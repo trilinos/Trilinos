@@ -1,46 +1,11 @@
-/*
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //        Piro: Strategy package for embedded analysis capabilitites
-//                  Copyright (2010) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2010 NTESS and the Piro contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #include "Piro_ConfigDefs.hpp"
 
@@ -122,6 +87,7 @@ void test_sincos_fsa(const bool use_combined_method,
   if (sens_method_string == "None") sens_method = Piro::NONE;
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
   else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -222,12 +188,12 @@ void test_sincos_fsa(const bool use_combined_method,
       typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
       std::ofstream ftmp(outfile_name);
-      RCP<const Tempus::SolutionHistory<double> > solutionHistory =
+      RCP<const Tempus::SolutionHistory<double> > lsolutionHistory =
         integrator->getSolutionHistory();
       RCP< Thyra::MultiVectorBase<double> > DxDp_exact_plot =
         Thyra::createMembers(model->get_x_space(), num_param);
-      for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<const Tempus::SolutionState<double> > solutionState = (*solutionHistory)[i];
+      for (int i=0; i<lsolutionHistory->getNumStates(); i++) {
+        RCP<const Tempus::SolutionState<double> > solutionState = (*lsolutionHistory)[i];
         double time_i = solutionState->getTime();
         RCP<const DMVPV> x_prod_plot =
           Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());

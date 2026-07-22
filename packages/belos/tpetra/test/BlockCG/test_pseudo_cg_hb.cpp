@@ -18,8 +18,6 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 
-#include <Trilinos_Util.h>
-
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
@@ -143,7 +141,7 @@ int run(int argc, char *argv[])
     
     // Perform solve
     Belos::ReturnType ret = solver.solve();
-    
+
     // Compute actual residuals.
     bool badRes = false;
     std::vector<MT> actual_resids( numrhs );

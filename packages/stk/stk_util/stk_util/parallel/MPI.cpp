@@ -223,7 +223,7 @@ extern "C" {
     void *		invec,
     void *		inoutvec,
     int *		len,
-    MPI_Datatype *	datatype)
+    MPI_Datatype *	/*datatype*/)
   {
     std::complex<double> *complex_in = static_cast<std::complex<double> *>(invec);
     std::complex<double> *complex_inout = static_cast<std::complex<double> *>(inoutvec);
@@ -288,19 +288,19 @@ struct ReduceCheck : public ReduceInterface
     m_size = size;
   }
 
-  virtual void size(void *&inbuf) const {
+  virtual void size(void *&inbuf) const override {
     unsigned *t = align_cast<unsigned>(inbuf);
     t += sizeof(unsigned);
     inbuf = t;
   }
 
-  virtual void copyin(void *&inbuf) const {
+  virtual void copyin(void *&inbuf) const override {
     unsigned *t = align_cast<unsigned>(inbuf);
     *t++ = m_size;
     inbuf = t;
   }
 
-  virtual void copyout(void *&outbuf) const {
+  virtual void copyout(void *&outbuf) const override {
     unsigned *t = align_cast<unsigned>(outbuf);
 
     unsigned size = *t++;
@@ -310,7 +310,7 @@ struct ReduceCheck : public ReduceInterface
     outbuf = t;
   }
 
-  virtual void op(void *&inbuf, void *&outbuf) const {
+  virtual void op(void *&inbuf, void *&outbuf) const override {
     unsigned *tin = align_cast<unsigned>(inbuf);
     unsigned *tout = align_cast<unsigned>(outbuf);
 
@@ -348,9 +348,9 @@ ReduceSet::size() const {
   }
 
   ReduceCheck *reduce_check = static_cast<ReduceCheck *>(m_reduceVector.front());
-  reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0));
+  reduce_check->setSize(reinterpret_cast<size_t>(buffer_end));
 
-  return reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0);
+  return reinterpret_cast<size_t>(buffer_end);
 }
 
 void

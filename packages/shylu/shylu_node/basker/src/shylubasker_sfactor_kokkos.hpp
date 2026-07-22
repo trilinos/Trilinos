@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_SFACTOR_KOKKOS_HPP
 #define SHYLUBASKER_SFACTOR_KOKKOS_HPP
 
@@ -41,11 +50,11 @@ namespace BaskerNS
     INT_2DARRAY   S;
     Int           lvl;
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     workspace_init_funct()
     {}
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     workspace_init_funct
     (
      INT_2DARRAY   _ws,
@@ -62,7 +71,7 @@ namespace BaskerNS
       lvl  = _lvl;
     }// workspace_init_funct()
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     void operator()(const int i) const
     {
       printf("Kokkos: workspace: %d lvl: %d \n", i, lvl);

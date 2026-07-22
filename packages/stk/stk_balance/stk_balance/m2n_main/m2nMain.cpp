@@ -34,34 +34,108 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/m2n/m2nRebalance.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
 #include "stk_balance/internal/LogUtils.hpp"
 
-#include <stk_util/environment/Env.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/util/human_bytes.hpp>
 
+#include <stk_util/command_line/CommandLineParserUtils.hpp>
+#include <stk_util/command_line/CommandLineParserParallel.hpp>
+#include <sstream>
+
+static std::string deprecationMsg = "stk_balance_m2n is deprecated. Please use stk_balance instead.";
+static std::string infileOpt = "infile";
+static std::string logfileOpt = "logfile";
+static std::string nprocsOpt = "nprocs";
+static std::string useNestedDecompOpt = "use-nested-decomp";
+
+void parse_args(int argc, const char**argv, stk::CommandLineParserParallel& commandLineParser)
+{
+  stk::CommandLineOption infile{infileOpt, "i", "input file decomposed for old number of processors"};
+  stk::CommandLineOption nprocs{nprocsOpt, "n", "new number of processors"};
+  stk::CommandLineOption logfile{logfileOpt, "l", "Output log file path, one of: 'cout', 'cerr', or a file path."};
+  stk::CommandLineOption useNested{useNestedDecompOpt, "",
+        "Nest the new decomposition completely within the boundaries "
+        "of the input decomposition.  The new number of processors "
+        "must be an integer multiple of the input processors."};
+
+  commandLineParser.add_required_positional<std::string>(infile);
+  commandLineParser.add_required_positional<int>(nprocs);
+  commandLineParser.add_optional<std::string>(logfile, "");
+  commandLineParser.add_flag(useNested);
+
+  stk::parse_command_line(argc, argv, deprecationMsg, deprecationMsg, commandLineParser, stk::parallel_machine_world());
+}
+
+std::string get_deprecation_msg(int argc, const char**argv)
+{
+  int commSize;
+  MPI_Comm_size(stk::parallel_machine_world(), &commSize);
+
+  stk::CommandLineParserParallel commandLineParser(stk::parallel_machine_world());
+  parse_args(argc, argv, commandLineParser);
+
+  std::ostringstream mpirunPrefix;
+  if (commSize > 1) {
+    mpirunPrefix << "mpirun -n " << commSize << " ";
+  }
+
+  std::ostringstream originalCmd;
+  originalCmd << "\t> " << mpirunPrefix.str();
+  originalCmd << stk::tailname(argv[0]) << " ";
+  for (int i = 1; i < argc; ++i) {
+    originalCmd << argv[i] << " ";
+  }
+
+  std::ostringstream convertToString;
+  convertToString << "\t> " << mpirunPrefix.str();
+  convertToString << "stk_balance ";
+
+  convertToString << "--rebalance-to " << commandLineParser.get_option_value<unsigned>(nprocsOpt) << " ";
+  if (commandLineParser.is_option_parsed(logfileOpt)) {
+    convertToString << "--logfile " << commandLineParser.get_option_value<std::string>(logfileOpt) << " ";
+  }
+  if (commandLineParser.is_option_parsed(useNestedDecompOpt)) {
+    convertToString << "--use-nested-decomp" << " ";
+  }
+  convertToString << commandLineParser.get_option_value<std::string>(infileOpt) << " ";
+
+  if (commSize == 1) {
+    convertToString << "\n\t\tOR\n"; 
+    convertToString << "\t> mpirun -n " << commandLineParser.get_option_value<unsigned>(nprocsOpt) << " ";
+    convertToString << "stk_balance ";
+    if (commandLineParser.is_option_parsed(logfileOpt)) {
+      convertToString << "--logfile " << commandLineParser.get_option_value<std::string>(logfileOpt) << " ";
+    }
+    if (commandLineParser.is_option_parsed(useNestedDecompOpt)) {
+      convertToString << "--use-nested-decomp" << " ";
+    }
+    convertToString << commandLineParser.get_option_value<std::string>(infileOpt) << " ";
+  }
+
+  std::ostringstream outputMsg;
+  outputMsg << deprecationMsg << "\n\n\n";
+  outputMsg << "  Input stk_balance_m2n command:\n";
+  outputMsg << originalCmd.str() << "\n\n";
+  outputMsg << "  can be converted to a stk_balance command:\n";
+  outputMsg << convertToString.str() << "\n";
+
+  return outputMsg.str();
+}
+
 int main(int argc, const char**argv)
 {
-    MPI_Init(&argc, const_cast<char***>(&argv));
-    MPI_Comm comm = MPI_COMM_WORLD;
-    stk::balance::initialize_environment(comm, argv);
+  MPI_Init(&argc, const_cast<char***>(&argv));
 
-    stk::balance::M2NBalanceSettings balanceSettings;
+  int rank;
+  MPI_Comm_rank(stk::parallel_machine_world(), &rank);
 
-    stk::balance::M2NParser parser(comm);
-    parser.parse_command_line_options(argc, argv, balanceSettings);
+  if (rank == 0) {
+    std::cout << get_deprecation_msg(argc, argv) << std::endl;
+  }
 
-    stk::balance::m2n::set_output_streams(comm, balanceSettings);
-    stk::balance::m2n::rebalance_m2n(balanceSettings, comm);
-
-    size_t hwmMax = 0, hwmMin = 0, hwmAvg = 0;
-    stk::get_memory_high_water_mark_across_processors(comm, hwmMax, hwmMin, hwmAvg);
-    sierra::Env::outputP0() << "Memory HWM across procs, max/min/avg: "
-                            << stk::human_bytes(hwmMax) << " / "
-                            << stk::human_bytes(hwmMin) << " / "
-                            << stk::human_bytes(hwmAvg) << std::endl;
-    MPI_Finalize();
-    return 0;
+  MPI_Finalize();
+  std::abort();
 }

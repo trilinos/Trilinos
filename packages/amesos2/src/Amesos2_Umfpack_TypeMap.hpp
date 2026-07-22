@@ -117,14 +117,14 @@ struct TypeMap<Umfpack,double>
 template <>
 struct TypeMap<Umfpack,std::complex<float> > // provide conversion from std::complex<float> to std::complex<double>
 {
-  typedef std::complex<double> type;
+  typedef Kokkos::complex<double> type;
   typedef double magnitude_type;
 };
 
 template <>
 struct TypeMap<Umfpack,std::complex<double> >
 {
-  typedef std::complex<double> type;
+  typedef Kokkos::complex<double> type;
   typedef double magnitude_type;
 };
 

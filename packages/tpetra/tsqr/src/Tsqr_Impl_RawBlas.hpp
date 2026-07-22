@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TSQR_IMPL_RAWBLAS_HPP
 #define TSQR_IMPL_RAWBLAS_HPP
 
@@ -14,9 +23,9 @@ namespace Impl {
 ///
 /// Methods are virtual because they are meant to be called from host,
 /// even if they run on device with pointers to device data.
-template<class Scalar>
+template <class Scalar>
 class RawBlas {
-public:
+ public:
   using value_type = Scalar;
 
   virtual ~RawBlas() = default;
@@ -41,7 +50,7 @@ public:
                                  value_type B[], const int ldb) const = 0;
 };
 
-} // namespace Impl
-} // namespace TSQR
+}  // namespace Impl
+}  // namespace TSQR
 
-#endif // TSQR_IMPL_RAWBLAS_HPP
+#endif  // TSQR_IMPL_RAWBLAS_HPP

@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <cmath>
 #include <array>
+#include <tuple>
 
 #include <stk_math/StkVector.hpp>
 
@@ -24,7 +25,7 @@ template <class REAL, class T>
 static void assign_location_and_parametric_coords(const stk::math::Vec<REAL,3> & closestPt, const REAL closestParamX, const REAL closestParamY, T & result);
 
 template <class REAL>
-static void assign_location_and_parametric_coords(const stk::math::Vec<REAL,3> & closestPt, const REAL closestParamX, const REAL closestParamY, stk::math::Vec<REAL,3> & result)
+static void assign_location_and_parametric_coords(const stk::math::Vec<REAL,3> & closestPt, const REAL /*closestParamX*/, const REAL /*closestParamY*/, stk::math::Vec<REAL,3> & result)
 {
   result = closestPt;
 }
@@ -47,21 +48,22 @@ template<class REAL, class T>
 void assign_edge_AB_location(const stk::math::Vec<REAL,3> & a, const stk::math::Vec<REAL,3> & ab, const REAL d1, const REAL d3, T & result)
 {
   REAL v = d1/(d1-d3);
-  assign_location_and_parametric_coords(a + v * ab, v, 0.0, result);
+  assign_location_and_parametric_coords(a + v * ab, v, REAL(0.0), result);
 }
 
 template<class REAL, class T>
 void assign_edge_AC_location(const stk::math::Vec<REAL,3> & a, const stk::math::Vec<REAL,3> & ac, const REAL d2, const REAL d6, T & result)
 {
   REAL w(d2/(d2-d6));
-  assign_location_and_parametric_coords(a + w * ac, 0.0, w, result);
+  assign_location_and_parametric_coords(a + w * ac, REAL(0.0), w, result);
 }
 
 template<class REAL, class T>
 void assign_edge_BC_location(const stk::math::Vec<REAL,3> & b, const stk::math::Vec<REAL,3> & c, const REAL d3, const REAL d4, const REAL d5, const REAL d6, T & result)
 {
   REAL w((d4-d3)/((d4-d3) + (d5-d6)));
-  assign_location_and_parametric_coords(b + w * (c-b), 1.0-w, w, result);
+  REAL oneMinusW = 1.0 - w;
+  assign_location_and_parametric_coords(b + w * (c-b), oneMinusW, w, result);
 }
 
 template<class REAL, class T>
@@ -86,15 +88,15 @@ class CalcTriangle3 {
     // The inequalities in closest_point_projection() are such that the edges and vertices are not considered to be inside.
     // If we want these points to be inside, we need to check for ==0.
     typedef bool ResultType;
-    static void vertex_projection(const stk::math::Vec<REAL,3> &pt, const REAL x, const REAL y, ResultType & result)
+    static void vertex_projection(const stk::math::Vec<REAL,3> &/*pt*/, const REAL /*x*/, const REAL /*y*/, ResultType & result)
       { result = false; }
-    static void edge_AB_projection(const stk::math::Vec<REAL,3> &a, const stk::math::Vec<REAL,3> &ab, const REAL d1, const REAL d3, ResultType & result)
+    static void edge_AB_projection(const stk::math::Vec<REAL,3> &/*a*/, const stk::math::Vec<REAL,3> &/*ab*/, const REAL /*d1*/, const REAL /*d3*/, ResultType & result)
       { result = false; }
-    static void edge_AC_projection(const stk::math::Vec<REAL,3> &a, const stk::math::Vec<REAL,3> &ac, const REAL d2, const REAL d6, ResultType & result)
+    static void edge_AC_projection(const stk::math::Vec<REAL,3> &/*a*/, const stk::math::Vec<REAL,3> &/*ac*/, const REAL /*d2*/, const REAL /*d6*/, ResultType & result)
       { result = false; }
-    static void edge_BC_projection(const stk::math::Vec<REAL,3> &b, const stk::math::Vec<REAL,3> &c, const REAL d3, const REAL d4, const REAL d5, const REAL d6, ResultType & result)
+    static void edge_BC_projection(const stk::math::Vec<REAL,3> &/*b*/, const stk::math::Vec<REAL,3> &/*c*/, const REAL /*d3*/, const REAL /*d4*/, const REAL /*d5*/, const REAL /*d6*/, ResultType & result)
       { result = false; }
-    static void face_projection(const stk::math::Vec<REAL,3> &a, const stk::math::Vec<REAL,3> &ab, const stk::math::Vec<REAL,3> &ac, const REAL va, const REAL vb, const REAL vc, ResultType & result)
+    static void face_projection(const stk::math::Vec<REAL,3> &/*a*/, const stk::math::Vec<REAL,3> &/*ab*/, const stk::math::Vec<REAL,3> &/*ac*/, const REAL /*va*/, const REAL /*vb*/, const REAL /*vc*/, ResultType & result)
       { result = true; }
   };
 
@@ -117,9 +119,17 @@ class CalcTriangle3 {
   using ClosestPointLocation = ClosestPoint<stk::math::Vec<REAL,3>>;
   using ClosestPointLocationAndParametricCoords = ClosestPoint<const std::tuple<stk::math::Vec<REAL,3> &, stk::math::Vec<REAL,2> &>>;
 
-  static Vec3d normal(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return normal_dir(p0,p1,p2).unit_vector(); } /// Unit vector
-  static Vec3d normal_dir(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return Cross(p1-p0,p2-p0); } /// Non-unit normal (faster)
-  static REAL area(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return 0.5*normal_dir(p0,p1,p2).length(); }
+  // from 3 points
+  static Vec3d normal(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return two_times_area_vector(p0,p1,p2).unit_vector(); } /// Unit vector
+  static Vec3d area_vector(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return 0.5*two_times_area_vector(p0,p1,p2); }
+  static Vec3d two_times_area_vector(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return Cross(p1-p0,p2-p0); } /// Non-unit normal (faster)
+  static REAL area(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return 0.5*two_times_area_vector(p0,p1,p2).length(); }
+
+  // from 2 edges ( a little bit faster than 3 points for FAD versions )
+  static Vec3d normal(const Vec3d & edge0, const Vec3d & edge1) { return two_times_area_vector(edge0,edge1).unit_vector(); } /// Unit vector
+  static Vec3d two_times_area_vector(const Vec3d & edge0, const Vec3d & edge1) { return Cross(edge0,edge1); } /// Non-unit normal (faster)
+  static Vec3d area_vector(const Vec3d & edge0, const Vec3d & edge1) { return 0.5*two_times_area_vector(edge0,edge1); }
+  static REAL area(const Vec3d & edge0, const Vec3d & edge1) { return 0.5*two_times_area_vector(edge0,edge1).length(); }
 
   static Vec3d parametric_to_real_coords(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2, const Vec2d & paramPt)
     {
@@ -136,9 +146,11 @@ class CalcTriangle3 {
   static REAL distance_squared(const std::array<Vec3d,3> & triCoords, const Vec3d& queryPt)  { return distance_squared(triCoords[0], triCoords[1], triCoords[2], queryPt); }
 
   static Vec3d normal(const std::array<Vec3d,3> & triCoords) { return normal(triCoords[0], triCoords[1], triCoords[2]); }
-  static Vec3d normal_dir(const std::array<Vec3d,3> & triCoords) { return normal_dir(triCoords[0], triCoords[1], triCoords[2]); }
+  static Vec3d two_times_area_vector(const std::array<Vec3d,3> & triCoords) { return two_times_area_vector(triCoords[0], triCoords[1], triCoords[2]); }
   static REAL area(const std::array<Vec3d,3> & triCoords) { return area(triCoords[0], triCoords[1], triCoords[2]); }
   static Vec3d parametric_to_real_coords(const std::array<Vec3d,3> & triCoords, const Vec2d & paramPt) { return parametric_to_real_coords(triCoords[0], triCoords[1], triCoords[2], paramPt); }
+  static std::pair<REAL, Vec3d> area_and_normal(const std::array<Vec3d,3> & triCoords) {Vec3d dir = two_times_area_vector(triCoords); const double mag = dir.unitize(); return {0.5*mag, dir}; }
+  static REAL signed_area(const Vec3d & positiveNormal, const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return 0.5*Dot(positiveNormal, Cross(p1-p0,p2-p0)); }
 
   template<class ProjectionType>
   static void closest_point_projection(const Vec3d & a, const Vec3d & b, const Vec3d & c, const Vec3d& p, typename ProjectionType::ResultType & result);

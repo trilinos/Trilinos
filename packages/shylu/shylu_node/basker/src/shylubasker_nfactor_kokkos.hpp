@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_NFACTOR_KOKKOS_HPP
 #define SHYLUBASKER_NFACTOR_KOKKOS_HPP
 //This file contains the kokkos functors needed for basker_nfactor.hpp
@@ -8,10 +17,8 @@
 #include "shylubasker_types.hpp"
 #include "shylubasker_stats.hpp"
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#endif 
 
 //#include <assert.h>
 
@@ -617,12 +624,9 @@ namespace Basker
   template <class Int, class Entry, class Exe_Space>
   struct rect_factor_funct
   {
-    //Kokkos Typedefs
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                                             execution_space ;
     typedef  Kokkos::TeamPolicy<Exe_Space>                        team_policy;
     typedef  typename team_policy::member_type                     team_member;
-    #endif
 
     BASKER_MATRIX  A;
     MATRIX_2DARRAY L;
@@ -2027,12 +2031,10 @@ namespace Basker
   struct local_extend_funct
   {
     //Kokkos Typedefs
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                                        execution_space ;
     typedef  Kokkos::TeamPolicy<Exe_Space>                   team_policy;
     typedef  typename team_policy::member_type               team_member;
-    #endif
-    
+
     MATRIX_VIEW_2DARRAY A;
     MATRIX_2DARRAY L;
     MATRIX_2DARRAY U;
@@ -2109,7 +2111,6 @@ namespace Basker
       stats = _stats;
     }
 
-    //KOKKOS_INLINE_FUNCTION
     BASKER_INLINE
     void operator()(const team_member &thread) const
     {

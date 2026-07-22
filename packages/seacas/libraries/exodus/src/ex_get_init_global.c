@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,23 +37,23 @@ static int ex_get_dim_value(int exoid, const char *name, const char *dimension_n
                             size_t *value)
 {
 
-  if (nc_inq_dimid(exoid, dimension_name, &dimension) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dimension_name, &dimension) != EX_NOERR) {
     /* optional and default to zero. */
     *value = 0;
   }
   else {
     size_t tmp;
     int    status;
-    if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s in file id %d", name,
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
     *value = tmp;
   }
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 
 /*!

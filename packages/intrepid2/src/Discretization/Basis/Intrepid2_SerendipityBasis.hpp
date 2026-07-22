@@ -111,9 +111,9 @@ public:
     Kokkos::deep_copy(ordinalMap_, ordinalMapHost);
 
     // set cell topology
-    this->basisCellTopology_ = fullBasis_->getBaseCellTopology();
+    this->basisCellTopologyKey_ = fullBasis_->getBaseCellTopology().getKey();
     this->numTensorialExtrusions_ = fullBasis_->getNumTensorialExtrusions();
-    const ordinal_type spaceDim = this->basisCellTopology_.getDimension() + numTensorialExtrusions_;
+    const ordinal_type spaceDim = fullBasis_->getBaseCellTopology().getDimension() + numTensorialExtrusions_;
     
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
             
@@ -141,7 +141,7 @@ public:
     const ordinal_type posDfCnt = 3;  // position in the tag, counting from 0, of DoF count for the subcell
 
     OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-    auto cellTopo = CellTopology::cellTopology(this->basisCellTopology_, numTensorialExtrusions_);
+    auto cellTopo = CellTopology::cellTopology(fullBasis_->getBaseCellTopology(), numTensorialExtrusions_);
     const OrdinalTypeArray2DHost fullBasisOrdinalToTag = fullBasis->getAllDofTags();
     
     using std::map;

@@ -97,39 +97,38 @@ void activate_entities(stk::io::StkMeshIoBroker &fixture,
 
 }
 
-TEST( StkMeshIoBroker, iofixture )
+TEST( StkMeshIoBroker, ioBroker_externalFile )
 {
   // A simple test for reading and writing an exodus file using the StkMeshIoBroker
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk::ParallelMachine comm = stk::parallel_machine_world();
 
-  stk::io::StkMeshIoBroker fixture(pm);
-  fixture.use_simple_fields();
+  stk::io::StkMeshIoBroker ioBroker(comm);
 
   std::string input_base_filename = "unit_test.g";
 
   bool ok = false;
   try {
     // Initialize meta data from exodus file
-    fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
-    fixture.create_input_mesh();
+    ioBroker.add_mesh_database(input_base_filename, stk::io::READ_MESH);
+    ioBroker.create_input_mesh();
     ok = true;
 
-    stk::mesh::MetaData & meta_data = fixture.meta_data();
+    stk::mesh::MetaData & meta_data = ioBroker.meta_data();
 
     // Commit meta_data
     meta_data.commit();
 
     // bulk_data initialize (from exodus file)
-    fixture.populate_bulk_data();
+    ioBroker.populate_bulk_data();
 
     // exodus file creation
     std::string output_base_filename = "unit_test_output.e";
-    size_t output_index = fixture.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS);
+    size_t output_index = ioBroker.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS);
 
     // process output
     const double time_step = 0;
-    fixture.process_output_request(output_index, time_step);
+    ioBroker.process_output_request(output_index, time_step);
   }
   catch(...) {
     ASSERT_TRUE(ok);
@@ -138,13 +137,63 @@ TEST( StkMeshIoBroker, iofixture )
   // checking is left to the test XML.
 }
 
+TEST( StkMeshIoBroker, ioBroker_iossRegion )
+{
+  // reading and writing an exodus file using StkMeshIoBroker with Ioss::Region
+  // that was obtained from a separate StkMeshIoBroker.
+
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+
+  stk::io::StkMeshIoBroker otherIoBroker(comm);
+
+  std::string input_base_filename = "unit_test.g";
+  std::string output_base_filename = "unit_test_output.e";
+
+  size_t numElems = 0;
+  size_t numNodes = 0;
+
+  bool ok = false;
+  try {
+    // Initialize meta data from exodus file
+    otherIoBroker.add_mesh_database(input_base_filename, stk::io::READ_MESH);
+    otherIoBroker.create_input_mesh();
+    ok = true;
+
+    stk::io::StkMeshIoBroker ioBroker(comm);
+    ioBroker.add_mesh_database(otherIoBroker.get_input_ioss_region());
+    ioBroker.create_input_mesh();
+
+    ioBroker.populate_bulk_data();
+
+    numElems = stk::mesh::count_entities(ioBroker.bulk_data(), stk::topology::ELEM_RANK, ioBroker.meta_data().universal_part());
+    numNodes = stk::mesh::count_entities(ioBroker.bulk_data(), stk::topology::NODE_RANK, ioBroker.meta_data().universal_part());
+
+    // exodus file creation
+    size_t output_index = ioBroker.create_output_mesh(output_base_filename, stk::io::WRITE_RESULTS);
+
+    // process output
+    const double time_step = 0;
+    ioBroker.process_output_request(output_index, time_step);
+  }
+  catch(...) {
+    ASSERT_TRUE(ok);
+  }
+
+  {//now read from the output mesh and make sure it has the same number of
+   //nodes and elements as the original input mesh.
+    std::shared_ptr<stk::mesh::BulkData> meshPtr = stk::mesh::MeshBuilder(comm).create();
+    stk::io::fill_mesh(output_base_filename, *meshPtr);
+    EXPECT_EQ(numElems, stk::mesh::count_entities(*meshPtr, stk::topology::ELEM_RANK, meshPtr->mesh_meta_data().universal_part()));
+    EXPECT_EQ(numNodes, stk::mesh::count_entities(*meshPtr, stk::topology::NODE_RANK, meshPtr->mesh_meta_data().universal_part()));
+  }
+}
+
 TEST( StkMeshIoBroker, testModifyTopology )
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     if (stk::parallel_machine_size(comm) == 1)
     {
         stk::io::StkMeshIoBroker fixture(comm);
-        fixture.use_simple_fields();
         std::string generated_mesh_spec = "generated:1x1x2";
         fixture.add_mesh_database(generated_mesh_spec, stk::io::READ_MESH);
         fixture.create_input_mesh();
@@ -188,13 +237,12 @@ TEST( StkMeshIoBroker, testModifyTopology )
     }
 }
 
-TEST( StkMeshIoBroker, active_only )
+TEST( StkMeshIoBroker, active_only_externalFile )
 {
   // A simple test for reading and writing an exodus file using the StkMeshIoBroker.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   stk::io::StkMeshIoBroker fixture(pm);
-  fixture.use_simple_fields();
 
   std::string input_base_filename = "unit_test.g";
 
@@ -239,7 +287,7 @@ TEST( StkMeshIoBroker, active_only )
   // checking is left to the test XML.
 }
 
-TEST( StkMeshIoBroker, active_and_all )
+TEST( StkMeshIoBroker, active_and_all_externalFile )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -248,7 +296,6 @@ TEST( StkMeshIoBroker, active_and_all )
     return;
   }
   stk::io::StkMeshIoBroker fixture(pm);
-  fixture.use_simple_fields();
 
   std::string input_base_filename = "unit_test.g";
 
@@ -304,7 +351,7 @@ TEST( StkMeshIoBroker, active_and_all )
   // checking is left to the test XML.
 }
 
-TEST( StkMeshIoBroker, large_mesh_test )
+TEST( StkMeshIoBroker, large_mesh_test_externalFile )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -313,7 +360,6 @@ TEST( StkMeshIoBroker, large_mesh_test )
     return;
   }
   stk::io::StkMeshIoBroker fixture(pm);
-  fixture.use_simple_fields();
 
   std::string input_base_filename = "1mCube_20x20x20.g";
 
@@ -424,7 +470,6 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
   stk::mesh::MetaData meta(3);
-  meta.use_simple_fields();
 
   stk::mesh::Part& myPart = declare_elem_part(meta, "myPart");
   stk::mesh::Part& myOtherPart = declare_elem_part(meta, "myOtherPart");
@@ -438,7 +483,7 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
   Ioss::Field* iossField1copy = create_ioss_field(fieldName, numScalarComponentsPerField, numFieldCopiesPerEntity);
 
   const stk::mesh::FieldBase* stkField = stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myPart,
-                                                                                   *iossField1copy, false);
+                                                                                   *iossField1copy);
 
   unsigned expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
   EXPECT_EQ(expectedMaxSize, stkField->max_size());
@@ -447,7 +492,7 @@ TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
 
   Ioss::Field* iossField9copies = create_ioss_field(fieldName, numScalarComponentsPerField, numFieldCopiesPerEntity);
 
-  stkField = stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myOtherPart, *iossField9copies, false);
+  stkField = stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myOtherPart, *iossField9copies);
 
   expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
   EXPECT_EQ(expectedMaxSize, stkField->max_size());

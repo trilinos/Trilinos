@@ -20,7 +20,7 @@ public:
 };
 
 
-class SideIdPoolInitialIdsTest : public stk::unit_test_util::simple_fields::MeshFixture
+class SideIdPoolInitialIdsTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   SideIdPoolInitialIdsTest()

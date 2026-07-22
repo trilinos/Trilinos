@@ -1,47 +1,11 @@
-/*
-//@HEADER
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //                Shards : Shared Discretization Tools
-//                 Copyright 2008, 2011 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Carter Edwards (hcedwar@sandia.gov),
-//                    Pavel Bochev (pbboche@sandia.gov), or
-//                    Denis Ridzal (dridzal@sandia.gov).
-//
-// ************************************************************************
-//@HEADER
-*/
+// Copyright 2008-2011 NTESS and the Shards contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef Shards_CellTopology_hpp
 #define Shards_CellTopology_hpp
@@ -478,9 +442,8 @@ public:
       return m_cell->permutation[permutation_ord].node[node_ord];
     }
   
-  /** \brief  Permutation of a cell's node ordinals.
+  /** \brief  Polarity of a cell's permutation.
    *  \param  permutation_ordinal [in]
-   *  \param  node_ordinal        [in]
    */
   unsigned getNodePermutationPolarity( const unsigned permutation_ord ) const
     {
@@ -520,36 +483,7 @@ public:
   CellTopology( const CellTopologyData * cell )
     : m_cell( cell )
   {}
-  
-        
-  /** \brief  Constructs custom 1-cell (line) with base topology Line<>. 
-   *          Example use: the statement
-   *          \code
-   *          CellTopology  customLine("customLine", 4);    
-   *          \endcode
-   *           defines custom line with 4 nodes.
-   */
-  CellTopology( const std::string & name,
-                const unsigned      nodeCount);
-  
-        
-  /** \brief  Construct custom 2-cell (polygon) from a list of edges.
-   *          The default base topology is the specified custom cell topology.
-   *  \param  name             [in]  - descriptive name of the custom 2-cell
-   *  \param  vertex_count     [in]  - number of vertices in the custom 2-cell
-   *  \param  node_count       [in]  - number of nodes in the custom 2-cell
-   *  \param  edges            [in]  - raw CellTopologyData for each edge (can be different!)
-   *  \param  edge_node_map    [in]  - flat array with node maps for each edge 
-   *  \param  base             [in]  - CellTopologyData of the base topology
-   */
-  CellTopology( const std::string                             & name,
-                const unsigned                                  vertex_count,
-                const unsigned                                  node_count,
-                const std::vector< const CellTopologyData * > & edges ,
-                const std::vector< unsigned >                 & edge_node_map ,
-                const CellTopologyData                        * base = NULL );
 
-  
   /** \brief  Construct custom 3-cell (polyhedron) from a list of edges and sides.
    *          The default base topology is the specified custom cell topology.
    *  \param  name             [in]  - descriptive name of the custom 3-cell

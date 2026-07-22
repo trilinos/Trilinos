@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file  example_04.cpp
@@ -62,9 +28,8 @@
 #include "ROL_Bounds.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -76,8 +41,8 @@ class Constraint_ParabolicControl : public ROL::Constraint_SimOpt<Real> {
   typedef std::vector<Real>    vector;
   typedef ROL::Vector<Real>    V;
   typedef ROL::StdVector<Real> SV;
-  
-  typedef typename vector::size_type uint; 
+
+  typedef typename vector::size_type uint;
 
 private:
   std::vector<Real> u0_;
@@ -132,7 +97,7 @@ private:
     jv[nx_-1] += eps2_*dt_*4.0*std::pow(u[nx_-1],3.0)*v[nx_-1];
   }
 
-  void apply_pde_hessian(std::vector<Real> &r, const std::vector<Real> &u, const std::vector<Real> &p, 
+  void apply_pde_hessian(std::vector<Real> &r, const std::vector<Real> &u, const std::vector<Real> &p,
                          const std::vector<Real> &s) {
     r.clear();
     r.resize(nx_,0.0);
@@ -140,7 +105,7 @@ private:
     r[nx_-1] = eps2_*dt_*12.0*std::pow(u[nx_-1],2.0)*p[nx_-1]*s[nx_-1];
   }
 
-  void compute_residual(std::vector<Real> &r, const std::vector<Real> &up, 
+  void compute_residual(std::vector<Real> &r, const std::vector<Real> &up,
                         const std::vector<Real> &u, const Real z) {
     r.clear();
     r.resize(nx_,0.0);
@@ -172,11 +137,11 @@ private:
     }
   }
 
-  void linear_solve(std::vector<Real> &u, std::vector<Real> &d, std::vector<Real> &o, 
+  void linear_solve(std::vector<Real> &u, std::vector<Real> &d, std::vector<Real> &o,
               const std::vector<Real> &r) {
     u.assign(r.begin(),r.end());
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int nx = static_cast<int>(nx_);
     int info;
     int ldb  = nx;
@@ -213,13 +178,13 @@ private:
       utmp.assign(u.begin(),u.end());
       update(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
-      rnorm = compute_norm(r); 
+      rnorm = compute_norm(r);
       while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
         update(utmp,s,-alpha);
         compute_residual(r,up,utmp,z);
-        rnorm = compute_norm(r); 
+        rnorm = compute_norm(r);
       }
       // Update iterate
       u.assign(utmp.begin(),utmp.end());
@@ -230,13 +195,13 @@ private:
   }
 
   ROL::Ptr<const vector> getVector( const V& x ) {
-    
+
     return dynamic_cast<const SV&>(x).getVector();
   }
 
   ROL::Ptr<vector> getVector( V& x ) {
-    
-    return dynamic_cast<SV&>(x).getVector(); 
+
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 
@@ -247,7 +212,7 @@ private:
 
 public:
 
-  Constraint_ParabolicControl(Real eps = 1.0, int nx = 128, int nt = 100, Real T = 1) 
+  Constraint_ParabolicControl(Real eps = 1.0, int nx = 128, int nt = 100, Real T = 1)
     : eps1_(eps), eps2_(1.0), nx_(nx), nt_(nt), T_(T) {
     u0_.resize(nx_,0.0);
     dx_ = 1.0/((Real)nx-1.0);
@@ -303,7 +268,7 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    
+
     ROL::Ptr<vector> jvp = getVector(jv);
     ROL::Ptr<const vector> vp = getVector(v);
     ROL::Ptr<const vector> up = getVector(u);
@@ -333,12 +298,12 @@ public:
 
   void applyInverseJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
- 
+
     ROL::Ptr<vector> jvp = getVector(jv);
     ROL::Ptr<const vector> vp = getVector(v);
     ROL::Ptr<const vector> up = getVector(u);
     ROL::Ptr<const vector> zp = getVector(z);
-   
+
     // Initialize State Storage
     std::vector<Real> M(u0_);
     std::vector<Real> sold(u0_);
@@ -359,7 +324,7 @@ public:
       compute_pde_jacobian(d,o,unew);
       // Get Right Hand Side
       if ( t > 0 ) {
-        apply_mass(M,sold); 
+        apply_mass(M,sold);
         update(vnew,M);
       }
       // Solve solve adjoint system at current time step
@@ -401,9 +366,9 @@ public:
     }
   }
 
-  void applyInverseAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, 
+  void applyInverseAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    
+
     ROL::Ptr<vector> jvp = getVector(jv);
     ROL::Ptr<const vector> vp = getVector(v);
     ROL::Ptr<const vector> up = getVector(u);
@@ -429,7 +394,7 @@ public:
       compute_pde_jacobian(d,o,unew);
       // Get Right Hand Side
       if ( t < nt_ ) {
-        apply_mass(M,sold); 
+        apply_mass(M,sold);
         update(vnew,M);
       }
       // Solve solve adjoint system at current time step
@@ -468,7 +433,7 @@ public:
     }
   }
 
-  void applyAdjointHessian_11(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w, 
+  void applyAdjointHessian_11(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w,
                               const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
 
@@ -499,19 +464,19 @@ public:
     }
   }
 
-  void applyAdjointHessian_12(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w, 
+  void applyAdjointHessian_12(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w,
                               const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
     hwv.zero();
   }
 
-  void applyAdjointHessian_21(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w, 
+  void applyAdjointHessian_21(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w,
                               const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
     hwv.zero();
   }
 
-  void applyAdjointHessian_22(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w, 
+  void applyAdjointHessian_22(ROL::Vector<Real> &hwv, const ROL::Vector<Real> &w,
                               const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
     hwv.zero();
@@ -524,8 +489,8 @@ class Objective_ParabolicControl : public ROL::Objective_SimOpt<Real> {
   typedef std::vector<Real>    vector;
   typedef ROL::Vector<Real>    V;
   typedef ROL::StdVector<Real> SV;
-  
-  typedef typename vector::size_type uint; 
+
+  typedef typename vector::size_type uint;
 
 private:
   Real alpha_;
@@ -563,7 +528,7 @@ private:
   }
 
   Real compute_dot(const std::vector<Real> &r, const std::vector<Real> &s) {
-    Real ip = 0.0; 
+    Real ip = 0.0;
     for (uint i = 0; i < r.size(); i++) {
       ip += r[i]*s[i];
     }
@@ -591,13 +556,13 @@ private:
   }
 
   ROL::Ptr<const vector> getVector( const V& x ) {
-    
+
     return dynamic_cast<const SV&>(x).getVector();
   }
 
   ROL::Ptr<vector> getVector( V& x ) {
-    
-    return dynamic_cast<SV&>(x).getVector(); 
+
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 /*************************************************************/
@@ -606,7 +571,7 @@ private:
 
 public:
 
-  Objective_ParabolicControl(Real alpha = 1.e-4, int nx = 128, int nt = 100, Real T = 1) 
+  Objective_ParabolicControl(Real alpha = 1.e-4, int nx = 128, int nt = 100, Real T = 1)
     : alpha_(alpha), nx_(nx), nt_(nt), T_(T) {
     dx_ = 1.0/((Real)nx-1.0);
     dt_ = T/((Real)nt-1.0);
@@ -621,8 +586,8 @@ public:
     std::vector<Real> uT(nx_,0.0);
     for (uint n = 0; n < nx_; n++) {
       uT[n] = (*up)[(nt_-1)*nx_ + n] - evaluate_target((Real)n*dx_);
-    } 
-    Real val = 0.5*compute_weighted_dot(uT,uT); 
+    }
+    Real val = 0.5*compute_weighted_dot(uT,uT);
 
     // Add Norm of Control
     for (uint t = 0; t < nt_; t++) {
@@ -641,7 +606,7 @@ public:
     std::vector<Real> uT(nx_,0.0);
     for (uint n = 0; n < nx_; n++) {
       uT[n] = (*up)[(nt_-1)*nx_ + n] - evaluate_target((Real)n*dx_);
-    } 
+    }
     std::vector<Real> M(nx_,0.0);
     apply_mass(M,uT);
     for (uint n = 0; n < nx_; n++) {
@@ -655,14 +620,14 @@ public:
     ROL::Ptr<vector> gp = getVector(g);
     ROL::Ptr<const vector> up = getVector(u);
     ROL::Ptr<const vector> zp = getVector(z);
- 
+
     // Compute gradient
     for (uint n = 0; n < nt_; n++) {
       (*gp)[n] = dt_*alpha_*(*zp)[n];
     }
   }
 
-  void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
+  void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                    const ROL::Vector<Real> &z, Real &tol ) {
 
     ROL::Ptr<vector> hvp = getVector(hv);
@@ -674,7 +639,7 @@ public:
     std::vector<Real> vT(nx_,0.0);
     for (uint n = 0; n < nx_; n++) {
       vT[n] = (*vp)[(nt_-1)*nx_ + n];
-    } 
+    }
     std::vector<Real> M(nx_,0.0);
     apply_mass(M,vT);
     for (uint n = 0; n < nx_; n++) {
@@ -682,17 +647,17 @@ public:
     }
   }
 
-  void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
+  void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                    const ROL::Vector<Real> &z, Real &tol ) {
     hv.zero();
   }
 
-  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
+  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                    const ROL::Vector<Real> &z, Real &tol ) {
     hv.zero();
   }
 
-  void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
+  void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                    const ROL::Vector<Real> &z, Real &tol ) {
 
     ROL::Ptr<vector> hvp = getVector(hv);
@@ -714,10 +679,10 @@ int main(int argc, char *argv[]) {
   typedef std::vector<RealT>    vector;
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
-   
-  typedef typename vector::size_type uint;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  typedef typename vector::size_type luint;
+
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -735,11 +700,11 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    uint nx     = 40;    // Set spatial discretization.
-    uint nt     = 40;    // Set temporal discretization.
+    luint nx     = 40;    // Set spatial discretization.
+    luint nt     = 40;    // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
-    RealT eps   = 5.e-1; // Set conductivity 
+    RealT eps   = 5.e-1; // Set conductivity
     Objective_ParabolicControl<RealT> obj(alpha,nx,nt,T);
     Constraint_ParabolicControl<RealT> con(eps,nx,nt,T);
 
@@ -751,10 +716,10 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<vector> yz_ptr = ROL::makePtr<vector>(nt, 1.0);
     ROL::Ptr<vector> yu_ptr = ROL::makePtr<vector>(nx*nt, 1.0);
 
-    for (uint i=0; i<nt; i++) {
+    for (luint i=0; i<nt; i++) {
       (*xz_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*yz_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      for (uint n=0; n<nx; n++) {
+      for (luint n=0; n<nx; n++) {
         (*xu_ptr)[i*nx + n] = (RealT)rand()/(RealT)RAND_MAX;
         (*yu_ptr)[i*nx + n] = (RealT)rand()/(RealT)RAND_MAX;
       }
@@ -837,7 +802,7 @@ int main(int argc, char *argv[]) {
     xz.zero();
     std::clock_t timer_pdas = std::clock();
     algo->run(xz, robj, icon, true, *outStream);
-    *outStream << "Primal Dual Active Set required " << (std::clock()-timer_pdas)/(RealT)CLOCKS_PER_SEC 
+    *outStream << "Primal Dual Active Set required " << (std::clock()-timer_pdas)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
 
     // Projected Newton.
@@ -851,7 +816,7 @@ int main(int argc, char *argv[]) {
     xz.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(xz, robj, icon, true, *outStream);
-    *outStream << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC 
+    *outStream << "Projected Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
 
     // Composite step.
@@ -866,7 +831,7 @@ int main(int argc, char *argv[]) {
     x.zero();
     std::clock_t timer_cs = std::clock();
     algo->run(x, g, l, c, obj, con, true, *outStream);
-    *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC 
+    *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
   }
   catch (std::logic_error& err) {

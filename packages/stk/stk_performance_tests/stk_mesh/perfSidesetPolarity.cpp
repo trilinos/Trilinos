@@ -23,11 +23,11 @@ namespace
 {
 
 //==============================================================================
-class PolarityPerformanceBase : public stk::unit_test_util::simple_fields::PerformanceTester
+class PolarityPerformanceBase : public stk::unit_test_util::PerformanceTester
 {
 public:
   PolarityPerformanceBase(stk::mesh::BulkData &bulk)
-    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    : stk::unit_test_util::PerformanceTester(bulk.parallel()),
       m_bulk(bulk)
   {
     create_mesh();
@@ -131,7 +131,7 @@ protected:
 
   int get_num_loops()
   {
-    return stk::unit_test_util::simple_fields::get_command_line_option("-l", m_defaultLoops);
+    return stk::unit_test_util::get_command_line_option("-l", m_defaultLoops);
   }
 
   stk::mesh::BulkData &m_bulk;
@@ -159,6 +159,10 @@ protected:
     // Get polarity results with util wrapper code
     std::pair<bool,bool> expectedPolarity(true, true);
     int numLoops = get_num_loops();
+    std::string perfCheck = stk::unit_test_util::get_option("-perf_check", "PERF_CHECK");
+    if (perfCheck == "NO_PERF_CHECK") {
+      numLoops = 100;
+    }
 
     for(int i=0; i<numLoops; i++) {
       std::pair<bool,bool> polarity1 = m_helper.is_positive_sideset_polarity(*m_sidesetParts[1], m_face, m_sideset);
@@ -189,6 +193,11 @@ protected:
     // Get polarity results with util wrapper code
     std::pair<bool,bool> expectedPolarity(true, true);
     int numLoops = get_num_loops();
+    std::string perfCheck = stk::unit_test_util::get_option("-perf_check", "PERF_CHECK");
+    if (perfCheck == "NO_PERF_CHECK") {
+      numLoops = 100;
+    }
+
     stk::mesh::Part& activePart = m_bulk.mesh_meta_data().universal_part();
 
     for(int i=0; i<numLoops; i++) {
@@ -203,7 +212,7 @@ protected:
   }
 };
 
-class PolarityPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class PolarityPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_util_polarity_perf_test()
@@ -248,7 +257,4 @@ TEST_F(PolarityPerformanceTest, freePolarityTestNoAura)
 }
 
 }
-
-
-
 

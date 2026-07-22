@@ -1,20 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+#include <std_algorithms/impl/Kokkos_FunctorsForExclusiveScan.hpp>
+#endif
 #include <utility>
 #include <iomanip>
 
@@ -110,27 +100,12 @@ void fill_view(ViewType dest_view, const std::string& name) {
   }
 
   else {
-    throw std::runtime_error("invalid choice");
+    FAIL() << "invalid choice";
   }
 
   Kokkos::deep_copy(aux_view, v_h);
   CopyFunctor<aux_view_t, ViewType> F1(aux_view, dest_view);
   Kokkos::parallel_for("copy", dest_view.extent(0), F1);
-}
-
-// I had to write my own because std::exclusive_scan is ONLY found with
-// std=c++17
-template <class it1, class it2, class ValType, class BopType>
-void my_host_exclusive_scan(it1 first, it1 last, it2 dest, ValType init,
-                            BopType bop) {
-  const auto num_elements = last - first;
-  if (num_elements > 0) {
-    while (first < last - 1) {
-      *(dest++) = init;
-      init      = bop(*first++, init);
-    }
-    *dest = init;
-  }
 }
 
 template <class ValueType>
@@ -163,15 +138,15 @@ struct VerifyData {
     using gold_view_value_type = typename ViewType2::value_type;
     Kokkos::View<gold_view_value_type*, Kokkos::HostSpace> gold_h(
         "goldh", data_view.extent(0));
-    my_host_exclusive_scan(KE::cbegin(data_view_h), KE::cend(data_view_h),
-                           KE::begin(gold_h), init_value, bop);
+    std::exclusive_scan(KE::cbegin(data_view_h), KE::cend(data_view_h),
+                        KE::begin(gold_h), init_value, bop);
 
     auto test_view_dc = create_deep_copyable_compatible_clone(test_view);
     auto test_view_h =
         create_mirror_view_and_copy(Kokkos::HostSpace(), test_view_dc);
     if (test_view_h.extent(0) > 0) {
       for (std::size_t i = 0; i < test_view_h.extent(0); ++i) {
-        if (std::is_same<gold_view_value_type, int>::value) {
+        if (std::is_same_v<gold_view_value_type, int>) {
           ASSERT_EQ(gold_h(i), test_view_h(i));
         } else {
           const auto error =
@@ -317,7 +292,6 @@ void run_exclusive_scan_all_scenarios() {
     run_single_scenario_inplace<Tag, ValueType>(it, ValueType{0});
     run_single_scenario_inplace<Tag, ValueType>(it, ValueType{-2});
 
-#if !defined KOKKOS_ENABLE_OPENMPTARGET
     // custom multiply op is only run for small views otherwise it overflows
     if (it.first == "small-a" || it.first == "small-b") {
       using custom_bop_t = MultiplyFunctor<ValueType>;
@@ -342,7 +316,6 @@ void run_exclusive_scan_all_scenarios() {
                                                 custom_bop_t());
     run_single_scenario_inplace<Tag, ValueType>(it, ValueType{-2},
                                                 custom_bop_t());
-#endif
   }
 }
 

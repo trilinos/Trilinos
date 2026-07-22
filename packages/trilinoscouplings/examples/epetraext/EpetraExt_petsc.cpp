@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "ml_config.h"
 #include "EpetraExt_config.h"
 #if defined(HAVE_PETSC) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_MPI)

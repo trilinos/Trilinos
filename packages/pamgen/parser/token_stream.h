@@ -1,4 +1,11 @@
-// $Id$
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
 
 #ifndef token_streamH
 #define token_streamH
@@ -180,4 +187,3 @@ Token Get_Identifier_Token(Token_Stream *, int);
 Token Get_No_Token(Token_Stream *, int);
 }//end namespace PAMGEN_NEVADA
 #endif
-

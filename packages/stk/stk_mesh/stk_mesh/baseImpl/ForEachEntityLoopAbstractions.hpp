@@ -39,114 +39,107 @@
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <type_traits>
+#include "stk_util/ngp/NgpSpaces.hpp"
 
-namespace stk {
-namespace mesh {
-namespace impl {
+namespace stk::mesh::impl {
 
-inline
-void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
-                                  const std::function<void(const BulkData&,const MeshIndex&)>& functor)
+template<typename Functor>
+void for_each_selected_entity_run(const BulkData& mesh, stk::topology::rank_t rank, const Selector& selector,
+                                  const Functor& functor)
 {
-    const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
-    const size_t numBuckets = buckets.size();
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(size_t j=0; j<numBuckets; j++)
-    {
-        stk::mesh::Bucket *bucket = buckets[j];
-        for(size_t i=0; i<bucket->size(); i++)
-        {
-            functor(mesh, stk::mesh::MeshIndex({bucket,i}));
+  const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
+  const size_t numBuckets = buckets.size();
+  using PolicyType = stk::ngp::TeamPolicy<stk::ngp::HostExecSpace>;
+  using TeamHandleType = typename PolicyType::member_type;
+  auto policy = PolicyType(numBuckets, Kokkos::AUTO);
+  Kokkos::parallel_for("for_each_selected_entity_run", policy, [&](const TeamHandleType& team) {
+      const int j = team.league_rank();
+      stk::mesh::Bucket& bucket = *buckets[j];
+      const unsigned numEntities = bucket.size();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numEntities),
+        [&](const unsigned& i) {
+          if constexpr (std::is_invocable_v<Functor,const stk::mesh::BulkData&,const stk::mesh::MeshIndex&>) {
+            functor(mesh, stk::mesh::MeshIndex({&bucket, i}));
+          }
+          else {
+            functor(mesh, bucket[i]);
+          }
         }
+      );
     }
-}
-
-inline
-void for_each_selected_entity_run(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
-                                  const std::function<void(const BulkData&,const Entity&)>& functor)
-{
-    const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
-    const size_t numBuckets = buckets.size();
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(size_t j=0; j<numBuckets; j++)
-    {
-        stk::mesh::Bucket *bucket = buckets[j];
-        for(size_t i=0; i<bucket->size(); i++)
-        {
-            functor(mesh, (*bucket)[i]);
-        }
-    }
+  );
 }
 
 template<typename ALGORITHM_TO_RUN_PER_ENTITY>
-void for_each_selected_entity_run_with_nodes(const BulkData &mesh, stk::topology::rank_t rank, const Selector &selector,
+void for_each_selected_entity_run_with_nodes(const BulkData& mesh, stk::topology::rank_t rank, const Selector& selector,
                                              const ALGORITHM_TO_RUN_PER_ENTITY& functor)
 {
-    const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
-    const size_t numBuckets = buckets.size();
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(size_t j=0; j<numBuckets; j++)
-    {
-        stk::mesh::Bucket& bucket = *buckets[j];
-        const size_t numNodesPerEntity = bucket.topology().num_nodes();
-        const Entity* nodes = bucket.begin_nodes(0);
-        const size_t bucketSize = bucket.size();
-        for(size_t i=0; i<bucketSize; i++)
-        {
+  const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
+  const size_t numBuckets = buckets.size();
+  using PolicyType = stk::ngp::TeamPolicy<stk::ngp::HostExecSpace>;
+  using TeamHandleType = typename PolicyType::member_type;
+  auto policy = PolicyType(numBuckets, Kokkos::AUTO);
+  Kokkos::parallel_for("for_each_selected_entity_run_with_nodes", policy, [&](const TeamHandleType& team) {
+      const int j = team.league_rank();
+      stk::mesh::Bucket& bucket = *buckets[j];
+      const size_t numNodesPerEntity = bucket.topology().num_nodes();
+      const Entity* nodes = bucket.begin_nodes(0);
+      const unsigned numEntities = bucket.size();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numEntities),
+        [&](const int& i) {
             Entity entity = bucket[i];
             functor(entity, nodes, numNodesPerEntity);
             nodes += numNodesPerEntity;
         }
+      );
     }
+  );
 }
 
-template <typename ALGORITHM_PER_ENTITY>
-void for_each_selected_entity_run_no_threads(const BulkData &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const ALGORITHM_PER_ENTITY &functor)
+template<typename Functor>
+void for_each_selected_entity_run_no_threads(const BulkData& mesh, stk::topology::rank_t rank, const stk::mesh::Selector& selector, const Functor& functor)
 {
-    const stk::mesh::BucketVector & buckets = mesh.get_buckets(rank, selector);
-    for(size_t j=0; j<buckets.size(); j++)
+  const stk::mesh::BucketVector& buckets = mesh.get_buckets(rank, selector);
+  for(stk::mesh::Bucket* bucket : buckets)
+  {
+    for(size_t i=0; i<bucket->size(); i++)
     {
-        stk::mesh::Bucket *bucket = buckets[j];
-        for(size_t i=0; i<bucket->size(); i++)
-        {
-            functor(mesh, stk::mesh::MeshIndex({bucket,i}));
-        }
+      if constexpr (std::is_invocable_v<Functor,const stk::mesh::BulkData&,const stk::mesh::MeshIndex&>) {
+        functor(mesh, stk::mesh::MeshIndex({bucket,i}));
+      }
+      else {
+        functor(mesh, (*bucket)[i]);
+      }
     }
+  }
 }
 
 template <typename ALGORITHM_PER_ENTITY>
-void for_each_entity_run_no_threads(const BulkData &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+void for_each_entity_run_no_threads(const BulkData& mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY& functor)
 {
     const stk::mesh::Selector selectAll = !stk::mesh::Selector();
     for_each_selected_entity_run_no_threads(mesh, rank, selectAll, functor);
 }
 
-inline Entity get_entity( const MeshIndex &meshIndex)
+inline Entity get_entity( const MeshIndex& meshIndex)
 {
     return (*meshIndex.bucket)[meshIndex.bucket_ordinal];
 }
-inline unsigned num_nodes(const MeshIndex &meshIndex)
+inline unsigned num_nodes(const MeshIndex& meshIndex)
 {
     return meshIndex.bucket->num_nodes(meshIndex.bucket_ordinal);
 }
-inline Entity const * begin_nodes(const MeshIndex &meshIndex)
+inline Entity const * begin_nodes(const MeshIndex& meshIndex)
 {
     return meshIndex.bucket->begin_nodes(meshIndex.bucket_ordinal);
 }
-inline stk::topology get_topology(const MeshIndex &meshIndex)
+inline stk::topology get_topology(const MeshIndex& meshIndex)
 {
     return meshIndex.bucket->topology();
 }
 
-} // namespace impl
-} // namespace mesh
-} // namespace stk
+} // namespace stk::mesh::impl
 
 #endif // stk_mesh_ForEachEntityLoopAbstractions_hpp
 

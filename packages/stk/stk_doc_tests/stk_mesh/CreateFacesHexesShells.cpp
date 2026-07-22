@@ -50,7 +50,7 @@ namespace
 
 
 //BEGIN2hex
-TEST(StkMeshHowTo, CreateFacesTwoHexes)
+TEST(StkMeshHowTo, CreateFacesTwoHexes_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  -----------
@@ -59,7 +59,6 @@ TEST(StkMeshHowTo, CreateFacesTwoHexes)
     //  |    |    |
     //  -----------
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("AA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -93,7 +92,7 @@ TEST(StkMeshHowTo, CreateFacesTwoHexes)
 //END2hex
 
 //BEGINshell
-TEST(StkMeshHowTo, CreateFacesSingleShell)
+TEST(StkMeshHowTo, CreateFacesSingleShell_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  S
@@ -102,7 +101,6 @@ TEST(StkMeshHowTo, CreateFacesSingleShell)
     //  L
     //  L
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("e.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -139,7 +137,7 @@ TEST(StkMeshHowTo, CreateFacesSingleShell)
 //ENDshell
 
 //BEGINhexshellhex
-TEST(StkMeshHowTo, CreateFacesTwoHexesInternalShell)
+TEST(StkMeshHowTo, CreateFacesTwoHexesInternalShell_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  ------S------
@@ -148,7 +146,6 @@ TEST(StkMeshHowTo, CreateFacesTwoHexesInternalShell)
     //  |    |L|    |
     //  ------L------
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("AeA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();

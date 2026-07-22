@@ -84,15 +84,15 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionNodalSubset)
     input_filename += "|shell:xyzXYZ|variables:nodal,1|times:1";
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(input_filename, "generated", stk::io::READ_MESH);
     stkIo.create_input_mesh();
 
     stk::mesh::MetaData &meta_data = stkIo.meta_data();
 
     // Declare the nodal "temperature" field. Exists on all nodes.
+    constexpr int numStates = 1;
     stk::mesh::Field<double> &temperature =
-        stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, appFieldName,1);
+        stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, appFieldName,numStates);
 
     // "NodeBlock_1" is the name of the node field on the input mesh.
     stk::io::MeshField mf(temperature, dbFieldNameShell);
@@ -155,15 +155,16 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionNodalSubset)
     EXPECT_EQ(expected_nodes, shell_nodes.size());
     EXPECT_EQ(all_nodes-expected_nodes, other_nodes.size());
 
+    auto temperatureData = temperature.data();
     for(size_t i=0; i<other_nodes.size(); i++) {
-      double *fieldDataForNode = stk::mesh::field_data(temperature, other_nodes[i]);
-      EXPECT_DOUBLE_EQ(0.0, *fieldDataForNode);
+      auto fieldDataForNode = temperatureData.entity_values(other_nodes[i]);
+      EXPECT_DOUBLE_EQ(0.0, fieldDataForNode());
     }
 
     for(size_t i=0; i<shell_nodes.size(); i++) {
-      double *fieldDataForNode = stk::mesh::field_data(temperature, shell_nodes[i]);
+      auto fieldDataForNode = temperatureData.entity_values(shell_nodes[i]);
       size_t id = stkIo.bulk_data().identifier(shell_nodes[i]);
-      EXPECT_DOUBLE_EQ(sqrt(id), *fieldDataForNode);
+      EXPECT_DOUBLE_EQ(sqrt(id), fieldDataForNode());
     }
   }
 }

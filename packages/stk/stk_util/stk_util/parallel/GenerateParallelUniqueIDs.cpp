@@ -44,35 +44,23 @@
 
 namespace stk {
 
-  //
-  //  MPI operation to compute the sum and max of a value simultaneously
-  //
-  void MpiSumMax(uint64_t* in, uint64_t* inout, int* len, MPI_Datatype * dptr) {
-    if(*len != 2) {
-      std::ostringstream msg;
-      msg << "MpiSumMax MPI operation can only be given two arguements \n";
-      throw std::runtime_error(msg.str());
-    }
-    inout[0] += in[0];
-    inout[1] = std::max(inout[1], in[1]);
-  }
-
 void compute_global_sum_and_max(ParallelMachine comm,
                                 uint64_t numLocalIds,
                                 uint64_t& globalSumNumIds,
                                 uint64_t& globalMaxNumIds)
 {
-  uint64_t numLocalReduce[2] = {numLocalIds, numLocalIds};
+  // Compute sum using MPI_SUM
+  uint64_t localSum = numLocalIds;
+  uint64_t globalSum = 0;
+  STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Allreduce(&localSum, &globalSum, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm), "MPI_Allreduce failed for sum");
 
-  MPI_Op myOp;
-  MPI_Op_create((MPI_User_function *)MpiSumMax, true, &myOp);
+  // Compute max using MPI_MAX
+  uint64_t localMax = numLocalIds;
+  uint64_t globalMax = 0;
+  STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Allreduce(&localMax, &globalMax, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_MAX, comm), "MPI_Allreduce failed for max");
 
-  uint64_t numGlobalReduce[2] = {0u, 0u};
-  STK_ThrowRequireMsg(MPI_SUCCESS == MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, sierra::MPI::Datatype<uint64_t>::type(), myOp, comm), "MPI_Allreduce failed");
-  MPI_Op_free(&myOp);
-
-  globalSumNumIds = numGlobalReduce[0];
-  globalMaxNumIds = numGlobalReduce[1];
+  globalSumNumIds = globalSum;
+  globalMaxNumIds = globalMax;
 }
 
 void generate_parallel_ids_in_gap(ParallelMachine comm,

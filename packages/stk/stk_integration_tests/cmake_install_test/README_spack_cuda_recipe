@@ -1,4 +1,10 @@
 
+=====================================================
+This spack/cuda recipe is extremely out of date and
+won't work.
+The STK team needs to replace it with a new one...
+=====================================================
+
 # recipe for creating a spack env and building trilinos/stk,
 # then building a stk-test-app using the spack-installed trilinos/stk
 #
@@ -23,7 +29,7 @@ spack add hdf5@1.14.3~shared
 spack add zlib
 spack add openmpi@4.1.6
 spack add kokkos@4.1.00+cuda+wrapper+cuda_constexpr+cuda_lambda+cuda_relocatable_device_code~shared cuda_arch=70
-spack add trilinos@master+cuda+cuda_rdc+exodus+stk+kokkos+wrapper~shared~boost cuda_arch=70 cxxstd=17
+spack add trilinos@master+cuda+cuda_rdc+exodus+stk+kokkos+wrapper~shared~boost cuda_arch=70 cxxstd=20
 
 spack external find
 # if spack didn't find openmpi@4.1.6, add these lines in `spack config edit`:

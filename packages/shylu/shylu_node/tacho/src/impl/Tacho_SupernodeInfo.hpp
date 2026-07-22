@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_SUPERNODE_INFO_HPP__
 #define __TACHO_SUPERNODE_INFO_HPP__
@@ -77,11 +69,11 @@ struct SuperNodeInfoInitReducer {
   }
 
   KOKKOS_INLINE_FUNCTION void init(value_type &val) const {
-    val.max_nchildren = Kokkos::reduction_identity<ordinal_type>::max();
-    val.max_supernode_size = Kokkos::reduction_identity<ordinal_type>::max();
-    val.max_num_cols = Kokkos::reduction_identity<ordinal_type>::max();
-    val.max_schur_size = Kokkos::reduction_identity<ordinal_type>::max();
-    val.nnz = Kokkos::reduction_identity<size_type>::sum();
+    val.max_nchildren = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.max_supernode_size = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.max_num_cols = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.max_schur_size = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.nnz = 0;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -93,6 +85,7 @@ struct SuperNodeInfoInitReducer {
 
 template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using value_type = ValueType;
+  using mag_type = typename ArithTraits<value_type>::mag_type;
 
   using device_type = DeviceType;
   using exec_space = typename device_type::execution_space;
@@ -105,14 +98,11 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using ordinal_type_array = Kokkos::View<ordinal_type *, device_type>;
   using size_type_array = Kokkos::View<size_type *, device_type>;
   using value_type_array = Kokkos::View<value_type *, device_type>;
+  using int_type_array = Kokkos::View<int*, Kokkos::LayoutLeft, device_type>;
 
   using ordinal_pair_type = Kokkos::pair<ordinal_type, ordinal_type>;
   using ordinal_pair_type_array = Kokkos::View<ordinal_pair_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
-
-  using rowptr_view = Kokkos::View<int *, device_type>;
-  using colind_view = Kokkos::View<int *, device_type>;
-  using nzvals_view = Kokkos::View<value_type *, device_type>;
   using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
 
   struct Supernode {
@@ -133,21 +123,23 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     bool do_not_apply_pivots;
 
     // for using SpMV
-    rowptr_view rowptrU;
-    colind_view colindU;
-    nzvals_view nzvalsU;
+    size_t nnzU;
+    int* rowptrU;
+    int* colindU;
+    value_type* nzvalsU;
 
-    rowptr_view rowptrL;
-    colind_view colindL;
-    nzvals_view nzvalsL;
+    size_t nnzL;
+    int* rowptrL;
+    int* colindL;
+    value_type* nzvalsL;
+
+    value_type* nzvalsD;
 
     bool spmv_explicit_transpose;
 #if defined(KOKKOS_ENABLE_CUDA)
-    cusparseHandle_t cusparseHandle;
     cusparseSpMatDescr_t U_cusparse;
     cusparseSpMatDescr_t L_cusparse;
 #elif defined(KOKKOS_ENABLE_HIP)
-    rocsparse_handle rocsparseHandle;
     rocsparse_spmat_descr descrU;
     rocsparse_spmat_descr descrL;
 #endif
@@ -156,7 +148,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     Supernode()
         : lock(0), row_begin(0), m(0), n(0), gid_col_begin(0), gid_col_end(0), sid_col_begin(0), sid_col_end(0),
           nchildren(0), children(NULL), max_decendant_schur_size(0), max_decendant_supernode_size(0), l_buf(NULL),
-          u_buf(NULL), do_not_apply_pivots(false) {
+          u_buf(NULL), do_not_apply_pivots(false), nnzU(0), rowptrU(NULL), colindU(NULL), nzvalsU(NULL),
+          nnzL(0), rowptrL(NULL), colindL(NULL), nzvalsL(NULL), nzvalsD(NULL) {
       // for (ordinal_type i=0;i<MaxDependenceSize;++i) children[i] = 0;
     }
 
@@ -269,7 +262,9 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
           }
 
           s.nchildren = stree_ptr_(sid + 1) - stree_ptr_(sid);
-          s.children = &stree_children_(stree_ptr_(sid));
+          if (s.nchildren > 0) {
+            s.children = &stree_children_(stree_ptr_(sid));
+          }
           // const ordinal_type offset = stree_ptr_(sid);
           // for (ordinal_type i=0;i<s.nchildren;++i)
           //   s.children[i] = stree_children_(offset + i);
@@ -359,8 +354,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
                                              const bool copy_to_l_buf,
                                              /// input from sparse matrix
                                              const size_type_array &ap, const ordinal_type_array &aj,
-                                             const value_type_array &ax, const ordinal_type_array &perm,
-                                             const ordinal_type_array &peri) {
+                                             const value_type_array &ax, const mag_type shift,
+                                             const ordinal_type_array &perm, const ordinal_type_array &peri) {
     const ordinal_type nsupernodes = self.supernodes.extent(0);
     using policy_type = Kokkos::TeamPolicy<exec_space, Kokkos::Schedule<Kokkos::Static>>;
 
@@ -420,6 +415,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
                                          TACHO_TEST_FOR_ABORT(*loc != jj, "copy is wrong");
                                          const ordinal_type j = loc - first;
                                          tgt_u(i, j) = ax(k);
+                                         if (i == j) tgt_u(i,j) += value_type(shift); 
                                          if (j >= s.m && copy_to_l_buf) {
                                            tgt_l(j - s.m, i) = axt(k);
                                          }
@@ -433,8 +429,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
 
   inline void copySparseToSuperpanels( // input from sparse matrix
       const bool copy_to_l_buf, const size_type_array &ap, const ordinal_type_array &aj, const value_type_array &ax,
-      const ordinal_type_array &perm, const ordinal_type_array &peri) {
-    copySparseToSuperpanels(*this, copy_to_l_buf, ap, aj, ax, perm, peri);
+      const mag_type shift, const ordinal_type_array &perm, const ordinal_type_array &peri) {
+    copySparseToSuperpanels(*this, copy_to_l_buf, ap, aj, ax, shift, perm, peri);
   }
 
   static inline void createCrsMatrix(SupernodeInfo &self, crs_matrix_type &A,

@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
-    bool verbose = false;
-    clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
+    bool verboseCLP = false;
+    clp.setOption( "v", "disable-verbosity", &verboseCLP, "Enable verbosity" );
 
     CommandLineProcessor::EParseCommandLineReturn
       parse_return = clp.parse(argc,argv,&std::cerr);
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
       return parse_return;
 
-    if (verbose)
+    if (verboseCLP)
       std::cout << "Verbosity Activated" << std::endl;
     else
       std::cout << "Verbosity Disabled" << std::endl;

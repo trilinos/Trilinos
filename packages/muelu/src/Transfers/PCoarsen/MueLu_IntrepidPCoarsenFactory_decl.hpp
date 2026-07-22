@@ -31,7 +31,7 @@
 namespace MueLu {
 
 /*!
-  @class IntrepidPCoarsenFactory class.
+  @class IntrepidPCoarsenFactory
   @ingroup MueLuTransferClasses
   @brief Factory for building transfer operators based on coarsening in polynomial degree, following the Intrepid basis functions
 

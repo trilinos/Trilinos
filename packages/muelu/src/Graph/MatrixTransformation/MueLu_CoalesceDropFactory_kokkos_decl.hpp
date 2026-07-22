@@ -19,8 +19,9 @@
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 
 #include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_LWGraph_kokkos_fwd.hpp"
+#include "MueLu_LWGraph_kokkos_decl.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
@@ -102,6 +103,8 @@ class CoalesceDropFactory_kokkos
   using node_type           = Node;
 
  private:
+  using boundary_nodes_type = typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type;
+
   // For compatibility
 #undef MUELU_COALESCEDROPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -128,6 +131,12 @@ class CoalesceDropFactory_kokkos
   //@}
 
   void Build(Level& currentLevel) const;
+
+  Teuchos::RCP<MultiVector> GetMaterial(Level& currentLevel, size_t spatialDim) const;
+
+  std::tuple<GlobalOrdinal, boundary_nodes_type> BuildScalar(Level& currentLevel) const;
+
+  std::tuple<GlobalOrdinal, boundary_nodes_type> BuildVector(Level& currentLevel) const;
 };
 
 }  // namespace MueLu

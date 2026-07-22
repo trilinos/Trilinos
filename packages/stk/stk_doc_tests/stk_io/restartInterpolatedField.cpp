@@ -69,7 +69,6 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ Create a "restart database" with several nodal and element fields,
     //+ and some timesteps...
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|shell:XYZ|"
                                           "nodeset:xyz|times:3|variables:nodal,4,element,3,nodeset,2";
@@ -103,7 +102,6 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ "temp" for 10 timesteps - 0.0, 1.0, ..., 9.0.
     //+ The value of the field at each node is the 'time' value.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -123,15 +121,16 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     stk::mesh::get_entities(stkIo.bulk_data(),
                             stk::topology::NODE_RANK, nodes);
 
+    auto temperatureData = temperature.data<stk::mesh::ReadWrite>();
+
     // Add three steps to the database
     // For each step, the value of the field is the value 'time'
     for (size_t i=0; i < 10; i++) {
       double time = i;
 
       for(size_t inode=0; inode<nodes.size(); inode++) {
-        double *fieldDataForNode =
-            stk::mesh::field_data(temperature, nodes[inode]);
-        *fieldDataForNode = time;
+        auto fieldDataForNode = temperatureData.entity_values(nodes[inode]);
+        fieldDataForNode() = time;
       }
 
       stkIo.begin_output_step(fh, time);
@@ -156,7 +155,6 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ reading the initial condition data from the other database
     //+ interpolating this data.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t ic = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     size_t rs = stkIo.add_mesh_database(rs_name, stk::io::READ_RESTART);
 
@@ -185,6 +183,7 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ Switch active mesh to "initial condition" database
     stkIo.set_active_mesh(ic);
 
+    auto temperatureData = temperature.data();
     double delta_time = 1.0 / 4.0;
     while (time <= 9.0) {
       //+ Read the field values from the database and verify that they
@@ -195,8 +194,8 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 'time'
       for(size_t i=0; i<nodes.size(); i++) {
-        double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[i]);
-        EXPECT_DOUBLE_EQ(time, *fieldDataForNode);
+        auto fieldDataForNode = temperatureData.entity_values(nodes[i]);
+        EXPECT_DOUBLE_EQ(time, fieldDataForNode());
       }
       time += delta_time;
     }

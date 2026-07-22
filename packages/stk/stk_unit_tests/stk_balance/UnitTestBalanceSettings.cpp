@@ -121,7 +121,6 @@ TEST(BalanceSettings, defaultContactSearchStatus)
   stk::balance::BasicZoltan2Settings basicZoltan2Settings;
   EXPECT_FALSE(basicZoltan2Settings.includeSearchResultsInGraph());
 
-  stk::balance::GraphCreationSettingsForZoltan2 graphCreationSettingsForZoltan2;
   EXPECT_TRUE(graphCreationSettingsWithCustomTolerances.includeSearchResultsInGraph());
 
   std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);

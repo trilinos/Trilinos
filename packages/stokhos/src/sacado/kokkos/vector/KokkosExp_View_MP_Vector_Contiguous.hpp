@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_MP_VECTOR_CONTIGUOUS_HPP
@@ -60,8 +28,217 @@
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
+#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+#include "Sacado.hpp"
+#include "Kokkos_DualView.hpp"
 //----------------------------------------------------------------------------
 
+namespace Stokhos {
+
+template<class T>
+struct is_mp_vector {
+  static constexpr bool value = false;
+};
+
+template<class I, class T, int N, class Exec>
+struct is_mp_vector<Sacado::MP::Vector<Stokhos::StaticFixedStorage<I, T, N, Exec>>> {
+  static constexpr bool value = true;
+};
+
+template<class I, class T, int N, class Exec>
+struct is_mp_vector<const Sacado::MP::Vector<Stokhos::StaticFixedStorage<I, T, N, Exec>>> {
+  static constexpr bool value = true;
+};
+
+template<class T>
+static constexpr bool is_mp_vector_v = is_mp_vector<T>::value;
+
+}
+
+namespace Kokkos {
+
+template<class DataType, class ... Args>
+struct is_view_mp_vector<Kokkos::View<DataType, Args...>> {
+  static constexpr bool value = Stokhos::is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>;
+};
+template <typename T, typename ... P>
+requires(is_view_mp_vector< View<T,P...> >::value)
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned dimension_scalar(const View<T,P...>& view) {
+  return typename View<T,P...>::value_type().size();
+}
+
+}
+
+
+namespace Stokhos {
+
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>& view) {
+  using view_t = Kokkos::View<DataType, Args...>;
+  using value_type = typename view_t::value_type::value_type;
+  using scalar_t = std::conditional_t<std::is_const_v<typename view_t::value_type>, const value_type, value_type>;
+  constexpr bool is_layout_right = std::is_same_v<typename view_t::layout_type, Kokkos::LayoutRight> ||
+                                   std::is_same_v<typename view_t::layout_type, Kokkos::Experimental::layout_right_padded<Kokkos::dynamic_extent>>;
+  if constexpr (view_t::rank() == 0) {
+    return Kokkos::View<scalar_t*, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view));
+  } else
+  if constexpr (view_t::rank() == 1) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t**, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t**, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0));
+    }
+  } else
+  if constexpr (view_t::rank() == 2) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t***, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), view.extent(1), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t***, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0), view.extent(1));
+    }
+  } else
+  if constexpr (view_t::rank() == 3) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), view.extent(1), view.extent(2), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0), view.extent(1), view.extent(2));
+    }
+  } else
+  if constexpr (view_t::rank() == 4) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), view.extent(1), view.extent(2), view.extent(3), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0), view.extent(1), view.extent(2), view.extent(3));
+    }
+  }
+}
+
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  using view_t = Kokkos::View<DataType, Args...>;
+  using value_type = typename view_t::value_type::value_type;
+  using scalar_t = std::conditional_t<std::is_const_v<typename view_t::value_type>, const value_type, value_type>;
+  return Kokkos::View<scalar_t*, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.mapping().required_span_size() * Kokkos::dimension_scalar(view));
+}
+
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_columnwise_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type> 
+  && (Kokkos::View<DataType, Args...>::rank() == 2) 
+  && (std::same_as<typename Kokkos::View<DataType, Args...>::layout_type, Kokkos::LayoutLeft> ||
+      std::same_as<typename Kokkos::View<DataType, Args...>::layout_type, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent>>))
+auto reinterpret_as_unmanaged_scalar_columnwise_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  using view_t = Kokkos::View<DataType, Args...>;
+  using value_type = typename view_t::value_type::value_type;
+  using scalar_t = std::conditional_t<std::is_const_v<typename view_t::value_type>, const value_type, value_type>;
+  return Kokkos::View<scalar_t**, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0) * Kokkos::dimension_scalar(view), view.extent(1));
+}
+
+template<class T>
+using scalar_view_t = decltype(reinterpret_as_unmanaged_scalar_view(std::declval<T>()));
+
+template<class T>
+using scalar_flat_view_t = decltype(reinterpret_as_unmanaged_scalar_flat_view(std::declval<T>()));
+
+template<class T>
+using scalar_columnwise_flat_view_t = decltype(reinterpret_as_unmanaged_scalar_columnwise_flat_view(std::declval<T>()));
+
+namespace {
+template<class DataType, class ... Args>
+struct DualViewModifiedFlagsAccessor: public Kokkos::DualView<DataType, Args...> {
+  using base_t = Kokkos::DualView<DataType, Args...>;
+  using base_t::base_t;
+  auto get_modified_flags() const { return base_t::modified_flags; }
+  DualViewModifiedFlagsAccessor(
+    typename base_t::t_modified_flags mod_flags,
+    typename base_t::t_dev dev,
+    typename base_t::t_host host):base_t(dev, host) {
+    base_t::modified_flags = mod_flags;
+  }
+  DualViewModifiedFlagsAccessor(base_t dv):base_t(dv) {}
+};
+}
+
+// DualView reinterpretation for creating flat Tpetra MV
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::DualView<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(const Kokkos::DualView<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(const Kokkos::DualView<DataType, Args...>& view) {
+  static_assert(Kokkos::DualView<DataType, Args...>::t_dev::rank() == 2);
+
+  using view_t = Kokkos::DualView<DataType, Args...>;
+  using scalar_t = typename view_t::value_type::value_type;
+  using view_scalar_t = Kokkos::DualView<scalar_t**, Args...>;
+
+  auto view_dev = view.view_device();
+  auto view_host = view.view_host();
+  DualViewModifiedFlagsAccessor<DataType, Args...> view_access(view);
+  printf("Sacado::dimension_scalar: %i %i\n", (int)Sacado::dimension_scalar(view), (int)typename Kokkos::View<DataType, Args...>::value_type().size());
+  int dim_scalar = typename Kokkos::View<DataType, Args...>::value_type().size();
+  constexpr bool is_layout_left = std::is_same_v<typename Kokkos::DualView<DataType, Args...>::t_dev::layout_type, Kokkos::LayoutLeft> ||
+    std::is_same_v<typename Kokkos::DualView<DataType, Args...>::t_dev::layout_type, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent>>;
+  if constexpr (is_layout_left) {
+  DualViewModifiedFlagsAccessor<scalar_t**, Args...> view_scalar(
+    view_access.get_modified_flags(),
+    typename view_scalar_t::t_dev(reinterpret_cast<scalar_t*>(view_dev.data()),
+                         view_dev.extent(0) * dim_scalar, view_dev.extent(1)),
+    typename view_scalar_t::t_host(reinterpret_cast<scalar_t*>(view_host.data()),
+                         view_dev.extent(0) * dim_scalar, view_dev.extent(1))
+  );
+
+  return view_scalar_t(view_scalar);
+  } else {
+  DualViewModifiedFlagsAccessor<scalar_t**, Args...> view_scalar(
+    view_access.get_modified_flags(),
+    typename view_scalar_t::t_dev(reinterpret_cast<scalar_t*>(view_dev.data()),
+                         view_dev.extent(0), dim_scalar * view_dev.extent(1)),
+    typename view_scalar_t::t_host(reinterpret_cast<scalar_t*>(view_host.data()),
+                         view_dev.extent(0), dim_scalar * view_dev.extent(1))
+  );
+
+  return view_scalar_t(view_scalar);
+  }
+}
+
+}
+
+namespace Kokkos {
+
+template <typename D, typename ... P>
+struct FlatArrayType< View<D,P...>,
+                      typename std::enable_if< is_view_mp_vector< View<D,P...> >::value >::type > {
+  typedef View<D,P...> view_type;
+  typedef typename view_type::value_type::value_type flat_value_type;
+  using type = Stokhos::scalar_flat_view_t<view_type>;
+};
+
+}
+
+#else // KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 namespace Kokkos {
 namespace Experimental {
 namespace Impl {
@@ -124,150 +301,106 @@ struct FlatArrayType< View<D,P...>,
   typedef View<flat_data_type,P...> type;
 };
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-    Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(const Kokkos::View<T,P...> & src)
+template <class T, class... P, class... ViewCtorArgs>
+inline auto create_mirror(
+  const Impl::ViewCtorProp<ViewCtorArgs...>& arg_prop,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>*
+)
 {
-  typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  static_assert(std::is_same_v<typename ViewTraits<T, P...>::array_layout, LayoutLeft> ||
+    std::is_same_v<typename ViewTraits<T, P...>::array_layout, LayoutRight> ||
+    std::is_same_v<typename ViewTraits<T, P...>::array_layout, LayoutStride>);
 
-  typename src_type::array_layout layout = src.layout();
-  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  using src_type = View<T, P...>;
 
-  return dst_type(std::string(src.label()).append("_mirror"), layout);
+  auto layout = [&] () {
+    if constexpr ( ! std::is_same_v<typename ViewTraits<T, P...>::array_layout, LayoutStride>) {
+      return src.layout();
+    } else {
+      LayoutStride layout2;
+
+      for (int idx = 0; idx <= 7; ++idx) {
+        layout2.dimension[idx] = src.extent(idx);
+        layout2.stride   [idx] = src.stride(idx);
+      }
+
+      return layout2;
+    }
+  }();
+
+  layout.dimension[src_type::rank] = dimension_scalar(src);
+
+  const auto prop_copy = Impl::with_properties_if_unset(
+    arg_prop, std::string(src.label()).append("_mirror"));
+
+  if constexpr (Impl::ViewCtorProp<ViewCtorArgs...>::has_memory_space){
+    return typename Impl::MirrorViewType<typename Impl::ViewCtorProp<ViewCtorArgs...>::memory_space, T, P ...>::dest_view_type(prop_copy, layout);
+  } else {
+    return typename View<T, P...>::host_mirror_type(prop_copy, layout);
+  }
 }
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-    Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(const Kokkos::View<T,P...> & src)
+template <class T, class... P>
+inline auto create_mirror(
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>*
+)
 {
-  typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
-
-  Kokkos::LayoutStride layout ;
-
-  layout.dimension[0] = src.extent(0);
-  layout.dimension[1] = src.extent(1);
-  layout.dimension[2] = src.extent(2);
-  layout.dimension[3] = src.extent(3);
-  layout.dimension[4] = src.extent(4);
-  layout.dimension[5] = src.extent(5);
-  layout.dimension[6] = src.extent(6);
-  layout.dimension[7] = src.extent(7);
-
-  layout.stride[0] = src.stride_0();
-  layout.stride[1] = src.stride_1();
-  layout.stride[2] = src.stride_2();
-  layout.stride[3] = src.stride_3();
-  layout.stride[4] = src.stride_4();
-  layout.stride[5] = src.stride_5();
-  layout.stride[6] = src.stride_6();
-  layout.stride[7] = src.stride_7();
-
-  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-
-  return dst_type(std::string(src.label()).append("_mirror"), layout);
+  return create_mirror(view_alloc(), src);
 }
 
-template<class Space, class T, class ... P, typename Enabled>
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
-create_mirror(const Space& , const Kokkos::View<T,P...> & src)
+template <class Space, class T, class... P, typename Enable>
+inline auto create_mirror(
+  const Space& space,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>*
+)
 {
-  typedef View<T,P...> src_type ;
-  typename src_type::array_layout layout = src.layout();
-  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(src.label(),layout);
+  return create_mirror(view_alloc(space), src);
 }
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-      Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
-              const Kokkos::View<T,P...> & src)
+template <class T, class... P>
+inline auto create_mirror(
+  Impl::WithoutInitializing_t wi,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>*
+)
 {
-  typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
-
-  typename src_type::array_layout layout = src.layout();
-  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-
-  return dst_type(
-    Kokkos::view_alloc(std::string(src.label()).append("_mirror"), wi), layout);
+  return create_mirror(view_alloc(wi), src);
 }
 
-template< class T , class ... P >
-inline
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-  std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-    Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
-create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
-              const Kokkos::View<T,P...> & src)
+template <class Space, class T, class... P, typename Enable>
+inline auto create_mirror(
+  Impl::WithoutInitializing_t wi,
+  const Space& space,
+  const View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>*
+)
 {
-  typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
-
-  Kokkos::LayoutStride layout ;
-
-  layout.dimension[0] = src.extent(0);
-  layout.dimension[1] = src.extent(1);
-  layout.dimension[2] = src.extent(2);
-  layout.dimension[3] = src.extent(3);
-  layout.dimension[4] = src.extent(4);
-  layout.dimension[5] = src.extent(5);
-  layout.dimension[6] = src.extent(6);
-  layout.dimension[7] = src.extent(7);
-
-  layout.stride[0] = src.stride_0();
-  layout.stride[1] = src.stride_1();
-  layout.stride[2] = src.stride_2();
-  layout.stride[3] = src.stride_3();
-  layout.stride[4] = src.stride_4();
-  layout.stride[5] = src.stride_5();
-  layout.stride[6] = src.stride_6();
-  layout.stride[7] = src.stride_7();
-
-  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-
-  return dst_type(
-    Kokkos::view_alloc(std::string(src.label()).append("_mirror"), wi), layout);
+  return create_mirror(view_alloc(wi, space), src);
 }
 
-template<class Space, class T, class ... P, typename Enable>
-typename std::enable_if<
-  std::is_same< typename ViewTraits<T,P...>::specialize ,
-    Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
-create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
-              const Space&, const Kokkos::View<T,P...> & src)
+template <class T, class... P, class... ViewCtorArgs>
+inline auto create_mirror_view(
+  const Impl::ViewCtorProp<ViewCtorArgs...>& arg_prop,
+  const Kokkos::View<T, P...>& src,
+  typename std::enable_if_t<
+    std::is_same_v<typename ViewTraits<T, P...>::specialize,
+      Experimental::Impl::ViewMPVectorContiguous>>*
+)
 {
-  typedef View<T,P...> src_type ;
-  typename src_type::array_layout layout = src.layout();
-  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(
-    Kokkos::view_alloc(src.label(), wi), layout);
+  return Impl::create_mirror_view(src, arg_prop);
 }
 
 template <class Space, class T, class... P>
@@ -402,7 +535,7 @@ void deep_copy(
 /* Specialize for deep copy of MP::Vector */
 template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
-void deep_copy( const ExecSpace &,
+void deep_copy( const ExecSpace & exec,
                 const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
@@ -435,7 +568,7 @@ void deep_copy( const ExecSpace &,
   //   typename View<ST,SP...>::array_type( src ) );
 
   Kokkos::deep_copy(
-    ExecSpace() ,
+    exec ,
     typename FlatArrayType< View<DT,DP...> >::type( dst ) ,
     typename FlatArrayType< View<ST,SP...> >::type( src ) );
 }
@@ -1923,6 +2056,7 @@ public:
 
 } // namespace Impl
 } // namespace Kokkos
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                           Stokhos Package
+//
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /*
  *  Copyright 2008-2009 NVIDIA Corporation
  *
@@ -168,4 +177,3 @@ void spmm_csr_scalar(const Matrix1& A,
 } // end namespace device
 } // end namespace detail
 } // end namespace cusp
-

@@ -1,0 +1,525 @@
+#! /usr/bin/env bash
+
+# Text color variables
+if [[ $TERM != *"xterm"* ]]; then
+    export TERM=dumb
+fi
+txtred=$(tput setaf 1)    # Red
+txtgrn=$(tput setaf 2)    # Green
+txtylw=$(tput setaf 3)    # Yellow
+#txtblu=$(tput setaf 4)    # Blue
+#txtpur=$(tput setaf 5)    # Purple
+txtcyn=$(tput setaf 6)    # Cyan
+#txtwht=$(tput setaf 7)    # White
+txtrst=$(tput sgr0)       # Text reset
+
+if [ "${TRAVIS}" == "true" ]
+then
+  BUILDDIR=${1:-build}
+  mkdir $BUILDDIR && cd $BUILDDIR
+else
+  EXTRA_ARGS=$@
+fi
+
+### The following assumes you are building in a subdirectory of ACCESS Root
+### If not, then define "ACCESS" to point to the root of the SEACAS source code.
+if [ "$ACCESS" == "" ]
+then
+    ACCESS=$(cd ..; pwd)
+fi
+
+### The SEACAS code will install in ${INSTALL_PATH}/bin, ${INSTALL_PATH}/lib, and ${INSTALL_PATH}/include.
+INSTALL_PATH=${INSTALL_PATH:-${ACCESS}}
+
+function check_valid()
+{
+    if [ "${!1}" == "YES" ] || [ "${!1}" == "ON" ]; then
+	echo "YES"
+	return 1
+    fi
+    if [ "${!1}" == "NO" ] || [ "${!1}" == "OFF" ]; then
+	echo "NO"
+	return 1
+    fi
+    echo "Invalid value for $1 (${!1}) -- Must be ON, YES, NO, or OFF"
+    exit 1
+}
+### Possible subset of what is built ---
+APPLICATIONS=${APPLICATIONS:-YES}
+APPLICATIONS=$(check_valid APPLICATIONS)
+
+LEGACY=${LEGACY:-YES}
+LEGACY=$(check_valid LEGACY)
+
+FORTRAN=${FORTRAN:-YES}
+FORTRAN=$(check_valid FORTRAN)
+
+ZOLTAN=${ZOLTAN:-YES}
+ZOLTAN=$(check_valid ZOLTAN)
+
+### TPLs --
+### Make sure these point to the locations to find the libraries and includes in lib and include
+### subdirectories of the specified paths.
+### For example, netcdf.h should be in ${NETCDF_PATH}/include
+NETCDF_PATH=${NETCDF_PATH:-${LIB_INSTALL_PATH}}
+PNETCDF_PATH=${PNETCDF_PATH:-${LIB_INSTALL_PATH}}
+MATIO_PATH=${MATIO_PATH:-${LIB_INSTALL_PATH}}
+HDF5_PATH=${HDF5_PATH:-${LIB_INSTALL_PATH}}
+CGNS_PATH=${CGNS_PATH:-${LIB_INSTALL_PATH}}
+FAODEL_PATH=${FAODEL_PATH:-${LIB_INSTALL_PATH}}
+ADIOS2_PATH=${ADIOS2_PATH:-${LIB_INSTALL_PATH}}
+CATALYST2_PATH=${CATALYST2_PATH:-${LIB_INSTALL_PATH}}
+GTEST_PATH=${GTEST_PATH:-${LIB_INSTALL_PATH}}
+#CATCH2_PATH=${CATCH2_PATH:-${LIB_INSTALL_PATH}}
+KOKKOS_PATH=${KOKKOS_PATH:-${LIB_INSTALL_PATH}}
+METIS_PATH=${METIS_PATH:-${LIB_INSTALL_PATH}}
+PARMETIS_PATH=${PARMETIS_PATH:-${LIB_INSTALL_PATH}}
+#FMT_PATH=${FMT_PATH:-${LIB_INSTALL_PATH}}
+
+### Set to ON for parallel compile; otherwise OFF for serial (default)
+if [ "${MPI}" = "" ]
+then
+    if [[ -f "$NETCDF_PATH/bin/nc-config" ]]; then
+	netcdf_parallel=$($NETCDF_PATH/bin/nc-config --has-parallel)
+	if [ "${netcdf_parallel}" == "yes" ]
+	then
+	    MPI=YES
+	else
+	    MPI=NO
+	fi
+    else
+	echo "Unable to determine whether netCDF is parallel or serial.  Assuming serial"
+	echo "Set either \"NETCDF_PATH\" or \"MPI\" manually if the assumption is incorrect."
+	MPI=NO
+    fi
+fi
+
+MPI=$(check_valid MPI)
+echo "${txtgrn}MPI set to ${MPI}${txtrst}"
+
+if [ "${MPI}" == "NO" ]
+then
+  ### Change this to point to the compilers you want to use
+    ## Travis build (and others) set this to EXTERNAL to set
+    ## CXX, CC, and FC externally.
+  COMPILER=${COMPILER:-gnu}
+
+  if [ "$COMPILER" == "gnu" ]
+  then
+      CXX=g++
+      CC=gcc
+      FC=gfortran
+      CFLAGS="-Wall -Wunused -pedantic -Wshadow -std=c11"
+      CXXFLAGS="-Wall -Wextra  -Wunused -pedantic -Wshadow"
+  fi
+
+  if [ "$COMPILER" == "gnubrew" ]
+  then
+      VER=${VER:-10}
+      CXX=g++-${VER}
+      CC=gcc-${VER}
+      FC=gfortran-${VER}
+      CFLAGS="-Wall -Wunused -pedantic -Wshadow -std=c11"
+      CXXFLAGS="-Wall -Wextra  -Wunused -pedantic -Wshadow"
+  fi
+
+  if [ "$COMPILER" == "gnumacport" ]
+  then
+      VER=${VER:-10}
+      CXX=g++-mp-${VER}
+      CC=gcc-mp-${VER}
+      FC=gfortran-mp-${VER}
+      CFLAGS="-Wall -Wunused -pedantic -Wshadow -std=c11"
+      CXXFLAGS="-Wall -Wextra  -Wunused -pedantic -Wshadow"
+  fi
+
+  if [ "$COMPILER" == "clangmacport" ]
+  then
+      VER=${VER:-9}
+      CXX=clang++-mp-${VER}.0
+      CC=clang-mp-${VER}.0
+      FC=gfortran
+      CFLAGS="-Wall -Wunused -pedantic -Wshadow -std=c11"
+      CXXFLAGS="-Wall -Wextra  -Wunused -pedantic -Wshadow"
+  fi
+
+  if [ "$COMPILER" == "nvidia" ]
+  then
+      CXX="nvcc -x c++"
+      CC=nvcc
+      FC=gfortran
+  fi
+
+  if [ "$COMPILER" == "clang" ]
+  then
+      CXX=clang++
+      CC=clang
+      FC=${FC:-gfortran}
+      CFLAGS="-Wall -Wunused -pedantic -Wshadow"
+      CXXFLAGS="-Wall -Wextra  -Wunused -pedantic -Wshadow"
+  fi
+
+  if [ "$COMPILER" == "intel" ]
+  then
+      CXX=icpx
+      CC=icx
+      FC=ifx
+      CFLAGS="-Wall -Wunused"
+      CXXFLAGS="-Wall -Wextra  -Wunused -DFMT_HEADER_ONLY"
+  fi
+
+  # When building:  "scan-build make -j8"
+  if [ "$COMPILER" == "analyzer" ]
+  then
+      CXX=/opt/local/libexec/llvm-9.0/libexec/c++-analyzer
+      CC=/opt/local/libexec/llvm-9.0/libexec/ccc-analyzer
+      FC=gfortran
+      CFLAGS="-Wall -Wunused"
+      CXXFLAGS="-Wall -Wunused"
+      FORTRAN="NO"
+  fi
+
+  if [ "$COMPILER" == "ibm" ]
+  then
+      CXX=xlC
+      CC=xlc
+      FC=xlf
+  fi
+fi
+
+MODERN=${MODERN:-NO}
+if [ "${MODERN}" == "YES" ]
+then
+#    MODERN_ARG="-D TPL_ENABLE_HDF5:BOOL=ON -D Netcdf_ALLOW_MODERN:BOOL=ON"
+    MODERN_ARG="-DNetcdf_FORCE_MODERN:BOOL=ON -DCGNS_FORCE_MODERN:BOOL=ON"
+else
+    MODERN_ARG="-D HDF5_NO_SYSTEM_PATHS=YES"
+fi
+
+GENERATOR=${GENERATOR:-"Unix Makefiles"}
+
+# If using an XLF compiler on an IBM system, may need to add the following:
+# -DCMAKE_Fortran_FLAGS="-qfixed=72" \
+# -DCMAKE_EXE_LINKER_FLAGS:STRING="-lxl -lxlopt"
+
+CRAY="${CRAY:-NO}"
+CRAY=$(check_valid CRAY)
+
+if [ "${CRAY}" == "YES" ]
+then
+    SHARED="${SHARED:-NO}"
+else
+    SHARED="${SHARED:-YES}"
+fi
+SHARED=$(check_valid SHARED)
+
+if [ "${CRAY}" == "YES" ] && [ "${SHARED}" == "NO" ]
+then
+  # Assumes we build our own static zlib with CRAY
+  EXTRA_LIB=-DTrilinos_EXTRA_LINK_FLAGS=${LIB_INSTALL_PATH}/lib/libz.a
+fi
+
+### Switch for Debug or Release build:
+### Check that both `DEBUG` and `BUILD_TYPE` are not set
+if [ ! -z ${DEBUG+x} ] && [ ! -z ${BUILD_TYPE+x} ]
+then
+    echo "ERROR: Both DEBUG and BUILD_TYPE are set. Only one is allowed."
+    exit
+fi
+
+BUILD_TYPE="${BUILD_TYPE:-RELEASE}"
+
+if [ ! -z ${DEBUG+x} ]
+then
+    if [ "${DEBUG}" == "ON" ] || [ "${DEBUG}" == "YES" ]
+    then
+	BUILD_TYPE="DEBUG"
+    elif [ "${DEBUG}" == "OFF" ] || [ "${DEBUG}" == "NO" ]
+    then
+	BUILD_TYPE="RELEASE"
+    else
+	echo "ERROR: Invalid value for DEBUG ('$DEBUG'). Must be 'ON', 'OFF', 'YES', 'NO'."
+	exit
+    fi
+fi
+
+
+### If you do not have the X11 developer package on your system
+### which provides X11/Xlib.h and the libX11, then change the "YES"
+### below to "NO". It will disable blot and fastq
+HAVE_X11=${HAVE_X11:-YES}
+HAVE_X11=$(check_valid HAVE_X11)
+
+### Set to ON to enable the building of a thread-safe version of the Exodus and IOSS libraries.
+THREADSAFE=${THREADSAFE:-NO}
+THREADSAFE=$(check_valid THREADSAFE)
+
+function check_enable()
+{
+    local path=$1
+    if [ -e "${path}" ]
+    then
+	echo "YES"
+    else
+	echo "NO"
+    fi
+}
+
+HAVE_NETCDF=$(check_enable "${NETCDF_PATH}/include/netcdf.h")
+HAVE_MATIO=$(check_enable "${MATIO_PATH}/include/matio.h")
+HAVE_CGNS=$(check_enable "${CGNS_PATH}/include/cgnslib.h")
+HAVE_FAODEL=$(check_enable "${FAODEL_PATH}/include/faodel/faodelConfig.h")
+HAVE_ADIOS2=$(check_enable "${ADIOS2_PATH}/include/adios2.h")
+HAVE_CATALYST2=$(check_enable "${CATALYST2_PATH}/include/catalyst-2.0/catalyst.h")
+HAVE_GTEST=$(check_enable "${GTEST_PATH}/include/gtest/gtest.h")
+#HAVE_CATCH2=$(check_enable "${CATCH2_PATH}/include/catch2/catch_all.hpp")
+HAVE_KOKKOS=$(check_enable "${KOKKOS_PATH}/include/Kokkos_Core.hpp")
+HAVE_METIS=$(check_enable "${METIS_PATH}/include/metis.h")
+HAVE_PARMETIS=$(check_enable "${METIS_PATH}/include/parmetis.h")
+
+### DataWarp (Burst Buffer)
+### I use the following for mutrino (10/16/2018):
+###    module load datawarp
+###    -D TPL_ENABLE_DataWarp:BOOL=ON \
+###    -D DataWarp_LIBRARY_DIRS:PATH=/opt/cray/datawarp/2.1.16-6.0.5.1_2.61__g238b34d.ari/lib \
+###    -D DataWarp_INCLUDE_DIRS:PATH=/opt/cray/datawarp/2.1.16-6.0.5.1_2.61__g238b34d.ari/include \
+
+### Define to NO to *enable* exodus deprecated functions
+OMIT_DEPRECATED=${OMIT_DEPRECATED:-NO}
+
+NUMPROCS=${NUMPROCS:-4}
+
+# BUG needs to work with cray too.
+if [ "${MPI}" == "YES" ] && [ "${CRAY}" == "YES" ]
+then
+   MPI_EXEC=$(which srun)
+   MPI_SYMBOLS="-D MPI_EXEC=${MPI_EXEC} -D MPI_EXEC_NUMPROCS_FLAG=-n  -DMPI_EXEC_DEFAULT_NUMPROCS:STRING=${NUMPROCS} -DMPI_EXEC_MAX_NUMPROCS:STRING=${NUMPROCS}"
+   CXX=CC
+   CC=cc
+   FC=ftn
+   MPI_BIN=$(dirname $(which ${CC}))
+elif [ "${MPI}" == "YES" ]
+then
+   if [ "${USE_SRUN}" == "YES" ]
+   then
+       MPI_EXEC=$(which srun)
+       MPI_SYMBOLS="-D MPI_EXEC=${MPI_EXEC} -D MPI_EXEC_NUMPROCS_FLAG=-N  -DMPI_EXEC_DEFAULT_NUMPROCS:STRING=${NUMPROCS} -DMPI_EXEC_MAX_NUMPROCS:STRING=${NUMPROCS}"
+       MPI_BIN=$(dirname "${MPI_EXEC}")
+   else
+       MPI_EXEC=$(which mpiexec)
+       MPI_SYMBOLS="-D MPI_EXEC=${MPI_EXEC}  -DMPI_EXEC_DEFAULT_NUMPROCS:STRING=${NUMPROCS} -DMPI_EXEC_MAX_NUMPROCS:STRING=${NUMPROCS}"
+       MPI_BIN=$(dirname "${MPI_EXEC}")
+   fi
+   CXX=mpicxx
+   CC=mpicc
+   FC=mpif77
+fi
+
+OS=$(uname -s)
+if [ "$SHARED" == "YES" ]
+then
+    if [ "$OS" == "Darwin" ] ; then
+	LD_EXT="dylib"
+    else
+	LD_EXT="so"
+    fi
+else
+# NOTE: Some systems may need `curl` added to Seacas_EXTRA_LINK_FLAGS`
+#       If you see missing symbols containing `_curl`, try adding `curl`
+#   EXTRA_LIB="-DTrilinos_EXTRA_LINK_FLAGS=curl;z;dl -DSEACASExodus_ENABLE_SHARED:BOOL=OFF"
+    EXTRA_LIB="-DTrilinos_EXTRA_LINK_FLAGS=z;dl -DSEACASExodus_ENABLE_SHARED:BOOL=OFF"
+    LD_EXT="a"
+fi
+
+if [ "${HAVE_KOKKOS}" == "YES" ]
+then
+    KOKKOS_SYMBOLS="-DKOKKOS_SRC_PATH:PATH=${INSTALL_PATH}/TPL/kokkos/kokkos \
+		    -DTPL_Kokkos_LIBRARY_DIRS:PATH=${KOKKOS_PATH}/lib \
+		    -DTPL_Kokkos_INCLUDE_DIRS:PATH=${KOKKOS_PATH}/include \
+		    -DTPL_Kokkos_LIBRARIES=${KOKKOS_PATH}/lib/libkokkoscore.${LD_EXT}"
+fi
+
+if [ "$HAVE_FAODEL" == "YES" ]
+then
+  FAODEL_SYMBOLS=" -D TPL_ENABLE_Faodel:BOOL=${HAVE_FAODEL} \
+    -D Faodel_ROOT:PATH=${FAODEL_PATH} \
+    -D Faodel_INCLUDE_DIRS:PATH=${FAODEL_PATH}/include/faodel \
+    "
+fi
+
+if [ "$OS" == "Darwin" ] ; then
+  DARWIN_OPT="-D CMAKE_MACOSX_RPATH:BOOL=ON -D TPL_X11_INCLUDE_DIRS:PATH=/opt/X11/include"
+else
+  DARWIN_OPT=""
+fi
+
+# Only run doxygen if me and on master branch...
+DOXYGEN=${DOXYGEN:-NO}
+DOXYGEN=$(check_valid DOXYGEN)
+
+if [[ "$DOXYGEN" == "NO" && "$OS" == "Darwin" && "$MPI" == "NO" ]] ; then
+    branch=$(git branch |grep \* |cut -c3-)
+    USER=$(id -nu)
+    if [ "$USER" == "gdsjaar" ] && [ "$branch" == "master" ]; then
+	DOXYGEN=YES
+    fi
+fi
+
+FC=${FC:-gfortran}
+
+EXTRA_WARNINGS=${EXTRA_WARNINGS:-NO}
+EXTRA_WARNINGS=$(check_valid EXTRA_WARNINGS)
+
+SANITIZER=${SANITIZER:-NO}
+
+if [ "$SANITIZER" != "NO" ] ; then
+### To use the clang sanitizers:
+#sanitizer=address     #: AddressSanitizer, a memory error detector.
+#sanitizer=integer     #: Enables checks for undefined or suspicious integer behavior.
+#sanitizer=thread      #: ThreadSanitizer, a data race detector.
+#sanitizer=memory      #: MemorySanitizer, experimental detector of uninitialized reads.
+#sanitizer=undefined   #: Fast and compatible undefined behavior checker.
+#sanitizer=dataflow    #: DataFlowSanitizer, a general data flow analysis.
+#sanitizer=cfi         #: control flow integrity checks. Requires -flto.
+#sanitizer=safe-stack  #: safe stack protection against stack-based memory corruption errors.
+SANITIZE="-fsanitize=${SANITIZER} -fno-omit-frame-pointer -fPIC"
+if [ "$SANITIZER" == "integer" ] ; then
+  SANITIZE="$SANITIZE -fno-sanitize=unsigned-integer-overflow"
+fi
+fi
+
+### You can add these below if you want more verbosity...
+#-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+#-D Seacas_VERBOSE_CONFIGURE=ON \
+
+### You can add these below to regenerate the flex and bison files for
+### aprepro and aprepro_lib May have to touch aprepro.l aprepro.y
+### aprepro.ll and aprepro.yy to have them regenerate
+#-D GENERATE_FLEX_FILES=ON \
+#-D GENERATE_BISON_FILES=ON \
+
+if [ "${EXTRA_WARNINGS}" == "YES" ]; then
+### Additional gcc warnings:
+if [ "$COMPILER" == "gnu" ]
+then
+  COMMON_WARNING_FLAGS="\
+   -Wshadow -Wabsolute-value -Waddress -Waliasing -Wpedantic\
+  "
+
+  C_WARNING_FLAGS="${COMMON_WARNING_FLAGS}"
+
+  CXX_WARNING_FLAGS="${COMMON_WARNING_FLAGS} -Wnull-dereference -Wzero-as-null-pointer-constant -Wuseless-cast -Weffc++ -Wsuggest-override"
+
+  # -Wuseless-cast
+  # -Wold-style-cast
+  # -Wdouble-promotion
+fi
+if [ "$COMPILER" == "clang" ]
+then
+  C_WARNING_FLAGS="-Weverything -Wno-missing-prototypes -Wno-sign-conversion -Wno-reserved-id-macro"
+
+  CXX_WARNING_FLAGS="-Weverything -Wno-c++98-compat -Wno-old-style-cast -Wno-sign-conversion -Wno-reserved-id-macro"
+fi
+fi
+
+rm -f CMakeCache.txt
+###------------------------------------------------------------------------
+cmake -G "${GENERATOR}" \
+-D CMAKE_CXX_COMPILER:FILEPATH=${CXX} \
+-D CMAKE_C_COMPILER:FILEPATH=${CC} \
+-D CMAKE_Fortran_COMPILER:FILEPATH=${FC} \
+-D CMAKE_CXX_FLAGS="${CXXFLAGS} ${CXX_WARNING_FLAGS} ${SANITIZE}" \
+-D CMAKE_C_FLAGS="${CFLAGS} ${C_WARNING_FLAGS} ${SANITIZE}" \
+-D CMAKE_Fortran_FLAGS="${FFLAGS} ${F77_WARNING_FLAGS} ${SANITIZE}" \
+-D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS=${EXTRA_WARNINGS} \
+-D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS=${EXTRA_WARNINGS} \
+-D CMAKE_INSTALL_RPATH:PATH=${INSTALL_PATH}/lib \
+-D BUILD_SHARED_LIBS:BOOL=${SHARED} \
+-D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+-D Trilinos_ENABLE_SEACASExodus=ON \
+-D Trilinos_ENABLE_SEACAS=ON \
+-D Trilinos_ENABLE_Zoltan:BOOL=${ZOLTAN} \
+-D Trilinos_ENABLE_TESTS=ON \
+-D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PATH} \
+-D Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON \
+-D Trilinos_HIDE_DEPRECATED_CODE:BOOL=${OMIT_DEPRECATED} \
+-D Trilinos_ENABLE_Fortran=${FORTRAN} \
+${EXTRA_LIB} \
+${MODERN_ARG} \
+\
+-D TPL_ENABLE_Netcdf:BOOL=${HAVE_NETCDF} \
+-D TPL_ENABLE_Matio:BOOL=${HAVE_MATIO} \
+-D TPL_ENABLE_CGNS:BOOL=${HAVE_CGNS} \
+-D TPL_ENABLE_ADIOS2:BOOL=${HAVE_ADIOS2} \
+-D TPL_ENABLE_Catalyst2:BOOL=${HAVE_CATALYST2} \
+-D TPL_ENABLE_GTest:BOOL=${HAVE_GTEST} \
+-D TPL_ENABLE_Catch2:BOOL=OFF \
+-D TPL_ENABLE_Kokkos:BOOL=${HAVE_KOKKOS} \
+-D TPL_ENABLE_METIS:BOOL=${HAVE_METIS} \
+-D TPL_ENABLE_ParMETIS:BOOL=${HAVE_PARMETIS} \
+-D TPL_ENABLE_MPI:BOOL=${MPI} \
+-D TPL_ENABLE_Pamgen:BOOL=OFF \
+-D TPL_ENABLE_fmt:BOOL=OFF \
+-D TPL_ENABLE_Pthread:BOOL=${THREADSAFE} \
+${THREAD_SAFE_OPT} \
+-D TPL_ENABLE_X11:BOOL=${HAVE_X11} \
+\
+-D SEACASExodus_ENABLE_THREADSAFE:BOOL=${THREADSAFE} \
+-D SEACASIoss_ENABLE_THREADSAFE:BOOL=${THREADSAFE} \
+\
+${KOKKOS_SYMBOLS} \
+${MPI_SYMBOLS} \
+${DARWIN_OPT} \
+${FAODEL_SYMBOLS} \
+\
+-D MPI_BIN_DIR:PATH=${MPI_BIN} \
+-D NetCDF_ROOT:PATH=${NETCDF_PATH} \
+-D HDF5_ROOT:PATH=${HDF5_PATH} \
+-D HDF5_DIR:PATH=${HDF5_PATH} \
+-D CGNS_ROOT:PATH=${CGNS_PATH} \
+-D CGNS_DIR:PATH=${CGNS_PATH} \
+-D Matio_LIBRARY_DIRS:PATH=${MATIO_PATH}/lib \
+-D Matio_INCLUDE_DIRS:PATH=${MATIO_PATH}/include \
+-D Metis_ROOT:PATH=${METIS_PATH} \
+-D ParMETIS_ROOT:PATH=${PARMETIS_PATH} \
+-D PNetCDF_ROOT:PATH=${PNETCDF_PATH} \
+-D CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON \
+$EXTRA_ARGS \
+..
+
+echo ""
+echo "          OS: ${OS}"
+echo "      ACCESS: ${ACCESS}"
+echo "INSTALL_PATH: ${INSTALL_PATH}"
+echo "LIB_INSTALL_PATH: ${LIB_INSTALL_PATH}"
+echo "  "
+echo "         CC: ${CC}"
+echo "        CXX: ${CXX}"
+echo "         FC: ${FC}"
+echo "        MPI: ${MPI}"
+echo "     SHARED: ${SHARED}"
+echo "    FORTRAN: ${FORTRAN}"
+echo " BUILD_TYPE: ${BUILD_TYPE}"
+echo " THREADSAFE: ${THREADSAFE}"
+echo "       CRAY: ${CRAY}"
+echo " "
+echo "     NETCDF: ${HAVE_NETCDF}"
+echo "      MATIO: ${HAVE_MATIO}"
+echo "       CGNS: ${HAVE_CGNS}"
+echo "     KOKKOS: ${HAVE_KOKKOS}"
+echo "     ZOLTAN: ${ZOLTAN}"
+echo "     ADIOS2: ${HAVE_ADIOS2}"
+echo "  CATALYST2: ${HAVE_CATALYST2}"
+echo "      METIS: ${HAVE_METIS}"
+echo "   PARMETIS: ${HAVE_PARMETIS}"
+echo "     FAODEL: ${HAVE_FAODEL}"
+echo "      GTEST: ${HAVE_GTEST}"
+echo "     CATCH2: ${HAVE_CATCH2}"
+echo "    DOXYGEN: ${DOXYGEN}"
+echo ""
+
+if [ "${TRAVIS}" == "true" ]
+then
+  make -j2
+  cd ${ACCESS}
+fi

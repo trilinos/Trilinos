@@ -29,7 +29,7 @@ INLINE_SOURCES         = NO
 STRIP_CODE_COMMENTS    = YES
 REFERENCED_BY_RELATION = NO
 REFERENCES_RELATION    = NO
-CASE_SENSE_NAMES       = YES
+CASE_SENSE_NAMES       = NO
 HIDE_SCOPE_NAMES       = NO
 VERBATIM_HEADERS       = YES
 SHOW_INCLUDE_FILES     = YES
@@ -44,14 +44,14 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc groups.doc ../src ../thyra/src ../epetra/src ../tpetra/src
+INPUT                  = index.doc groups.doc ../src ../thyra/src ../tpetra/src
 RECURSIVE              = YES
 EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp ../src/AnasaziDirectSolver.hpp
 EXCLUDE_PATTERNS       = *.x *.o *.out
 #
 # Set up paths and patterns for examples
 #
-EXAMPLE_PATH           = ../epetra/example ../tpetra/example
+EXAMPLE_PATH           = ../tpetra/example
 EXAMPLE_RECURSIVE      = YES
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 #
@@ -75,13 +75,13 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
-PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI Anasazi::StatusTest
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS Anasazi::StatusTest
 INCLUDE_PATH           = ../src
 EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
 # Links to other packages
 #
-TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/ThyraInterfacesOperatorVectorANAFundamental.tag=../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/ThyraInterfacesOperatorVectorANAFundamental.tag=../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html
 GENERATE_TAGFILE       = ../../common/tag_files/anasazi.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO

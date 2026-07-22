@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -22,9 +22,6 @@
 #include <fstream>
 
 #include <exodusII.h>
-#if !defined __NVCC__
-#include <fmt/color.h>
-#endif
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
@@ -41,7 +38,7 @@ extern double seacas_timer();
 extern void   progress(const std::string &output);
 
 namespace {
-  char **get_name_array(size_t count, int size)
+  char **get_name_array(size_t count, size_t size)
   {
     auto *names = new char *[count];
     for (size_t i = 0; i < count; i++) {
@@ -51,9 +48,9 @@ namespace {
     return names;
   }
 
-  void delete_name_array(char **names, int count)
+  void delete_name_array(char **names, size_t count)
   {
-    for (int i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) {
       delete[] names[i];
     }
     delete[] names;
@@ -107,7 +104,7 @@ namespace {
     std::ostringstream errmsg;
     fmt::print(
         errmsg,
-        "Exodus error ({}) {} at line {} in file Slice.C. Please report to gdsjaar@sandia.gov "
+        "Exodus error ({}) {} at line {} in file Slice.C. Please report to sierra-help@sandia.gov "
         "if you need help.",
         exerrval, ex_strerror(exerrval), lineno);
 
@@ -160,7 +157,7 @@ namespace {
 
   template <typename INT>
   void decompose_metis(const Ioss::Region &region, SystemInterface &interFace,
-                       std::vector<int> &elem_to_proc, IOSS_MAYBE_UNUSED INT dummy)
+                       std::vector<int> &elem_to_proc, INT dummy)
   {
     size_t element_count = region.get_property("element_count").get_int();
 
@@ -272,15 +269,13 @@ namespace {
 } // namespace
 
 template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                             const std::vector<float> &weights,
-                                             IOSS_MAYBE_UNUSED int     dummy);
+                                             const std::vector<float> &weights, int dummy);
 template std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                             const std::vector<float> &weights,
-                                             IOSS_MAYBE_UNUSED int64_t dummy);
+                                             const std::vector<float> &weights, int64_t dummy);
 
 template <typename INT>
 std::vector<int> decompose_elements(const Ioss::Region &region, SystemInterface &interFace,
-                                    const std::vector<float> &weights, IOSS_MAYBE_UNUSED INT dummy)
+                                    const std::vector<float> &weights, INT dummy)
 {
   progress(__func__);
   // Populate the 'elem_to_proc' vector with a mapping from element to processor.

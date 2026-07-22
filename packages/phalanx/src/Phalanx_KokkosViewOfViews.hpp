@@ -1,8 +1,20 @@
+// @HEADER
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation
+//       Kernel for Flexible Management of Complex Dependency Chains
+//
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef PHALANX_KOKKOS_VIEW_OF_VIEWS_HPP
 #define PHALANX_KOKKOS_VIEW_OF_VIEWS_HPP
 
 #include "Sacado.hpp" // for IsADType
 #include <utility> // for declval
+#include <memory> // for shared_ptr
+#include <type_traits> // for void_t
 
 namespace PHX {
 
@@ -21,33 +33,135 @@ namespace PHX {
   }
 
   // ****************************
-  // Functions to free inner view memory (assumes outer views are on host)
+  // Customization point used to build the "runtime unmanaged" copy of
+  // an inner object that is stored in a ViewOfViews. This is the copy
+  // that is deep_copied into the outer device view so that the inner
+  // objects are not reference counted/double deleted on device (see
+  // the ViewOfViews class documentation below for details).
+  //
+  // The default implementation below handles the common case where
+  // the inner object is a plain Kokkos::View. To support an inner
+  // object that is a struct containing one or more Kokkos::Views
+  // (e.g. "View<MyObj*>" instead of "View<View<double**>*>"), users
+  // must provide their own overload of phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(...)
+  // for MyObj, discoverable via ADL (i.e. defined in the same
+  // namespace as MyObj), that returns a copy of MyObj where each
+  // Kokkos::View data member has been replaced with the corresponding
+  // runtime unmanaged view (typically by calling this same function
+  // recursively on each view data member). MyObj must also be default
+  // constructible so that the outer ViewOfViews deleter can reset
+  // entries to an "empty" state on host.
+  //
+  // NOTE: This is declared directly in namespace PHX (NOT in the
+  // nested v_of_v_utils namespace) and always called unqualified so
+  // that ordinary unqualified lookup finds the Kokkos::View overload
+  // below and argument-dependent lookup (ADL) finds any user supplied
+  // overload for a struct-of-views type living in the user's own
+  // namespace.
   // ****************************
-  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
-  auto freeInnerViewsOfHostHostViewOfViews(Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>*,OuterProps...>& v_of_v) {
-    for (std::size_t i=0; i < v_of_v.extent(0); ++i) {
-      v_of_v(i) = Kokkos::View<InnerViewDataType,InnerProps...>();
+
+  /// Default implementation of the ViewOfViews inner-object
+  /// customization point for plain Kokkos::View inner types.
+  template<typename D,typename... P>
+  Kokkos::View<D,P...> phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(const Kokkos::View<D,P...>& v)
+  {
+    using ViewType = Kokkos::View<D,P...>;
+    if (Sacado::IsADType<typename ViewType::value_type>::value) {
+      // For FAD types, we need to adjust the layout to account for
+      // the derivative array. The layout() method returns the
+      // non-fad adjusted layout.
+      #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      auto layout = v.layout();
+      layout.dimension[ViewType::rank] = Kokkos::dimension_scalar(v);
+      return ViewType(v.data(),layout);
+      #else
+      return ViewType(v.data(),v.mapping(),v.accessor());
+      #endif
+    }
+    else {
+      return ViewType(v.data(),v.layout());
     }
   }
 
-  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
-  auto freeInnerViewsOfHostHostViewOfViews(Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>**,OuterProps...>& v_of_v) {
-    for (std::size_t i=0; i < v_of_v.extent(0); ++i) {
-      for (std::size_t j=0; j < v_of_v.extent(1); ++j) {
-        v_of_v(i,j) = Kokkos::View<InnerViewDataType,InnerProps...>();
-      }
-    }
+  namespace v_of_v_utils {
+
+    /// Trait to detect whether phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(...) is
+    /// defined for type T, either via the default Kokkos::View
+    /// overload above or a user supplied ADL overload for a
+    /// struct-of-views type.
+    template<typename T,typename Enable = void>
+    struct has_create_runtime_unmanaged_view : std::false_type {};
+
+    template<typename T>
+    struct has_create_runtime_unmanaged_view<T,std::void_t<decltype(phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(std::declval<const T&>()))>>
+      : std::true_type {};
+
+    template<typename T>
+    inline constexpr bool has_create_runtime_unmanaged_view_v = has_create_runtime_unmanaged_view<T>::value;
   }
 
-  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
-  auto freeInnerViewsOfHostHostViewOfViews(Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>***,OuterProps...>& v_of_v) {
-    for (std::size_t i=0; i < v_of_v.extent(0); ++i) {
-      for (std::size_t j=0; j < v_of_v.extent(1); ++j) {
-        for (std::size_t k=0; k < v_of_v.extent(2); ++k) {
-          v_of_v(i,j,k) = Kokkos::View<InnerViewDataType,InnerProps...>();
+  namespace details {
+    struct ViewOfViewsDeleter {
+      bool do_safety_check_ = false;
+
+      template <class D, class... P>
+      std::enable_if_t<
+          v_of_v_utils::has_create_runtime_unmanaged_view_v<typename Kokkos::View<D, P...>::value_type>>
+      operator()(Kokkos::View<D, P...>* vov) const {
+        Kokkos::fence("PHX:ViewOfViewsDeleter: fence before host cleanup of View of Views");
+        if (do_safety_check_) {
+          if (vov->use_count() > 1) {
+            Kokkos::abort("\n\n********\n ERROR - PHX::ViewOfViews - please free all instances of device Kokkos::View<View<...>> \n before deleting the host ViewOfView!\n********\n\n");
+          }
         }
+
+        // destroy inner views on host, outside of a parallel region
+        constexpr size_t rank = Kokkos::View<D, P...>::rank();
+        static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename Kokkos::View<D, P...>::memory_space>::accessible;
+        if (device_view_is_accessible_from_host) {
+          if constexpr (rank == 0) {
+            (*vov)() = {};
+          } else if constexpr (rank == 1) {
+            for (size_t i = 0; i < vov->extent(0); ++i) {
+              (*vov)(i) = {};
+            }
+          } else if constexpr (rank == 2) {
+            for (size_t i = 0; i < vov->extent(0); ++i) {
+              for (size_t j = 0; j < vov->extent(1); ++j) {
+                (*vov)(i, j) = {};
+              }
+            }
+          } else if constexpr (rank == 3) {
+            for (size_t i = 0; i < vov->extent(0); ++i) {
+              for (size_t j = 0; j < vov->extent(1); ++j) {
+                for (size_t k = 0; k < vov->extent(2); ++k) {
+                  (*vov)(i, j, k) = {};
+                }
+              }
+            }
+          } else {
+            static_assert(std::is_void_v<decltype(vov)>, "\n\n********\n Error - PHX::ViewOfViews - ViewOfView with outer view greater than rank 3 is not supported!\n********\n\n");
+          }
+        }
+        // dispose of the outer view
+        delete vov;
       }
-    }
+    };
+
+    template <class VoV>
+    struct ViewOfViewsMaker {
+      static_assert(Kokkos::is_view_v<VoV>);
+    };
+    template <class D, class... P>
+    struct ViewOfViewsMaker<Kokkos::View<D, P...>> {
+      static_assert(v_of_v_utils::has_create_runtime_unmanaged_view_v<typename Kokkos::View<D, P...>::value_type>,
+                    "\n\n********\n Error - PHX::ViewOfViews - the inner object type does not support phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(...)! \n If the inner object is a struct of Kokkos::Views (not a plain Kokkos::View), you must provide an overload of phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(const YourStruct&) in the same namespace as YourStruct so it is discoverable via ADL. \n********\n\n");
+      template <class... Args>
+      static auto make_shared(Args&&... args) {
+        return std::shared_ptr<Kokkos::View<D, P...>>(
+            new Kokkos::View<D, P...>((Args &&) args...), ViewOfViewsDeleter());
+      }
+    };
   }
 
   // ****************************
@@ -78,6 +192,21 @@ namespace PHX {
       can generate an unmanged view without the template parameter by
       constructing the view with a raw pointer. This thrid
       implementation does that here.
+
+      4. InnerViewType is normally a plain Kokkos::View, e.g. for
+      "View<View<double**>*>" InnerViewType is "View<double**>".
+      However InnerViewType may instead be a user defined struct
+      containing one or more Kokkos::View data members, e.g. for
+      "View<MyObj*>" InnerViewType is "MyObj". In that case, MyObj
+      must be default constructible and the user must provide an ADL
+      discoverable overload of
+      phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(const MyObj&),
+      defined in the same namespace as MyObj, that returns a copy of
+      MyObj with each Kokkos::View data member replaced by its runtime
+      unmanaged counterpart (see
+      PHX::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews() for the
+      Kokkos::View case above, which can be called/reused for each
+      individual view data member).
   */
   template<int OuterViewRank,typename InnerViewType,typename... OuterViewProps>
   class ViewOfViews {
@@ -90,20 +219,19 @@ namespace PHX {
     using OuterViewType = Kokkos::View<OuterDataType,OuterViewProps...>;
 
   private:
-    // Inner views are mananged - used to prevent early deletion
-    typename OuterViewType::HostMirror view_host_;
+    // Inner views are managed - used to prevent early deletion
+    std::shared_ptr<typename OuterViewType::host_mirror_type> view_host_;
+    // Device view
+    std::shared_ptr<OuterViewType> view_device_;
     // Inner views are unmanaged by runtime construction with pointer
     // (avoids template parameter). Used to correctly initialize outer
     // device view on device.
-    typename OuterViewType::HostMirror view_host_unmanaged_;
-    // Device view
-    OuterViewType view_device_;
+    static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename OuterViewType::memory_space>::accessible;
+    std::conditional_t<device_view_is_accessible_from_host, std::shared_ptr<OuterViewType>, std::shared_ptr<typename OuterViewType::host_mirror_type>> view_host_unmanaged_;
     // True if the host view has not been synced to device
     bool device_view_is_synced_;
     // True if the outer view has been initialized
     bool is_initialized_;
-    // Use count of device view after initialization. This changes based on whether the view_device_ is accessible to host space. If not accessible, the use_count_ is 1. If it is accessible, the value is 2 due to using create_mirror_view in initialization if view_host_unmanaged_.
-    int use_count_;
     // A safety check. If true, this makes sure there are no external references to the device view of views.
     bool check_use_count_;
 
@@ -111,15 +239,19 @@ namespace PHX {
     /// Ctor that uses the default execution space instance.
     template<typename... Extents>
     ViewOfViews(const std::string name,Extents... extents)
-      : view_host_(name,extents...),
-        view_device_(name,extents...),
+      : view_host_(details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(name,extents...)),
+        view_device_(details::ViewOfViewsMaker<OuterViewType>::make_shared(name,extents...)),
         device_view_is_synced_(false),
         is_initialized_(true),
-        use_count_(0),
         check_use_count_(true)
     {
-      view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
-      use_count_ = view_device_.impl_track().use_count();
+      if constexpr (device_view_is_accessible_from_host) {
+        view_host_unmanaged_ = view_device_;
+      } else {
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(*view_device_));
+      }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
     }
 
     /// Ctor that uses a user specified execution space instance.
@@ -128,72 +260,59 @@ namespace PHX {
     /// fence. Be sure to manually fence as needed.
     template<typename ExecSpace,typename... Extents>
     ViewOfViews(const ExecSpace& e_space,const std::string name,Extents... extents)
-      : view_host_(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...),
-        view_device_(Kokkos::view_alloc(e_space,name),extents...),
+      : view_host_(details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space(),name),extents...)),
+        view_device_(details::ViewOfViewsMaker<OuterViewType>::make_shared(Kokkos::view_alloc(e_space,name),extents...)),
         device_view_is_synced_(false),
         is_initialized_(true),
-        use_count_(0),
         check_use_count_(true)
     {
-      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
-      use_count_ = view_device_.impl_track().use_count();
+      if constexpr (device_view_is_accessible_from_host) {
+        view_host_unmanaged_ = view_device_;
+      } else {
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space()),*view_device_));
+      }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
     }
 
     ViewOfViews()
       : device_view_is_synced_(false),
         is_initialized_(false),
-        use_count_(0),
         check_use_count_(true)
     {}
 
-    ViewOfViews(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
-    ViewOfViews& operator=(const ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>& ) = default;
-    ViewOfViews(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& src) = default;
-    ViewOfViews& operator=(ViewOfViews<OuterViewRank,InnerViewType,OuterViewProps...>&& ) = default;
-
-    // Making this a kokkos function eliminates cuda compiler warnings
-    // in objects that contain ViewOfViews that are copied to device.
-    KOKKOS_INLINE_FUNCTION
-    ~ViewOfViews()
+    /// Enable safety check in dtor for external references.
+    void enableSafetyCheck()
     {
-      // Make sure there is not another object pointing to the device
-      // view if the host view is about to be deleted. The host view
-      // may delete the inner views if it is the last owner.
-      KOKKOS_IF_ON_HOST((
-        if ( check_use_count_ ) {
-          if ( (view_host_.impl_track().use_count() == 1) && (view_device_.impl_track().use_count() > use_count_) ) {
-            Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
-          }
-        }
-        // We must manually delete the inner views now. The Serial
-        // backend has been updated for thread safety, causing
-        // deadlock from a view dtor mutex - nested views cause nested
-        // parallel_for calls. Details:
-        // Commit to kokkos that caused issue: https://github.com/kokkos/kokkos/pull/7080
-        // Kokkos issue that reports failures: https://github.com/kokkos/kokkos/issues/7092
-        // Phalanx: fixes: https://github.com/trilinos/Trilinos/pull/13188
-        if (view_host_.impl_track().use_count() == 1) {
-          PHX::freeInnerViewsOfHostHostViewOfViews(view_host_);
-        }
-      ))
+      check_use_count_ = true;
+      if (this->isInitialized())
+        std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
     }
 
-    /// Enable safety check in dtor for external references.
-    void enableSafetyCheck() { check_use_count_ = true; }
-
     /// Disable safety check in dtor for external references.
-    void disableSafetyCheck() { check_use_count_ = false; }
+    void disableSafetyCheck()
+    {
+      check_use_count_ = false;
+      if (this->isInitialized())
+        std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
+    }
 
     /// Allocate the out view objects. Extents are for the outer view. Uses the default execution space.
     template<typename... Extents>
     void initialize(const std::string name,Extents... extents)
     {
-      view_host_ = typename OuterViewType::HostMirror(name,extents...);
-      view_device_ = OuterViewType(name,extents...);
-      view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
+      view_host_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(name,extents...);
+      view_device_ = details::ViewOfViewsMaker<OuterViewType>::make_shared(name,extents...);
+      if constexpr (device_view_is_accessible_from_host) {
+        view_host_unmanaged_ = view_device_;
+      } else {
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(*view_device_));
+      }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
+
       device_view_is_synced_ = false;
       is_initialized_ = true;
-      use_count_ = view_device_.impl_track().use_count();
     }
 
     /// Allocate the out view objects. Extents are for the outer
@@ -204,12 +323,18 @@ namespace PHX {
     template<typename ExecSpace,typename... Extents>
     void initialize(const ExecSpace& e_space,const std::string name,Extents... extents)
     {
-      view_host_ = typename OuterViewType::HostMirror(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...);
-      view_device_ = OuterViewType(Kokkos::view_alloc(e_space,name),extents...);
-      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
+      view_host_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space(),name),extents...);
+      view_device_ = details::ViewOfViewsMaker<OuterViewType>::make_shared(Kokkos::view_alloc(e_space,name),extents...);
+      if constexpr (device_view_is_accessible_from_host) {
+        view_host_unmanaged_ = view_device_;
+      } else {
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space()),*view_device_));
+      }
+
+      std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
+
       device_view_is_synced_ = false;
       is_initialized_ = true;
-      use_count_ = view_device_.impl_track().use_count();
     }
 
     // Returns true if the outer view has been initialized.
@@ -227,21 +352,24 @@ namespace PHX {
 
       TEUCHOS_ASSERT(is_initialized_);
 
-      // Store the managed version so inner views don't get deleted.
-      view_host_(i...) = v;
+      // Store the managed version so inner objects don't get deleted.
+      (*view_host_)(i...) = v;
 
-      // Store a runtime unmanaged view for deep_copy to
-      // device. Unmanaged is required to prevent double deletion on
-      // device. For FAD types, we need to adjust the layout to
-      // account for the derivative array. The layout() method reutrns
-      // the non-fad adjusted layout.
-      if (Sacado::IsADType<typename InnerViewType::value_type>::value) {
-        auto layout = v.layout();
-        layout.dimension[InnerViewType::rank] = Kokkos::dimension_scalar(v);
-        view_host_unmanaged_(i...) = InnerViewType(v.data(),layout);
-      }
-      else
-        view_host_unmanaged_(i...) = InnerViewType(v.data(),v.layout());
+      // Store a runtime unmanaged copy for deep_copy to device.
+      // Unmanaged views are required to prevent double deletion on
+      // device. If InnerViewType is a plain Kokkos::View, this is
+      // handled by the default
+      // phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews()
+      // overload. If InnerViewType is instead a struct containing
+      // Kokkos::View data members, the struct must provide its own
+      // ADL discoverable overload of
+      // phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews().  NOTE:
+      // called unqualified (not
+      // PHX::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews or
+      // v_of_v_utils::phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews)
+      // so that ADL can find a user supplied overload for
+      // struct-of-views types.
+      (*view_host_unmanaged_)(i...) = phalanxVoVMakeCopyWithInnerRuntimeUnmanagedViews(v);
 
       device_view_is_synced_ = false;
     }
@@ -253,7 +381,7 @@ namespace PHX {
     void syncHostToDevice()
     {
       TEUCHOS_ASSERT(is_initialized_);
-      Kokkos::deep_copy(view_device_,view_host_unmanaged_);
+      Kokkos::deep_copy(*view_device_,*view_host_unmanaged_);
       device_view_is_synced_ = true;
     }
 
@@ -267,16 +395,8 @@ namespace PHX {
     void syncHostToDevice(const ExecSpace& e_space)
     {
       TEUCHOS_ASSERT(is_initialized_);
-      Kokkos::deep_copy(e_space,view_device_,view_host_unmanaged_);
+      Kokkos::deep_copy(e_space,*view_device_,*view_host_unmanaged_);
       device_view_is_synced_ = true;
-    }
-
-    /// Returns a host mirror view for the outer view, where the inner
-    /// views are still on device.
-    auto getViewHost()
-    {
-      TEUCHOS_ASSERT(is_initialized_);
-      return view_host_;
     }
 
     /// Returns a host mirror view for the outer view, where the inner
@@ -284,21 +404,14 @@ namespace PHX {
     auto getViewHost() const
     {
       TEUCHOS_ASSERT(is_initialized_);
-      return view_host_;
-    }
-
-    /// Returns device view of views
-    auto getViewDevice()
-    {
-      KOKKOS_ASSERT(device_view_is_synced_);
-      return view_device_;
+      return *view_host_;
     }
 
     /// Returns device view of views
     auto getViewDevice() const
     {
       KOKKOS_ASSERT(device_view_is_synced_);
-      return view_device_;
+      return *view_device_;
     }
   };
 

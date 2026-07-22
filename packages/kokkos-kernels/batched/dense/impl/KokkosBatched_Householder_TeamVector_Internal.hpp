@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_HOUSEHOLDER_TEAMVECTOR_INTERNAL_HPP__
-#define __KOKKOSBATCHED_HOUSEHOLDER_TEAMVECTOR_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_HOUSEHOLDER_TEAMVECTOR_INTERNAL_HPP
+#define KOKKOSBATCHED_HOUSEHOLDER_TEAMVECTOR_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -30,13 +17,12 @@ namespace KokkosBatched {
 ///
 struct TeamVectorLeftHouseholderInternal {
   template <typename MemberType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int m_x2,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m_x2,
                                            /* */ ValueType *chi1,
                                            /* */ ValueType *x2, const int x2s,
                                            /* */ ValueType *tau) {
     typedef ValueType value_type;
-    typedef typename Kokkos::ArithTraits<ValueType>::mag_type mag_type;
+    typedef typename KokkosKernels::ArithTraits<ValueType>::mag_type mag_type;
 
     const mag_type zero(0);
     const mag_type half(0.5);
@@ -64,11 +50,10 @@ struct TeamVectorLeftHouseholderInternal {
     }
 
     /// compute magnitude of chi1, equal to norm2 of chi1
-    const mag_type norm_chi1 = Kokkos::ArithTraits<value_type>::abs(*chi1);
+    const mag_type norm_chi1 = KokkosKernels::ArithTraits<value_type>::abs(*chi1);
 
     /// compute 2 norm of x using norm_chi1 and norm_x2
-    const mag_type norm_x = Kokkos::ArithTraits<mag_type>::sqrt(
-        norm_x2_square + norm_chi1 * norm_chi1);
+    const mag_type norm_x = KokkosKernels::ArithTraits<mag_type>::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
 
     /// compute alpha
     const mag_type alpha = (*chi1 < 0 ? one : minus_one) * norm_x;
@@ -76,9 +61,8 @@ struct TeamVectorLeftHouseholderInternal {
     /// overwrite x2 with u2
     const value_type chi1_minus_alpha     = *chi1 - alpha;
     const value_type inv_chi1_minus_alpha = one / chi1_minus_alpha;
-    Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(member, m_x2),
-        [&](const int &i) { x2[i * x2s] *= inv_chi1_minus_alpha; });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m_x2),
+                         [&](const int &i) { x2[i * x2s] *= inv_chi1_minus_alpha; });
     member.team_barrier();
 
     // later consider to use the following
@@ -86,9 +70,8 @@ struct TeamVectorLeftHouseholderInternal {
 
     /// compute tau
     Kokkos::single(Kokkos::PerTeam(member), [&]() {
-      const mag_type chi1_minus_alpha_square =
-          chi1_minus_alpha * chi1_minus_alpha;
-      *tau = half + half * (norm_x2_square / chi1_minus_alpha_square);
+      const mag_type chi1_minus_alpha_square = chi1_minus_alpha * chi1_minus_alpha;
+      *tau                                   = half + half * (norm_x2_square / chi1_minus_alpha_square);
 
       /// overwrite chi1 with alpha
       *chi1 = alpha;

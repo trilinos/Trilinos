@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_FUNCTIONAL_IMPL_HPP
 #define KOKKOS_FUNCTIONAL_IMPL_HPP
@@ -75,6 +62,7 @@ uint32_t MurmurHash3_x86_32(const void* key, int len, uint32_t seed) {
   //----------
   // tail
 
+  // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
   const uint8_t* tail = (const uint8_t*)(data + nblocks * 4);
 
   uint32_t k1 = 0;
@@ -88,6 +76,8 @@ uint32_t MurmurHash3_x86_32(const void* key, int len, uint32_t seed) {
       k1 = rotl32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
+      break;
+    default: break;
   };
 
   //----------

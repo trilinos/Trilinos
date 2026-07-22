@@ -559,6 +559,13 @@ namespace Amesos2 {
   }
 
 
+  template <class Matrix, class Vector>
+  void
+  STRUMPACK<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                          const Teuchos::EVerbosityLevel verbLevel) const{
+  }
+
+
   template<class Matrix, class Vector>
   const char* STRUMPACK<Matrix,Vector>::name = "STRUMPACK";
 

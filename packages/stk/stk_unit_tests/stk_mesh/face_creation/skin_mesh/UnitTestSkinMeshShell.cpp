@@ -20,7 +20,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
       std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
       stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
       stk::mesh::BulkData& bulk_data = *bulkPtr;
-      stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+      stk::mesh::fixtures::VectorFieldType & node_coord =
           meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
       stk::mesh::put_field_on_mesh(node_coord, meta_data.universal_part(), 3, nullptr);
 
@@ -61,15 +61,16 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
         {0, 0, 0}, {0, 0, 1}, {1, 0, 0}, {1, 0, 1},
         {1, 1, 0}, {1, 1, 1}, {0, 1, 0}, {0, 1, 1}};
 
+      auto coordData = node_coord.data<stk::mesh::ReadWrite>();
       for(unsigned i = 0; i < node_count; ++i)
       {
         stk::mesh::Entity const node = bulk_data.get_entity(stk::topology::NODE_RANK, i + 1);
 
-        double * const coord = stk::mesh::field_data(node_coord, node);
+        auto coord = coordData.entity_values(node);
 
-        coord[0] = node_coord_data[i][0];
-        coord[1] = node_coord_data[i][1];
-        coord[2] = node_coord_data[i][2];
+        coord(0_comp) = node_coord_data[i][0];
+        coord(1_comp) = node_coord_data[i][1];
+        coord(2_comp) = node_coord_data[i][2];
       }
 
       bulk_data.modification_end();
@@ -85,7 +86,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
     stk::mesh::BulkData& bulk_data = *bulkPtr;
     stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
     stk::io::put_io_part_attribute(skin);
-    stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+    stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
     unlink(fileName.c_str());
     EXPECT_NO_FATAL_FAILURE(ElemGraphTestUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
     std::vector<size_t> mesh_counts;

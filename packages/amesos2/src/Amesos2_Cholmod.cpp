@@ -18,9 +18,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 
 namespace Amesos2 {
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(Cholmod);
-#endif
 
   #define AMESOS2_CHOLMOD_LOCAL_INSTANT(S,LO,GO,N) \
     template class Amesos2::Cholmod<Tpetra::CrsMatrix<S, LO, GO, N>, \

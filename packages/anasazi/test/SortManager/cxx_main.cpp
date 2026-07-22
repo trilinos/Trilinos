@@ -19,7 +19,7 @@
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziBasicSort.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   using Teuchos::null;
   using Teuchos::rcp;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Init(&argc,&argv);
 #endif
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","nodebug",&debug,"Print debugging info.");
   cmdp.setOption("numVals",&numVals,"Number of values for testing sorting.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -702,7 +702,7 @@ int main(int argc, char *argv[])
 
   printer->print(Warnings,"\n");
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize();
 #endif
 

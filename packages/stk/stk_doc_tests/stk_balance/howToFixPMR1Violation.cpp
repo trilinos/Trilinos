@@ -44,8 +44,6 @@ namespace
 //BEGIN_FIX_PMR1
 TEST(StkMeshHowTo, FixPMR1Violation)
 {
-    stk::mesh::MetaData meta;
-    meta.use_simple_fields();
     std::shared_ptr<stk::mesh::BulkData> bulkData = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
     stk::io::fill_mesh("generated:4x4x4|sideset:xX", *bulkData);
 

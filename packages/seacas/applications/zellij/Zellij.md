@@ -102,7 +102,7 @@ usage: zellij [options] -lattice <lattice_definition_file>
 
         Can also set options via ZELLIJ_OPTIONS environment variable.
 
-        ->->-> Send email to gdsjaar@sandia.gov for zellij support.<-<-<-
+        ->->-> Send email to sierra-help@sandia.gov for zellij support.<-<-<-
 ```
 The only required option is `-lattice` followed by the name of the file containing the lattice description.  The other options are used to specify compression of the output file; the format of the output file; or to request additional debug output.
 

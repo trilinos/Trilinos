@@ -41,11 +41,24 @@ struct StkTopologyMapEntry {
 
   int num_nodes() const { return topology.num_nodes(); }
 
+  void operator=(const StkTopologyMapEntry &entry) { topology = entry.topology; }
+
   bool operator==(const StkTopologyMapEntry &rhs) const { return topology == rhs.topology; }
 
   bool operator!=(const StkTopologyMapEntry &rhs) const { return !(*this == rhs); }
 
-  int num_sides() const { return topology.num_sides(); }
+  int num_face_sides() const {
+    return 2; // FIXME: Number of stackable faces for a 3D shell is always 2 in STK
+  }
+
+  int num_sides() const {
+    if (topology.is_shell()) {
+      if (topology.dimension() == 3) {
+        return num_face_sides(); // FIXME: Number of stackable faces for a 3D shell is always 2 in STK
+      }
+    }
+    return topology.num_sides();
+  }
 
   bool valid_side(unsigned side) const
   {
@@ -206,14 +219,6 @@ class StkTopologyMapping : public text_mesh::TopologyMapping<StkTopologyMapEntry
     };
   }
 };
-
-namespace simple_fields {
-
-struct StkTopologyMapEntry : public stk::unit_test_util::StkTopologyMapEntry {};
-
-class StkTopologyMapping : public stk::unit_test_util::StkTopologyMapping {};
-
-} // namespace simple_fields
 
 } // namespace unit_test_util
 } // namespace stk

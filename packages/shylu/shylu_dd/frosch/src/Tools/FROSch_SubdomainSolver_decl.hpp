@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _FROSCH_SUBDOMAINSOLVER_DECL_HPP
 #define _FROSCH_SUBDOMAINSOLVER_DECL_HPP
@@ -48,16 +16,6 @@
 #include <FROSch_Timers.h>
 
 #include <FROSch_Tools_decl.hpp>
-
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include "Epetra_LinearProblem.h"
-#endif
-
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-#include "Amesos_ConfigDefs.h"
-#include "Amesos.h"
-#include "Amesos_BaseSolver.h"
-#endif
 
 #include "Amesos2.hpp"
 
@@ -129,11 +87,6 @@ namespace FROSch {
         using XMatrixPtr                  = RCP<XMatrix>;
         using ConstXMatrixPtr             = RCP<const XMatrix>;
 
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        using ECrsMatrix                  = Epetra_CrsMatrix;
-        using ECrsMatrixPtr               = RCP<ECrsMatrix>;
-        using ConstECrsMatrixPtr          = RCP<const ECrsMatrix>;
-#endif
         using TCrsMatrix                  = Tpetra::CrsMatrix<SC,LO,GO,NO>;
         using TCrsMatrixPtr               = RCP<TCrsMatrix>;
         using ConstTCrsMatrixPtr          = RCP<const TCrsMatrix>;
@@ -151,27 +104,10 @@ namespace FROSch {
         using TMultiVector                = Tpetra::MultiVector<SC,LO,GO,NO>;
         using TMultiVectorPtr             = RCP<TMultiVector>;
 
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        using EMultiVector                = Epetra_MultiVector;
-        using EMultiVectorPtr             = RCP<EMultiVector>;
-#endif
-
         using XMultiVectorFactory         = MultiVectorFactory<SC,LO,GO,NO>;
 
         using ParameterListPtr            = RCP<ParameterList>;
 
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        using ELinearProblem              = Epetra_LinearProblem;
-        using ELinearProblemPtr           = RCP<Epetra_LinearProblem>;
-#endif
-
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-        using AmesosSolverPtr             = RCP<Amesos_BaseSolver>;
-#endif
-
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        using Amesos2SolverEpetraPtr      = RCP<Amesos2::Solver<ECrsMatrix,EMultiVector> >;
-#endif
         using Amesos2SolverTpetraPtr      = RCP<Amesos2::Solver<TCrsMatrix,TMultiVector> >;
 
 #ifdef HAVE_SHYLU_DDFROSCH_MUELU
@@ -299,17 +235,6 @@ namespace FROSch {
 
         mutable XMultiVectorPtr YTmp_;
 
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        ELinearProblemPtr EpetraLinearProblem_;
-#endif
-
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-        AmesosSolverPtr AmesosSolver_;
-#endif
-
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        Amesos2SolverEpetraPtr Amesos2SolverEpetra_;
-#endif
         Amesos2SolverTpetraPtr Amesos2SolverTpetra_;
 
 #ifdef HAVE_SHYLU_DDFROSCH_MUELU

@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_Assert.hpp"
@@ -46,12 +14,12 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 LanczosPCEBasis(
-   ordinal_type p,
+   ordinal_type ap,
    const Teuchos::RCP< const Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce_,
    const Teuchos::RCP< const Stokhos::Quadrature<ordinal_type, value_type> >& quad_,
-   bool normalize,
+   bool anormalize,
    bool limit_integration_order_) :
-  RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", p, normalize),
+  RecurrenceBasis<ordinal_type, value_type>("Lanczos PCE", ap, anormalize),
   pce(pce_),
   quad(quad_),
   limit_integration_order(limit_integration_order_),
@@ -61,7 +29,7 @@ LanczosPCEBasis(
 	      nqp),
   pce_vals(nqp),
   u0(nqp),
-  lanczos_vecs(nqp, p+1),
+  lanczos_vecs(nqp, ap+1),
   fromStieltjesMat(),
   new_pce()
 {
@@ -128,10 +96,10 @@ getQuadPoints(ordinal_type quad_order,
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
-cloneWithOrder(ordinal_type p) const
+cloneWithOrder(ordinal_type ap) const
 {
    return Teuchos::rcp(new Stokhos::LanczosPCEBasis<ordinal_type,value_type>(
-			 p,*this));
+			 ap,*this));
 }
 
 template <typename ordinal_type, typename value_type>
@@ -158,10 +126,10 @@ template <typename ordinal_type, typename value_type>
 bool
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
-			      Teuchos::Array<value_type>& alpha,
-			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta,
-			      Teuchos::Array<value_type>& gamma) const
+			      Teuchos::Array<value_type>& aalpha,
+			      Teuchos::Array<value_type>& abeta,
+			      Teuchos::Array<value_type>& adelta,
+			      Teuchos::Array<value_type>& agamma) const
 {
   Teuchos::Array<value_type> nrm(n);
   vectorspace_type vs(pce_weights);
@@ -176,18 +144,18 @@ computeRecurrenceCoefficients(ordinal_type n,
     lv = Teuchos::rcp(new matrix_type(nqp,n));
 
   if (this->normalize)
-    lanczos_type::computeNormalized(n, vs, A, u0, *lv, alpha, beta, nrm);
+    lanczos_type::computeNormalized(n, vs, A, u0, *lv, aalpha, abeta, nrm);
   else
-    lanczos_type::compute(n, vs, A, u0, *lv, alpha, beta, nrm);
+    lanczos_type::compute(n, vs, A, u0, *lv, aalpha, abeta, nrm);
 
   for (ordinal_type i=0; i<n; i++) {
-    delta[i] = value_type(1.0);
+    adelta[i] = value_type(1.0);
   }
   if (this->normalize)
-    gamma = beta;
+    agamma = abeta;
   else
     for (ordinal_type i=0; i<n; i++)
-      gamma[i] = value_type(1.0);
+      agamma[i] = value_type(1.0);
 
   return this->normalize;
 }
@@ -227,8 +195,8 @@ setup()
 
 template <typename ordinal_type, typename value_type> 
 Stokhos::LanczosPCEBasis<ordinal_type, value_type>::
-LanczosPCEBasis(ordinal_type p, const LanczosPCEBasis& basis) :
-  RecurrenceBasis<ordinal_type, value_type>(p, basis),
+LanczosPCEBasis(ordinal_type ap, const LanczosPCEBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(ap, basis),
   pce(basis.pce),
   quad(basis.quad),
   limit_integration_order(basis.limit_integration_order),
@@ -236,7 +204,7 @@ LanczosPCEBasis(ordinal_type p, const LanczosPCEBasis& basis) :
   pce_weights(basis.pce_weights),
   pce_vals(basis.pce_vals),
   u0(basis.u0),
-  lanczos_vecs(nqp, p+1),
+  lanczos_vecs(nqp, ap+1),
   fromStieltjesMat(),
   new_pce()
 {

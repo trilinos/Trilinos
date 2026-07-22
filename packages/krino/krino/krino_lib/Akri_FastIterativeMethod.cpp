@@ -11,10 +11,10 @@
 
 #include <Akri_Eikonal_Calc.hpp>
 #include <Akri_FastIterativeMethod.hpp>
-#include <Akri_LevelSet.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_ParallelErrorMessage.hpp>
+#include <Akri_Sign.hpp>
 #include <math.h>
 
 namespace krino{
@@ -176,8 +176,8 @@ FastIterativeMethod::update_triangle(const stk::mesh::Entity * elemNodes, int no
   const std::array<int,3> lnn = get_oriented_nodes_triangle(nodeToUpdate);
   const std::array<stk::math::Vector3d,3> x{stk::math::Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[0]]),2), stk::math::Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[1]]),2), stk::math::Vector3d(field_data<double>(myCoordinates, elemNodes[lnn[2]]),2)};
   const std::array<double,2> d{*field_data<double>(myDistance, elemNodes[lnn[0]]), *field_data<double>(myDistance, elemNodes[lnn[1]])};
-  const int sign = LevelSet::sign(*field_data<double>(myDistance, elemNodes[lnn[2]]));
-  return eikonal_solve_triangle(x, d, sign, far, speed);
+  const int distSign = sign(*field_data<double>(myDistance, elemNodes[lnn[2]]));
+  return eikonal_solve_triangle(x, d, distSign, far, speed);
 }
 
 double
@@ -187,8 +187,8 @@ FastIterativeMethod::update_tetrahedron(const stk::mesh::Entity * elemNodes, int
   const std::array<int,4> lnn = get_oriented_nodes_tetrahedron(nodeToUpdate);
   const std::array<stk::math::Vector3d,4> x{field_data<double>(myCoordinates, elemNodes[lnn[0]]), field_data<double>(myCoordinates, elemNodes[lnn[1]]), field_data<double>(myCoordinates, elemNodes[lnn[2]]), field_data<double>(myCoordinates, elemNodes[lnn[3]])};
   const std::array<double,3> d{*field_data<double>(myDistance, elemNodes[lnn[0]]), *field_data<double>(myDistance, elemNodes[lnn[1]]), *field_data<double>(myDistance, elemNodes[lnn[2]])};
-  const int sign = LevelSet::sign(*field_data<double>(myDistance, elemNodes[lnn[3]]));
-  return eikonal_solve_tetrahedron(x, d, sign, far, speed);
+  const int distSign = sign(*field_data<double>(myDistance, elemNodes[lnn[3]]));
+  return eikonal_solve_tetrahedron(x, d, distSign, far, speed);
 }
 
 double FastIterativeMethod::element_signed_distance_for_node(ParallelErrorMessage& err, const stk::mesh::Entity & elem, const stk::mesh::Entity & node) const
@@ -213,8 +213,8 @@ double FastIterativeMethod::element_signed_distance_for_node(ParallelErrorMessag
 
 double FastIterativeMethod::updated_node_distance(ParallelErrorMessage& err, const stk::mesh::Entity & node) const
 {
-  const int sign = LevelSet::sign(*field_data<double>(myDistance, node));
-  double updateDistance = sign * std::numeric_limits<double>::max();
+  const int distSign = sign(*field_data<double>(myDistance, node));
+  double updateDistance = distSign * std::numeric_limits<double>::max();
 
   stk::mesh::Selector fieldNotGhost = field_not_ghost_selector();
   for (auto elem : StkMeshEntities{myMesh.begin_elements(node), myMesh.end_elements(node)})
@@ -222,7 +222,7 @@ double FastIterativeMethod::updated_node_distance(ParallelErrorMessage& err, con
     if (fieldNotGhost(mesh().bucket(elem)))
     {
       const double elemNodeDistance = element_signed_distance_for_node(err, elem, node);
-      updateDistance = sign * std::min(std::abs(updateDistance), std::abs(elemNodeDistance));
+      updateDistance = distSign * std::min(std::abs(updateDistance), std::abs(elemNodeDistance));
     }
   }
 
@@ -254,7 +254,7 @@ FastIterativeMethod::have_crossing(const stk::mesh::Entity & elem) const
   {
     const double * dist = field_data<double>(myDistance, elem_nodes[n]);
     STK_ThrowAssert(nullptr != dist);
-    if (LevelSet::sign_change(*dist0, *dist))
+    if (sign_change(*dist0, *dist))
     {
       return true;
     }
@@ -295,8 +295,8 @@ FastIterativeMethod::initialize_element(const stk::mesh::Entity & elem, const do
   {
     const double elemNodeSignedDistance = *field_data<double>(oldDistance, node) / (gradientMagnitude * speed);
     double & nodeDistance = *field_data<double>(myDistance, node);
-    const int sign = LevelSet::sign(nodeDistance);
-    nodeDistance = sign * std::min(std::abs(nodeDistance), std::abs(elemNodeSignedDistance));
+    const int distSign = sign(nodeDistance);
+    nodeDistance = distSign * std::min(std::abs(nodeDistance), std::abs(elemNodeSignedDistance));
   }
 }
 
@@ -343,7 +343,7 @@ void unpack_shared_nodes(const stk::mesh::BulkData & mesh,
   });
 }
 
-void FastIterativeMethod::parallel_communicate_nodes(ParallelErrorMessage& err, std::set<stk::mesh::Entity> & nodes) const
+void FastIterativeMethod::parallel_communicate_nodes(ParallelErrorMessage& /*err*/, std::set<stk::mesh::Entity> & nodes) const
 {
   if (mesh().parallel_size() > 1)
   {
@@ -402,13 +402,13 @@ void unpack_shared_node_distances(const stk::mesh::BulkData & mesh,
       STK_ThrowAssert(nodeIter != nodes.end());
 
       double & nodeDistance = distances[std::distance(nodes.begin(), nodeIter)];
-      const int sign = LevelSet::sign(nodeDistance);
-      nodeDistance = sign * std::min(std::abs(nodeDistance), std::abs(updateDistance));
+      const int distSign = sign(nodeDistance);
+      nodeDistance = distSign * std::min(std::abs(nodeDistance), std::abs(updateDistance));
     }
   });
 }
 
-void FastIterativeMethod::parallel_communicate_node_distances(ParallelErrorMessage& err, const std::set<stk::mesh::Entity> & nodes, std::vector<double> & distances) const
+void FastIterativeMethod::parallel_communicate_node_distances(ParallelErrorMessage& /*err*/, const std::set<stk::mesh::Entity> & nodes, std::vector<double> & distances) const
 {
   if (mesh().parallel_size() > 1)
   {
@@ -469,7 +469,7 @@ std::set<stk::mesh::Entity> FastIterativeMethod::initialize(ParallelErrorMessage
     {
       const double nodeOldDistance = *field_data<double>(oldDistance, node);
       double & nodeDistance = *field_data<double>(myDistance, node);
-      nodeDistance = LevelSet::sign(nodeOldDistance) * std::numeric_limits<double>::max();
+      nodeDistance = sign(nodeOldDistance) * std::numeric_limits<double>::max();
     }
   }
 

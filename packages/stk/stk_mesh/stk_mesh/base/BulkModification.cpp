@@ -37,8 +37,9 @@
 #include <set>                          // for _Rb_tree_const_iterator, etc
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <stdexcept>                    // for runtime_error
-#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer
 #include <stk_util/parallel/CommSparse.hpp>
 #include <utility>                      // for pair

@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef _KOKKOSKERNELS_MEMPOOL_HPP
-#define _KOKKOSKERNELS_MEMPOOL_HPP
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSKERNELS_MEMPOOL_HPP
+#define KOKKOSKERNELS_MEMPOOL_HPP
 
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_Utils.hpp"
@@ -176,10 +163,8 @@ class UniformMemoryPool {
    * initialized_value: the value to initialize \param pool_type_: whether
    * ManyThread2OneChunk or OneThread2OneChunk
    */
-  UniformMemoryPool(const size_t num_chunks_, const size_t set_chunk_size_,
-                    const data_type initialized_value = 0,
-                    const PoolType pool_type_         = OneThread2OneChunk,
-                    bool initialize                   = true)
+  UniformMemoryPool(const size_t num_chunks_, const size_t set_chunk_size_, const data_type initialized_value = 0,
+                    const PoolType pool_type_ = OneThread2OneChunk, bool initialize = true)
       : num_chunks(1),
         num_set_chunks(num_chunks_),
         modular_num_chunks(0),
@@ -200,9 +185,7 @@ class UniformMemoryPool {
     modular_num_chunks = num_chunks - 1;
     overall_size       = num_chunks * chunk_size;
     if (num_set_chunks > 0) {
-      data_view = data_view_t(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "pool data"),
-          overall_size);
+      data_view = data_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "pool data"), overall_size);
     }
     data = (data_view.data());
 
@@ -233,9 +216,9 @@ class UniformMemoryPool {
 
   ~UniformMemoryPool() = default;
 
-  UniformMemoryPool(UniformMemoryPool &&)      = default;
-  UniformMemoryPool(const UniformMemoryPool &) = default;
-  UniformMemoryPool &operator=(UniformMemoryPool &&) = default;
+  UniformMemoryPool(UniformMemoryPool &&)                 = default;
+  UniformMemoryPool(const UniformMemoryPool &)            = default;
+  UniformMemoryPool &operator=(UniformMemoryPool &&)      = default;
   UniformMemoryPool &operator=(const UniformMemoryPool &) = default;
 
   /**
@@ -295,12 +278,10 @@ class UniformMemoryPool {
   }
 
   KOKKOS_INLINE_FUNCTION
-  data_type *get_arbitrary_free_chunk(const size_t &thread_index,
-                                      const size_t max_tries) const {
+  data_type *get_arbitrary_free_chunk(const size_t &thread_index, const size_t max_tries) const {
     size_t chunk_index = thread_index & modular_num_chunks;
     size_t num_try     = 0;
-    while (!Kokkos::atomic_compare_exchange_strong(pchunk_locks + chunk_index,
-                                                   0, 1)) {
+    while (0 != Kokkos::atomic_compare_exchange(pchunk_locks + chunk_index, 0, 1)) {
       chunk_index = (chunk_index + 1) & modular_num_chunks;
       ++num_try;
       if (num_try > max_tries) {
@@ -344,9 +325,7 @@ class UniformMemoryPool {
    * \brief Returns the chunk index of the pointer.
    */
   KOKKOS_INLINE_FUNCTION
-  size_t get_chunk_index(const data_type *chunk_ptr) const {
-    return (chunk_ptr - data) / chunk_size;
-  }
+  size_t get_chunk_index(const data_type *chunk_ptr) const { return (chunk_ptr - data) / chunk_size; }
 
   /**
    * \brief Releases the memory that has been allocated.

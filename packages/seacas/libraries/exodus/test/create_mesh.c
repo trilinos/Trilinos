@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -53,7 +53,7 @@ INT StringToCount(char *size_str)
   else if (rc == 0) {
     size = -1;
   }
-  return (size);
+  return size;
 } /* StringToCount() */
 
 void get_file_name(const char *base, const char *ext, int rank, int nprocs, const char *other,
@@ -334,9 +334,9 @@ void make_mesh(realtyp *x, realtyp *y, realtyp *z, INT *connect, INT map_origin,
 {
   /* create global coordinates */
   size_t k = 0;
-  for (size_t m = 0; m < (num_elements_1d + 1); m++) {
-    for (size_t i = 0; i < (num_elements_1d + 1); i++) {
-      for (size_t j = 0; j < (num_elements_1d + 1); j++, k++) {
+  for (INT m = 0; m < (num_elements_1d + 1); m++) {
+    for (INT i = 0; i < (num_elements_1d + 1); i++) {
+      for (INT j = 0; j < (num_elements_1d + 1); j++, k++) {
         x[k] = (realtyp)j;
         y[k] = (realtyp)i;
         z[k] = (realtyp)m;
@@ -347,10 +347,10 @@ void make_mesh(realtyp *x, realtyp *y, realtyp *z, INT *connect, INT map_origin,
   /* build connectivity array (node list) for mesh */
   size_t elp1sq = (num_elements_1d + 1) * (num_elements_1d + 1);
   size_t cnt    = 0;
-  for (size_t m = 0; m < num_elements_1d; m++) {
+  for (INT m = 0; m < num_elements_1d; m++) {
     k = 0;
-    for (size_t i = 0; i < num_elements_1d; i++) {
-      for (size_t j = 0; j < num_elements_1d; j++, k++) {
+    for (INT i = 0; i < num_elements_1d; i++) {
+      for (INT j = 0; j < num_elements_1d; j++, k++) {
         size_t base    = (m * elp1sq) + k + i + map_origin;
         connect[cnt++] = base;
         connect[cnt++] = base + 1;

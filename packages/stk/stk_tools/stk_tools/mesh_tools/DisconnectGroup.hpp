@@ -34,7 +34,6 @@
 #ifndef _DisconnectGroup_hpp_
 #define _DisconnectGroup_hpp_
 
-#include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Part.hpp"
@@ -47,6 +46,7 @@
 #include <ostream>
 
 namespace stk {
+namespace mesh { class BulkData; }
 namespace tools {
 namespace impl {
 

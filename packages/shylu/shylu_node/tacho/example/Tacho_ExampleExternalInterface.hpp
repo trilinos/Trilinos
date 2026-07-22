@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
 #define __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
@@ -36,10 +28,12 @@ enum TACHO_PARAM_INDICES {
   VERBOSITY,
   SMALLPROBLEMTHRESHOLDSIZE,
   SOLUTION_METHOD,
+#ifdef TACHO_DEPRECATED_PARAMETERS
   TASKING_OPTION_BLOCKSIZE,
   TASKING_OPTION_PANELSIZE,
   TASKING_OPTION_MAXNUMSUPERBLOCKS,
   LEVELSET_OPTION_SCHEDULING,
+#endif
   LEVELSET_OPTION_DEVICE_LEVEL_CUT,
   LEVELSET_OPTION_DEVICE_FACTOR_THRES,
   LEVELSET_OPTION_DEVICE_SOLVE_THRES,
@@ -349,13 +343,17 @@ private:
     // solution method
     m_Solver.setSolutionMethod(solverParams[SOLUTION_METHOD]);
 
+#ifdef TACHO_DEPRECATED_PARAMETERS
     // tasking options
     m_Solver.setBlocksize(solverParams[TASKING_OPTION_BLOCKSIZE]);
     m_Solver.setPanelsize(solverParams[TASKING_OPTION_PANELSIZE]);
     m_Solver.setMaxNumberOfSuperblocks(solverParams[TASKING_OPTION_MAXNUMSUPERBLOCKS]);
+#endif
 
     // levelset options
+#ifdef TACHO_DEPRECATED_PARAMETERS
     m_Solver.setLevelSetScheduling(solverParams[LEVELSET_OPTION_SCHEDULING]);
+#endif
     m_Solver.setLevelSetOptionDeviceLevelCut(solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
     m_Solver.setLevelSetOptionDeviceFunctionThreshold(solverParams[LEVELSET_OPTION_DEVICE_FACTOR_THRES],
                                                       solverParams[LEVELSET_OPTION_DEVICE_SOLVE_THRES]);

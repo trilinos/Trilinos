@@ -95,14 +95,13 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
 
-
   template<typename DeviceType>
-  template<class MatrixViewType>
+  template<ordinal_type D, class MatrixViewType>
   KOKKOS_INLINE_FUNCTION
   typename MatrixViewType::value_type
   RealSpaceTools<DeviceType>::Serial::
-  det( const MatrixViewType inMat ) {
-
+  det( const MatrixViewType inMat )
+  {
     typedef typename decltype(inMat)::non_const_value_type value_type;
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -118,27 +117,61 @@ namespace Intrepid2 {
 #endif
     }
 #endif
-    const auto dim = inMat.extent(0);
-    
-    value_type r_val = 0.0;
-    switch (dim) {
-    case 3:
-      r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
-                inMat(1,0) * inMat(2,1) * inMat(0,2) +
-                inMat(2,0) * inMat(0,1) * inMat(1,2) -
-                inMat(2,0) * inMat(1,1) * inMat(0,2) -
-                inMat(0,0) * inMat(2,1) * inMat(1,2) -
-                inMat(1,0) * inMat(0,1) * inMat(2,2) );
-      break;
-    case 2:
-      r_val = ( inMat(0,0) * inMat(1,1) -
-                inMat(0,1) * inMat(1,0) );
-      break;
-    case 1:
-      r_val = ( inMat(0,0) );
-      break;
+    if constexpr (D==1)
+    {
+      value_type r_val = ( inMat(0,0) );
+      return r_val;
     }
-    return r_val;
+    else if constexpr (D==2)
+    {
+      value_type r_val = ( inMat(0,0) * inMat(1,1) -
+                           inMat(0,1) * inMat(1,0) );
+      return r_val;
+    }
+    else if constexpr (D==3)
+    {
+      value_type r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
+                           inMat(1,0) * inMat(2,1) * inMat(0,2) +
+                           inMat(2,0) * inMat(0,1) * inMat(1,2) -
+                           inMat(2,0) * inMat(1,1) * inMat(0,2) -
+                           inMat(0,0) * inMat(2,1) * inMat(1,2) -
+                           inMat(1,0) * inMat(0,1) * inMat(2,2) );
+      return r_val;
+    }
+    static_assert((D >= 1) && (D <= 3));
+  }
+
+  template<typename DeviceType>
+  template<class MatrixViewType>
+  KOKKOS_INLINE_FUNCTION
+  typename MatrixViewType::value_type
+  RealSpaceTools<DeviceType>::Serial::
+  det( const MatrixViewType inMat ) {
+    typename decltype(inMat)::non_const_value_type val(0);
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      bool dbgInfo = false;
+      INTREPID2_TEST_FOR_DEBUG_ABORT( getFunctorRank( inMat ) != 2, dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Rank of matrix argument must be 2!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) != inMat.extent(1), dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) < 1 || inMat.extent(0) > 3, dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE      
+      if (dbgInfo) return val;
+#endif
+    }
+#endif
+    const auto dim = inMat.extent(0);
+    switch (dim) {
+      case 3: val = det<3, MatrixViewType>(inMat); break;
+      case 2: val = det<2, MatrixViewType>(inMat); break;
+      case 1: val = det<1, MatrixViewType>(inMat); break;
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+      }
+    }
+    return val;
   }
 
   // ------------------------------------------------------------------------------------
@@ -202,10 +235,10 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type i) const {
-        const ordinal_type jend = _input.extent(1);
-        const ordinal_type kend = _input.extent(2);
-        const ordinal_type lend = _input.extent(3);
-        const ordinal_type mend = _input.extent(4);
+        const ordinal_type jend = _input.extent_int(1);
+        const ordinal_type kend = _input.extent_int(2);
+        const ordinal_type lend = _input.extent_int(3);
+        const ordinal_type mend = _input.extent_int(4);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type k=0;k<kend;++k)
@@ -226,9 +259,9 @@ namespace Intrepid2 {
     
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(output)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(input)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::extractScalarValues(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -325,9 +358,9 @@ namespace Intrepid2 {
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(output)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(input)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::clone(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -400,9 +433,9 @@ namespace Intrepid2 {
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(absArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::absval(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -454,7 +487,7 @@ namespace Intrepid2 {
         auto vec = ( _inVecs.rank() == 2 ? Kokkos::subview(_inVecs, i,    Kokkos::ALL()) :
                                            Kokkos::subview(_inVecs, i, j, Kokkos::ALL()) );
 
-        _normArray(i, j) = RealSpaceTools<>::Serial::vectorNorm(vec, _normType);
+        _normArray.access(i, j) = RealSpaceTools<>::Serial::vectorNorm(vec, _normType);
       }
     };
   }
@@ -482,9 +515,9 @@ namespace Intrepid2 {
 
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(normArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::vectorNorm(..): input/output views' memory spaces are not compatible with DeviceType");
     using FunctorType = FunctorRealSpaceTools::F_vectorNorm<decltype(normArray),decltype(inVecs)>;
@@ -570,9 +603,9 @@ namespace Intrepid2 {
 
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(transposeMats)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inMats)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::transpose(..): input/output views' memory spaces are not compatible with DeviceType");
     using FunctorType = FunctorRealSpaceTools::F_transpose<decltype(transposeMats),decltype(inMats)>;
@@ -593,7 +626,8 @@ namespace Intrepid2 {
     /**
       \brief Functor to compute inverse see Intrepid2::RealSpaceTools for more
     */ 
-    template<typename inverseMatViewType,
+    template<ordinal_type D,
+             typename inverseMatViewType,
              typename inMatViewType>
     struct F_inverse {
       typedef typename inMatViewType::non_const_value_type value_type;
@@ -612,7 +646,7 @@ namespace Intrepid2 {
       apply_inverse(       invViewType inv,
                      const matViewType mat ) {
         // compute determinant
-        const value_type val = RealSpaceTools<>::Serial::det(mat);
+        const value_type val = RealSpaceTools<>::Serial::det<D,matViewType>(mat);
         
 #ifdef HAVE_INTREPID2_DEBUG
         {
@@ -626,20 +660,20 @@ namespace Intrepid2 {
 #endif
         }
 #endif
-        switch (mat.extent(0)) {
-        case 1: {
+        if constexpr (D==1)
+        {
           inv(0,0) = value_type(1)/mat(0,0);
-          break;
         }
-        case 2: {
+        else if constexpr (D==2)
+        {
           inv(0,0) =   mat(1,1)/val;
           inv(1,1) =   mat(0,0)/val;
 
           inv(1,0) = - mat(1,0)/val;
           inv(0,1) = - mat(0,1)/val;
-          break;
         }
-        case 3: {
+        else if constexpr (D==3)
+        {
           value_type val0, val1, val2;
 
           val0 =   mat(1,1)*mat(2,2) - mat(2,1)*mat(1,2);
@@ -665,9 +699,8 @@ namespace Intrepid2 {
           inv(0,2) = val0/val;
           inv(1,2) = val1/val;
           inv(2,2) = val2/val;
-          break;
         }
-        }
+        static_assert((D >= 1) && (D <= 3));
       }
       
       template< bool B, class T = void >
@@ -711,7 +744,7 @@ namespace Intrepid2 {
   }
 
   template<typename DeviceType>
-  template<class InverseMatrixViewType, class MatrixViewType>
+  template<ordinal_type D, class InverseMatrixViewType, class MatrixViewType>
   void
   RealSpaceTools<DeviceType>::
   inverse( InverseMatrixViewType inverseMats, MatrixViewType inMats ) {
@@ -734,7 +767,7 @@ namespace Intrepid2 {
 #endif
 
     using ExecSpaceType = typename DeviceType::execution_space;
-    using FunctorType = FunctorRealSpaceTools::F_inverse<InverseMatrixViewType, MatrixViewType>;
+    using FunctorType = FunctorRealSpaceTools::F_inverse<D, InverseMatrixViewType, MatrixViewType>;
 
     switch (rank) {
     case 3: { // output P,D,D and input P,D,D
@@ -755,6 +788,24 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
     }
+    }
+  }
+
+  template<typename DeviceType>
+  template<class InverseMatrixViewType, class MatrixViewType>
+  void
+  RealSpaceTools<DeviceType>::
+  inverse( InverseMatrixViewType inverseMats, MatrixViewType inMats ) {
+    // both Views are either shape C,P,D,D or P,D,D
+    // either way, the second rank is D
+    
+    const auto dim = inMats.extent(2);
+    switch (dim)
+    {
+      case 1: inverse<1,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
+      case 2: inverse<2,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
+      case 3: inverse<3,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
+      default: INTREPID2_TEST_FOR_EXCEPTION((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
     }
   }
 
@@ -929,11 +980,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(sumArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray1)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray2)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::add(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1028,11 +1079,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(diffArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray1)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray2)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::subtract(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1128,9 +1179,9 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(scaledArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inArray)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::scale(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1190,7 +1241,7 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         auto vec2 = ( r == 2 ? Kokkos::subview(_inVecs2, i,    Kokkos::ALL()) :
                                Kokkos::subview(_inVecs2, i, j, Kokkos::ALL()) );
 
-        _dotArray(i,j) = RealSpaceTools<>::Serial::dot(vec1, vec2);
+        _dotArray.access(i,j) = RealSpaceTools<>::Serial::dot(vec1, vec2);
       }
     };
   }
@@ -1225,11 +1276,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(dotArray)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs1)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs2)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::dot(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1249,7 +1300,8 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
     */ 
     template<typename matVecViewType,
              typename inMatViewType,
-             typename inVecViewType>
+             typename inVecViewType,
+             bool transpose>
     struct F_matvec {
             matVecViewType _matVecs;
       const inMatViewType  _inMats;
@@ -1290,7 +1342,10 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         for (ordinal_type i=0;i<iend;++i) {
           result(i) = 0;
           for (ordinal_type j=0;j<jend;++j)
-            result(i) += mat(i, j)*vec(j);
+            if constexpr (transpose)
+              result(i) += mat(j, i)*vec(j);
+            else
+              result(i) += mat(i, j)*vec(j);
         }
       }
     };
@@ -1355,7 +1410,8 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
   RealSpaceTools<DeviceType>::
   matvec(       Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
           const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
-          const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs ) {
+          const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs, 
+          const bool transpose) {
 
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument,
@@ -1373,10 +1429,6 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         INTREPID2_TEST_FOR_EXCEPTION( matVecs.extent(i) != inVecs.extent(i), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector array arguments do not agree!");
       }
-      // matvec compatibility 
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(0) != matVecs.extent(matVecs.rank()-1) || 
-                                    inMats.extent(1) != inVecs.extent(inVecs.rank()-1), std::invalid_argument,
-                                    ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
     } else if (inVecs.rank() < matVecs.rank()) {
       // multiple matrix, single input and multiple output
       INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != (matVecs.rank()+1), std::invalid_argument,
@@ -1385,10 +1437,6 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != matVecs.extent(i), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector and matrix array arguments do not agree!");
       }
-      // matvec compatibility 
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) != matVecs.extent(matVecs.rank()-1) || 
-                                    inMats.extent(inMats.rank()-1) != inVecs.extent(inVecs.rank()-1), std::invalid_argument,
-                                    ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
     } else {
       // multiple matrix, multiple input and multiple output
       INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != (matVecs.rank()+1), std::invalid_argument,
@@ -1399,25 +1447,29 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != matVecs.extent(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector and matrix array arguments do not agree!");
       }
-      for (size_type i=0;i<inVecs.rank();++i) {
+      for (ordinal_type i=0;i<static_cast<ordinal_type>(inVecs.rank()-1);++i) {
         INTREPID2_TEST_FOR_EXCEPTION( matVecs.extent(i) != inVecs.extent(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector array arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-1) != inVecs.extent(inVecs.rank()-1), std::invalid_argument,
-                                      ">>> ERROR (RealSpaceTools::matvec): Matrix column dimension does not match to the length of a vector!");
     }
+    // matvec compatibility 
+    INTREPID2_TEST_FOR_EXCEPTION( !transpose && (inMats.extent(inMats.rank()-2) != matVecs.extent(matVecs.rank()-1) || 
+                                  inMats.extent(inMats.rank()-1) != inVecs.extent(inVecs.rank()-1)), std::invalid_argument,
+                                  ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
+    INTREPID2_TEST_FOR_EXCEPTION( transpose && (inMats.extent(inMats.rank()-1) != matVecs.extent(matVecs.rank()-1) || 
+                                  inMats.extent(inMats.rank()-2) != inVecs.extent(inVecs.rank()-1)), std::invalid_argument,
+                                  ">>> ERROR (RealSpaceTools::matvec): Matvec dimensions are not compatible each other.");
+
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(matVecs)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inMats)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inVecs)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::matvec(..): input/output views' memory spaces are not compatible with DeviceType");
-
-    using FunctorType = FunctorRealSpaceTools::F_matvec<decltype(matVecs),decltype(inMats),decltype(inVecs)>;
 
     size_type loopSize = 1;
     const ordinal_type r = matVecs.rank() - 1;
@@ -1426,7 +1478,13 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 
     using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(matVecs, inMats, inVecs) );
+    if(transpose) {
+      using FunctorType = FunctorRealSpaceTools::F_matvec<decltype(matVecs),decltype(inMats),decltype(inVecs),true>;
+      Kokkos::parallel_for( policy, FunctorType(matVecs, inMats, inVecs) );
+    } else {
+      using FunctorType = FunctorRealSpaceTools::F_matvec<decltype(matVecs),decltype(inMats),decltype(inVecs),false>;
+      Kokkos::parallel_for( policy, FunctorType(matVecs, inMats, inVecs) );
+    }
   }
 
 
@@ -1456,9 +1514,9 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(outMats)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inMats)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::AtA(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -1507,25 +1565,31 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 
         const auto r = _inLeft.rank();
 
-        auto left   = ( r == 1 ? Kokkos::subview(_inLeft,         Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subview(_inLeft,   i,    Kokkos::ALL()) :
-                                 Kokkos::subview(_inLeft,   i, j, Kokkos::ALL()) );
-
-        auto right  = ( r == 1 ? Kokkos::subview(_inRight,        Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subview(_inRight,  i,    Kokkos::ALL()) :
-                                 Kokkos::subview(_inRight,  i, j, Kokkos::ALL()) );
-
-        auto result = ( r == 1 ? Kokkos::subview(_vecProd,        Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subview(_vecProd,  i,    Kokkos::ALL()) :
-                                 Kokkos::subview(_vecProd,  i, j, Kokkos::ALL()) );
-
         // branch prediction is possible
-        if (_is_vecprod_3d) {
-          result(0) = left(1)*right(2) - left(2)*right(1);
-          result(1) = left(2)*right(0) - left(0)*right(2);
-          result(2) = left(0)*right(1) - left(1)*right(0);
+        if(r == 1) {
+          if (_is_vecprod_3d) {
+            _vecProd(0) = _inLeft(1)*_inRight(2) - _inLeft(2)*_inRight(1);
+            _vecProd(1) = _inLeft(2)*_inRight(0) - _inLeft(0)*_inRight(2);
+            _vecProd(2) = _inLeft(0)*_inRight(1) - _inLeft(1)*_inRight(0);
+          } else {
+            _vecProd(0) = _inLeft(0)*_inRight(1) - _inLeft(1)*_inRight(0);
+          }
+        } else if(r == 2) {
+          if (_is_vecprod_3d) {
+            _vecProd(i, 0) = _inLeft(i, 1)*_inRight(i, 2) - _inLeft(i, 2)*_inRight(i, 1);
+            _vecProd(i, 1) = _inLeft(i, 2)*_inRight(i, 0) - _inLeft(i, 0)*_inRight(i, 2);
+            _vecProd(i, 2) = _inLeft(i, 0)*_inRight(i, 1) - _inLeft(i, 1)*_inRight(i, 0);
+          } else {
+            _vecProd(i, 0) = _inLeft(i, 0)*_inRight(i, 1) - _inLeft(i, 1)*_inRight(i, 0);
+          }
         } else {
-          result(0) = left(0)*right(1) - left(1)*right(0);
+          if (_is_vecprod_3d) {
+            _vecProd(i, j, 0) = _inLeft(i, j, 1)*_inRight(i, j, 2) - _inLeft(i, j, 2)*_inRight(i, j, 1);
+            _vecProd(i, j, 1) = _inLeft(i, j, 2)*_inRight(i, j, 0) - _inLeft(i, j, 0)*_inRight(i, j, 2);
+            _vecProd(i, j, 2) = _inLeft(i, j, 0)*_inRight(i, j, 1) - _inLeft(i, j, 1)*_inRight(i, j, 0);
+          } else {
+            _vecProd(i, j, 0) = _inLeft(i, j, 0)*_inRight(i, j, 1) - _inLeft(i, j, 1)*_inRight(i, j, 0);
+          }
         }
       }
     };
@@ -1571,11 +1635,11 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 #endif
     using MemSpaceType = typename DeviceType::memory_space;
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(vecProd)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inLeft)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(inRight)::memory_space>::accessible;
     static_assert(are_accessible, "RealSpaceTools<DeviceType>::vecprod(..): input/output views' memory spaces are not compatible with DeviceType");
 

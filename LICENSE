@@ -11,6 +11,8 @@ name>/LICENSE).
 
 For Trilinos (unless otherwise stated by package, directory and/or file),
 
+SPDX-License-Identifier: BSD-3-Clause
+
 Copyright (c) 2001-2024 NTESS and the Trilinos contributors.
 
 Redistribution and use in source and binary forms, with or without

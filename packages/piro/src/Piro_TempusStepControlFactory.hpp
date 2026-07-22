@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        Piro: Strategy package for embedded analysis capabilitites
+//
+// Copyright 2010 NTESS and the Piro contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef __Piro_TempusStepControlFactory_hpp__
 #define __Piro_TempusStepControlFactory_hpp__
 

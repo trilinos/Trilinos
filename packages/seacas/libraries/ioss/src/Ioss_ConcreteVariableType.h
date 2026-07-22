@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -21,7 +21,7 @@ namespace Ioss {
   };
 
 #define MAKE_CLASS(X)                                                                              \
-  class IOSS_EXPORT X : public VariableType                                                        \
+  class IOSS_EXPORT X final : public VariableType                                                  \
   {                                                                                                \
   public:                                                                                          \
     IOSS_NODISCARD std::string label(int which, const char suffix_sep = '_') const override;       \
@@ -37,7 +37,7 @@ namespace Ioss {
   private:                                                                                         \
   }
 
-  class IOSS_EXPORT Invalid_Storage : public VariableType
+  class IOSS_EXPORT Invalid_Storage final : public VariableType
   {
   public:
     Invalid_Storage(const Invalid_Storage &) = delete;
@@ -54,7 +54,7 @@ namespace Ioss {
     Invalid_Storage();
   };
 
-  class IOSS_EXPORT Scalar : public VariableType
+  class IOSS_EXPORT Scalar final : public VariableType
   {
   public:
     Scalar(const Scalar &) = delete;

@@ -1,25 +1,17 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 
 #include <sstream>
 #include <iostream>
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 namespace Test {
 
@@ -92,37 +84,37 @@ void test_is_scoped_enum() {
   using Kokkos::Impl::is_scoped_enum_v;
 
   static_assert(!is_scoped_enum<int>{});
-  static_assert(!is_scoped_enum<int>::value);
+  static_assert(!is_scoped_enum<int>::value);  // NOLINT
   static_assert(!is_scoped_enum_v<int>);
   static_assert(
       is_public_unambiguous_base_of_v<std::false_type, is_scoped_enum<int>>);
 
   static_assert(!is_scoped_enum<Class>{});
-  static_assert(!is_scoped_enum<Class>::value);
+  static_assert(!is_scoped_enum<Class>::value);  // NOLINT
   static_assert(!is_scoped_enum_v<Class>);
   static_assert(
       is_public_unambiguous_base_of_v<std::false_type, is_scoped_enum<Class>>);
 
   static_assert(!is_scoped_enum<Enum>{});
-  static_assert(!is_scoped_enum<Enum>::value);
+  static_assert(!is_scoped_enum<Enum>::value);  // NOLINT
   static_assert(!is_scoped_enum_v<Enum>);
   static_assert(
       is_public_unambiguous_base_of_v<std::false_type, is_scoped_enum<Enum>>);
 
   static_assert(!is_scoped_enum<EnumBool>{});
-  static_assert(!is_scoped_enum<EnumBool>::value);
+  static_assert(!is_scoped_enum<EnumBool>::value);  // NOLINT
   static_assert(!is_scoped_enum_v<EnumBool>);
   static_assert(is_public_unambiguous_base_of_v<std::false_type,
                                                 is_scoped_enum<EnumBool>>);
 
   static_assert(is_scoped_enum<ScopedEnum>{});
-  static_assert(is_scoped_enum<ScopedEnum>::value);
+  static_assert(is_scoped_enum<ScopedEnum>::value);  // NOLINT
   static_assert(is_scoped_enum_v<ScopedEnum>);
   static_assert(is_public_unambiguous_base_of_v<std::true_type,
                                                 is_scoped_enum<ScopedEnum>>);
 
   static_assert(is_scoped_enum<ScopedEnumShort>{});
-  static_assert(is_scoped_enum<ScopedEnumShort>::value);
+  static_assert(is_scoped_enum<ScopedEnumShort>::value);  // NOLINT
   static_assert(is_scoped_enum_v<ScopedEnumShort>);
   static_assert(
       is_public_unambiguous_base_of_v<std::true_type,

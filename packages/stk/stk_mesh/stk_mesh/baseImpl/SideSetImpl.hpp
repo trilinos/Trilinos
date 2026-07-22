@@ -42,7 +42,6 @@
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max
 #include <functional>                   // for less, equal_to
-#include <iostream>                     // for operator<<, basic_ostream, etc
 #include <list>                         // for list
 #include <map>                          // for map, map<>::value_compare
 #include <set>
@@ -61,6 +60,14 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
+struct SidesetPartAttribute
+{
+  bool value;
+};
+
+void set_sideset_part_attribute(stk::mesh::Part& part, const bool hasAttribute);
+bool has_sideset_part_attribute(stk::mesh::Part& part);
+bool get_sideset_part_attribute(stk::mesh::Part& part);
 
 template<typename KEY>
 struct SideSetKeyGenerator {

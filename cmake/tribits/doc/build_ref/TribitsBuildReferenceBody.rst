@@ -506,7 +506,7 @@ packages.
 
 If one wants to enable a package along with the enable of other packages, but
 not the test suite for that package, then one can use a "exclude-list"
-appraoch to disable the tests for that package by configuring with, for
+approach to disable the tests for that package by configuring with, for
 example::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
@@ -521,7 +521,7 @@ packages that might get implicitly enabled).  One might use this approach if
 one wants to build and install package ``<TRIBITS_PACKAGE_2>`` but does not
 want to build and run the test suite for that package.
 
-Alternatively, one can use an "include-list" appraoch to enable packages and
+Alternatively, one can use an "include-list" approach to enable packages and
 only enable tests for specific packages, for example, configuring with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
@@ -1488,6 +1488,13 @@ any required TPLs.  The third flag tells the auto-detection routines that
 search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
 
+The TPL_FIND_SHARED_LIBS setting can also be set per-TPL, in the case that
+the desire is to find shared libraries for one TPL, but static libraries for
+all others::
+
+ -D TPL_FIND_SHARED_LIBS=OFF \
+ -D <TPLNAME>_FIND_SHARED_LIBS=ON
+
 
 Changing include directories in downstream CMake projects to non-system
 -----------------------------------------------------------------------
@@ -2230,6 +2237,21 @@ This will override the global behavior set by
 ``<TRIBITS_PACKAGE>``.
 
 
+Setting or disabling Python
+----------------------------
+
+To set which Python interpreter is used, configure with::
+
+  -D Python3_EXECUTABLE=<python-path>
+
+Otherwise, Python will be found automatically by default using
+``find_python(Python3)`` internally (see `FindPython3.cmake`_).
+
+To disable the finding and usage of Python, configure with (empty)::
+
+  -D Python3_EXECUTABLE=
+
+
 Outputting package dependency information
 -----------------------------------------
 
@@ -2952,7 +2974,7 @@ printed to cmake STDOUT.
 
 
 Show parent(s) commit info in the repo version output
-----------------------------------------------------
+-----------------------------------------------------
 
 .. _<Project>_SHOW_GIT_COMMIT_PARENTS:
 
@@ -4489,5 +4511,8 @@ dashboard``.
 .. _TriBITS TribitsExampleApp Tests: https://github.com/TriBITSPub/TriBITS/blob/master/test/core/ExamplesUnitTests/TribitsExampleApp_Tests.cmake
 
 .. _xSDK Community Package Policies: https://doi.org/10.6084/m9.figshare.4495136
+
+.. _FindPython3.cmake: https://cmake.org/cmake/help/latest/module/FindPython3.html
+
 
 ..  LocalWords:  templated instantiation Makefiles CMake

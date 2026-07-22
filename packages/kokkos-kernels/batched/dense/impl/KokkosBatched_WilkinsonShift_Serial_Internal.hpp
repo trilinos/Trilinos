@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_WILKINSON_SHIFT_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_WILKINSON_SHIFT_SERIAL_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_WILKINSON_SHIFT_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_WILKINSON_SHIFT_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -29,12 +16,10 @@ namespace KokkosBatched {
 ///
 struct SerialWilkinsonShiftInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const ValueType a, const ValueType b, const ValueType c,
-      const ValueType d,
-      /* */ Kokkos::complex<ValueType>* lambda1,
-      /* */ Kokkos::complex<ValueType>* lambda2,
-      /* */ bool* is_complex) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const ValueType a, const ValueType b, const ValueType c, const ValueType d,
+                                           /* */ Kokkos::complex<ValueType>* lambda1,
+                                           /* */ Kokkos::complex<ValueType>* lambda2,
+                                           /* */ bool* is_complex) {
     /// compute eigenvalues of 2x2 system [a b;
     ///                                    c d]
     /// when the system has a real complex values,
@@ -52,13 +37,13 @@ struct SerialWilkinsonShiftInternal {
 
     if (v < 0) {
       // complex
-      const value_type sqrt_v = Kokkos::ArithTraits<value_type>::sqrt(-v);
+      const value_type sqrt_v = KokkosKernels::ArithTraits<value_type>::sqrt(-v);
       *lambda1                = Kokkos::complex<value_type>(p, sqrt_v);
       *lambda2                = Kokkos::complex<value_type>(p, -sqrt_v);
       *is_complex             = true;
     } else {
       // real
-      const value_type sqrt_v = Kokkos::ArithTraits<value_type>::sqrt(v);
+      const value_type sqrt_v = KokkosKernels::ArithTraits<value_type>::sqrt(v);
       *lambda1                = Kokkos::complex<value_type>(p + sqrt_v);
       *lambda2                = Kokkos::complex<value_type>(p - sqrt_v);
       *is_complex             = false;

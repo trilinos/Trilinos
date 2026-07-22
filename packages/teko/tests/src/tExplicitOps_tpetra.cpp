@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "tExplicitOps_tpetra.hpp"
 
@@ -56,14 +19,15 @@
 #include "Teko_TpetraHelpers.hpp"
 
 // Thyra includes
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 
-// TriUtils includes
-#include "Trilinos_Util_CrsMatrixGallery.h"
+// Galeri / Xpetra includes
+#include "Galeri_XpetraMaps.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraParameters.hpp"
 
 // Test-rig
 #include "Test_Utils.hpp"
@@ -74,55 +38,78 @@ namespace Test {
 using Teuchos::rcp;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
-using Thyra::epetraLinearOp;
+
+namespace {
+
+using ST = Teko::ST;
+using LO = Teko::LO;
+using GO = Teko::GO;
+using NT = Teko::NT;
+
+using map_t = Tpetra::Map<LO, GO, NT>;
+using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+
+RCP<crs_t> build2DMatrix(const std::string& problemName, const RCP<const Teuchos::Comm<int>>& comm,
+                         GO nx, GO ny) {
+  Teuchos::ParameterList galeriList;
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
+  galeriList.set("mx", comm->getSize());
+  galeriList.set("my", 1);
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian2D", comm, galeriList);
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
+          problemName, tMap, galeriList);
+  return problem->BuildMatrix();
+}
+
+RCP<crs_t> buildEyeMatrix(const RCP<const Teuchos::Comm<int>>& comm, GO size) {
+  Teuchos::ParameterList galeriList;
+  galeriList.set("n", size);
+
+  auto tMap = Galeri::Xpetra::CreateMap<LO, GO, map_t>("Cartesian1D", comm, galeriList);
+
+  auto problem =
+      Galeri::Xpetra::BuildProblem<ST, LO, GO, map_t, crs_t, Tpetra::MultiVector<ST, LO, GO, NT>>(
+          "Identity", tMap, galeriList);
+
+  return problem->BuildMatrix();
+}
+
+}  // namespace
 
 void tExplicitOps_tpetra::initializeTest() {
-  const Epetra_Comm& comm_epetra                   = *GetComm();
-  const RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  const RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   tolerance_ = 1.0e-4;
 
-  int nx = 39;  // essentially random values
-  int ny = 53;
+  GO nx = 39;  // essentially random values
+  GO ny = 53;
 
   // create some big blocks to play with
-  Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d", comm_epetra, false);
-  FGallery.Set("nx", nx);
-  FGallery.Set("ny", ny);
-  Epetra_CrsMatrix& epetraF = FGallery.GetMatrixRef();
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraF =
-      Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(rcpFromRef(epetraF), comm_tpetra);
-  F_ = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getDomainMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getRangeMap()), tpetraF);
+  auto tpetraF = build2DMatrix("Recirc2D", comm_tpetra, nx, ny);
+  F_           = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraF->getDomainMap()), tpetraF);
 
   // create some big blocks to play with
-  Trilinos_Util::CrsMatrixGallery GGallery("laplace_2d", comm_epetra, false);
-  GGallery.Set("nx", nx);
-  GGallery.Set("ny", ny);
-  Epetra_CrsMatrix& epetraG = GGallery.GetMatrixRef();
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraG =
-      Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(rcpFromRef(epetraG), comm_tpetra);
-  G_ = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getDomainMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getRangeMap()), tpetraG);
+  auto tpetraG = build2DMatrix("Laplace2D", comm_tpetra, nx, ny);
+  G_           = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraG->getDomainMap()), tpetraG);
 
   // create some big blocks to play with
-  Trilinos_Util::CrsMatrixGallery HGallery("eye", comm_epetra, false);
-  HGallery.Set("nx", nx * ny);
-  // HGallery.Set("ny",ny);
-  Epetra_CrsMatrix& epetraH = HGallery.GetMatrixRef();
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > tpetraH =
-      Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(rcpFromRef(epetraH), comm_tpetra);
-  H_ = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getDomainMap()),
-      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getRangeMap()), tpetraH);
+  auto tpetraH = buildEyeMatrix(comm_tpetra, nx * ny);
+  H_           = Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getRangeMap()),
+      Thyra::tpetraVectorSpace<ST, LO, GO, NT>(tpetraH->getDomainMap()), tpetraH);
 
-  RCP<Tpetra::Vector<ST, LO, GO, NT> > v =
+  RCP<Tpetra::Vector<ST, LO, GO, NT>> v =
       rcp(new Tpetra::Vector<ST, LO, GO, NT>(tpetraF->getRangeMap()));
   v->randomize();
-  RCP<Thyra::VectorBase<ST> > tV = Thyra::createVector<ST, LO, GO, NT>(
-      v, Thyra::createVectorSpace<ST, LO, GO, NT>(tpetraF->getRowMap()));
+  RCP<Thyra::VectorBase<ST>> tV =
+      Thyra::createVector<ST, LO, GO, NT>(v, Thyra::createVectorSpace<ST, LO, GO, NT>(v->getMap()));
   D_ = Thyra::diagonal(tV);
 }
 
@@ -135,43 +122,44 @@ int tExplicitOps_tpetra::runTest(int verbosity, std::ostream& stdstrm, std::ostr
   failstrm << "tExplicitOps_tpetra";
 
   status = test_mult_diagScaleMatProd(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"mult_diagScaleMatProd\" ... PASSED",
-                "   \"mult_diagScaleMatProd\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"mult_diagScaleMatProd\" ... PASSED",
+                       "   \"mult_diagScaleMatProd\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_mult_diagScaling(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"mult_diagScaling\" ... PASSED",
-                "   \"mult_diagScaling\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"mult_diagScaling\" ... PASSED",
+                       "   \"mult_diagScaling\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_add(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"add\" ... PASSED", "   \"add\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"add\" ... PASSED", "   \"add\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_mult_modScaleMatProd(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"mult_modScaleMatProd\" ... PASSED",
-                "   \"mult_modScaleMatProd\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"mult_modScaleMatProd\" ... PASSED",
+                       "   \"mult_modScaleMatProd\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = test_add_mod(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"add_mod\" ... PASSED", "   \"add\" ... FAILED");
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"add_mod\" ... PASSED", "   \"add\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
 
   status = allTests;
   if (verbosity >= 10) {
-    Teko_TEST_MSG(failstrm, 0, "tExplicitOps_tpetra...PASSED", "tExplicitOps_tpetra...FAILED");
+    Teko_TEST_MSG_tpetra(failstrm, 0, "tExplicitOps_tpetra...PASSED",
+                         "tExplicitOps_tpetra...FAILED");
   } else {  // Normal Operating Procedures (NOP)
-    Teko_TEST_MSG(failstrm, 0, "...PASSED", "tExplicitOps_tpetra...FAILED");
+    Teko_TEST_MSG_tpetra(failstrm, 0, "...PASSED", "tExplicitOps_tpetra...FAILED");
   }
 
   return failcount;
@@ -185,7 +173,7 @@ bool tExplicitOps_tpetra::test_mult_diagScaleMatProd(int verbosity, std::ostream
   tester.set_all_error_tol(1e-10);
   tester.show_all_tests(true);
 
-  RCP<const Thyra::LinearOpBase<ST> > thyOp;
+  RCP<const Thyra::LinearOpBase<ST>> thyOp;
   Teko::LinearOp expOp;
 
   thyOp = Thyra::multiply(Teko::scale(-4.0, F_), D_, Teko::adjoint(G_));
@@ -225,7 +213,7 @@ bool tExplicitOps_tpetra::test_mult_diagScaling(int verbosity, std::ostream& os)
   tester.set_all_error_tol(1e-10);
   tester.show_all_tests(true);
 
-  RCP<const Thyra::LinearOpBase<ST> > thyOp;
+  RCP<const Thyra::LinearOpBase<ST>> thyOp;
   Teko::LinearOp expOp;
 
   thyOp = Teko::multiply(Teko::scale(-4.0, F_), D_);
@@ -271,9 +259,9 @@ bool tExplicitOps_tpetra::test_mult_modScaleMatProd(int verbosity, std::ostream&
   thyOp = Teko::multiply(Teko::scale(-4.0, F_), D_, Teko::adjoint(G_));
   expOp = Teko::explicitMultiply(Teko::scale(-4.0, F_), D_, Teko::adjoint(G_), expOp);
 
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp1 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop1 = tOp1->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp1 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop1 = tOp1->getConstTpetraOperator();
 
   {
     std::stringstream ss;
@@ -285,15 +273,15 @@ bool tExplicitOps_tpetra::test_mult_modScaleMatProd(int verbosity, std::ostream&
     if (not result || verbosity >= 10) os << ss.str();
   }
 
-  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT> > tF =
-      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT> >(F_);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > crsF =
-      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT> >(tF->getTpetraOperator(), true);
+  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tF =
+      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(F_);
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> crsF =
+      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tF->getTpetraOperator(), true);
   crsF->scale(5.0);
-  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT> > tG =
-      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT> >(G_);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > crsG =
-      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT> >(tG->getTpetraOperator(), true);
+  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tG =
+      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(G_);
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> crsG =
+      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tG->getTpetraOperator(), true);
   crsG->scale(2.0);
 
   // do some random violence (oh my brothers) to one row
@@ -320,9 +308,9 @@ bool tExplicitOps_tpetra::test_mult_modScaleMatProd(int verbosity, std::ostream&
   thyOp = Teko::multiply(Teko::scale(-4.0, F_), D_, Teko::adjoint(G_));
   expOp = Teko::explicitMultiply(Teko::scale(-4.0, F_), D_, Teko::adjoint(G_), expOp);
 
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp2 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop2 = tOp2->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp2 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop2 = tOp2->getConstTpetraOperator();
 
   {
     std::stringstream ss;
@@ -345,7 +333,7 @@ bool tExplicitOps_tpetra::test_add(int verbosity, std::ostream& os) {
   tester.set_all_error_tol(1e-10);
   tester.show_all_tests(true);
 
-  RCP<const Thyra::LinearOpBase<ST> > thyOp;
+  RCP<const Thyra::LinearOpBase<ST>> thyOp;
   Teko::LinearOp expOp;
 
   thyOp = Teko::add(Teko::scale(-4.0, F_), Teko::adjoint(G_));
@@ -372,15 +360,15 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
   tester.set_all_error_tol(1e-10);
   tester.show_all_tests(true);
 
-  RCP<const Thyra::LinearOpBase<ST> > thyOp;
+  RCP<const Thyra::LinearOpBase<ST>> thyOp;
   Teko::ModifiableLinearOp expOp;
 
   thyOp = Teko::add(Teko::scale(-4.0, F_), Teko::adjoint(G_));
   expOp = Teko::explicitAdd(Teko::scale(-4.0, F_), Teko::adjoint(G_), expOp);
 
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp1 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop1 = tOp1->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp1 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop1 = tOp1->getConstTpetraOperator();
 
   {
     std::stringstream ss;
@@ -392,15 +380,15 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
     if (not result || verbosity >= 10) os << ss.str();
   }
 
-  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT> > tF =
-      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT> >(F_);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > crsF =
-      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT> >(tF->getTpetraOperator(), true);
+  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tF =
+      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(F_);
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> crsF =
+      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tF->getTpetraOperator(), true);
   crsF->scale(5.0);
-  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT> > tG =
-      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT> >(G_);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > crsG =
-      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT> >(tG->getTpetraOperator(), true);
+  RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tG =
+      Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(G_);
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> crsG =
+      Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tG->getTpetraOperator(), true);
   crsG->scale(2.0);
 
   // do some random violence (oh my brothers) to one row
@@ -427,9 +415,9 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
   thyOp = Teko::add(Teko::scale(-4.0, F_), Teko::adjoint(G_));
   expOp = Teko::explicitAdd(Teko::scale(-4.0, F_), Teko::adjoint(G_), expOp);
 
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp2 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop2 = tOp2->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp2 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop2 = tOp2->getConstTpetraOperator();
 
   // check that underlying pointers are the same
   // since the sparsity pattern of expOp entering the explicitAdd
@@ -459,15 +447,15 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
 
   // Create a target linear operator, with a known sparsity pattern (diagonal)
   expOp2 = Teko::explicitAdd(H_, H_, expOp2);
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp3 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop3 = tOp3->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp3 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp2, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop3 = tOp3->getConstTpetraOperator();
 
   // Create a target linear operator, with a known sparsity pattern (diagonal) for a second time
   expOp2 = Teko::explicitAdd(H_, H_, expOp2);
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp3b =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop3b = tOp3b->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp3b =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp2, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop3b = tOp3b->getConstTpetraOperator();
 
   // check that underlying pointers are the same
   {
@@ -482,9 +470,9 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
 
   // Try to add matricies with sparsity patterns that differ from the target operator
   expOp2 = Teko::explicitAdd(Teko::scale(-4.0, F_), Teko::adjoint(G_), expOp2);
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp4 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop4 = tOp4->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp4 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp2, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop4 = tOp4->getConstTpetraOperator();
 
   // check that underlying pointers are different
   // since the sparsity pattern of expOp entering the explicitAdd
@@ -512,12 +500,12 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
 
   // Create a target linear operator, with a known sparsity pattern (diagonal) and aliased args
   expOp2 = Teko::explicitAdd(H_, H_, expOp2);
-  tOp3   = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
+  tOp3   = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp2, true);
   eop3   = tOp3->getConstTpetraOperator();
   auto expOp3 = Teko::explicitAdd(H_, expOp2, expOp2);
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp5 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp3, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop5 = tOp5->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp5 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp3, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop5 = tOp5->getConstTpetraOperator();
 
   // check that underlying pointers are different
   // since the sparsity pattern of expOp entering the explicitAdd
@@ -535,12 +523,12 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity, std::ostream& os) {
 
   // Create a target linear operator, with a known sparsity pattern (diagonal) and aliased args
   expOp2 = Teko::explicitAdd(H_, H_, expOp2);
-  tOp3   = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp2, true);
+  tOp3   = Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp2, true);
   eop3   = tOp3->getConstTpetraOperator();
   auto expOp4 = Teko::explicitAdd(expOp2, H_, expOp2);
-  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tOp6 =
-      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(expOp4, true);
-  RCP<const Tpetra::Operator<ST, LO, GO, NT> > eop6 = tOp6->getConstTpetraOperator();
+  RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp6 =
+      Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT>>(expOp4, true);
+  RCP<const Tpetra::Operator<ST, LO, GO, NT>> eop6 = tOp6->getConstTpetraOperator();
 
   // check that underlying pointers are different
   // since the sparsity pattern of expOp entering the explicitAdd

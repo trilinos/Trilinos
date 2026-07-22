@@ -160,7 +160,7 @@ void RegionRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             RCP<Matrix>& R,
             RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coarseCoordinates,
             Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim) const {
-  using local_matrix_type = typename CrsMatrix::local_matrix_type;
+  using local_matrix_type = typename CrsMatrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
   using entries_type      = typename local_matrix_type::index_type::non_const_type;
@@ -240,13 +240,13 @@ void RegionRFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
        << "  -nnz=     " << nnz << std::endl;
 
   row_map_type row_map(Kokkos::ViewAllocateWithoutInitializing("row_map"), numRows + 1);
-  typename row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(row_map);
+  typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
 
   entries_type entries(Kokkos::ViewAllocateWithoutInitializing("entries"), nnz);
-  typename entries_type::HostMirror entries_h = Kokkos::create_mirror_view(entries);
+  typename entries_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
 
   values_type values(Kokkos::ViewAllocateWithoutInitializing("values"), nnz);
-  typename values_type::HostMirror values_h = Kokkos::create_mirror_view(values);
+  typename values_type::host_mirror_type values_h = Kokkos::create_mirror_view(values);
 
   // Compute the basic interpolation
   // coefficients for 1D rate of 3

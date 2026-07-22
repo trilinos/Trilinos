@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -83,10 +83,10 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
        VAR_QA_TITLE variable also exists...
      */
     status = nc_inq_dimid(rootid, DIM_NUM_QA, &num_qa_dim);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
 
       /*   put file into define mode  */
-      if ((status = nc_redef(rootid)) != NC_NOERR) {
+      if ((status = exi_redef(rootid, __func__)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode",
                  rootid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -94,7 +94,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
       }
 
       /*   define dimensions */
-      if ((status = nc_def_dim(rootid, DIM_NUM_QA, num_qa_records, &num_qa_dim)) != NC_NOERR) {
+      if ((status = nc_def_dim(rootid, DIM_NUM_QA, num_qa_records, &num_qa_dim)) != EX_NOERR) {
         if (status == NC_ENAMEINUSE) { /* duplicate entry? */
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: qa records already exist in file id %d", rootid);
           ex_err_fn(exoid, __func__, errmsg, status);
@@ -109,7 +109,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
       }
 
       /* create number "4" dimension; must be of type long */
-      if ((status = nc_def_dim(rootid, DIM_N4, 4L, &n4dim)) != NC_NOERR) {
+      if ((status = nc_def_dim(rootid, DIM_N4, 4L, &n4dim)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define number \"4\" dimension in file id %d", rootid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -117,7 +117,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
       }
 
       /* create string length dimension -- only used for QA records */
-      if ((status = nc_def_dim(rootid, DIM_STR, (MAX_STR_LENGTH + 1), &strdim)) != NC_NOERR) {
+      if ((status = nc_def_dim(rootid, DIM_STR, (MAX_STR_LENGTH + 1), &strdim)) != EX_NOERR) {
         if (status == NC_ENAMEINUSE) { /* already defined */
           nc_inq_dimid(rootid, DIM_STR, &strdim);
         }
@@ -134,7 +134,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
       dims[1] = n4dim;
       dims[2] = strdim;
 
-      if ((status = nc_def_var(rootid, VAR_QA_TITLE, NC_CHAR, 3, dims, &varid)) != NC_NOERR) {
+      if ((status = nc_def_var(rootid, VAR_QA_TITLE, NC_CHAR, 3, dims, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define qa record array in file id %d",
                  rootid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -152,14 +152,14 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
 #endif
 
       /*   leave define mode  */
-      if ((status = exi_leavedef(rootid, __func__)) != NC_NOERR) {
+      if ((status = exi_leavedef(rootid, __func__)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
         ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
     else {
-      if ((status = nc_inq_varid(rootid, VAR_QA_TITLE, &varid)) != NC_NOERR) {
+      if ((status = nc_inq_varid(rootid, VAR_QA_TITLE, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find qa records variable in file id %d",
                  rootid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -181,7 +181,7 @@ int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4])
           count[2] = strlen(qa_record[i][j]) + 1;
 
           if ((status = nc_put_vara_text(rootid, varid, start, count, qa_record[i][j])) !=
-              NC_NOERR) {
+              EX_NOERR) {
             snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store qa record in file id %d",
                      rootid);
             ex_err_fn(exoid, __func__, errmsg, status);

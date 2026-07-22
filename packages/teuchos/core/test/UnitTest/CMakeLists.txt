@@ -38,15 +38,43 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF (${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 19, run = 18, passed = 18, failed = 0")
-ELSEIF (${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND NOT ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 17, run = 16, passed = 16, failed = 0")
-ELSEIF (NOT ${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 17, run = 16, passed = 16, failed = 0")
-ELSEIF (NOT ${PARENT_PACKAGE_NAME}_ENABLE_COMPLEX AND NOT ${PARENT_PACKAGE_NAME}_ENABLE_FLOAT)
-  SET(PASS_STRING "Summary: total = 16, run = 15, passed = 15, failed = 0")
-ENDIF()
+# PASS_REGULAR_EXPRESSION below must mirror the binary's "Summary"
+# line byte-for-byte. The binary's test count is fixed at compile time by
+# HAVE_TEUCHOS_INST_* (see Teuchos_UnitTestHelpers.hpp), not by the higher-
+# level ${PARENT_PACKAGE_NAME}_ENABLE_{COMPLEX,FLOAT}, from which the INST_*
+# values are only derived as defaults. The two diverge whenever the user
+# overrides Trilinos_ENABLE_COMPLEX_{FLOAT,DOUBLE} or ${PARENT_PACKAGE_NAME}_INST_*
+# directly (see packages/teuchos/CMakeLists.txt). Concrete trap: the default
+# Teuchos_INST_COMPLEX_FLOAT for (ENABLE_COMPLEX=ON, ENABLE_FLOAT=OFF) is OFF,
+# so an _ENABLE_*-based prediction overcounts by one for that very common
+# configuration. Predicting from _INST_* makes the divergence impossible by
+# construction.
+#
+# Base count = 16, justified by the unconditional registrations:
+#   Int_UnitTests.cpp           2  Basic, Assignment
+#   PrintDouble_UnitTests.cpp   1  Basic
+#   vector_UnitTests.cpp       12  4 tests * {int, float, double}; the type
+#                                  set is hard-coded and ignores *_INST_FLOAT
+#   TemplateFunc_UnitTests.cpp  1  double leg of
+#                                  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES,
+#                                  which has no HAVE_TEUCHOS_INST_DOUBLE guard
+set(Simple_UnitTests_total 16)
+if (${PARENT_PACKAGE_NAME}_INST_FLOAT)
+  math(EXPR Simple_UnitTests_total "${Simple_UnitTests_total} + 1")
+endif()
+if (${PARENT_PACKAGE_NAME}_INST_COMPLEX_FLOAT)
+  math(EXPR Simple_UnitTests_total "${Simple_UnitTests_total} + 1")
+endif()
+if (${PARENT_PACKAGE_NAME}_INST_COMPLEX_DOUBLE)
+  math(EXPR Simple_UnitTests_total "${Simple_UnitTests_total} + 1")
+endif()
+
+# run = total - 1: the minus_one variant filters exactly vector<float>::constAt
+# (see ARGS below), which is part of the unconditional base above and is
+# therefore guaranteed to be present in every supported configuration.
+math(EXPR Simple_UnitTests_run "${Simple_UnitTests_total} - 1")
+set(PASS_STRING
+  "Summary: total = ${Simple_UnitTests_total}, run = ${Simple_UnitTests_run}, passed = ${Simple_UnitTests_run}, failed = 0")
 
 
 TRIBITS_ADD_TEST(
@@ -175,5 +203,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_TEST(
   GlobalMPISessionUnitTests
   COMM mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+
+#
+# SystemInformation unit tests
+#
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SystemInformation_UnitTests
+  SOURCES
+    SystemInformation_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )

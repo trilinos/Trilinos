@@ -30,7 +30,7 @@ class SubElementNode;
 class ProlongationElementData;
 class InterfaceGeometry;
 class IntersectionPoint;
-class ElementIntersection;
+struct ElementIntersection;
 class Surface_Identifier;
 
 class ElementObj {
@@ -43,8 +43,7 @@ public:
 
   static bool is_less(const ElementObj * elem0,const ElementObj * elem1) { return (elem0->entityId() < elem1->entityId()); }
 
-  static int evaluate_quad(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, const SubElementNode * n3);
-  static int evaluate_quad(const stk::math::Vector3d & x0, const stk::math::Vector3d & x1, const stk::math::Vector3d & x2, const stk::math::Vector3d & x3);
+  static bool will_cutting_quad_from_0to2_cut_largest_angle(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, const SubElementNode * n3);
   static bool determine_diagonal_for_internal_quad_of_cut_tet_from_owner_nodes(const SubElementNode * pn0, const SubElementNode * pn1, const SubElementNode * pn2, const SubElementNode * pn3);
   static bool determine_diagonal_for_internal_quad_of_cut_tet_from_edge_nodes(const Simplex_Generation_Method simplexMethod, const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, const SubElementNode * n3,
       const bool face0, const bool face1, const bool face2, const bool face3);
@@ -61,15 +60,6 @@ public:
 
   const MasterElement & master_elem() const { return my_master_elem; }
   stk::topology topology() const { return my_master_elem.get_topology(); }
-  void std_intg_pts( sierra::Array<const double,DIM,NINT> & intg_pt_locations,
-    sierra::Array<const double,NINT> & intg_weights,
-    sierra::ArrayContainer<double,NINT> & det_J,
-    const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords,
-    const MasterElement & me ) const;
-  void std_intg_pts( sierra::Array<const double,DIM,NINT> & intg_pt_locations,
-    sierra::Array<const double,NINT> & intg_weights,
-    sierra::ArrayContainer<double,NINT> & det_J,
-    const sierra::ArrayContainer<double,DIM,NPE_COORD> & coords ) const { std_intg_pts(intg_pt_locations, intg_weights, det_J, coords, my_master_elem); }
 
   void fill_node_owner_coords(const Mesh_Element * owner, std::vector<stk::math::Vector3d> & coords) const;
   stk::math::Vector3d compute_local_coords_from_owner_coordinates(const Mesh_Element * owner, const stk::math::Vector3d & coords) const;
@@ -103,7 +93,7 @@ public:
   unsigned num_subelements() const { return my_subelements.size(); }
   bool have_refined_edges() const;
 
-  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) { STK_ThrowRequire(false); }
+  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & /*surfaceIDs*/) { STK_ThrowRequire(false); }
   virtual void cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains);
   virtual void cut_face_intersection_point(const int iFace, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains);
   bool have_edges_with_children() const;
@@ -152,7 +142,7 @@ public:
   std::string visualize(const CDMesh & mesh) const;
   double interface_crossing_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const;
   std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const;
-  void fill_face_interior_intersections(const NodeVec & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, std::vector<ElementIntersection> & faceIntersectionPoints) const;
+  void fill_face_interior_intersections(const NodeVec & faceNodes, std::vector<ElementIntersection> & faceIntersectionPoints) const;
   double interface_crossing_position(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2) const;
   std::function<bool(const std::array<unsigned,4> &)> get_diagonal_picker() const;
 

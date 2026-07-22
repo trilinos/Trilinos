@@ -2,8 +2,8 @@
 Trilinos Configure, Build, Test, and Install Reference Guide
 ============================================================
 
-:Author: Roscoe A. Bartlett (bartlettra@orn.gov)
-:Contact: trilinos-framework@software.sandia.gov
+:Author: Roscoe A. Bartlett (rabartl@sandia.gov)
+:Contact: @trilinos/framework (github)
 
 :Abstract: This document contains reference information on how to configure, build, test, and install Trilinos using the TriBITS CMake build system.  The primary audience are users of Trilinos that need to configure and build the software.  The secondary audience are actual developers of Trilinos.
 
@@ -90,7 +90,7 @@ when setting this option.
 Enabling/disabling time monitors
 --------------------------------
 
-I order to enable instrumentation of select code to generate timing statistics, set::
+In order to enable instrumentation of select code to generate timing statistics, set::
 
  -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
 
@@ -101,7 +101,7 @@ that support them.  To print the timers at the end of the program, call
 Select different TriBITS implementation
 ----------------------------------------
 
-When co-developing TriBTS and Trilinos (after cloning the TriBITS repo
+When co-developing TriBITS and Trilinos (after cloning the TriBITS repo
 https://github.com/TriBITSPub/TriBITS under the local Trilinos git repo)
 configure Trilinos to use that TriBITS implementation using, for example::
 
@@ -118,68 +118,27 @@ Kokkos (https://github.com/kokkos/kokkos) is a C++ implementation of a
 cross-platform shared-memory parallel programming model. Many Trilinos packages,
 and other stand-alone applications, use it to implement parallel algorithms.
 
-If the Kokkos package is enabled (e.g. ``-DTrilinos_ENABLE_Kokkos=ON``), then
-the following CMake cache variables can be used to get the included Kokkos
-configuration system to select compiler and other build related flags for the
-target machine.  These build-related flags are selected to create correct and
-perforamnt code and for C++ software that uses Kokkos.
+The Kokkos package is enabled with ``-DTrilinos_ENABLE_Kokkos=ON``, then
+the native configuration options of the Kokkos package are available such as
+``-DKokkos_ENABLE_OPENMP=ON`` or ``-DKokkos_ENABLE_CUDA=ON``.
+For comprehensive information on how to configure Kokkos for your specific build,
+including details on selecting various parallel backends and optimizing performance,
+please refer to the official Kokkos documentation from the Kokkos website (https://kokkos.org).
 
-============================    ======================================
-Functionality                   CMake Cache Variable
-============================    ======================================
-Specify architecture            ``KOKKOS_ARCH``
-Debug builds                    ``KOKKOS_DEBUG``
+The following Trilinos variables will pass their value to the equivalent
+Kokkos variable
+
+============================    ======================================   ============================
+Functionality                   CMake Cache Variable                     Kokkos Variable
+============================    ======================================   ============================
 Device options:
-* Enable Cuda                   ``TPL_ENABLE_CUDA``
-* Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``
-* Enable Pthread                ``TPL_ENABLE_PThread``
-* Specify Serial                ``TPL_ENABLE_MPI=FALSE``
-Advanced options:
-* Enable compiler warnings      ``KOKKOS_ENABLE_COMPILER_WARNINGS``
-* Aggressive Vectorization      ``KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION``
-* Profiling                     ``KOKKOS_ENABLE_PROFILING``
-* Enable profile load print     ``KOKKOS_ENABLE_PROFILE_LOAD_PRINT``
-* Enable dualview modify chk    ``KOKKOS_ENABLE_DUALVIEW_MODIFY_CHECK``
-Kokkos TPLs:                 
-* Use hwloc library             ``TPL_ENABLE_HWLOC``
-* Use librt                     ``KOKKOS_ENABLE_LIBRT``
-CUDA Options:                
-* Enable CUDA LDG               ``KOKKOS_ENABLE_CUDA_LDG_INTRINSIC`` (global mem load)
-* Enable CUDA UVM               ``KOKKOS_ENABLE_CUDA_UVM`` (unified virtual mem)
-* Enable CUDA RDC               ``KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE``
-* Enable CUDA LAMBDA            ``KOKKOS_ENABLE_CUDA_LAMBDA``
-============================    ======================================
+* Enable CUDA                   ``TPL_ENABLE_CUDA``                      ``Kokkos_ENABLE_CUDA``
+* Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``               ``Kokkos_ENABLE_OPENMP``
+* Enable Pthread                ``TPL_ENABLE_PThread``                   ``Kokkos_ENABLE_THREADS``
+============================    ======================================   ============================
 
-If the cache var ``KOKKOS_ARCH`` is not set (or is set to ``None``) then
-the Kokkos settings are not used and the default Trilinos CMake configuration
-is used as described below.
-
-If ``KOKKOS_ARCH != None`` is set, then the correct compiler flags for
-OpenMP are selected by the Kokkos system and the value of the cache
-var ``OpenMP_CXX_FLAGS`` set by the user will be ignored.
-
-``KOKKOS_ARCH`` can be set to a list of entries with different values for the
-host code and the device code using semi-colons as::
-
-  -DKOKKOS_ARCH="<arch0>;<arch1>"
-
-or as a list of entries separated using comas as::
-
-  -DKOKKOS_ARCH=<arch0>,<arch1>
-
-(Using commas is more robust since it will not get accidentally interpreted as
-a shell command separator or with CMake code that is trying to handle an array
-of entries which include one being ``${KOKKOS_ARCH}`` (which itself is an
-array of values).)
-
-The order of the ``<archi>>`` values is not significant.  Each ``<archi>>``
-value is interpreted on its own as the list is read.  Some of these
-``<archi>>`` values apply to host code (e.g. ``HSW``, ``BDW``, and ``Power9``)
-and other values apply to device code (like for a specific GPU like
-``Kepler35`` or ``Kepler37``).  If multiple ``<archi>>`` values conflict
-(e.g. ``-DKOKKOS_ARCH=BDW,Power8``) then the behavior is undefined (so be
-careful not to do that).  Error-checking for conflicting values may be added
-in the future.
+Note: Trilinos always turns on the Kokkos Serial backend even if it was disabled
+explicitly using ``-D Kokkos_ENABLE_SERIAL=OFF``.
 
 To see more documentation for each of these options, run a configure with
 ``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the ``CMakeCache.txt`` file
@@ -189,11 +148,11 @@ To see more documentation for each of these options, run a configure with
 Setting the C++ language standard for Trilinos
 ----------------------------------------------
 
-Trilinos currently supports building with the C++17 language standard as
+Trilinos currently supports building with the C++20 language standard as
 supported by a wide range of C++ compilers.  In addition, the library targets
 imported from the installed ``<Package>Config.cmake`` files (also pulled in
 through ``TrilinosConfig.cmake``) will automatically require downstream CMake
-projects turn on C++17 or later standard support in the compiler options
+projects turn on C++20 or later standard support in the compiler options
 (using the CMake ``INTERFACE_COMPILE_FEATURES`` properties of the Trilinos
 library targets).  Building Trilinos with C++14 or lower C++ language
 standards is not supported.
@@ -208,7 +167,7 @@ on, configure with::
 As mentioned above, that will also result in all downstream C++ software built
 with CMake to be built with C++20 compiler options turned on as well.
 
-However, Trilinos is currently only rigorously tested with C++17 compiler
+However, Trilinos is currently only rigorously tested with C++20 compiler
 options so trying to build and use with a higher language standard may not
 give satisfactory results.
 
@@ -217,7 +176,7 @@ Addressing problems with large builds of Trilinos
 -------------------------------------------------
 
 Trilinos is a large collection of complex software.  Depending on what gets
-enabled when building Trlinos, one can experience build and installation
+enabled when building Trilinos, one can experience build and installation
 problems due to this large size.
 
 When running into problems like these, the first thing that should be tried is
@@ -231,7 +190,7 @@ are mentioned below.
 
 **Command-line too long errors:**
 
-When turning on some options and enabling some set of package's one may
+When turning on some options and enabling some set of packages one may
 encounter command-lines that are too long for the OS shell or the tool being
 called.  For example, on some systems, enabling CUDA and COMPLEX variable
 types (e.g. ``-D TPL_ENABLE_CUDA=ON -D Trilinos_ENABLE_COMPLEX=ON``) can
@@ -287,7 +246,7 @@ CDash).  To enable support for these build statistics, configure with::
 This will do the following:
 
 * Generate wrappers ``build_stats_<op>_wrapper.sh`` for C, C++, and Fortran
-  (and for static builds also ``ar``, ``randlib`` and ``ld``) in the build
+  (and for static builds also ``ar``, ``ranlib`` and ``ld``) in the build
   tree that will compute statics as a byproduct of every invocation of these
   commands.  (The wrappers create a file ``<output-file>.timing`` for every
   generated object, library and executable ``<output-file>`` file.)
@@ -391,7 +350,7 @@ targets getting (re)built after an initial configure, then configure with::
 This will remove **all** of the ``*.timing`` files under the base build
 directory during a fresh configure (i.e. where the ``CMakeCache.txt`` file
 does not exist).  But this will not remove ``*.timing`` files on reconfigures
-(i..e where a ``CMakeCache.txt`` file is preserved).  Timing stats for targets
+(i.e., where a ``CMakeCache.txt`` file is preserved).  Timing stats for targets
 that are already built and don't need to be rebuilt after the last fresh
 configure will not get reported.  (But this can be useful for CI builds where
 one only wants to see build stats for the files updated in the last PR

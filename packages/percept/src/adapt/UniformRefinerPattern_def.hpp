@@ -27,8 +27,6 @@
     URP<FromTopology, ToTopology>::
     on_parent_edge(unsigned childNodeIdx, const Elem::RefinementTopology& ref_topo)
     {
-      unsigned num_child_nodes = ref_topo.num_child_nodes();
-
       shards::CellTopology cell_topo ( shards::getCellTopologyData< FromTopology >() );
       unsigned n_edges = cell_topo.getEdgeCount();
 
@@ -36,7 +34,6 @@
         {
           const UInt *edge_nodes = ref_topo.edge_node(i_edge);
 
-          unsigned i_ord = 0;
           for (unsigned i_edge_n = 0; edge_nodes[i_edge_n] != END_UINT_ARRAY; i_edge_n++)
             {
               unsigned j_e_node = edge_nodes[i_edge_n];
@@ -44,8 +41,6 @@
                 {
                   return true;
                 }
-              if (j_e_node < num_child_nodes)
-                ++i_ord;
             }
         }
       return false;
@@ -56,8 +51,6 @@
     URP<FromTopology, ToTopology>::
     on_parent_face(unsigned childNodeIdx, const Elem::RefinementTopology& ref_topo)
     {
-      unsigned num_child_nodes = ref_topo.num_child_nodes();
-
       shards::CellTopology cell_topo ( shards::getCellTopologyData< FromTopology >() );
       if (cell_topo.getDimension() == 2)
         {
@@ -71,7 +64,6 @@
         {
           const UInt *face_nodes = ref_topo.face_node(i_face);
 
-          unsigned i_ord = 0;
           for (unsigned i_face_n = 0; face_nodes[i_face_n] != END_UINT_ARRAY; i_face_n++)
             {
               unsigned j_e_node = face_nodes[i_face_n];
@@ -79,8 +71,6 @@
                 {
                   return true;
                 }
-              if (j_e_node < num_child_nodes)
-                ++i_ord;
             }
         }
       return false;
@@ -104,14 +94,14 @@
           const UInt *edge_nodes = ref_topo.edge_node(i_edge);
 
           n_ord = 0;
-          int n_edge_n = 0;
+          //int n_edge_n = 0;
           for (unsigned i_edge_n = 0; edge_nodes[i_edge_n] != END_UINT_ARRAY; i_edge_n++)
             {
               if (on_parent_vertex(edge_nodes[i_edge_n]))
                 continue;
               if (edge_nodes[i_edge_n] < num_child_nodes)
                 ++n_ord;
-              ++n_edge_n;
+              //++n_edge_n;
             }
 
           i_ord = 0;
@@ -346,13 +336,11 @@
         {
           i_face = 0;
           n_ord = 0;
-          int n_face_n = 0;
           for (unsigned i_face_n = 0; i_face_n < num_child_nodes; i_face_n++)
             {
               if (on_parent_edge(i_face_n, ref_topo))
                 continue;
               ++n_ord;
-              ++n_face_n;
             }
 
           if (fromTopoKey == topo_key_quad8 || fromTopoKey == topo_key_shellquad8)
@@ -389,14 +377,12 @@
           const UInt *face_nodes = ref_topo.face_node(i_face);
 
           n_ord = 0;
-          int n_face_n = 0;
           for (unsigned i_face_n = 0; face_nodes[i_face_n] != END_UINT_ARRAY; i_face_n++)
             {
               if (on_parent_edge(face_nodes[i_face_n], ref_topo))
                 continue;
               if (face_nodes[i_face_n] < num_child_nodes)
                 ++n_ord;
-              ++n_face_n;
             }
 
           if (fromTopoKey == topo_key_hex20)
@@ -415,11 +401,11 @@
             }
 
           i_ord = 0;
-          unsigned fnl=0;
-          for (unsigned i_face_n = 0; face_nodes[i_face_n] != END_UINT_ARRAY; i_face_n++)
-            {
-              ++fnl;
-            }
+          //unsigned fnl=0;
+          //for (unsigned i_face_n = 0; face_nodes[i_face_n] != END_UINT_ARRAY; i_face_n++)
+          //  {
+          //    ++fnl;
+          //  }
           for (unsigned i_face_n = 0; face_nodes[i_face_n] != END_UINT_ARRAY; i_face_n++)
             {
               if (on_parent_edge(face_nodes[i_face_n], ref_topo))
@@ -495,7 +481,7 @@
     URP<FromTopology, ToTopology>::
     findRefinedCellTopoInfo(unsigned childNodeIdx,
                             const Elem::RefinementTopology& ref_topo,
-                            RefTopoX_arr ref_topo_x,  // assumed good for the vertices
+                            RefTopoX_arr /*ref_topo_x*/,  // assumed good for the vertices
                             unsigned& rank_of_subcell,
                             unsigned& ordinal_of_subcell,
                             unsigned& ordinal_of_node_on_subcell,
@@ -871,19 +857,22 @@
 
       bool useIntrepid = true;
       if (useIntrepid)
-        {
-          for (unsigned iNode = 0; iNode < FromTopology::node_count; iNode++)
-            {
-              const double * param_coord = Intrepid::CellTools<double>::getReferenceNode(cell_topo, iNode);
-              ref_topo_x[iNode].parametric_coordinates[0] = param_coord[0];
-              ref_topo_x[iNode].parametric_coordinates[1] = param_coord[1];
-              ref_topo_x[iNode].parametric_coordinates[2] = param_coord[2];
-              if (0) std::cout<<"tmp param_coord= "
-                              << param_coord[0] << " "
-                              << param_coord[1] << " "
-                              << param_coord[2] << std::endl;
+      { 
+        const unsigned ndim = cell_topo.getDimension();
+        Kokkos::DynRankView<double,Kokkos::HostSpace> param_coord("param_coord", ndim);
+
+        for (unsigned iNode = 0; iNode < cell_topo.getNodeCount(); iNode++)
+          {              
+            Intrepid2::CellTools<Kokkos::HostSpace>::getReferenceNode(param_coord, cell_topo, iNode);
+            for(unsigned j = 0; j < ndim; ++j) {
+              ref_topo_x[iNode].parametric_coordinates[j] = param_coord(j);
             }
-        }
+            if (0) std::cout<<"tmp param_coord= "
+                            << param_coord(0) << " "
+                            << param_coord(1) << " "
+                            << param_coord(2) << std::endl;
+          }
+      }
 
       findRefinedCellParamCoordsLinear(ref_topo, ref_topo_x);
       findRefinedCellParamCoords(ref_topo, ref_topo_x);

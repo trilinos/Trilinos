@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Xpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Xpetra_UnitTestHelpers.hpp>
 
@@ -53,12 +17,7 @@
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraCrsMatrix.hpp"
-#endif
 namespace {
 using Xpetra::viewLabel_t;
 
@@ -147,27 +106,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(MatrixUtils, SwitchMatrixToStridedMaps, M, MA,
 //
 // INSTANTIATIONS
 //
-#ifdef HAVE_XPETRA_TPETRA
 
 #define XPETRA_TPETRA_TYPES(S, LO, GO, N)                     \
   typedef typename Xpetra::TpetraMap<LO, GO, N> M##LO##GO##N; \
   typedef typename Xpetra::TpetraCrsMatrix<S, LO, GO, N> MA##S##LO##GO##N;
 
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(S, LO, GO, N)                  \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N; \
-  typedef typename Xpetra::EpetraCrsMatrixT<GO, N> MA##S##LO##GO##N;
-
-#endif
-
 // list of all tests which run both with Epetra and Tpetra
 #define XP_MATRIX_INSTANT(S, LO, GO, N) \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(MatrixUtils, SwitchMatrixToStridedMaps, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
-
-#if defined(HAVE_XPETRA_TPETRA)
 
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
@@ -175,23 +121,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(MatrixUtils, SwitchMatrixToStridedMaps, M, MA,
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XPETRA_TPETRA_TYPES)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_MATRIX_INSTANT)
-
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(double, int, int, EpetraNode)
-XP_MATRIX_INSTANT(double, int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(double, int, LongLong, EpetraNode)
-XP_MATRIX_INSTANT(double, int, LongLong, EpetraNode)
-#endif
-
-#endif
 
 }  // namespace

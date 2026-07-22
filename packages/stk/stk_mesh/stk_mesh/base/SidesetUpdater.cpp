@@ -45,7 +45,7 @@ void ReconstructionSidesetUpdater::fill_sidesets_element_belongs_to(Entity elem)
   }
 }
 
-void ReconstructionSidesetUpdater::entity_added(Entity entity)
+void ReconstructionSidesetUpdater::entity_added(Entity /*entity*/)
 {
 
 }
@@ -67,22 +67,6 @@ bool is_part_a_sideset(const BulkData& bulkData, const Part& part)
   }
 
   return isSideset;
-}
-
-Entity get_side(const BulkData& bulk, const SideSetEntry& entry)
-{
-  EntityRank sideRank = bulk.mesh_meta_data().side_rank();
-  const Entity* sides = bulk.begin(entry.element, sideRank);
-  const ConnectivityOrdinal* ordinals = bulk.begin_ordinals(entry.element, sideRank);
-  unsigned numSides = bulk.num_connectivity(entry.element, sideRank);
-  for(unsigned i=0; i<numSides; ++i)
-  {
-    if (ordinals[i] == entry.side)
-    {
-      return sides[i];
-    }
-  }
-  return Entity();
 }
 
 std::pair<bool,bool> is_side_internal_and_modified(const BulkData& bulk, Entity side,
@@ -312,11 +296,11 @@ void ReconstructionSidesetUpdater::set_reduced_values(const std::vector<size_t> 
   }
 }
 
-void ReconstructionSidesetUpdater::elements_about_to_move_procs_notification(const EntityProcVec &elemProcPairsToMove)
+void ReconstructionSidesetUpdater::elements_about_to_move_procs_notification(const EntityProcVec &/*elemProcPairsToMove*/)
 {
 }
 
-void ReconstructionSidesetUpdater::elements_moved_procs_notification(const EntityProcVec &elemProcPairsToMove)
+void ReconstructionSidesetUpdater::elements_moved_procs_notification(const EntityProcVec &/*elemProcPairsToMove*/)
 {
 }
 
@@ -347,11 +331,11 @@ void ReconstructionSidesetUpdater::insert_parts(Entity entity, const OrdinalVect
   }
 }
 
-void ReconstructionSidesetUpdater::entity_parts_added(Entity entity, const OrdinalVector& parts)
+void ReconstructionSidesetUpdater::entity_parts_added(Entity /*entity*/, const OrdinalVector& /*parts*/)
 {
 }
 
-void ReconstructionSidesetUpdater::entity_parts_removed(Entity entity, const OrdinalVector& parts)
+void ReconstructionSidesetUpdater::entity_parts_removed(Entity /*entity*/, const OrdinalVector& /*parts*/)
 {
 }
 
@@ -470,7 +454,7 @@ void IncrementalSidesetUpdater::resolve_faces_affected_by_connected_element_part
 
       STK_ThrowAssert(part.primary_entity_rank() == m_metaData.side_rank());
 
-      const stk::mesh::Part &parentPart = get_sideset_parent(part);
+      const stk::mesh::Part &parentPart = internal_get_sideset_parent(part);
       bool sidesetExists = m_bulkData.does_sideset_exist(parentPart);
 
       if(sidesetExists) {
@@ -615,6 +599,33 @@ void IncrementalSidesetUpdater::update_surfaces_touching_blocks_vector()
   }
 }
 
+const Part& IncrementalSidesetUpdater::internal_get_sideset_parent(const Part& sidesetPart)
+{
+  for(stk::mesh::Part * part : sidesetPart.supersets()) {
+    const bool sameRank = part->primary_entity_rank() == sidesetPart.primary_entity_rank();
+    const bool alreadyExists = impl::has_sideset_part_attribute(*part) && impl::get_sideset_part_attribute(*part);
+
+    if(sameRank && alreadyExists) {
+      return *part;
+    }
+
+    bool isTouchingBlock = false;
+    auto iter = std::lower_bound(m_surfacesTouchingBlocks.begin(), m_surfacesTouchingBlocks.end(), part, PartLess());
+    if(iter != m_surfacesTouchingBlocks.end() && (*iter)->mesh_meta_data_ordinal() == part->mesh_meta_data_ordinal()) {
+      isTouchingBlock = true;
+    }
+
+    // A stricter test would be to use an element block as a filter, get the list of
+    // surfaces touching this block and then check if the superset part is in this list.
+    // Here we are simply accepting any superset part that is touching any element block
+    if(sameRank && isTouchingBlock) {
+      return *part;
+    }
+  }
+
+  return get_sideset_parent(sidesetPart);
+}
+
 SideSet* IncrementalSidesetUpdater::get_or_create_connectivity_based_sideset(const Part& part, const bool checkSubsets)
 {
   SideSet* sideset = nullptr;
@@ -625,7 +636,7 @@ SideSet* IncrementalSidesetUpdater::get_or_create_connectivity_based_sideset(con
 
     auto iter = std::lower_bound(m_surfacesTouchingBlocks.begin(), m_surfacesTouchingBlocks.end(), &part, PartLess());
     if(iter != m_surfacesTouchingBlocks.end() && (*iter)->mesh_meta_data_ordinal() == part.mesh_meta_data_ordinal()) {
-      const Part &parentPart = get_sideset_parent(part);
+      const Part &parentPart = internal_get_sideset_parent(part);
       sideset = &m_bulkData.create_sideset(parentPart);
     }
   }
@@ -696,7 +707,7 @@ void IncrementalSidesetUpdater::fill_sidesets_and_selectors(SideSetSelectorVecto
 void IncrementalSidesetUpdater::add_sidesets_from_part(const Part& part, std::vector<SideSet*>& sidesets)
 {
   if(part.primary_entity_rank() == m_metaData.side_rank()) {
-    const Part &parentPart = get_sideset_parent(part);
+    const Part &parentPart = internal_get_sideset_parent(part);
     if(m_bulkData.does_sideset_exist(parentPart)) {
       SideSet& sideset = m_bulkData.get_sideset(parentPart);
       stk::util::insert_keep_sorted_and_unique(&sideset, sidesets);

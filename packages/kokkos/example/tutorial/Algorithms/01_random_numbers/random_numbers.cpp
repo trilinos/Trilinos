@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -94,25 +81,25 @@ int main(int argc, char* args[]) {
     Kokkos::Timer timer;
     Kokkos::parallel_for(size,
                          generate_random<Kokkos::Random_XorShift64_Pool<> >(
-                             vals.d_view, rand_pool64, samples));
+                             vals.view_device(), rand_pool64, samples));
     Kokkos::fence();
 
     timer.reset();
     Kokkos::parallel_for(size,
                          generate_random<Kokkos::Random_XorShift64_Pool<> >(
-                             vals.d_view, rand_pool64, samples));
+                             vals.view_device(), rand_pool64, samples));
     Kokkos::fence();
     double time_64 = timer.seconds();
 
     Kokkos::parallel_for(size,
                          generate_random<Kokkos::Random_XorShift1024_Pool<> >(
-                             vals.d_view, rand_pool1024, samples));
+                             vals.view_device(), rand_pool1024, samples));
     Kokkos::fence();
 
     timer.reset();
     Kokkos::parallel_for(size,
                          generate_random<Kokkos::Random_XorShift1024_Pool<> >(
-                             vals.d_view, rand_pool1024, samples));
+                             vals.view_device(), rand_pool1024, samples));
     Kokkos::fence();
     double time_1024 = timer.seconds();
 
@@ -121,7 +108,7 @@ int main(int argc, char* args[]) {
     printf("#Time XorShift1024*: %e %e\n", time_1024,
            1.0e-9 * samples * size / time_1024);
 
-    Kokkos::deep_copy(vals.h_view, vals.d_view);
+    Kokkos::deep_copy(vals.view_host(), vals.view_device());
   }
   Kokkos::finalize();
   return 0;

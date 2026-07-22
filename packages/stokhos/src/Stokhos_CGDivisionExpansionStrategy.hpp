@@ -1,44 +1,10 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef STOKHOS_CG_DIVISION_EXPANSION_STRATEGY_HPP
@@ -246,28 +212,28 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 
     // Compute B
     B->putScalar(0.0);
-    for (ordinal_type i=0; i<pa; i++)
+    for (i=0; i<pa; i++)
       (*B)(i,0) = ca[i]*basis->norm_squared(i);
 
     Teuchos::SerialDenseMatrix<ordinal_type,value_type> D(sz, 1);
     //Equilibrate the linear system
     if (equil == 1){
       //Create diag mtx of max row entries
-      for (ordinal_type i=0; i<sz; i++){
+      for (i=0; i<sz; i++){
 	Teuchos::SerialDenseMatrix<ordinal_type, value_type> r(Teuchos::View, *A, 1, sz, i, 0);
 	D(i,0)=sqrt(r.normOne());
       }
 
 
       //Compute inv(D)*A*inv(D)
-      for (ordinal_type i=0; i<sz; i++){
-	for (ordinal_type j=0; j<sz; j++){
+      for (i=0; i<sz; i++){
+	for (j=0; j<sz; j++){
 	  (*A)(i,j)=(*A)(i,j)/(D(i,0)*D(j,0));
 	}
       }
 
       //Scale b by inv(D)
-      for (ordinal_type i=0; i<sz; i++){
+      for (i=0; i<sz; i++){
 	(*B)(i,0)=(*B)(i,0)/D(i,0);
       }
 
@@ -298,8 +264,8 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
       //Scale M
       if (equil == 1){
 	//Compute inv(D)*M*inv(D)
-	for (ordinal_type i=0; i<sz; i++){
-	  for (ordinal_type j=0; j<sz; j++){
+	for (i=0; i<sz; i++){
+	  for (j=0; j<sz; j++){
 	    (*M)(i,j)=(*M)(i,j)/(D(i,0)*D(j,0));
 	  }
  	}
@@ -314,13 +280,13 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     
     if (equil == 1 ) {
       //Rescale X 
-      for (ordinal_type i=0; i<sz; i++){
+      for (i=0; i<sz; i++){
 	(*X)(i,0)=(*X)(i,0)/D(i,0);
       }
     }
    
     // Compute c
-    for (ordinal_type i=0; i<pc; i++)
+    for (i=0; i<pc; i++)
       cc[i] = alpha*(*X)(i,0) + beta*cc[i];
   }
   else {
@@ -333,25 +299,25 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 template <typename ordinal_type, typename value_type, typename node_type>
 ordinal_type
 Stokhos::CGDivisionExpansionStrategy<ordinal_type,value_type,node_type>::
-CG(const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & A, 
-   Teuchos::SerialDenseMatrix<ordinal_type,value_type> & X, 
-   const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & B, 
+CG(const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & aA, 
+   Teuchos::SerialDenseMatrix<ordinal_type,value_type> & aX, 
+   const Teuchos::SerialDenseMatrix<ordinal_type,value_type> & aB, 
    ordinal_type max_iter, 
    value_type tolerance, 
-   ordinal_type prec_iter, 
+   ordinal_type aprec_iter, 
    ordinal_type order , 
    ordinal_type m, 
-   ordinal_type PrecNum, 
-   const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & M, 
-   ordinal_type diag)
+   ordinal_type aPrecNum, 
+   const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & aM, 
+   ordinal_type adiag)
 
 {
-  ordinal_type n = A.numRows();
+  ordinal_type n = aA.numRows();
   ordinal_type k=0;
   value_type resid;
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> Ax(n,1);
-  Ax.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, A, X, 0.0);
-  Teuchos::SerialDenseMatrix<ordinal_type, value_type> r(Teuchos::Copy,B);
+  Ax.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, aA, aX, 0.0);
+  Teuchos::SerialDenseMatrix<ordinal_type, value_type> r(Teuchos::Copy,aB);
   r-=Ax;
   resid=r.normFrobenius();
   Teuchos::SerialDenseMatrix<ordinal_type, value_type> p(r);
@@ -364,22 +330,22 @@ CG(const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & A,
   while (resid > tolerance && k < max_iter){
     Teuchos::SerialDenseMatrix<ordinal_type, value_type> z(r);
     //Solve Mz=r
-    if (PrecNum != 0){
-      if (PrecNum == 1){
-	Stokhos::DiagPreconditioner<ordinal_type, value_type> precond(M);
-	precond.ApplyInverse(r,z,prec_iter);
+    if (aPrecNum != 0){
+      if (aPrecNum == 1){
+	Stokhos::DiagPreconditioner<ordinal_type, value_type> precond(aM);
+	precond.ApplyInverse(r,z,aprec_iter);
       }
-      else if (PrecNum == 2){
-	Stokhos::JacobiPreconditioner<ordinal_type, value_type> precond(M);
+      else if (aPrecNum == 2){
+	Stokhos::JacobiPreconditioner<ordinal_type, value_type> precond(aM);
 	precond.ApplyInverse(r,z,2);
       }
-      else if (PrecNum == 3){
-	Stokhos::GSPreconditioner<ordinal_type, value_type> precond(M,0);
+      else if (aPrecNum == 3){
+	Stokhos::GSPreconditioner<ordinal_type, value_type> precond(aM,0);
 	precond.ApplyInverse(r,z,1);
       }
-      else if (PrecNum == 4){
-	Stokhos::SchurPreconditioner<ordinal_type, value_type> precond(M, order, m, diag);
-	precond.ApplyInverse(r,z,prec_iter);            
+      else if (aPrecNum == 4){
+	Stokhos::SchurPreconditioner<ordinal_type, value_type> precond(aM, order, m, adiag);
+	precond.ApplyInverse(r,z,aprec_iter);            
       }
     }
     rho.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,1.0, r, z, 0.0);
@@ -394,12 +360,12 @@ CG(const Teuchos::SerialDenseMatrix<ordinal_type, value_type> & A,
       p.scale(b);
       p+=z; 
     }
-    Ap.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, A, p, 0.0);
+    Ap.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0, aA, p, 0.0);
     pAp.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,1.0, p, Ap, 0.0);
     a=rho(0,0)/pAp(0,0);
     Teuchos::SerialDenseMatrix<ordinal_type, value_type> scalep(p);
     scalep.scale(a);
-    X+=scalep;
+    aX+=scalep;
     Ap.scale(a);
     r-=Ap;
     oldrho.assign(rho);

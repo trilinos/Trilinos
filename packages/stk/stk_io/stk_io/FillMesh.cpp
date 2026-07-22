@@ -1,5 +1,6 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
+#include <stk_util/stk_config.h>
 #include "stk_io/FillMesh.hpp"
 #include "Ioss_Property.h"             // for Property
 #include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
@@ -21,16 +22,18 @@ void fill_mesh_preexisting(stk::io::StkMeshIoBroker & stkIo,
     stkIo.add_mesh_database(meshSpec, purpose);
     stkIo.create_input_mesh();
     stkIo.add_all_mesh_fields_as_input_fields();
-    stkIo.populate_bulk_data();
-
-    if(stkIo.check_integer_size_requirements() == 8) {
-        bulkData.set_large_ids_flag(true);
-    }
+    const bool delayFieldDataAllocation = true;
+    stkIo.populate_mesh(delayFieldDataAllocation);
+    stkIo.populate_field_data();
 }
 
 void fill_mesh_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::io::StkMeshIoBroker &stkIo)
 {
+#ifdef STK_HAS_SEACAS_IOSS_ZOLTAN
     stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+#else
+    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
+#endif
     fill_mesh_preexisting(stkIo, meshSpec, bulkData);
 }
 

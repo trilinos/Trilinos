@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
@@ -154,7 +155,7 @@ public:
     return numWeightsPerVertex;
   }
 
-  virtual void getWeightsViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&weights, int &stride, int idx = 0) const
+  virtual void getWeightsViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&weights, int &stride, [[maybe_unused]] int idx = 0) const
   {
     STK_ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
     weights = NULL;
@@ -170,7 +171,7 @@ public:
 
   // Fill in 2nd adjs if needed
 
-  virtual bool avail2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const
+  virtual bool avail2ndAdjs(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/) const
   {
     bool avail2ndAdj = false;
     //if(get_mapped_topology(source)==m_primary_rank && get_mapped_topology(target)==m_secondary_rank)
@@ -178,26 +179,26 @@ public:
     return avail2ndAdj;
   }
 
-  virtual size_t getLocalNum2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const
+  virtual size_t getLocalNum2ndAdjs(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/) const
   {
     // size of the adjacency list (for 2nd adjacency)
     return 0;
   }
 
-  virtual void get2ndAdjsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const BalanceLocalNumber *&offsets, const BalanceGlobalNumber *&adjacencyIds) const
+  virtual void get2ndAdjsView(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/, const BalanceLocalNumber *& /*offsets*/, const BalanceGlobalNumber *& /*adjacencyIds*/) const
   {
     //ThrowRequireMsg(get_mapped_topology(sourcetarget)==m_primary_rank && get_mapped_topology(through)==m_secondary_rank, "Error!");
     STK_ThrowRequireMsg(false, "Error!");
   }
 
-  virtual int getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const
+  virtual int getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/) const
   {
     //ThrowRequireMsg(get_mapped_topology(sourcetarget)==m_primary_rank && get_mapped_topology(through)==m_secondary_rank, "Error!");
     STK_ThrowRequireMsg(false, "Error!");
     return 1;
   }
 
-  virtual void get2ndAdjWeightsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const scalar_t *&weights, int &stride, int idx) const
+  virtual void get2ndAdjWeightsView(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/, const scalar_t *& /*weights*/, int & /*stride*/, int /*idx*/) const
   {
     STK_ThrowRequireMsg(false, "Error!");
     // return edge weights (one per edge)
@@ -244,7 +245,7 @@ public:
     }
   }
 
-  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType etype, int idx) const
+  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType /*etype*/, int /*idx*/) const
   {
     return false;
   }
@@ -339,12 +340,13 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class UsingZoltan2 : public stk::unit_test_util::simple_fields::MeshFixture
+class UsingZoltan2 : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_decomp_with_method(const std::string& method, int nparts, stk::mesh::EntityRank primary_rank, stk::mesh::EntityRank secondary_rank)
   {
-    stk::io::write_mesh("junk.exo", get_bulk());
+    std::string filename = "junk.exo";
+    stk::io::write_mesh(filename, get_bulk());
     LearningZoltan2Adapter adapter(get_bulk(), primary_rank, secondary_rank);
     std::vector<int> elem2proc(adapter.getLocalNumOf(map_rank_to_mesh_entity_type(primary_rank)), get_bulk().parallel_rank());
     use_zoltan2_with_adapter(adapter, method, nparts, elem2proc);
@@ -356,6 +358,14 @@ protected:
     for(size_t i=0;i<entities.size();++i)
       os << get_bulk().entity_key(entities[i]) << " goes to processor " << elem2proc[i] << std::endl;
     std::cerr << os.str();
+
+    if (get_parallel_rank() == 0) {
+      unlink(filename.c_str());
+      for (int i = 0; i < get_parallel_size(); i++) {
+        std::string output_filename = filename + "." + std::to_string(get_parallel_size()) + "." + std::to_string(i);
+        unlink(output_filename.c_str());
+      }
+    }
   }
 
   void use_zoltan2_with_adapter(LearningZoltan2Adapter& adapter, const std::string &method, int nparts, std::vector<int> &elem2proc)

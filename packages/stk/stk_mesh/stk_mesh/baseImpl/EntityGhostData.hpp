@@ -37,20 +37,20 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {
 namespace mesh {
+class BulkData;
 
 namespace impl {
 
 struct EntityGhostData
 {
     enum DIRECTION {
-        INVALID,
         NONE,
         SEND,
-        RECEIVE
+        RECEIVE,
+        INVALID
     };
     enum GHOST_LEVEL {
         LOCALLY_OWNED = -1,
@@ -74,9 +74,6 @@ struct EntityGhostData
     template<class OStream> friend inline OStream& operator << (OStream& s, const DIRECTION& dir)
     {    
         switch (dir) {
-            case INVALID: 
-                s << "INVALID";
-                break; 
             case NONE:
                 s << "NONE";
                 break; 
@@ -86,6 +83,7 @@ struct EntityGhostData
             case RECEIVE:
                 s << "RECEIVE";
                 break; 
+            case INVALID: 
             default:
                 s << "INVALID";
         }

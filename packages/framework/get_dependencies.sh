@@ -3,7 +3,7 @@ ini_file_option=$1
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # Data that needs to be updated when GenConfig changes!
-genconfig_sha1=924a08af66f0a0573b5dd1128179731489339aec
+genconfig_sha1=f0235b4bef904f8851d3edd953005bc5bbb8d05a
 
 # The following code contains no changing data
 
@@ -19,6 +19,11 @@ function tril_genconfig_assert_pwd_is_git_repo() {
   fi
 }
 
+function retry_command() {
+  cmd=$1
+  ${cmd} || { echo "Retrying after 1m..." ; sleep 60 ; ${cmd} ; } || { echo "Retrying after 5m..." ; sleep 300 ; ${cmd} ; }
+}
+
 function tril_genconfig_clone_or_update_repo() {
   git_url=$1
   sub_dir=$2
@@ -30,13 +35,30 @@ function tril_genconfig_clone_or_update_repo() {
   echo
 
   if [[ -d ${sub_dir} ]] ; then
-    echo "STATUS: ${sub_dir}: Fetching remote repo"
     cd ${sub_dir}
+    # Validate correct remote and abort if not correct
+    remote=$(git remote get-url origin)
+    normalized_remote=$(python3 ${script_dir}/normalize_git_repo_url.py ${remote})
+    normalized_git_url=$(python3 ${script_dir}/normalize_git_repo_url.py ${git_url})
+    if [[ "${normalized_remote}" != "${normalized_git_url}" ]] ; then
+      echo "ERROR: Current remote origin does not match expected!" >&2
+      echo "   Current Remote:  ${remote}" >&2
+      echo "   Expected Remote: ${git_url}" >&2
+      echo "" >&2
+      echo "Please remove/move '$(pwd)' and re-run this script" >&2
+      echo "" >&2
+      echo "" >&2
+      exit 1
+    fi
+    # Update remote repo (which points to correct remote)
+    echo "STATUS: ${sub_dir}: Fetching remote repo"
     tril_genconfig_assert_pwd_is_git_repo
-    git fetch
+    cmd="git fetch"
+    retry_command "${cmd}"
   else
     echo "STATUS: ${sub_dir}: Cloning from '${git_url}'"
-    git clone ${git_url} ${sub_dir}
+    cmd="git clone ${git_url} ${sub_dir}"
+    retry_command "${cmd}"
     cd ${sub_dir}
   fi
 
@@ -52,7 +74,8 @@ function tril_genconfig_clone_or_update_repo() {
   if [[ "${has_submodules}" == "has-submodules" ]] ; then
     echo
     echo "STATUS: ${sub_dir}: Update submodules"
-    git submodule update --force --init --recursive
+    cmd="git submodule update --force --init --recursive"
+    retry_command "${cmd}"
     cd - > /dev/null
   elif [[ "${has_submodules}" != "" ]] ; then
     echo "ERROR: argument '${has_submodules}' not allowed!  Only 'has-submodules' or ''!"
@@ -62,15 +85,10 @@ function tril_genconfig_clone_or_update_repo() {
   popd &> /dev/null
 }
 
-# Clone or update the repos
-if [[ "$ini_file_option" == "--container" ]] ; then
-  echo "In a container it is assumed that GenConfig is already in the container at /GenConfig"
-else
-  #Clone GenConfig from gitlab-ex
-  tril_genconfig_clone_or_update_repo \
-    git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
-    GenConfig  has-submodules ${genconfig_sha1}
-fi
+# Clone GenConfig from GitHub
+tril_genconfig_clone_or_update_repo \
+  https://github.com/sandialabs/GenConfig.git \
+  GenConfig  has-submodules ${genconfig_sha1}
 
 if [[ "$ini_file_option" == "--srn" ]] ; then
   #Clone srn-ini-files from cee-gitlab
@@ -84,10 +102,6 @@ elif [[ "$ini_file_option" == "--son" ]] ; then
     git@gitlab-ex.sandia.gov:trilinos-project/son-ini-files.git \
     son-ini-files
   
-elif [[ "$ini_file_option" == "--container" ]] ; then
-  #Copy Genconfig into place from /GenConfig
-  cp -R /GenConfig ${script_dir}
-    
 elif [[ "$ini_file_option" != "" ]] ; then
   echo "ERROR: Option '${ini_file_option}' not allowed! Must select '--son', '--srn' or ''."
   exit 1

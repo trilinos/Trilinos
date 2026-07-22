@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <impl/Kokkos_StringManipulation.hpp>
 #include <climits>
@@ -36,10 +23,8 @@ KOKKOS_FUNCTION constexpr bool test_strcmp() {
   constexpr char cat3[] = "Hobbes";
   constexpr char cat4[] = "Garfield";
   static_assert(strcmp(cat1, cat1) == 0);
-#if (!defined(KOKKOS_COMPILER_NVCC) ||                                 \
-     ((__CUDACC_VER_MAJOR__ >= 11) && (__CUDACC_VER_MINOR__ >= 3))) && \
-    (!defined(__INTEL_COMPILER_BUILD_DATE) ||                          \
-     (__INTEL_COMPILER_BUILD_DATE >= 20210228))
+#if (!defined(KOKKOS_COMPILER_NVCC) || \
+     ((__CUDACC_VER_MAJOR__ >= 11) && (__CUDACC_VER_MINOR__ >= 3)))
   static_assert(strcmp(cat1, cat2) < 0);
   static_assert(strcmp(cat1, cat3) < 0);
 #endif

@@ -1,4 +1,0 @@
-If KokkosCore is enabled, Xpetra will depend on the class Tpetra::KokkosCompat::KokkosDeviceWrapperNode defined in
-teuchos/kokkoscompat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp.
-If KokkosCore is not enabled, Xpetra will depend on the class Tpetra::KokkosCompat::KokkosDeviceWrapperNode defined in
-Kokkos_SerialNode.hpp in this directory.

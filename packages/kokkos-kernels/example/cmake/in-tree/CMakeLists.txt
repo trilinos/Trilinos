@@ -1,7 +1,7 @@
 #Kokkos requires at least 3.16
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required(VERSION 3.16)
 
-project (MyProgram)
+project(MyProgram)
 
 # The add_subdirectory calls must occur in the order below
 
@@ -15,4 +15,3 @@ add_subdirectory(kokkos-kernels)
 
 # Now I can add code for my specific program
 add_subdirectory(my_program)
-

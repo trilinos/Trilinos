@@ -34,9 +34,11 @@
 #ifndef ModificationNotifier_hpp
 #define ModificationNotifier_hpp
 
-#include <stk_mesh/base/ModificationObserver.hpp>
+#include <stk_util/stk_config.h>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
 #include <memory>

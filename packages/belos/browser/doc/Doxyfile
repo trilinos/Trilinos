@@ -2,7 +2,6 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE = epetraext/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
 #
 # Override some options from Doxyfile.options
 #

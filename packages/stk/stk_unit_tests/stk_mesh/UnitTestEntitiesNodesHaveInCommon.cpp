@@ -42,7 +42,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
-#include <stk_mesh/base/CreateFaces.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/GetEntities.hpp> // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/BulkDataTester.hpp>
@@ -108,7 +108,7 @@ TEST ( MeshImplUtils, find_faces_these_nodes_have_in_common )
   stk::mesh::BulkData& bulk = *bulkPtr;
 
   setup2Block2HexMesh(bulk);
-  stk::mesh::create_faces(bulk);
+  stk::mesh::create_all_sides(bulk, bulk.mesh_meta_data().universal_part());
 
   const unsigned numNodesPerEdge = 2;
 
@@ -256,7 +256,7 @@ std::string vec_to_string(const std::vector<T> &vec)
   return s + " ]";
 }
 
-class EntitiesNodesHaveInCommon : public stk::unit_test_util::simple_fields::MeshFixture
+class EntitiesNodesHaveInCommon : public stk::unit_test_util::MeshFixture
 {
 protected:
   void expect_nodes_have_elems_in_common(stk::mesh::EntityId elemId,

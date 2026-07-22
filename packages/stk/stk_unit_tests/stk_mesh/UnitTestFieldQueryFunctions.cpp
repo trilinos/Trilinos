@@ -49,7 +49,7 @@
 
 namespace {
 
-class FieldQueryFunctions : public stk::unit_test_util::simple_fields::MeshFixture
+class FieldQueryFunctions : public stk::unit_test_util::MeshFixture
 {
 public:
   FieldQueryFunctions()
@@ -72,7 +72,7 @@ public:
     const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                                  "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n";
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_mesh_vector_fields_one_block() {
@@ -87,7 +87,7 @@ public:
     const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                                  "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n";
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_mesh_vector_fields_four_copies_one_block() {
@@ -102,7 +102,7 @@ public:
     const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                                  "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n";
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_mesh_vector_fields_not_on_all_blocks() {
@@ -118,7 +118,7 @@ public:
     const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                                  "0,2,HEX_8,5,6,7,8,9,10,11,12,block_2\n";
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   void setup_mesh_vector_fields_variable_num_copies() {
@@ -136,7 +136,7 @@ public:
     const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                                  "0,2,HEX_8,5,6,7,8,9,10,11,12,block_2\n";
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
   stk::mesh::Field<double> * m_doubleField;

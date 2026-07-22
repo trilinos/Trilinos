@@ -16,7 +16,7 @@
 
 namespace Amesos2 {
 
-/** \brief Amesos2 interface to cuSOLVER.
+/** \brief Amesos2 interface to Cholesky from cuSOLVER.
  *
  * \ingroup amesos2_solver_interfaces
  */
@@ -146,6 +146,13 @@ private:
    * \return \c true if the matrix was loaded, \c false if not
    */
   bool loadA_impl(EPhase current_phase);
+
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
 
   /**
    * \brief can we optimize size_type and ordinal_type for straight pass through

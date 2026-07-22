@@ -21,6 +21,12 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamationFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AmalgamationFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A");
@@ -187,6 +193,31 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateM
   elementList.resize(numRows);
 
   amalgamatedMap = MapFactory::Build(sourceMap.lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, sourceMap.getComm());
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateMap(RCP<const StridedMap> sourceMap, RCP<const Map>& amalgamatedMap) {
+  // NOTE: There could be further optimizations here where we detect contiguous maps and then
+  // create a contiguous amalgamated maps, which bypasses the expense of the getMyGlobalIndicesDevice()
+  // call (which is free for non-contiguous maps, but costs something if the map is contiguous).
+  using range_policy = Kokkos::RangePolicy<typename Node::execution_space>;
+  using array_type   = typename Map::global_indices_array_device_type;
+
+  array_type elementAList = sourceMap->getMyGlobalIndicesDevice();
+  GO indexBase            = sourceMap->getIndexBase();
+  LO blkSize              = sourceMap->getFixedBlockSize();
+  auto numElements        = elementAList.size() / blkSize;
+  typename array_type::non_const_type elementList_nc("elementList", numElements);
+
+  // Amalgamate the map
+  Kokkos::parallel_for(
+      "Amalgamate Element List", range_policy(0, numElements), KOKKOS_LAMBDA(LO i) {
+        elementList_nc[i] = (elementAList[i * blkSize] - indexBase) / blkSize + indexBase;
+      });
+  array_type elementList = elementList_nc;
+
+  amalgamatedMap = MapFactory::Build(sourceMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                     elementList, indexBase, sourceMap->getComm());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

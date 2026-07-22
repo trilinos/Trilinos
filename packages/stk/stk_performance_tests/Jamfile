@@ -42,8 +42,6 @@ project votd
     $(sierra-warnings)
     <include>$(stk_performance_tests-root)
     <include>$(stk_performance_tests-root)/..
-    <define>STK_BUILT_IN_SIERRA
-    <define>STK_HIDE_DEPRECATED_CODE
   : usage-requirements
     <include>$(stk_performance_tests-root)
     <include>$(stk_performance_tests-root)/..
@@ -129,13 +127,17 @@ exe stk_performance_tests
     [ glob $(stk_performance_tests-root)/general/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_middle_mesh/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_search/*.cpp ]
+    [ glob $(stk_performance_tests-root)/stk_transfer/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_util/*.cpp ]
+    [ glob $(stk_performance_tests-root)/stk_tools/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_balance//stk_balance_lib
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_middle_mesh//stk_middle_mesh
     /sierra/stk_coupling//stk_coupling
     /sierra/stk_search//stk_search
+    /sierra/stk_search_util//stk_search_util_base
+    /sierra/stk_transfer_util//stk_transfer_util    
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_diag
     /sierra/stk_tools//stk_mesh_tools_lib

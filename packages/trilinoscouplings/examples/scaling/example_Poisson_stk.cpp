@@ -1,31 +1,10 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Denis Ridzal  (dridzal@sandia.gov),
-//                    Kara Peterson (kjpeter@sandia.gov).
-//
-// ************************************************************************
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   example_Poisson_stk.cpp
@@ -43,7 +22,7 @@
      Poisson system:
 
             div A grad u = f in Omega
-                       u = g on Gamma
+                       u = g on  Gamma
 
        where
              A is a symmetric, positive definite material tensor
@@ -80,30 +59,37 @@
 #include <map>
 
 #include "TrilinosCouplings_config.h"
+#include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
+#include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
+
 
 // Teuchos includes
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
-// Intrepid includes
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_ArrayTools.hpp"
-#include "Intrepid_Basis.hpp"
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_HGRAD_TET_C1_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
-#include "Intrepid_Utils.hpp"
+// Intrepid2 includes
+#include "Intrepid2_ArrayTools.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_Utils.hpp"
+#include "Intrepid2_CellGeometry.hpp"
+#include "Intrepid2_Basis.hpp"
+#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 
-// Epetra includes
-#include "Epetra_Time.h"
-#include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_Import.h"
+// Tpetra includes
+#include "Tpetra_Map.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
+#include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_FEMultiVector.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Assembly_Helpers.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
@@ -115,33 +101,13 @@
 // Shards includes
 #include "Shards_CellTopology.hpp"
 
-// EpetraExt includes
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-
-// AztecOO includes
-#include "AztecOO.h"
-
-// ML includes
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_epetra_utils.h"
-
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) 
 // MueLu includes
 #include "MueLu.hpp"
-#if defined(HAVE_MUELU_EPETRA)
 #include "MueLu_ParameterListInterpreter.hpp"
-#include "MueLu_CreateEpetraPreconditioner.hpp"
-#include "MueLu_EpetraOperator.hpp"
-#endif
-#endif
+#include "MueLu_CreateTpetraPreconditioner.hpp"
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
-#include "Sacado_No_Kokkos.hpp"
-#endif
+#include "Sacado.hpp"
 
 // STK includes
 #include "Ionit_Initializer.h"
@@ -151,37 +117,32 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 
 #include "stk_util/parallel/Parallel.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/CoordinateSystems.hpp"
 #include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/Comm.hpp"
-#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/GetBuckets.hpp"
-#include "stk_mesh/base/CreateAdjacentEntities.hpp"
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian3d, etc
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
-#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId
+#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/Bucket.hpp"
+#include "stk_mesh/base/Entity.hpp"
+#include "stk_mesh/base/Field.hpp"
 
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
-#include "TrilinosCouplings_Statistics.hpp"
-#endif
 
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-typedef shards::CellTopology             ShardsCellTopology;
-typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
-typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
-typedef Intrepid::CellTools<double>      IntrepidCTools;
-typedef Intrepid::FieldContainer<double> IntrepidFieldContainer;
+// Tpetra typedefs
+typedef Tpetra::Map<> Map;
 
+typedef Map::node_type::memory_space memory_space;
+typedef Map::node_type::device_type device_type;
+
+typedef shards::CellTopology ShardsCellTopology;
+typedef Intrepid2::FunctionSpaceTools<device_type> Intrepid2FSTools;
+typedef Intrepid2::CellTools<device_type> Intrepid2CTools;
+typedef Intrepid2::ScalarView<double, memory_space> Intrepid2ScalarView;
+
+using Teuchos::TimeMonitor;
 
 // Number of dimensions
 int spaceDim;
@@ -280,35 +241,32 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 /**********************************************************************************/
 /**************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
 /**********************************************************************************/
-int TestMultiLevelPreconditioner(char                        ProblemType[],
-                                 Teuchos::ParameterList &    MLList,
-                                 Epetra_CrsMatrix &          A,
-                                 const Epetra_MultiVector &  xexact,
-                                 Epetra_MultiVector &        b,
-                                 Epetra_MultiVector &        uh,
-				 Epetra_MultiVector & coords,
-                                 double &                    TotalErrorResidual,
-                                 double &                    TotalErrorExactSol);
-
+using Tpetra_CrsMatrix = Tpetra::CrsMatrix<>;
+using Tpetra_MultiVector = Tpetra::MultiVector<>;
+using Tpetra_Vector = Tpetra::Vector<>;
+int TestMultiLevelPreconditioner(char ProblemType[],
+                                 Teuchos::ParameterList   & MLList,
+                                 Teuchos::RCP<Tpetra_CrsMatrix>   & A,
+                                 Teuchos::RCP<Tpetra_Vector> & xexact,
+                                 Teuchos::RCP<Tpetra_MultiVector> & b,
+                                 Teuchos::RCP<Tpetra_MultiVector> & uh,
+				 Teuchos::RCP<Tpetra_MultiVector> & coords,
+                                 Teuchos::RCP<Tpetra_CrsMatrix>   & MassMatrix,
+                                 double & TotalErrorResidual,
+                                 double & TotalErrorExactSol);
 
 /**********************************************************************************/
 /************* FUNCTION DECLARATIONS FOR SIMPLE BASIS FACTORY *********************/
 /**********************************************************************************/
 
-/** \brief  Simple factory that chooses basis function based on cell topology.
+/** \brief  Simple factory that chooses HGRAD basis function based on cell topology.
 
     \param  cellTopology  [in]    Shards cell topology
-    \param  order         [in]    basis function order, currently unused
-    \param  basis         [out]   pointer to Intrepid basis
 
     \return Intrepid basis
  */
-
-void getBasis(Teuchos::RCP<Intrepid::Basis<double,IntrepidFieldContainer > > &basis,
-               const ShardsCellTopology & cellTopology,
-               int order);
-
-int getDimension(const ShardsCellTopology & cellTopology);
+template<typename DeviceType, typename Scalar>
+Teuchos::RCP<Intrepid2::Basis<DeviceType, Scalar, Scalar> > getHGradBasis(const ShardsCellTopology & cellTopology);
 
 /**********************************************************************************/
 /**********************************************************************************/
@@ -327,6 +285,9 @@ void mesh_read_write(const std::string &type,
   MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
 
   std::string absoluteFileName = working_directory + "/" + filename;
+  if (myrank == 0) {
+    std::cout<<"Reading mesh: "<<absoluteFileName<<std::endl;
+  }
   size_t input_index = broker.add_mesh_database(absoluteFileName, type, stk::io::READ_MESH);
   broker.set_active_mesh(input_index);
   // creates metadata
@@ -339,24 +300,70 @@ void mesh_read_write(const std::string &type,
 
 
 /**********************************************************************************/
+/**********************************************************************************/
+/**********************************************************************************/
+template<class crs_matrix_type, class multivector_type1, class multivector_type2, class solution_type>
+void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multivector_type1 & x, multivector_type2 & b, solution_type & solution_values) {
+  using SC = typename multivector_type1::scalar_type;
+  using LO = typename multivector_type1::local_ordinal_type;
+  int N=(int)BCNodes.size();
+  Teuchos::ArrayRCP<SC> xdata = x.getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> bdata = b.getDataNonConst(0);
+  if (b.getMap()->getComm()->getRank() == 0)
+    std::cout<<"Apply in Dirichlet BCs to "<<BCNodes.size() << " nodes"<<std::endl;
+
+  Tpetra::beginModify(A,b);
+
+  for(int i=0; i<N; i++) {
+    LO lrid = BCNodes[i];
+
+    xdata[lrid]=bdata[lrid] = solution_values[i];
+
+    size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
+    typename crs_matrix_type::nonconst_local_inds_host_view_type cols("cols", numEntriesInRow);
+    typename crs_matrix_type::nonconst_values_host_view_type vals("vals", numEntriesInRow);
+    A.getLocalRowCopy(lrid, cols, vals, numEntriesInRow);
+
+    for(int j=0; j<vals.extent_int(0); j++)
+      vals(j) = (cols(j) == lrid) ? 1.0 : 0.0;
+
+    A.replaceLocalValues(lrid, cols, vals);
+  }
+
+  Tpetra::endModify(A,b);
+
+}
+
+
+
+/**********************************************************************************/
 /******************************** MAIN ********************************************/
 /**********************************************************************************/
 
-int main(int argc, char *argv[]) {
 
+int main_(int argc, char *argv[]) {
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using entity_type = stk::mesh::Entity;
+  using Tpetra_Map = Tpetra::Map<>;
+  using Tpetra_FEMultiVector = Tpetra::FEMultiVector<>;
+  using Tpetra_FECrsMatrix = Tpetra::FECrsMatrix<>;
+  using Tpetra_FECrsGraph = Tpetra::FECrsGraph<>;
+  using SC = Tpetra_Vector::scalar_type;
+  using LO = Tpetra_Vector::local_ordinal_type;
+  using GO = Tpetra_Vector::global_ordinal_type;
+  //using NO = Tpetra_Vector::node_type;
+
 
   const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
   const stk::mesh::EntityRank ELEMENT_RANK = stk::topology::ELEMENT_RANK;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  int numRanks = Comm.NumProc();
-  int MyPID = Comm.MyPID();
+  RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Teuchos::MpiComm<int> > MpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
+  int numRanks = Comm->getSize();
+  int MyPID = Comm->getRank();
 
-  Epetra_Time Time(Comm);
- 
+
   Teuchos::CommandLineProcessor clp(false);
 
   std::string optMeshFile = "unit_cube_10int_hex.exo";
@@ -370,6 +377,12 @@ int main(int argc, char *argv[]) {
   clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
 		  "generated matrix to that file in MatrixMarket format.");
 
+  // If massmatFilename is nonempty, dump the mass matrix to that file
+  // in MatrixMarket format.
+  std::string massmatFilename;
+  clp.setOption ("massmatFilename", &massmatFilename, "If nonempty, dump the "
+		  "generated mass matrix to that file in MatrixMarket format.");
+
   // If rhsFilename is nonempty, dump the rhs to that file
   // in MatrixMarket format.
   std::string rhsFilename;
@@ -381,13 +394,15 @@ int main(int argc, char *argv[]) {
   std::string initialGuessFilename;
   clp.setOption ("initialGuessFilename", &initialGuessFilename, "If nonempty, dump the "
 		  "generated initial guess to that file in MatrixMarket format.");
-  
+
   // If coordsFilename is nonempty, dump the coords to that file
   // in MatrixMarket format.
   std::string coordsFilename;
   clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
 		  "generated coordinates to that file in MatrixMarket format.");
 
+  bool buildMassMatrix = false;
+  clp.setOption("buildMassMat", "dontBuildMassMat", &buildMassMatrix, "build a mass matrix");
 
 
   switch (clp.parse(argc, argv)) {
@@ -401,7 +416,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (MyPID == 0) {
-    std::cout 
+    std::cout
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
     << "|              Example: Solve Poisson Equation                                |\n" \
@@ -410,10 +425,10 @@ int main(int argc, char *argv[]) {
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
     << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
     << "|                                                                             |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  STK's website:      http://trilinos.sandia.gov/packages/stk                |\n" \
-    << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|  Intrepid2's website: http://trilinos.sandia.gov/packages/intrepid2         |\n" \
+    << "|  STK's website:       http://trilinos.github.io/stk.html                    |\n" \
+    << "|  ML's website:        http://trilinos.sandia.gov/packages/ml                |\n" \
+    << "|  Trilinos website:    http://trilinos.sandia.gov                            |\n" \
     << "|                                                                             |\n" \
     << "===============================================================================\n";
   }
@@ -441,9 +456,11 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*********************************** READ MESH ************************************/
   /**********************************************************************************/
-  stk::io::StkMeshIoBroker broker(Comm.GetMpiComm());
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) Read Mesh")));
+
+  stk::io::StkMeshIoBroker broker(*MpiComm->getRawMpiComm());
   broker.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", 180));
-  broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "rcb"));
+  broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "HSFC"));
   broker.property_add(Ioss::Property("COMPOSE_RESULTS", false));  //Note!  true results in an error in Seacas
 
   std::string type = "exodusii";
@@ -454,34 +471,37 @@ int main(int argc, char *argv[]) {
   std::string filename(optMeshFile);
   int db_integer_size = 4;
   stk::io::HeartbeatType hb_type = stk::io::NONE;
-
+  stk::initialize(&argc, &argv);
   mesh_read_write(type, working_directory, filename, broker, db_integer_size, hb_type);
 
   stk::mesh::BulkData &bulkData = broker.bulk_data();
   stk::mesh::MetaData &metaData = broker.meta_data();
 
-  // Count number of local nodes, record GIDs for Epetra map.
-  std::vector<int> epetraGIDs;
-  int numLocalNodes=0;
-  stk::mesh::Selector locallyOwnedSelector = metaData.locally_owned_part(); //locally-owned
-  const stk::mesh::BucketVector &localNodeBuckets = bulkData.get_buckets(NODE_RANK, locallyOwnedSelector);
-  for (size_t bucketIndex = 0; bucketIndex < localNodeBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &nodeBucket = *localNodeBuckets[bucketIndex];
-    numLocalNodes += nodeBucket.size();
-    for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex) {
-      stk::mesh::Entity node = nodeBucket[nodeIndex];
-      epetraGIDs.push_back(bulkData.identifier(node)-1);
-    }
+  // Count number of local nodes, record GIDs for Tpetra map.
+  Teuchos::Array<GO> ownedGIDs, ownedPlusSharedGIDs;
+  stk::mesh::Selector locallyOwnedSelector = metaData.locally_owned_part();
+  int numLocalNodes = stk::mesh::count_entities(bulkData, NODE_RANK, locallyOwnedSelector);
+
+  stk::mesh::for_each_entity_run_no_threads(bulkData, NODE_RANK, locallyOwnedSelector,
+    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
+    {
+        ownedGIDs.push_back(mesh.identifier(node)-1);
+    });
+  ownedPlusSharedGIDs.assign(ownedGIDs.begin(), ownedGIDs.end());
+
+  // Now record the shared-but-not-owned nodal GIDs
+  {
+    stk::mesh::Selector globallySharedSelector = metaData.globally_shared_part();
+    globallySharedSelector &= !locallyOwnedSelector; //not owned
+    stk::mesh::for_each_entity_run_no_threads(bulkData, NODE_RANK, globallySharedSelector,
+      [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
+      {
+        ownedPlusSharedGIDs.push_back(mesh.identifier(node)-1);
+      });
   }
 
-
-  // Count number of local elements
-  int numLocalElems=0;
-  const stk::mesh::BucketVector &localElementBuckets = bulkData.get_buckets(ELEMENT_RANK, locallyOwnedSelector);
-  for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &elementBucket = *localElementBuckets[bucketIndex];
-    numLocalElems += elementBucket.size();
-  }
+  // Count # of local elements
+  int numLocalElems = stk::mesh::count_entities(bulkData, ELEMENT_RANK, locallyOwnedSelector);
 
   if (optPrintLocalStats) {
     for (int i=0; i<numRanks; ++i) {
@@ -489,253 +509,235 @@ int main(int argc, char *argv[]) {
         std::cout << "(" << MyPID << ")    Number of local Elements: " << numLocalElems << std::endl
                   << "(" << MyPID << ")    Number of local Nodes   : " << numLocalNodes << std::endl << std::endl;
       }
-      Comm.Barrier();
+      Comm->barrier();
     }
   }
 
-  int numGlobalNodes = 0, numGlobalElements = 0;
-  Comm.SumAll(&numLocalNodes,&numGlobalNodes,1);
-  Comm.SumAll(&numLocalElems,&numGlobalElements,1);
+  GO numGlobalNodes=0, numGlobalElements=0;
+  Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, (GO)numLocalNodes, Teuchos::outArg(numGlobalNodes));
+  Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, (GO)numLocalElems, Teuchos::outArg(numGlobalElements));
   if (MyPID == 0) {
     std::cout << "       Number of global Nodes   : " << numGlobalNodes << std::endl;
     std::cout << "       Number of global Elements: " << numGlobalElements << std::endl;
   }
- 
+  tm = Teuchos::null;
 
-  typedef stk::mesh::Field<double, stk::mesh::Cartesian>  CoordFieldType;
-  // get coordinates field
-  CoordFieldType *coords = metaData.get_field<CoordFieldType>(NODE_RANK,"coordinates");
 
-  // get buckets containing entities of node rank
-  stk::mesh::Selector nothingSelector;
-  stk::mesh::Selector allSelector(!nothingSelector);
-  stk::mesh::BucketVector const & nodeBuckets = bulkData.get_buckets( NODE_RANK,allSelector );
+  /**********************************************************************************/
+  /********************* BUILD MAPS/GRAPHS FOR GLOBAL SOLUTION **********************/
+  /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) Build Maps/Graph")));
+
+  RCP<Tpetra_Map> globalMapG = Teuchos::rcp(new Tpetra_Map( (Tpetra::global_size_t)numGlobalNodes,ownedGIDs(), (GO)0, Comm));
+  RCP<Tpetra_Map> ownedPlusSharedMapG = Teuchos::rcp(new Tpetra_Map( (Tpetra::global_size_t)numGlobalNodes,ownedPlusSharedGIDs(), (GO)0, Comm));
+  Kokkos::DualView<size_t*> nnzPerRowUpperBound("nnzbound",ownedPlusSharedGIDs.size());
+  nnzPerRowUpperBound.template modify<typename Kokkos::DualView<size_t*>::host_mirror_space>();
+  auto nnzPerRowUpperBound_h = nnzPerRowUpperBound.view_host();
+
+  // Count the local elements and get node index upper bound
+  stk::mesh::for_each_entity_run_no_threads(bulkData, ELEMENT_RANK, locallyOwnedSelector,
+    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
+    {
+      stk::mesh::ConnectedEntities nodes = mesh.get_connected_entities(elem,NODE_RANK);
+
+      // NOTE: This will substantially overcount the NNZ needed.  You should use hash table to be smarter
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+        GO GID = mesh.identifier(nodes[inode])-1;
+        LO LID = ownedPlusSharedMapG->getLocalElement(GID);
+        if (LID != Teuchos::OrdinalTraits<LO>::invalid())
+          nnzPerRowUpperBound_h[LID]+=nodes.size();
+      }
+    });
+
+  // Build the Graph
+  RCP<Tpetra_FECrsGraph> StiffGraph = rcp(new Tpetra_FECrsGraph(globalMapG,ownedPlusSharedMapG,nnzPerRowUpperBound));
+  Tpetra::beginAssembly(*StiffGraph);
+  stk::mesh::for_each_entity_run_no_threads(bulkData, ELEMENT_RANK, locallyOwnedSelector,
+    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
+    {
+      stk::mesh::ConnectedEntities nodes = mesh.get_connected_entities(elem,NODE_RANK);
+
+      Teuchos::Array<GO> global_ids(nodes.size());
+      bool foundOwnedNode = false;
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+        if (mesh.bucket(nodes[inode]).owned()) {
+          foundOwnedNode = true;
+        }
+        GO GID = mesh.identifier(nodes[inode])-1;
+        global_ids[inode]=GID;
+      }
+
+      if (!foundOwnedNode) {
+        std::cout<<"Warning, element "<<mesh.identifier(elem)<<" on P"<<mesh.parallel_rank()<<" doesn't have any locally-owned nodes."<<std::endl;
+      }
+
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+        StiffGraph->insertGlobalIndices(global_ids[inode],global_ids());
+      }
+    });
+
+  Tpetra::endAssembly(*StiffGraph);
+  tm = Teuchos::null;
+
+  /**********************************************************************************/
+  /******************** COMPUTE COORDINATES AND STATISTICS **************************/
+  /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) Compute Coordinates and Stats")));
+
   std::vector<entity_type> bcNodes;
 
-  // loop over all mesh parts
-  const stk::mesh::PartVector & all_parts = metaData.get_parts();
+  stk::mesh::ExodusTranslator exodusTranslator(bulkData);
+  stk::mesh::PartVector nodeSets = exodusTranslator.get_node_set_parts();
   ShardsCellTopology cellType;
-  for (stk::mesh::PartVector::const_iterator i  = all_parts.begin(); i != all_parts.end(); ++i) {
+  for (const stk::mesh::Part* nodeSet : nodeSets) {
 
-    stk::mesh::Part & part = **i ;
-    //printf("Loading mesh part %s isnode=%s\n",part.name().c_str(),part.primary_entity_rank() == NODE_RANK ? "YES" : "NO");
-    // if part only contains nodes and isn't the ROOT_CELL_TOPOLOGY guy, then it is a node set
-    if (part.primary_entity_rank() == NODE_RANK && part.name() != "{FEM_ROOT_CELL_TOPOLOGY_PART_NODE}") {
-      stk::mesh::Selector partSelector(part);
-      stk::mesh::Selector bcNodeSelector = partSelector & locallyOwnedSelector;
+      stk::mesh::Selector bcNodeSelector = *nodeSet & locallyOwnedSelector;
 
       if(bcNodes.size() == 0)
-        stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
+        stk::mesh::get_entities(bulkData, NODE_RANK, bcNodeSelector, bcNodes);
       else {
         std::vector<entity_type> myBcNodes;
-        stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, myBcNodes);
+        stk::mesh::get_entities(bulkData, NODE_RANK, bcNodeSelector, myBcNodes);
         std::copy(myBcNodes.begin(),myBcNodes.end(),std::back_inserter(bcNodes));
-      }        
+      }
 
-      if(MyPID==0) printf("Adding nodeset %s\n",part.name().c_str());
+      if(MyPID==0) printf("Adding nodeset %s\n",nodeSet->name().c_str());
+  }
 
-    }
-    else if(part.primary_entity_rank() == ELEMENT_RANK) {
+  stk::mesh::PartVector elemBlocks = exodusTranslator.get_element_block_parts();
+  for(const stk::mesh::Part* elemBlock : elemBlocks) {
       // Here the topology is defined from the mesh. Note that it is assumed
       // that all parts with elements (aka ELEMENT_RANK) have the same topology type
-      auto myCell = stk::mesh::get_cell_topology(metaData.get_topology( part ));
+      auto myCell = stk::mesh::get_cell_topology(metaData.get_topology( *elemBlock ));
       if(myCell.getCellTopologyData()) {
-	cellType =  myCell;
+        cellType =  myCell;
       }
-    }
+  }
 
-  } // end loop over mesh parts
-
-  int numNodesPerElem = cellType.getNodeCount();  
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
-  int numEdgesPerElem = cellType.getEdgeCount();  
-#endif
+  int numNodesPerElem = cellType.getNodeCount();
+  int numEdgesPerElem = cellType.getEdgeCount();
 
   if(MyPID==0) {
     std::cout<<"Cell Topology: "<<cellType.getName() << " ("<<cellType.getBaseName()<<")"<<std::endl;
   }
 
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
-  MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numGlobalElements);
-  bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8") && (Comm.NumProc() == 1);
+  //MachineLearningStatistics_Hex3D<SC,LO,GO,NO> MLStatistics(numGlobalElements);
+  bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8") && (numRanks == 1);
   if(MyPID==0) std::cout<<"do_statistics = "<<do_statistics<<std::endl;
-#endif
 
   // if no boundary node set was found give a warning
   int numLocalBCs = bcNodes.size();
   int numGlobalBCs = 0;
-  Comm.SumAll(&numLocalBCs,&numGlobalBCs,1);
-  if (numGlobalBCs == 0) {
-    if (MyPID == 0) {
+  Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, numLocalBCs, Teuchos::outArg(numGlobalBCs));
+
+  if (MyPID == 0) {
+    std::cout << "       Number of Dirichlet Nodes: " << numGlobalBCs << std::endl;
+    if (numGlobalBCs == 0) {
       std::cout << std::endl
                 << "     Warning! - No boundary node set found." << std::endl
-                << "  Boundary conditions will not be applied correctly.\n"
+                << "     Boundary conditions will not be applied correctly.\n"
                 << std::endl;
     }
   }
 
   if (optPrintLocalStats) {
-    if (MyPID == 0)
-      std::cout << "       Number of global b.c. nodes: " << numGlobalBCs << std::endl;
     for (int i=0; i<numRanks; ++i) {
       if (MyPID == i) {
         std::cout << "(" << MyPID << ")    Number of local b.c. nodes: " << bcNodes.size() << std::endl;
       }
-      Comm.Barrier();
+      Comm->barrier();
     }
     if(MyPID==0) std::cout << std::endl;
   }
 
-  if(MyPID==0) {
-    std::cout << "Read mesh" << "                                   "
-              << Time.ElapsedTime() << " seconds" << std::endl;
-    Time.ResetStartTime();
-
-  }
+  tm = Teuchos::null;
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
   /**********************************************************************************/
-
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) Assembly Prep")));
   // Define cubature of the specified degree for the cellType
-  Intrepid::DefaultCubatureFactory<double>  cubFactory;
+  Intrepid2::DefaultCubatureFactory  cubFactory;
   int cubDegree = 2;
 
-  RCP<Intrepid::Cubature<double> > cellCubature = cubFactory.create(cellType, cubDegree);
+  RCP<Intrepid2::Cubature<device_type> > cellCubature = cubFactory.create<device_type>(cellType, cubDegree);
 
   int cubDim       = cellCubature -> getDimension();
   int numCubPoints = cellCubature -> getNumPoints();
 
   // Get numerical integration points and weights
-  IntrepidFieldContainer cubPoints (numCubPoints, cubDim);
-  IntrepidFieldContainer cubWeights(numCubPoints);
+  Intrepid2ScalarView cubPoints ("cubPoints", numCubPoints, cubDim);
+  Intrepid2ScalarView cubWeights("cubWeights", numCubPoints);
 
   cellCubature -> getCubature(cubPoints, cubWeights);
-
-  if(MyPID==0) {
-    std::cout << "Getting cubature                            "
-              << Time.ElapsedTime() << " seconds" << std::endl;
-    Time.ResetStartTime();
-  }
 
   /**********************************************************************************/
   /*********************************** GET BASIS ************************************/
   /**********************************************************************************/
 
   // Select basis from the cell topology
-  int order = 1;
-  spaceDim = getDimension(cellType);
-  RCP<Intrepid::Basis<double, IntrepidFieldContainer > >  HGradBasis;
-  getBasis(HGradBasis, cellType, order);
-
+  spaceDim = cellType.getDimension();
+  auto HGradBasis = getHGradBasis<device_type,SC>(cellType);
 
   int numFieldsG = HGradBasis->getCardinality();
-  IntrepidFieldContainer basisValues(numFieldsG, numCubPoints);
-  IntrepidFieldContainer basisGrads(numFieldsG, numCubPoints, spaceDim);
+
+  Intrepid2ScalarView basisValues("HGBValues", numFieldsG, numCubPoints);
+  Intrepid2ScalarView basisGrads("HGBGrads", numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
-  HGradBasis->getValues(basisValues, cubPoints, Intrepid::OPERATOR_VALUE);
-  HGradBasis->getValues(basisGrads, cubPoints, Intrepid::OPERATOR_GRAD);
-
-  if(MyPID==0) {
-    std::cout << "Getting basis                               "
-              << Time.ElapsedTime() << " seconds" << std::endl;
-    Time.ResetStartTime();
-  }
-
-
-  /**********************************************************************************/
-  /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
-  /**********************************************************************************/
-
-  Epetra_Map   globalMapG(numGlobalNodes,numLocalNodes, &epetraGIDs[0], 0, Comm);
-  Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
-  Epetra_FEVector rhsVector(globalMapG);
-
-  if(MyPID==0) {
-    std::cout <<  "Build global maps                           "
-              << Time.ElapsedTime() << " seconds" << std::endl;
-    Time.ResetStartTime();
-  }
+  HGradBasis->getValues(basisValues, cubPoints, Intrepid2::OPERATOR_VALUE);
+  HGradBasis->getValues(basisGrads, cubPoints, Intrepid2::OPERATOR_GRAD);
 
 
   /**********************************************************************************/
   /******************************** STASH COORDINATES *******************************/
   /**********************************************************************************/
+  typedef stk::mesh::Field<double>  CoordFieldType;
+  // get coordinates field
+  CoordFieldType *coords = metaData.get_field<double>(NODE_RANK,"coordinates");
+
   // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,spaceDim);    
+  RCP<Tpetra_MultiVector> nCoord = rcp(new Tpetra_MultiVector(globalMapG,spaceDim));
+  auto nCoord_h = nCoord->get2dViewNonConst();
   // Loop over elements
-  
-  for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-    for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-      stk::mesh::Entity elem = elemBucket[elemIndex];
-      //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-      //TODO Therefore there's no need to do this everytime.
-      unsigned numNodes = bulkData.num_nodes(elem);
-      stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
-      for (unsigned inode = 0; inode < numNodes; ++inode) {
-	double *coord = stk::mesh::field_data(*coords, nodes[inode]);
-	int lid = globalMapG.LID((int)bulkData.identifier(nodes[inode]) -1);
-        if(lid != -1) {
-          nCoord[0][lid] = coord[0];
-          nCoord[1][lid] = coord[1];
+
+  const stk::mesh::BucketVector &localElementBuckets = bulkData.get_buckets(ELEMENT_RANK, locallyOwnedSelector);
+  for (const stk::mesh::Bucket* elemBucketPtr : localElementBuckets) {
+    for (stk::mesh::Entity elem : *elemBucketPtr) {
+      stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(elem,NODE_RANK);
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+        double *coord = stk::mesh::field_data(*coords, nodes[inode]);
+        LO lid = globalMapG->getLocalElement((int)bulkData.identifier(nodes[inode]) -1);
+        if(lid != Teuchos::OrdinalTraits<LO>::invalid()) {
+          nCoord_h[0][lid] = coord[0];
+          nCoord_h[1][lid] = coord[1];
           if(spaceDim==3)
-            nCoord[2][lid] = coord[2];
+            nCoord_h[2][lid] = coord[2];
         }
       }
-    }      
-  } // end loop over elements
-  if(coordsFilename != "") {
-    // WARNING: This does *NOT* output the coordinates in an ordering that corresponds
-    // to the matrix unless the matrix is (a) in serial and (b) has identical global and ordering
-    // The ifdef'd code below will do processor-by-processor output with global IDs for matching
-    // in all other cases
-    EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
-
-#if 0
-    // Processor-by-processor output
-    char fn[80];
-    sprintf(fn,"test-%d-%s",MyPID,coordsFilename.c_str());
-    FILE *f = fopen(fn,"w");
-    for(int i=0;i<nCoord.MyLength(); i++) {
-      fprintf(f,"%d ",nCoord.Map().GID(i));
-      for(int j=0; j<nCoord.NumVectors(); j++)
-        fprintf(f,"%22.16e ",nCoord[j][i]);
-      fprintf(f,"\n");
     }
-    fclose(f);
-#endif
-
-    if(MyPID==0) {Time.ResetStartTime();}
-  }
+  } // end loop over elements
 
 
   /**********************************************************************************/
   /****************************** STATISTICS (Part I) *******************************/
   /**********************************************************************************/
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   if(do_statistics) {
-    Intrepid::FieldContainer<int> elemToNode(numLocalElems,numNodesPerElem);
-    Intrepid::FieldContainer<int> elemToEdge(numLocalElems,numEdgesPerElem);
-    Intrepid::FieldContainer<double> nodeCoord (numLocalNodes, spaceDim);
-    Intrepid::FieldContainer<double> sigmaVal(numLocalElems);
-    
+    Intrepid2::ScalarView<int, memory_space> elemToNode("elemToNode",numLocalElems,numNodesPerElem);
+    Intrepid2::ScalarView<int, memory_space> elemToEdge("elemToEdge",numLocalElems,numEdgesPerElem);
+    Intrepid2::ScalarView<double, memory_space> nodeCoord ("nodeCoord", numLocalNodes, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> sigmaVal("sigmaVal", numLocalElems);
+
     int elem_ct=0;
     std::map<std::pair<int,int>,int> local_edge_hash;
     std::vector<std::pair<int,int> > edge_vector;
 
-    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-        stk::mesh::Entity elem = elemBucket[elemIndex];
-        //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-        //TODO Therefore there's no need to do this everytime.
-        unsigned numNodes = bulkData.num_nodes(elem);
-        stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
-        for (unsigned inode = 0; inode < numNodes; ++inode) {
-          double *coord = stk::mesh::field_data(*coords, nodes[inode]);
-          int lid = globalMapG.LID((int)bulkData.identifier(nodes[inode]) -1);
+    for (const stk::mesh::Bucket* elemBucketPtr : localElementBuckets) {
+      for (stk::mesh::Entity elem : *elemBucketPtr) {
+        stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(elem,NODE_RANK);
+        for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+          const double *coord = stk::mesh::field_data(*coords, nodes[inode]);
+          LO lid = globalMapG->getLocalElement((int)bulkData.identifier(nodes[inode]) -1);
           elemToNode(elem_ct,inode) = lid;
           if(lid != -1) {
             nodeCoord(lid,0) = coord[0];
@@ -744,15 +746,15 @@ int main(int argc, char *argv[]) {
               nodeCoord(lid,2) = coord[2];
           }
         }//end node loop
-        
+
         auto data = cellType.getCellTopologyData();
         for(unsigned iedge=0; iedge<cellType.getEdgeCount(); iedge++) {
           int n0 = data->edge[iedge].node[0];
           int n1 = data->edge[iedge].node[1];
-          int lid0 = globalMapG.LID((int)bulkData.identifier(nodes[n0]) -1);
-          int lid1 = globalMapG.LID((int)bulkData.identifier(nodes[n1]) -1);
+          int lid0 = globalMapG->getLocalElement((int)bulkData.identifier(nodes[n0]) -1);
+          int lid1 = globalMapG->getLocalElement((int)bulkData.identifier(nodes[n1]) -1);
           if(lid0 != -1 && lid1 != -1) {
-            int lo = std::min(lid0,lid1);            
+            int lo = std::min(lid0,lid1);
             int hi = std::max(lid0,lid1);
             std::pair<int,int> key(lo,hi);
             if (local_edge_hash.find(key) == local_edge_hash.end()) {
@@ -766,28 +768,32 @@ int main(int argc, char *argv[]) {
             }
           }
         }//end edge loop
-      
+
         sigmaVal(elem_ct) = 1;// Not doing sigma here
-        
+
         elem_ct++;
       }//end element loop
     }//end bucket loop
 
-    Intrepid::FieldContainer<int> edgeToNode(edge_vector.size(), 2);
+    Intrepid2::ScalarView<int, memory_space> edgeToNode("edgeToNode", edge_vector.size(), 2);
     for(int i=0; i<(int)edge_vector.size(); i++) {
       edgeToNode(i,0) = edge_vector[i].first;
       edgeToNode(i,1) = edge_vector[i].second;
     }
 
 
-    MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
+    //MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
 
   }
-#endif
+  tm = Teuchos::null;
 
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
   /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("5) Matrix/RHS Assembly")));
+  RCP<Tpetra_FECrsMatrix> StiffMatrix = rcp(new Tpetra_FECrsMatrix(StiffGraph));
+  RCP<Tpetra_FECrsMatrix> MassMatrix;
+  if (buildMassMatrix) MassMatrix = rcp(new Tpetra_FECrsMatrix(StiffGraph));
 
   // Define desired workset size and count how many worksets there are on this processor's mesh block
   //int desiredWorksetSize = numElems;                   // change to desired workset size!
@@ -801,10 +807,15 @@ int main(int argc, char *argv[]) {
   if(numWorksets*desiredWorksetSize < numLocalElems) numWorksets += 1;
 
   if (MyPID == 0) {
-    std::cout << "\tDesired workset size:                 " << desiredWorksetSize << std::endl;
-    std::cout << "\tNumber of worksets (per processor):   " << numWorksets << std::endl << std::endl;
-    Time.ResetStartTime();
+    std::cout << "       Desired workset size:                 " << desiredWorksetSize << std::endl;
+    std::cout << "       Number of worksets (per processor):   " << numWorksets << std::endl << std::endl;
   }
+
+
+  // Start assembly
+  RCP<Tpetra_FEMultiVector> rhsVector = rcp (new Tpetra_FEMultiVector(globalMapG,StiffGraph->getImporter(),1));
+  if (buildMassMatrix) Tpetra::beginAssembly(*MassMatrix,*StiffMatrix,*rhsVector);
+  else  Tpetra::beginAssembly(*StiffMatrix,*rhsVector);
 
   // Right now, this loop only increments once:
   //   numWorkset = 1
@@ -823,19 +834,14 @@ int main(int argc, char *argv[]) {
 
     // allocate the array for the cell nodes
     worksetSize  = worksetEnd - worksetBegin;
-    IntrepidFieldContainer cellWorkset(worksetSize, numNodesPerElem, spaceDim);
+    Intrepid2ScalarView cellWorkset("cellWorkset", worksetSize, numNodesPerElem, spaceDim);
 
     // copy coordinates into cell workset
     int cellCounter = 0;
-    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-        stk::mesh::Entity elem = elemBucket[elemIndex];
-        //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-        //TODO Therefore there's no need to do this everytime.
-        unsigned numNodes = bulkData.num_nodes(elem);
-        stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
-        for (unsigned inode = 0; inode < numNodes; ++inode) {
+    for (const stk::mesh::Bucket* elemBucket : localElementBuckets) {
+      for (stk::mesh::Entity elem : *elemBucket) {
+        stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(elem,NODE_RANK);
+        for (unsigned inode = 0; inode < nodes.size(); ++inode) {
           double *coord = stk::mesh::field_data(*coords, nodes[inode]);
           cellWorkset(cellCounter, inode, 0) = coord[0];
           cellWorkset(cellCounter, inode, 1) = coord[1];
@@ -850,55 +856,47 @@ int main(int argc, char *argv[]) {
     /**********************************************************************************/
 
     // Containers for Jacobians, integration measure & cubature points in workset cells
-    IntrepidFieldContainer worksetJacobian  (worksetSize, numCubPoints, spaceDim, spaceDim);
-    IntrepidFieldContainer worksetJacobInv  (worksetSize, numCubPoints, spaceDim, spaceDim);
-    IntrepidFieldContainer worksetJacobDet  (worksetSize, numCubPoints);
-    IntrepidFieldContainer worksetCubWeights(worksetSize, numCubPoints);
-    IntrepidFieldContainer worksetCubPoints (worksetSize, numCubPoints, cubDim);
+    Intrepid2ScalarView worksetJacobian  ("worksetJacobian", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2ScalarView worksetJacobInv  ("worksetJacobInv", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2ScalarView worksetJacobDet  ("worksetJacobDet", worksetSize, numCubPoints);
+    Intrepid2ScalarView worksetCubWeights("worksetCubWeights", worksetSize, numCubPoints);
+    Intrepid2ScalarView worksetCubPoints ("worksetCubPoints", worksetSize, numCubPoints, cubDim);
 
     // Containers for basis values transformed to workset cells and them multiplied by cubature weights
-    IntrepidFieldContainer worksetBasisValues        (worksetSize, numFieldsG, numCubPoints);
-    IntrepidFieldContainer worksetBasisValuesWeighted(worksetSize, numFieldsG, numCubPoints);
-    IntrepidFieldContainer worksetBasisGrads         (worksetSize, numFieldsG, numCubPoints, spaceDim);
-    IntrepidFieldContainer worksetBasisGradsWeighted (worksetSize, numFieldsG, numCubPoints, spaceDim);
+    Intrepid2ScalarView worksetBasisValues        ("worksetBasisValues", worksetSize, numFieldsG, numCubPoints);
+    Intrepid2ScalarView worksetBasisValuesWeighted("worksetBasisValuesWeighted", worksetSize, numFieldsG, numCubPoints);
+    Intrepid2ScalarView worksetBasisGrads         ("worksetBasisGrads", worksetSize, numFieldsG, numCubPoints, spaceDim);
+    Intrepid2ScalarView worksetBasisGradsWeighted ("worksetBasisGradsWeighted", worksetSize, numFieldsG, numCubPoints, spaceDim);
 
     // Containers for diffusive & advective fluxes & non-conservative adv. term and reactive terms
-    IntrepidFieldContainer worksetDiffusiveFlux(worksetSize, numFieldsG, numCubPoints, spaceDim);
+    Intrepid2ScalarView worksetDiffusiveFlux("worksetDiffusiveFlux", worksetSize, numFieldsG, numCubPoints, spaceDim);
 
     // Containers for material values and source term. Require user-defined functions
-    IntrepidFieldContainer worksetMaterialVals (worksetSize, numCubPoints, spaceDim, spaceDim);
-    IntrepidFieldContainer worksetSourceTerm   (worksetSize, numCubPoints);
+    Intrepid2ScalarView worksetMaterialVals ("worksetMaterialVals", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2ScalarView worksetSourceTerm   ("worksetSourceTerm", worksetSize, numCubPoints);
 
     // Containers for workset contributions to the discretization matrix and the right hand side
-    IntrepidFieldContainer worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
-    IntrepidFieldContainer worksetRHS         (worksetSize, numFieldsG);
+    Intrepid2ScalarView worksetStiffMatrix ("worksetStiffMatrix", worksetSize, numFieldsG, numFieldsG);
+    Intrepid2ScalarView worksetMassMatrix;
+    if (buildMassMatrix)
+      worksetMassMatrix  = Intrepid2ScalarView("worksetMassMatrix" , worksetSize, numFieldsG, numFieldsG);
+    Intrepid2ScalarView worksetRHS         ("worksetRHS", worksetSize, numFieldsG);
 
-    if(MyPID==0) {
-      std::cout << "Allocate arrays                             "
-                << Time.ElapsedTime() << " seconds" << std::endl;
-      Time.ResetStartTime();
-    }
 
     /**********************************************************************************/
     /*                                Calculate Jacobians                             */
     /**********************************************************************************/
 
-    IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
-    IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
-    IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
-
-    if(MyPID==0) {
-      std::cout << "Calculate Jacobians                         "
-                << Time.ElapsedTime() << " seconds" << std::endl;
-      Time.ResetStartTime();
-    }
+    Intrepid2CTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
+    Intrepid2CTools::setJacobianInv(worksetJacobInv, worksetJacobian );
+    Intrepid2CTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
     /**********************************************************************************/
     /*          Cubature Points to Physical Frame and Compute Data                    */
     /**********************************************************************************/
 
     // map cubature points to physical frame
-    IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, cellType);
+    Intrepid2CTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, cellType);
 
     // get A at cubature points
     evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
@@ -906,80 +904,64 @@ int main(int argc, char *argv[]) {
     // get source term at cubature points
     evaluateSourceTerm (worksetSourceTerm, worksetCubPoints);
 
-    if(MyPID==0) {
-      std::cout << "Map to physical frame and get source term   "
-                << Time.ElapsedTime() << " seconds" << std::endl;
-      Time.ResetStartTime();
-    }
-
-
     /**********************************************************************************/
     /*                         Compute Stiffness Matrix                               */
     /**********************************************************************************/
 
     // Transform basis gradients to physical frame:                        DF^{-T}(grad u)
-    IntrepidFSTools::HGRADtransformGRAD<double>(worksetBasisGrads,
+    Intrepid2FSTools::HGRADtransformGRAD(worksetBasisGrads,
                                                 worksetJacobInv,   basisGrads);
 
     // Compute integration measure for workset cells:                      Det(DF)*w = J*w
-    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,
+    Intrepid2FSTools::computeCellMeasure(worksetCubWeights,
                                                 worksetJacobDet, cubWeights);
 
 
     // Multiply transformed (workset) gradients with weighted measure:     DF^{-T}(grad u)*J*w
-    IntrepidFSTools::multiplyMeasure<double>(worksetBasisGradsWeighted,
+    Intrepid2FSTools::multiplyMeasure(worksetBasisGradsWeighted,
                                              worksetCubWeights, worksetBasisGrads);
 
 
     // Compute material tensor applied to basis grads:                     A*(DF^{-T}(grad u)
-    IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,
+    Intrepid2FSTools::tensorMultiplyDataField(worksetDiffusiveFlux,
                                                      worksetMaterialVals,
                                                      worksetBasisGrads);
 
     // Integrate to compute contribution to global stiffness matrix:      (DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
-    IntrepidFSTools::integrate<double>(worksetStiffMatrix,
+    Intrepid2FSTools::integrate(worksetStiffMatrix,
                                        worksetBasisGradsWeighted,
-                                       worksetDiffusiveFlux, Intrepid::COMP_BLAS);
-
-    if(MyPID==0) {
-      std::cout << "Compute stiffness matrix                    "
-                << Time.ElapsedTime() << " seconds" << std::endl;
-      Time.ResetStartTime();
-    }
+                                       worksetDiffusiveFlux);
 
     /**********************************************************************************/
     /*                                   Compute RHS                                  */
     /**********************************************************************************/
 
     // Transform basis values to physical frame:                        clones basis values (u)
-    IntrepidFSTools::HGRADtransformVALUE<double>(worksetBasisValues,
+    Intrepid2FSTools::HGRADtransformVALUE(worksetBasisValues,
                                                  basisValues);
 
     // Multiply transformed (workset) values with weighted measure:     (u)*J*w
-    IntrepidFSTools::multiplyMeasure<double>(worksetBasisValuesWeighted,
+    Intrepid2FSTools::multiplyMeasure(worksetBasisValuesWeighted,
                                              worksetCubWeights, worksetBasisValues);
 
     // Integrate worksetSourceTerm against weighted basis function set:  f.(u)*J*w
-    IntrepidFSTools::integrate<double>(worksetRHS,
+    Intrepid2FSTools::integrate(worksetRHS,
                                        worksetSourceTerm,
-                                       worksetBasisValuesWeighted, Intrepid::COMP_BLAS);
+                                       worksetBasisValuesWeighted);
 
-    if(MyPID==0) {
-      std::cout << "Compute right-hand side                     "
-                << Time.ElapsedTime() << " seconds" << std::endl;
-      Time.ResetStartTime();
-    }
-
-    
-
+    /**********************************************************************************/
+    /*                         Compute Mass Matrix                                    */
+    /**********************************************************************************/
+    if (buildMassMatrix)
+       Intrepid2FSTools::integrate(worksetMassMatrix, worksetBasisValues,worksetBasisValuesWeighted);
 
     /**********************************************************************************/
     /***************************** STATISTICS (Part II) ******************************/
     /**********************************************************************************/
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
-    if(do_statistics)
+    /*
+      if(do_statistics)
       MLStatistics.Phase2a(worksetJacobDet,worksetCubWeights);
-#endif
+    */
 
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
@@ -988,33 +970,34 @@ int main(int argc, char *argv[]) {
     //"WORKSET CELL" loop: local cell ordinal is relative to numLocalElems
     //JJH runs from 0 to (#local cells - 1)
     int worksetCellOrdinal = 0;
-
-    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-
-      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
+    for (const stk::mesh::Bucket* elemBucketPtr : localElementBuckets) {
+      for (stk::mesh::Entity elem : *elemBucketPtr) {
 
         // Compute cell ordinal relative to the current workset
 
-        // Get element entity from id of cell
-        entity_type elem = elemBucket[elemIndex];
-        entity_type const* worksetNodes = bulkData.begin_nodes(elem);
+        stk::mesh::ConnectedEntities worksetNodes = bulkData.get_connected_entities(elem,NODE_RANK);
 
         // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
         for (int cellRow = 0; cellRow < numFieldsG; cellRow++) {
 
           int globalRow = bulkData.identifier(worksetNodes[cellRow]) - 1;
           double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
-          rhsVector.SumIntoGlobalValues(1, &globalRow, &sourceTermContribution);
+          rhsVector->sumIntoGlobalValue(globalRow, 0, sourceTermContribution);
 
           // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
           for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
-
-            //int globalCol = worksetNodes[cellCol].entity().identifier() - 1;
             int globalCol = bulkData.identifier(worksetNodes[cellCol]) - 1;
             double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
-            StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
 
+            Teuchos::Array<GO> col(1); col[0] = globalCol;
+            Teuchos::Array<SC> val(1); val[0] = operatorMatrixContribution;
+            StiffMatrix->sumIntoGlobalValues(globalRow, col(), val());
+
+            if (buildMassMatrix) {
+              double MassMatrixContribution = worksetMassMatrix(worksetCellOrdinal, cellRow, cellCol);
+              Teuchos::Array<SC> massval(1); massval[0] = MassMatrixContribution;
+              MassMatrix->sumIntoGlobalValues(globalRow,  col(), massval());
+            }
           }// end cell col loop
 
         }// end cell row loop
@@ -1023,103 +1006,104 @@ int main(int argc, char *argv[]) {
       }// end workset cell loop
 
 
-    } //for (size_t bucketIndex = 0; ...
+    } //for (localElementBuckets
 
   }// end workset loop
 
 
-  StiffMatrix.GlobalAssemble();
-  StiffMatrix.FillComplete();
-  rhsVector.GlobalAssemble();
+  if (buildMassMatrix) Tpetra::endAssembly(*MassMatrix,*StiffMatrix,*rhsVector);
+  else Tpetra::endAssembly(*StiffMatrix,*rhsVector);
 
-  if (MyPID==0) {
-    std::cout << "Global assembly                             "
-              << Time.ElapsedTime() << " seconds" << std::endl;
-    Time.ResetStartTime();
-  }
 /**********************************************************************************/
 /***************************** STATISTICS (Part IIb) ******************************/
 /**********************************************************************************/
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
+  /*
   if(do_statistics){
-    MLStatistics.Phase2b(Teuchos::rcp(&StiffMatrix.Graph(),false),Teuchos::rcp(&nCoord,false));
+        MLStatistics.Phase2b(Xpetra::toXpetra(StiffMatrix->getGraph()),Teuchos::rcp(&nCoord,false));
   }
-#endif
+  */
 /**********************************************************************************/
 /***************************** STATISTICS (Part III) ******************************/
 /**********************************************************************************/
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
+  /*
   if(do_statistics){
     MLStatistics.Phase3();
     Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
     if(MyPID==0) std::cout<<"*** Problem Statistics ***"<<std::endl<<problemStatistics<<std::endl;
   }
-#endif
+  */
+  tm = Teuchos::null;
 
- 
+/**********************************************************************************/
+/************************** DIRICHLET BC SETUP ************************************/
+/**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("6) Matrix/RHS Dirichlet BCs")));
+  RCP<Tpetra_MultiVector> lhsVector = rcp(new Tpetra_MultiVector(globalMapG,1));
 
-  /**********************************************************************************/
-  /************************** DIRICHLET BC SETUP ************************************/
-  /**********************************************************************************/
-  Epetra_Vector lhsVector(globalMapG,true);
-
+  std::vector<SC> solution_values; solution_values.reserve(bcNodes.size());
   std::vector<int> ownedBoundaryNodes; ownedBoundaryNodes.reserve(bcNodes.size());
   // Loop over boundary nodes
   for (unsigned i = 0; i < bcNodes.size(); i++) {
     int bcNodeId = bulkData.identifier(bcNodes[i]);
-    int lid = globalMapG.LID((int) bcNodeId -1);
+    int lid = globalMapG->getLocalElement((int) bcNodeId -1);
     if(lid != -1) {
       ownedBoundaryNodes.push_back(lid);
-      
+
       // get coordinates for this node
       entity_type bcnode = bulkData.get_entity(NODE_RANK,bcNodeId);
       double * coord = stk::mesh::field_data(*coords, bcnode);
-      
+
       // look up exact value of function on boundary
       double x  = coord[0];
       double y  = coord[1];
       double z  = (spaceDim==3) ? coord[2] : 0;
-      lhsVector[lid]=rhsVector[0][lid]=exactSolution(x, y, z);
+      solution_values.push_back(exactSolution(x, y, z));
     }
   } // end loop over boundary nodes
 
+  // Apply the Dirichlet conditions to matrix, lhs and rhs
+  Apply_Dirichlet_BCs(ownedBoundaryNodes,*StiffMatrix,*lhsVector,*rhsVector,solution_values);
 
-  // Zero out rows of stiffness matrix corresponding to Dirichlet edges
-  //  and add one to diagonal.
-  ML_Epetra::Apply_BCsToMatrixRows(&(ownedBoundaryNodes[0]), ownedBoundaryNodes.size(), StiffMatrix);
-  ML_Epetra::Remove_Zeroed_Rows(StiffMatrix,0.0);
-
+  tm = Teuchos::null;
 
 
-  if(MyPID==0) {
-    std::cout << "Adjust global matrix and rhs due to BCs     "
-              << Time.ElapsedTime()
-              << " seconds" << std::endl;
-    Time.ResetStartTime();
+
+   // Optionally dump the matrix and/or its coords to files.
+  {
+    typedef Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix> writer_type;
+    if (matrixFilename != "") {
+      writer_type::writeSparseFile (matrixFilename, StiffMatrix);
+    }
+    if ( (massmatFilename != "") && buildMassMatrix ) {
+      writer_type::writeSparseFile (massmatFilename, MassMatrix);
+    }
+    if (rhsFilename != "") {
+      writer_type::writeDenseFile (rhsFilename, rhsVector);
+    }
+    if (initialGuessFilename != "") {
+      writer_type::writeDenseFile (initialGuessFilename, lhsVector);
+    }
+    if (coordsFilename != "") {
+      writer_type::writeDenseFile (coordsFilename, nCoord);
+    }
   }
-
-  if(matrixFilename != "") 
-    EpetraExt::RowMatrixToMatlabFile(matrixFilename.c_str(),StiffMatrix);
-  if(rhsFilename != "") 
-    EpetraExt::MultiVectorToMatrixMarketFile(rhsFilename.c_str(),rhsVector,0,0,false);
-  if(initialGuessFilename != "") 
-    EpetraExt::MultiVectorToMatrixMarketFile(initialGuessFilename.c_str(),lhsVector,0,0,false);
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("7) Analytic Solution Generation")));
 
   // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
-  Epetra_FEVector exactNodalVals(globalMapG);
+  RCP<Tpetra_Vector> exactNodalVals = rcp(new Tpetra_Vector(globalMapG));
+  auto exactNodalVals_h = exactNodalVals->getDataNonConst();
   double TotalErrorResidual = 0.0;
   double TotalErrorExactSol = 0.0;
 
   // Get exact solution at nodes
-  for (size_t bucketIndex = 0; bucketIndex < localNodeBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &nodeBucket = *localNodeBuckets[bucketIndex];
-    for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex) {
-      stk::mesh::Entity node = nodeBucket[nodeIndex];
+  const stk::mesh::BucketVector &localNodeBuckets = bulkData.get_buckets(NODE_RANK, locallyOwnedSelector);
+  for (const stk::mesh::Bucket* bucketPtr : localNodeBuckets) {
+    for (stk::mesh::Entity node : *bucketPtr) {
       double * coord = stk::mesh::field_data(*coords, node);
       // look up exact value of function on boundary
       double x  = coord[0];
@@ -1127,19 +1111,36 @@ int main(int argc, char *argv[]) {
       double z  = (spaceDim==3) ? coord[2] : 0;
       int gNodeId = bulkData.identifier(node) - 1;
       //exactNodalVals[0][gNodeId]=exactSolution(x, y, z);
-      int lid = globalMapG.LID(gNodeId);
-      exactNodalVals[0][lid]=exactSolution(x, y, z);
+      int lid = globalMapG->getLocalElement(gNodeId);
+      exactNodalVals_h[lid]=exactSolution(x, y, z);
     }
   }
 
-  exactNodalVals.GlobalAssemble();
-
   char probType[10] = "laplace";
 
-  TestMultiLevelPreconditioner(probType,             MLList,
-                               StiffMatrix,          exactNodalVals,
-                               rhsVector,            lhsVector, nCoord,
-                               TotalErrorResidual,   TotalErrorExactSol);
+  Teuchos::RCP<Tpetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(StiffMatrix);
+  Teuchos::RCP<Tpetra_MultiVector> rhsMV = Teuchos::rcp_dynamic_cast<Tpetra_MultiVector>(rhsVector);
+  Teuchos::RCP<Tpetra_CrsMatrix> Mcrs;
+
+  if (buildMassMatrix) {
+    Mcrs = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(MassMatrix);
+  }
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) Linear solve")));
+  TestMultiLevelPreconditioner(probType,           MLList,
+                               Acrs,               exactNodalVals,
+                               rhsMV,              lhsVector, nCoord, Mcrs,
+                               TotalErrorResidual, TotalErrorExactSol);
+
+   // Timer Output
+   tm = Teuchos::null;
+   const bool alwaysWriteLocal = false;
+   const bool writeGlobalStats = true;
+   const bool writeZeroTimers  = false;
+   const bool ignoreZeroTimers = true;
+   const std::string filter    = "";
+   TimeMonitor::summarize(Comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                          writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
 
    return 0;
 
@@ -1261,9 +1262,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateMaterialTensor(ArrayOut &        matTensorValues,
                              const ArrayIn &   evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints        = evaluationPoints.dimension(1);
-  int spaceDim         = evaluationPoints.dimension(2);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints        = evaluationPoints.extent_int(1);
+  int spaceDim2         = evaluationPoints.extent_int(2);
 
   double material[3][3];
 
@@ -1273,12 +1274,12 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
       double z = 0.0;
-      if(spaceDim==3) z = evaluationPoints(cell, pt, 2);
+      if(spaceDim2==3) z = evaluationPoints(cell, pt, 2);
 
       materialTensor<double>(material, x, y, z);
 
-      for(int row = 0; row < spaceDim; row++){
-        for(int col = 0; col < spaceDim; col++){
+      for(int row = 0; row < spaceDim2; row++){
+        for(int col = 0; col < spaceDim2; col++){
           matTensorValues(cell, pt, row, col) = material[row][col];
         }
       }
@@ -1291,16 +1292,16 @@ template<class ArrayOut, class ArrayIn>
 void evaluateSourceTerm(ArrayOut &       sourceTermValues,
                         const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints = evaluationPoints.dimension(1);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
 
       Sacado::Fad::SFad<double,3> x = evaluationPoints(cell, pt, 0);
-      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);      
+      Sacado::Fad::SFad<double,3> y = evaluationPoints(cell, pt, 1);
       Sacado::Fad::SFad<double,3> z;
-      if(spaceDim==3) 
+      if(spaceDim==3)
 	z = evaluationPoints(cell, pt, 2);
 
       sourceTermValues(cell, pt) = sourceTerm<Sacado::Fad::SFad<double,3> >(x, y, z).val();
@@ -1313,8 +1314,8 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolution(ArrayOut &       exactSolutionValues,
                            const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints = evaluationPoints.dimension(1);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
@@ -1322,7 +1323,7 @@ void evaluateExactSolution(ArrayOut &       exactSolutionValues,
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
       double z=0.0;
-      if(spaceDim==3) 
+      if(spaceDim==3)
 	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionValues(cell, pt) = exactSolution<double>(x, y, z);
@@ -1336,9 +1337,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
                                const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints = evaluationPoints.dimension(1);
-  int spaceDim  = evaluationPoints.dimension(2);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
+  int spaceDim2  = evaluationPoints.extent_int(2);
 
   double gradient[3];
 
@@ -1348,12 +1349,12 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
       double z = 0.0;
-      if(spaceDim==3)
+      if(spaceDim2==3)
 	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionGrad<double>(gradient, x, y, z);
 
-      for(int row = 0; row < spaceDim; row++){
+      for(int row = 0; row < spaceDim2; row++){
         exactSolutionGradValues(cell, pt, row) = gradient[row];
       }
     }
@@ -1361,105 +1362,79 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 }
 
 /**********************************************************************************/
-/******************************* TEST ML ******************************************/
+/******************************* TEST MueLu****************************************/
 /**********************************************************************************/
 
-// Test ML
+// Test MueLu
 int TestMultiLevelPreconditioner(char ProblemType[],
                                  Teuchos::ParameterList   & MLList,
-                                 Epetra_CrsMatrix   & A,
-                                 const Epetra_MultiVector & xexact,				 
-                                 Epetra_MultiVector & b,
-                                 Epetra_MultiVector & uh,
-				 Epetra_MultiVector & coords,
+                                 Teuchos::RCP<Tpetra_CrsMatrix>   & A,
+                                 Teuchos::RCP<Tpetra_Vector> & xexact,
+                                 Teuchos::RCP<Tpetra_MultiVector> & b,
+                                 Teuchos::RCP<Tpetra_MultiVector> & uh,
+				 Teuchos::RCP<Tpetra_MultiVector> & coords,
+                                 Teuchos::RCP<Tpetra_CrsMatrix> & MassMatrix,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using namespace TrilinosCouplings::TpetraIntrepidPoissonExample;
+  using MT = Teuchos::ScalarTraits<Tpetra_MultiVector::scalar_type>::magnitudeType;
 
-  Epetra_LinearProblem Problem(&A,&uh,&b);
-  Epetra_MultiVector* lhs = Problem.GetLHS();
-  Epetra_MultiVector* rhs = Problem.GetRHS();
 
-  Epetra_Time Time(A.Comm());
+  // Solver params
+  std::string solverName = MLList.get("solver","cg");
+  int maxNumIters = MLList.get("Maximum Iterations",200);
+  double tol = MLList.get("Convergence Tolerance",1e-10);
+  int num_steps = MLList.get("Number of Time Steps",1);
 
-  // =================== //
-  // call ML and AztecOO //
-  // =================== //
 
-  AztecOO solver(Problem);
-  
-  std::string precondType = "ML";
-  if(MLList.isParameter("Preconditioner")) {
-    precondType = MLList.get("Preconditioner",precondType);
-    MLList.remove("Preconditioner");
+  // Multigrid Hierarchy
+  Teuchos::ParameterList mueluParams;
+  if (MLList.isSublist("MueLu"))
+    mueluParams = MLList.sublist("MueLu");
+  // Xpetrify coordinates
+  mueluParams.sublist("user data").set("Coordinates",Xpetra::toXpetra(coords));
+  // Future versions of muelu can use a mass matrix (or a mass matrix inverse)
+  // to define a strength-of-connection matrix that guides coarsening decisions
+  if (!MassMatrix.is_null())
+    mueluParams.sublist("user data").set("M",Xpetra::toXpetra(MassMatrix));
+  if(A->getMap()->getComm()->getRank()==0)
+    std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
+
+  RCP<Tpetra::Operator<> > Aop = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(A);
+  auto M = MueLu::CreateTpetraPreconditioner(Aop,mueluParams);
+
+  // Do the linear solve(s).
+  bool converged = false;
+  int numItersPerformed = 0;
+  {
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
+    solveWithBelos (converged, numItersPerformed, solverName, tol,
+                    maxNumIters, num_steps, uh, A, b, Teuchos::null, M);
   }
 
-  RCP<Epetra_Operator> M;
-  if(precondType == "ML") {    
-    Teuchos::ParameterList mylist;
-    if(MLList.isSublist("ML")) mylist = MLList.sublist("ML");
-    else  mylist = MLList;
-    
-    ML_Epetra::SetDefaults("SA", mylist, 0, 0, false);
-    M = rcp(new ML_Epetra::MultiLevelPreconditioner(A, mylist, true));
-  }
-#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
-  else if(precondType == "MueLu") {
-    // Multigrid Hierarchy
-    Teuchos::ParameterList mueluParams;
-    if (MLList.isSublist("MueLu"))
-      mueluParams = MLList.sublist("MueLu");
-    mueluParams.sublist("user data").set("Coordinates",Teuchos::rcpFromRef(coords));
-    if(A.Comm().MyPID()==0)
-      std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
-    M = MueLu::CreateEpetraPreconditioner(Teuchos::rcpFromRef(A),mueluParams);
+  if (b->getMap()->getComm()->getRank() == 0) {
+    std::cout<<"Total Iterations: "<<numItersPerformed<<std::endl;
   }
 
-#endif
-  solver.SetPrecOperator(&*M);
-    
-
-  // tell AztecOO to use this preconditioner, then solve
-
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 1);
-
-  solver.Iterate(200, 1e-10);
-
-  // ==================================================== //
-  // compute difference between exact solution and ML one //
-  // ==================================================== //
-  double d = 0.0, d_tot = 0.0;
-  for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
-    d += ((*lhs)[0][i] - xexact[0][i]) * ((*lhs)[0][i] - xexact[0][i]);
-
-  A.Comm().SumAll(&d,&d_tot,1);
-
-  // ================== //
-  // compute ||Ax - b|| //
-  // ================== //
-  double Norm;
-  Epetra_Vector Ax(rhs->Map());
-  A.Multiply(false, *lhs, Ax);
-  Ax.Update(1.0, *rhs, -1.0);
-  Ax.Norm2(&Norm);
-
-  std::string msg = ProblemType;
-
-  if (A.Comm().MyPID() == 0) {
-    std::cout << msg << std::endl << "......Using " << A.Comm().NumProc() << " processes" << std::endl;
-    std::cout << msg << "......||A x - b||_2 = " << Norm << std::endl;
-    std::cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << std::endl;
-    std::cout << msg << "......Total Time = " << Time.ElapsedTime() << std::endl << std::endl;
+  // Compute ||X-X_exact||_2
+  Teuchos::Array<MT> norm_x(1), norm_error(1);
+  xexact->norm2 (norm_x());
+  xexact->update (-1.0, *uh, 1.0);
+  xexact->norm2 (norm_error());
+  if (b->getMap()->getComm()->getRank() == 0) {
+    std::cout << std::endl
+              << "||X - X_exact||_2 / ||X_exact||_2 = " << norm_error[0] / norm_x[0]
+              << std::endl;
   }
 
-  TotalErrorExactSol += sqrt(d_tot);
-  TotalErrorResidual += Norm;
+  TotalErrorExactSol += norm_error[0];
+  TotalErrorResidual += norm_x[0];
 
-  return( solver.NumIters() );
 
+  return( numItersPerformed );
 }
 
 /**********************************************************************************/
@@ -1467,49 +1442,26 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 /**********************************************************************************/
 
 
-void getBasis(Teuchos::RCP<Intrepid::Basis<double,IntrepidFieldContainer > > &basis,
-               const ShardsCellTopology & cellTopology,
-               int order)  {
-
-
- // select basis based on cell topology only for now, and assume first order basis
-    switch (cellTopology.getKey()) {
-
-       case shards::Tetrahedron<4>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double, IntrepidFieldContainer > );
-         break;
-
-       case shards::Hexahedron<8>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, IntrepidFieldContainer > );
-         break;
-
-       case shards::Triangle<3>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, IntrepidFieldContainer > );
-         break;
-
-       case shards::Quadrilateral<4>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, IntrepidFieldContainer > );
-         break;
-
-
-       default:
-         TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
-				    "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
-
-     }
-
+template<typename DeviceType, typename Scalar>
+Teuchos::RCP<Intrepid2::Basis<DeviceType, Scalar, Scalar> > getHGradBasis( const ShardsCellTopology & cellTopology) {
+  Teuchos::RCP<Intrepid2::Basis<DeviceType, Scalar, Scalar> > r_val;
+  switch (cellTopology.getKey()) {
+    case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM    <DeviceType,Scalar,Scalar>()); break;
+    case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM   <DeviceType,Scalar,Scalar>()); break;
+    case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM    <DeviceType,Scalar,Scalar>()); break;
+    case shards::Hexahedron<8>::key:    r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM    <DeviceType,Scalar,Scalar>()); break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
+              "Unexpected cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
+  }
+  return r_val;
 }
 
-int getDimension( const ShardsCellTopology & cellTopology) {
-  switch (cellTopology.getKey()) {    
-  case shards::Tetrahedron<4>::key:
-  case shards::Hexahedron<8>::key:
-    return 3;
-  case shards::Triangle<3>::key:
-  case shards::Quadrilateral<4>::key:
-    return 2;
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
-			       "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");    
-  }
+
+int main(int argc, char *argv[]) {
+  Kokkos::initialize(argc,argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+
+  main_(argc,argv);
+  Kokkos::finalize();
 }

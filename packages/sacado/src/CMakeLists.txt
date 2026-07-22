@@ -309,6 +309,10 @@ SET(HEADERS ${HEADERS}
   KokkosExp_View_Fad.hpp
   KokkosExp_View_Fad_Contiguous.hpp
   Kokkos_ViewFactory.hpp
+  Sacado_Fad_Kokkos_View_Support.hpp
+  Sacado_Fad_Kokkos_ThreadLocalScalar.hpp
+  Sacado_Fad_Kokkos_TeuchosComm.hpp
+  Sacado_Fad_Kokkos_Specialization.hpp
   Sacado_DisableKokkosCuda.hpp
   Sacado_MathFunctions.hpp
   Sacado_cmath.hpp

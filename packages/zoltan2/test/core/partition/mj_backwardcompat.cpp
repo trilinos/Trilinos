@@ -1,46 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file mj_backwardcompat.cpp
@@ -170,7 +134,7 @@ public:
       kokkos_gids = view_ids_t(
         Kokkos::ViewAllocateWithoutInitializing("gids"), nids);
 
-      auto host_gids = kokkos_gids.h_view;
+      auto host_gids = kokkos_gids.view_host();
       for(size_t n = 0; n < nids; ++n) {
         host_gids(n) = gids_[n];
       }
@@ -186,7 +150,7 @@ public:
       typedef Kokkos::DualView<scalar_t **, device_t> view_weights_t;
       kokkos_weights = view_weights_t(
         Kokkos::ViewAllocateWithoutInitializing("weights"), nids, 0);
-      auto host_kokkos_weights = kokkos_weights.h_view;
+      auto host_kokkos_weights = kokkos_weights.view_host();
       for(size_t n = 0; n < nids; ++n) {
         host_kokkos_weights(n,0) = weights_[n];
       }
@@ -201,7 +165,7 @@ public:
       typedef Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft, device_t> kokkos_coords_t;
       kokkos_coords = kokkos_coords_t(
         Kokkos::ViewAllocateWithoutInitializing("coords"), nids, dim);
-      auto host_kokkos_coords = kokkos_coords.h_view;
+      auto host_kokkos_coords = kokkos_coords.view_host();
 
       for(size_t n = 0; n < nids; ++n) {
         for(int idx = 0; idx < dim; ++idx) {
@@ -215,18 +179,18 @@ public:
     }
   }
 
-  size_t getLocalNumIDs() const { return nids; }
+  size_t getLocalNumIDs() const override { return nids; }
 
   void getIDsView(const gno_t *&ids) const override {
     auto kokkosIds = kokkos_gids.view_host();
     ids = kokkosIds.data();
   }
 
-  virtual void getIDsKokkosView(Kokkos::View<const gno_t *, device_t> &ids) const {
+  virtual void getIDsKokkosView(Kokkos::View<const gno_t *, device_t> &ids) const override {
     ids = kokkos_gids.template view<device_t>();
   }
 
-  int getNumWeightsPerID() const { return (kokkos_weights.h_view.size() != 0); }
+  int getNumWeightsPerID() const override { return (kokkos_weights.view_host().size() != 0); }
 
   void getWeightsView(const scalar_t *&wgt, int &stride,
                       int idx = 0) const override
@@ -237,11 +201,11 @@ public:
     stride = 1;
   }
 
-  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **, device_t> & wgt) const {
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **, device_t> & wgt) const override {
     wgt = kokkos_weights.template view<device_t>();
   }
 
-  int getNumEntriesPerID() const { return dim; }
+  int getNumEntriesPerID() const override { return dim; }
 
   void getEntriesView(const scalar_t *&elements,
     int &stride, int idx = 0) const override {
@@ -250,7 +214,7 @@ public:
   }
 
   virtual void getEntriesKokkosView(Kokkos::View<scalar_t **,
-    Kokkos::LayoutLeft, device_t> & coo) const {
+    Kokkos::LayoutLeft, device_t> & coo) const override {
     coo = kokkos_coords.template view<device_t>();
   }
 

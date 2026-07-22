@@ -103,7 +103,7 @@ void solve_system_belos(
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_Vector;
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
 
-  RCP<Tpetra_Operator> At    = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraRow(A);
+  RCP<Tpetra_Operator> At    = Xpetra::toTpetraRowMatrix(A);
   RCP<Tpetra_Operator> Mt    = MueLu::CreateTpetraPreconditioner(At, MueLuList);
   RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
   RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
@@ -141,7 +141,7 @@ void solve_system_ifpack2(
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_Vector;
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
 
-  RCP<Tpetra_RowMatrix> At   = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraRow(A);
+  RCP<Tpetra_RowMatrix> At   = Xpetra::toTpetraRowMatrix(A);
   RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
   RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
 
@@ -281,7 +281,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::string matrixType = galeriParameters.GetMatrixType();
       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Axp;
       MueLuExamples::generate_user_matrix_and_nullspace<Scalar, LocalOrdinal, GlobalOrdinal, Node>(matrixType, lib, galeriList, comm, Axp, nullspace);
-      Acrs = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(Axp);
+      Acrs = toTpetra(Axp);
     }
     // Block this bad boy
     Ablock = Tpetra::convertToBlockCrsMatrix<SC, LO, GO, NO>(*Acrs, blocksize);

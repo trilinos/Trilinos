@@ -56,8 +56,8 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,0>::ge
     for (ordinal_type i=0;i<npts;++i) {
       output0(loc, i) = 1.0;
       if(hasDeriv) {
-        output.access(loc,i,1) = 0;
-        output.access(loc,i,2) = 0;
+        output(loc,i,1) = 0;
+        output(loc,i,2) = 0;
       }
     }
   }
@@ -82,8 +82,8 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,0>::ge
       for (ordinal_type i=0;i<npts;++i) {
         output0(loc, i) = f1[i];
         if(hasDeriv) {
-          output.access(loc,i,1) = df1_0;
-          output.access(loc,i,2) = df1_1;
+          output(loc,i,1) = df1_0;
+          output(loc,i,2) = df1_1;
         }
       }
     }
@@ -103,10 +103,10 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,0>::ge
         output0(loc_p1,i) = ( a * f1[i] * output0(loc,i) -
             b * f2[i] * output0(loc_m1,i) );
         if(hasDeriv) {
-          output.access(loc_p1,i,1) =  a * (f1[i] * output.access(loc,i,1) + df1_0 * output0(loc,i))  -
-              b * f2[i] * output.access(loc_m1,i,1) ;
-          output.access(loc_p1,i,2) =  a * (f1[i] * output.access(loc,i,2) + df1_1 * output0(loc,i))  -
-              b * (df2_1[i] * output0(loc_m1,i) + f2[i] * output.access(loc_m1,i,2)) ;
+          output(loc_p1,i,1) =  a * (f1[i] * output(loc,i,1) + df1_0 * output0(loc,i))  -
+              b * f2[i] * output(loc_m1,i,1) ;
+          output(loc_p1,i,2) =  a * (f1[i] * output(loc,i,2) + df1_1 * output0(loc,i))  -
+              b * (df2_1[i] * output0(loc_m1,i) + f2[i] * output(loc_m1,i,2)) ;
         }
       }
     }
@@ -120,8 +120,8 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,0>::ge
       for (ordinal_type i=0;i<npts;++i) {
         output0(loc_p_1,i) = output0(loc_p_0,i)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
         if(hasDeriv) {
-          output.access(loc_p_1,i,1) = output.access(loc_p_0,i,1)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
-          output.access(loc_p_1,i,2) = output.access(loc_p_0,i,2)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0)) + output0(loc_p_0,i)*(3.0+2.0*p);
+          output(loc_p_1,i,1) = output(loc_p_0,i,1)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0));
+          output(loc_p_1,i,2) = output(loc_p_0,i,2)*0.5*(1.0+2.0*p+(3.0+2.0*p)*(2.0*z(i,1)-1.0)) + output0(loc_p_0,i)*(3.0+2.0*p);
         }
       }
     }
@@ -141,10 +141,10 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,0>::ge
           output0(loc_p_qp1,i) =  (a*(2.0*z(i,1)-1.0)+b)*output0(loc_p_q,i)
                     - c*output0(loc_p_qm1,i) ;
           if(hasDeriv) {
-            output.access(loc_p_qp1,i,1) =  (a*(2.0*z(i,1)-1.0)+b)*output.access(loc_p_q,i,1)
-                      - c*output.access(loc_p_qm1,i,1) ;
-            output.access(loc_p_qp1,i,2) =  (a*(2.0*z(i,1)-1.0)+b)*output.access(loc_p_q,i,2) +2*a*output0(loc_p_q,i)
-            - c*output.access(loc_p_qm1,i,2) ;
+            output(loc_p_qp1,i,1) =  (a*(2.0*z(i,1)-1.0)+b)*output(loc_p_q,i,1)
+                      - c*output(loc_p_qm1,i,1) ;
+            output(loc_p_qp1,i,2) =  (a*(2.0*z(i,1)-1.0)+b)*output(loc_p_q,i,2) +2*a*output0(loc_p_q,i)
+            - c*output(loc_p_qm1,i,2) ;
           }
         }
       }
@@ -156,8 +156,8 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,0>::ge
       for (ordinal_type i=0;i<npts;++i) {
         output0(Intrepid2::getPnEnumeration<spaceDim>(p,q),i) *= std::sqrt( (p+0.5)*(p+q+1.0));
         if(hasDeriv) {
-          output.access(Intrepid2::getPnEnumeration<spaceDim>(p,q),i,1) *= std::sqrt( (p+0.5)*(p+q+1.0));
-          output.access(Intrepid2::getPnEnumeration<spaceDim>(p,q),i,2) *= std::sqrt( (p+0.5)*(p+q+1.0));
+          output(Intrepid2::getPnEnumeration<spaceDim>(p,q),i,1) *= std::sqrt( (p+0.5)*(p+q+1.0));
+          output(Intrepid2::getPnEnumeration<spaceDim>(p,q),i,2) *= std::sqrt( (p+0.5)*(p+q+1.0));
         }
       }
 }
@@ -182,7 +182,7 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,1>::ge
   for (ordinal_type i=0;i<card;++i)
     for (ordinal_type j=0;j<npts;++j)
       for (ordinal_type k=0;k<spaceDim;++k)
-        output.access(i,j,k) = work(i,j,k+1);
+        output(i,j,k) = work(i,j,k+1);
 }
 
 
@@ -198,102 +198,36 @@ void OrthPolynomialTri<OutputViewType,inputViewType,workViewType,hasDeriv,n>::ge
     const inputViewType  /* input */,
     workViewType   /* work */,
     const ordinal_type   /* order */ ) {
-#if 0   //#ifdef HAVE_INTREPID2_SACADO
-
-constexpr ordinal_type spaceDim = 2;
-constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
-
-typedef typename OutputViewType::value_type value_type;
-typedef Sacado::Fad::SFad<value_type,spaceDim> fad_type;
-
-const ordinal_type
-npts = input.extent(0),
-card = output.extent(0);
-
-// use stack buffer
-fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim],
-outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n];
-
-typedef typename inputViewType::memory_space memory_space;
-typedef typename Kokkos::View<fad_type***, memory_space> outViewType;
-typedef typename Kokkos::View<fad_type**, memory_space> inViewType;
-auto vcprop = Kokkos::common_view_alloc_prop(input);
-
-inViewType in(Kokkos::view_wrap((value_type*)&inBuf[0][0], vcprop), npts, spaceDim);
-outViewType out(Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, n);
-
-for (ordinal_type i=0;i<npts;++i)
-  for (ordinal_type j=0;j<spaceDim;++j) {
-    in(i,j) = input(i,j);
-    in(i,j).diff(j,spaceDim);
-  }
-
-typedef typename Kokkos::DynRankView<fad_type, memory_space> outViewType_;
-outViewType_ workView;
-if (n==2) {
-  //char outBuf[bufSize*sizeof(typename inViewType::value_type)];
-  fad_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1];
-  auto vcprop = Kokkos::common_view_alloc_prop(in);
-  workView = outViewType_( Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, spaceDim+1);
-}
-OrthPolynomialTri<outViewType,inViewType,outViewType_,hasDeriv,n-1>::generate(out, in, workView, order);
-
-for (ordinal_type i=0;i<card;++i)
-  for (ordinal_type j=0;j<npts;++j) {
-    for (ordinal_type i_dx = 0; i_dx <= n; ++i_dx) {
-      ordinal_type i_dy =  n-i_dx;
-      ordinal_type i_Dn = i_dy;
-      if(i_dx > 0) {
-        //n=2:  (f_x)_x, (f_y)_x
-        //n=3:  (f_xx)_x, (f_xy)_x, (f_yy)_x
-        ordinal_type i_Dnm1 = i_dy;
-        output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(0);
-      }
-      else {
-        //n=2:  (f_y)_y, (f_z)_y
-        //n=3:  (f_yy)_y
-        ordinal_type i_Dnm1 = i_dy-1;
-        output.access(i,j,i_Dn) = out(i,j,i_Dnm1).dx(1);
-      }
-    }
-  }
-#else
 INTREPID2_TEST_FOR_ABORT( true,
     ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::OrthPolynomialTri) Computing of second and higher-order derivatives is not currently supported");
-#endif
 }
 
 
 
-template<EOperator opType>
+template<EOperator OpType>
 template<typename OutputViewType,
 typename inputViewType,
 typename workViewType>
 KOKKOS_INLINE_FUNCTION
 void
-Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial<opType>::
+Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial<OpType>::
 getValues( OutputViewType output,
     const inputViewType  input,
     workViewType   work,
     const ordinal_type   order) {
-  switch (opType) {
-  case OPERATOR_VALUE: {
+
+  if constexpr (OpType == OPERATOR_VALUE) {
     OrthPolynomialTri<OutputViewType,inputViewType,workViewType,false,0>::generate( output, input, work, order );
-    break;
   }
-  case OPERATOR_GRAD:
-  case OPERATOR_D1: {
+  else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
     OrthPolynomialTri<OutputViewType,inputViewType,workViewType,true,1>::generate( output, input, work, order );
-    break;
   }
-  case OPERATOR_D2: {
+  else if constexpr (OpType == OPERATOR_D2) {
     OrthPolynomialTri<OutputViewType,inputViewType,workViewType,true,2>::generate( output, input, work, order );
-    break;
   }
-  default: {
+  else {
     INTREPID2_TEST_FOR_ABORT( true,
         ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::Serial::getValues) operator is not supported");
-  }
   }
 }
 
@@ -318,12 +252,10 @@ getValues(
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
   Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
-  typedef typename inputPointViewType::value_type inputPointType;
   const ordinal_type cardinality = outputValues.extent(0);
   const ordinal_type spaceDim = 2;
 
-  auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
-  typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
+  typedef typename DeduceDynRankView<inputPointViewType>::type workViewType;
 
   switch (operatorType) {
   case OPERATOR_VALUE: {
@@ -334,7 +266,7 @@ getValues(
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.extent(0), spaceDim+1);
+    workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", cardinality, inputPoints.extent(0), spaceDim+1);
     typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
     break;
@@ -361,12 +293,12 @@ Basis_HGRAD_TRI_Cn_FEM_ORTH<DT,OT,PT>::
 Basis_HGRAD_TRI_Cn_FEM_ORTH( const ordinal_type order ) {
 
   constexpr ordinal_type spaceDim = 2;
-  this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order);
-  this->basisDegree_       = order;
-  this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_HIERARCHICAL;
-  this->basisCoordinates_  = COORDINATES_CARTESIAN;
-  this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+  this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order);
+  this->basisDegree_          = order;
+  this->basisCellTopologyKey_ = shards::Triangle<3>::key;
+  this->basisType_            = BASIS_FEM_HIERARCHICAL;
+  this->basisCoordinates_     = COORDINATES_CARTESIAN;
+  this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
   // initialize tags
   {

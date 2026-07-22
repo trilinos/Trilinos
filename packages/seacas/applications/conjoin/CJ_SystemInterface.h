@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -17,11 +17,16 @@ namespace Excn {
     SystemInterface();
     bool parse_options(int argc, char **argv);
 
-    int  debug() const { return debugLevel_; }
-    int  screen_width() const { return screenWidth_; }
+    int debug() const { return debugLevel_; }
+    int screen_width() const { return screenWidth_; }
+
+    int  quantize_nsd() const { return quantizeNSD_; }
     int  compress_data() const { return compressionLevel_; }
     bool zlib() const { return zlib_; }
     bool szip() const { return szip_; }
+    bool zstd() const { return zstd_; }
+    bool bz2() const { return bz2_; }
+    bool quantize() const { return quantizeNSD_ > 0; }
 
     bool omit_nodesets() const { return omitNodesets_; }
     bool omit_sidesets() const { return omitSidesets_; }
@@ -29,6 +34,8 @@ namespace Excn {
     bool ignore_coordinates() const { return ignoreCoordinates_; }
     bool use_netcdf4() const { return useNetcdf4_; }
     bool sort_times() const { return sortTimes_; }
+    bool use_all_times() const { return useAllTimes_; }
+    bool force_status_variable() const { return forceStatusVariable_; }
 
     double alive_value() const { return aliveValue_; }
 
@@ -58,16 +65,21 @@ namespace Excn {
     GetLongOption options_{}; //!< Options parsing
 
     int  debugLevel_{0};
-    int  screenWidth_{0};
+    int  screenWidth_{80};
     int  compressionLevel_{0};
-    bool zlib_{true};
+    int  quantizeNSD_{0};
+    bool zlib_{false};
     bool szip_{false};
+    bool zstd_{false};
+    bool bz2_{false};
     bool omitNodesets_{false};
     bool omitSidesets_{false};
     bool ints64Bit_{false};
     bool ignoreCoordinates_{false};
     bool useNetcdf4_{false};
     bool sortTimes_{false};
+    bool useAllTimes_{false};
+    bool forceStatusVariable_{false};
 
     double aliveValue_{-1.0};
     double interpartMinimumTimeDelta_{0.0};

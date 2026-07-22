@@ -196,7 +196,7 @@ bool Scheduler::internal_is_it_time(Time time)
   // called multiple times with the same argument, it will return the
   // same response.
 
-  assert(time >= lastTime_);
+  STK_ThrowAssertMsg(time >= lastTime_, "time = " << time << ", lastTime_ = " << lastTime_);
 
   // If this is a restart, then calculate what the lastTime_ setting would
   // have been for this scheduler (based only on start time and deltas).

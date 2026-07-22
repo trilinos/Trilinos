@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_AS_HPP
@@ -1165,7 +1133,7 @@ public:
     // All three cases are legal according to both C++03 and C99.
     // However, I (mfh 15 Nov 2012) have never encountered Cases 2 and
     // 3.
-    if (sizeof (short) < sizeof (double)) {
+    if constexpr (sizeof (short) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1237,7 +1205,7 @@ public:
     // rounding.  Case 3 is quite rare, but casting minVal or maxVal
     // to double in this case could result in overflow.  Thus, we only
     // do the cast for Case 1.
-    if (sizeof (int) < sizeof (double)) {
+    if constexpr (sizeof (int) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1309,7 +1277,7 @@ public:
     // implementation of the LLP64 integer model, on which
     // sizeof(long) == 4, and sizeof(long long) == sizeof(void*) ==
     // 8).
-    if (sizeof (long) < sizeof (double)) {
+    if constexpr (sizeof (long) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1442,7 +1410,7 @@ public:
     // is certainly reasonable.  (For example, some hardware prefers
     // to work only with 32-bit words, so _every_ built-in type has
     // size a multiple of 4 bytes.)
-    if (sizeof (short) < sizeof (float)) {
+    if constexpr (sizeof (short) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1514,7 +1482,7 @@ public:
     // float in this case could result in loss of accuracy
     // (sizeof(int) == 8 or 16) or overflow (sizeof(int) > 16).  Thus,
     // we only do the test for Case 1.
-    if (sizeof (int) < sizeof (float)) {
+    if constexpr (sizeof (int) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1591,7 +1559,7 @@ public:
     // (64-bit Windows) and other implementations of (I32L32)LLP64.
     // Case 3 is common (e.g., in the (I32)LP64 integer model of
     // GNU/Linux and other operating systems).
-    if (sizeof (long) < sizeof (float)) {
+    if constexpr (sizeof (long) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > static_cast<float>(maxVal),
         std::range_error,
@@ -2121,7 +2089,7 @@ public:
     // overflow.
 
     // The C++ standard promises that sizeof (unsigned int) <= sizeof (long).
-    if (sizeof (unsigned int) < sizeof (long)) {
+    if constexpr (sizeof (unsigned int) < sizeof (long)) {
       const unsigned int maxInt = std::numeric_limits<unsigned int>::max ();
 
       TEUCHOS_TEST_FOR_EXCEPTION(

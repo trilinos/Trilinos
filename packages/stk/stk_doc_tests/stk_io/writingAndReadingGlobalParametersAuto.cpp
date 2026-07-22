@@ -76,7 +76,6 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
   // Write output file with all parameters in params list...
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t input_index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(input_index);
@@ -111,7 +110,6 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalParametersAuto)
     gold_params.set_param("Ages", ages);   // Vector of integers...
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(file_name, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();

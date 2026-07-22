@@ -15,9 +15,6 @@
 #include <array>
 
 #define DEBUG_PRINT 0
-namespace std {
-
-}
 
   namespace percept {
 
@@ -25,8 +22,8 @@ namespace std {
     MeshSmootherImpl<STKMesh>::MeshSmootherImpl(PerceptMesh *eMesh,
                    STKMesh::MTSelector *stk_select,
                    typename STKMesh::MTMeshGeometry *meshGeometry,
-                   int innerIter, double gradNorm , int parallelIterations) :
-        m_eMesh(eMesh), innerIter(innerIter), gradNorm(gradNorm), parallelIterations(parallelIterations),
+                   int innerIter_arg, double gradNorm_arg , int parallelIterations_arg) :
+        m_eMesh(eMesh), innerIter(innerIter_arg), gradNorm(gradNorm_arg), parallelIterations(parallelIterations_arg),
         m_stk_boundarySelector(stk_select),m_meshGeometry(meshGeometry)
       {
 #if defined(STK_PERCEPT_HAS_GEOMETRY)

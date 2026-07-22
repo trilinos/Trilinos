@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,8 +10,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-#include <fmt/core.h>
-#include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <stdio.h>
 #include <string>
@@ -232,12 +230,12 @@ namespace {
       Ioss::ElementBlock *eb = *I;
       ++I;
       std::string type = eb->topology()->name();
+      std::string name = eb->name();
       if (type == Ioss::Hex8::name) {
         sph_node_count += eb->entity_count();
 
         // Add the element block...
-        int         num_elem = eb->entity_count();
-        std::string name     = eb->name();
+        int   num_elem = eb->entity_count();
         auto *ebn = new Ioss::ElementBlock(output_region.get_database(), name, "sphere", num_elem);
         int   id  = eb->get_property("id").get_int();
         ebn->property_add(Ioss::Property("id", id));
@@ -252,6 +250,9 @@ namespace {
         auto ns = new Ioss::NodeSet(output_region.get_database(), name, num_elem);
         ns->property_add(Ioss::Property("id", id));
         output_region.add(ns);
+      }
+      else {
+        fmt::print("Skipping block {} which contains {} elements.\n", name, type);
       }
     }
 

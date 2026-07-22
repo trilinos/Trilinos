@@ -161,12 +161,12 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             RCP<Matrix>& R,
             RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coarseCoordinates,
             Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim) const {
-  using local_matrix_type = typename CrsMatrix::local_matrix_type;
+  using local_matrix_type = typename CrsMatrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
   using entries_type      = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
-  using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
+  using impl_scalar_type  = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 
   // Set debug outputs based on environment variable
   RCP<Teuchos::FancyOStream> out;
@@ -211,8 +211,8 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                                                numDimensions);
 
   // Get device views of coordinates
-  auto fineCoordsView   = fineCoordinates->getDeviceLocalView(Xpetra::Access::ReadOnly);
-  auto coarseCoordsView = coarseCoordinates->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+  auto fineCoordsView   = fineCoordinates->getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto coarseCoordsView = coarseCoordinates->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
   Array<ArrayRCP<const real_type> > fineCoordData(numDimensions);
   Array<ArrayRCP<real_type> > coarseCoordData(numDimensions);
@@ -247,13 +247,13 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
        << "  -nnz=     " << nnz << std::endl;
 
   row_map_type row_map(Kokkos::ViewAllocateWithoutInitializing("row_map"), numRows + 1);
-  typename row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(row_map);
+  typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
 
   entries_type entries(Kokkos::ViewAllocateWithoutInitializing("entries"), nnz);
-  typename entries_type::HostMirror entries_h = Kokkos::create_mirror_view(entries);
+  typename entries_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
 
   values_type values(Kokkos::ViewAllocateWithoutInitializing("values"), nnz);
-  typename values_type::HostMirror values_h = Kokkos::create_mirror_view(values);
+  typename values_type::host_mirror_type values_h = Kokkos::create_mirror_view(values);
 
   // Compute the basic interpolation
   // coefficients for 1D rate of 3
@@ -760,8 +760,8 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   LOTupleView lFineNodesPerDim_d("lFineNodesPerDim");
   LOTupleView lCoarseNodesPerDim_d("lCoarseNodesPerDim");
 
-  typename Kokkos::View<LO[3], device_type>::HostMirror lCoarseNodesPerDim_h = Kokkos::create_mirror_view(lCoarseNodesPerDim_d);
-  typename Kokkos::View<LO[3], device_type>::HostMirror lFineNodesPerDim_h   = Kokkos::create_mirror_view(lFineNodesPerDim_d);
+  typename Kokkos::View<LO[3], device_type>::host_mirror_type lCoarseNodesPerDim_h = Kokkos::create_mirror_view(lCoarseNodesPerDim_d);
+  typename Kokkos::View<LO[3], device_type>::host_mirror_type lFineNodesPerDim_h   = Kokkos::create_mirror_view(lFineNodesPerDim_d);
 
   for (int dim = 0; dim < numDimensions; ++dim) {
     lCoarseNodesPerDim_h(dim) = lCoarseNodesPerDim[dim];

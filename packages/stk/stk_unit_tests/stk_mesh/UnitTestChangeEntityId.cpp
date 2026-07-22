@@ -130,7 +130,7 @@ TEST( UnitTestChangeEntityId, change_id_large )
   const unsigned NZ = 20;
   const unsigned num_elems = NX * NY * NZ;
 
-  fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
 
   Field<int> & simple_nodal_field = hf.m_meta.declare_field<int>(stk::topology::NODE_RANK, "simple_nodal_field");
 
@@ -150,11 +150,11 @@ TEST( UnitTestChangeEntityId, change_id_large )
   mesh.modification_begin();
 
   const BucketVector & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
-
+  auto fieldData = simple_nodal_field.data<stk::mesh::ReadWrite>();
   for(Bucket * b : node_buckets) {
-    int* nodal_field = stk::mesh::field_data( simple_nodal_field, *b );
-    for (size_t i =0; i<b->size(); ++i) {
-      nodal_field[i] = 1;
+    auto bktFieldData = fieldData.bucket_values(*b);
+    for (stk::mesh::EntityIdx i : b->entities()) {
+      bktFieldData(i,0_comp) = 1;
     }
   }
 
@@ -186,10 +186,11 @@ TEST( UnitTestChangeEntityId, change_id_large )
 
   EXPECT_TRUE(old_ids == new_ids_minus_num_elems);
 
+  fieldData = simple_nodal_field.data<stk::mesh::ReadWrite>();
   for(Bucket * b : node_buckets) {
-    int* nodal_field = stk::mesh::field_data( simple_nodal_field, *b );
-    for (size_t i =0; i<b->size(); ++i) {
-      EXPECT_TRUE( nodal_field[i] == 1);
+    auto bktFieldData = fieldData.bucket_values(*b);
+    for (stk::mesh::EntityIdx i : b->entities()) {
+      EXPECT_TRUE(bktFieldData(i,0_comp) == 1);
     }
   }
 }

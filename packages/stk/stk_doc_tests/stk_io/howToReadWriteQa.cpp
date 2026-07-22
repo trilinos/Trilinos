@@ -11,13 +11,12 @@
 namespace
 {
 
-class StkIoHowToQaRecords : public stk::unit_test_util::simple_fields::MeshFixture
+class StkIoHowToQaRecords : public stk::unit_test_util::MeshFixture
 {
 protected:
   void write_qa_information()
   {
     stk::io::StkMeshIoBroker stkIo(get_comm());
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
     size_t fileId = stkIo.create_output_mesh(filename, stk::io::WRITE_RESULTS);
     stkIo.set_name_and_version_for_qa_record(fileId, codeName, codeVersion);
@@ -29,7 +28,6 @@ protected:
   void read_qa_information_and_verify()
   {
     stk::io::StkMeshIoBroker stkIo(get_comm());
-    stkIo.use_simple_fields();
     size_t fileId = stkIo.add_mesh_database(filename, stk::io::READ_MESH);
     stkIo.set_active_mesh(fileId);
     std::vector<stk::io::QaRecord> qas = stkIo.get_qa_records();

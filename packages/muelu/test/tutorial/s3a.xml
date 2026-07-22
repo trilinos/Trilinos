@@ -1,0 +1,35 @@
+<ParameterList name="MueLu">
+
+   <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <ParameterList name="UncoupledAggregationFact">
+      <Parameter name="factory"              type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: ordering"                    type="string" value="natural"/>
+      <Parameter name="aggregation: max selected neighbors"            type="int"    value="0"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="4"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                        type="string" value="TentativePFactory"/>
+    </ParameterList>
+    
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="use kokkos refactor"                   type="bool"     value="true"/>
+    <Parameter name="max levels"                            type="int"      value="10"/>
+    <Parameter name="coarse: max size"                      type="int"      value="10"/>
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+
+    <ParameterList name="All">
+      <Parameter name="Aggregates"           type="string"   value="UncoupledAggregationFact"/>
+      <Parameter name="Nullspace"                    type="string"   value="myTentativePFact"/>
+      <Parameter name="P"                            type="string"   value="myTentativePFact"/>
+      <Parameter name="CoarseSolver"                     type="string"   value="DirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

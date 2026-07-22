@@ -36,8 +36,8 @@
 
 #include "MueLu.hpp"
 
-#include "../../research/q2q1/MueLu_Q2Q1PFactory.hpp"
-#include "../../research/q2q1/MueLu_Q2Q1uPFactory.hpp"
+#include "MueLu_Q2Q1PFactory.hpp"
+#include "MueLu_Q2Q1uPFactory.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -106,7 +106,7 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    initializePrec(const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    initializePrec(const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse /*supportSolveUse*/) const {
   // Check precondition
   TEUCHOS_ASSERT(Teuchos::nonnull(fwdOpSrc));
   TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
@@ -293,10 +293,10 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
   RCP<TP_Crs> TpetCrsA12     = rcp_dynamic_cast<TP_Crs>(TpetA12);
   RCP<TP_Crs> TpetCrsA11_9Pt = rcp_dynamic_cast<TP_Crs>(TpetA11_9Pt);
 
-  RCP<Matrix> A_11     = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11);
-  RCP<Matrix> tmp_A_21 = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA21);  // needs map modification
-  RCP<Matrix> tmp_A_12 = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA12);  // needs map modification
-  RCP<Matrix> A_11_9Pt = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11_9Pt);
+  RCP<Matrix> A_11     = Xpetra::toXpetra(TpetCrsA11);
+  RCP<Matrix> tmp_A_21 = Xpetra::toXpetra(TpetCrsA21);  // needs map modification
+  RCP<Matrix> tmp_A_12 = Xpetra::toXpetra(TpetCrsA12);  // needs map modification
+  RCP<Matrix> A_11_9Pt = Xpetra::toXpetra(TpetCrsA11_9Pt);
 
   Xpetra::global_size_t numVel  = A_11->getRowMap()->getLocalNumElements();
   Xpetra::global_size_t numPres = tmp_A_21->getRowMap()->getLocalNumElements();
@@ -848,7 +848,7 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
   for (int i = 0; i < valA.size(); i++) valB[i] = Teuchos::ScalarTraits<SC>::magnitude(valA[i]);
 
   RCP<Matrix> B       = rcp(new CrsMatrixWrap(A.getRowMap(), A.getColMap(), 0));
-  RCP<CrsMatrix> Bcrs = rcp_dynamic_cast<CrsMatrixWrap>(B)->getCrsMatrix();
+  RCP<CrsMatrix> Bcrs = toCrsMatrix(B);
   Bcrs->setAllValues(iaB, jaB, valB);
   Bcrs->expertStaticFillComplete(A.getDomainMap(), A.getRangeMap());
 

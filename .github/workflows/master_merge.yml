@@ -1,0 +1,65 @@
+name: master-merge
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 2 * * 6
+
+permissions:
+  contents: read
+
+jobs:
+
+  master-merge:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: generate-token
+        with:
+          client-id: ${{ secrets.SNAPSHOT_APP_ID }}
+          private-key: ${{ secrets.SNAPSHOT_APP_PRIVATE_KEY }}
+
+      - name: Clone Trilinos
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          REMOTE=origin
+          
+          # Name for the new master merge branch
+          BRANCH=master_merge_`date +%Y%m%d_%H%M`
+
+          # branch off of develop
+          git checkout -b ${BRANCH}
+
+          # push it back to GitHub
+          git push ${REMOTE} ${BRANCH}
+
+          # create a PR using the new branch
+          gh pr create \
+          --base master \
+          --head $BRANCH \
+          --title "Master Merge: Automatic PR from develop to master" \
+          --body "Automatic PR from develop to master."
+
+          # delete previously merged branches
+          merged_branches=`git branch --remote --merged ${REMOTE}/master | grep -E "master_merge_[0-9]{8}_[0-9]{4}"`
+          for merged_branch in ${merged_branches} ; do
+              # extract branch name
+              merged_branch_name=`echo ${merged_branch} | cut -d "/" -f 2`
+              
+              echo "Branch ${merged_branch_name} can be deleted on remote ${REMOTE}"
+
+              # Delete the branch on origin.
+              git push --delete ${REMOTE} ${merged_branch_name}
+          done
+
+      

@@ -5,7 +5,7 @@ after exopen, error =   0
 
 after exgini, error =   0
 database parameters:
-title =  This is a test                                                                  
+title =  This is a test
 num_dim =   3
 num_nodes =  33
 num_elem =   7
@@ -14,7 +14,7 @@ num_node_sets =   0
 num_side_sets =   0
 
 after exgcor, error =   0
-x coords = 
+x coords =
   0.0
   1.0
   1.0
@@ -48,7 +48,7 @@ x coords =
   0.0
  10.0
  10.0
-y coords = 
+y coords =
   0.0
   0.0
   1.0
@@ -82,7 +82,7 @@ y coords =
   0.0
   0.0
  10.0
-z coords = 
+z coords =
   0.0
   0.0
   0.0
@@ -118,8 +118,8 @@ z coords =
  10.0
 
 after exgcon, error =   0
-x coord name = xcoor    
-y coord name = ycoor    
+x coord name = xcoor
+y coord name = ycoor
 
 after exgmap, error =   0
 elem_map(1) = 1
@@ -134,7 +134,7 @@ after exgebi, error =   0
 
 after exgelb, error =   0
 element block id = 10
-element type = nsided   
+element type = nsided
 num_elem_in_block =  7
 num_nodes_per_elem = 37
 num_attr =  0

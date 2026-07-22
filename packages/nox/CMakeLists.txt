@@ -67,18 +67,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 ###################################################
 # Optional Trilinos Library Support
 ###################################################
-IF(NOX_ENABLE_ML)
-  SET(HAVE_NOX_ML_EPETRA ON)
-ENDIF()
-
-IF(NOX_ENABLE_EpetraExt)
-  SET(HAVE_NOX_EPETRAEXT ON)
-ENDIF()
-
-IF(NOX_ENABLE_Amesos)
-  SET(HAVE_NOX_AMESOS ON)
-ENDIF()
-
 IF(NOX_ENABLE_Anasazi)
   SET(HAVE_LOCA_ANASAZI ON)
 ENDIF()
@@ -86,6 +74,12 @@ ENDIF()
 ###################################################
 # Optional TPL Support
 ###################################################
+
+###################################################
+# Explicit template instantiation
+###################################################
+
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 ###################################################
 # Concrete implementations of NOX::Abstract Classes
@@ -96,15 +90,6 @@ OPTION(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK
   "Enables support for LAPACK implementation of Abstract Group and Vector classes.  Defaults to ON if LAPACK is enabled, otherwise defaults to OFF."
   ${NOX_ENABLE_LAPACK}
   )
-
-# Epetra
-COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
-  DEP_OPTIONS_NAMES NOX_ENABLE_AztecOO NOX_ENABLE_Epetra NOX_ENABLE_Ifpack
-  DOCSTR "Enables support for Epetra implementation of Abstract Group and"
-    " Vector classes.  Defaults to ON if Epetra, AztecOO, and Ifpack are"
-    " enabled, otherwise defaults to OFF."
-  )
-MESSAGE(STATUS "Epetra Abstractions: ${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA}")
 
 # Thyra
 COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA
@@ -118,13 +103,6 @@ MESSAGE(STATUS "Thyra Abstractions: ${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA}"
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
   SET(HAVE_NOX_THYRA ON)
 ENDIF()
-
-COMBINED_OPTION( NOX_ENABLE_THYRA_EPETRA_ADAPTERS
-  DEP_OPTIONS_NAMES NOX_ENABLE_ThyraCore NOX_ENABLE_ThyraEpetraAdapters NOX_ENABLE_ThyraEpetraExtAdapters
-  DOCSTR "Enables support for the Thyra Epetra(Ext) adapters "
-    " Defaults to ON if the Thyra Epetra(Ext) adapters are both enabled,"
-    " otherwise defaults to OFF"
-  )
 
 COMBINED_OPTION( NOX_ENABLE_THYRA_TPETRA_ADAPTERS
   DEP_OPTIONS_NAMES NOX_ENABLE_ThyraCore NOX_ENABLE_ThyraTpetraAdapters
@@ -147,6 +125,15 @@ COMBINED_OPTION( NOX_ENABLE_KOKKOS_SOLVER_STACK
   )
 MESSAGE(STATUS "Kokkos Solver Stack: ${NOX_ENABLE_KOKKOS_SOLVER_STACK}")
 
+# Tpetra
+COMBINED_OPTION(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_TPETRA
+  DEP_OPTIONS_NAMES NOX_ENABLE_Tpetra
+  DOCSTR "Enables support for Tpetra implementation of Abstract Group"
+    " and Vector classes.  Defaults to ON if Tpetra is enabled,"
+    " otherwise defaults to OFF"
+  )
+MESSAGE(STATUS "Tpetra Abstractions: ${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_TPETRA}")
+
 # PETSc
 COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
   DEP_OPTIONS_NAMES NOX_ENABLE_PETSC
@@ -155,23 +142,6 @@ COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
     " enabled, otherwise defaults to OFF."
   )
 MESSAGE(STATUS "PETSc Abstractions: ${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC}")
-
-# For the stratimikos/epetra stack
-COMBINED_OPTION( NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
-  DEP_OPTIONS_NAMES NOX_ENABLE_Epetra
-                    NOX_ENABLE_EpetraExt
-                    NOX_ENABLE_ThyraCore
-                    NOX_ENABLE_ThyraEpetraAdapters
-                    NOX_ENABLE_ThyraEpetraExtAdapters
-                    NOX_ENABLE_Stratimikos
-                    Stratimikos_ENABLE_Belos
-                    Stratimikos_ENABLE_Ifpack
-                    Stratimikos_ENABLE_Amesos
-  DOCSTR "Enables support for the Stratimikos/Epetra linear solver stack."
-    " Defaults to ON if the Epetra, EpetraExt, ThyraCore, ThyraTpetraAdapters, ThyraEpetraExtAdapters Stratimikos, Amesos, and Ifpack are all enabled,"
-    " otherwise defaults to OFF."
-  )
-MESSAGE(STATUS "Stratimikos/Epetra Stack: ${NOX_ENABLE_STRATIMIKOS_EPETRA_STACK}")
 
 ###################################################
 ###################################################
@@ -185,7 +155,6 @@ MESSAGE(STATUS "Stratimikos/Epetra Stack: ${NOX_ENABLE_STRATIMIKOS_EPETRA_STACK}
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(src-lapack)
-ADD_SUBDIRECTORY(src-epetra)
 ADD_SUBDIRECTORY(src-tpetra)
 ADD_SUBDIRECTORY(src-thyra)
 ADD_SUBDIRECTORY(src-petsc)

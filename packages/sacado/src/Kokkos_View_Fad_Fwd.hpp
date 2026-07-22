@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #ifndef KOKKOS_VIEW_FAD_FWD_HPP
@@ -48,7 +28,14 @@
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #endif
 
-namespace Kokkos {
+#if (KOKKOS_VERSION > 40700) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY) \
+&& !defined(SACADO_DISABLE_FAD_VIEW_SPEC) 
+#define SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+#endif
+
+
+#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+namespace Sacado {
 
 // Whether a given type is a view with Sacado FAD scalar type
 template <typename view_type>
@@ -56,6 +43,20 @@ struct is_view_fad;
 
 }
 
+namespace Kokkos {
+using Sacado::is_view_fad;
+}
+#else
+namespace Kokkos {
+
+// Whether a given type is a view with Sacado FAD scalar type
+template <typename view_type>
+struct is_view_fad;
+
+}
+#endif
+
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 // Make sure the user really wants these View specializations
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
@@ -90,8 +91,6 @@ view_copy(const ExecutionSpace& space,
           const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
 
 template<class Space, class T, class ... P>
-struct MirrorType;
-template<class Space, class T, class ... P>
 struct MirrorViewType;
 
 } // namespace Impl
@@ -108,7 +107,7 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src);
 
 template< class T , class ... P >
@@ -120,7 +119,7 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src);
 
 template<class Space, class T, class ... P,
@@ -130,7 +129,7 @@ typename std::enable_if<
     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(const Space&, const Kokkos::View<T,P...> & src);
 
 template< class T , class ... P >
@@ -142,7 +141,7 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src);
 
@@ -155,7 +154,7 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src);
 
@@ -166,7 +165,7 @@ typename std::enable_if<
        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
      std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ),
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space&, const Kokkos::View<T,P...> & src);
 
@@ -398,6 +397,7 @@ void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
 } // namespace Kokkos
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#endif
 
 #endif // defined(HAVE_SACADO_KOKKOS)
 

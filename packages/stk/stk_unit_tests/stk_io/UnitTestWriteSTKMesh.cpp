@@ -1,44 +1,42 @@
 #include <gtest/gtest.h>
-#include "mpi.h"
 #include <Ioss_IOFactory.h>
 #include <Ioss_Region.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_PropertyManager.h>
-#include <string>
 #include <Ionit_Initializer.h>
 
 #include <Ioss_ElementBlock.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_NodeBlock.h>
 #include <Ioss_SideSet.h>
-#include <Ioss_SideBlock.h>
 #include <Ioss_NodeSet.h>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
-#include <stk_mesh/base/Bucket.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/memory_util.hpp>
 
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_unit_test_utils/GetMeshSpec.hpp>
+#include <stk_unit_test_utils/getOption.h>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/WriteMesh.hpp>
 
+#include <string>
 #include <iostream>
 #include <unistd.h>                     // for unlink
 
-#include "stk_util/environment/Env.hpp"
 #include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace {
@@ -62,24 +60,84 @@ Ioss::DatabaseIO* create_output_db_io(const std::string &filename)
     return db_io;
 }
 
-//BeginDocTest1
-TEST(StkIo, write_stk_mesh_to_file)
+void verify_num_nodes_in_file(MPI_Comm comm,
+                              const std::string& meshFileName,
+                              unsigned expectedNumNodes)
+{
+    std::shared_ptr<stk::mesh::BulkData> bulkData = build_mesh(comm);
+    stk::io::fill_mesh(meshFileName, *bulkData);
+
+    std::vector<size_t> entity_counts;
+    stk::mesh::comm_mesh_counts(*bulkData, entity_counts);
+    EXPECT_EQ(expectedNumNodes, entity_counts[stk::topology::NODE_RANK]);
+}
+
+void fill_node_ids_and_coords(const stk::mesh::BulkData& bulk,
+                              std::vector<int64_t>& node_ids,
+                              std::vector<double>& coordinates)
+{
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    stk::mesh::Field<double> * coordField = meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
+    int spatial_dim = meta.spatial_dimension();
+
+    STK_ThrowAssert(coordField != NULL);
+    auto coordFieldData = coordField->data();
+
+    stk::mesh::Selector locallyOwned = meta.locally_owned_part();
+
+    int node_counter = 0;
+    stk::mesh::for_each_entity_run_no_threads(bulk, stk::topology::NODE_RANK, locallyOwned,
+      [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
+      {
+          int node_id = mesh.identifier(node);
+          node_ids[node_counter] = node_id;
+
+          auto coords = coordFieldData.entity_values(node);
+          for(stk::mesh::ComponentIdx k=0_comp;k<spatial_dim;++k) {
+              coordinates[spatial_dim*node_counter+k] = coords(k);
+          }
+          node_counter++;
+      });
+}
+
+void fill_elem_ids_and_connectivity(const stk::mesh::BulkData& bulkData,
+                                    const stk::mesh::Part* elemBlock,
+                                    std::vector<int64_t>& elem_ids,
+                                    std::vector<int64_t>& connectivity)
+{
+    stk::mesh::EntityVector elems;
+    stk::mesh::get_entities(bulkData, stk::topology::ELEM_RANK, *elemBlock, elems);
+
+    elem_ids.resize(elems.size());
+    const unsigned connectivity_size = elems.size()*elemBlock->topology().num_nodes();
+    connectivity.resize(connectivity_size);
+
+    unsigned conn_counter = 0;
+    for(size_t j=0;j<elems.size();++j) {
+        elem_ids[j] = bulkData.identifier(elems[j]);
+        const stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(elems[j], stk::topology::NODE_RANK);
+        for(unsigned k=0;k<nodes.size();++k) {
+            connectivity[conn_counter++] = bulkData.identifier(nodes[k]);
+        }
+    }
+}
+
+TEST(StkIo, write_stk_mesh_using_ioss_instead_of_stk_io)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     std::string file_written = "out.exo";
 
-    if(stk::parallel_machine_size(comm) == 1)
+    if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
     {
         std::shared_ptr<stk::mesh::BulkData> bulkData = build_mesh(comm);
         stk::mesh::MetaData& meta = bulkData->mesh_meta_data();
 
         stk::io::fill_mesh("generated:2x2x2|sideset:xX|nodeset:x", *bulkData);
 
-        const stk::mesh::PartVector & all_parts = meta.get_parts();
-
         Ioss::DatabaseIO* db_io = create_output_db_io(file_written);
-        Ioss::Region output_region(db_io);
         EXPECT_TRUE(db_io->ok());
+        Ioss::Region output_region(db_io);
 
         ////////////////////////////////////////////////////////////
 
@@ -96,26 +154,19 @@ TEST(StkIo, write_stk_mesh_to_file)
         Ioss::NodeBlock *output_node_block = new Ioss::NodeBlock(db_io, NodeBlockName, num_nodes, spatial_dim);
         output_region.add(output_node_block);
 
-        for(stk::mesh::PartVector::const_iterator i = all_parts.begin(); i != all_parts.end(); ++i)
-        {
-            stk::mesh::Part * const part = *i;
+        stk::mesh::PartVector elemBlockParts;
+        stk::mesh::fill_element_block_parts(meta, stk::topology::HEX_8, elemBlockParts);
 
-            if(stk::io::is_part_io_part(*part)) // this means it is an io_part
-            {
-                if(part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
-                {
-                    stk::mesh::EntityVector entities;
-                    const stk::mesh::BucketVector &input_buckets = bulkData->buckets(stk::topology::ELEMENT_RANK);
-                    stk::mesh::get_selected_entities(*part, input_buckets, entities);
-                    Ioss::ElementBlock *output_element_block = new Ioss::ElementBlock(db_io, part->name(), part->topology().name(), entities.size());
+        for(const stk::mesh::Part* elemBlock : elemBlockParts) {
+            STK_ThrowRequireMsg(stk::io::is_part_io_part(*elemBlock),"element-block-part "<<elemBlock->name()<<" is not an IO part.");
+            unsigned numElems = stk::mesh::count_entities(*bulkData, stk::topology::ELEM_RANK, *elemBlock);
+            Ioss::ElementBlock *output_element_block = new Ioss::ElementBlock(db_io, elemBlock->name(), elemBlock->topology().name(), numElems);
 
-                    output_element_block->property_add(Ioss::Property("original_topology_type", part->topology().name()));
-                    output_element_block->property_add(Ioss::Property("id", part->id()));
-                    output_region.add(output_element_block);
+            output_element_block->property_add(Ioss::Property("original_topology_type", elemBlock->topology().name()));
+            output_element_block->property_add(Ioss::Property("id", elemBlock->id()));
+            output_region.add(output_element_block);
 
-                    // how about attributes?
-                }
-            }
+            // how about attributes?
         }
 
         output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
@@ -126,96 +177,34 @@ TEST(StkIo, write_stk_mesh_to_file)
 
         Ioss::NodeBlock *node_block = output_region.get_node_blocks()[0];
 
-        stk::mesh::Field<double> * coordField = meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
-
-        ASSERT_TRUE(coordField != NULL);
-
         std::vector<double> coordinates(spatial_dim*num_nodes);
         std::vector<int64_t> node_ids(num_nodes);
 
-        stk::mesh::Selector local_nodes = meta.locally_owned_part();
-
-        const stk::mesh::BucketVector &input_buckets = bulkData->get_buckets(stk::topology::NODE_RANK, local_nodes);
-
-        int node_counter = 0;
-        for(size_t i=0;i<input_buckets.size();++i)
-        {
-            const stk::mesh::Bucket &bucket = *input_buckets[i];
-            for(size_t j=0;j<bucket.size();++j)
-            {
-                stk::mesh::Entity node = bucket[j];
-                int node_id = bulkData->identifier(node);
-                node_ids[node_counter] = node_id;
-
-                double* coords = stk::mesh::field_data(*coordField, node);
-                for(int k=0;k<spatial_dim;++k)
-                {
-                    coordinates[spatial_dim*node_counter+k] = coords[k];
-                }
-                node_counter++;
-            }
-        }
+        fill_node_ids_and_coords(*bulkData, node_ids, coordinates);
 
         node_block->put_field_data("mesh_model_coordinates", coordinates);
         node_block->put_field_data("ids", node_ids);
 
-        for(stk::mesh::PartVector::const_iterator i = all_parts.begin(); i != all_parts.end(); ++i)
-        {
-            stk::mesh::Part * const part = *i;
+        for(const stk::mesh::Part* elemBlock : elemBlockParts) {
+            std::vector<int64_t> elem_ids;
+            std::vector<int64_t> connectivity;
 
-            if(stk::io::is_part_io_part(*part)) // this means it is an io_part
-            {
-                if(part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
-                {
-                    stk::mesh::EntityVector entities;
-                    const stk::mesh::BucketVector &input_bucketsA = bulkData->buckets(stk::topology::ELEMENT_RANK);
-                    stk::mesh::get_selected_entities(*part, input_bucketsA, entities);
-                    Ioss::ElementBlock *output_element_block = output_region.get_element_block(part->id());
+            fill_elem_ids_and_connectivity(*bulkData, elemBlock, elem_ids, connectivity);
 
-                    std::vector<int64_t> elem_ids(entities.size());
-                    unsigned connectivity_size = entities.size()*part->topology().num_nodes();
-                    std::vector<int64_t> connectivity(connectivity_size);
-                    unsigned conn_counter = 0;
-
-                    for(size_t j=0;j<entities.size();++j)
-                    {
-                        elem_ids[j] = bulkData->identifier(entities[j]);
-                        unsigned num_nodes_per = bulkData->num_nodes(entities[j]);
-                        const stk::mesh::Entity *nodes = bulkData->begin_nodes(entities[j]);
-                        for(unsigned k=0;k<num_nodes_per;++k)
-                        {
-                            connectivity[conn_counter] = bulkData->identifier(nodes[k]);
-                            conn_counter++;
-                        }
-                    }
-
-                    output_element_block->put_field_data("connectivity_raw", connectivity);
-                    output_element_block->put_field_data("ids", elem_ids);
-                }
-            }
+            Ioss::ElementBlock *output_element_block = output_region.get_element_block(elemBlock->id());
+            output_element_block->put_field_data("connectivity_raw", connectivity);
+            output_element_block->put_field_data("ids", elem_ids);
         }
 
         output_region.end_mode(Ioss::STATE_MODEL);
         ////////////////////////////////////////////////////////////
     }
 
-    if(stk::parallel_machine_size(comm) == 1)
-    {
-        std::shared_ptr<stk::mesh::BulkData> bulkData = build_mesh(comm);
-
-        stk::io::fill_mesh(file_written, *bulkData);
-
-        std::vector<size_t> entity_counts;
-        stk::mesh::comm_mesh_counts(*bulkData, entity_counts);
-        EXPECT_EQ(27u, entity_counts[stk::topology::NODE_RANK]);
-    }
-
+    verify_num_nodes_in_file(comm, file_written, 27);
     unlink(file_written.c_str());
-
 }
-//EndDocTest1
 
-class StkIoResultsOutput : public stk::unit_test_util::simple_fields::MeshFixture
+class StkIoResultsOutput : public stk::unit_test_util::MeshFixture
 {
 protected:
     void setup_mesh(const std::string & meshSpec,
@@ -256,7 +245,6 @@ TEST_F(StkIoResultsOutput, close_output_mesh_makes_it_invalid) {
     setup_mesh(meshSpec, stk::mesh::BulkData::NO_AUTO_AURA);
 
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
 
     std::string fileName1 = "output1.e";
@@ -284,7 +272,6 @@ TEST_F(StkIoResultsOutput, write_nodal_face_variable_multiple_procs)
 
     const std::string fileName = "nodal_field_as_face_variable.e";
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
     stkIo.use_nodeset_for_sideset_nodes_fields(outputFileIndex, true);

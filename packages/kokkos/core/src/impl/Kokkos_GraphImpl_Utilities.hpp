@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_KOKKOS_GRAPHIMPL_UTILITIES_HPP
 #define KOKKOS_KOKKOS_GRAPHIMPL_UTILITIES_HPP
@@ -54,9 +41,9 @@ template <template <class, class, class> class Template, class TSrc, class USrc,
 struct is_compatible_type_erasure<
     Template<TSrc, USrc, VSrc>, Template<TDst, UDst, VDst>,
     // Because gcc thinks this is ambiguous, we need to add this:
-    std::enable_if_t<!std::is_same<TSrc, TDst>::value ||
-                     !std::is_same<USrc, UDst>::value ||
-                     !std::is_same<VSrc, VDst>::value>>
+    std::enable_if_t<!std::is_same_v<TSrc, TDst> ||
+                     !std::is_same_v<USrc, UDst> ||
+                     !std::is_same_v<VSrc, VDst>>>
     : std::bool_constant<is_compatible_type_erasure<TSrc, TDst>::value &&
                          is_compatible_type_erasure<USrc, UDst>::value &&
                          is_compatible_type_erasure<VSrc, VDst>::value> {};

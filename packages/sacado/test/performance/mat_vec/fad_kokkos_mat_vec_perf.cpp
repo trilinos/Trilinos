@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #define SACADO_VIEW_CUDA_HIERARCHICAL 1
@@ -193,7 +173,7 @@ check_val(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   const double tol = 1.0e-14;
   typedef typename ViewTypeC::value_type value_type;
-  typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
+  typename ViewTypeC::host_mirror_type h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
   const size_t m = A.extent(0);
   const size_t n = A.extent(1);
@@ -212,7 +192,7 @@ check_deriv(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 {
   const double tol = 1.0e-14;
   typedef typename ViewTypeC::value_type value_type;
-  typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
+  typename ViewTypeC::host_mirror_type h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
   const size_t m = A.extent(0);
   const size_t n = A.extent(1);

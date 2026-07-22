@@ -1,23 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_STD_ALGORITHMS_UNIQUE_IMPL_HPP
 #define KOKKOS_STD_ALGORITHMS_UNIQUE_IMPL_HPP
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include "Kokkos_Constraints.hpp"
 #include "Kokkos_HelperPredicates.hpp"
 #include <std_algorithms/Kokkos_Move.hpp>
@@ -52,13 +44,10 @@ struct StdUniqueFunctor {
     auto& val_i         = m_first_from[i];
     const auto& val_ip1 = m_first_from[i + 1];
 
-    if (final_pass) {
-      if (!m_pred(val_i, val_ip1)) {
+    if (!m_pred(val_i, val_ip1)) {
+      if (final_pass) {
         m_first_dest[update] = std::move(val_i);
       }
-    }
-
-    if (!m_pred(val_i, val_ip1)) {
       update += 1;
     }
   }
@@ -188,6 +177,7 @@ KOKKOS_FUNCTION IteratorType unique_team_impl(const TeamHandleType& teamHandle,
           IteratorType result = first;
           IteratorType lfirst = first;
           while (++lfirst != last) {
+            // NOLINTNEXTLINE(bugprone-inc-dec-in-conditions)
             if (!pred(*result, *lfirst) && ++result != lfirst) {
               *result = std::move(*lfirst);
             }

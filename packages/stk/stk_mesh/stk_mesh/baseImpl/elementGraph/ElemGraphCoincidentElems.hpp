@@ -59,12 +59,28 @@ public:
     virtual stk::mesh::impl::LocalId globalToLocal(stk::mesh::EntityId global) const = 0;
 };
 
+// TODO: deprecate this version as it does not work for paved shells
 bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
                               stk::mesh::Entity localElem,
                               const stk::mesh::EntityVector& localElemSideNodes,
                               unsigned sideIndex,
                               stk::topology otherElemTopology,
                               const stk::mesh::EntityVector &otherElemSideNodes);
+
+bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
+                              stk::mesh::Entity localElem,
+                              const stk::mesh::EntityVector& localElemSideNodes,
+                              unsigned sideIndex,
+                              stk::topology otherElemTopology,
+                              const stk::mesh::EntityVector &otherElemSideNodes,
+                              unsigned otherSideIndex);
+
+bool is_coincident_connection(const stk::topology& elemTopology,
+                              const unsigned sideIndex,
+                              const stk::mesh::Permutation& elemPerm,
+                              const stk::topology& otherElemTopology,
+                              const unsigned otherSideIndex,
+                              const stk::mesh::Permutation& otherElemPerm);
 
 }}} // end namespaces stk mesh
 

@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_STANDARD_PARAMETER_ENTRY_VALIDATORS_H
@@ -317,7 +285,7 @@ public:
     std::string const& paramName,
     std::string const& sublistName
     ) const;
-  
+
 #if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
   void validateAndModify(
     std::string const& paramName,
@@ -342,7 +310,7 @@ private:
   const bool caseSensitive_;
 
   /** \brief Auxiliary method to simplify constructors
-   * 
+   *
    * \param strings [in] Array of unique names for the enum or integer
    *   values.  These are the strings which users will see and use
    *   when setting parameters.  <tt>strings[i]</tt> will be
@@ -352,7 +320,7 @@ private:
    * \param integralValues [in] Array of the enum or integer values
    *   associated with <tt>strings[]</tt>.
   */
-  void init(const ArrayView<const std::string>& strings, 
+  void init(const ArrayView<const std::string>& strings,
             const ArrayView<const IntegralType>& integralValues);
 
   void setValidValues(
@@ -1911,7 +1879,7 @@ public:
    *
    * @param validStrings A list of valid string values for this validator.
    */
-  StringValidator(const Teuchos::Array<std::string> &validStrings);
+  StringValidator(const Teuchos::Array<std::string> &validStrings, bool caseSensitive=true);
 
   //@}
 
@@ -1927,6 +1895,14 @@ public:
    */
   ValidStringsList setValidStrings(
     const Teuchos::Array<std::string> &validStrings);
+
+  /// \brief Whether this validator is case sensitive.
+  ///
+  /// Case sensitivity is with respect to the string names, not the
+  /// parameter name.
+  bool isCaseSensitive () const {
+    return caseSensitive_;
+  }
 
   //@}
 
@@ -1956,6 +1932,15 @@ private:
   /** \brief An array containing a list of all the valid string values.
    */
   ValidStringsList validStrings_;
+
+  bool caseSensitive_;
+
+  //! Return an upper-case copy of the string s.
+  static std::string upperCase (const std::string s) {
+    std::string s_upper = s;
+    std::transform (s_upper.begin (), s_upper.end (), s_upper.begin (), ::toupper);
+    return s_upper;
+  }
 
   //@}
 

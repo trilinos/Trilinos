@@ -71,7 +71,6 @@ TEST(StkMeshHowTo, changeEntityOwner)
   if (stk::parallel_machine_size(communicator) == 2)
   {
     std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = stk::mesh::MeshBuilder(communicator).create();
-    bulkDataPtr->mesh_meta_data().use_simple_fields();
     stk::io::fill_mesh("generated:1x1x4", *bulkDataPtr);
 
     stk::mesh::EntityId elem2Id = 2;

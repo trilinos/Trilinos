@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_SPECTRALRISK_HPP
@@ -208,33 +174,33 @@ public:
   }
 
   void setStorage(const Ptr<ScalarController<Real>> &value_storage,
-                  const Ptr<VectorController<Real>> &gradient_storage) {
+                  const Ptr<VectorController<Real>> &gradient_storage) override {
     RandVarFunctional<Real>::setStorage(value_storage,gradient_storage);
     mqq_->setStorage(value_storage,gradient_storage);
   }
 
   void setHessVecStorage(const Ptr<ScalarController<Real>> &gradvec_storage,
-                         const Ptr<VectorController<Real>> &hessvec_storage) {
+                         const Ptr<VectorController<Real>> &hessvec_storage) override {
     RandVarFunctional<Real>::setHessVecStorage(gradvec_storage,hessvec_storage);
     mqq_->setHessVecStorage(gradvec_storage,hessvec_storage);
   }
 
-  void setSample(const std::vector<Real> &point, const Real weight) {
+  void setSample(const std::vector<Real> &point, const Real weight) override {
     RandVarFunctional<Real>::setSample(point,weight);
     mqq_->setSample(point,weight);
   }
 
-  void resetStorage(bool flag = true) {
+  void resetStorage(bool flag = true) override {
     RandVarFunctional<Real>::resetStorage(flag);
     mqq_->resetStorage(flag);
   }
 
-  void resetStorage(UpdateType type) {
+  void resetStorage(UpdateType type) override {
     RandVarFunctional<Real>::resetStorage(type);
     mqq_->resetStorage(type);
   }
 
-  void initialize(const Vector<Real> &x) {
+  void initialize(const Vector<Real> &x) override {
     RandVarFunctional<Real>::initialize(x);
     mqq_->initialize(x);
   }
@@ -246,14 +212,14 @@ public:
   void updateValue(Objective<Real>         &obj,
                    const Vector<Real>      &x,
                    const std::vector<Real> &xstat,
-                   Real                    &tol) {
+                   Real                    &tol) override {
     mqq_->updateValue(obj,x,xstat,tol);
   }
 
   void updateGradient(Objective<Real>         &obj,
                       const Vector<Real>      &x,
                       const std::vector<Real> &xstat,
-                      Real                    &tol) {
+                      Real                    &tol) override {
     mqq_->updateGradient(obj,x,xstat,tol);
   }
 
@@ -262,13 +228,13 @@ public:
                      const std::vector<Real> &vstat,
                      const Vector<Real>      &x,
                      const std::vector<Real> &xstat,
-                     Real                    &tol) {
+                     Real                    &tol) override {
     mqq_->updateHessVec(obj,v,vstat,x,xstat,tol);
   }
 
   Real getValue(const Vector<Real>      &x,
                 const std::vector<Real> &xstat,
-                SampleGenerator<Real>   &sampler) {
+                SampleGenerator<Real>   &sampler) override {
     return mqq_->getValue(x,xstat,sampler);
   }
 
@@ -276,7 +242,7 @@ public:
                    std::vector<Real>       &gstat,
                    const Vector<Real>      &x,
                    const std::vector<Real> &xstat,
-                   SampleGenerator<Real>   &sampler) {
+                   SampleGenerator<Real>   &sampler) override {
     mqq_->getGradient(g,gstat,x,xstat,sampler);
   }
 
@@ -286,7 +252,7 @@ public:
                   const std::vector<Real> &vstat,
                   const Vector<Real>      &x,
                   const std::vector<Real> &xstat,
-                  SampleGenerator<Real>   &sampler) {
+                  SampleGenerator<Real>   &sampler) override {
     mqq_->getHessVec(hv,hvstat,v,vstat,x,xstat,sampler);
   }
 };

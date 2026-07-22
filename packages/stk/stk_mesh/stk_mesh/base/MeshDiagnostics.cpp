@@ -4,6 +4,7 @@
 #include "stk_mesh/base/MetaData.hpp"
 #include <stk_mesh/base/ExodusTranslator.hpp>
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
+#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
 #include "stk_mesh/baseImpl/elementGraph/ElemFilter.hpp"
 #include "stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp"
 #include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
@@ -24,26 +25,77 @@ void fill_single_split_coincident_connection(const stk::mesh::BulkData &bulk, st
     splitCoincidents[bulk.identifier(localElem)].push_back({connectedElemParallelData.get_element_identifier(), connectedElemParallelData.get_proc_rank_of_neighbor()});
 }
 
-void fill_split_coincident_connections_for_elem(const stk::mesh::BulkData &bulk, stk::mesh::Entity localElem, const stk::mesh::EntityVector& localElemSideNodes, const impl::ParallelElementData &localElementData, const impl::ParallelElementDataVector &elementsConnectedToThisElementSide,
-                                                  SplitCoincidentInfo & splitCoincidents)
+void fill_split_coincident_connections_for_elem(const stk::mesh::BulkData &bulk, stk::mesh::Entity localElem,
+                                                const stk::mesh::EntityVector& localElemSideNodes,
+                                                const impl::ParallelElementData &localElementData,
+                                                const impl::ParallelElementDataVector &elementsConnectedToThisElementSide,
+                                                impl::SortedKeyBoolPairVector<stk::mesh::EntityId>& hasShellFaceFaceConfiguration,
+                                                SplitCoincidentInfo & splitCoincidents)
 {
-    for(const impl::ParallelElementData & connectedElemParallelData : elementsConnectedToThisElementSide)
-        if(connectedElemParallelData.is_parallel_edge())
-            if(impl::is_coincident_connection(bulk, localElem, localElemSideNodes, localElementData.get_element_side_index(), connectedElemParallelData.get_element_topology(), connectedElemParallelData.get_side_nodes()))
+    bool isShellFaceElem = impl::is_shell_face_side(localElementData.get_element_topology(), localElementData.get_element_side_index());
+    for(const impl::ParallelElementData & connectedElemParallelData : elementsConnectedToThisElementSide) {
+        if(connectedElemParallelData.is_parallel_edge()) {
+            stk::mesh::EntityId connectedElementId = connectedElemParallelData.get_element_identifier();
+
+            bool areBothShells = localElementData.get_element_topology().is_shell() &&
+                                 connectedElemParallelData.get_element_topology().is_shell();
+
+            if(areBothShells) {
+              hasShellFaceFaceConfiguration.set_if_not_already_set(connectedElementId, false);
+            }
+
+            bool isShellFaceOtherElem = impl::is_shell_face_side(connectedElemParallelData.get_element_topology(),
+                                                                 connectedElemParallelData.get_element_side_index());
+
+            if(isShellFaceElem && isShellFaceOtherElem) {
+              hasShellFaceFaceConfiguration.set(connectedElementId, true);
+            }
+
+            bool isCoincidentConnection = false;
+
+            if(areBothShells) {
+              if(hasShellFaceFaceConfiguration.get(connectedElementId)) {
+                isCoincidentConnection = true;
+              } else if(!isShellFaceElem && !isShellFaceOtherElem) {
+                // Assumption here is that the shell face sides have already been processed and no face/face connection was found
+                isCoincidentConnection = false;
+              }
+            } else {
+                isCoincidentConnection =  impl::is_coincident_connection(bulk,
+                                                                         localElem, localElemSideNodes,
+                                                                         localElementData.get_element_side_index(),
+                                                                         connectedElemParallelData.get_element_topology(),
+                                                                         connectedElemParallelData.get_side_nodes(),
+                                                                         connectedElemParallelData.get_element_side_index());
+            }
+
+            if(isCoincidentConnection) {
                 fill_single_split_coincident_connection(bulk, localElem, connectedElemParallelData, splitCoincidents);
+            }
+        }
+    }
 }
 
 void fill_split_coincident_connections(const stk::mesh::BulkData & bulk, const impl::ElementLocalIdMapper & localMapper,
                                          const impl::ParallelElementDataVector &localElementsAttachedToReceivedNodes,
-                                         stk::mesh::impl::ParallelElementDataVector & remoteElementsConnectedToSideNodes,
+                                         const stk::mesh::impl::ParallelElementDataVector & remoteElementsConnectedToSideNodes,
                                          SplitCoincidentInfo & splitCoincidents)
 {
+    stk::mesh::Entity currentLocalElem;
+    impl::SortedKeyBoolPairVector<stk::mesh::EntityId> hasShellFaceFaceConfiguration;
+
     const size_t numReceivedNodes = remoteElementsConnectedToSideNodes[0].get_side_nodes().size();
     for (const impl::ParallelElementData &localElementData: localElementsAttachedToReceivedNodes)
     {
         stk::mesh::Entity localElem = localMapper.local_to_entity(localElementData.get_element_local_id());
+
+        if(localElem != currentLocalElem) {
+          currentLocalElem = localElem;
+          hasShellFaceFaceConfiguration.clear();
+        }
         if (localElementData.get_side_nodes().size() == numReceivedNodes)
-            fill_split_coincident_connections_for_elem(bulk, localElem, localElementData.get_side_nodes(), localElementData, remoteElementsConnectedToSideNodes, splitCoincidents);
+            fill_split_coincident_connections_for_elem(bulk, localElem, localElementData.get_side_nodes(), localElementData,
+                                                       remoteElementsConnectedToSideNodes, hasShellFaceFaceConfiguration, splitCoincidents);
     }
 }
 
@@ -67,8 +119,7 @@ SplitCoincidentInfo get_split_coincident_elements_from_received_element_sides(st
         localElementsAttachedToReceivedNodes.clear();
         stk::mesh::impl::ParallelElementDataVector &parallelElementDatas = receivedElementData.second;
         impl::get_elements_connected_via_sidenodes<impl::ParallelElementData>(bulkData,
-                                                                              parallelElementDatas[0].get_element_identifier(),
-                                                                              parallelElementDatas[0].get_element_topology(),
+                                                                              parallelElementDatas[0].get_element_topology(), // <- possibly dangerous
                                                                               localIdMapper,
                                                                               parallelElementDatas[0].get_side_nodes(),
                                                                               scratchNodeVector, localElementsAttachedToReceivedNodes);

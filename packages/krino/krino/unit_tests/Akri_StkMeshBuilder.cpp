@@ -8,7 +8,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
-#include "../../../stk/stk_io/stk_io/StkMeshIoBroker.hpp"
+#include <stk_io/StkMeshIoBroker.hpp>
 
 namespace krino
 {
@@ -18,7 +18,20 @@ StkMeshBuilder<TOPO>::StkMeshBuilder(stk::mesh::BulkData & mesh, const stk::Para
 : mMesh(mesh), mAuxMeta(AuxMetaData::create(mesh.mesh_meta_data())), mPhaseSupport(Phase_Support::get(mesh.mesh_meta_data())), mComm(comm), time(0.0)
 {
   declare_coordinates();
-  mMesh.mesh_meta_data().use_simple_fields();
+}
+
+template<stk::topology::topology_t TOPO>
+std::vector<int> StkMeshBuilder<TOPO>::get_processor_distribution_for_num_elements(const unsigned numElements) const
+{
+  std::vector<int> elemOwners(numElements);
+  int elemOwner = 0;
+  for (unsigned iElem=0; iElem<numElements; ++iElem)
+  {
+    elemOwners[iElem] = elemOwner;
+    if (++elemOwner == stk::parallel_machine_size(mComm))
+      elemOwner = 0;
+  }
+  return elemOwners;
 }
 
 template<stk::topology::topology_t TOPO>
@@ -57,14 +70,26 @@ std::string get_surface_name(const unsigned sidesetId)
 }
 
 template<stk::topology::topology_t TOPO>
+const stk::mesh::Part & StkMeshBuilder<TOPO>::get_sideset_part(const unsigned sidesetId)
+{
+  stk::mesh::Part * sidesetPart = mMesh.mesh_meta_data().get_part(get_surface_name(sidesetId));
+  STK_ThrowRequireMsg(sidesetPart, "No sideset with id " << sidesetId);
+  return *sidesetPart;
+}
+
+template<stk::topology::topology_t TOPO>
+void StkMeshBuilder<TOPO>::create_sideset_part(const unsigned sidesetId)
+{
+    stk::mesh::Part &sidesetPart = mMesh.mesh_meta_data().declare_part(get_surface_name(sidesetId), mMesh.mesh_meta_data().side_rank());
+    mMesh.mesh_meta_data().set_part_id(sidesetPart, sidesetId);
+    stk::io::put_io_part_attribute(sidesetPart);
+}
+
+template<stk::topology::topology_t TOPO>
 void StkMeshBuilder<TOPO>::create_sideset_parts(const std::vector<unsigned> &sidesetIds)
 {
     for (unsigned sidesetId : sidesetIds)
-    {
-      stk::mesh::Part &sidesetPart = mMesh.mesh_meta_data().declare_part(get_surface_name(sidesetId), mMesh.mesh_meta_data().side_rank());
-      mMesh.mesh_meta_data().set_part_id(sidesetPart, sidesetId);
-      stk::io::put_io_part_attribute(sidesetPart);
-    }
+      create_sideset_part(sidesetId);
 }
 
 template<stk::topology::topology_t TOPO>
@@ -294,10 +319,6 @@ StkMeshBuilder<TOPO>::create_parallel_elements(const std::vector<std::array<unsi
 {
     const int proc = stk::parallel_machine_rank(mComm);
 
-    size_t numOwnedElements = 0;
-    for (int elemProc : elementProcOwners)
-      if (elemProc == proc) ++numOwnedElements;
-
     std::vector<stk::mesh::Entity> ownedElems;
     for (size_t iElem=0; iElem<elementConn.size(); ++iElem)
     {
@@ -430,7 +451,7 @@ void StkMeshBuilder<TOPO>::build_mesh_with_all_needed_block_ids
     const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
     const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<unsigned> &elementBlockIDs,
-    const std::vector<unsigned> &allBlocksIncludingThoseThatDontHaveElements,
+    const std::vector<unsigned> &/*allBlocksIncludingThoseThatDontHaveElements*/,
     const std::vector<int> &specifiedElementProcOwners
 )
 {
@@ -465,9 +486,13 @@ void StkMeshBuilder<TOPO>::write_mesh(const std::string & fileName)
 }
 
 // Explicit template instantiation
+template class StkMeshBuilder<stk::topology::BEAM_2>;
 template class StkMeshBuilder<stk::topology::TRIANGLE_3_2D>;
+template class StkMeshBuilder<stk::topology::TRIANGLE_6_2D>;
 template class StkMeshBuilder<stk::topology::TETRAHEDRON_4>;
+template class StkMeshBuilder<stk::topology::TETRAHEDRON_10>;
 template class StkMeshBuilder<stk::topology::QUADRILATERAL_4_2D>;
-
+template class StkMeshBuilder<stk::topology::HEXAHEDRON_8>;
+template class StkMeshBuilder<stk::topology::SHELL_TRIANGLE_3_ALL_FACE_SIDES>;
 
 }

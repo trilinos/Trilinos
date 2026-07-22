@@ -14,7 +14,7 @@ namespace stk { namespace mesh { class MetaData; } }
 
 namespace krino {
 
-class RefinementInterface;
+class RefinementManager;
 
 class RefinementSupport {
 public:
@@ -29,19 +29,23 @@ public:
   void activate_interface_refinement(int minimum_level, int maximum_level);
   void activate_nonconformal_adaptivity(const int num_levels);
 
+  void setup_refinement_error_indicator();
   void activate_nonconformal_adapt_target_count(uint64_t val);
   uint64_t get_nonconformal_adapt_target_count() const { return my_nonconformal_adapt_target_element_count; }
   int get_interface_minimum_refinement_level() const { return my_interface_minimum_refinement_level; }
   int get_interface_maximum_refinement_level() const { return my_interface_maximum_refinement_level; }
   void set_post_adapt_refinement_levels(int levels) { my_post_adapt_uniform_refinement_levels = levels; }
   int get_post_adapt_refinement_levels() const { return my_post_adapt_uniform_refinement_levels; }
+  double get_interface_refinement_curvature_tolerance() const { return myInterfaceRefinementCurvatureTol; }
+  void set_rebalance_interval(int rebalanceInterval) { myRebalanceInterval = rebalanceInterval; }
+  int get_rebalance_interval() const { return myRebalanceInterval; }
 
   FieldRef get_nonconforming_refinement_node_marker_field() const { return myNonInterfaceConformingRefinementNodeMarkerField; }
   const std::string & get_nonconformal_adapt_indicator_name() const { return my_nonconformal_adapt_indicator_name; }
 
-  void set_non_interface_conforming_refinement(RefinementInterface & refinement) { myNonInterfaceConformingRefinement = &refinement; }
+  void set_non_interface_conforming_refinement(RefinementManager & refinement) { myNonInterfaceConformingRefinement = &refinement; }
   bool has_non_interface_conforming_refinement() const { return nullptr != myNonInterfaceConformingRefinement; }
-  RefinementInterface & get_non_interface_conforming_refinement() const { return *myNonInterfaceConformingRefinement; }
+  RefinementManager & get_non_interface_conforming_refinement() const { return *myNonInterfaceConformingRefinement; }
   stk::mesh::Selector get_do_not_refine_or_unrefine_selector() const;
 
   void do_nearby_refinement_before_interface_refinement(bool flag) { myFlagDoNearbyRefinementBeforeInterfaceRefinement = flag; }
@@ -71,8 +75,10 @@ private:
   std::array<double,2> myRefinementInterval{1.,-1.}; // bad initial interval
   FieldRef myNonInterfaceConformingRefinementNodeMarkerField;
   std::string my_nonconformal_adapt_indicator_name;
-  RefinementInterface * myNonInterfaceConformingRefinement{nullptr};
+  RefinementManager * myNonInterfaceConformingRefinement{nullptr};
   bool myFlagDoNearbyRefinementBeforeInterfaceRefinement{false};
+  double myInterfaceRefinementCurvatureTol{0.2};
+  int myRebalanceInterval{2};
   mutable stk::diag::Timer myTimer;
 };
 

@@ -1,44 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teko_TpetraOperatorWrapper.hpp"
@@ -144,7 +110,7 @@ void TpetraOperatorWrapper::apply(const Tpetra::MultiVector<ST, LO, GO, NT>& X,
     Thyra::assign(tX.ptr(), 0.0);
     Thyra::assign(tY.ptr(), 0.0);
 
-    // copy epetra X into thyra X
+    // copy Tpetra X into thyra X
     mapStrategy_->copyTpetraIntoThyra(X, tX.ptr());
     mapStrategy_->copyTpetraIntoThyra(
         Y, tY.ptr());  // if this matrix isn't block square, this probably won't work!
@@ -152,7 +118,7 @@ void TpetraOperatorWrapper::apply(const Tpetra::MultiVector<ST, LO, GO, NT>& X,
     // perform matrix vector multiplication
     thyraOp_->apply(Thyra::NOTRANS, *tX, tY.ptr(), alpha, beta);
 
-    // copy thyra Y into epetra Y
+    // copy thyra Y into Tpetra Y
     mapStrategy_->copyThyraIntoTpetra(tY, Y);
   } else {
     TEUCHOS_ASSERT(false);
@@ -193,68 +159,6 @@ RCP<const Teuchos::Comm<Thyra::Ordinal> > TpetraOperatorWrapper::getThyraComm(
                              "blocks to be SPMD std::vector spaces");
 
   return spmd->getComm();
-  /*
-    const Thyra::ConstLinearOperator<double> thyraOp = rcpFromRef(inOp);
-
-    RCP<Epetra_Comm> rtn;
-    // VectorSpace<double> vs = thyraOp.domain().getBlock(0);
-    RCP<const VectorSpaceBase<double> > vs = thyraOp.domain().getBlock(0).constPtr();
-
-    // search for an SpmdVectorSpaceBase object
-    RCP<const SpmdVectorSpaceBase<double> > spmd;
-    RCP<const VectorSpaceBase<double> > current = vs;
-    while(current!=Teuchos::null) {
-       // try to cast to a product vector space first
-       RCP<const ProductVectorSpaceBase<double> > prod
-             = rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(current);
-
-       // figure out what type it is
-       if(prod==Teuchos::null) {
-          // hopfully this is a SPMD vector space
-          spmd = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(current);
-
-          break;
-       }
-       else {
-          // get first convenient vector space
-          current = prod->getBlock(0);
-       }
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error,
-                       "TpetraOperatorWrapper requires std::vector space "
-                       "blocks to be SPMD std::vector spaces");
-
-    const SerialComm<Thyra::Ordinal>* serialComm
-      = dynamic_cast<const SerialComm<Thyra::Ordinal>*>(spmd->getComm().get());
-
-  #ifdef HAVE_MPI
-    const MpiComm<Thyra::Ordinal>* mpiComm
-      = dynamic_cast<const MpiComm<Thyra::Ordinal>*>(spmd->getComm().get());
-
-    TEUCHOS_TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, std::runtime_error,
-                       "SPMD std::vector space has a communicator that is "
-                       "neither a serial comm nor an MPI comm");
-
-    if (mpiComm != 0)
-      {
-        rtn = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-      }
-    else
-      {
-        rtn = rcp(new Epetra_SerialComm());
-      }
-  #else
-    TEUCHOS_TEST_FOR_EXCEPTION(serialComm==0, std::runtime_error,
-                       "SPMD std::vector space has a communicator that is "
-                       "neither a serial comm nor an MPI comm");
-    rtn = rcp(new Epetra_SerialComm());
-
-  #endif
-
-    TEUCHOS_TEST_FOR_EXCEPTION(rtn.get()==0, std::runtime_error, "null communicator created");
-    return rtn;
-  */
 }
 
 int TpetraOperatorWrapper::GetBlockRowCount() {

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_OPENACC_PARALLEL_FOR_TEAM_HPP
 #define KOKKOS_OPENACC_PARALLEL_FOR_TEAM_HPP
@@ -44,10 +31,12 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
     auto team_size     = m_policy.team_size();
     auto vector_length = m_policy.impl_vector_length();
 
+    int const async_arg = m_policy.space().acc_async_queue();
+
     auto const a_functor(m_functor);
 
 #pragma acc parallel loop gang vector num_gangs(league_size) \
-    vector_length(team_size* vector_length) copyin(a_functor)
+    vector_length(team_size* vector_length) copyin(a_functor) async(async_arg)
     for (int i = 0; i < league_size * team_size * vector_length; i++) {
       int league_id = i / (team_size * vector_length);
       typename Policy::member_type team(league_id, league_size, team_size,
@@ -57,7 +46,7 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
   }
 
   inline ParallelFor(const FunctorType& arg_functor, Policy arg_policy)
-      : m_functor(arg_functor), m_policy(arg_policy) {}
+      : m_functor(arg_functor), m_policy(std::move(arg_policy)) {}
 };
 
 namespace Kokkos {
@@ -69,10 +58,10 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
     const Impl::TeamThreadRangeBoundariesStruct<iType, Impl::OpenACCTeamMember>&
         loop_boundaries,
     const Lambda& lambda) {
-  iType j_start =
-      loop_boundaries.team.team_rank() / loop_boundaries.team.vector_length();
+  iType j_start = loop_boundaries.member.team_rank() /
+                  loop_boundaries.member.vector_length();
   iType j_end  = loop_boundaries.end;
-  iType j_step = loop_boundaries.team.team_size();
+  iType j_step = loop_boundaries.member.team_size();
   if (j_start >= loop_boundaries.start) {
 #pragma acc loop seq
     for (iType j = j_start; j < j_end; j += j_step) {
@@ -88,10 +77,10 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
     const Impl::ThreadVectorRangeBoundariesStruct<
         iType, Impl::OpenACCTeamMember>& loop_boundaries,
     const Lambda& lambda) {
-  iType j_start =
-      loop_boundaries.team.team_rank() % loop_boundaries.team.vector_length();
+  iType j_start = loop_boundaries.member.team_rank() %
+                  loop_boundaries.member.vector_length();
   iType j_end  = loop_boundaries.end;
-  iType j_step = loop_boundaries.team.vector_length();
+  iType j_step = loop_boundaries.member.vector_length();
   if (j_start >= loop_boundaries.start) {
 #pragma acc loop seq
     for (iType j = j_start; j < j_end; j += j_step) {
@@ -107,10 +96,10 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
     const Impl::TeamVectorRangeBoundariesStruct<iType, Impl::OpenACCTeamMember>&
         loop_boundaries,
     const Lambda& lambda) {
-  iType j_start =
-      loop_boundaries.team.team_rank() % loop_boundaries.team.vector_length();
+  iType j_start = loop_boundaries.member.team_rank() %
+                  loop_boundaries.member.vector_length();
   iType j_end  = loop_boundaries.end;
-  iType j_step = loop_boundaries.team.vector_length();
+  iType j_step = loop_boundaries.member.vector_length();
   if (j_start >= loop_boundaries.start) {
 #pragma acc loop seq
     for (iType j = j_start; j < j_end; j += j_step) {
@@ -145,10 +134,12 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
     auto team_size     = m_policy.team_size();
     auto vector_length = m_policy.impl_vector_length();
 
+    int const async_arg = m_policy.space().acc_async_queue();
+
     auto const a_functor(m_functor);
 
 #pragma acc parallel loop gang num_gangs(league_size) num_workers(team_size) \
-    vector_length(vector_length) copyin(a_functor)
+    vector_length(vector_length) copyin(a_functor) async(async_arg)
     for (int i = 0; i < league_size; i++) {
       int league_id = i;
       typename Policy::member_type team(league_id, league_size, team_size,
@@ -158,7 +149,7 @@ class Kokkos::Impl::ParallelFor<FunctorType, Kokkos::TeamPolicy<Properties...>,
   }
 
   inline ParallelFor(const FunctorType& arg_functor, Policy arg_policy)
-      : m_functor(arg_functor), m_policy(arg_policy) {}
+      : m_functor(arg_functor), m_policy(std::move(arg_policy)) {}
 };
 
 namespace Kokkos {

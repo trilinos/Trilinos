@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 // Note: Luc Berger-Vergiat 04/14/21
@@ -21,10 +8,8 @@
 //       to ensure it is not included in these
 //       backends unit-test
 
-#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && \
-    !defined(TEST_HIP_BATCHED_DENSE_CPP) &&  \
-    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
+#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && !defined(TEST_HIP_BATCHED_DENSE_CPP) && \
+    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
@@ -46,7 +31,7 @@ void impl_test_batched_vector_misc() {
   typedef typename vector_type::value_type value_type;
   const int vector_length = vector_type::vector_length;
 
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
   typedef typename ats::mag_type mag_type;
 
   vector_type a, b, c;
@@ -159,9 +144,8 @@ void impl_test_batched_vector_misc() {
 
 template <typename DeviceType, typename VectorTagType, int VectorLength>
 int test_batched_vector_misc() {
-  static_assert(
-      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
-      "vector datatype is only tested on host space");
+  static_assert(Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+                "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_misc<VectorTagType, VectorLength>();
 
   return 0;
@@ -172,21 +156,13 @@ int test_batched_vector_misc() {
 ///
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, batched_vector_misc_simd_float3) {
-  test_batched_vector_misc<TestDevice, SIMD<float>, 3>();
-}
-TEST_F(TestCategory, batched_vector_misc_simd_float8) {
-  test_batched_vector_misc<TestDevice, SIMD<float>, 8>();
-}
+TEST_F(TestCategory, batched_vector_misc_simd_float3) { test_batched_vector_misc<TestDevice, SIMD<float>, 3>(); }
+TEST_F(TestCategory, batched_vector_misc_simd_float8) { test_batched_vector_misc<TestDevice, SIMD<float>, 8>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, batched_vector_misc_simd_double3) {
-  test_batched_vector_misc<TestDevice, SIMD<double>, 3>();
-}
-TEST_F(TestCategory, batched_vector_misc_simd_double4) {
-  test_batched_vector_misc<TestDevice, SIMD<double>, 4>();
-}
+TEST_F(TestCategory, batched_vector_misc_simd_double3) { test_batched_vector_misc<TestDevice, SIMD<double>, 3>(); }
+TEST_F(TestCategory, batched_vector_misc_simd_double4) { test_batched_vector_misc<TestDevice, SIMD<double>, 4>(); }
 #endif
 
 // #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)

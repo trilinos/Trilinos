@@ -579,6 +579,7 @@ PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
+  ReturnType retType = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -711,6 +712,7 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
+            retType = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){block_cg_iter->iterate()}
           }
@@ -723,11 +725,13 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            retType = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockStochasticCGSolMgr::solve(): Invalid return from PseudoBlockStochasticCGIter::iterate().");
           }
         }
         catch (const std::exception &e) {
+          retType = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockStochasticCGIter::iterate() at iteration "
                                    << block_cg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -781,7 +785,7 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
   numIters_ = maxIterTest_->getNumIters();
 
   if (!isConverged ) {
-    return Unconverged; // return from PseudoBlockStochasticCGSolMgr::solve()
+    return retType; // return from PseudoBlockStochasticCGSolMgr::solve()
   }
   return Converged; // return from PseudoBlockStochasticCGSolMgr::solve()
 }

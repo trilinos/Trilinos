@@ -62,33 +62,5 @@ void TextMeshToFile::setup_mesh(const std::string& meshDesc, const std::string& 
   m_outputFileIndex = m_broker.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 }
 
-namespace simple_fields {
-
-TextMeshToFile::TextMeshToFile(stk::ParallelMachine comm, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-  : m_bulkPtr(build_mesh(3, comm, auraOption)),
-    m_bulk(*m_bulkPtr),
-    m_meta(m_bulk.mesh_meta_data())
-{
-  m_meta.use_simple_fields();
-}
-
-void
-TextMeshToFile::write_mesh()
-{
-  m_broker.write_output_mesh(m_outputFileIndex);
-}
-
-void TextMeshToFile::setup_mesh(const std::string& meshDesc, const std::string& outputFileName)
-{
-  stk::unit_test_util::setup_text_mesh(m_bulk, meshDesc);
-
-  m_broker.set_bulk_data(m_bulk);
-  m_broker.property_add(Ioss::Property("INTEGER_SIZE_API", 8));
-  m_broker.property_add(Ioss::Property("INTEGER_SIZE_DB", 8));
-  m_outputFileIndex = m_broker.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
-}
-
-} // namespace simple_fields
-
 }
 }

@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef STOKHOS_TPETRA_UTILITIES_MP_VECTOR_HPP
@@ -47,6 +15,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "KokkosExp_View_MP_Vector_Contiguous.hpp"
 
 namespace Stokhos {
 
@@ -178,7 +147,15 @@ namespace Stokhos {
     using FlatVector = Tpetra::MultiVector<BaseScalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     // Create flattenend view using reshaping conversion copy constructor
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
     typename FlatVector::wrapped_dual_view_type flat_vals(vec.getWrappedDualView());
+#else
+    using flat_dual_view_t = typename FlatVector::wrapped_dual_view_type::DVT;
+    auto w_d_v = vec.getWrappedDualView();
+    typename FlatVector::wrapped_dual_view_type flat_vals(//vec.getWrappedDualView()
+      flat_dual_view_t(Stokhos::reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(w_d_v.implGetDualView())),
+      flat_dual_view_t(Stokhos::reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(w_d_v.implGetOriginalDualView())));
+#endif
 
     // Create flat vector
     return Teuchos::make_rcp<FlatVector>(flat_map, flat_vals);

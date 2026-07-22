@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 // ModelEvaluator implementing our problem
@@ -138,8 +106,8 @@ int main(int argc, char *argv[]) {
     int num_KL = 2;
     CLP.setOption("num_kl", &num_KL, "Number of KL terms");
 
-    int p = 3;
-    CLP.setOption("order", &p, "Polynomial order");
+    int polynomialOrder = 3;
+    CLP.setOption("order", &polynomialOrder, "Polynomial order");
 
     bool normalize_basis = true;
     CLP.setOption("normalize", "unnormalize", &normalize_basis,
@@ -181,7 +149,7 @@ int main(int argc, char *argv[]) {
                 << "\tmean            = " << mean << std::endl
                 << "\tstd_dev         = " << sigma << std::endl
                 << "\tnum_kl          = " << num_KL << std::endl
-                << "\torder           = " << p << std::endl
+                << "\torder           = " << polynomialOrder << std::endl
                 << "\tnormalize_basis = " << normalize_basis << std::endl
                 << "\tkrylov_method   = " << krylov_method_names[krylov_method]
                 << std::endl
@@ -207,20 +175,20 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<int,double> > b;
       if (randField == UNIFORM) {
         b = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(
-                                  p, normalize_basis));
+                                  polynomialOrder, normalize_basis));
       }
       else if (randField == CC_UNIFORM) {
         b =
           Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
-                         p, normalize_basis, true));
+                         polynomialOrder, normalize_basis, true));
       }
       else if (randField == RYS) {
         b = Teuchos::rcp(new Stokhos::RysBasis<int,double>(
-                                  p, weightCut, normalize_basis));
+                                  polynomialOrder, weightCut, normalize_basis));
       }
       else if (randField == LOGNORMAL) {
         b = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(
-                                  p, normalize_basis));
+                                  polynomialOrder, normalize_basis));
       }
       bases[i] = b;
     }
@@ -239,7 +207,7 @@ int main(int argc, char *argv[]) {
       else if (sg_growth == UNRESTRICTED)
         sparse_grid_growth = Pecos::UNRESTRICTED_GROWTH;
       quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(
-                            basis,p,1e-12,sparse_grid_growth));
+                            basis,polynomialOrder,1e-12,sparse_grid_growth));
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
@@ -307,7 +275,7 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, precParams,
                                                            false));
     if (precStrategy == MEAN) {
-      TEUCHOS_FUNC_TIME_MONITOR("Deterministic Preconditioner Calculation");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Deterministic Preconditioner Calculation", deterministic_calc);
       *A = *(model.get_mean());
       M->ComputePreconditioner();
     }
@@ -331,7 +299,7 @@ int main(int argc, char *argv[]) {
     x_var.PutScalar(0.0);
     // Loop over colloction points
     for (int qp=0; qp<nqp; qp++) {
-      TEUCHOS_FUNC_TIME_MONITOR("Collocation Loop");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Collocation Loop", coll_loop);
 
       if (qp%100 == 0 || qp == nqp-1)
         std::cout << "Collocation point " << qp+1 <<'/' << nqp << "\n";
@@ -353,13 +321,13 @@ int main(int argc, char *argv[]) {
 
       // Compute preconditioner
       if (precStrategy != MEAN) {
-        TEUCHOS_FUNC_TIME_MONITOR("Deterministic Preconditioner Calculation");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Deterministic Preconditioner Calculation", deterministic);
         M->ComputePreconditioner(checkFiltering);
       }
 
       // Solve linear system
       {
-        TEUCHOS_FUNC_TIME_MONITOR("Deterministic Solve");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Deterministic Solve", solve);
         aztec.Iterate(1000, tol);
       }
 

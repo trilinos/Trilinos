@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 
@@ -39,14 +26,14 @@ TEST(defaultdevicetype, initialization_settings) {
 
 constexpr bool test_initialization_settings_getter() {
 #define CHECK_INITIALIZATION_SETTINGS_GETTER_RETURN_TYPE(NAME, TYPE)           \
-  static_assert(std::is_same<                                                  \
+  static_assert(std::is_same_v<                                                \
                 decltype(std::declval<Kokkos::InitializationSettings const&>() \
                              .has_##NAME()),                                   \
-                bool>::value);                                                 \
-  static_assert(std::is_same<                                                  \
+                bool>);                                                        \
+  static_assert(std::is_same_v<                                                \
                 decltype(std::declval<Kokkos::InitializationSettings const&>() \
                              .get_##NAME()),                                   \
-                TYPE>::value);
+                TYPE>);
   CHECK_INITIALIZATION_SETTINGS_GETTER_RETURN_TYPE(num_threads, int);
   CHECK_INITIALIZATION_SETTINGS_GETTER_RETURN_TYPE(device_id, int);
   CHECK_INITIALIZATION_SETTINGS_GETTER_RETURN_TYPE(disable_warnings, bool);
@@ -60,7 +47,6 @@ constexpr bool test_initialization_settings_getter() {
 
 static_assert(test_initialization_settings_getter());
 
-static_assert(
-    std::is_default_constructible<Kokkos::InitializationSettings>::value);
+static_assert(std::is_default_constructible_v<Kokkos::InitializationSettings>);
 
 }  // namespace

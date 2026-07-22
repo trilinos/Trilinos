@@ -1,20 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 namespace TestCXX11 {
 
@@ -57,9 +49,9 @@ double AddTestFunctor() {
 
   Kokkos::View<double**, DeviceType> a("A", 100, 5);
   Kokkos::View<double**, DeviceType> b("B", 100, 5);
-  typename Kokkos::View<double**, DeviceType>::HostMirror h_a =
+  typename Kokkos::View<double**, DeviceType>::host_mirror_type h_a =
       Kokkos::create_mirror_view(a);
-  typename Kokkos::View<double**, DeviceType>::HostMirror h_b =
+  typename Kokkos::View<double**, DeviceType>::host_mirror_type h_b =
       Kokkos::create_mirror_view(b);
 
   for (int i = 0; i < 100; i++) {
@@ -87,14 +79,13 @@ double AddTestFunctor() {
   return result;
 }
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
 template <class DeviceType, bool PWRTest>
 double AddTestLambda() {
   Kokkos::View<double**, DeviceType> a("A", 100, 5);
   Kokkos::View<double**, DeviceType> b("B", 100, 5);
-  typename Kokkos::View<double**, DeviceType>::HostMirror h_a =
+  typename Kokkos::View<double**, DeviceType>::host_mirror_type h_a =
       Kokkos::create_mirror_view(a);
-  typename Kokkos::View<double**, DeviceType>::HostMirror h_b =
+  typename Kokkos::View<double**, DeviceType>::host_mirror_type h_b =
       Kokkos::create_mirror_view(b);
 
   for (int i = 0; i < 100; i++) {
@@ -144,12 +135,6 @@ double AddTestLambda() {
 
   return result;
 }
-#else
-template <class DeviceType, bool PWRTest>
-double AddTestLambda() {
-  return AddTestFunctor<DeviceType, PWRTest>();
-}
-#endif
 
 template <class DeviceType>
 struct FunctorReduceTest {
@@ -201,7 +186,7 @@ double ReduceTestFunctor() {
       Kokkos::View<double, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
 
   view_type a("A", 100, 5);
-  typename view_type::HostMirror h_a = Kokkos::create_mirror_view(a);
+  typename view_type::host_mirror_type h_a = Kokkos::create_mirror_view(a);
 
   for (int i = 0; i < 100; i++) {
     for (int j = 0; j < 5; j++) {
@@ -224,7 +209,6 @@ double ReduceTestFunctor() {
   return result;
 }
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
 template <class DeviceType, bool PWRTest>
 double ReduceTestLambda() {
   using policy_type = Kokkos::TeamPolicy<DeviceType>;
@@ -233,7 +217,7 @@ double ReduceTestLambda() {
       Kokkos::View<double, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
 
   view_type a("A", 100, 5);
-  typename view_type::HostMirror h_a = Kokkos::create_mirror_view(a);
+  typename view_type::host_mirror_type h_a = Kokkos::create_mirror_view(a);
 
   for (int i = 0; i < 100; i++) {
     for (int j = 0; j < 5; j++) {
@@ -277,12 +261,6 @@ double ReduceTestLambda() {
 
   return result;
 }
-#else
-template <class DeviceType, bool PWRTest>
-double ReduceTestLambda() {
-  return ReduceTestFunctor<DeviceType, PWRTest>();
-}
-#endif
 
 template <class DeviceType>
 double TestVariantLambda(int test) {
@@ -291,6 +269,7 @@ double TestVariantLambda(int test) {
     case 2: return AddTestLambda<DeviceType, true>();
     case 3: return ReduceTestLambda<DeviceType, false>();
     case 4: return ReduceTestLambda<DeviceType, true>();
+    default: Kokkos::abort("unreachable");
   }
 
   return 0;
@@ -303,6 +282,7 @@ double TestVariantFunctor(int test) {
     case 2: return AddTestFunctor<DeviceType, true>();
     case 3: return ReduceTestFunctor<DeviceType, false>();
     case 4: return ReduceTestFunctor<DeviceType, true>();
+    default: Kokkos::abort("unreachable");
   }
 
   return 0;
@@ -310,7 +290,6 @@ double TestVariantFunctor(int test) {
 
 template <class DeviceType>
 bool Test(int test) {
-#ifdef KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA
   double res_functor = TestVariantFunctor<DeviceType>(test);
   double res_lambda  = TestVariantLambda<DeviceType>(test);
 
@@ -333,17 +312,13 @@ bool Test(int test) {
   }
 
   return passed;
-#else
-  (void)test;
-  return true;
-#endif
 }
 
 }  // namespace TestCXX11
 
 namespace Test {
 TEST(TEST_CATEGORY, cxx11) {
-  if (std::is_same<Kokkos::DefaultExecutionSpace, TEST_EXECSPACE>::value) {
+  if (std::is_same_v<Kokkos::DefaultExecutionSpace, TEST_EXECSPACE>) {
     ASSERT_TRUE((TestCXX11::Test<TEST_EXECSPACE>(1)));
     ASSERT_TRUE((TestCXX11::Test<TEST_EXECSPACE>(2)));
     ASSERT_TRUE((TestCXX11::Test<TEST_EXECSPACE>(3)));

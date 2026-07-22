@@ -62,7 +62,7 @@ class PhysicsStateCounter : virtual public Tempus::PhysicsState<Scalar> {
   /// \name Overridden from Teuchos::Describable
   //@{
   virtual void describe(Teuchos::FancyOStream& out,
-                        const Teuchos::EVerbosityLevel verbLevel) const
+                        const Teuchos::EVerbosityLevel /*verbLevel*/) const
   {
     out << this->description() << "::describe" << std::endl
         << "  physicsName      = " << this->physicsName_ << std::endl

@@ -33,6 +33,10 @@ static const std::string TimeStep = "Time Step";
 static const std::string FinalTime = "Final Time";
 static const std::string IsFinished = "Is Finished";
 static const std::string SuccessFlag = "Is Successful";
+static const std::string GlobalVars = "Global Vars";
+static const std::string CouplingVersion = "CouplingVersion";
+static const std::string ConvergenceStatus = "iteration_convergence_status";
+static const std::string StepContinuationStatus = "solve_step_continuation_status";
 //ENDCouplingReservedNames
 
 }

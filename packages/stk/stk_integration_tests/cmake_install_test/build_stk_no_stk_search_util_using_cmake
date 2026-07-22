@@ -1,0 +1,7 @@
+#!/bin/bash
+
+sierra_proj=${SIERRA_PROJ:-${PWD}}
+echo "assuming SIERRA_PROJ=${sierra_proj}"
+
+SIERRA_PROJ=${sierra_proj} SPECIALIZATION=no_stk_search_util ${sierra_proj}/stk/stk_integration_tests/cmake_install_test/do_trilinos_stk_build
+

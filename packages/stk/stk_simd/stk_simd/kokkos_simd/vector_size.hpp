@@ -41,6 +41,12 @@
 //@HEADER
 */
 
+// IWYU pragma: private
+
+#ifndef STK_INCLUDE_ONLY_STK_SIMD_HEADER
+static_assert(false, "Do not include simd impl files directly. Only include stk_simd/Simd.hpp");
+#endif
+
 #pragma once
 
 #include "simd_common.hpp"

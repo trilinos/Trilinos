@@ -1,53 +1,21 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Thyra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef THYRA_TPETRA_LINEAR_OP_HPP
 #define THYRA_TPETRA_LINEAR_OP_HPP
 
 #include "Thyra_TpetraLinearOp_decl.hpp"
+#include "Kokkos_Core.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-
-#include "Tpetra_CrsMatrix.hpp"
 
 #ifdef HAVE_THYRA_TPETRA_EPETRA
 #  include "Thyra_EpetraThyraWrappers.hpp"
@@ -135,9 +103,11 @@ convertToTeuchosTransMode(const Thyra::EOpTransp transp)
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraLinearOp()
-{}
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraLinearOp() = default;
 
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraLinearOp() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize(
@@ -296,7 +266,9 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   // Apply the operator
 
   tpetraOperator_->apply(*tX, *tY, tTransp, alpha, beta);
-  Kokkos::fence();
+  // CAG: Commented out since the purpose seems unclear.
+  //      Tpetra apply should do all the necessary fencing.
+  // Kokkos::fence();
 }
 
 // Protected member functions overridden from ScaledLinearOpBase
@@ -472,7 +444,50 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initializeImpl(
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+tpetraLinearOp(
+  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
+  )
+{
+  const RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
+    Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+  op->initialize(rangeSpace, domainSpace, tpetraOperator);
+  return op;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+constTpetraLinearOp(
+  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
+  )
+{
+  const RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
+    Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+  op->constInitialize(rangeSpace, domainSpace, tpetraOperator);
+  return op;
+}
+
+
 } // namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRALINEAROP_INSTANT(S, LO, GO, N)               \
+  template class Thyra::TpetraLinearOp<S, LO, GO, N>;                          \
+                                                                               \
+  template Teuchos::RCP<Thyra::TpetraLinearOp<S, LO, GO, N>>                   \
+  Thyra::tpetraLinearOp(const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &, \
+                        const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &, \
+                        const Teuchos::RCP<Tpetra::Operator<S, LO, GO, N>> &); \
+                                                                               \
+  template Teuchos::RCP<const Thyra::TpetraLinearOp<S, LO, GO, N>>             \
+  Thyra::constTpetraLinearOp(                                                  \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &,                   \
+      const Teuchos::RCP<const Thyra::VectorSpaceBase<S>> &,                   \
+      const Teuchos::RCP<const Tpetra::Operator<S, LO, GO, N>> &);
 
 #endif  // THYRA_TPETRA_LINEAR_OP_HPP

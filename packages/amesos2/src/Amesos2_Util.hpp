@@ -18,6 +18,10 @@
 #ifndef AMESOS2_UTIL_HPP
 #define AMESOS2_UTIL_HPP
 
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+
 #include "Amesos2_config.h"
 
 #include "Teuchos_RCP.hpp"
@@ -33,10 +37,6 @@
 #include "Amesos2_TypeDecl.hpp"
 #include "Amesos2_Meta.hpp"
 #include "Amesos2_Kokkos_View_Copy_Assign.hpp"
-
-#ifdef HAVE_AMESOS2_EPETRA
-#include <Epetra_Map.h>
-#endif
 
 #ifdef HAVE_AMESOS2_METIS
 #include "metis.h" // to discuss, remove from header?
@@ -83,42 +83,6 @@ namespace Amesos2 {
                        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                        GO indexBase = 0,
                        const Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >& map = Teuchos::null);
-
-
-#ifdef HAVE_AMESOS2_EPETRA
-
-    /**
-     * \brief Transform an Epetra_Map object into a Tpetra::Map
-     *
-     * \ingroup amesos2_utils
-     */
-    template <typename LO, typename GO, typename GS, typename Node>
-    RCP<Tpetra::Map<LO,GO,Node> >
-    epetra_map_to_tpetra_map(const Epetra_BlockMap& map);
-
-    /**
-     * \brief Transform a Tpetra::Map object into an Epetra_Map
-     *
-     * \ingroup amesos2_utils
-     */
-    template <typename LO, typename GO, typename GS, typename Node>
-    RCP<Epetra_Map>
-    tpetra_map_to_epetra_map(const Tpetra::Map<LO,GO,Node>& map);
-
-    /**
-     * \brief Transform an Epetra_Comm object into a Teuchos::Comm object
-     *
-     * \ingroup amesos2_utils
-     */
-    const RCP<const Teuchos::Comm<int> > to_teuchos_comm(RCP<const Epetra_Comm> c);
-
-    /**
-     * \brief Transfrom a Teuchos::Comm object into an Epetra_Comm object
-     *
-     * \ingroup amesos2_utils
-     */
-    const RCP<const Epetra_Comm> to_epetra_comm(RCP<const Teuchos::Comm<int> > c);
-#endif  // HAVE_AMESOS2_EPETRA
 
     /**
      * Transposes the compressed sparse matrix representation.
@@ -266,7 +230,7 @@ namespace Amesos2 {
       {
         typedef typename M::global_size_t mat_gs_t;
         typedef typename Kokkos::View<mat_gs_t*, Kokkos::HostSpace> KV_TMP;
-        size_t i, size = pointers.extent(0);
+        size_t i, size = (pointers.extent(0) > 0 ? pointers.extent(0) : 1); // making sure it is at least 1, even for empty local matrix
         KV_TMP pointers_tmp(Kokkos::ViewAllocateWithoutInitializing("pointers_tmp"), size);
 
         mat_gs_t nnz_tmp = 0;
@@ -275,8 +239,14 @@ namespace Amesos2 {
         nnz = Teuchos::as<typename KV_GS::value_type>(nnz_tmp);
 
         typedef typename KV_GS::value_type view_gs_t;
-        for (i = 0; i < size; ++i){
-          pointers(i) = Teuchos::as<view_gs_t>(pointers_tmp(i));
+        if (pointers.extent(0) == 1) {
+          Kokkos::deep_copy(pointers, 0);
+        } else {
+          auto host_pointers = Kokkos::create_mirror_view(pointers);
+          for (i = 0; i < pointers.extent(0); ++i){
+            host_pointers(i) = Teuchos::as<view_gs_t>(pointers_tmp(i));
+          }
+          Kokkos::deep_copy(pointers, host_pointers);
         }
         nnz = Teuchos::as<view_gs_t>(nnz_tmp);
       }
@@ -335,9 +305,11 @@ namespace Amesos2 {
           diff_gs_helper_kokkos_view<M, KV_S, KV_TMP, KV_GS, Op> >::do_get(mat, nzvals, indices_tmp,
                                                                                  pointers, nnz, map,
                                                                                  distribution, ordering);
+        auto host_indices = Kokkos::create_mirror_view(indices);
         for (i = 0; i < size; ++i){
-          indices(i) = Teuchos::as<view_go_t>(indices_tmp(i));
+          host_indices(i) = Teuchos::as<view_go_t>(indices_tmp(i));
         }
+        Kokkos::deep_copy(indices, host_indices);
       }
     };
 
@@ -382,7 +354,7 @@ namespace Amesos2 {
                          EStorage_Ordering ordering)
       {
         typedef typename M::global_ordinal_t mat_go_t;
-        typedef typename Kokkos::ArithTraits<typename M::scalar_t>::val_type mat_scalar_t;
+        typedef typename KokkosKernels::ArithTraits<typename M::scalar_t>::val_type mat_scalar_t;
         typedef typename Kokkos::View<mat_scalar_t*, Kokkos::HostSpace> KV_TMP;
         size_t i, size = nzvals.extent(0);
         KV_TMP nzvals_tmp(Kokkos::ViewAllocateWithoutInitializing("nzvals_tmp"), size);
@@ -395,9 +367,11 @@ namespace Amesos2 {
                                                                                   pointers, nnz, map,
                                                                                   distribution, ordering);
 
+        auto host_nzvals = Kokkos::create_mirror_view(nzvals);
         for (i = 0; i < size; ++i){
-          nzvals(i) = Teuchos::as<view_scalar_t>(nzvals_tmp(i));
+          host_nzvals(i) = Teuchos::as<view_scalar_t>(nzvals_tmp(i));
         }
+        Kokkos::deep_copy(nzvals, host_nzvals);
       }
     };
 
@@ -470,10 +444,10 @@ namespace Amesos2 {
         std::conditional_t<std::is_same_v<mat_scalar,view_scalar_t>,
           same_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op>,
           diff_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op> >::do_get(mat,
-                                                                                     nzvals, indices,
-                                                                                     pointers, nnz,
-                                                                                     map,
-                                                                                     distribution, ordering);
+                                                                               nzvals, indices,
+                                                                               pointers, nnz,
+                                                                               map,
+                                                                               distribution, ordering);
       }
     };
 
@@ -680,69 +654,6 @@ namespace Amesos2 {
                             "Please contact the Amesos2 developers." );
       }
     }
-
-
-#ifdef HAVE_AMESOS2_EPETRA
-
-    //#pragma message "include 3"
-    //#include <Epetra_Map.h>
-
-    template <typename LO, typename GO, typename GS, typename Node>
-    Teuchos::RCP<Tpetra::Map<LO,GO,Node> >
-    epetra_map_to_tpetra_map(const Epetra_BlockMap& map)
-    {
-      using Teuchos::as;
-      using Teuchos::rcp;
-
-      int num_my_elements = map.NumMyElements();
-      Teuchos::Array<int> my_global_elements(num_my_elements);
-      map.MyGlobalElements(my_global_elements.getRawPtr());
-
-      Teuchos::Array<GO> my_gbl_inds_buf;
-      Teuchos::ArrayView<GO> my_gbl_inds;
-      if (! std::is_same<int, GO>::value) {
-        my_gbl_inds_buf.resize (num_my_elements);
-        my_gbl_inds = my_gbl_inds_buf ();
-        for (int k = 0; k < num_my_elements; ++k) {
-          my_gbl_inds[k] = static_cast<GO> (my_global_elements[k]);
-        }
-      }
-      else {
-        using Teuchos::av_reinterpret_cast;
-        my_gbl_inds = av_reinterpret_cast<GO> (my_global_elements ());
-      }
-
-      typedef Tpetra::Map<LO,GO,Node> map_t;
-      RCP<map_t> tmap = rcp(new map_t(Teuchos::OrdinalTraits<GS>::invalid(),
-                                      my_gbl_inds(),
-                                      as<GO>(map.IndexBase()),
-                                      to_teuchos_comm(Teuchos::rcpFromRef(map.Comm()))));
-      return tmap;
-    }
-
-    template <typename LO, typename GO, typename GS, typename Node>
-    Teuchos::RCP<Epetra_Map>
-    tpetra_map_to_epetra_map(const Tpetra::Map<LO,GO,Node>& map)
-    {
-      using Teuchos::as;
-
-      Teuchos::Array<GO> elements_tmp;
-      elements_tmp = map.getLocalElementList();
-      int num_my_elements = elements_tmp.size();
-      Teuchos::Array<int> my_global_elements(num_my_elements);
-      for (int i = 0; i < num_my_elements; ++i){
-        my_global_elements[i] = as<int>(elements_tmp[i]);
-      }
-
-      using Teuchos::rcp;
-      RCP<Epetra_Map> emap = rcp(new Epetra_Map(-1,
-                                                num_my_elements,
-                                                my_global_elements.getRawPtr(),
-                                                as<GO>(map.getIndexBase()),
-                                                *to_epetra_comm(map.getComm())));
-      return emap;
-    }
-#endif  // HAVE_AMESOS2_EPETRA
 
     template <typename Scalar,
               typename GlobalOrdinal,
@@ -1052,6 +963,123 @@ namespace Amesos2 {
         });
     }
 
+
+    // used to read matrix with gapped GIDs for test/example
+    template <typename GO, typename Scalar>
+    bool
+    readEntryFromFile (GO& gblRowInd, GO& gblColInd, Scalar& val, const std::string& s)
+    {
+      if (s.size () == 0 || s.find ("%") != std::string::npos) {
+        return false; // empty line or comment line
+      }
+      std::istringstream in (s);
+
+      if (! in) {
+        return false;
+      }
+      in >> gblRowInd;
+      if (! in) {
+        return false;
+      }
+      in >> gblColInd;
+      if (! in) {
+        return false;
+      }
+      in >> val;
+      return true;
+    }
+
+    template<class map_type, class MAT>
+    Teuchos::RCP<MAT>
+    readCrsMatrixFromFile (const std::string& matrixFilename,
+                           Teuchos::RCP<Teuchos::FancyOStream> & fos,
+                           const Teuchos::RCP<const map_type>& rowMap,
+                           const Teuchos::RCP<const map_type>& domainMap,
+                           const Teuchos::RCP<const map_type>& rangeMap,
+                           const bool convert_to_zero_base,
+                           const int header_size)
+    {
+      using Scalar = typename MAT::scalar_type;
+      using GO = typename MAT::global_ordinal_type;
+
+      using counter_type = std::map<GO, size_t>;
+      using pair_type = std::pair<const GO, size_t>;
+      using Teuchos::RCP;
+
+      auto comm = rowMap->getComm ();
+      const int myRank = comm->getRank ();
+
+      std::ifstream inFile;
+      int opened = 0;
+      if (myRank == 0)
+      {
+        try {
+          inFile.open (matrixFilename);
+          if (inFile) {
+            opened = 1;
+          }
+        }
+        catch (...) {
+          opened = 0;
+        }
+      }
+      Teuchos::broadcast<int, int> (*comm, 0, Teuchos::outArg (opened));
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (opened == 0, std::runtime_error, "readCrsMatrixFromFile: "
+         "Failed to open file \"" << matrixFilename << "\" on Process 0.");
+
+      RCP<MAT> A;
+      if (myRank == 0)
+      {
+        std::string line;
+
+        // Skip the first N lines.  This is a hack, specific to the input file in question.
+        //*fos << "  Reading matrix market file. Skip " << header_size << "  header lines" << std::endl;
+        for ( int i = 0; i < header_size; ++i ) {
+          std::getline (inFile, line);
+        }
+
+        counter_type counts;
+        Teuchos::Array<Scalar> vals;
+        Teuchos::Array<GO> gblRowInds;
+        Teuchos::Array<GO> gblColInds;
+        while (inFile) {
+          std::getline (inFile, line);
+          GO gblRowInd {};
+          GO gblColInd {};
+          Scalar val {};
+          const bool gotLine = readEntryFromFile (gblRowInd, gblColInd, val, line);
+          if (gotLine) {
+            //*fos << "  read mtx rank: " << myRank << " |  gblRowInd = " << gblRowInd << "  gblColInd = " << gblColInd << std::endl;
+            if ( convert_to_zero_base ) {
+              gblRowInd -= 1 ;
+              gblColInd -= 1 ;
+            }
+            counts[gblRowInd]++;
+            vals.push_back(val);
+            gblRowInds.push_back(gblRowInd);
+            gblColInds.push_back(gblColInd);
+          }
+        }
+
+        // Max number of entries in any row
+        auto pr = std::max_element(
+          std::begin(counts),
+          std::end(counts),
+          [] (pair_type const& p1, pair_type const& p2){ return p1.second < p2.second; }
+        );
+        size_t maxCount = (counts.empty()) ? size_t(0) : pr->second;
+        A = Teuchos::rcp(new MAT(rowMap, maxCount));
+        for (typename Teuchos::Array<GO>::size_type i=0; i<gblRowInds.size(); i++) {
+          A->insertGlobalValues (gblRowInds[i], gblColInds(i,1), vals(i,1));
+        }
+      } else {
+        A = Teuchos::rcp(new MAT(rowMap, 0));
+      }
+
+      A->fillComplete (domainMap, rangeMap);
+      return A;
+    }
     /** @} */
 
   } // end namespace Util

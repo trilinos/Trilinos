@@ -34,7 +34,7 @@
       return clone;
     }
 
-    stk::mesh::Part& GeometryRecoverySplineFit::clone_part_bulk(const stk::mesh::Part& part, const std::string& clone_name, const stk::mesh::EntityRank rank_to_clone, bool make_part_io_part )
+    stk::mesh::Part& GeometryRecoverySplineFit::clone_part_bulk(const stk::mesh::Part& part, const std::string& clone_name, const stk::mesh::EntityRank rank_to_clone, bool /*make_part_io_part*/ )
     {
       stk::mesh::Part * clone_p = m_eMesh.get_fem_meta_data()->get_part(clone_name);
       if (!clone_p)

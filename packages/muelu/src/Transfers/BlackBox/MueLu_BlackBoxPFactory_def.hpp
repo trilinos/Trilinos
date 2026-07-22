@@ -18,7 +18,7 @@
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Teuchos_SerialDenseSolver.hpp>
 
-#include <Xpetra_CrsMatrixUtils.hpp>
+#include <MueLu_CrsMatrixUtils.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -425,7 +425,7 @@ void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& 
   // Create the matrix itself using the above maps
   RCP<Matrix> P;
   P                   = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0));
-  RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> PCrs = toCrsMatrix(P);
 
   ArrayRCP<size_t> iaP;
   ArrayRCP<LO> jaP;

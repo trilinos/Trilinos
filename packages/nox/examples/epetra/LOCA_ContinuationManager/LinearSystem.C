@@ -188,12 +188,12 @@ SetContinuableParameter(std::string label,double value)
 bool LinearSystem::
 UpdateContinuationFile( const std::string & fileName,
           const int & idStep,
-          const Teuchos::ParameterList & continuationFileParams)
+          const Teuchos::ParameterList & continuationFileParams_)
 {
 
   // Here we are using the coninuation file utilities
   if (comm->MyPID() == 0)
-    UpdateContFile(fileName,idStep,continuationFileParams);
+    UpdateContFile(fileName,idStep,continuationFileParams_);
 
   return true;
 }

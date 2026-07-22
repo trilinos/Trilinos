@@ -20,7 +20,7 @@
 
 namespace MueLu {
 /*!
-  @class AggregationPhase1Algorithm class.
+  @class AggregationPhase1Algorithm
   @brief Algorithm for coarsening a graph with uncoupled aggregation.
 
   @ingroup Aggregation

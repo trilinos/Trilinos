@@ -1,0 +1,24 @@
+#ifndef TEUCHOSCORE_CONFIG_H_
+#define TEUCHOSCORE_CONFIG_H_
+
+/* #undef HAVE_TEUCHOSCORE_KOKKOS */
+
+#define HAVE_TEUCHOSCORE_CXX11
+
+/* #undef HAVE_TEUCHOSCORE_BOOST */
+
+/* #undef HAVE_TEUCHOSCORE_BOOST_IS_POLYMORPHIC */
+
+/* #undef HAVE_TEUCHOSCORE_QT */
+
+/* Deprecated */
+/* #undef HAVE_TEUCHOSCORE_QD */
+
+/* #undef HAVE_TEUCHOSCORE_QUADMATH */
+
+/* Deprecated */
+/* #undef HAVE_TEUCHOSCORE_ARPREC */
+
+/* #undef HAVE_TEUCHOSCORE_PTHREAD */
+
+#endif // TEUCHOSCORE_CONFIG_H_

@@ -55,16 +55,16 @@
 
 #if defined(KOKKOS_ENABLE_THREADS)
 #ifdef HAVE_TPETRA_INST_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode)
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosKokkosThreadsWrapperNode)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Tpetra::KokkosCompat::KokkosThreadsWrapperNode)
 #endif
 #endif // KOKKOS_ENABLE_THREADS
 

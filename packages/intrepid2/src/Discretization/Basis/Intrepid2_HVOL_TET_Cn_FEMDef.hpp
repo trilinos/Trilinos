@@ -23,18 +23,18 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
-             typename inputViewType,
-             typename workViewType,
-             typename vinvViewType>
+             typename InputViewType,
+             typename WorkViewType,
+             typename VinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HVOL_TET_Cn_FEM::Serial<opType>::
+    Basis_HVOL_TET_Cn_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
-               const inputViewType  input,
-                     workViewType   work,
-               const vinvViewType   vinv ) {
+               const InputViewType  input,
+                     WorkViewType   work,
+               const VinvViewType   vinv ) {
 
       constexpr ordinal_type spaceDim = 3;
       const ordinal_type
@@ -50,72 +50,58 @@ namespace Intrepid2 {
         }
       }
 
-      typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
-      auto vcprop = Kokkos::common_view_alloc_prop(work);
+      typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
       auto ptr = work.data();
 
-      switch (opType) {
-      case OPERATOR_VALUE: {
-        const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
-        workViewType dummyView;
+      if constexpr (OpType == OPERATOR_VALUE) {
+        const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts);
+        ViewType dummyView;
 
         Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-          Serial<opType>::getValues(phis, input, dummyView, order);
+          Serial<OpType>::getValues(phis, input, dummyView, order);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
-            output.access(i,j) = 0.0;
+            output(i,j) = 0.0;
             for (ordinal_type k=0;k<card;++k)
-              output.access(i,j) += vinv(k,i)*phis.access(k,j);
+              output(i,j) += vinv(k,i)*phis(k,j);
           }
-        break;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1: {
-        const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
-        ptr += card*npts*spaceDim*get_dimension_scalar(work);
-        const viewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
+        const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
+        ptr += card*npts*spaceDim*get_dimension_scalar(input);
+        const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
         Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-          Serial<opType>::getValues(phis, input, workView, order);
+          Serial<OpType>::getValues(phis, input, workView, order);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j)
             for (ordinal_type k=0;k<spaceDim;++k) {
-              output.access(i,j,k) = 0.0;
+              output(i,j,k) = 0.0;
               for (ordinal_type l=0;l<card;++l)
-                output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
+                output(i,j,k) += vinv(l,i)*phis(l,j,k);
             }
-        break;
       }
-      case OPERATOR_D2:
-      case OPERATOR_D3:
-      case OPERATOR_D4:
-      case OPERATOR_D5:
-      case OPERATOR_D6:
-      case OPERATOR_D7:
-      case OPERATOR_D8:
-      case OPERATOR_D9:
-      case OPERATOR_D10: {
-        const ordinal_type dkcard = getDkCardinality<opType,spaceDim>(); //(orDn + 1);
-        const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
-        workViewType dummyView;
+      else if constexpr ((OpType == OPERATOR_D2) || (OpType == OPERATOR_D3) || (OpType == OPERATOR_D4) || (OpType == OPERATOR_D5) ||
+                     (OpType == OPERATOR_D6) || (OpType == OPERATOR_D7) || (OpType == OPERATOR_D8) || (OpType == OPERATOR_D9)  || (OpType == OPERATOR_D10)) {
+        const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
+        const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, dkcard);
+        ViewType dummyView;
 
         Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-          Serial<opType>::getValues(phis, input, dummyView, order);
+          Serial<OpType>::getValues(phis, input, dummyView, order);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j)
             for (ordinal_type k=0;k<dkcard;++k) {
-              output.access(i,j,k) = 0.0;
+              output(i,j,k) = 0.0;
               for (ordinal_type l=0;l<card;++l)
-                output.access(i,j,k) += vinv(l,i)*phis.access(l,j,k);
+                output(i,j,k) += vinv(l,i)*phis(l,j,k);
             }
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
                                   ">>> ERROR (Basis_HVOL_TET_Cn_FEM): Operator type not implemented");
-      }
       }
     }
 
@@ -140,21 +126,18 @@ namespace Intrepid2 {
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
-      typedef typename inputPointViewType::value_type inputPointType;
-
       const ordinal_type cardinality = outputValues.extent(0);
       const ordinal_type spaceDim = 3;
 
       ordinal_type order = 0;
       while((Intrepid2::getPnCardinality<spaceDim>(++order) !=  cardinality) && (order != Parameters::MaxOrder));
 
-      auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
-      typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
+      typedef typename DeduceDynRankView<inputPointViewType>::type workViewType;
 
       switch (operatorType) {
       case OPERATOR_VALUE: {
         auto bufferSize = Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_VALUE>::getWorkSizePerPoint(order);
-        workViewType  work(Kokkos::view_alloc("Basis_HVOL_TET_Cn_FEM::getValues::work", vcprop), bufferSize, inputPoints.extent(0));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -163,7 +146,7 @@ namespace Intrepid2 {
       case OPERATOR_GRAD:
       case OPERATOR_D1: {
         auto bufferSize = Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_D1>::getWorkSizePerPoint(order);
-        workViewType  work(Kokkos::view_alloc("Basis_HVOL_TET_Cn_FEM::getValues::work", vcprop), bufferSize, inputPoints.extent(0));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_D1,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -173,14 +156,14 @@ namespace Intrepid2 {
         auto bufferSize = Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_D2>::getWorkSizePerPoint(order);
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_D2,numPtsPerEval> FunctorType;
-        workViewType  work(Kokkos::view_alloc("Basis_HVOL_TET_Cn_FEM::getValues::work", vcprop), bufferSize, inputPoints.extent(0));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
         break;
       }
     /*  case OPERATOR_D3: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType
             OPERATOR_D3,numPtsPerEval> FunctorType;
-        workViewType  work(Kokkos::view_alloc("Basis_HVOL_TET_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0), outputValues.extent(2));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", cardinality, inputPoints.extent(0), outputValues.extent(2));
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
         break;
       }*/
@@ -199,13 +182,13 @@ namespace Intrepid2 {
                           const EPointType   pointType ) {
     constexpr ordinal_type spaceDim = 3;
 
-    this->pointType_         = pointType;
-    this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
-    this->basisDegree_       = order; // small n
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-    this->basisType_         = BASIS_FEM_LAGRANGIAN;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HVOL;
+    this->pointType_            = pointType;
+    this->basisCardinality_     = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
+    this->basisDegree_          = order; // small n
+    this->basisCellTopologyKey_ = shards::Tetrahedron<4>::key;
+    this->basisType_            = BASIS_FEM_LAGRANGIAN;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HVOL;
 
     const ordinal_type card = this->basisCardinality_;
 
@@ -215,8 +198,9 @@ namespace Intrepid2 {
 
     // construct lattice (only internal nodes for HVOL element)
     const ordinal_type offset = 1;
+    const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >());
     PointTools::getLattice( dofCoords,
-                            this->basisCellTopology_,
+                            cellTopo,
                             order+spaceDim+offset, offset,
                             pointType );
 
@@ -241,7 +225,7 @@ namespace Intrepid2 {
     Teuchos::LAPACK<ordinal_type,scalarType> lapack;
 
     lapack.GETRF(card, card,
-                 vmat.data(), vmat.stride_1(),
+                 vmat.data(), vmat.stride(1),
                  (ordinal_type*)ipiv.data(),
                  &info);
 
@@ -250,7 +234,7 @@ namespace Intrepid2 {
                                   ">>> ERROR: (Intrepid2::Basis_HVOL_TET_Cn_FEM) lapack.GETRF returns nonzero info." );
 
     lapack.GETRI(card,
-                 vmat.data(), vmat.stride_1(),
+                 vmat.data(), vmat.stride(1),
                  (ordinal_type*)ipiv.data(),
                  work.data(), lwork,
                  &info);
@@ -308,5 +292,54 @@ namespace Intrepid2 {
                               posDfOrd);
     }
   }
+
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HVOL_TET_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(        
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+    using ScratchViewType = Kokkos::DynRankView<ScalarType, typename DT::execution_space::scratch_memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+    perThreadSpaceSize = ScratchViewType::shmem_size(this->vinv_.extent(0)*get_dimension_scalar(inputPoints));
+  }
+
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HVOL_TET_Cn_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+      
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HVOL_TET_Cn_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      const int numPoints = inputPoints.extent(0);
+      using ScalarType = typename ScalarTraits<typename PointViewType::value_type>::scalar_type;
+      using WorkViewType = Kokkos::DynRankView< ScalarType,typename DT::execution_space::scratch_memory_space,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      auto sizePerPoint = this->vinv_.extent(0)*get_dimension_scalar(inputPoints);
+      
+      WorkViewType  work(team_member.thread_scratch(threadScratchLevel), sizePerPoint);
+      using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=, &vinv_ = this->vinv_] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), range_type  (pt,pt+1), Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 range_type(pt, pt+1), Kokkos::ALL() );
+            Impl::Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, vinv_);
+          });
+          break;
+        default: {          
+          INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR (Basis_HVOL_TET_Cn_FEM): getValues not implemented for this operator");
+          }
+    }
+  }
+
 } // namespace Intrepid2
 #endif

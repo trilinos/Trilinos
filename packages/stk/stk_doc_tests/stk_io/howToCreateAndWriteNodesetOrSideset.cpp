@@ -76,6 +76,9 @@ void compare_fields(const stk::mesh::BulkData& bulk1,
 
   ASSERT_EQ(entityList1.size(), entityList2.size());
 
+  auto field1Data = field1->data<double>();
+  auto field2Data = field2->data<double>();
+
   for(unsigned i=0; i<entityList1.size(); ++i)
   {
     stk::mesh::Entity entity1 = entityList1[i];
@@ -83,10 +86,13 @@ void compare_fields(const stk::mesh::BulkData& bulk1,
 
     ASSERT_EQ(bulk1.identifier(entity1), bulk2.identifier(entity2));
 
-    double* data1 = static_cast<double*>(stk::mesh::field_data(*field1, entity1) );
-    double* data2 = static_cast<double*>(stk::mesh::field_data(*field2, entity2) );
+    auto data1 = field1Data.entity_values(entity1);
+    auto data2 = field2Data.entity_values(entity2);
 
-    ASSERT_EQ(*data1, *data2);
+    ASSERT_TRUE(data1.num_components() == data2.num_components());
+    for(stk::mesh::ComponentIdx j : data1.components()) {
+      ASSERT_EQ(data1(j), data2(j));
+    }
   }
 }
 
@@ -99,9 +105,11 @@ void verify_field_is_valid(const stk::mesh::MetaData &meta,
   stk::topology::rank_t rank = meta.mesh_bulk_data().entity_rank(entity);
   stk::mesh::FieldBase* field = meta.get_field(rank, fieldName);
   ASSERT_TRUE(field != nullptr);
-  const double* fieldDataForEntity = static_cast<double*>(stk::mesh::field_data(*field, entity) );
-  ASSERT_EQ(fieldLength, stk::mesh::field_scalars_per_entity(*field, entity));
-  ASSERT_EQ(initialValue[0], fieldDataForEntity[0]);
+  auto fieldData = field->data<double>();
+  auto fieldDataForEntity = fieldData.entity_values(entity);
+  const unsigned numComponents = fieldDataForEntity.num_components();
+  ASSERT_EQ(fieldLength, numComponents);
+  ASSERT_EQ(initialValue[0], fieldDataForEntity(0_comp));
 }
 
 void verify_entity_from_file(stk::mesh::BulkData& input_bulk, stk::mesh::Entity input_entity, stk::mesh::BulkData &bulk, const std::string& bulkEntitySetName)
@@ -163,7 +171,7 @@ void verify_nodesetField_in_file(stk::mesh::BulkData& input_bulk, stk::mesh::Ent
   verify_field_in_file(input_bulk, node, nodesetName, fieldName, filename);
 }
 
-class MeshWithNodeset : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithNodeset : public stk::unit_test_util::MeshFixture
 {
 };
 
@@ -211,7 +219,7 @@ void verify_sidesetField_in_file(stk::mesh::BulkData& input_bulk, stk::mesh::Ent
   verify_field_in_file(input_bulk, side, sidesetName, fieldName, filename);
 }
 
-class MeshWithSideset : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithSideset : public stk::unit_test_util::MeshFixture
 {
 };
 

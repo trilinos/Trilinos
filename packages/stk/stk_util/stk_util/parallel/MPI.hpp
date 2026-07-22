@@ -56,20 +56,27 @@ namespace sierra {
 namespace MPI {
 
 template<class T>
+inline void
+mpi_real_std_complex_sum(void* invec, void* inoutvec, int* len, MPI_Datatype*)
+{
+  std::complex<T> *complex_in = static_cast<std::complex<T> *>(invec);
+  std::complex<T> *complex_inout = static_cast<std::complex<T> *>(inoutvec);
+
+  for (int i = 0; i < *len; ++i)
+    complex_inout[i] += complex_in[i];
+}
+
+template<class T>
 inline
 void
-  mpi_real_complex_sum(
-    void *		invec,
-    void *		inoutvec,
-    int *		len,
-    MPI_Datatype *	)
-  {
-    std::complex<T> *complex_in = static_cast<std::complex<T> *>(invec);
-    std::complex<T> *complex_inout = static_cast<std::complex<T> *>(inoutvec);
+mpi_real_kokkos_complex_sum(void* invec, void* inoutvec, int* len, MPI_Datatype*)
+{
+  Kokkos::complex<T> *complex_in = static_cast<Kokkos::complex<T> *>(invec);
+  Kokkos::complex<T> *complex_inout = static_cast<Kokkos::complex<T> *>(inoutvec);
 
-    for (int i = 0; i < *len; ++i)
-      complex_inout[i] += complex_in[i];
-  }
+  for (int i = 0; i < *len; ++i)
+    complex_inout[i] += complex_in[i];
+}
 
 ///
 /// @addtogroup MPIDetail
@@ -119,7 +126,7 @@ MPI_Op double_complex_sum_op();
  */
 template<class T>
 inline
-MPI_Op real_complex_sum_op()
+MPI_Op real_std_complex_sum_op()
 {
   static MPI_Op s_mpi_real_complex_sum;
   static bool initialized = false;
@@ -127,7 +134,22 @@ MPI_Op real_complex_sum_op()
   if (!initialized) {
     initialized = true;
 
-    MPI_Op_create(mpi_real_complex_sum<T>, true, &s_mpi_real_complex_sum);
+    MPI_Op_create(mpi_real_std_complex_sum<T>, true, &s_mpi_real_complex_sum);
+  }
+  return s_mpi_real_complex_sum;
+}
+
+template<class T>
+inline
+MPI_Op real_kokkos_complex_sum_op()
+{
+  static MPI_Op s_mpi_real_complex_sum;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+
+    MPI_Op_create(mpi_real_kokkos_complex_sum<T>, true, &s_mpi_real_complex_sum);
   }
   return s_mpi_real_complex_sum;
 }
@@ -221,7 +243,7 @@ inline std::ostream & operator<<(std::ostream & os, const TempLoc & loc)
 
 template<class T, class CompareOp, class IdType>
 inline
-void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * datatype)
+void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * /*datatype*/)
 {
   CompareOp op;
   Loc<T, IdType> *Loc_in = static_cast<Loc<T, IdType> *>(invec);
@@ -379,7 +401,7 @@ struct Datatype<long double>
 };
 
 template <>
-struct Datatype<std::complex<float> >
+struct Datatype<std::complex<float>>
 {
   static MPI_Datatype type() {
     return float_complex_type();
@@ -387,7 +409,23 @@ struct Datatype<std::complex<float> >
 };
 
 template <>
-struct Datatype<std::complex<double> >
+struct Datatype<std::complex<double>>
+{
+  static MPI_Datatype type() {
+    return double_complex_type();
+  }
+};
+
+template <>
+struct Datatype<Kokkos::complex<float>>
+{
+  static MPI_Datatype type() {
+    return float_complex_type();
+  }
+};
+
+template <>
+struct Datatype<Kokkos::complex<double>>
 {
   static MPI_Datatype type() {
     return double_complex_type();
@@ -609,10 +647,10 @@ T *align_cast(void *p)
   enum {mask = alignment - 1};
 
   char * c = reinterpret_cast<char *>(p);
-  size_t front_misalign = (c - static_cast<char*>(0)) & mask;
+  size_t front_misalign = (reinterpret_cast<size_t>(c)) & mask;
   if (front_misalign > 0) {
     size_t correction = alignment - front_misalign;
-    T *q = reinterpret_cast<T *>((c - static_cast<char*>(0)) + correction);
+    T *q = reinterpret_cast<T *>((reinterpret_cast<size_t>(c)) + correction);
     return q;
   }
 
@@ -735,27 +773,27 @@ struct Reduce : public ReduceInterface
   virtual ~Reduce()
   {}
 
-  virtual void size(void *&inbuf) const {
+  virtual void size(void *&inbuf) const override {
     value_type *t = align_cast<value_type>(inbuf);
     t += m_length;
     inbuf = t;
   }
 
-  virtual void copyin(void *&inbuf) const {
+  virtual void copyin(void *&inbuf) const override {
     value_type *t = align_cast<value_type>(inbuf);
     for (LocalIt it = m_localBegin; it != m_localEnd; ++it)
       *t++ = (*it);
     inbuf = t;
   }
 
-  virtual void copyout(void *&outbuf) const {
+  virtual void copyout(void *&outbuf) const override {
     value_type *t = align_cast<value_type>(outbuf);
     for (GlobalIt it = m_globalBegin; it != m_globalEnd; ++it)
       (*it) = *t++;
     outbuf = t;
   }
 
-  virtual void op(void *&inbuf, void *&outbuf) const {
+  virtual void op(void *&inbuf, void *&outbuf) const override {
     value_type *tin = align_cast<value_type>(inbuf);
     value_type *tout = align_cast<value_type>(outbuf);
 

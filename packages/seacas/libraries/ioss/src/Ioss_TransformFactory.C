@@ -1,16 +1,18 @@
-// Copyright(C) 1999-2021, 2024, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2024, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
+#include "Ioss_CodeTypes.h"
+
 #include "Ioss_TransformFactory.h"
 #include "Ioss_Utils.h"
+#include <fmt/format.h>
 #include <map>
 #include <ostream>
 #include <string>
-
-#include "Ioss_CodeTypes.h"
+#include <utility>
 
 namespace Ioss {
   class Transform;
@@ -21,15 +23,12 @@ namespace Ioss {
     auto             iter      = registry().find(type);
     if (iter == registry().end()) {
       if (registry().empty()) {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: No transformations have been registered.\n"
-               << "       Was Iotr::Initializer::initialize() called?\n\n";
+        std::string errmsg = "ERROR: No transformations have been registered.\n"
+                             "       Was Iotr::Initializer::initialize() called?\n\n";
         IOSS_ERROR(errmsg);
       }
       else {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: The transform named '" << type << "' is not supported.\n";
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: The transform named '{}' is not supported.\n", type));
       }
     }
     else {

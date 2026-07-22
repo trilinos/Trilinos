@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,13 +10,14 @@
 #include "side_set.h"
 #include "smart_assert.h" // for SMART_ASSERT
 #include <cstdlib>        // for exit
-#include <vector>         // for vector
+#include <fmt/format.h>
+#include <vector> // for vector
 
 template <typename INT> Side_Set<INT>::Side_Set() : Exo_Entity() {}
 
 template <typename INT> Side_Set<INT>::Side_Set(int file_id, size_t id) : Exo_Entity(file_id, id)
 {
-  SMART_ASSERT((int)id != EX_INVALID_ID);
+  SMART_ASSERT(static_cast<int>(id) != EX_INVALID_ID);
 }
 
 template <typename INT>

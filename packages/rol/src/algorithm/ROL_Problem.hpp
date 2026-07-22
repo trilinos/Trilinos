@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_PROBLEM_HPP
@@ -46,6 +12,7 @@
 
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "ROL_Ptr.hpp"
 #include "ROL_Types.hpp"
@@ -65,6 +32,7 @@ private:
   bool hasInequality_;
   bool hasLinearEquality_;
   bool hasLinearInequality_;
+  bool hasProximableObjective_;
   unsigned cnt_econ_;
   unsigned cnt_icon_;
   unsigned cnt_linear_econ_;
@@ -73,6 +41,7 @@ private:
   ParameterList ppa_list_;
 
   Ptr<Objective<Real>>            obj_;
+  Ptr<Objective<Real>>            nobj_;
   Ptr<Vector<Real>>               xprim_;
   Ptr<Vector<Real>>               xdual_;
   Ptr<BoundConstraint<Real>>      bnd_;
@@ -89,11 +58,17 @@ private:
 protected:
 
   Ptr<Objective<Real>>                                 INPUT_obj_;
+  Ptr<Objective<Real>>                                 INPUT_nobj_;
   Ptr<Vector<Real>>                                    INPUT_xprim_;
   Ptr<Vector<Real>>                                    INPUT_xdual_;
   Ptr<BoundConstraint<Real>>                           INPUT_bnd_;
   std::unordered_map<std::string,ConstraintData<Real>> INPUT_con_;
   std::unordered_map<std::string,ConstraintData<Real>> INPUT_linear_con_;
+  std::unordered_map<std::string,ConstraintData<Real>> INPUT_proj_;
+  std::unordered_map<std::string,std::vector<std::string>> groups_;
+  std::unordered_set<std::string> grouped_constraint_names_;
+  std::vector<std::string> ungrouped_equality_constraint_names_;
+  std::vector<std::string> ungrouped_linear_equality_constraint_names_;
 
 public:
   virtual ~Problem() {}
@@ -119,17 +94,25 @@ public:
        hasInequality_(problem.hasInequality_),
        hasLinearEquality_(problem.hasLinearEquality_),
        hasLinearInequality_(problem.hasLinearInequality_),
+       hasProximableObjective_(problem.hasProximableObjective_),
        cnt_econ_(problem.cnt_econ_),
        cnt_icon_(problem.cnt_icon_),
        cnt_linear_econ_(problem.cnt_linear_econ_),
        cnt_linear_icon_(problem.cnt_linear_icon_),
        ppa_list_(problem.ppa_list_),
        INPUT_obj_(problem.INPUT_obj_),
+       INPUT_nobj_(problem.INPUT_nobj_),
        INPUT_xprim_(problem.INPUT_xprim_),
        INPUT_xdual_(problem.INPUT_xdual_),
        INPUT_bnd_(problem.INPUT_bnd_),
        INPUT_con_(problem.INPUT_con_),
-       INPUT_linear_con_(problem.INPUT_linear_con_) {}
+       INPUT_linear_con_(problem.INPUT_linear_con_),
+       INPUT_proj_(problem.INPUT_proj_),
+       groups_(problem.groups_),
+       grouped_constraint_names_(problem.grouped_constraint_names_),
+       ungrouped_equality_constraint_names_(problem.ungrouped_equality_constraint_names_),
+       ungrouped_linear_equality_constraint_names_(problem.ungrouped_linear_equality_constraint_names_)
+       {}
 
   /***************************************************************************/
   /*** Set and remove methods for constraints ********************************/
@@ -174,6 +157,22 @@ public:
                      const Ptr<BoundConstraint<Real>> &ibnd,
                      const Ptr<Vector<Real>>          &ires = nullPtr,
                      bool                              reset = false);
+
+  /** \brief Add a projection constraint.
+
+      @param[in] name   the unique constraint identifier
+      @param[in] pcon   constraint object
+      @param[in] pmul   dual constraint space vector
+      @param[in] proj   projection
+      @param[in] pres   primal constraint space vector
+      @param[in] reset  whether or not to clear constraint container
+  */
+  void addConstraint(std::string                  name,
+                     const Ptr<Constraint<Real>> &pcon,
+                     const Ptr<Vector<Real>>     &pmul,
+                     const Ptr<Projection<Real>> &proj,
+                     const Ptr<Vector<Real>>     &pres = nullPtr,
+                     bool                         reset = false);
 
   /** \brief Remove an existing constraint.
 
@@ -223,6 +222,28 @@ public:
   */
   void setProjectionAlgorithm(ParameterList &parlist);
 
+  /** \brief Set Proximable objective function
+  */
+  void addProximableObjective(const Ptr<Objective<Real>> &nobj);
+
+  /** \brief Remove Proximable objective function
+  */
+  void removeProximableObjective();
+
+  /** \brief Combine a set of constraints into a group.
+
+      @param[in] group_name       group name
+      @param[in] constraint_names constraint names
+  */
+  void addConstraintGroup(const std::string              &group_name,
+                          const std::vector<std::string> &constraint_names);
+
+  /** \brief Remove a group of constraints.
+   *
+      @param[in] group_name group name
+  */
+  void removeConstraintGroup(const std::string &group_name);
+
   /***************************************************************************/
   /*** Accessor methods ******************************************************/
   /***************************************************************************/
@@ -230,6 +251,10 @@ public:
   /** \brief Get the objective function.
   */
   const Ptr<Objective<Real>>&            getObjective();
+
+  /** \brief Get proximable objective
+  */
+  const Ptr<Objective<Real>>&            getProximableObjective();
 
   /** \brief Get the primal optimization space vector.
   */
@@ -260,9 +285,19 @@ public:
   */
   const Ptr<PolyhedralProjection<Real>>& getPolyhedralProjection();
 
-  /** \brief Get the optimization problem type (U, B, E, or G).
+  /** \brief Get the optimization problem type (U, B, E, G, or P).
   */
   EProblem                              getProblemType();
+
+  Ptr<ConstraintData<Real>>        getConstraintData(const std::string &constraint_name);
+
+  const std::vector<std::string>&  getUngroupedEqualityConstraintNames();
+
+  const std::vector<std::string>&  getUngroupedLinearEqualityConstraintNames();
+
+  const std::vector<std::string>   getGroupNames();
+
+  const Ptr<ConstraintData<Real>>  getGroupConstraintData(const std::string &group_name);
 
   /***************************************************************************/
   /*** Consistency checks ****************************************************/
@@ -306,16 +341,18 @@ public:
   /*** Finalize and edit methods *********************************************/
   /***************************************************************************/
 
-  /** \brief Tranform user-supplied constraints to consist of only bounds
-             and equalities.  Optimization problem cannot be modified after
-             finalize has been called without calling the edit function.
+  /** \brief Tranform user-supplied constraints.  Problem cannot be modified
+   *         after finalize has been called without calling the edit function.
 
-      @param[in]     lumpConstraints combine both linear and nonlinear constraints
-      @param[in]     printToStream   determines whether to print to the supplied std::ostream
-      @param[in,out] outStream       user supplied std::ostream
+      @param[in]     lumpConstraints   combine both linear and nonlinear constraints
+      @param[in]     printToStream     determines whether to print to the supplied std::ostream
+      @param[in,out] outStream         user supplied std::ostream
+      @param[in]     useSlackVariables legacy finalize logic
   */
-  virtual void finalize(bool lumpConstraints = false, bool printToStream = false,
-                        std::ostream &outStream = std::cout);
+  virtual void finalize(bool lumpConstraints = false,
+                        bool printToStream = false,
+                        std::ostream &outStream = std::cout,
+                        bool useSlackVariables = true);
 
   /** \brief Indicate whether or no finalize has been called.
   */

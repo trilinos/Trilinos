@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 #include <algorithm>
@@ -55,7 +42,6 @@ void test_for_each(const ViewType view) {
   std::for_each(KE::begin(expected), KE::end(expected), non_mod_functor);
   compare_views(expected, view);
 
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
   const auto mod_lambda = KOKKOS_LAMBDA(value_t & i) { ++i; };
 
   // pass view, lambda takes non-const ref
@@ -79,7 +65,6 @@ void test_for_each(const ViewType view) {
   KE::for_each(exespace(), KE::cbegin(view), KE::cend(view), non_mod_lambda);
   std::for_each(KE::cbegin(expected), KE::cend(expected), non_mod_lambda);
   compare_views(expected, view);
-#endif
 }
 
 // std::for_each_n is C++17, so we cannot compare results directly

@@ -28,7 +28,6 @@
 #include "MueLu_Utilities_fwd.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
-#include "mex.h"
 
 namespace MueLu {
 /*!
@@ -36,7 +35,10 @@ namespace MueLu {
   @ingroup MueMexClasses
   @brief Factory for interacting with Matlab
 */
-template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
 class TwoLevelMatlabFactory : public TwoLevelFactoryBase {
 #undef MUELU_TWOLEVELMATLABFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

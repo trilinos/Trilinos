@@ -1,31 +1,10 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Denis Ridzal  (dridzal@sandia.gov),
-//                    Kara Peterson (kjpeter@sandia.gov).
-//
-// ************************************************************************
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 // TrilinosCouplings includes
@@ -205,7 +184,6 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::TimeMonitor;
   using std::endl;
   //typedef Teuchos::ArrayView<LO>::size_type size_type; // unused
-  typedef Teuchos::ScalarTraits<ST> STS;
 
   (void) verbose;
   (void) debug;
@@ -297,15 +275,15 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   long long local_num_ijk[3];
   im_ne_get_local_num_ijk_l (id, local_num_ijk);
-  for(int dim = 0; dim < 3; ++dim) {
-    lNodesPerDim[dim] = local_num_ijk[dim];
+  for(int ldim = 0; ldim < 3; ++ldim) {
+    lNodesPerDim[ldim] = local_num_ijk[ldim];
   }
 
   Teuchos::Array<LO> nodesPerDim(3);
   long long num_ijk[3];
   im_ne_get_num_ijk_l (id, num_ijk);
-  for(int dim = 0; dim < 3; ++dim) {
-    nodesPerDim[dim] = num_ijk[dim];
+  for(int ldim = 0; ldim < 3; ++ldim) {
+    nodesPerDim[ldim] = num_ijk[ldim];
   }
 
   // Print mesh information
@@ -1182,8 +1160,6 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  typedef Teuchos::ScalarTraits<ST> STS;
-  typedef STS::magnitudeType MT;
 
   RCP<vector_type> R = rcp (new vector_type (*B)); // R := B
   // R := 1.0*R - 1.0*A*X_exact.
@@ -1241,13 +1217,13 @@ public:
                const Scalar& y,
                const Scalar& z) const
   {
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Teuchos::ScalarTraits<Scalar> STSc;
 
     // We go through this trouble to make numbers, because Scalar
     // isn't necessarily double.  It could be some automatic
     // differentiation type.
-    const Scalar zero = STS::zero ();
-    const Scalar one = STS::one ();
+    const Scalar zero = STSc::zero ();
+    const Scalar one = STSc::one ();
 
     // You can use the value of offDiagVal_ to control the iteration
     // count.  The iteration counts below are for Belos' GMRES with no

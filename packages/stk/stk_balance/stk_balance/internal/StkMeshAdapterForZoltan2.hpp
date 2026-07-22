@@ -56,26 +56,26 @@ public:
 
   virtual ~StkMeshZoltanAdapter() { }
 
-  virtual size_t getLocalNumOf(Zoltan2::MeshEntityType etype) const;
-  virtual void getIDsViewOf(Zoltan2::MeshEntityType etype, BalanceGlobalNumber const *&Ids) const;
+  virtual size_t getLocalNumOf(Zoltan2::MeshEntityType etype) const override;
+  virtual void getIDsViewOf(Zoltan2::MeshEntityType etype, BalanceGlobalNumber const *&Ids) const override;
 
-  virtual int getDimension() const;
+  virtual int getDimension() const override;
 
-  virtual void getCoordinatesViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&coords, int &stride, int coordDim) const;
+  virtual void getCoordinatesViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&coords, int &stride, int coordDim) const override;
 
-  virtual int getNumWeightsPerOf(Zoltan2::MeshEntityType etype) const;
+  virtual int getNumWeightsPerOf(Zoltan2::MeshEntityType etype) const override;
 
-  virtual void getWeightsViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&weights, int &stride, int idx = 0) const;
+  virtual void getWeightsViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&weights, int &stride, int idx = 0) const override;
 
-  virtual bool avail2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const;
+  virtual bool avail2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const override;
 
-  virtual size_t getLocalNum2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const;
+  virtual size_t getLocalNum2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const override;
 
-  virtual void get2ndAdjsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const BalanceLocalNumber *&offsets, const BalanceGlobalNumber *&adjacencyIds) const;
+  virtual void get2ndAdjsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const BalanceLocalNumber *&offsets, const BalanceGlobalNumber *&adjacencyIds) const override;
 
-  virtual int getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const;
+  virtual int getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const override;
 
-  virtual void get2ndAdjWeightsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const scalar_t *&weights, int &stride, int idx) const;
+  virtual void get2ndAdjWeightsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const scalar_t *&weights, int &stride, int idx) const override;
 
   void debuggingInfo(int proc_id,  std::ofstream& out) const;
 
@@ -83,24 +83,24 @@ private:
   const Zoltan2ParallelGraph &mGraph;
 
 public: // defaultish
-  virtual bool availAdjs(Zoltan2::MeshEntityType source, Zoltan2::MeshEntityType target) const
+  virtual bool availAdjs(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/) const override
   {
     return false;
   }
 
-  virtual size_t getLocalNumAdjs(Zoltan2::MeshEntityType source, Zoltan2::MeshEntityType target) const
+  virtual size_t getLocalNumAdjs(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/) const override
   {
     return 0;
   }
 
-  virtual void getAdjsView(Zoltan2::MeshEntityType source, Zoltan2::MeshEntityType target, const BalanceLocalNumber *&offsets, const BalanceGlobalNumber *& adjacencyIds) const
+  virtual void getAdjsView(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/, const BalanceLocalNumber *&offsets, const BalanceGlobalNumber *& adjacencyIds) const override
   {
     offsets = NULL;
     adjacencyIds = NULL;
     Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType etype, int idx) const
+  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType /*etype*/, int /*idx*/) const override
   {
     return false;
   }

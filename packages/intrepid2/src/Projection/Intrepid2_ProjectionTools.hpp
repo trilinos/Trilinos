@@ -50,7 +50,7 @@
 #ifdef HAVE_INTREPID2_KOKKOSKERNELS
 #include "KokkosBatched_QR_Serial_Internal.hpp"
 #include "KokkosBatched_ApplyQ_Serial_Internal.hpp"
-#include "KokkosBatched_Trsv_Serial_Internal.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Util.hpp"
 #endif
 
@@ -520,9 +520,10 @@ public:
         auto w0_host = Kokkos::create_mirror_view(Kokkos::subview(work, 0, Kokkos::ALL()));
 
         //computing QR of A0. QR is saved in A0 and tau0
-        KokkosBatched::SerialQR_Internal::invoke(A0_host.extent(0), A0_host.extent(1),
-            A0_host.data(), A0_host.stride_0(), A0_host.stride_1(),
-            tau0_host.data(), tau0_host.stride_0(), w0_host.data());
+        KokkosBatched::Impl::SerialQR_Internal::invoke
+            (A0_host.extent(0), A0_host.extent(1),
+             A0_host.data(), A0_host.stride(0), A0_host.stride(1),
+             tau0_host.data(), tau0_host.stride(0), w0_host.data());
 
         Kokkos::deep_copy(A0_device, A0_host);
         Kokkos::deep_copy(A0, A0_device);
@@ -539,17 +540,13 @@ public:
           //b'*Q0 -> b
           KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A0.extent(0), A0.extent(1),
-              A0.data(),  A0.stride_0(), A0.stride_1(),
-              tau0.data(), tau0.stride_0(),
-              b.data(),  1, b.stride_0(),
+              A0.data(),  A0.stride(0), A0.stride(1),
+              tau0.data(), tau0.stride(0),
+              b.data(),  1, b.stride(0),
               w.data());
 
           // R0^{-1} b -> b
-          KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
-              A0.extent(0),
-              1.0,
-              A0.data(), A0.stride_0(), A0.stride_1(),
-              b.data(),  b.stride_0());
+          KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Unblocked>::invoke(1.0, A0, b);
 
           //scattering b into the basis coefficients
           for(ordinal_type i=0; i<n; ++i){
@@ -572,25 +569,22 @@ public:
               A(i,j) = A(j,i);
 
           //computing QR of A. QR is saved in A and tau
-          KokkosBatched::SerialQR_Internal::invoke(A.extent(0), A.extent(1),
-              A.data(), A.stride_0(), A.stride_1(), tau.data(), tau.stride_0(), w.data());
+          KokkosBatched::Impl::SerialQR_Internal::invoke
+              (A.extent(0), A.extent(1),
+               A.data(), A.stride(0), A.stride(1), tau.data(), tau.stride(0), w.data());
 
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 
           //b'*Q -> b
           KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A.extent(0), A.extent(1),
-              A.data(),  A.stride_0(), A.stride_1(),
-              tau.data(), tau.stride_0(),
-              b.data(),  1, b.stride_0(),
+              A.data(),  A.stride(0), A.stride(1),
+              tau.data(), tau.stride(0),
+              b.data(),  1, b.stride(0),
               w.data());
 
           // R^{-1} b -> b
-          KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
-              A.extent(0),
-              1.0,
-              A.data(), A.stride_0(), A.stride_1(),
-              b.data(),  b.stride_0());
+          KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Unblocked>::invoke(1.0, A, b);
 
           //scattering b into the basis coefficients
           for(ordinal_type i=0; i<n; ++i){

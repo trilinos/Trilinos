@@ -353,14 +353,14 @@ namespace Intrepid2
     :
     polyOrder_(polyOrder)
     {
-      const int numEdgeFunctions = polyOrder * 3;
-      const int numFaceFunctions = polyOrder * (polyOrder-1);  // two families, each with p*(p-1)/2 functions
-      this->basisCardinality_  = numEdgeFunctions + numFaceFunctions;
-      this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
-      this->basisType_         = BASIS_FEM_HIERARCHICAL;
-      this->basisCoordinates_  = COORDINATES_CARTESIAN;
-      this->functionSpace_     = FUNCTION_SPACE_HCURL;
+      const int numEdgeFunctions  = polyOrder * 3;
+      const int numFaceFunctions  = polyOrder * (polyOrder-1);  // two families, each with p*(p-1)/2 functions
+      this->basisCardinality_     = numEdgeFunctions + numFaceFunctions;
+      this->basisDegree_          = polyOrder;
+      this->basisCellTopologyKey_ = shards::Triangle<>::key;
+      this->basisType_            = BASIS_FEM_HIERARCHICAL;
+      this->basisCoordinates_     =  COORDINATES_CARTESIAN;
+      this->functionSpace_        = FUNCTION_SPACE_HCURL;
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Hierarchical H(curl) triangle polynomial degree lookup", this->basisCardinality_, degreeLength);
@@ -371,8 +371,9 @@ namespace Intrepid2
       // no vertex functions in H(curl)
       
       // **** edge functions **** //
+      const shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Triangle<> >());
       const int numFunctionsPerEdge = polyOrder; // p functions associated with each edge
-      const int numEdges            = this->basisCellTopology_.getEdgeCount();
+      const int numEdges            = cellTopo.getEdgeCount();
       for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
       {
         for (int i=0; i<numFunctionsPerEdge; i++)

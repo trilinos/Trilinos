@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 #include <algorithm>
@@ -67,8 +54,8 @@ struct TestFunctorA {
 
     if (m_apiPick == 0) {
       auto it    = KE::remove_copy(member, KE::cbegin(myRowViewFrom),
-                                KE::cend(myRowViewFrom),
-                                KE::begin(myRowViewDest), m_targetValue);
+                                   KE::cend(myRowViewFrom),
+                                   KE::begin(myRowViewDest), m_targetValue);
       resultDist = KE::distance(KE::begin(myRowViewDest), it);
       Kokkos::single(Kokkos::PerTeam(member), [=, *this]() {
         m_distancesView(myRowIndex) = resultDist;
@@ -212,10 +199,6 @@ void run_all_scenarios() {
 }
 
 TEST(std_algorithms_remove_copy_team_test, test) {
-// FIXME_OPENMPTARGET
-#if defined(KOKKOS_ENABLE_OPENMPTARGET) && defined(KOKKOS_ARCH_INTEL_GPU)
-  GTEST_SKIP() << "the test is known to fail with OpenMPTarget on Intel GPUs";
-#endif
   run_all_scenarios<DynamicTag, double>();
   run_all_scenarios<StridedTwoRowsTag, int>();
   run_all_scenarios<StridedThreeRowsTag, unsigned>();

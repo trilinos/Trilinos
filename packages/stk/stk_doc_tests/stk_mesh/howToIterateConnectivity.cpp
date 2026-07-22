@@ -57,7 +57,6 @@ TEST(StkMeshHowTo, iterateElemNodeConnectivity_ForEachEntityWithNodes)
   MPI_Comm comm = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
   std::unique_ptr<stk::mesh::BulkData> stkMesh = stk::mesh::MeshBuilder(comm).create();
-  stkMesh->mesh_meta_data().use_simple_fields();
   // Generate a mesh of unit-cube hexes with a sideset
   const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
   stk::io::fill_mesh(generatedMeshSpecification, *stkMesh);
@@ -75,14 +74,15 @@ TEST(StkMeshHowTo, iterateElemNodeConnectivity_ForEachEntityWithNodes)
 
   stk::mesh::Selector all = stkMesh->mesh_meta_data().universal_part();
 
+  auto coordFieldData = coord_field.data();
   stk::mesh::for_each_entity_run_with_nodes(*stkMesh, stk::topology::ELEM_RANK, all,
-    [&](stk::mesh::Entity elem, const stk::mesh::Entity* nodes, size_t numNodesPerEntity) {
+    [&](stk::mesh::Entity /*elem*/, const stk::mesh::Entity* nodes, size_t numNodesPerEntity) {
       EXPECT_EQ(numNodesPerEntity, nodesPerHex);
       for (unsigned inode = 0; inode < numNodesPerEntity; ++inode) {
-        const double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
-        elementNodeCoords[inode][0] = coords[0];
-        elementNodeCoords[inode][1] = coords[1];
-        elementNodeCoords[inode][2] = coords[2];
+        auto coords = coordFieldData.entity_values(nodes[inode]);
+        elementNodeCoords[inode][0] = coords(0_comp);
+        elementNodeCoords[inode][1] = coords(1_comp);
+        elementNodeCoords[inode][2] = coords(2_comp);
         ++count;
       }
     });
@@ -98,7 +98,6 @@ TEST(StkMeshHowTo, iterateConnectivity_General_BulkData)
   MPI_Comm comm = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
   std::unique_ptr<stk::mesh::BulkData> stkMesh = stk::mesh::MeshBuilder(comm).create();
-  stkMesh->mesh_meta_data().use_simple_fields();
   // Generate a mesh of unit-cube hexes with a sideset
   const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
   stk::io::fill_mesh(generatedMeshSpecification, *stkMesh);
@@ -114,16 +113,17 @@ TEST(StkMeshHowTo, iterateConnectivity_General_BulkData)
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN},
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN} };
 
+  auto coordFieldData = coord_field.data();
   stk::mesh::for_each_entity_run(*stkMesh, stk::topology::ELEM_RANK,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity elem) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity elem) {
       const stk::mesh::ConnectedEntities nodes = stkMesh->get_connected_entities(elem, stk::topology::NODE_RANK);
       EXPECT_EQ(nodes.size(), nodesPerHex);
 
       for (unsigned inode = 0; inode < nodes.size(); ++inode) {
-        const double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
-        elementNodeCoords[inode][0] = coords[0];
-        elementNodeCoords[inode][1] = coords[1];
-        elementNodeCoords[inode][2] = coords[2];
+        auto coords = coordFieldData.entity_values(nodes[inode]);
+        elementNodeCoords[inode][0] = coords(0_comp);
+        elementNodeCoords[inode][1] = coords(1_comp);
+        elementNodeCoords[inode][2] = coords(2_comp);
         ++count;
       }
     });
@@ -139,7 +139,6 @@ TEST(StkMeshHowTo, iterateConnectivity_Buckets)
   MPI_Comm comm = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(comm) != 1) { return; }
   std::unique_ptr<stk::mesh::BulkData> stkMesh = stk::mesh::MeshBuilder(comm).create();
-  stkMesh->mesh_meta_data().use_simple_fields();
   // Generate a mesh of unit-cube hexes with a sideset
   const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
   stk::io::fill_mesh(generatedMeshSpecification, *stkMesh);
@@ -157,6 +156,7 @@ TEST(StkMeshHowTo, iterateConnectivity_Buckets)
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN},
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN} };
 
+  auto coordFieldData = coord_field.data();
   for (size_t bucketIndex = 0; bucketIndex < elementBuckets.size(); ++bucketIndex) {
     const stk::mesh::Bucket &elemBucket = *elementBuckets[bucketIndex];
 
@@ -166,10 +166,10 @@ TEST(StkMeshHowTo, iterateConnectivity_Buckets)
       const stk::mesh::Entity* nodes = elemBucket.begin_nodes(elemIndex);
 
       for (unsigned inode = 0; inode < numNodes; ++inode) {
-        const double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
-        elementNodeCoords[inode][0] = coords[0];
-        elementNodeCoords[inode][1] = coords[1];
-        elementNodeCoords[inode][2] = coords[2];
+        auto coords = coordFieldData.entity_values(nodes[inode]);
+        elementNodeCoords[inode][0] = coords(0_comp);
+        elementNodeCoords[inode][1] = coords(1_comp);
+        elementNodeCoords[inode][2] = coords(2_comp);
         ++count;
       }
     }

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                           Sacado Package
+//
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 /* uninit.c is part of the libf2c source (libf2c.zip) in f2c available at
  * http://www.netlib.org/f2c/.  It is used by Rad to fill memory locations
  * with NaN values so that uninitialized accesses of those memory locations

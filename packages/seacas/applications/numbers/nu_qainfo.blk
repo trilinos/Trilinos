@@ -8,8 +8,8 @@ C    See packages/seacas/LICENSE for details
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20220330'
-      QAINFO(3)(:8) = '    1.30'
+      QAINFO(2)(:8) = '20250423'
+      QAINFO(3)(:8) = '    2.00'
 
 C ... Added esum and eaverage commands
 c ... Fixed cavity volume output
@@ -35,3 +35,5 @@ c ... Add centroid option for 3d cavity
 c ... Fix/kluge command-line arg parsing on intel (qainfo not in common block)
 c ... Enable MCAVITY to calculate multiple single-sset cavities simultaneously
 c ... Fix bugs in mcavity implementation
+
+c ... begin supporting tets

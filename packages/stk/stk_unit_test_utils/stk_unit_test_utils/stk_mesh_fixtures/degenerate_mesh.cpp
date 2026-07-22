@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <sstream>                      // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
@@ -127,73 +127,6 @@ static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
 
 void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord)
 {
-  static const char method[] = "stk_mesh::fixtures::heterogenous_mesh_bulk_data" ;
-
-  bulk_data.modification_begin();
-
-  const stk::mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
-
-  stk::mesh::Part & hex_block = * meta_data.get_part("hexes",method);
-
-  unsigned elem_id = 1 ;
-
-  for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
-    stk::mesh::declare_element( bulk_data, hex_block, elem_id, hex_node_ids[i] );
-  }
-
-  for ( unsigned i = 0 ; i < node_count ; ++i ) {
-
-    stk::mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );
-
-    double * const coord = stk::mesh::field_data( node_coord , node );
-
-    coord[0] = node_coord_data[i][0] ;
-    coord[1] = node_coord_data[i][1] ;
-    coord[2] = node_coord_data[i][2] ;
-  }
-
-  bulk_data.modification_end();
-}
-
-namespace simple_fields {
-
-enum { SpatialDim = 3 };
-
-void degenerate_mesh_meta_data(stk::mesh::MetaData & meta_data, VectorFieldType & node_coord)
-{
-  stk::mesh::Part & universal = meta_data.universal_part();
-  stk::mesh::Part& part = meta_data.declare_part_with_topology( "hexes", stk::topology::HEX_8);
-  stk::io::put_io_part_attribute(part);
-
-  const stk::mesh::FieldBase::Restriction & res = stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );
-
-  if ( res.num_scalars_per_entity() != 3 ) {
-    std::ostringstream msg ;
-    msg << "stk_mesh/unit_tests/degenerate_mesh_meta_data FAILED, coordinate dimension must be 3 != "
-        << res.num_scalars_per_entity() ;
-    throw std::runtime_error( msg.str() );
-  }
-}
-
-namespace {
-
-enum { node_count = 10 };
-enum { number_hex = 2 };
-
-static const double node_coord_data[ node_count ][ SpatialDim ] = {
-  { 0 , 0 , 0 } , { 1 , 0 , 0 } , { 2, 0, 0} , {0, 1, 0}, {2, 1, 0},
-  { 0 , 0 ,-1 } , { 1 , 0 ,-1 } , { 2, 0,-1} , {0, 1,-1}, {2, 1,-1}
-};
-
-typedef stk::topology::topology_type<stk::topology::HEX_8> Hex8;
-static const stk::mesh::EntityIdVector hex_node_ids[number_hex] {
-  { 1, 2, 7, 6, 4, 2,  7, 9},
-  { 2, 3, 8, 7, 2, 5, 10, 7}
-};
-}
-
-void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord)
-{
   static const char method[] = "stk_mesh::fixtures::heterogenous_mesh_bulk_data";
 
   bulk_data.modification_begin();
@@ -208,21 +141,20 @@ void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFiel
     stk::mesh::declare_element( bulk_data, hex_block, elem_id, hex_node_ids[i] );
   }
 
+  auto node_coord_field_data = node_coord.data<stk::mesh::ReadWrite>();
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
 
     stk::mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );
 
-    double * const coord = stk::mesh::field_data( node_coord , node );
+    auto coord = node_coord_field_data.entity_values(node);
 
-    coord[0] = node_coord_data[i][0] ;
-    coord[1] = node_coord_data[i][1] ;
-    coord[2] = node_coord_data[i][2] ;
+    coord(0_comp) = node_coord_data[i][0] ;
+    coord(1_comp) = node_coord_data[i][1] ;
+    coord(2_comp) = node_coord_data[i][2] ;
   }
 
   bulk_data.modification_end();
 }
-
-}  // namespace simple_fields
 
 }}}
 

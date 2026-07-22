@@ -19,6 +19,7 @@
 #include <Akri_MathUtil.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_ProlongationData.hpp>
+#include <Akri_QualityMetric.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <stk_math/StkVector.hpp>
 #include <math.h>
@@ -292,12 +293,12 @@ ElementObj::have_refined_edges() const
   return false;
 }
 
-void ElementObj::cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
+void ElementObj::cut_interior_intersection_point(CDMesh & /*mesh*/, const stk::math::Vector3d & /*pCoords*/, const std::vector<int> & /*sortedDomains*/)
 {
   throw std::runtime_error("Incorrect usage of ElementObj.  The type of element cannot cut_interior_intersection_point.");
 }
 
-void ElementObj::cut_face_intersection_point(const int iFace, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
+void ElementObj::cut_face_intersection_point(const int /*iFace*/, const stk::math::Vector3d & /*pCoords*/, const std::vector<int> & /*sortedDomains*/)
 {
   throw std::runtime_error("Incorrect usage of ElementObj.  The type of element cannot cut_face_intersection_point.");
 }
@@ -450,7 +451,7 @@ Mesh_Element::is_single_coincident() const
   if(conformal_subelems.size() != 1) return false;
 
   const SubElement * subelem = conformal_subelems[0];
-  if(subelem->topology() != coord_topology()) return false;
+  if(subelem->topology().num_nodes() != coord_topology().num_nodes()) return false;
   for (auto && node : get_nodes())
     if (std::find(subelem->get_nodes().begin(), subelem->get_nodes().end(), node) == subelem->get_nodes().end())
       return false;
@@ -504,6 +505,14 @@ Mesh_Element::determine_subelement_topology(stk::topology elem_topology)
         return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_3_2D, 1);
     case stk::topology::TRIANGLE_6_2D:
         return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_6_2D, 2);
+    case stk::topology::TRIANGLE_3:
+    case stk::topology::SHELL_TRIANGLE_3:
+    case stk::topology::SHELL_TRIANGLE_3_ALL_FACE_SIDES:
+        return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_3, 1); // Using side topology instead of shell topology for shells so that it looks just like lower dimensional element wrt to sides
+    case stk::topology::TRIANGLE_6:
+    case stk::topology::SHELL_TRIANGLE_6:
+    case stk::topology::SHELL_TRIANGLE_6_ALL_FACE_SIDES:
+        return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_6, 2); // Using side topology instead of shell topology for shells so that it looks just like lower dimensional element wrt to sides
     case stk::topology::TETRAHEDRON_4:
         return std::pair<stk::topology, unsigned>(stk::topology::TETRAHEDRON_4, 1);
     case stk::topology::TETRAHEDRON_10:
@@ -608,12 +617,12 @@ static ElementIntersectionPointFilter build_element_intersection_filter(const No
 }
 
 void
-Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, std::vector<ElementIntersection> & faceIntersectionPoints) const
+Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, std::vector<ElementIntersection> & faceIntersectionPoints) const
 {
   STK_ThrowRequire(get_cutter() && faceNodes.size() == 3);
   const std::array<stk::math::Vector3d,3> faceNodeOwnerCoords = {{faceNodes[0]->owner_coords(this), faceNodes[1]->owner_coords(this), faceNodes[2]->owner_coords(this)}};
   const ElementIntersectionPointFilter intersectionPointFilter = build_element_intersection_filter(faceNodes);
-  get_cutter()->fill_tetrahedron_face_interior_intersections(faceNodeOwnerCoords, interface1, interface2, intersectionPointFilter, faceIntersectionPoints);
+  get_cutter()->fill_tetrahedron_face_interior_intersections(faceNodeOwnerCoords, intersectionPointFilter, faceIntersectionPoints);
 }
 
 std::pair<int, double>
@@ -686,7 +695,7 @@ static IntersectionPointFilter
 keep_all_intersecion_points_filter()
 {
   auto filter =
-  [](const std::vector<stk::mesh::Entity> & intersectionPointNodes, const std::vector<int> & intersectionPointSortedDomains)
+  [](const std::vector<stk::mesh::Entity> & /*intersectionPointNodes*/, const std::vector<int> & /*intersectionPointSortedDomains*/)
   {
     return true;
   };
@@ -752,15 +761,8 @@ Mesh_Element::cut_interior_intersection_points(CDMesh & mesh)
       elem->cut_interior_intersection_point(mesh, containingElemPCoords, intersectionPoint.get_sorted_domains());
   }
 
-  const std::vector<InterfaceID> interfaces = get_sorted_cutting_interfaces();
-  for (size_t i1=0; i1<interfaces.size(); ++i1)
-  {
-    for (size_t i2=i1+1; i2<interfaces.size(); ++i2)
-    {
-      for (auto && subelem : my_subelements)
-        subelem->cut_face_interior_intersection_points(mesh, interfaces[i1], interfaces[i2]);
-    }
-  }
+  for (auto && subelem : my_subelements)
+    subelem->cut_face_interior_intersection_points(mesh);
 
   std::vector<const SubElement *> leafSubElements;
   get_subelements(leafSubElements);
@@ -784,9 +786,9 @@ void
 Mesh_Element::create_base_subelement()
 { /* %TRACE% */  /* %TRACE% */
 
-  stk::topology base_topology = coord_topology();
+  stk::topology baseTopology = coord_topology();
 
-  const unsigned num_sides = base_topology.num_sides();
+  const unsigned num_sides = baseTopology.num_sides();
 
   std::vector<int> parent_side_ids(num_sides);
   for (unsigned i=0; i<num_sides; ++i)
@@ -795,27 +797,27 @@ Mesh_Element::create_base_subelement()
   }
 
   std::unique_ptr<SubElement> base_subelement;
-  if (stk::topology::TETRAHEDRON_4 == base_topology)
+  if (stk::topology::TETRAHEDRON_4 == baseTopology)
   {
     base_subelement = std::make_unique<SubElement_Tet_4>( my_nodes, parent_side_ids, this);
   }
-  else if (stk::topology::TETRAHEDRON_10 == base_topology)
+  else if (stk::topology::TETRAHEDRON_10 == baseTopology)
   {
     // purposely use lower order base subelement
     std::vector<const SubElementNode *> sub_nodes(my_nodes.begin(), my_nodes.begin()+4);
     base_subelement = std::make_unique<SubElement_Tet_4>( sub_nodes, parent_side_ids, this);
   }
-  else if (stk::topology::TRIANGLE_3_2D == base_topology)
+  else if (stk::topology::TRIANGLE_3_2D == baseTopology || stk::topology::TRIANGLE_3 == baseTopology)
   {
     base_subelement = std::make_unique<SubElement_Tri_3>( my_nodes, parent_side_ids, this);
   }
-  else if (stk::topology::TRIANGLE_6_2D == base_topology)
+  else if (stk::topology::TRIANGLE_6_2D == baseTopology || stk::topology::TRIANGLE_6 == baseTopology)
   {
     // purposely use lower order base subelement
     std::vector<const SubElementNode *> sub_nodes(my_nodes.begin(), my_nodes.begin()+3);
     base_subelement = std::make_unique<SubElement_Tri_3>( sub_nodes, parent_side_ids, this);
   }
-  STK_ThrowErrorMsgIf(!base_subelement, "Elements with topology " << base_topology.name() << " not supported for CDFEM.");
+  STK_ThrowErrorMsgIf(!base_subelement, "Elements with topology " << baseTopology.name() << " not supported for CDFEM.");
 
   base_subelement->initialize_interface_signs();
   add_subelement(std::move(base_subelement));
@@ -883,67 +885,10 @@ Mesh_Element::build_quadratic_subelements(CDMesh & mesh)
   }
 }
 
-int
-ElementObj::evaluate_quad(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, const SubElementNode * n3)
-{ /* %TRACE% */  /* %TRACE% */
-  return evaluate_quad(n0->coordinates(), n1->coordinates(), n2->coordinates(), n3->coordinates());
-}
-
-int
-ElementObj::evaluate_quad(const stk::math::Vector3d & x0, const stk::math::Vector3d & x1, const stk::math::Vector3d & x2, const stk::math::Vector3d & x3)
-{ /* %TRACE% */  /* %TRACE% */
-  // given 4 angles
-  // angle0 - angle subtended by (x3-x0) and (x1-x0)
-  // angle1 - angle subtended by (x0-x1) and (x2-x1)
-  // angle2 - angle subtended by (x1-x2) and (x3-x2)
-  // angle3 - angle subtended by (x2-x3) and (x0-x3)
-  // returns -1 if the max of angle 0 and angle 2 is significant larger than the max of angle 1 and angle 3
-  // returns +1 if the opposite is true
-  // returns 0 if neither is true (the max angles are basically the same) OR one of the sides is degenerate
-
-  const stk::math::Vector3d side0 = x1 - x0;
-  const stk::math::Vector3d side1 = x2 - x1;
-  const stk::math::Vector3d side2 = x3 - x2;
-  const stk::math::Vector3d side3 = x0 - x3;
-
-  const double side_len0 = side0.length();
-  const double side_len1 = side1.length();
-  const double side_len2 = side2.length();
-  const double side_len3 = side3.length();
-
-  // here, meas0 = -cos(angle0) * side_len0*side_len1*side_len2*side_len3
-  const double meas0 = Dot(side3,side0) * side_len1*side_len2;
-  const double meas1 = Dot(side0,side1) * side_len2*side_len3;
-  const double meas2 = Dot(side1,side2) * side_len3*side_len0;
-  const double meas3 = Dot(side2,side3) * side_len0*side_len1;
-
-  if ( krinolog.shouldPrint(LOG_DEBUG) )
-  {
-    krinolog << "Lengths: " << side_len0 << ", " << side_len1 << ", " << side_len2 << ", " << side_len3 << "\n";
-    krinolog << "Angle measures: " << meas0 << ", " << meas1 << ", " << meas2 << ", " << meas3 << "\n";
-    krinolog << "Angles: " << std::acos(-meas0/(side_len0*side_len1*side_len2*side_len3))*180.0/3.141592654 << ", "
-             << std::acos(-meas1/(side_len0*side_len1*side_len2*side_len3))*180.0/3.141592654 << ", "
-             << std::acos(-meas2/(side_len0*side_len1*side_len2*side_len3))*180.0/3.141592654 << ", "
-             << std::acos(-meas3/(side_len0*side_len1*side_len2*side_len3))*180.0/3.141592654 << "\n";
-  }
-
-  const double meas02 = std::max(meas0,meas2);
-  const double meas13 = std::max(meas1,meas3);
-
-  const double tol = std::numeric_limits<float>::epsilon()*(side_len0*side_len1*side_len2*side_len3);
-
-  if (meas02 > (meas13 + tol))
-  {
-    return -1;
-  }
-  else if (meas13 > (meas02 + tol))
-  {
-    return +1;
-  }
-  else
-  {
-    return 0;
-  }
+bool
+ElementObj::will_cutting_quad_from_0to2_cut_largest_angle(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, const SubElementNode * n3)
+{
+  return krino::will_cutting_quad_from_0to2_cut_largest_angle(n0->coordinates(), n1->coordinates(), n2->coordinates(), n3->coordinates());
 }
 
 bool
@@ -1014,7 +959,7 @@ ElementObj::determine_diagonal_for_internal_quad_of_cut_tet_from_edge_nodes(cons
   const int caseId = (face0 ? 1 : 0) + (face1 ? 2 : 0) + (face2 ? 4 : 0) + (face3 ? 8 : 0);
   STK_ThrowRequire(caseId == 3 || caseId == 5 || caseId == 10 || caseId == 12);
 
-  return (evaluate_quad(n0,n1,n2,n3) == -1);
+  return will_cutting_quad_from_0to2_cut_largest_angle(n0,n1,n2,n3);
 }
 
 } // namespace krino

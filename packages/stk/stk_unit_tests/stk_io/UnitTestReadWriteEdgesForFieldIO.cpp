@@ -59,13 +59,14 @@ public:
 
   void initialize_edge_field(stk::mesh::FieldBase* edgeField, stk::mesh::EntityVector& edges)
   {
-    for(auto edge : edges) {
-      for(unsigned i = 0; i < edgeField->number_of_states(); i++) {
-        stk::mesh::FieldState state = stk::mesh::FieldState(i+stk::mesh::StateNP1);
-        stk::mesh::FieldBase* field = edgeField->field_state(state);
-        double* data = reinterpret_cast<double*>(stk::mesh::field_data(*field, edge));
+    for(unsigned i = 0; i < edgeField->number_of_states(); i++) {
+      stk::mesh::FieldState state = stk::mesh::FieldState(i+stk::mesh::StateNP1);
+      stk::mesh::FieldBase* field = edgeField->field_state(state);
+      auto edgeFieldData = field->data<double, stk::mesh::ReadWrite>();
+      for(auto edge : edges) {
+        auto data = edgeFieldData.entity_values(edge);
 
-        *data = get_bulk().identifier(edge) + i*100;
+        data() = get_bulk().identifier(edge) + i*100;
       }
     }
   }
@@ -114,9 +115,10 @@ public:
     stk::mesh::EntityVector edges;
     stk::mesh::get_entities(bulk, stk::topology::EDGE_RANK, edges);
 
+    auto fieldData = field->data<double>();
     for(stk::mesh::Entity& edge : edges) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(*field, edge));
-      EXPECT_EQ((double)bulk.identifier(edge), *data);
+      auto data = fieldData.entity_values(edge);
+      EXPECT_EQ((double)bulk.identifier(edge), data());
     }
   }
 
@@ -142,7 +144,6 @@ public:
   void load_output_mesh(stk::mesh::BulkData& bulk) override
   {
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stk::io::fill_mesh_preexisting(stkIo, fileName, bulk, stk::io::READ_RESTART);
     int numSteps = stkIo.get_num_time_steps();
     EXPECT_EQ(1, numSteps);
@@ -177,15 +178,17 @@ public:
 
     stk::mesh::FieldBase* fieldStateN   = field->field_state(stk::mesh::StateN);
     stk::mesh::FieldBase* fieldStateNM1 = field->field_state(stk::mesh::StateNM1);
+    auto fieldStateNData = fieldStateN->data<double>();
+    auto fieldStateNM1Data = fieldStateNM1->data<double>();
 
     for(auto edge : edges) {
-      double* dataN   = reinterpret_cast<double*>(stk::mesh::field_data(*fieldStateN, edge));
-      double* dataNM1 = reinterpret_cast<double*>(stk::mesh::field_data(*fieldStateNM1, edge));
+      auto dataN   = fieldStateNData.entity_values(edge);
+      auto dataNM1 = fieldStateNM1Data.entity_values(edge);
 
       double expectedDataNValue   = bulk.identifier(edge);
       double expectedDataNM1Value = bulk.identifier(edge) + 100;
-      EXPECT_EQ(expectedDataNValue, *dataN);
-      EXPECT_EQ(expectedDataNM1Value, *dataNM1);
+      EXPECT_EQ(expectedDataNValue, dataN());
+      EXPECT_EQ(expectedDataNM1Value, dataNM1());
     }
   }
 
@@ -210,18 +213,18 @@ TEST_F(StkEdgeIoTestForResultOutput, SerialWriteMeshWithEdgeField)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
 
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{12};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{0};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{0};
-  expectedValues.numConnectedEdges = 0;
-  expectedValues.globalEdgeCount = 12;
-  expectedValues.globalElemCount = 1;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{12};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{12};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{0};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{0};
+  expectedTestValues.numConnectedEdges = 0;
+  expectedTestValues.globalEdgeCount = 12;
+  expectedTestValues.globalElemCount = 1;
 
   setup_mesh_with_edge_field(1);
 
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_edges(get_bulk());
   write_mesh(stk::io::WRITE_RESULTS);
 
@@ -232,18 +235,18 @@ TEST_F(StkEdgeIoTestForResultOutput, ParallelWriteMeshWithEdgeField)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
 
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{12, 12};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{0, 0};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{0, 0};
-  expectedValues.numConnectedEdges = 0;
-  expectedValues.globalEdgeCount = 20;
-  expectedValues.globalElemCount = 2;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{12, 12};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{0, 0};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{0, 0};
+  expectedTestValues.numConnectedEdges = 0;
+  expectedTestValues.globalEdgeCount = 20;
+  expectedTestValues.globalElemCount = 2;
 
   setup_mesh_with_edge_field(2);
 
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_edges(get_bulk());
   write_mesh(stk::io::WRITE_RESULTS);
 
@@ -254,20 +257,20 @@ TEST_F(StkEdgeIoTestForRestart, SerialWriteMeshWithEdgeField)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
 
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{12};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{0};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{0};
-  expectedValues.numConnectedEdges = 0;
-  expectedValues.globalEdgeCount = 12;
-  expectedValues.globalElemCount = 1;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{12};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{12};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{0};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{0};
+  expectedTestValues.numConnectedEdges = 0;
+  expectedTestValues.globalEdgeCount = 12;
+  expectedTestValues.globalElemCount = 1;
 
   unsigned numStates = 3;
 
   setup_mesh_with_edge_field(1, numStates);
 
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_edges(get_bulk());
   write_mesh(stk::io::WRITE_RESTART);
 
@@ -278,20 +281,20 @@ TEST_F(StkEdgeIoTestForRestart, ParallelWriteMeshWithEdgeField)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 3) { return; }
 
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{12, 12, 12};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8, 8};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{0, 0, 0};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{0, 0, 0};
-  expectedValues.numConnectedEdges = 0;
-  expectedValues.globalEdgeCount = 28;
-  expectedValues.globalElemCount = 3;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{12, 12, 12};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8, 8};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{0, 0, 0};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{0, 0, 0};
+  expectedTestValues.numConnectedEdges = 0;
+  expectedTestValues.globalEdgeCount = 28;
+  expectedTestValues.globalElemCount = 3;
 
   unsigned numStates = 3;
 
   setup_mesh_with_edge_field(3, numStates);
 
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_edges(get_bulk());
   write_mesh(stk::io::WRITE_RESTART);
 

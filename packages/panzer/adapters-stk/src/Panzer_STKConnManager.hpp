@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef __Panzer_STKConnManager_hpp__
@@ -63,10 +31,12 @@ class STKConnManager : public panzer::ConnManager {
 public:
    typedef typename panzer::ConnManager::LocalOrdinal LocalOrdinal;
    typedef typename panzer::ConnManager::GlobalOrdinal GlobalOrdinal;
-   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::HostMirror GlobalOrdinalView;
-   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::HostMirror LocalOrdinalView;
+   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::host_mirror_type GlobalOrdinalView;
+   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::host_mirror_type LocalOrdinalView;
 
    STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB);
+
+   STKConnManager(const panzer_stk::STKConnManager & cm);
 
    virtual ~STKConnManager() {}
 
@@ -136,12 +106,14 @@ public:
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { return stkMeshDB_->getElementBlockNames(elementBlockIds); }
+
    /** What are the cellTopologies linked to element blocks in this connection manager?
     */
    virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const{
      std::vector<std::string> elementBlockIds;
      getElementBlockIds(elementBlockIds);
      elementBlockTopologies.reserve(elementBlockIds.size());
+
      for (unsigned i=0; i<elementBlockIds.size(); ++i) {
        elementBlockTopologies.push_back(*(stkMeshDB_->getCellTopology(elementBlockIds[i])));
      }
@@ -217,6 +189,21 @@ public:
       */
     virtual bool hasAssociatedNeighbors() const;
 
+  /// Enables the caching of connectivity data. Be sure to call clearCachedConnectivityData() before exiting your program.
+  static void cacheConnectivity()
+  { cache_connectivity_ = true; }
+
+  /// If you enable caching with cacheConnectivity(), this must be called prior to exiting the code.
+  static void clearCachedConnectivityData()
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::ConnectivityManager::clearCachedConnectivityData()");
+    cached_conn_managers_.clear();
+  }
+
+  /// This is purely for unit testing. Returns the number of times that buildConnectivity() was called, but a cached version was found to use instead.
+  static int getCachedReuseCount()
+  { return cached_reuse_count_; }
+
 protected:
    /** Apply periodic boundary conditions associated with the mesh object.
      *
@@ -237,15 +224,15 @@ protected:
 
    /**
     * @brief Loops over relations of a given rank for a specified element and adds a unique ID to the connectivity vector
-    *    
+    *
     * @param[in] element Mesh element
     * @param[in] subcellRank Rank of the subcell entities to identify
     * @param[in] idCnt Number of IDs on the requested subcell type
     * @param[in] offset Offset for requested subcell type
     * @param[in,optional] maxIds If positive, maximum number of IDs to connect to this element. If 0 (default), add all IDs.
-    * 
+    *
     * @pre Should call buildOffsetsAndIdCounts() to obtain \p idCnt and \p offset.
-    * @note The connectivity manager needs only the lowest order nodal information. 
+    * @note The connectivity manager needs only the lowest order nodal information.
     *       Hence, maxIds should be set appropriately if the STK mesh is second order or higher.
    */
    LocalOrdinal addSubcellConnectivities(stk::mesh::Entity element,unsigned subcellRank,
@@ -272,6 +259,18 @@ protected:
    std::vector<std::string> sidesetsToAssociate_;
    std::vector<bool> sidesetYieldedAssociations_;
    std::vector<std::vector<LocalOrdinal> > elmtToAssociatedElmts_;
+
+  using CachedEntry = std::pair<Teuchos::RCP<const panzer::FieldPattern>,Teuchos::RCP<panzer_stk::STKConnManager>>;
+  struct FieldPatternCompare {
+    Teuchos::RCP<const panzer::FieldPattern> fp_;
+    FieldPatternCompare(const Teuchos::RCP<const panzer::FieldPattern>& fp):fp_(fp){}
+    bool inline operator()(CachedEntry& entry_to_compare) const
+    { return fp_->equals(*entry_to_compare.first); }
+  };
+
+  static bool cache_connectivity_;
+  static std::vector<CachedEntry> cached_conn_managers_;
+  static int cached_reuse_count_;
 };
 
 }

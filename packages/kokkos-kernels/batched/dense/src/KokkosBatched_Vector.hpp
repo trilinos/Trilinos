@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_VECTOR_HPP__
-#define __KOKKOSBATCHED_VECTOR_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_VECTOR_HPP
+#define KOKKOSBATCHED_VECTOR_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -143,9 +130,7 @@ struct DefaultInternalVectorLength {
 };
 template <typename ValueType>
 struct DefaultInternalVectorLength<ValueType, Kokkos::HostSpace> {
-  enum : int {
-    value = DefaultVectorLength<ValueType, Kokkos::HostSpace>::value
-  };
+  enum : int { value = DefaultVectorLength<ValueType, Kokkos::HostSpace>::value };
 };
 
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -174,13 +159,11 @@ struct DefaultInternalVectorLength<double, Kokkos::CudaUVMSpace> {
   enum : int { value = 2 };
 };
 template <>
-struct DefaultInternalVectorLength<Kokkos::complex<float>,
-                                   Kokkos::CudaUVMSpace> {
+struct DefaultInternalVectorLength<Kokkos::complex<float>, Kokkos::CudaUVMSpace> {
   enum : int { value = 2 };
 };
 template <>
-struct DefaultInternalVectorLength<Kokkos::complex<double>,
-                                   Kokkos::CudaUVMSpace> {
+struct DefaultInternalVectorLength<Kokkos::complex<double>, Kokkos::CudaUVMSpace> {
   enum : int { value = 1 };
 };
 #endif
@@ -246,7 +229,7 @@ struct MagnitudeScalarType<Vector<SIMD<Kokkos::complex<double>>, l>> {
 #include "KokkosBatched_Vector_SIMD.hpp"
 
 // arith traits overload for vector types
-namespace Kokkos {
+namespace KokkosKernels {
 
 // do not use Vector alone as other can use the name.
 
@@ -256,18 +239,12 @@ class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>> {
   typedef typename ArithTraits<T>::val_type val_scalar_type;
   typedef typename ArithTraits<T>::mag_type mag_scalar_type;
 
-  typedef KokkosBatched::Vector<KokkosBatched::SIMD<val_scalar_type>, l>
-      val_type;
-  typedef KokkosBatched::Vector<KokkosBatched::SIMD<mag_scalar_type>, l>
-      mag_type;
+  typedef KokkosBatched::Vector<KokkosBatched::SIMD<val_scalar_type>, l> val_type;
+  typedef KokkosBatched::Vector<KokkosBatched::SIMD<mag_scalar_type>, l> mag_type;
 
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &val) {
-    return val;
-  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &val) { return val; }
 
-  static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &val) {
-    return val;
-  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &val) { return val; }
 
   static KOKKOS_FORCEINLINE_FUNCTION val_type abs(const val_type &val) {
     using KAT = ArithTraits<typename val_type::value_type>;
@@ -286,17 +263,13 @@ class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<T>, l>> {
 };
 
 template <typename T, int l>
-class ArithTraits<
-    KokkosBatched::Vector<KokkosBatched::SIMD<Kokkos::complex<T>>, l>> {
+class ArithTraits<KokkosBatched::Vector<KokkosBatched::SIMD<Kokkos::complex<T>>, l>> {
  public:
   typedef typename ArithTraits<T>::val_type val_scalar_type;
   typedef typename ArithTraits<T>::mag_type mag_scalar_type;
 
-  typedef KokkosBatched::Vector<
-      KokkosBatched::SIMD<Kokkos::complex<val_scalar_type>>, l>
-      val_type;
-  typedef KokkosBatched::Vector<KokkosBatched::SIMD<mag_scalar_type>, l>
-      mag_type;
+  typedef KokkosBatched::Vector<KokkosBatched::SIMD<Kokkos::complex<val_scalar_type>>, l> val_type;
+  typedef KokkosBatched::Vector<KokkosBatched::SIMD<mag_scalar_type>, l> mag_type;
 
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &val) {
     mag_type r_val;
@@ -332,6 +305,6 @@ class ArithTraits<
   }
 };
 
-}  // namespace Kokkos
+}  // namespace KokkosKernels
 
 #endif

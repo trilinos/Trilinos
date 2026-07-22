@@ -35,8 +35,8 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp *.h)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp *.h)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 IF(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(
@@ -46,6 +46,7 @@ IF(HAVE_STK_Trilinos)
   )
 ELSE()
   add_library(stk_util_diag ${SOURCES})
+  target_compile_definitions(stk_util_diag PUBLIC SIERRA_DLOPEN_ENABLED=1)
 
   target_link_libraries(stk_util_diag PUBLIC stk_util_env)
 ENDIF()
@@ -59,5 +60,5 @@ INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/diag/)
 
 IF(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_util_diag DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_util_diag EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 ENDIF()

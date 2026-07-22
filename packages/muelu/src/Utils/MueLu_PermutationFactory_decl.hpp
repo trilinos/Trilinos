@@ -29,7 +29,7 @@
 namespace MueLu {
 
 /*!
-  @class PermutationFactory class.
+  @class PermutationFactory
   @brief factory generates a row- and column permutation operators P and Q such that
   P*A*Q^T is a (hopefully) diagonal-dominant matrix.
   It's meant to be used with PermutingSmoother.

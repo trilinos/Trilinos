@@ -74,19 +74,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
   // confirm that we did get a hierarchy with two levels -- a sanity check for this test
   TEST_EQUALITY(2, H->GetGlobalNumLevels());
 
+  // When Kokkos Kernels uses TPLs, some Kokkos::deep_copy in the Kokkos Kernels native implementations are not called.
+  int kkNativeDeepCopies = 8;
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+  if constexpr (Node::is_cpu)
+    kkNativeDeepCopies = 0;
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::Cuda>) {
+    // kokkos kernels only uses cuSparse for these versions
+#if (CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040)
+    kkNativeDeepCopies = 0;
+#endif
+  }
+#endif
+#if defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+  if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>)
+    kkNativeDeepCopies = 0;
+#endif
+
   if (Node::is_cpu) {
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 0);
   }
 #ifdef KOKKOS_HAS_SHARED_SPACE
   else {
-    size_t targetNumDeepCopies = std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 27 : 42;
+    size_t targetNumDeepCopies = kkNativeDeepCopies + (std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 19 : 27);
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), targetNumDeepCopies);
   }
 #else
   else {
-    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 42);
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), kkNativeDeepCopies + 32);
   }
-#endif
+#endif  // KOKKOS_HAS_SHARED_SPACE
 
   auto X = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(map, 1);
   auto B = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(map, 1);
@@ -111,7 +130,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
 
 }  // H2D
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, Aggregration, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, Aggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -156,12 +175,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, Aggregration, Scalar, LocalOrdinal
   }
 #ifdef KOKKOS_HAS_SHARED_SPACE
   else {
-    size_t targetNumDeepCopies = std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 17 : 23;
+    size_t targetNumDeepCopies = std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 11 : 13;
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), targetNumDeepCopies);
   }
 #else
   else {
-    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 23);
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), 13);
   }
 #endif
 
@@ -174,7 +193,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, Aggregration, Scalar, LocalOrdinal
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Regression, H2D, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Regression, Aggregration, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Regression, Aggregation, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

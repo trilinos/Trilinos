@@ -32,7 +32,7 @@ bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec,
 }
 
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x,
-                    Epetra_Operator& Jac)
+                    Epetra_Operator& Jac_)
 {
   return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0, 1.0, 0.0);
 }
@@ -75,7 +75,7 @@ bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatr
 }
 
 bool Problem_Interface::computePreconditioner(const Epetra_Vector& x,
-                          Epetra_Operator& Prec,
+                          Epetra_Operator& Prec_,
                           Teuchos::ParameterList* p)
 {
   std::cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << std::endl;

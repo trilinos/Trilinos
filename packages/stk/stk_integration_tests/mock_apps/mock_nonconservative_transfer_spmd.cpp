@@ -1,4 +1,5 @@
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include "stk_search/CoarseSearch.hpp"
 #include "stk_middle_mesh/mesh.hpp"
@@ -338,7 +339,7 @@ std::function<double(const utils::Point&)> function_factory(const std::string& f
 {
   if (functionName == "constant")
   {
-    return [](const utils::Point& pt) { return 1; };  
+    return [](const utils::Point& /*pt*/) { return 1; };  
   } else if (functionName == "linear")
   {
     return [](const utils::Point& pt) { return pt.x + 2*pt.y + 3*pt.z; };
@@ -377,7 +378,7 @@ void write_output(mesh::FieldPtr<double> field1, mesh::FieldPtr<double> field2, 
 
 int main(int argc, char* argv[])
 {
-  stk::parallel_machine_init(&argc, &argv);
+  stk::initialize(&argc, &argv);
 
   {
     std::string defaultFileName1 = "generated:3x3x1|sideset:Z|bbox:0,0,0,1,1,1";
@@ -428,7 +429,7 @@ int main(int argc, char* argv[])
     write_output(field1, field2, functionName);
   }
   
-  stk::parallel_machine_finalize();
+  stk::finalize();
 
   return 0;
 }

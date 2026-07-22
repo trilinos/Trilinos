@@ -113,14 +113,12 @@ TEST ( UnitTestCreateFaces, Hex_2x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
-
-  fixture.m_meta.commit();
-  fixture.generate_mesh();
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
+  stk::mesh::fixtures::HexFixture::fill_mesh(NX, NY, NZ, *bulkPtr);
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::comm_mesh_counts( *bulkPtr , counts);
 
     EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
     EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
@@ -128,11 +126,11 @@ TEST ( UnitTestCreateFaces, Hex_2x1x1 )
     EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
-  stk::mesh::create_faces(fixture.m_bulk_data);
+  stk::mesh::create_faces(*bulkPtr);
 
   {
     std::vector<size_t> counts ;
-    stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
+    stk::mesh::comm_mesh_counts( *bulkPtr , counts);
 
     EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
     EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
@@ -148,7 +146,7 @@ TEST ( UnitTestCreateFaces, Tet_2x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -183,7 +181,7 @@ TEST( UnitTestCreateFaces , Hex_3x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -217,7 +215,7 @@ TEST( UnitTestCreateFaces , Tet_3x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -251,7 +249,7 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -370,7 +368,7 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -485,8 +483,8 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
 
 TEST ( UnitTestCreateFaces, Gears )
 {
-  stk::mesh::fixtures::simple_fields::GearsFixture fixture( MPI_COMM_WORLD, 1,
-                                                            stk::mesh::fixtures::simple_fields::GearParams(0.1, 0.4, 1.0, -0.4, 0.4));
+  stk::mesh::fixtures::GearsFixture fixture( MPI_COMM_WORLD, 1,
+                                                            stk::mesh::fixtures::GearParams(0.1, 0.4, 1.0, -0.4, 0.4));
 
   fixture.meta_data.commit();
   fixture.generate_mesh();
@@ -524,14 +522,14 @@ void heterogeneous_create_faces_test(stk::mesh::BulkData::AutomaticAuraOption au
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD, autoAuraOption);
   stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk_data = *bulkPtr;
-  stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+  stk::mesh::fixtures::VectorFieldType & node_coord =
       meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
   stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3, nullptr);
 
-  stk::mesh::fixtures::simple_fields::heterogeneous_mesh_meta_data( meta_data , node_coord );
+  stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();
 
-  stk::mesh::fixtures::simple_fields::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
+  stk::mesh::fixtures::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
 
   /*
    * Three hexes, three wedges, three tets, two pyramids,
@@ -617,14 +615,14 @@ TEST ( UnitTestCreateFaces, Degenerate )
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
   stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk_data = *bulkPtr;
-  stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+  stk::mesh::fixtures::VectorFieldType & node_coord =
       meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
   stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3, nullptr);
 
-  stk::mesh::fixtures::simple_fields::degenerate_mesh_meta_data( meta_data , node_coord );
+  stk::mesh::fixtures::degenerate_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();
 
-  stk::mesh::fixtures::simple_fields::degenerate_mesh_bulk_data( bulk_data , node_coord );
+  stk::mesh::fixtures::degenerate_mesh_bulk_data( bulk_data , node_coord );
 
   /*
    *  Z = 0 plane:

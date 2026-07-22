@@ -45,7 +45,7 @@
       bool getIsClosed() { return m_isClosed; }
 
       /// create an OpenNURBS curve that fits the given input points
-      virtual ON_Curve * fit(Vectors2D& input);
+      virtual ON_Curve * fit(Vectors2D& input) override;
       void print();
 
       const Vectors2D& Q() { return m_Q; }

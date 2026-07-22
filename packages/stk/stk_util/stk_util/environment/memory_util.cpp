@@ -120,12 +120,16 @@ void get_gpu_memory_info(size_t& used, size_t& free)
   free = 0;
   size_t total = 0;
 
-#ifdef __CUDACC__
+#ifdef KOKKOS_ENABLE_CUDA
   cudaError_t err = cudaMemGetInfo(&free, &total);
   STK_ThrowRequireMsg(err == cudaSuccess,
                   "stk::get_gpu_memory_info: cudaMemGetInfo returned error-code: "<<err);
-  used = total - free;
+#elif defined(KOKKOS_ENABLE_HIP)
+  hipError_t err = hipMemGetInfo(&free, &total);
+  STK_ThrowRequireMsg(err == hipSuccess,
+                  "stk::get_gpu_memory_info: hipMemGetInfo returned error-code: "<<err);
 #endif
+  used = total - free;
   STK_ThrowRequireMsg(total != std::numeric_limits<size_t>::max(), "total memory size must be finite");
   STK_ThrowRequireMsg(free != std::numeric_limits<size_t>::max(), "free memory size must be finite");
   STK_ThrowRequireMsg(total >= free, "total memory size must be >= free memory size");

@@ -15,7 +15,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -72,12 +71,12 @@ MarkerInterval::unrefine_element(const double error) {
 }
 
 void 
-MarkerInterval::markUsing(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec, bool do_refine)
+MarkerInterval::markUsing(double /*errIndRefineThreshold*/, std::vector<ErrIndInfoTuple>& /*errIndRefFieldVec*/, bool /*do_refine*/)
 {
   return;
 }
 
-size_t MarkerInterval::estimateNewElements(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec)
+size_t MarkerInterval::estimateNewElements(double /*errIndRefineThreshold*/, std::vector<ErrIndInfoTuple>& errIndRefFieldVec)
 {
   size_t numRefinedLocal = 0, numRefinedGlobal = 0;
   for (size_t i = 0; i < errIndRefFieldVec.size(); ++i) {

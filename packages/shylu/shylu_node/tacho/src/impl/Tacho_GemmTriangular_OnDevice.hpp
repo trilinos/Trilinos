@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_GEMM_TRIANGULAR_ON_DEVICE_HPP__
 #define __TACHO_GEMM_TRIANGULAR_ON_DEVICE_HPP__
@@ -27,7 +19,8 @@ Sandia National Laboratories, Albuquerque, NM, USA
 
 namespace Tacho {
 
-template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice> {
+template <>
+struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice> {
   template <typename ScalarType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
   inline static int blas_invoke(const ScalarType alpha, const ViewTypeA &A, const ViewTypeB &B, const ScalarType beta,
                                 const ViewTypeC &C) {
@@ -48,7 +41,7 @@ template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Up
       if (m == n) {
         const ordinal_type b = 32;
         value_type *aptr = A.data(), *bptr = B.data(), *cptr = C.data();
-        const int as1 = A.stride_1(), bs1 = B.stride_1(), cs1 = C.stride_1();
+        const int as1 = A.stride(1), bs1 = B.stride(1), cs1 = C.stride(1);
         for (ordinal_type i = 0; i < m; i += b) {
           const ordinal_type m2 = i + b, mm = (m2 > m ? m : m2), nn = mm - i;
           value_type *aaptr = aptr, *bbptr = bptr + i * bs1, *ccptr = cptr + i * cs1;
@@ -81,9 +74,10 @@ template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Up
 
     if (m > 0 && n > 0 && k > 0) {
       if (m == n) {
-        const ordinal_type b = 256;
+        char *b_env = getenv("TACHO_BLOCK_SIZE");
+        const ordinal_type b = (b_env == NULL ? 256 : atoi(b_env));
         value_type *aptr = A.data(), *bptr = B.data(), *cptr = C.data();
-        const int as1 = A.stride_1(), bs1 = B.stride_1(), cs1 = C.stride_1();
+        const int as1 = A.stride(1), bs1 = B.stride(1), cs1 = C.stride(1);
         if (m < 2 * b) {
           Blas<value_type>::gemm(handle, Trans::Transpose::cublas_param, Trans::NoTranspose::cublas_param, m, n, k,
                                  value_type(alpha), aptr, as1, bptr, bs1, value_type(beta), cptr, cs1);
@@ -124,7 +118,7 @@ template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Up
       if (m == n) {
         const ordinal_type b = 256;
         value_type *aptr = A.data(), *bptr = B.data(), *cptr = C.data();
-        const int as1 = A.stride_1(), bs1 = B.stride_1(), cs1 = C.stride_1();
+        const int as1 = A.stride(1), bs1 = B.stride(1), cs1 = C.stride(1);
         if (m < 2 * b) {
           Blas<value_type>::gemm(handle, Trans::Transpose::rocblas_param, Trans::NoTranspose::rocblas_param, m, n, k,
                                  value_type(alpha), aptr, as1, bptr, bs1, value_type(beta), cptr, cs1);

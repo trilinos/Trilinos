@@ -27,6 +27,20 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::SetupPhase(const ParameterList& params, Teuchos::RCP<const Teuchos::Comm<int>>& comm, LO& numLocalNodes, LO& numNonAggregatedNodes) {
+  bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2a");
+  if (matchMLbehavior) {
+    // Note: ML uses global counts to set the factor
+    // Passing  # of nonaggregated nodes and # of nodes via aggStat
+    GO in_data[2] = {(GO)numNonAggregatedNodes, (GO)numLocalNodes};
+    GO out_data[2];
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 2, in_data, out_data);
+    GO phase_one_aggregated = out_data[1] - out_data[0];
+    factorMLOverride_       = as<double>(phase_one_aggregated) / (out_data[1] + 1);
+  }
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const {
   Monitor m(*this, "BuildAggregatesNonKokkos");
 
@@ -49,13 +63,9 @@ void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggreg
   double factor;
 
   if (matchMLbehavior) {
-    // Note: ML uses global counts to set the factor
-    // Passing  # of nonaggregated nodes and # of nodes via aggStat
-    GO in_data[2] = {(GO)numNonAggregatedNodes, (GO)aggStat.size()};
-    GO out_data[2];
-    Teuchos::reduceAll(*graph.GetComm(), Teuchos::REDUCE_SUM, 2, in_data, out_data);
-    GO phase_one_aggregated = out_data[1] - out_data[0];
-    factor                  = as<double>(phase_one_aggregated) / (out_data[1] + 1);
+    // Computed in SetupPhase.
+    // This needs to be precomputed in case some ranks are done after phase1.
+    factor = factorMLOverride_;
 
     LO agg_stat_unaggregated = 0;
     LO agg_stat_aggregated   = 0;
@@ -76,6 +86,7 @@ void AggregationPhase2aAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggreg
     // MueLu defaults to using local counts to set the factor
     factor = as<double>(numLocalAggregated) / (numLocalNodes + 1);
   }
+  TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<double>::magnitude(factor)), Exceptions::RuntimeError, "Phase2a factor needs to be finite.");
 
   // Now apply aggFactor
   factor = pow(factor, aggFactor);
@@ -187,8 +198,8 @@ void AggregationPhase2aAlgorithm<LO, GO, Node>::
   const LO numRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();
 
-  auto vertex2AggId  = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto procWinner    = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto vertex2AggId  = aggregates.GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto procWinner    = aggregates.GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadWrite);
   auto colors        = aggregates.GetGraphColors();
   const LO numColors = aggregates.GetGraphNumColors();
 
@@ -206,7 +217,7 @@ void AggregationPhase2aAlgorithm<LO, GO, Node>::
   // If we can avoid this and use a simple LO that would be
   // simpler for later maintenance.
   Kokkos::View<LO, device_type> numLocalAggregates("numLocalAggregates");
-  typename Kokkos::View<LO, device_type>::HostMirror h_numLocalAggregates =
+  typename Kokkos::View<LO, device_type>::host_mirror_type h_numLocalAggregates =
       Kokkos::create_mirror_view(numLocalAggregates);
   h_numLocalAggregates() = aggregates.GetNumAggregates();
   Kokkos::deep_copy(numLocalAggregates, h_numLocalAggregates);
@@ -307,8 +318,8 @@ void AggregationPhase2aAlgorithm<LO, GO, Node>::
   const LO numRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();
 
-  auto vertex2AggId  = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto procWinner    = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto vertex2AggId  = aggregates.GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto procWinner    = aggregates.GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadWrite);
   auto colors        = aggregates.GetGraphColors();
   const LO numColors = aggregates.GetGraphNumColors();
 
@@ -322,7 +333,7 @@ void AggregationPhase2aAlgorithm<LO, GO, Node>::
   factor                 = pow(factor, aggFactor);
 
   Kokkos::View<LO, device_type> numLocalAggregates("numLocalAggregates");
-  typename Kokkos::View<LO, device_type>::HostMirror h_numLocalAggregates =
+  typename Kokkos::View<LO, device_type>::host_mirror_type h_numLocalAggregates =
       Kokkos::create_mirror_view(numLocalAggregates);
   h_numLocalAggregates() = aggregates.GetNumAggregates();
   Kokkos::deep_copy(numLocalAggregates, h_numLocalAggregates);

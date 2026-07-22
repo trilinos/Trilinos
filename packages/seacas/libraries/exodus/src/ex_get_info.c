@@ -57,7 +57,7 @@ int ex_get_info(int exoid, char **info)
   /* inquire previously defined dimensions and variables  */
   int rootid = exoid & EX_FILE_ID_MASK;
   int dimid;
-  if ((status = nc_inq_dimid(rootid, DIM_NUM_INFO, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(rootid, DIM_NUM_INFO, &dimid)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Warning: failed to locate number of info records in file id %d", rootid);
@@ -66,7 +66,7 @@ int ex_get_info(int exoid, char **info)
   }
 
   size_t num_info;
-  if ((status = nc_inq_dimlen(rootid, dimid, &num_info)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(rootid, dimid, &num_info)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of info records in file id %d",
              rootid);
@@ -77,7 +77,7 @@ int ex_get_info(int exoid, char **info)
   /* do this only if there are any information records */
   if (num_info > 0) {
     int varid;
-    if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate info record data in file id %d",
                rootid);
@@ -90,7 +90,7 @@ int ex_get_info(int exoid, char **info)
       size_t start[] = {i, 0};
       size_t count[] = {1, MAX_LINE_LENGTH + 1};
 
-      if ((status = nc_get_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
+      if ((status = nc_get_vara_text(rootid, varid, start, count, info[i])) != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get info record data in file id %d",
                  rootid);

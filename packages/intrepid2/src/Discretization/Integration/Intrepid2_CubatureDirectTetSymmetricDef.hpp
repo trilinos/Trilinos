@@ -18,7 +18,7 @@ namespace Intrepid2 {
   template <typename DT, typename PT, typename WT>
   CubatureDirectTetSymmetric<DT,PT,WT>::
   CubatureDirectTetSymmetric(const ordinal_type degree)
-    : CubatureDirect<DT>(degree, 3) {
+    : CubatureDirect<DT,PT,WT>(degree, 3) {
 
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 ||
                                   degree > static_cast<ordinal_type>(Parameters::MaxCubatureDegreeTet), std::out_of_range,

@@ -44,10 +44,6 @@ bool MueLuRefMaxwellPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, N
 
   if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isTpetra(fwdOp)) return true;
 
-#ifdef HAVE_MUELU_EPETRA
-  if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isEpetra(fwdOp)) return true;
-#endif
-
   return false;
 }
 
@@ -58,7 +54,7 @@ RCP<PreconditionerBase<Scalar>> MueLuRefMaxwellPreconditionerFactory<Scalar, Loc
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MueLuRefMaxwellPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    initializePrec(const RCP<const LinearOpSourceBase<Scalar>>& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    initializePrec(const RCP<const LinearOpSourceBase<Scalar>>& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse /*supportSolveUse*/) const {
   // we are using typedefs here, since we are using objects from different packages (Xpetra, Thyra,...)
   typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpOp;
   typedef Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpThyUtils;
@@ -91,9 +87,8 @@ void MueLuRefMaxwellPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, N
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
   // Check whether it is Epetra/Tpetra
-  bool bIsEpetra = XpThyUtils::isEpetra(fwdOp);
   bool bIsTpetra = XpThyUtils::isTpetra(fwdOp);
-  TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == true && bIsTpetra == true));
+  TEUCHOS_TEST_FOR_EXCEPT((bIsTpetra == false));
 
   // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
   // MueLu needs a non-const object as input

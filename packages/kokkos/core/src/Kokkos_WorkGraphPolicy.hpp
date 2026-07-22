@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #include <Kokkos_Macros.hpp>
@@ -120,7 +107,7 @@ class WorkGraphPolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
                                         (std::int32_t)BEGIN_TOKEN))) {
         // Attempt to claim ready work index succeeded,
         // update the hint and return work index
-        atomic_increment(begin_hint);
+        atomic_inc(begin_hint);
         return w;
       }
       // arrive here when ready_queue[i] == BEGIN_TOKEN
@@ -169,7 +156,7 @@ class WorkGraphPolicy : public Kokkos::Impl::PolicyTraits<Properties...> {
   void operator()(const TagCount, int i) const noexcept {
     std::int32_t* const count_queue = &m_queue[m_graph.numRows()];
 
-    atomic_increment(count_queue + m_graph.entries[i]);
+    atomic_inc(count_queue + m_graph.entries[i]);
   }
 
   KOKKOS_INLINE_FUNCTION

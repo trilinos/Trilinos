@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,14 +10,15 @@
 #include "iqsort.h"       // for index_qsort
 #include "smart_assert.h" // for SMART_ASSERT
 #include <cstdlib>        // for exit
-#include <vector>         // for vector
+#include <fmt/format.h>
+#include <vector> // for vector
 
 template <typename INT> Edge_Block<INT>::Edge_Block() : Exo_Entity() {}
 
 template <typename INT>
 Edge_Block<INT>::Edge_Block(int file_id, size_t id) : Exo_Entity(file_id, id)
 {
-  SMART_ASSERT((int)id != EX_INVALID_ID);
+  SMART_ASSERT(static_cast<int>(id) != EX_INVALID_ID);
 }
 
 template <typename INT>
@@ -50,12 +51,13 @@ template <typename INT> void Edge_Block<INT>::entity_load_params()
 
   if (num_edges_per_elmt < 0 || num_attr < 0) {
     Error(fmt::format(
-        "Edge_Block<INT>::entity_load_params(): Data appears corrupt for edge block {}!\n"
-        "\tnum elmts          = {}\n"
-        "\tnum edges per elmt = {}\n"
-        "\tnum attributes     = {}\n"
-        " ... Aborting...\n",
-        fmt::group_digits(numEntity), num_edges_per_elmt, num_attr));
+        fmt::runtime(
+            "Edge_Block<INT>::entity_load_params(): Data appears corrupt for edge block {}!\n"
+            "\tnum elmts          = {}\n"
+            "\tnum edges per elmt = {}\n"
+            "\tnum attributes     = {}\n"
+            " ... Aborting...\n"),
+        block.id, fmt::group_digits(numEntity), num_edges_per_elmt, num_attr));
   }
 }
 

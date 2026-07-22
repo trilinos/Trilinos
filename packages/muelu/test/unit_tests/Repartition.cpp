@@ -867,12 +867,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, CoordinateMap, Scalar, LocalOrdin
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
-#if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#endif
 
   out << "version: " << MueLu::Version() << std::endl;
   out << "Tests that repartitioning is invariant to map specified in coordinates." << std::endl;
@@ -942,13 +936,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, CoordinateMap, Scalar, LocalOrdin
 
   // build a map that is a "randomly" permuted version of the correct
   // coordinate map.  This map will be used to build the "bad" coordinates.
-  RCP<const Map> coordMap = coordinates->getMap();
-  std::srand(Teuchos::as<unsigned int>(comm->getRank() * 31415));
+  RCP<const Map> coordMap                                  = coordinates->getMap();
   Teuchos::ArrayView<const GlobalOrdinal> correctLocalElts = coordMap->getLocalElementList();
   std::vector<GlobalOrdinal> eltsToShuffle;
   for (size_t i = 0; i < Teuchos::as<size_t>(correctLocalElts.size()); ++i)
     eltsToShuffle.push_back(correctLocalElts[i]);
-  std::random_shuffle(eltsToShuffle.begin(), eltsToShuffle.end(), [](GlobalOrdinal i) { return std::rand() % i; });
+  std::mt19937 g(Teuchos::as<unsigned int>(comm->getRank() * 31415));
+  std::shuffle(eltsToShuffle.begin(), eltsToShuffle.end(), g);
   Teuchos::Array<GlobalOrdinal> eltList(eltsToShuffle);
   RCP<const Map> badMap = MapFactory::Build(TestHelpers::Parameters::getLib(), coordMap->getGlobalNumElements(), eltList(), coordMap->getIndexBase(), comm);
 
@@ -977,12 +971,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, NodePartition, Scalar, LocalOrdin
   MUELU_TESTING_SET_OSTREAM;
 
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
-#if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#endif
 
   out << "version: " << MueLu::Version() << std::endl;
   out << "Tests that node repartitioning works " << std::endl;
@@ -1045,6 +1033,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, NodePartition, Scalar, LocalOrdin
 
 }  // NodePartition
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, PutOnSingleProc, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+  out << "Tests build of the permutation matrix for repartitioning." << std::endl;
+  out << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  int numProcs                        = comm->getSize();
+  // int myRank                          = comm->getRank();
+
+  const GlobalOrdinal nx = 5, ny = 3 * numProcs;
+
+  Teuchos::ParameterList matrixList;
+  matrixList.set("nx", nx);
+  matrixList.set("ny", ny);
+  matrixList.set("keepBCs", false);
+
+  RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, matrixList);
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+  RCP<Matrix> A = Pr->BuildMatrix();
+
+  Level level;
+  level.SetLevelID(2);
+  level.Set("A", A);
+
+  // If put on single proc doesn't work we should get more than one rank out ofit
+  RCP<RepartitionHeuristicFactory> repart = rcp(new RepartitionHeuristicFactory());
+  Teuchos::ParameterList paramList;
+  paramList.set("repartition: min rows per proc", 10);
+  paramList.set("repartition: put on single proc", 5000);
+  repart->SetParameterList(paramList);
+
+  // Build
+  level.Request("number of partitions", repart.get());
+  repart->Build(level);
+
+  int num_partitions = level.Get<int>("number of partitions", repart.get());
+
+  TEST_EQUALITY(num_partitions, 1);
+
+}  // PutOnSingleProc
+
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                           \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, Constructor, Scalar, LO, GO, Node)                  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, Build, Scalar, LO, GO, Node)                        \
@@ -1055,7 +1088,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, NodePartition, Scalar, LocalOrdin
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, DeterminePartitionPlacement5, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, Correctness, Scalar, LO, GO, Node)                  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, CoordinateMap, Scalar, LO, GO, Node)                \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, NodePartition, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, NodePartition, Scalar, LO, GO, Node)                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, PutOnSingleProc, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

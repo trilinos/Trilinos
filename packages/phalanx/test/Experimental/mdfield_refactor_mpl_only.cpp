@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
+//       Kernel for Flexible Management of Complex Dependency Chains
+//
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // This is a stand-alone toy code for experimenting with template
 // metaprogramming wrt MDFields. It is meant to be hand complied
 // WITHOUT any Trilinos dependencies using this line:

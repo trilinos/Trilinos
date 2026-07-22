@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_PAR_ILUT_SYMBOLIC_HPP_
 #define KOKKOSSPARSE_IMPL_PAR_ILUT_SYMBOLIC_HPP_
@@ -21,23 +8,21 @@
 /// \brief Implementation of the symbolic phase of sparse ILU(k).
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_par_ilut_handle.hpp>
 #include <KokkosSparse_par_ilut_numeric_impl.hpp>
 #include <Kokkos_Sort.hpp>
 #include <KokkosKernels_Error.hpp>
 
-//#define SYMBOLIC_OUTPUT_INFO
+// #define SYMBOLIC_OUTPUT_INFO
 
 namespace KokkosSparse {
 namespace Impl {
 namespace Experimental {
 
-template <class IlutHandle, class ARowMapType, class AEntriesType,
-          class LRowMapType, class URowMapType>
-void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d,
-                   const AEntriesType& A_entries_d, LRowMapType& L_row_map_d,
-                   URowMapType& U_row_map_d) {
+template <class IlutHandle, class ARowMapType, class AEntriesType, class LRowMapType, class URowMapType>
+void ilut_symbolic(IlutHandle& thandle, const ARowMapType& A_row_map_d, const AEntriesType& A_entries_d,
+                   LRowMapType& L_row_map_d, URowMapType& U_row_map_d) {
   using execution_space = typename ARowMapType::execution_space;
   using policy_type     = Kokkos::TeamPolicy<execution_space>;
   using member_type     = typename policy_type::member_type;

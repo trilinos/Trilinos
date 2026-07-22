@@ -1,40 +1,10 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
 include(TribitsPackageSetupCompilerFlags)
@@ -705,9 +675,9 @@ macro(tribits_package_postprocess_common)
 
   tribits_package_create_all_libs_interface_library()
 
-  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-    # Create the configure file so external projects can find packages with a
-    # call to find_package(<package_name>).
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+      AND (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+    )
     tribits_write_package_client_export_files(${PACKAGE_NAME})
   endif()
 
@@ -725,7 +695,7 @@ macro(tribits_package_create_all_libs_interface_library)
 
     # Find all of the non-TESTONLY library targets
     tribits_get_all_build_targets_including_in_subdirs("${CMAKE_CURRENT_SOURCE_DIR}"
-      "STATIC_LIBRARY;SHARED_LIBRARY"
+      "STATIC_LIBRARY;SHARED_LIBRARY;INTERFACE_LIBRARY"
       allPackageBuildableLibTargetsList )
     #print_var(allPackageBuildableLibTargetsList)
     set(packageLibsInAllLibsList)

@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_TEAMFUNCTOR_SOLVE_UPPER_LDL_HPP__
 #define __TACHO_TEAMFUNCTOR_SOLVE_UPPER_LDL_HPP__
@@ -222,7 +214,7 @@ public:
 
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        const auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
 
         ConstUnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
         ConstUnmanagedViewType<value_type_matrix> D(_diag.data() + offm * 2, m, 2);

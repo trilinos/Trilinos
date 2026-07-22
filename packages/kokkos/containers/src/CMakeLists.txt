@@ -1,33 +1,50 @@
 #need these here for now
-KOKKOS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+kokkos_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkos_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 #-----------------------------------------------------------------------------
 
-SET(KOKKOS_CONTAINERS_SRCS)
-APPEND_GLOB(KOKKOS_CONTAINERS_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/impl/*.cpp)
-SET(KOKKOS_CONTAINER_HEADERS)
-APPEND_GLOB(KOKKOS_CONTAINERS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/impl/*.hpp)
-APPEND_GLOB(KOKKOS_CONTAINERS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+set(KOKKOS_CONTAINERS_SRCS)
+append_glob(KOKKOS_CONTAINERS_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/impl/*.cpp)
+set(KOKKOS_CONTAINER_HEADERS)
+append_glob(KOKKOS_CONTAINERS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/impl/*.hpp)
+append_glob(KOKKOS_CONTAINERS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 
+set(KOKKOS_CONTAINERS_MODULES
+    Kokkos_Bitset.cppm
+    Kokkos_DualView.cppm
+    Kokkos_DynamicView.cppm
+    Kokkos_DynRankView.cppm
+    Kokkos_DynRankView_Impl.cppm
+    Kokkos_ErrorReporter.cppm
+    Kokkos_Functional.cppm
+    Kokkos_OffsetView.cppm
+    Kokkos_ScatterView.cppm
+    Kokkos_ScatterView_Impl.cppm
+    Kokkos_UnorderedMap.cppm
+    Kokkos_UnorderedMap_Impl.cppm
+)
 
-INSTALL (
+install(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
   DESTINATION ${KOKKOS_HEADER_DIR}
-  FILES_MATCHING PATTERN "*.hpp"
+  FILES_MATCHING
+  PATTERN "*.hpp"
 )
 
-KOKKOS_ADD_LIBRARY(
+kokkos_add_library(
   kokkoscontainers
-  SOURCES ${KOKKOS_CONTAINERS_SRCS}
-  HEADERS ${KOKKOS_CONTAINERS_HEADERS}
+  SOURCES
+  ${KOKKOS_CONTAINERS_SRCS}
+  HEADERS
+  ${KOKKOS_CONTAINERS_HEADERS}
+  MODULE_INTERFACE
+  ${KOKKOS_CONTAINERS_MODULES}
 )
 
-KOKKOS_LIB_INCLUDE_DIRECTORIES(kokkoscontainers
-  ${KOKKOS_TOP_BUILD_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}
+kokkos_lib_include_directories(
+  kokkoscontainers ${KOKKOS_TOP_BUILD_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
 )
-KOKKOS_LINK_INTERNAL_LIBRARY(kokkoscontainers kokkoscore)
+kokkos_link_internal_library(kokkoscontainers kokkoscore)
 
 #-----------------------------------------------------------------------------

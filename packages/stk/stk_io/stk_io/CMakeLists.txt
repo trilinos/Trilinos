@@ -36,8 +36,8 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(stk_io
@@ -47,7 +47,7 @@ if(HAVE_STK_Trilinos)
 else()
   if(STK_HAS_SEACAS_IOSS)
     add_library(stk_io ${SOURCES})
-    target_link_libraries(stk_io PUBLIC ${SEACAS_LIBRARIES})
+    target_link_libraries(stk_io PUBLIC SEACASIoss::all_libs)
     target_link_libraries(stk_io PUBLIC stk_mesh_base)
   endif()
 endif()
@@ -68,5 +68,5 @@ ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_io/)
 ADD_SUBDIRECTORY(util)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_io DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_io EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

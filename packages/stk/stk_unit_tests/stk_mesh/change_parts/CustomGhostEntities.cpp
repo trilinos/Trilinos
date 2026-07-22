@@ -12,11 +12,11 @@
 namespace
 {
 
-class CustomGhostEntities: public stk::unit_test_util::simple_fields::MeshFixture
+class CustomGhostEntities: public stk::unit_test_util::MeshFixture
 {
 protected:
   CustomGhostEntities()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       myPart(nullptr)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);

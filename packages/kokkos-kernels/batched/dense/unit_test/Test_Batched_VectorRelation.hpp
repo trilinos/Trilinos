@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 // Note: Luc Berger-Vergiat 04/14/21
@@ -21,10 +8,8 @@
 //       to ensure it is not included in these
 //       backends unit-test
 
-#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && \
-    !defined(TEST_HIP_BATCHED_DENSE_CPP) &&  \
-    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
+#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && !defined(TEST_HIP_BATCHED_DENSE_CPP) && \
+    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
@@ -46,7 +31,7 @@ void impl_test_batched_vector_relation() {
   typedef typename vector_type::value_type value_type;
   const int vector_length = vector_type::vector_length;
 
-  // typedef Kokkos::ArithTraits<value_type> ats;
+  // typedef KokkosKernels::ArithTraits<value_type> ats;
   // typedef typename ats::mag_type mag_type;
 
   vector_type a, b;
@@ -60,11 +45,10 @@ void impl_test_batched_vector_relation() {
 
     {
 #undef CHECK
-#define CHECK(op)                             \
-  {                                           \
-    const auto comparison = a op b;           \
-    for (int i = 0; i < vector_length; ++i)   \
-      EXPECT_EQ(comparison[i], a[i] op b[i]); \
+#define CHECK(op)                                                                   \
+  {                                                                                 \
+    const auto comparison = a op b;                                                 \
+    for (int i = 0; i < vector_length; ++i) EXPECT_EQ(comparison[i], a[i] op b[i]); \
   }
 
       CHECK(<);
@@ -75,11 +59,10 @@ void impl_test_batched_vector_relation() {
       CHECK(!=);
 
 #undef CHECK
-#define CHECK(op)                                      \
-  {                                                    \
-    const auto comparison = a op value_type(0);        \
-    for (int i = 0; i < vector_length; ++i)            \
-      EXPECT_EQ(comparison[i], a[i] op value_type(0)); \
+#define CHECK(op)                                                                            \
+  {                                                                                          \
+    const auto comparison = a op value_type(0);                                              \
+    for (int i = 0; i < vector_length; ++i) EXPECT_EQ(comparison[i], a[i] op value_type(0)); \
   }
 
       CHECK(<);
@@ -90,11 +73,10 @@ void impl_test_batched_vector_relation() {
       CHECK(!=);
 
 #undef CHECK
-#define CHECK(op)                                      \
-  {                                                    \
-    const auto comparison = value_type(0) op b;        \
-    for (int i = 0; i < vector_length; ++i)            \
-      EXPECT_EQ(comparison[i], value_type(0) op b[i]); \
+#define CHECK(op)                                                                            \
+  {                                                                                          \
+    const auto comparison = value_type(0) op b;                                              \
+    for (int i = 0; i < vector_length; ++i) EXPECT_EQ(comparison[i], value_type(0) op b[i]); \
   }
 
       CHECK(<);
@@ -113,9 +95,8 @@ void impl_test_batched_vector_relation() {
 
 template <typename DeviceType, typename VectorTagType, int VectorLength>
 int test_batched_vector_relation() {
-  static_assert(
-      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
-      "vector datatype is only tested on host space");
+  static_assert(Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+                "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_relation<VectorTagType, VectorLength>();
 
   return 0;

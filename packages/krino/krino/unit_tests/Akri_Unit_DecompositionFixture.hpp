@@ -38,10 +38,24 @@ CDFEM_Support & cdfem_support() { return CDFEM_Support::get(mMesh.mesh_meta_data
 
 FieldRef get_coordinates_field() { return this->get_aux_meta().get_current_coordinates(); }
 
+void connect_all_surfaces_to_all_blocks()
+{
+  std::vector<const stk::mesh::Part*> blocks;
+  for (auto && volumePart : mMesh.mesh_meta_data().get_mesh_parts())
+    if (volumePart->primary_entity_rank() == stk::topology::ELEMENT_RANK)
+      blocks.push_back(volumePart);
+
+  for (auto && surfacePart : mMesh.mesh_meta_data().get_mesh_parts())
+    if (surfacePart->primary_entity_rank() == mMesh.mesh_meta_data().side_rank())
+      mMesh.mesh_meta_data().set_surface_to_block_mapping(surfacePart, blocks);
+}
+
 void setup_ls_fields_with_options(const bool isDeath, const bool doRegisterField)
 {
   mMesh.mesh_meta_data().enable_late_fields();
 
+  if (false)
+  connect_all_surfaces_to_all_blocks();
   Block_Surface_Connectivity blockSurfaceConnectivity(mMesh.mesh_meta_data());
 
   if (isDeath)
@@ -121,6 +135,7 @@ void attempt_decompose_mesh()
   {
     std::cout << "Decomposing mesh failed with exception:\n";
     std::cout << exception.what() << "\n";
+    std::cout << log.get_log() << std::endl;
     ASSERT_TRUE(false);
   }
 }
@@ -150,36 +165,8 @@ void check_nonfatal_error(const std::string & baseName, const int iteration)
 
 void decompose_mesh()
 {
-  NodeToCapturedDomainsMap nodesToSnappedDomains;
   std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(mMesh.mesh_meta_data().spatial_dimension(), cdmesh->get_active_part(), cdfem_support(), Phase_Support::get(mMesh.mesh_meta_data()), levelset_fields());
-  if (cdfem_support().get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-  {
-    const double minIntPtWeightForEstimatingCutQuality = cdfem_support().get_snapper().get_edge_tolerance();
-    nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(cdmesh->stk_bulk(),
-        cdmesh->get_active_part(),
-        cdfem_support().get_snap_fields(),
-        *interfaceGeometry,
-        cdfem_support().get_global_ids_are_parallel_consistent(),
-        cdfem_support().get_snapping_sharp_feature_angle_in_degrees(),
-        minIntPtWeightForEstimatingCutQuality,
-        cdfem_support().get_max_edge_snap());
-  }
-  interfaceGeometry->prepare_to_decompose_elements(mMesh, nodesToSnappedDomains);
-
-  cdmesh->generate_nonconformal_elements();
-  if (cdfem_support().get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-    cdmesh->snap_nearby_intersections_to_nodes(*interfaceGeometry, nodesToSnappedDomains);
-  cdmesh->set_phase_of_uncut_elements(*interfaceGeometry);
-  cdmesh->triangulate(*interfaceGeometry);
-  cdmesh->decompose(*interfaceGeometry);
-  cdmesh->stash_field_data(-1);
-  cdmesh->modify_mesh();
-  cdmesh->prolongation();
-
-  if (krinolog.shouldPrint(LOG_DEBUG))
-  {
-    cdmesh->debug_output();
-  }
+  cdmesh->decompose_mesh(*interfaceGeometry, -1);
 }
 
 void expect_num_entities(const unsigned numGold, const stk::mesh::Selector & select, const stk::mesh::EntityRank entityRank)
@@ -222,7 +209,6 @@ void setup_cdfem_support()
 {
   FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
   cdfem_support().set_coords_field(coordsField);
-  cdfem_support().add_edge_interpolation_field(coordsField);
   cdfem_support().register_parent_node_ids_field();
 
   cdfem_support().set_prolongation_model(INTERPOLATION);

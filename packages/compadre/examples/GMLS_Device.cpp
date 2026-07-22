@@ -60,6 +60,7 @@ bool all_passed = true;
     auto problem_name = clp.problem_name;
     auto number_of_batches = clp.number_of_batches;
     bool keep_coefficients = number_of_batches==1;
+    Compadre::WeightingFunctionType wt = clp.kernel_type;
     
     // the functions we will be seeking to reconstruct are in the span of the basis
     // of the reconstruction space we choose for GMLS, so the error should be very small
@@ -86,11 +87,11 @@ bool all_passed = true;
     // coordinates of source sites
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> source_coords_device("source coordinates", 
             number_source_coords, 3);
-    Kokkos::View<double**>::HostMirror source_coords = Kokkos::create_mirror_view(source_coords_device);
+    Kokkos::View<double**>::host_mirror_type source_coords = Kokkos::create_mirror_view(source_coords_device);
     
     // coordinates of target sites
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> target_coords_device ("target coordinates", number_target_coords, 3);
-    Kokkos::View<double**>::HostMirror target_coords = Kokkos::create_mirror_view(target_coords_device);
+    Kokkos::View<double**>::host_mirror_type target_coords = Kokkos::create_mirror_view(target_coords_device);
     
     
     // fill source coordinates with a uniform grid
@@ -211,16 +212,16 @@ bool all_passed = true;
     // why we can start with a neighbor_lists_device size of 0.
     Kokkos::View<int*> neighbor_lists_device("neighbor lists", 
             0); // first column is # of neighbors
-    Kokkos::View<int*>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+    Kokkos::View<int*>::host_mirror_type neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
     // number_of_neighbors_list must be the same size as the number of target sites so that it can be populated
     // with the number of neighbors for each target site.
     Kokkos::View<int*> number_of_neighbors_list_device("number of neighbor lists", 
             number_target_coords); // first column is # of neighbors
-    Kokkos::View<int*>::HostMirror number_of_neighbors_list = Kokkos::create_mirror_view(number_of_neighbors_list_device);
+    Kokkos::View<int*>::host_mirror_type number_of_neighbors_list = Kokkos::create_mirror_view(number_of_neighbors_list_device);
     
     // each target site has a window size
     Kokkos::View<double*, Kokkos::DefaultExecutionSpace> epsilon_device("h supports", number_target_coords);
-    Kokkos::View<double*>::HostMirror epsilon = Kokkos::create_mirror_view(epsilon_device);
+    Kokkos::View<double*>::host_mirror_type epsilon = Kokkos::create_mirror_view(epsilon_device);
     
     // query the point cloud to generate the neighbor lists using a kdtree to produce the n nearest neighbor
     // to each target site, adding (epsilon_multiplier-1)*100% to whatever the distance away the further neighbor used is from
@@ -292,7 +293,7 @@ bool all_passed = true;
     my_GMLS.addTargets(lro);
     
     // sets the weighting kernel function from WeightingFunctionType
-    my_GMLS.setWeightingType(WeightingFunctionType::Power);
+    my_GMLS.setWeightingType(wt);
     
     // power to use in that weighting kernel function
     my_GMLS.setWeightingParameter(2);

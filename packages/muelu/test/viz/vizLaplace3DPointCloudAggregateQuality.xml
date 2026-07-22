@@ -1,0 +1,35 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+  <Parameter        name="number of equations"                  type="int"      value="1"/>
+  <Parameter        name="coarse: max size"                     type="int"      value="500"/>
+  <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/>
+  <Parameter        name="use kokkos refactor"                  type="bool"     value="false"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                            type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop scheme"                     type="string"   value="classical"/>
+  <Parameter        name="aggregation: drop tol"                        type="double"   value="0.0"/>
+  <Parameter        name="aggregation: export visualization data"       type="bool"     value="true"/>
+  <Parameter        name="aggregation: compute aggregate qualities"     type="bool"     value="true"/>
+  <!--
+  <Parameter        name="aggregation: output filename"                 type="string"   value="Viz-Level%LEVELID.vtu"/>
+  -->
+  <Parameter        name="aggregation: output file: agg style"           type="string"   value="Point Cloud"/>
+  <Parameter        name="aggregation: output file: fine graph edges"    type="bool"     value="false"/>
+  <Parameter        name="aggregation: output file: coarse graph edges"  type="bool"     value="false"/>
+  <Parameter        name="aggregation: output file: build colormap"      type="bool"     value="false"/>
+  <Parameter        name="aggregation: output file: aggregate qualities" type="bool"     value="true"/>
+
+  <!-- ===========  SMOOTHING  =========== -->
+  <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>>
+    <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="7"/>
+    <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
+    <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+  </ParameterList>
+
+  <!-- ===========  REPARTITIONING  =========== -->
+  <Parameter        name="repartition: enable"                  type="bool"     value="false"/>
+
+</ParameterList>

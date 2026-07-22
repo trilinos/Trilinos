@@ -105,9 +105,11 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
       //  count_row++;
       //}
       int curr_lrid = k/nprocs_col;//note: nprocs_col (global var) cannot be read in a device function
-      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,RHS.extent(1)), KOKKOS_LAMBDA (const int i) {
-        ck(0,i) = RHS(curr_lrid,i);
-      });
+      if (curr_lrid < static_cast<int>(RHS.extent(0))) { //note: to avoid out-of-bounds access on the RHS
+        Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,RHS.extent(1)), KOKKOS_LAMBDA (const int i) {
+          ck(0,i) = RHS(curr_lrid,i);
+        });
+      }
 
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
       Kokkos::deep_copy(h_ck,ck);

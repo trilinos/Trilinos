@@ -25,7 +25,6 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     builder.set_spatial_dimension(3);
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Part* part = &meta.declare_part_with_topology("faceBlock", stk::topology::QUAD_4);
     stk::mesh::Field<double>& faceField = meta.declare_field<double>(stk::topology::FACE_RANK, "faceField", numStates);
@@ -38,10 +37,12 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(*bulk, stk::topology::FACE_RANK, meta.universal_part(), faces);
 
-    for(auto face : faces) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(faceField, face));
+    auto faceFieldData = faceField.data<stk::mesh::ReadWrite>();
 
-      *data = bulk->identifier(face);
+    for(auto face : faces) {
+      auto data = faceFieldData.entity_values(face);
+
+      data() = bulk->identifier(face);
     }
 
     stk::io::StkMeshIoBroker ioBroker;
@@ -52,7 +53,6 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Field<double>& faceField = meta.declare_field<double>(stk::topology::FACE_RANK, "faceField", numStates);
     stk::mesh::put_field_on_mesh(faceField, meta.universal_part(), nullptr);
@@ -68,11 +68,13 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(*bulk, stk::topology::FACE_RANK, faces);
 
+    auto faceFieldData = faceField.data();
+
     for(auto face : faces) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(faceField, face));
+      auto data = faceFieldData.entity_values(face);
       double expectedValue = bulk->identifier(face);
 
-      EXPECT_EQ(expectedValue, *data);
+      EXPECT_EQ(expectedValue, data());
     }
   }
 

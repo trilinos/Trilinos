@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_THREADS_PARALLEL_SCAN_RANGE_HPP
 #define KOKKOS_THREADS_PARALLEL_SCAN_RANGE_HPP
@@ -39,7 +26,7 @@ class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
   const Policy m_policy;
 
   template <class TagType>
-  inline static std::enable_if_t<std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member &ibeg, const Member &iend,
       reference_type update, const bool final) {
 #if defined(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION) && \
@@ -52,7 +39,7 @@ class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline static std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<!std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member &ibeg, const Member &iend,
       reference_type update, const bool final) {
     const TagType t{};
@@ -119,7 +106,7 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
   const pointer_type m_result_ptr;
 
   template <class TagType>
-  inline static std::enable_if_t<std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member &ibeg, const Member &iend,
       reference_type update, const bool final) {
 #if defined(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION) && \
@@ -132,7 +119,7 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline static std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<!std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member &ibeg, const Member &iend,
       reference_type update, const bool final) {
     const TagType t{};

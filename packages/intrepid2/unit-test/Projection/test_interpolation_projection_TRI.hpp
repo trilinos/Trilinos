@@ -97,7 +97,7 @@ int InterpolationProjectionTri(const bool verbose) {
   using DynRankViewIntHost = Kokkos::DynRankView<ordinal_type,Kokkos::HostSpace>;
 
   int errorFlag = 0;
-  const ValueType tol = tolerence();
+  const ValueType tol = tolerance();
 
   //target functions and their derivatives
 

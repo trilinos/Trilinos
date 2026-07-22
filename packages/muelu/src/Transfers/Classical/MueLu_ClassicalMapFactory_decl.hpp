@@ -22,13 +22,12 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
 
-#include "MueLu_LWGraph_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
 
 namespace MueLu {
 
 /*!
-  @class ClassicalMapFactory class.
+  @class ClassicalMapFactory
   @brief Factory for generating F/C-splitting and a coarse level map. Used by ClassicalPFactory.
 
   @ingroup MueLuTransferClasses

@@ -43,8 +43,6 @@
 namespace stk {
 namespace balance {
 
-std::string construct_output_file_name(const std::string& outputDirectory, const std::string& inputFile);
-std::string construct_generic_parallel_file_name(const std::string& inputFile, unsigned numProcs);
 
 struct OptionNames
 {
@@ -62,6 +60,7 @@ struct OptionNames
   const std::string fixMechanisms = "fix-mechanisms";
   const std::string decompMethod = "decomp-method";
   const std::string vertexWeightBlockMultiplier = "block-weights";
+  const std::string cohesiveElements = "cohesive-elements";
   const std::string useNestedDecomp = "use-nested-decomp";
 
   const std::string vertexWeightMethod = "vertex-weight-method";
@@ -109,6 +108,7 @@ private:
   void set_contact_search_tolerance(BalanceSettings& settings) const;
   void set_decomp_method(BalanceSettings& settings) const;
   void set_vertex_weight_block_multiplier(BalanceSettings& settings) const;
+  void set_cohesive_elements(BalanceSettings& settings) const;
   void set_print_diagnostics(BalanceSettings& settings) const;
 
   void set_vertex_weight_method(BalanceSettings& settings) const;

@@ -21,7 +21,7 @@ MPITagManager::MPITagManager(int deletionGroupSize, int delayCount) :
   MPI_Comm_get_attr(parallel_machine_world(), MPI_TAG_UB, &val, &flag);
   STK_ThrowRequireMsg(flag, "This MPI implementation is erroneous");
   STK_ThrowRequireMsg(*val >= m_tagMax, "MPI_TAG_UB must be at least " + std::to_string(m_tagMax));
-  m_tagMax = util::get_common_coupling_version() >= 9 ? *val - 1 : *val;
+  m_tagMax = *val - 1;
 
   m_callbackUID = m_keyManager->get_UID();
 }
@@ -150,7 +150,7 @@ void MPITagManager::erase_comm(MPI_Comm origComm)
 }
 
 
-void MPITagManager::check_same_value_on_all_procs_debug_only(MPI_Comm comm, int newVal)
+void MPITagManager::check_same_value_on_all_procs_debug_only([[maybe_unused]] MPI_Comm comm, [[maybe_unused]] int newVal)
 {
 #ifndef NDEBUG
   int commSize, myrank;
@@ -178,8 +178,6 @@ void MPITagManager::check_same_value_on_all_procs_debug_only(MPI_Comm comm, int 
 
 MPITagManager& get_mpi_tag_manager()
 {
-  stk::util::print_unsupported_version_warning(7, __LINE__, __FILE__);
-
   static int delayCount = -1;
   if (delayCount < 0)
   {
@@ -191,18 +189,7 @@ MPITagManager& get_mpi_tag_manager()
     delayCount = std::max(2*std::ceil(std::log2(commSize)), 4.0);
   }
 
-  int deletionGroupSize;
-  if (stk::util::get_common_coupling_version() >= 9)
-  {
-    deletionGroupSize = std::max(33, 2 * delayCount);
-  } else if (stk::util::get_common_coupling_version() >= 8)
-  {
-    deletionGroupSize = 33;
-  } else
-  {
-    deletionGroupSize = 32;
-  }
-
+  int deletionGroupSize = std::max(33, 2 * delayCount);
 
   static MPITagManager tagManager(deletionGroupSize, delayCount);
   return tagManager;

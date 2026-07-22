@@ -411,7 +411,7 @@ after ex_inquire: EX_INQ_SS_DF_LEN = 8
 
 after ex_get_concat_side_sets, error =   0
 concatenated side set info
-ids = 
+ids =
  30
  31
  32
@@ -421,7 +421,7 @@ ids =
  36
  37
  38
-num_elem_per_set = 
+num_elem_per_set =
   0
   0
   2
@@ -431,7 +431,7 @@ num_elem_per_set =
   2
   4
   2
-num_dist_per_set = 
+num_dist_per_set =
   0
   0
   4
@@ -441,7 +441,7 @@ num_dist_per_set =
   0
   0
   0
-elem_ind = 
+elem_ind =
   0
   0
   0
@@ -451,7 +451,7 @@ elem_ind =
  15
  17
  21
-dist_ind = 
+dist_ind =
   0
   0
   0
@@ -461,7 +461,7 @@ dist_ind =
   8
   8
   8
-elem_list = 
+elem_list =
   2
   2
   1
@@ -485,7 +485,7 @@ elem_list =
   7
   8
   8
-side_list = 
+side_list =
   4
   2
   2
@@ -509,7 +509,7 @@ side_list =
   6
   1
   3
-dist_fact = 
+dist_fact =
 30.000
 30.100
 30.200

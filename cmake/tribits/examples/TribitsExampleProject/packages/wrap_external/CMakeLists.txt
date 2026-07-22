@@ -82,7 +82,7 @@ add_custom_command(
   OUTPUT ${EXTERNAL_FUNC_MAKEFILE}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
     ${EXTERNAL_FUNC_SOURCE_DIR}/configure.py
-  COMMAND ${PYTHON_EXECUTABLE} ${EXTERNAL_FUNC_SOURCE_DIR}/configure.py
+  COMMAND ${Python3_EXECUTABLE} ${EXTERNAL_FUNC_SOURCE_DIR}/configure.py
     "--cxx=${CMAKE_CXX_COMPILER}"
     "--cxx-flags=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${upperBuildType}}"
     "--ar=${CMAKE_AR}"

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023,  National Technology & Engineering Solutions
+// Copyright(C) 1999-2024,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -222,7 +222,7 @@ namespace SEAMS {
     void dumpsym_json() const;
     void dumpsym(int type, const char *pre, bool doInternal) const;
 
-    array *make_array(int r, int c);
+    array *make_array(size_t r, size_t c);
     array *make_array(const array &from);
     void   redefine_array(array *data);
 

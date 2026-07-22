@@ -49,10 +49,12 @@ public:
   typedef SolverCore<Amesos2::KLU2,Matrix,Vector>             super_type;
 
   // Since typedef's are not inheritted, go grab them
+  typedef typename VectorTraits<Vector>::scalar_t        vector_scalar_type;
   typedef typename super_type::scalar_type                      scalar_type;
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
+  typedef typename super_type::node_type                         node_type;
 
   typedef TypeMap<Amesos2::KLU2,scalar_type>                    type_map;
 
@@ -193,6 +195,15 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
+
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
+
+
   // struct holds all data necessary for KLU2 factorization or solve call
   mutable struct KLU2Data {
       ::KLU2::klu_symbolic<klu2_dtype, local_ordinal_type> *symbolic_;
@@ -223,11 +234,20 @@ private:
   /// Persisting 1D store for B
   mutable host_solve_array_t bValues_;
 
+  /// Cached distribution map for B/X redistribution; avoids recomputing the
+  /// gather map (MPI collective) on every solve call.
+  mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
+                                          global_ordinal_type,
+                                          node_type>> distributionMap_;
+
   /// Transpose flag
   /// 0: Non-transpose, 1: Transpose, 2: Conjugate-transpose
   int transFlag_;
 
   bool is_contiguous_;
+  bool use_gather_;
+
+  int debug_level_;
 };                              // End class KLU2
 
 

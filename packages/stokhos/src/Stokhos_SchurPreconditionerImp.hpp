@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseSolver.hpp"
@@ -78,24 +44,24 @@ fact (ordinal_type n) const
 template <typename ordinal_type, typename value_type>
 ordinal_type 
 Stokhos::SchurPreconditioner<ordinal_type,value_type>::
-size (ordinal_type n, ordinal_type m) const
+size (ordinal_type n, ordinal_type lm) const
 {
-  //n is the polynomial order and m is the number of random variables
-  // return (fact(n+m)/(fact(n)*fact(m)));
+  //n is the polynomial order and lm is the number of random variables
+  // return (fact(n+lm)/(fact(n)*fact(lm)));
   ordinal_type min;
   if (n == 0 ) 
     return 1;
   else {
-    if (n<=m){
+    if (n<=lm){
       min = n;
     }
     else {
-      min = m;
+      min = lm;
     }
     
-    ordinal_type num = n+m;
+    ordinal_type num = n+lm;
     for (ordinal_type i=1; i<=min-1; i++)
-      num = num*(n+m-i);
+      num = num*(n+lm-i);
     return num/fact(min); 
   }
 }

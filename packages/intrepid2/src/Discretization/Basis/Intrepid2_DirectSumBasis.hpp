@@ -77,9 +77,9 @@ namespace Intrepid2
         name_ = basisName.str();
       }
       
-      this->basisCellTopology_ = basis1->getBaseCellTopology();
-      this->basisType_         = basis1->getBasisType();
-      this->basisCoordinates_  = basis1->getCoordinateSystem();
+      this->basisCellTopologyKey_ = basis1->getBaseCellTopology().getKey();
+      this->basisType_            = basis1->getBasisType();
+      this->basisCoordinates_     = basis1->getCoordinateSystem();
 
       if (this->basisType_ == BASIS_FEM_HIERARCHICAL)
       {
@@ -126,7 +126,7 @@ namespace Intrepid2
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
         
-        shards::CellTopology cellTopo = this->basisCellTopology_;
+        shards::CellTopology cellTopo(getCellTopologyData(this->basisCellTopologyKey_));
         
         unsigned spaceDim  = cellTopo.getDimension();
         

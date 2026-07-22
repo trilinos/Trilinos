@@ -47,6 +47,7 @@
 #include <string>                           // for string
 #include <utility>                          // for pair, swap
 #include <vector>                           // for vector
+#include <any>
 #include "mpi.h"                            // for MPI_Comm, ompi_communicat...
 #include "stk_io/FieldAndName.hpp"          // for FieldAndName, UserDataAnd...
 #include "stk_io/OutputVariableParams.hpp"  // for OutputVariableParams
@@ -85,6 +86,7 @@ public:
       m_checkFieldExistenceWhenCreatingNodesets(true),
       m_usePartIdForOutput(true),
       m_meshDefined(false),
+      m_meshWritten(false),
       m_fieldsDefined(false),
       m_anyGlobalVariablesDefined(false),
       m_appendingToMesh(false),
@@ -108,7 +110,7 @@ public:
         initialize_output_selectors();
     }
 
-    OutputFile(std::shared_ptr<Ioss::Region> ioss_output_region, MPI_Comm communicator,
+    OutputFile(std::shared_ptr<Ioss::Region> ioss_output_region, MPI_Comm /*communicator*/,
                DatabasePurpose db_type, const Ioss::Region *input_region)
     : m_currentOutputStep(-1),
       m_useNodesetForBlockNodesFields(false),
@@ -116,6 +118,7 @@ public:
       m_checkFieldExistenceWhenCreatingNodesets(true),
       m_usePartIdForOutput(true),
       m_meshDefined(false),
+      m_meshWritten(false),
       m_fieldsDefined(false),
       m_anyGlobalVariablesDefined(false),
       m_appendingToMesh(false),
@@ -148,6 +151,16 @@ public:
     void setup_output_params(OutputParams &params) const;
 
     bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes);
+
+    void reset_mesh_definition()
+    {
+      m_meshDefined   = false;
+      m_meshWritten   = false;
+      m_fieldsDefined = false;
+    }
+
+    void define_output_mesh(const stk::mesh::BulkData& bulk_data,
+                            const std::vector<std::vector<int>> &attributeOrdering);
 
     void write_output_mesh(const stk::mesh::BulkData& bulk_data,
                            const std::vector<std::vector<int>> &attributeOrdering);
@@ -212,7 +225,6 @@ public:
     void has_adaptivity(bool hasAdaptivity);
 
     bool is_skin_mesh() const;
-    void is_skin_mesh(bool skinMesh);
 
     void set_enable_edge_io(bool enableEdgeIO);
 
@@ -223,8 +235,11 @@ public:
 
     std::vector<stk::mesh::Entity> get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name);
 
-private:
     void define_output_fields(const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
+
+    const std::vector<stk::io::FieldAndName>& get_defined_output_fields() const { return m_namedFields; }
+
+private:
     void setup_output_file(const std::string &filename, MPI_Comm communicator,
                            Ioss::PropertyManager &property_manager,
                            char const* type = "exodus", bool openFileImmediately = true);
@@ -242,6 +257,7 @@ private:
     bool m_checkFieldExistenceWhenCreatingNodesets;
     bool m_usePartIdForOutput;
     bool m_meshDefined;
+    bool m_meshWritten;
     bool m_fieldsDefined;
     bool m_anyGlobalVariablesDefined;
     bool m_appendingToMesh;

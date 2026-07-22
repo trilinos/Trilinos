@@ -80,10 +80,8 @@ void
 NodeBalancer::getGlobalLoadImbalance(double &loadFactor, int& numLocallyOwnedNodes)
 {
   stk::mesh::Selector localSelector = m_metaData.locally_owned_part();
-  stk::mesh::EntityVector ownedNodes;
-  stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, localSelector, ownedNodes);
+  numLocallyOwnedNodes = stk::mesh::count_entities(m_bulkData, stk::topology::NODE_RANK, localSelector);
 
-  numLocallyOwnedNodes = ownedNodes.size();
   int maxLocallyOwned = 0;
   int minLocallyOwned = 0;
   stk::all_reduce_max(m_bulkData.parallel(), &numLocallyOwnedNodes, &maxLocallyOwned, 1);

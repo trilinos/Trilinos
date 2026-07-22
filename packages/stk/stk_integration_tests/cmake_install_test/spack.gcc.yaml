@@ -1,0 +1,181 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - cmake@3.29.4
+  - boost@1.85.0
+  - hdf5@1.14.3
+  - zlib
+  - openmpi@4.1.6
+  - parallel-netcdf@1.12.3
+  - netcdf-c@4.9.2
+  - parmetis@4.0.3
+  - metis@5.1.0
+  - yaml-cpp@0.8.0
+  view: true
+  concretizer:
+    unify: true
+  config:
+      install_tree:
+        root: SED_REPLACE_STK_SPACK_INSTALL_PATH
+      build_stage:
+      - SED_REPLACE_STK_SPACK_STAGE_PATH
+  compilers:
+  - compiler:
+      spec: gcc@=12.3.0
+      paths:
+        cc: /projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/gcc
+        cxx: /projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/g++
+        f77: /projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/gfortran
+        fc: /projects/aue/cee/deploy/9d138342/linux-rhel8-x86_64/gcc-11.4.0/gcc-12.3.0-ac54ws5/bin/gfortran
+      flags: {}
+      operating_system: rhel8
+      target: x86_64
+      modules:
+      - aue/gcc/12.3.0
+      environment: {}
+      extra_rpaths: []
+  packages:
+    binutils:
+      externals:
+      - spec: binutils@2.45
+        prefix: /projects/aue/cee/deploy/1c89fec8/linux-rhel8-x86_64/gcc-14.2.0/binutils-2.45-rx7nvkz
+    coreutils:
+      externals:
+      - spec: coreutils@8.30
+        prefix: /usr
+    diffutils:
+      externals:
+      - spec: diffutils@3.6
+        prefix: /usr
+    findutils:
+      externals:
+      - spec: findutils@4.6.0
+        prefix: /usr
+    gawk:
+      externals:
+      - spec: gawk@4.2.1
+        prefix: /usr
+    openssh:
+      externals:
+      - spec: openssh@8.0p1
+        prefix: /usr
+    openssl:
+      externals:
+      - spec: openssl@1.1.1k
+        prefix: /usr
+    tar:
+      externals:
+      - spec: tar@1.30
+        prefix: /usr
+    autoconf:
+      externals:
+      - spec: autoconf@2.69
+        prefix: /usr
+    automake:
+      externals:
+      - spec: automake@1.16.1
+        prefix: /usr
+    bison:
+      externals:
+      - spec: bison@3.0.4
+        prefix: /usr
+    cmake:
+      buildable: false
+      externals:
+      - spec: cmake@3.29.4
+        modules:
+        - aue/cmake/3.29.4
+    curl:
+      externals:
+      - spec: curl@7.61.1+gssapi+ldap+nghttp2
+        prefix: /usr
+    cvs:
+      externals:
+      - spec: cvs@1.11.23
+        prefix: /usr
+    doxygen:
+      externals:
+      - spec: doxygen@1.8.14+graphviz~mscgen
+        prefix: /usr
+    flex:
+      externals:
+      - spec: flex@2.6.1+lex
+        prefix: /usr
+    git:
+      externals:
+      - spec: git@2.48.1
+        prefix: /projects/aue/cee/deploy/a9bfb60e/linux-rhel8-x86_64/gcc-14.2.0/git-2.48.1-hxb6ssm
+    gmake:
+      externals:
+      - spec: gmake@4.2.1
+        prefix: /usr
+    groff:
+      externals:
+      - spec: groff@1.22.3
+        prefix: /usr
+    m4:
+      externals:
+      - spec: m4@1.4.18
+        prefix: /usr
+    pkgconf:
+      externals:
+      - spec: pkgconf@1.4.2
+        prefix: /usr
+    subversion:
+      externals:
+      - spec: subversion@1.10.2
+        prefix: /usr
+    swig:
+      externals:
+      - spec: swig@3.0.12
+        prefix: /usr
+    texinfo:
+      externals:
+      - spec: texinfo@6.5
+        prefix: /usr
+    boost:
+      buildable: false
+      externals:
+      - spec: boost@1.85.0
+        modules:
+        - aue/boost/1.85.0-gcc-12.3.0-openmpi-4.1.6
+    hdf5:
+      buildable: false
+      externals:
+      - spec: hdf5@1.14.3
+        modules:
+        - aue/hdf5/1.14.3-gcc-12.3.0-openmpi-4.1.6
+    parallel-netcdf:
+      buildable: false
+      externals:
+      - spec: parallel-netcdf@1.12.3
+        modules:
+        - aue/parallel-netcdf/1.12.3-gcc-12.3.0-openmpi-4.1.6
+    netcdf-c:
+      buildable: false
+      externals:
+      - spec: netcdf-c@4.9.2
+        modules:
+        - aue/netcdf-c/4.9.2-gcc-12.3.0-openmpi-4.1.6
+    parmetis:
+      buildable: false
+      externals:
+      - spec: parmetis@4.0.3
+        modules:
+        - aue/parmetis/4.0.3-gcc-12.3.0-openmpi-4.1.6
+    metis:
+      buildable: false
+      externals:
+      - spec: metis@5.1.0
+        modules:
+        - aue/metis/5.1.0-gcc-12.3.0
+    openmpi:
+      buildable: false
+      externals:
+      - spec: openmpi@4.1.6
+        modules:
+        - aue/openmpi/4.1.6-gcc-12.3.0

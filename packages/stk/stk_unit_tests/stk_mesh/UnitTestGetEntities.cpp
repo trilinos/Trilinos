@@ -3,10 +3,9 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
-namespace
-{
+namespace {
 
-class GetEntitiesTest : public stk::unit_test_util::simple_fields::MeshFixture { };
+class GetEntitiesTest : public stk::unit_test_util::MeshFixture { };
 
 TEST_F(GetEntitiesTest, get_num_entities)
 {

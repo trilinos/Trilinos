@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Xpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef XPETRA_MULTIVECTOR_DECL_HPP
 #define XPETRA_MULTIVECTOR_DECL_HPP
 
@@ -55,11 +19,11 @@
 #include "Xpetra_DistObject.hpp"
 #include "Xpetra_Map_decl.hpp"
 
-#include "Xpetra_Access.hpp"
+#include "Tpetra_Access.hpp"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace Xpetra {
 
@@ -267,54 +231,54 @@ class MultiVector
   //! Set multi-vector values to random numbers. XPetra implementation
   virtual void Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal);
 
-  using impl_scalar_type     = typename Kokkos::ArithTraits<Scalar>::val_type;
+  using impl_scalar_type     = typename KokkosKernels::ArithTraits<Scalar>::val_type;
   using dual_view_type       = Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;
   using dual_view_type_const = Kokkos::DualView<const impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;
   using host_execution_space = typename dual_view_type::host_mirror_space;
   using dev_execution_space  = typename dual_view_type::t_dev::execution_space;
 
-  virtual typename dual_view_type::t_host_const_um getHostLocalView(Access::ReadOnlyStruct) const {
-    throw std::runtime_error("Dummy function getHostLocalView(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_host_const_um getLocalViewHost(Tpetra::Access::ReadOnlyStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewHost(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_host_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const {
-    throw std::runtime_error("Dummy function getDeviceLocalView(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_dev_const_um getLocalViewDevice(Tpetra::Access::ReadOnlyStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewDevice(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_dev_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::OverwriteAllStruct) const {
-    throw std::runtime_error("Dummy function getHostLocalView(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Tpetra::Access::OverwriteAllStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewHost(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_host_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const {
-    throw std::runtime_error("Dummy function getDeviceLocalView(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Tpetra::Access::OverwriteAllStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewDevice(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_dev_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::ReadWriteStruct) const {
-    throw std::runtime_error("Dummy function getHostLocalView(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Tpetra::Access::ReadWriteStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewHost(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_host_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const {
-    throw std::runtime_error("Dummy function getDeviceLocalView(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Tpetra::Access::ReadWriteStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewDevice(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_dev_um test;
 #endif

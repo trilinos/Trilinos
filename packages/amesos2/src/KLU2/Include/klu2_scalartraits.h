@@ -68,10 +68,10 @@ struct KLU_ScalarTraits<float>
 
 template <typename T>
 struct KLU_ScalarTraits<
-std::complex<T>
+::std::complex<T>
 >
 {
-    typedef std::complex<T> ComplexT ;
+    typedef ::std::complex<T> ComplexT ;
     typedef typename KLU_ScalarTraits<T>::magnitudeType magnitudeType ;
 
     static inline ComplexT reciprocal (ComplexT c)
@@ -84,13 +84,13 @@ std::complex<T>
         {
             r = ci / cr ;
             den = cr + r * ci ;
-            ret = std::complex<T>(1.0 / den, -r / den) ;
+            ret = ::std::complex<T>(1.0 / den, -r / den) ;
         }
         else
         {
             r = cr / ci ;
             den = r * cr + ci ;
-            ret = std::complex<T>(r / den, -1.0 / den) ;
+            ret = ::std::complex<T>(r / den, -1.0 / den) ;
         }
         return ret;
     }
@@ -108,13 +108,13 @@ std::complex<T>
         {
             r = bi / br ;
             den = br + r * bi ;
-            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
+            ret = ::std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
         }
         else
         {
             r = br / bi ;
             den = r * br + bi ;
-            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
+            ret = ::std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
         }
         return ret;
     }
@@ -132,13 +132,13 @@ std::complex<T>
         {
             r = (-bi) / br ;
             den = br - r * bi ;
-            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
+            ret = ::std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
         }
         else
         {
             r = br / (-bi) ;
             den =  r * br - bi;
-            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
+            ret = ::std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
         }
         return ret;
     }

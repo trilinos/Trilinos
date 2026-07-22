@@ -26,16 +26,13 @@ The Exodus library source code is available on Github at
 https://github.com/sandialabs/seacas
 
 For bug reports, documentation errors, and enhancement suggestions, contact:
-- Gregory D. Sjaardema
 - WEB:   https://github.com/sandialabs/seacas/issues
-- EMAIL: gdsjaar@sandia.gov
-- EMAIL: gsjaardema@gmail.com
-- PHONE: (505) 844-2701 (office)
+- EMAIL: sierra-help@sandia.gov
 
 \section license License
 The EXODUS library is licensed under the BSD open source license.
 
-     Copyright(C) 1999-2022 National Technology & Engineering Solutions
+     Copyright(C) 1999-2022, 2025 National Technology & Engineering Solutions
      of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
      NTESS, the U.S. Government retains certain rights in this software.
 
@@ -223,15 +220,15 @@ an integer which can be and'ed with the above flags to determine
 either the storage type or function parameter type.
 
 For example, if
-`(#EX_MAPS_INT64_DB & ex_int64_status()(exoid))` is true, then map data is
+`(EX_MAPS_INT64_DB & ex_int64_status()(exoid))` is true, then map data is
 being stored as 64-bit integers for that database.
 
 It is not possible to determine the integer data size on a database
 without opening the database via an ex_open() call. However, the
 integer size specification for API functions can be changed at any
 time via the ex_set_int64_status()(exoid, mode) function. The mode is
-one or more of `#EX_MAPS_INT64_API`, `#EX_IDS_INT64_API`, or
-`#EX_BULK_INT64_API`, or'd together.  Any exodus function calls after
+one or more of `EX_MAPS_INT64_API`, `EX_IDS_INT64_API`, or
+`EX_BULK_INT64_API`, or'd together.  Any exodus function calls after
 that point will use the specified integer size. Note that a call to
 ex_set_int64_status()(exoid, mode) overrides any previous setting for
 the integer sizes used in the API.  The ex_create() function is the

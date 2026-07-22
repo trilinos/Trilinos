@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -79,12 +79,12 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* Make sure the file contains entries */
-  if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dnumentries, &dimid) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* first check if any maps are specified */
-  if ((status = nc_inq_dimid(exoid, dnummaps, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnummaps, &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss specified in file id %d",
              ex_name_of_object(map_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -109,7 +109,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   /* Check for duplicate map id entry */
   if (!map_exists) {
     /* Get number of maps initialized for this file */
-    if ((status = nc_inq_dimlen(exoid, dimid, &num_maps)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &num_maps)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d",
                ex_name_of_object(map_type), exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -144,14 +144,14 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* determine number of elements */
-  if ((status = nc_inq_dimid(exoid, dnumentries, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumentries, &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: couldn't determine number of mesh objects in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimlen(exoid, dimid, &num_mobj)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &num_mobj)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of mesh objects in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -163,7 +163,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
     ent_start = 0;
   }
 
-  if (ent_start < 0 || ent_start > num_mobj) {
+  if (ent_start < 0 || ent_start > (int64_t)num_mobj) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: start count is invalid in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -173,7 +173,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  if (ent_count > 0 && (ent_start + ent_count - 1 > num_mobj)) {
+  if (ent_count > 0 && (ent_start + ent_count - 1 > (int64_t)num_mobj)) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start+count-1 is larger than mesh object count in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
@@ -194,7 +194,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   if (!map_exists) {
     start[0] = cur_num_maps;
     {
-      if ((status = nc_put_var1_longlong(exoid, varid, start, (long long *)&map_id)) != NC_NOERR) {
+      if ((status = nc_put_var1_longlong(exoid, varid, start, (long long *)&map_id)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s id %" PRId64 " in file id %d",
                  ex_name_of_object(map_type), map_id, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -216,7 +216,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* locate variable array in which to store the map */
-  if ((status = nc_inq_varid(exoid, vmap, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vmap, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -238,7 +238,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
     status = nc_put_vara_int(exoid, varid, start, count, map);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s in file id %d",
              ex_name_of_object(map_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

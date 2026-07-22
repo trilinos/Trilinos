@@ -1,24 +1,16 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 #include <type_traits>
 #include <typeinfo>
@@ -44,7 +36,7 @@ struct TestViewCtorProp_EmbeddedDim {
     void operator()(const int i) const { v(i) = i; }
   };
 
-  static void test_vcpt(const int N0, const int N1) {
+  static void test_vcpt(const size_t N0, const size_t N1) {
     // Create views to test
     {
       using VIT = typename TestViewCtorProp_EmbeddedDim::ViewIntType;
@@ -62,7 +54,7 @@ struct TestViewCtorProp_EmbeddedDim {
         using CommonViewValueType =
             typename decltype(view_alloc_arg)::value_type;
         using CVT     = typename Kokkos::View<CommonViewValueType*, ExecSpace>;
-        using HostCVT = typename CVT::HostMirror;
+        using HostCVT = typename CVT::host_mirror_type;
 
         // Construct View using the common type; for case of specialization, an
         // 'embedded_dim' would be stored by view_alloc_arg
@@ -74,11 +66,11 @@ struct TestViewCtorProp_EmbeddedDim {
         HostCVT hcv1 = Kokkos::create_mirror_view(cv1);
         Kokkos::deep_copy(hcv1, cv1);
 
-        ASSERT_EQ((std::is_same<CommonViewValueType, double>::value), true);
-        ASSERT_EQ(
-            (std::is_same<typename decltype(view_alloc_arg)::scalar_array_type,
-                          CommonViewValueType>::value),
-            true);
+        ASSERT_EQ((std::is_same_v<CommonViewValueType, double>), true);
+        ASSERT_EQ((std::is_same_v<typename decltype(view_alloc_arg)::data_type,
+                                  CommonViewValueType>),
+                  true);
+
 #if 0
       // debug output
       for ( int i = 0; i < N0*N1; ++i ) {
@@ -87,11 +79,11 @@ struct TestViewCtorProp_EmbeddedDim {
 
       printf( " Common value type view: %s \n", typeid( CVT() ).name() );
       printf( " Common value type: %s \n", typeid( CommonViewValueType() ).name() );
-      if ( std::is_same< CommonViewValueType, double >::value == true ) {
+      if ( std::is_same_v< CommonViewValueType, double > == true ) {
         printf("Proper common value_type\n");
       }
       else {
-        printf("WRONG common value_type\n");
+        printf("Wrong common value_type\n");
       }
       // end debug output
 #endif
@@ -103,7 +95,7 @@ struct TestViewCtorProp_EmbeddedDim {
         using CommonViewValueType =
             typename decltype(view_alloc_arg)::value_type;
         using CVT     = typename Kokkos::View<CommonViewValueType*, ExecSpace>;
-        using HostCVT = typename CVT::HostMirror;
+        using HostCVT = typename CVT::host_mirror_type;
 
         // Construct View using the common type; for case of specialization, an
         // 'embedded_dim' would be stored by view_alloc_arg
@@ -115,7 +107,7 @@ struct TestViewCtorProp_EmbeddedDim {
         HostCVT hcv1 = Kokkos::create_mirror_view(cv1);
         Kokkos::deep_copy(hcv1, cv1);
 
-        ASSERT_EQ((std::is_same<CommonViewValueType, int>::value), true);
+        ASSERT_EQ((std::is_same_v<CommonViewValueType, int>), true);
       }
     }
 

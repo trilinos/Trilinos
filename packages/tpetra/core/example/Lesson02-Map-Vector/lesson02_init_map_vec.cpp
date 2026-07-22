@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*!
@@ -53,20 +21,19 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 
-void
-exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                std::ostream& out)
-{
+void exampleRoutine(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                    std::ostream& out) {
   using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  const int myRank = comm->getRank ();
+  const int myRank = comm->getRank();
   if (myRank == 0) {
     // Print out the Tpetra software version information.
-    out << Tpetra::version () << endl << endl;
+    out << Tpetra::version() << endl
+        << endl;
   }
 
   //
@@ -112,7 +79,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // type in the code below.  Leaving the typedef in that case will
   // make the compiler emit "unused typedef" warnings.
   //
-  //typedef Tpetra::Vector<>::local_ordinal_type local_ordinal_type;
+  // typedef Tpetra::Vector<>::local_ordinal_type local_ordinal_type;
 
   // The "GlobalOrdinal" (GO) type is the type of "global" indices.
   // We use the default GO type here, which we get from
@@ -131,7 +98,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // This line is commented out because we don't actually use this
   // type in the code below.  Leaving the typedef in that case will
   // make the compiler emit "unused typedef" warnings.
-  //typedef Tpetra::Vector<>::node_type node_type;
+  // typedef Tpetra::Vector<>::node_type node_type;
 
   // Maps know how to convert between local and global indices, so of
   // course they are templated on the local and global Ordinal types.
@@ -170,7 +137,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // example with any number of MPI processes and every process will
   // still have a positive number of entries.
   const Tpetra::global_size_t numGlobalEntries =
-    comm->getSize () * numLocalEntries;
+      comm->getSize() * numLocalEntries;
 
   // Tpetra can index the entries of a Map starting with 0 (C style),
   // 1 (Fortran style), or any base you want.  1-based indexing is
@@ -192,15 +159,15 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // create it as a "const map_type".  If you want a new data
   // distribution, create a new Map.
   RCP<const map_type> contigMap =
-    rcp (new map_type (numGlobalEntries, indexBase, comm));
+      rcp(new map_type(numGlobalEntries, indexBase, comm));
 
   // contigMap is contiguous by construction.  Test this at run time.
   // Lesson 01 introduced the TEUCHOS_TEST_FOR_EXCEPTION macro, which
   // throws an exception of the given type (second argument) with the
   // given message (third argument), if the first argument is true.
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! contigMap->isContiguous (), std::logic_error,
-    "The supposedly contiguous Map isn't contiguous.");
+      !contigMap->isContiguous(), std::logic_error,
+      "The supposedly contiguous Map isn't contiguous.");
 
   // contigMap2: Create a Map which is the same as contigMap, but uses
   // a different Map constructor.  This one asks for the number of
@@ -210,14 +177,14 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // entries on each MPI process is the same, but that doesn't always
   // have to be the case.
   RCP<const map_type> contigMap2 =
-    rcp (new map_type (numGlobalEntries, numLocalEntries, indexBase, comm));
+      rcp(new map_type(numGlobalEntries, numLocalEntries, indexBase, comm));
 
   // Since contigMap and contigMap2 have the same communicators, and
   // the same number of entries on all MPI processes in their
   // communicators, they are "the same."
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! contigMap->isSameAs (*contigMap2), std::logic_error,
-    "contigMap should be the same as contigMap2, but it's not.");
+      !contigMap->isSameAs(*contigMap2), std::logic_error,
+      "contigMap should be the same as contigMap2, but it's not.");
 
   // contigMap3: Use the same Map constructor as contigMap3, but don't
   // specify the global number of entries.  This is helpful if you
@@ -227,15 +194,15 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // be unsigned, so don't use -1!!!), which we call "INVALID" (an
   // "invalid value" used as a flag).
   const Tpetra::global_size_t INVALID =
-    Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   RCP<const map_type> contigMap3 =
-    rcp (new map_type (INVALID, numLocalEntries, indexBase, comm));
+      rcp(new map_type(INVALID, numLocalEntries, indexBase, comm));
 
   // Even though we made contigMap3 without specifying the global
   // number of entries, it should still be the same as contigMap2.
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! contigMap2->isSameAs (*contigMap3), std::logic_error,
-    "contigMap2 should be the same as contigMap3, but it's not.");
+      !contigMap2->isSameAs(*contigMap3), std::logic_error,
+      "contigMap2 should be the same as contigMap3, but it's not.");
 
   // Create a Map which has the same number of global entries per
   // process as contigMap, but distributes them differently, in
@@ -250,32 +217,32 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // don't do that here; we make a nonoverlapping (also called
     // "1-to-1") Map.
     Array<global_ordinal_type>::size_type numEltsPerProc = 5;
-    Array<global_ordinal_type> elementList (numEltsPerProc);
+    Array<global_ordinal_type> elementList(numEltsPerProc);
 
-    const int numProcs = comm->getSize ();
+    const int numProcs = comm->getSize();
     for (Array<global_ordinal_type>::size_type k = 0; k < numEltsPerProc; ++k) {
-      elementList[k] = myRank + k*numProcs;
+      elementList[k] = myRank + k * numProcs;
     }
 
-    cyclicMap = rcp (new map_type (numGlobalEntries, elementList, indexBase, comm));
+    cyclicMap = rcp(new map_type(numGlobalEntries, elementList, indexBase, comm));
   }
 
   // If there's more than one MPI process in the communicator,
   // then cyclicMap is definitely NOT contiguous.
   TEUCHOS_TEST_FOR_EXCEPTION(
-    comm->getSize () > 1 && cyclicMap->isContiguous (),
-    std::logic_error,
-    "The cyclic Map claims to be contiguous.");
+      comm->getSize() > 1 && cyclicMap->isContiguous(),
+      std::logic_error,
+      "The cyclic Map claims to be contiguous.");
 
   // contigMap and cyclicMap should always be compatible.  However, if
   // the communicator contains more than 1 process, then contigMap and
   // cyclicMap are NOT the same.
-  TEUCHOS_TEST_FOR_EXCEPTION(! contigMap->isCompatible (*cyclicMap),
-    std::logic_error,
-    "contigMap should be compatible with cyclicMap, but it's not.");
-  TEUCHOS_TEST_FOR_EXCEPTION(comm->getSize() > 1 && contigMap->isSameAs (*cyclicMap),
-    std::logic_error,
-    "contigMap should be compatible with cyclicMap, but it's not.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!contigMap->isCompatible(*cyclicMap),
+                             std::logic_error,
+                             "contigMap should be compatible with cyclicMap, but it's not.");
+  TEUCHOS_TEST_FOR_EXCEPTION(comm->getSize() > 1 && contigMap->isSameAs(*cyclicMap),
+                             std::logic_error,
+                             "contigMap should be compatible with cyclicMap, but it's not.");
 
   //////////////////////////////////////////////////////////////////////
   // We have maps now, so we can create vectors.
@@ -291,34 +258,34 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   // Create a Vector with the contiguous Map.  This version of the
   // constructor will fill in the vector with zeros.
-  vector_type x (contigMap);
+  vector_type x(contigMap);
 
   // The two-argument copy constructor with second argument
   // Teuchos::Copy performs a deep copy.  x and y have the same Map.
   // The one-argument copy constructor does a _shallow_ copy.
-  vector_type y (x, Teuchos::Copy);
+  vector_type y(x, Teuchos::Copy);
 
   // Create a Vector with the 1-D cyclic Map.  Calling the constructor
   // with false for the second argument leaves the data uninitialized,
   // so that you can fill it later without paying the cost of
   // initially filling it with zeros.
-  vector_type z (cyclicMap, false);
+  vector_type z(cyclicMap, false);
 
   // Set the entries of z to (pseudo)random numbers.  Please don't
   // consider this a good parallel pseudorandom number generator.
-  z.randomize ();
+  z.randomize();
 
   // Set the entries of x to all ones.
   //
   // The code below works because scalar_type=double.  In general, you
   // may use the commented-out line of code, if the conversion from
   // float to scalar_type is not defined for your scalar type.
-  x.putScalar (1.0);
-  //x.putScalar (Teuchos::ScalarTraits<scalar_type>::one());
+  x.putScalar(1.0);
+  // x.putScalar (Teuchos::ScalarTraits<scalar_type>::one());
 
   // See comment above about type conversions to scalar_type.
   const scalar_type alpha = 3.14159;
-  const scalar_type beta = 2.71828;
+  const scalar_type beta  = 2.71828;
   const scalar_type gamma = -10.0;
 
   // x = beta*x + alpha*z
@@ -326,12 +293,12 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // This is a legal operation!  Even though the Maps of x and z are
   // not the same, their Maps are compatible.  Whether it makes sense
   // or not depends on your application.
-  x.update (alpha, z, beta);
+  x.update(alpha, z, beta);
 
   // See comment above about type conversions from float to scalar_type.
-  y.putScalar (42.0);
+  y.putScalar(42.0);
   // y = gamma*y + alpha*x + beta*z
-  y.update (alpha, x, beta, z, gamma);
+  y.update(alpha, x, beta, z, gamma);
 
   // Compute the 2-norm of y.
   //
@@ -343,8 +310,8 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // If you are using an older version of Tpetra, this code might not
   // work.  Try the commented-out line instead in that case.
   typedef Tpetra::Vector<>::mag_type mag_type;
-  //typedef Teuchos::ScalarTraits<scalar_type>::magnitudeType mag_type;
-  const mag_type theNorm = y.norm2 ();
+  // typedef Teuchos::ScalarTraits<scalar_type>::magnitudeType mag_type;
+  const mag_type theNorm = y.norm2();
 
   // Print the norm of y on Proc 0.
   if (myRank == 0) {
@@ -355,18 +322,16 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 //
 // The same main() driver routine as in the first Tpetra lesson.
 //
-int
-main (int argc, char *argv[])
-{
-  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
     // Never allow Tpetra objects to persist past ScopeGuard's
     // destructor.
-    auto comm = Tpetra::getDefaultComm ();
-    exampleRoutine (comm, std::cout);
+    auto comm = Tpetra::getDefaultComm();
+    exampleRoutine(comm, std::cout);
 
     // This tells the Trilinos test framework that the test passed.
-    if (comm->getRank () == 0) {
+    if (comm->getRank() == 0) {
       std::cout << "End Result: TEST PASSED" << std::endl;
     }
   }

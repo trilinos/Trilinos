@@ -6,7 +6,7 @@
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
 #include <stk_tools/block_extractor/ExtractBlocks.hpp>
-#include <stk_tools/transfer_utils/TransientFieldTransferById.hpp>
+#include <stk_transfer_util/TransientFieldTransferById.hpp>
 
 namespace test_stk_lib {
 

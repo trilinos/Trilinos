@@ -1,45 +1,12 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_RCP.hpp>
@@ -56,7 +23,6 @@
 #include <Ioss_EdgeBlock.h>
 #include <Ioss_FaceBlock.h>
 #include <Ioss_Region.h>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
@@ -277,8 +243,12 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
       mesh.buildLocalFaceIDs();
       addFaceBlocks(mesh);
    }
-   mesh.endModification();
 
+   {
+     const bool find_and_set_shared_nodes_in_stk = false;
+     mesh.endModification(find_and_set_shared_nodes_in_stk);
+   }
+   
    if (userMeshScaling_) {
      stk::mesh::Field<double>* coord_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
      std::vector< const stk::mesh::FieldBase *> fields;
@@ -647,7 +617,10 @@ void STK_ExodusReaderFactory::addEdgeBlocks(STK_Interface & mesh) const
 
    /* For each element block, iterate over it's edge topologies.
     * For each edge topology, get the matching edge block and
-    * add all edges of that topology to the edge block.
+    * add all edges of that topology to the edge block. Make sure to include
+    * aura values - when they are marked shared, the part membership
+    * gets updated, if only ghosted the part memberships are not
+    * automatically updated.
     */
    for (auto iter : elemBlockUniqueEdgeTopologies_) {
       std::string elemBlockName = iter.first;
@@ -660,14 +633,11 @@ void STK_ExodusReaderFactory::addEdgeBlocks(STK_Interface & mesh) const
          stk::mesh::Selector owned_block;
          owned_block  = *elemBlockPart;
          owned_block &= edgeTopoPart;
-         owned_block &= metaData->locally_owned_part();
 
          std::string edge_block_name = mkBlockName(panzer_stk::STK_Interface::edgeBlockString, topo.name());
          stk::mesh::Part * edge_block = mesh.getEdgeBlock(edge_block_name);
 
-         std::vector<stk::mesh::Entity> all_edges_for_topo;
-         bulkData->get_entities(mesh.getEdgeRank(),owned_block,all_edges_for_topo);
-         mesh.addEntitiesToEdgeBlock(all_edges_for_topo, edge_block);
+         bulkData->change_entity_parts(owned_block, mesh.getEdgeRank(), stk::mesh::PartVector{edge_block});
       }
    }
 }
@@ -679,9 +649,12 @@ void STK_ExodusReaderFactory::addFaceBlocks(STK_Interface & mesh) const
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
 
-   /* For each element block, iterate over it's face topologies.
-    * For each face topology, get the matching face block and
-    * add all faces of that topology to the face block.
+   /* For each element block, iterate over it's face topologies.  For
+    * each face topology, get the matching face block and add all
+    * faces of that topology to the face block. Make sure to include
+    * aura values - when they are marked shared, the part membership
+    * gets updated, if only ghosted the part memberships are not
+    * automatically updated.
     */
    for (auto iter : elemBlockUniqueFaceTopologies_) {
       std::string elemBlockName = iter.first;
@@ -694,14 +667,11 @@ void STK_ExodusReaderFactory::addFaceBlocks(STK_Interface & mesh) const
          stk::mesh::Selector owned_block;
          owned_block  = *elemBlockPart;
          owned_block &= faceTopoPart;
-         owned_block &= metaData->locally_owned_part();
 
          std::string face_block_name = mkBlockName(panzer_stk::STK_Interface::faceBlockString, topo.name());
          stk::mesh::Part * face_block = mesh.getFaceBlock(face_block_name);
 
-         std::vector<stk::mesh::Entity> all_faces_for_topo;
-         bulkData->get_entities(mesh.getFaceRank(),owned_block,all_faces_for_topo);
-         mesh.addEntitiesToFaceBlock(all_faces_for_topo, face_block);
+         bulkData->change_entity_parts(owned_block, mesh.getFaceRank(), stk::mesh::PartVector{face_block});
       }
    }
 }

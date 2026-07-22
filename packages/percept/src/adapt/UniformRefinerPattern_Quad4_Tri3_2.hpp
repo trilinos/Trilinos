@@ -21,7 +21,7 @@
     {
     public:
 
-      virtual bool edgeMarkIsEnough() { return false; }
+      virtual bool edgeMarkIsEnough() override { return false; }
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Quadrilateral<4> , shards::Triangle<3> >(eMesh)
        {
          EXCEPTWATCH;
@@ -33,37 +33,39 @@
 
        }
 
-      virtual void doBreak() {}
+      virtual void doBreak() override {}
 
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(0);
         //needed_entities[0] = (m_eMesh.get_spatial_dim() == 2 ? stk::topology::ELEMENT_RANK :  m_eMesh.face_rank());
         setToOne(needed_entities);
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 2; }
+      virtual unsigned getNumNewElemPerElem() override { return 2; }
 
-      virtual size_t estimateNumberOfNewElements(percept::PerceptMesh& eMesh, stk::mesh::EntityRank rank, NodeRegistry& nodeRegistry, size_t num_elem_not_ghost)
+      virtual size_t estimateNumberOfNewElements(percept::PerceptMesh& /*eMesh*/, stk::mesh::EntityRank /*rank*/, NodeRegistry& /*nodeRegistry*/, size_t num_elem_not_ghost) override
       {
 
         unsigned num_elem_needed = num_elem_not_ghost * this->getNumNewElemPerElem();
         return num_elem_needed;
       }
 
-      virtual StringStringMap fixSurfaceAndEdgeSetNamesMap()
+      virtual StringStringMap fixSurfaceAndEdgeSetNamesMap() override
       {
         StringStringMap str_map;
+        str_map["wedge6"] = "tet4";
+        str_map["pyramid5"] = "tet4";
         str_map["hex8"] = "tet4";
         str_map["quad4"] = "tri3";
         return str_map;
       }
 
       void
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& /*nodeRegistry*/,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& /*new_sub_entity_nodes*/, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
         typedef std::array<stk::mesh::EntityId, 3> tri_tuple_type;

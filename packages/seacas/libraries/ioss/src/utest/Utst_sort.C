@@ -1,14 +1,15 @@
-// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "Ioss_Sort.h"
+#include <array>
 #include <cassert>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream>
 #include <random>
 #include <stddef.h>
@@ -73,9 +74,9 @@ namespace {
 
 TEST_CASE("empty")
 {
-  std::vector<int64_t> x{};
+  std::vector<int64_t> x;
   Ioss::sort(x);
-  REQUIRE(verify_sorted(x));
+  CHECK(verify_sorted(x));
 }
 
 TEST_CASE("single-element")
@@ -83,7 +84,7 @@ TEST_CASE("single-element")
   int64_t              n = GENERATE(100, 1023, 1024, 1025, (2 << 16) - 1, 2 << 16, (2 << 16) + 1);
   std::vector<int64_t> x{n};
   Ioss::sort(x);
-  REQUIRE(verify_sorted(x));
+  CHECK(verify_sorted(x));
 }
 
 TEST_CASE("sort")
@@ -102,40 +103,40 @@ TEST_CASE("sort")
     SECTION("output")
     {
       // Just printing output; no test...
-      std::string type[] = {"sawtooth", "do_rand", "stagger", "plateau", "shuffle"};
+      std::array<std::string, 5> type = {"sawtooth", "do_rand", "stagger", "plateau", "shuffle"};
       fmt::print("Size: {:8}, Shape = {:8}, Type = {:12}\n", n, m, type[dist - 1]);
     }
 
     DYNAMIC_SECTION("as generated" << n << m << dist)
     {
       Ioss::sort(x); // Copy of x
-      REQUIRE(verify_sorted(x));
+      CHECK(verify_sorted(x));
     }
 
     DYNAMIC_SECTION("reversed" << n << m << dist)
     {
       std::reverse(x.begin(), x.end()); // Reversed
       Ioss::sort(x);
-      REQUIRE(verify_sorted(x));
+      CHECK(verify_sorted(x));
     }
 
     DYNAMIC_SECTION("front-half reversed" << n << m << dist)
     {
       std::reverse(&x[0], &x[n / 2]); // Front half reversed
       Ioss::sort(x);
-      REQUIRE(verify_sorted(x));
+      CHECK(verify_sorted(x));
     }
 
     DYNAMIC_SECTION("back-half reversed" << n << m << dist)
     {
       std::reverse(&x[n / 2], &x[n]); // Back half reversed
       Ioss::sort(x);
-      REQUIRE(verify_sorted(x));
+      CHECK(verify_sorted(x));
       DYNAMIC_SECTION("already sorted" << n << m << dist)
       {
-        //        REQUIRE(verify_sorted(x));
+        //        CHECK(verify_sorted(x));
         Ioss::sort(x); // Already sorted
-        REQUIRE(verify_sorted(x));
+        CHECK(verify_sorted(x));
       }
     }
 
@@ -145,7 +146,7 @@ TEST_CASE("sort")
         x[p] += p % 5;
       }
       Ioss::sort(x); // Dithered
-      REQUIRE(verify_sorted(x));
+      CHECK(verify_sorted(x));
     }
   }
 }

@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Xpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef XPETRA_CRSGRAPH_HPP
 #define XPETRA_CRSGRAPH_HPP
 
@@ -56,9 +20,7 @@
 
 #include "Xpetra_Map.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
-#include <Kokkos_StaticCrsGraph.hpp>
-#endif
+#include <KokkosSparse_StaticCrsGraph.hpp>
 
 namespace Xpetra {
 
@@ -227,10 +189,11 @@ class CrsGraph
 
   //! @name Tpetra-specific routines
   //@{
-#ifdef HAVE_XPETRA_TPETRA
   typedef typename node_type::execution_space execution_space;
   typedef typename node_type::device_type device_type;
-  typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t> local_graph_type;
+  using local_graph_type        = KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t>;
+  using local_graph_device_type = KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t>;
+  using local_graph_host_type   = typename local_graph_device_type::host_mirror_type;
 
   /// \brief Get the local graph.
   ///
@@ -239,17 +202,11 @@ class CrsGraph
   ///
   /// This is only a valid representation of the local graph if the
   /// (global) graph is fill complete.
-  virtual typename local_graph_type::HostMirror getLocalGraphHost() const = 0;
-  virtual local_graph_type getLocalGraphDevice() const                    = 0;
+  virtual typename local_graph_type::host_mirror_type getLocalGraphHost() const = 0;
+  virtual local_graph_type getLocalGraphDevice() const                          = 0;
 
   //! Get offsets of the diagonal entries in the matrix.
   virtual void getLocalDiagOffsets(const Kokkos::View<size_t *, device_type, Kokkos::MemoryUnmanaged> &offsets) const = 0;
-
-#else
-#ifdef __GNUC__
-#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
-#endif
 
   //@}
 

@@ -59,11 +59,11 @@ template <typename OrdinalOutputIterator>
 struct fill_ordinal_container {
 
   template <typename Ordinal>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Ordinal i)
   { *m_itr = i; ++m_itr; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   fill_ordinal_container( OrdinalOutputIterator itr)
     : m_itr(itr)
   {}
@@ -87,7 +87,7 @@ struct fill_ordinal_container< std::vector<T,A> >
 };
  
 #ifdef __GNUC__
-# if (__GNUC__ == 11)
+# if (__GNUC__ >= 11)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Warray-bounds"
 #   define SIERRA_GCC_POP_DIAG
@@ -98,11 +98,11 @@ template <typename NodeArray, typename NodeOutputIterator>
 struct fill_node_container {
 
   template <typename Ordinal>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Ordinal i)
   { *m_itr = m_nodes[i]; ++m_itr; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   fill_node_container( const NodeArray & nodes, NodeOutputIterator itr)
     : m_nodes(nodes)
     , m_itr(itr)
@@ -123,7 +123,7 @@ struct fill_node_container<NodeArray, std::vector<T,A> > {
   void operator()(Ordinal i)
   { *m_itr = m_nodes[i]; ++m_itr; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   fill_node_container( const NodeArray & nodes, std::vector<T,A> & vec)
     : m_nodes(nodes)
     , m_itr(vec.begin())

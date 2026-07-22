@@ -1,7 +1,7 @@
 #include "mpi.h"
 #include <stk_util/stk_config.h>
 #include <stk_tools/block_extractor/ExtractBlocks.hpp>
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_transfer_util/TransientFieldTransferById.hpp"
 #include <stk_io/FillMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
@@ -98,16 +98,21 @@ void extract_blocks_and_ns_from_file(const std::string &inFile,
   stk::mesh::MeshBuilder builder(comm);
   builder.set_aura_option(stk::mesh::BulkData::AUTO_AURA);
   std::shared_ptr<stk::mesh::BulkData> inBulk = builder.create();
-  stk::mesh::MetaData& inMeta = inBulk->mesh_meta_data();
-  inMeta.use_simple_fields();
-
   std::shared_ptr<stk::mesh::BulkData> outBulk = builder.create();
-  stk::mesh::MetaData& outMeta = outBulk->mesh_meta_data();
-  outMeta.use_simple_fields();
 
   stk::io::StkMeshIoBroker stkInput;
-  stk::io::fill_mesh_preexisting(stkInput, inFile, *inBulk);
+  stkInput.set_bulk_data(*inBulk);
+  stkInput.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "off"));
+  const size_t inputFileIndex = stkInput.add_mesh_database(inFile, stk::io::READ_MESH);
+  stkInput.create_input_mesh();
 
+  stkInput.add_all_mesh_fields_as_input_fields();
+  const bool delayFieldDataAllocation = true;
+  stkInput.populate_mesh(delayFieldDataAllocation);
+  stkInput.populate_field_data();
+
+  const Ioss::DatabaseIO* inputDBIO = stkInput.get_input_database(inputFileIndex);
+  const int maxSymbolLength = inputDBIO->maximum_symbol_length();
 
   stk::mesh::Selector nothingSelector_byDefaultConstruction;
   stk::mesh::Selector allSelector(!nothingSelector_byDefaultConstruction);
@@ -129,6 +134,10 @@ void extract_blocks_and_ns_from_file(const std::string &inFile,
   }
 
   stk::io::StkMeshIoBroker stkOutput;
+  if (maxSymbolLength > 0) {
+    stkOutput.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", maxSymbolLength));
+  }
+
   stkOutput.set_bulk_data(*outBulk);
   stkOutput.set_attribute_field_ordering_stored_by_part_ordinal(stkInput.get_attribute_field_ordering_stored_by_part_ordinal());
 

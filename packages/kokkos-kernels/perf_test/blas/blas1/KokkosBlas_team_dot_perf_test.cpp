@@ -1,23 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
+#include <iostream>
 
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_team_dot.hpp>
 #include <Kokkos_Random.hpp>
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 struct Params {
   int use_cuda    = 0;
@@ -42,8 +31,7 @@ void print_options() {
 
 int parse_inputs(Params& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (0 == Test::string_compare_no_case(argv[i], "--help") ||
-        0 == Test::string_compare_no_case(argv[i], "-h")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--help") || 0 == Test::string_compare_no_case(argv[i], "-h")) {
       print_options();
       exit(0);  // note: this is before Kokkos::initialize
     } else if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
@@ -59,8 +47,7 @@ int parse_inputs(Params& params, int argc, char** argv) {
       // has to have ".bin", or ".crs" extension.
       params.repeat = atoi(argv[++i]);
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
       return 1;
     }
@@ -71,8 +58,7 @@ int parse_inputs(Params& params, int argc, char** argv) {
 template <class Vector, class ExecSpace>
 struct teamDotFunctor {
   // Compile - time check to see if your data type is a Kokkos::View:
-  static_assert(Kokkos::is_view<Vector>::value,
-                "Vector is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<Vector>::value, "Vector is not a Kokkos::View.");
 
   using Scalar = typename Vector::non_const_value_type;
   // Vector is templated on memory space
@@ -86,9 +72,7 @@ struct teamDotFunctor {
 
   // Functor instead of KOKKOS_LAMBDA expression
 
-  KOKKOS_INLINE_FUNCTION void operator()(const team_member& team) const {
-    KokkosBlas::Experimental::dot(team, x, y);
-  }
+  KOKKOS_INLINE_FUNCTION void operator()(const team_member& team) const { KokkosBlas::Experimental::dot(team, x, y); }
   // Constructor
   teamDotFunctor(Vector X_, Vector Y_) {
     x = X_;
@@ -122,21 +106,17 @@ void run(int m, int repeat) {
   std::cout << "Each test input vector has a length of " << m << std::endl;
 
   // Warm up run of dot:
-  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
-      teamDotFunctorWarmUpInstance(x, y);
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace> teamDotFunctorWarmUpInstance(x, y);
 
-  Kokkos::parallel_for("TeamDotUsage -- Warm Up Run", policy(1, Kokkos::AUTO),
-                       teamDotFunctorWarmUpInstance);
+  Kokkos::parallel_for("TeamDotUsage -- Warm Up Run", policy(1, Kokkos::AUTO), teamDotFunctorWarmUpInstance);
 
   Kokkos::fence();
   Kokkos::Timer timer;
 
   // Live test of dot:
 
-  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace>
-      teamDotFunctorLiveTestInstance(x, y);
-  Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO),
-                       teamDotFunctorLiveTestInstance);
+  teamDotFunctor<Kokkos::View<Scalar*, MemSpace>, ExecSpace> teamDotFunctorLiveTestInstance(x, y);
+  Kokkos::parallel_for("TeamDotUsage -- Live Test", policy(1, Kokkos::AUTO), teamDotFunctorLiveTestInstance);
 
   ExecSpace().fence();
 
@@ -156,13 +136,11 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  const int device_id = params.use_cuda - 1;
+  const int device_id = params.use_cuda > 0 ? params.use_cuda - 1 : 0;
 
   const int num_threads = std::max(params.use_openmp, params.use_threads);
 
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
 
   bool useThreads = params.use_threads != 0;
   bool useOMP     = params.use_openmp != 0;

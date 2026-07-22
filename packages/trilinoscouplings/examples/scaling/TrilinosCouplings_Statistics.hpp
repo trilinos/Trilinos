@@ -1,31 +1,10 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-//                      TrilinosCouplings Package
-//                 Copyright (2007) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Chris Siefert (csiefer@sandia.gov),
-//                    Kara Peterson (kjpeter@sandia.gov).
-//
-// ************************************************************************
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef __TrilinosCouplings_Statistics_hpp
@@ -45,15 +24,8 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
-#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsGraph.hpp>
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraMultiVector.hpp>
-#include <Xpetra_EpetraCrsGraph.hpp>
-#endif
 
 
 // Teuchos
@@ -375,23 +347,12 @@ class MachineLearningStatistics_Hex3D {
     globalNumMatrixEntries = gl_StiffGraph->getGlobalNumEntries();
   }
 
-#ifdef HAVE_XPETRA_TPETRA
   void Phase2b(Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node> > gl_StiffGraph, Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO,Node> > coords) {
     Teuchos::RCP<multivector_type> coords_X = Teuchos::rcp(new Xpetra::TpetraMultiVector<ST,LO,GO,Node>(coords));
     Teuchos::RCP<const crsgraph_type> graph_X = Teuchos::rcp(new Xpetra::TpetraCrsGraph<LO,GO,Node>(Teuchos::rcp_const_cast<Tpetra::CrsGraph<LO,GO,Node> >(gl_StiffGraph)));
 
     Phase2b(graph_X, coords_X);
   }
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-  void Phase2b(Teuchos::RCP<const Epetra_CrsGraph> gl_StiffGraph, Teuchos::RCP<Epetra_MultiVector> coords) {
-    Teuchos::RCP<multivector_type> coords_X = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,Node>(coords));
-    Teuchos::RCP<const crsgraph_type> graph_X = Teuchos::rcp(new Xpetra::EpetraCrsGraphT<GO,Node>(Teuchos::rcp_const_cast<Epetra_CrsGraph>(gl_StiffGraph)));
-
-    Phase2b(graph_X, coords_X);
-  }
-#endif
 
 
   /**********************************************************************************/

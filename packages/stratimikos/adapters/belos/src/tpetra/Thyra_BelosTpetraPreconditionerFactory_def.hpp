@@ -1,44 +1,12 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //         Stratimikos: Thyra-based strategies for linear solvers
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Jennifer A. Loe (jloe@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2006 NTESS and the Stratimikos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef THYRA_BELOS_TPETRA_PRECONDITIONERFACTORY_DEF_HPP
 #define THYRA_BELOS_TPETRA_PRECONDITIONERFACTORY_DEF_HPP
 
@@ -130,7 +98,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   TEUCHOS_ASSERT(this->isCompatible(*fwdOpSrc));
   TEUCHOS_ASSERT(prec);
 
-  Teuchos::Time totalTimer(""), timer("");
+  Teuchos::Time totalTimer("Stratimikos::BelosTpetraPreconditionerFactory");
   totalTimer.start(true);
 
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -155,7 +123,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(tpetraFwdOp));
 
   // Belos-specific typedefs:
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraMV; 
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraMV;
   typedef Belos::TpetraOperator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> BelosTpOp;
   typedef Belos::LinearProblem<scalar_type, TpetraMV, TpetraLinOp> BelosTpLinProb;
 
@@ -165,7 +133,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
   //      with both scalar types.
   typedef typename Teuchos::ScalarTraits<scalar_type>::halfPrecision half_scalar_type;
   typedef Tpetra::Operator<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraLinOpHalf;
-  typedef Tpetra::MultiVector<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraMVHalf; 
+  typedef Tpetra::MultiVector<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> TpetraMVHalf;
   typedef Belos::TpetraOperator<half_scalar_type, local_ordinal_type, global_ordinal_type, node_type> BelosTpOpHalf;
   typedef Belos::LinearProblem<half_scalar_type, TpetraMVHalf, TpetraLinOpHalf> BelosTpLinProbHalf;
 #endif
@@ -176,7 +144,7 @@ void BelosTpetraPreconditionerFactory<MatrixType>::initializePrec(
     Teuchos::ptr(dynamic_cast<DefaultPreconditioner<scalar_type> *>(prec));
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
-  // This check needed to address Issue #535. 
+  // This check needed to address Issue #535.
   RCP<Teuchos::ParameterList> innerParamList;
   if (paramList_.is_null ()) {
     innerParamList = rcp(new Teuchos::ParameterList(*getValidParameters()));

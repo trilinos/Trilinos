@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_THREADS_PARALLEL_REDUCE_RANGE_HPP
 #define KOKKOS_THREADS_PARALLEL_REDUCE_RANGE_HPP
@@ -42,7 +29,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   const pointer_type m_result_ptr;
 
   template <class TagType>
-  inline static std::enable_if_t<std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member &ibeg, const Member &iend,
       reference_type update) {
 #if defined(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION) && \
@@ -55,7 +42,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline static std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<!std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member &ibeg, const Member &iend,
       reference_type update) {
     const TagType t{};
@@ -73,7 +60,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class Schedule>
-  static std::enable_if_t<std::is_same<Schedule, Kokkos::Static>::value>
+  static std::enable_if_t<std::is_same_v<Schedule, Kokkos::Static>>
   exec_schedule(ThreadsInternal &instance, const void *arg) {
     const ParallelReduce &self = *((const ParallelReduce *)arg);
     const WorkRange range(self.m_policy, instance.pool_rank(),
@@ -89,7 +76,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class Schedule>
-  static std::enable_if_t<std::is_same<Schedule, Kokkos::Dynamic>::value>
+  static std::enable_if_t<std::is_same_v<Schedule, Kokkos::Dynamic>>
   exec_schedule(ThreadsInternal &instance, const void *arg) {
     const ParallelReduce &self = *((const ParallelReduce *)arg);
     const WorkRange range(self.m_policy, instance.pool_rank(),

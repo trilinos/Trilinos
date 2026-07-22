@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,11 +9,11 @@
 #include "Ioss_FileInfo.h"
 #include "Ioss_Hex8.h"
 #include "Ioss_ParallelUtils.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_Utils.h"
 #include "cgns/Iocgns_Utils.h"
 #include <cassert>
 #include <cstdlib>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <stdio.h>
 #include <string>
@@ -39,6 +39,9 @@
 #include "Ioss_State.h"
 #include "Ioss_StructuredBlock.h"
 #include "Ioss_VariableType.h"
+#if IOSS_DEBUG_OUTPUT
+#include "Ioss_use_fmt.h"
+#endif
 
 namespace {
 
@@ -87,7 +90,7 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "5.01";
+  std::string version = "5.02 (2025-04-18)";
 } // namespace
 
 int main(int argc, char *argv[])
@@ -138,6 +141,8 @@ namespace {
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
+
+    dbi->set_lowercase_database_names(false);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");

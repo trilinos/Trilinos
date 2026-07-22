@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef _KOKKOSKERNELS_IOTA_HPP
-#define _KOKKOSKERNELS_IOTA_HPP
+#ifndef KOKKOSKERNELS_IOTA_HPP
+#define KOKKOSKERNELS_IOTA_HPP
 
 #include <type_traits>
 
@@ -67,8 +54,7 @@ class Iota {
       Constructing with size < 0 yeilds a 0-size Iota
   */
   KOKKOS_INLINE_FUNCTION
-  constexpr Iota(const size_type &size, const value_type offset)
-      : size_(size), offset_(offset) {
+  constexpr Iota(const size_type &size, const value_type offset) : size_(size), offset_(offset) {
     if constexpr (std::is_signed_v<size_type>) {
       if (size_ < size_type(0)) {
         size_ = 0;
@@ -102,8 +88,7 @@ class Iota {
     Creating a subview outside of the base Iota yeilds undefined behavior
   */
   template <typename P1, typename P2>
-  KOKKOS_INLINE_FUNCTION constexpr Iota(const Iota &base,
-                                        const Kokkos::pair<P1, P2> &range)
+  KOKKOS_INLINE_FUNCTION constexpr Iota(const Iota &base, const Kokkos::pair<P1, P2> &range)
       : Iota(range.second - range.first, base.offset_ + range.first) {}
 
   /*! \brief Construct Iota subview
@@ -111,9 +96,7 @@ class Iota {
      i >= size() or i < 0 yields undefined behavior.
   */
   KOKKOS_INLINE_FUNCTION
-  constexpr T operator()(size_type i) const noexcept {
-    return value_type(i + offset_);
-  };
+  constexpr T operator()(size_type i) const noexcept { return value_type(i + offset_); }
 
   /// \brief return the size of the iota
   KOKKOS_INLINE_FUNCTION
@@ -141,4 +124,4 @@ inline constexpr bool is_iota_v = is_iota<P...>::value;
 }  // namespace Impl
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNELS_IOTA_HPP
+#endif  // KOKKOSKERNELS_IOTA_HPP

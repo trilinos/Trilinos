@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,7 @@
 #include "add_to_log.h"  // for add_to_log
 #include "elb.h"         // for LB_Description<INT>, get_time, etc
 #include "elb_allo.h"    // for array_alloc
-#include "elb_elem.h"    // for E_Type, ::NULL_EL
+#include "elb_elem.h"    // for ElementType, ::NULL_EL
 #include "elb_err.h"     // for error_report, Gen_Error, etc
 #include "elb_exo.h"     // for init_weight_struct, etc
 #include "elb_graph.h"   // for generate_graph
@@ -38,6 +38,7 @@ namespace {
   void print_input(Machine_Description * /*machine*/, LB_Description<INT> * /*lb*/,
                    Problem_Description * /*prob*/, Solver_Description * /*solver*/,
                    Weight_Description * /*weight*/);
+
 } // namespace
 
 /*****************************************************************************/
@@ -245,7 +246,8 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
     error_report();
     exit(1);
   }
-  else if ((problem.type == ELEMENTAL) && ((mesh.num_elems) / (machine.num_procs) < 1)) {
+  else if ((problem.type == DecompType::ELEMENTAL) &&
+           ((mesh.num_elems) / (machine.num_procs) < 1)) {
     Gen_Error(0, "fatal: problem divided among too many processors");
     error_report();
     exit(1);
@@ -276,26 +278,26 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
 
   /* Initialize various parameters */
-  if (lb.type == INERTIAL || lb.type == ZPINCH || lb.type == BRICK || lb.type == ZOLTAN_RCB ||
-      lb.type == ZOLTAN_RIB || lb.type == ZOLTAN_HSFC || problem.vis_out == 1 ||
-      problem.vis_out == 2) {
+  if (lb.type == Balance::INERTIAL || lb.type == Balance::ZPINCH || lb.type == Balance::BRICK ||
+      lb.type == Balance::ZOLTAN_RCB || lb.type == Balance::ZOLTAN_RIB ||
+      lb.type == Balance::ZOLTAN_HSFC || problem.vis_out == 1 || problem.vis_out == 2) {
     problem.read_coords = ELB_TRUE;
   }
   else {
     problem.read_coords = ELB_FALSE;
   }
 
-  if (lb.type != SPECTRAL) {
+  if (lb.type != Balance::SPECTRAL) {
     problem.coarse_flag = ELB_FALSE;
   }
   else {
     problem.coarse_flag = ELB_TRUE;
   }
 
-  if (lb.refine == KL_REFINE) {
+  if (lb.refine == Balance::KL_REFINE) {
     problem.alloc_graph = ELB_TRUE;
   }
-  else if (lb.type == SPECTRAL) {
+  else if (lb.type == Balance::SPECTRAL) {
     problem.alloc_graph = ELB_TRUE;
   }
   else {
@@ -316,10 +318,10 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
 
   /* Allocate necessary memory */
-  if (problem.type == NODAL) {
+  if (problem.type == DecompType::NODAL) {
     problem.num_vertices = mesh.num_nodes;
   }
-  else if (problem.type == ELEMENTAL) {
+  else if (problem.type == DecompType::ELEMENTAL) {
     problem.num_vertices = (mesh.num_elems - sphere.num);
   }
 
@@ -455,27 +457,27 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   for (int cnt = 0; cnt < machine.num_procs; cnt++) {
     vec_free(lb.int_nodes[cnt]);
     vec_free(lb.bor_nodes[cnt]);
-    if (problem.type == NODAL) {
+    if (problem.type == DecompType::NODAL) {
       vec_free(lb.ext_nodes[cnt]);
       vec_free(lb.ext_procs[cnt]);
     }
 
     vec_free(lb.int_elems[cnt]);
-    if (problem.type == ELEMENTAL) {
+    if (problem.type == DecompType::ELEMENTAL) {
       vec_free(lb.bor_elems[cnt]);
     }
   }
 
   vec_free(lb.int_nodes);
 
-  if (problem.type == NODAL) {
+  if (problem.type == DecompType::NODAL) {
     vec_free(lb.ext_nodes);
     vec_free(lb.ext_procs);
   }
 
   vec_free(lb.int_elems);
 
-  if (problem.type == ELEMENTAL) {
+  if (problem.type == DecompType::ELEMENTAL) {
     vec_free(lb.bor_elems);
     for (int cnt = 0; cnt < machine.num_procs; cnt++) {
       for (size_t cnt1 = 0; cnt1 < lb.bor_nodes[cnt].size(); cnt1++) {
@@ -497,7 +499,6 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
 
   vec_free(lb.bor_nodes);
-  free(lb.vertex2proc);
 
 #ifdef USE_ZOLTAN
   MPI_Finalize();
@@ -521,9 +522,9 @@ namespace {
 
     fmt::print("Performing ");
     switch (prob->type) {
-    case NODAL: fmt::print("a nodal "); break;
+    case DecompType::NODAL: fmt::print("a nodal "); break;
 
-    case ELEMENTAL: fmt::print("an elemental "); break;
+    case DecompType::ELEMENTAL: fmt::print("an elemental "); break;
     }
 
     fmt::print("load balance with the following parameters...\n");
@@ -540,26 +541,29 @@ namespace {
       fmt::print("\tarchitecture: ");
     }
     switch (machine->type) {
-    case HCUBE: fmt::print("hypercube\n"); break;
-
-    case MESH: fmt::print("mesh\n"); break;
+    case MachineType::HCUBE: fmt::print("hypercube\n"); break;
+    case MachineType::MESH: fmt::print("mesh\n"); break;
+    default: fmt::print("invalid/unknown\n"); break;
     }
+
     if (machine->num_boxes > 1) {
       fmt::print("\tdimension(s) of each box: ");
     }
     else {
       fmt::print("\tdimension(s): ");
     }
-    switch (machine->type) {
-    case HCUBE: fmt::print("{}\n", machine->dim[0]); break;
 
-    case MESH:
+    switch (machine->type) {
+    case MachineType::HCUBE: fmt::print("{}\n", machine->dim[0]); break;
+
+    case MachineType::MESH:
       for (int cnt = 0; cnt < (machine->num_dims) - 1; cnt++) {
         fmt::print("{}x", machine->dim[cnt]);
       }
 
       fmt::print("{}\n", machine->dim[(machine->num_dims) - 1]);
       break;
+    default:; /* do nothing */
     }
     fmt::print("\ttotal number of processors: {}\n", machine->num_procs);
 
@@ -568,44 +572,46 @@ namespace {
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
     fmt::print("Load Balance Parameters\n");
     switch (lb->type) {
-    case MULTIKL:
+    case Balance::MULTIKL:
       fmt::print("\ttype: multilevel\n");
       fmt::print("\tnumber of sections: {}\n", lb->num_sects);
       break;
 
-    case SPECTRAL:
+    case Balance::SPECTRAL:
       fmt::print("\ttype: spectral\n");
       fmt::print("\tnumber of sections: {}\n", lb->num_sects);
       break;
 
-    case INERTIAL: fmt::print("\ttype: inertial\n"); break;
+    case Balance::INERTIAL: fmt::print("\ttype: inertial\n"); break;
 
-    case ZPINCH: fmt::print("\ttype: zpinch\n"); break;
+    case Balance::ZPINCH: fmt::print("\ttype: zpinch\n"); break;
 
-    case BRICK: fmt::print("\ttype: brick\n"); break;
+    case Balance::BRICK: fmt::print("\ttype: brick\n"); break;
 
-    case ZOLTAN_RCB: fmt::print("\ttype: rcb\n"); break;
+    case Balance::ZOLTAN_RCB: fmt::print("\ttype: rcb\n"); break;
 
-    case ZOLTAN_RIB: fmt::print("\ttype: rib\n"); break;
+    case Balance::ZOLTAN_RIB: fmt::print("\ttype: rib\n"); break;
 
-    case ZOLTAN_HSFC: fmt::print("\ttype: hsfc\n"); break;
+    case Balance::ZOLTAN_HSFC: fmt::print("\ttype: hsfc\n"); break;
 
-    case LINEAR: fmt::print("\ttype: linear\n"); break;
+    case Balance::LINEAR: fmt::print("\ttype: linear\n"); break;
 
-    case RANDOM: fmt::print("\ttype: random\n"); break;
+    case Balance::RANDOM: fmt::print("\ttype: random\n"); break;
 
-    case SCATTERED: fmt::print("\ttype: scattered\n"); break;
+    case Balance::SCATTERED: fmt::print("\ttype: scattered\n"); break;
 
-    case INFILE:
+    case Balance::INFILE:
       fmt::print("\ttype: input from file\n");
       fmt::print("\tfile name: {}\n", lb->file);
       break;
+    default:; /* do nothing */
     }
     fmt::print("\trefinement: ");
     switch (lb->refine) {
-    case KL_REFINE: fmt::print("Kernighan-Lin\n"); break;
+    case Balance::KL_REFINE: fmt::print("Kernighan-Lin\n"); break;
 
-    case NO_REFINE: fmt::print("none\n"); break;
+    case Balance::NO_REFINE: fmt::print("none\n"); break;
+    default:; /* do nothing */
     }
     if (lb->cnctd_dom) {
       fmt::print("\tConnected Domain enforced\n");
@@ -618,10 +624,10 @@ namespace {
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
     /*                         EIGENSOLVER PARAMETERS                            */
     /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-    if (lb->type == MULTIKL || lb->type == SPECTRAL) {
+    if (lb->type == Balance::MULTIKL || lb->type == Balance::SPECTRAL) {
       fmt::print("Eigensolver Parameters\n");
       fmt::print("\teignsolver tolerance: {}\n", solver->tolerance);
-      if (solver->rqi_flag == USE_RQI) {
+      if (solver->rqi_flag == SolverOptions::USE_RQI) {
         fmt::print("\tusing RQI/Symmlq eigensolver\n");
         fmt::print("\tnumber of vertices to coarsen down to: {}\n", solver->vmax);
       }

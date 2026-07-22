@@ -83,7 +83,7 @@ class MueLuGraphBaseAdapter : public Zoltan2::GraphAdapter<User, UserCoord> {
   ~MueLuGraphBaseAdapter() {}
 
   /*! \brief Constructor for graph with no weights or coordinates.
-   *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
+   *  \param ingraph the Tpetra::CrsGraph or Xpetra::CrsGraph
    *  \param numVtxWeights  the number of weights per vertex (default = 0)
    *  \param numEdgeWeights the number of weights per edge  (default = 0)
    *
@@ -228,14 +228,14 @@ class MueLuGraphBaseAdapter : public Zoltan2::GraphAdapter<User, UserCoord> {
   }
 
   template <typename Adapter>
-  void applyPartitioningSolution(const User &in, User *&out,
-                                 const Zoltan2::PartitioningSolution<Adapter> &solution) const {
+  void applyPartitioningSolution(const User & /*in*/, User *& /*out*/,
+                                 const Zoltan2::PartitioningSolution<Adapter> & /*solution*/) const {
     TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument, "applyPartitionlingSolution not implemeneted");
   }
 
   template <typename Adapter>
-  void applyPartitioningSolution(const User &in, RCP<User> &out,
-                                 const Zoltan2::PartitioningSolution<Adapter> &solution) const {
+  void applyPartitioningSolution(const User & /*in*/, RCP<User> & /*out*/,
+                                 const Zoltan2::PartitioningSolution<Adapter> & /*solution*/) const {
     TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument, "applyPartitionlingSolution not implemeneted");
   }
 

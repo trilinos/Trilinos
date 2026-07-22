@@ -97,7 +97,7 @@ public:
     }
   }
 
-  void copy_entities(const EntityProcVec & entitiesToSend, const std::string & name)
+  void copy_entities(const EntityProcVec & entitiesToSend, const std::string & /*name*/)
   {
     m_ghostedEntities.clear();
 
@@ -132,14 +132,14 @@ public:
     stk::mesh::communicate_field_data(*m_bulk, commFields);
   }
 
-  Coords parametric_coords(EntityKey entityKey, const double * spatialCoordinates,
+  Coords parametric_coords(EntityKey /*entityKey*/, const double * /*spatialCoordinates*/,
                            double & distance) const
   {
     distance = 0.0;
     return Coords{0.0, 0.0, 0.0};
   }
 
-  void interpolate_fields(const Coords & parametricCoords, EntityKey entityKey,
+  void interpolate_fields(const Coords & /*parametricCoords*/, EntityKey entityKey,
                           unsigned numFields, const std::vector<unsigned> & fieldSizes,
                           const std::vector<double *> & recvFieldPtrs) const
   {

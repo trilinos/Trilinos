@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <sstream>
 
 #include "Kokkos_Core.hpp"
@@ -21,26 +8,23 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosSparse_spmv.hpp"
 
-using Scalar  = default_scalar;
-using Ordinal = default_lno_t;
-using Offset  = default_size_type;
-using Layout  = default_layout;
+using Scalar  = KokkosKernels::default_scalar;
+using Ordinal = KokkosKernels::default_lno_t;
+using Offset  = KokkosKernels::default_size_type;
+using Layout  = KokkosKernels::default_layout;
 
 int main() {
   Kokkos::initialize();
 
-  using device_type = typename Kokkos::Device<
-      Kokkos::DefaultExecutionSpace,
-      typename Kokkos::DefaultExecutionSpace::memory_space>;
-  using matrix_type =
-      typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void,
-                                       Offset>;
+  using device_type =
+      typename Kokkos::Device<Kokkos::DefaultExecutionSpace, typename Kokkos::DefaultExecutionSpace::memory_space>;
+  using matrix_type  = typename KokkosSparse::CrsMatrix<Scalar, Ordinal, device_type, void, Offset>;
   using graph_type   = typename matrix_type::staticcrsgraph_type;
   using row_map_type = typename graph_type::row_map_type;
   using entries_type = typename graph_type::entries_type;
   using values_type  = typename matrix_type::values_type;
 
-  const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+  const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
 
   Ordinal numRows = 10;
 
@@ -52,8 +36,7 @@ int main() {
 
     {
       // Build the row pointers and store numNNZ
-      typename row_map_type::HostMirror row_map_h =
-          Kokkos::create_mirror_view(row_map);
+      typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
       for (Ordinal rowIdx = 1; rowIdx < numRows + 1; ++rowIdx) {
         if ((rowIdx == 1) || (rowIdx == numRows)) {
           row_map_h(rowIdx) = row_map_h(rowIdx - 1) + 2;
@@ -64,15 +47,13 @@ int main() {
       Kokkos::deep_copy(row_map, row_map_h);
       if (row_map_h(numRows) != numNNZ) {
         std::ostringstream error_msg;
-        error_msg << "error: row_map(numRows) != numNNZ, row_map_h(numRows)="
-                  << row_map_h(numRows) << ", numNNZ=" << numNNZ;
+        error_msg << "error: row_map(numRows) != numNNZ, row_map_h(numRows)=" << row_map_h(numRows)
+                  << ", numNNZ=" << numNNZ;
         throw std::runtime_error(error_msg.str());
       }
 
-      typename entries_type::HostMirror entries_h =
-          Kokkos::create_mirror_view(entries);
-      typename values_type::HostMirror values_h =
-          Kokkos::create_mirror_view(values);
+      typename entries_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
+      typename values_type::host_mirror_type values_h   = Kokkos::create_mirror_view(values);
       for (Ordinal rowIdx = 0; rowIdx < numRows; ++rowIdx) {
         if (rowIdx == 0) {
           entries_h(row_map_h(rowIdx))     = rowIdx;

@@ -289,7 +289,7 @@ void findGhostingRegionResidentsDDEfficient(const SuperTile3D &tilingPattern, MP
 }
 
 
-inline int getGhostingRegionRank(const TilingIndices &tileId, const SuperTile3D &tilingPattern, int mpiSize) {
+inline int getGhostingRegionRank(const TilingIndices &tileId, const SuperTile3D &tilingPattern, int /*mpiSize*/) {
   int xIdx = tileId.xIdx % tilingPattern.numXTiles;
   int yIdx = tileId.yIdx % tilingPattern.numYTiles;
   int zIdx = tileId.zIdx % tilingPattern.numZTiles;
@@ -453,7 +453,7 @@ void witnessAndComputeNeighborRanks(MPI_Comm mpiComm, int pSize,
                                     std::vector<int> &neighborDomainRanks, std::vector<int> &neighborRangeRanks);
 
 template <typename T>
-void witnessAndComputeNeighborRanksDDEfficient(MPI_Comm mpiComm, int pSize,
+void witnessAndComputeNeighborRanksDDEfficient(MPI_Comm mpiComm, int /*pSize*/,
                                                const typename GS_Types<T>::ResidencyBoxMapT &myDomainResidents,
                                                const typename GS_Types<T>::ResidencyBoxMapT &myRangeResidents,
                                                std::vector<std::pair<typename GS_Types<T>::OwnedBox3D, typename GS_Types<T>::OwnedBox3D> > &neighborPairs)
@@ -502,36 +502,78 @@ void communicateNeighborObjectBBs(
     std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
     std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array)
 {
-  typedef stk::search::ObjectBoundingBox_T<DomainBox> DomObjBBoxT;
+  using DomObjBBoxT = stk::search::ObjectBoundingBox_T<DomainBox>;
+  using RngObjBBoxT = stk::search::ObjectBoundingBox_T<RangeBox>;
 
-  stk::CommNeighbors commneighborsR2D(mpiComm, neighborRangeRanks, neighborDomainRanks);
+  if (stk::util::get_common_coupling_version() < 18) {
 
-  for (int nbrRangeProc : neighborRangeRanks) {
-    stk::CommBufferV& procBuff = commneighborsR2D.send_buffer(nbrRangeProc);
-    procBuff.pack<DomObjBBoxT>(domainObjBBox);
+    stk::CommNeighbors commneighborsR2D(mpiComm, neighborRangeRanks, neighborDomainRanks);
+
+    for (int nbrRangeProc : neighborRangeRanks) {
+      stk::CommBufferV& procBuff = commneighborsR2D.send_buffer(nbrRangeProc);
+      procBuff.pack<DomObjBBoxT>(domainObjBBox);
+    }
+    commneighborsR2D.communicate();
+    for(int nbrDomProc : neighborDomainRanks) {
+      stk::CommBufferV& procBuff = commneighborsR2D.recv_buffer(nbrDomProc  );
+      DomObjBBoxT box;
+      procBuff.unpack(box);
+      boxA_proc_box_array[box.get_object_number()] = box;
+    }
+
+    stk::CommNeighbors commneighborsD2R(mpiComm, neighborDomainRanks, neighborRangeRanks);
+
+    for (int nbrDomainProc : neighborDomainRanks) {
+      stk::CommBufferV& procBuff = commneighborsD2R.send_buffer(nbrDomainProc);
+      procBuff.pack<RngObjBBoxT>(rangeObjBBox);
+    }
+    commneighborsD2R.communicate();
+    for(int nbrRngProc : neighborRangeRanks) {
+      stk::CommBufferV& procBuff = commneighborsD2R.recv_buffer(nbrRngProc);
+      RngObjBBoxT box;
+      procBuff.unpack(box);
+      boxB_proc_box_array[box.get_object_number()] = box;
+    }
+
   }
-  commneighborsR2D.communicate();
-  for(int nbrDomProc : neighborDomainRanks) {
-    stk::CommBufferV& procBuff = commneighborsR2D.recv_buffer(nbrDomProc  );
-    DomObjBBoxT box;
-    procBuff.unpack(box);
-    boxA_proc_box_array[box.get_object_number()] = box;
-  }
+  else {
 
-  typedef stk::search::ObjectBoundingBox_T<RangeBox> RngObjBBoxT;
+    stk::CommSparse commSparseR2D(mpiComm);
 
-  stk::CommNeighbors commneighborsD2R(mpiComm, neighborDomainRanks, neighborRangeRanks);
+    stk::pack_and_communicate(commSparseR2D,
+      [&]() {
+        for (int nbrRangeProc : neighborRangeRanks) {
+          stk::CommBuffer& buffer = commSparseR2D.send_buffer(nbrRangeProc);
+          buffer.pack<DomObjBBoxT>(domainObjBBox);
+        }
+      }
+    );
 
-  for (int nbrDomainProc : neighborDomainRanks) {
-    stk::CommBufferV& procBuff = commneighborsD2R.send_buffer(nbrDomainProc);
-    procBuff.pack<RngObjBBoxT>(rangeObjBBox);
-  }
-  commneighborsD2R.communicate();
-  for(int nbrRngProc : neighborRangeRanks) {
-    stk::CommBufferV& procBuff = commneighborsD2R.recv_buffer(nbrRngProc);
-    RngObjBBoxT box;
-    procBuff.unpack(box);
-    boxB_proc_box_array[box.get_object_number()] = box;
+    for (int nbrDomProc : neighborDomainRanks) {
+      stk::CommBuffer& buffer = commSparseR2D.recv_buffer(nbrDomProc);
+      DomObjBBoxT box;
+      buffer.unpack(box);
+      boxA_proc_box_array[box.get_object_number()] = box;
+    }
+
+    stk::CommSparse commSparseD2R(mpiComm);
+
+    stk::pack_and_communicate(commSparseD2R,
+      [&]() {
+        for (int nbrDomainProc : neighborDomainRanks) {
+          stk::CommBuffer& buffer = commSparseD2R.send_buffer(nbrDomainProc);
+          buffer.pack<RngObjBBoxT>(rangeObjBBox);
+        }
+      }
+    );
+
+    for (int nbrRngProc : neighborRangeRanks) {
+      stk::CommBuffer& buffer = commSparseD2R.recv_buffer(nbrRngProc);
+      RngObjBBoxT box;
+      buffer.unpack(box);
+      boxB_proc_box_array[box.get_object_number()] = box;
+    }
+
   }
 }
 
@@ -678,7 +720,7 @@ void findGhostingNeighborsFromScratch(MPI_Comm comm, int mpiRank, int mpiSize,
 template<typename DomainBox, typename RangeBox>
 void findGhostingNeighborsFromScratchDDEfficient(MPI_Comm comm, int mpiRank, int mpiSize,
                                                  const stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc,
-                                                 const stk::search::ObjectBoundingBox_T<RangeBox> boxB_proc,
+                                                 const stk::search::ObjectBoundingBox_T<RangeBox> /*boxB_proc*/,
                                                  const std::vector<DomainBox> &localDomain,
                                                  const std::vector<RangeBox>  &localRange,
                                                  std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
@@ -856,11 +898,11 @@ class GhostingSearcher {
 
 template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
 GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::GhostingSearcher(
-      const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
-      const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
-      std::vector<RangeBoxType >& rangeBoxes,
-      std::vector<RangeIdentifier>& rangeGhostIdentifiers, MPI_Comm comm,
-      experimental::GhostingSearchTimeBreakdown &timeBreakdown)
+      const std::vector<std::pair<DomainObjType, DomainIdentifier> >& /*local_domain*/,
+      const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& /*local_range*/,
+      std::vector<RangeBoxType >& /*rangeBoxes*/,
+      std::vector<RangeIdentifier>& /*rangeGhostIdentifiers*/, MPI_Comm comm,
+      experimental::GhostingSearchTimeBreakdown & /*timeBreakdown*/)
       : mpiComm(comm), pSize(-1), pRank(-1)
 {
   MPI_Comm_rank(mpiComm, &pRank);
@@ -1134,12 +1176,10 @@ GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>
 
   const unsigned numBoxRange  = local_range.size();
 
-#ifdef _OPENMP
-#pragma omp parallel for default(shared)
-#endif
-  for (size_t i = 0; i < numBoxRange; ++i) {
+  auto policy = Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, numBoxRange);
+  Kokkos::parallel_for(policy, [&](size_t i) {
     rangeBoxes[i] = local_range[i].first;
-  }
+  });
   if(pSize == 0) {
     return;
   }

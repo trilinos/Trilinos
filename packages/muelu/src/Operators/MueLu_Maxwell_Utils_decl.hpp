@@ -73,8 +73,7 @@ class Maxwell_Utils : public VerboseObject {
   //! Remove explicit zeros
   static RCP<Matrix> removeExplicitZeros(const RCP<Matrix>& A,
                                          const magnitudeType tolerance,
-                                         const bool keepDiagonal        = true,
-                                         const size_t expectedNNZperRow = 0);
+                                         const bool keepDiagonal = true);
 
   static void removeExplicitZeros(Teuchos::ParameterList& parameterList,
                                   RCP<Matrix>& D0_Matrix,
@@ -97,7 +96,7 @@ class Maxwell_Utils : public VerboseObject {
 
   //! Performs an P^T AP
   static RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  PtAPWrapper(const RCP<Matrix>& A, const RCP<Matrix>& P, Teuchos::ParameterList& params, std::string& label);
+  PtAPWrapper(const RCP<Matrix>& A, const RCP<Matrix>& P, Teuchos::ParameterList& params, const std::string& label);
 };
 
 }  // namespace MueLu

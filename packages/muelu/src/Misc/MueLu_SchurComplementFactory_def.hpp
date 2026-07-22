@@ -145,8 +145,8 @@ SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeSchurC
     if (!A11.is_null()) {
       S = MatrixFactory::BuildCopy(A11);
     } else {
-      S = MatrixFactory::Build(A11->getRowMap(), 10 /*A11->getLocalMaxNumRowEntries()*/);
-      S->fillComplete(A11->getDomainMap(), A11->getRangeMap());
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                                 "MueLu::SchurComplementFactory::Build: Constructing Schur complement for matrix with zero block row or column.");
     }
   }
 

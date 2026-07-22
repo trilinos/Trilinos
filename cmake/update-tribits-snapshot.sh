@@ -21,6 +21,40 @@ _SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
 echo "_SCRIPT_DIR = '${_SCRIPT_DIR}'"
 _TRILINOS_HOME=$_SCRIPT_DIR/..
 
-# Update the snapshot
+# Get the merge commits being pulled in and amend the commit message
+newTribitsMergeCommits=$(./cmake/get-tribits-mainline-merge-commits.sh)
+#echo "newTribitsMergeCommits:
+#
+#${newTribitsMergeCommits}"
+
+# Create the snapshot commit
 cd $_TRILINOS_HOME/cmake/tribits/
-../../TriBITS/tribits/snapshot_tribits.py --clean-ignored-files-orig-dir "$@"
+../../TriBITS/tribits/snapshot_tribits.py --clean-ignored-files-orig-dir "$@" \
+  || echo "snapshot_tribits.py failed but it worked okay?"
+cd - 2>&1 >> /dev/null
+
+# Get the current commit message created by the snapshotting script
+currentCommitMsg=$(git log -1 --pretty="%B")
+#echo "currentCommitMsg:
+#
+#${currentCommitMsg}"
+
+# Amend the commit message
+
+echo
+echo "Amending the snapshot commit message with the new first-parent commits from TriBITS repo:"
+echo
+echo "${newTribitsMergeCommits}"
+echo
+
+newCommitMsg="${currentCommitMsg}
+
+New first-parent commits in TriBITS snapshot:
+
+${newTribitsMergeCommits}\n"
+
+#echo "CommitMsg:
+#
+#${newCommitMsg}"
+
+git commit -s --amend -m "${newCommitMsg}"

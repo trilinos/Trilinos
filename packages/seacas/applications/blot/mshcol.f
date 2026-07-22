@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -53,7 +53,7 @@ C   --                                   6 - magenta
 
       include 'dbnums.blk'
       include 'linthc.blk'
-      
+
       CHARACTER*(*) FNCT
       INTEGER MLNTYP(-1:1)
       LOGICAL WIDLIN

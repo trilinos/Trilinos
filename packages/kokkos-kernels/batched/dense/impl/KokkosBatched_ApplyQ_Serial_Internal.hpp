@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -32,15 +19,12 @@ namespace KokkosBatched {
 
 struct SerialApplyQ_LeftForwardInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const int k,
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
-                                           /* */ ValueType *B, const int bs0,
-                                           const int bs1,
+                                           /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
-    typedef ValueType value_type;
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
     /// it applies a unitary matrix Q to B from left without transpose
@@ -75,9 +59,8 @@ struct SerialApplyQ_LeftForwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21,
-                                                 as0, B_part3x1.A1, bs1,
-                                                 B_part3x1.A2, bs0, bs1, w);
+      SerialApplyLeftHouseholderInternal<Trans::NoTranspose>::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1,
+                                                                     bs1, B_part3x1.A2, bs0, bs1, w);
 
       /// -----------------------------------------------------
       A_part2x2.mergeToABR(A_part3x3);
@@ -90,18 +73,15 @@ struct SerialApplyQ_LeftForwardInternal {
 
 struct SerialApplyQ_LeftBackwardInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const int k,
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
-                                           /* */ ValueType *B, const int bs0,
-                                           const int bs1,
+                                           /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
-    typedef ValueType value_type;
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
-    /// it applies a unitary matrix Q to B from left without transpose
+    /// it applies a unitary matrix Q to B from left with transpose
     ///   B = Q^H B = (H(k-1) H(k-2) ... H0) B
     /// where
     ///   A is m x k (holding H0, H1 ... H(k-1)
@@ -133,10 +113,8 @@ struct SerialApplyQ_LeftBackwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21,
-                                                 as0, B_part3x1.A1, bs1,
-                                                 B_part3x1.A2, bs0, bs1, w);
-
+      SerialApplyLeftHouseholderInternal<Trans::Transpose>::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1,
+                                                                   B_part3x1.A2, bs0, bs1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);
@@ -148,15 +126,12 @@ struct SerialApplyQ_LeftBackwardInternal {
 
 struct SerialApplyQ_RightForwardInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n,
-                                           const int k,
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const int k,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
-                                           /* */ ValueType *B, const int bs0,
-                                           const int bs1,
+                                           /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
-    typedef ValueType value_type;
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
     /// it applies a unitary matrix Q to B from left without transpose
@@ -191,9 +166,8 @@ struct SerialApplyQ_RightForwardInternal {
       const int n_B2 = n - n_A0 - 1;
       /// -----------------------------------------------------
       // right apply householder to partitioned B1 and B2
-      SerialApplyRightHouseholderInternal::invoke(m, n_B2, tau, A_part3x3.A21,
-                                                  as0, B_part1x3.A1, bs0,
-                                                  B_part1x3.A2, bs0, bs1, w);
+      SerialApplyRightHouseholderInternal::invoke(m, n_B2, tau, A_part3x3.A21, as0, B_part1x3.A1, bs0, B_part1x3.A2,
+                                                  bs0, bs1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);

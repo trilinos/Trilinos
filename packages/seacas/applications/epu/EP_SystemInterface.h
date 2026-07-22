@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,6 +35,7 @@ namespace Excn {
     int step_interval() const { return stepInterval_; }
     int subcycle() const { return subcycle_; }
     int cycle() const { return cycle_; }
+    int selected_change_set() const { return selectedChangeSet_; }
 
     void subcycle_join(bool tf) { subcycleJoin_ = tf; }
     void subcycle(int cycles) { subcycle_ = cycles; }
@@ -55,6 +56,7 @@ namespace Excn {
 
     bool add_nodal_communication_map() const { return addNodalCommunicationMap_; }
     bool add_processor_id_field() const { return addProcessorIdField_; }
+    void set_processor_id_field(bool yes_no) { addProcessorIdField_ = yes_no; }
     bool add_processor_id_map() const { return addProcessorIdMap_; }
     bool sum_shared_nodes() const { return sumSharedNodes_; }
     bool use_netcdf4() const { return useNetcdf4_; }
@@ -70,9 +72,13 @@ namespace Excn {
     bool omit_faceblocks() const { return omitFaceBlocks_; }
     bool int64() const { return intIs64Bit_; }
     void set_int64() const { intIs64Bit_ = true; }
-    int  compress_data() const { return compressData_; }
+    int  compress_data() const { return compressionLevel_; }
     bool zlib() const { return zlib_; }
     bool szip() const { return szip_; }
+    bool zstd() const { return zstd_; }
+    bool bz2() const { return bz2_; }
+    int  quantize_nsd() const { return quantizeNSD_; }
+    bool quantize() const { return quantizeNSD_ > 0; }
     bool subcycle_join() const { return subcycleJoin_; }
     bool output_shared_nodes() const { return outputSharedNodes_; }
     bool is_auto() const { return auto_; }
@@ -137,10 +143,14 @@ namespace Excn {
     int          stepInterval_{1};
     int          subcycle_{-1};
     int          cycle_{-1};
-    int          compressData_{0};
+    int          compressionLevel_{0};
+    int          quantizeNSD_{0};
     int          maxOpenFiles_{0};
-    bool         zlib_{true};
+    int          selectedChangeSet_{-1};
+    bool         zlib_{false};
     bool         szip_{false};
+    bool         zstd_{false};
+    bool         bz2_{false};
     bool         sumSharedNodes_{false};
     bool         addProcessorIdField_{false};
     bool         addProcessorIdMap_{false};

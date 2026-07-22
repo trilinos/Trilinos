@@ -39,7 +39,6 @@ void EigenVerify::process_options()
 void EigenVerify::create_mesh_data(stk::io::StkMeshIoBroker * mesh_data,
 				   const std::string &filename)
 {
-  mesh_data->use_simple_fields();
   mesh_data->property_add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ""));
   mesh_data->add_mesh_database(filename, "exodus", stk::io::READ_MESH);
   mesh_data->create_input_mesh();
@@ -180,7 +179,7 @@ void compute_field_error(
 }
 
 void
-compute_permutations_and_signs(Intrepid::FieldContainer<double> & mac_values,
+compute_permutations_and_signs(Kokkos::View<double**,Kokkos::HostSpace> & mac_values,
 			       std::vector<int> & reorder_indices,
 			       std::vector<double> & sign_factor)
 {
@@ -202,7 +201,7 @@ compute_permutations_and_signs(Intrepid::FieldContainer<double> & mac_values,
 }
 
 void
-write_mac(Intrepid::FieldContainer<double> & mac_values,
+write_mac(Kokkos::View<double**,Kokkos::HostSpace> & mac_values,
 	  std::vector<int> & reorder_indices,
 	  std::vector<double> & sign_factor)
 {
@@ -227,8 +226,6 @@ write_mac(Intrepid::FieldContainer<double> & mac_values,
 
 void EigenVerify::run(int argc, char** argv)
 {
-  stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
-
   process_options();
   clp.parse( argc, argv );
 
@@ -275,7 +272,7 @@ void EigenVerify::run(int argc, char** argv)
   mesh_transfer_01->apply();
 
   // fix up signs and ordering
-  Intrepid::FieldContainer<double> mac_values(num_time_steps, num_time_steps);
+  Kokkos::View<double**, Kokkos::HostSpace> mac_values("mac_values",num_time_steps, num_time_steps);
 
   field_compute_MAC(mesh_data[1]->bulk_data(), mesh_data[1]->meta_data(),
 		    fieldAll[1], xferFieldAll[1], mac_values);
@@ -323,7 +320,6 @@ void EigenVerify::run(int argc, char** argv)
   }
   delete mesh_data[0];
   delete mesh_data[1];
-  stk::parallel_machine_finalize();
 }
 
 } //namespace percept

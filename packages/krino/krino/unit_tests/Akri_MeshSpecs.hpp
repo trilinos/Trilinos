@@ -8,6 +8,36 @@
 
 namespace krino {
 
+struct RegularBeam
+{
+    RegularBeam() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::BEAM_2;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        {-0.500,  0.000,  0.000 },
+        { 0.500,  0.000,  0.000 },
+    }};
+
+    std::array<unsigned,2> BeamConn{{0, 1}};
+    std::vector<std::array<unsigned, 2>> allElementConn{BeamConn};
+};
+
+struct UMRRegularBeam
+{
+    UMRRegularBeam() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::BEAM_2;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        {-0.500,  0.000,  0.000 },
+        { 0.000,  0.000,  0.000 },
+        { 0.500,  0.000,  0.000 },
+    }};
+
+    std::array<unsigned,2> Beam1Conn{{0, 1}};
+    std::array<unsigned,2> Beam2Conn{{1, 2}};
+    std::vector<std::array<unsigned, 2>> allElementConn{Beam1Conn, Beam2Conn};
+};
+
 struct RegularTri
 {
     RegularTri() = default;
@@ -51,6 +81,28 @@ struct UMRRegularTri
         { 0.000,  0.000 },
         { 0.250,  std::sqrt(3.)/4. },
         {-0.250,  std::sqrt(3.)/4. }
+    }};
+
+    std::array<unsigned,3> TriConn0{{3,4,5}};
+    std::array<unsigned,3> TriConn1{{0,3,5}};
+    std::array<unsigned,3> TriConn2{{1,4,3}};
+    std::array<unsigned,3> TriConn3{{2,5,4}};
+    std::vector<std::array<unsigned, 3>> allElementConn{TriConn0,TriConn1,TriConn2,TriConn3};
+};
+
+struct UMRRegularTriShell
+{
+    UMRRegularTriShell() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::SHELL_TRIANGLE_3_ALL_FACE_SIDES;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        {-0.500,  0.000, 0. },
+        { 0.500,  0.000, 0. },
+        { 0.000,  std::sqrt(3.)/2., 1. },
+
+        { 0.000,  0.000, 0. },
+        { 0.250,  std::sqrt(3.)/4., 0.5 },
+        {-0.250,  std::sqrt(3.)/4., 0.5 }
     }};
 
     std::array<unsigned,3> TriConn0{{3,4,5}};
@@ -156,6 +208,32 @@ struct QuadSplit4Tri
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn };
 };
 
+struct QuadSplit4TriAndQuadSplit2Tri
+{
+    QuadSplit4TriAndQuadSplit2Tri() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { -0.500,  -0.500 },
+        { 0.500,  -0.500 },
+        { 0.500,  0.500 },
+        { -0.500,  0.500 },
+        { 0,  0 },
+        { 1., 0.5 },
+        { 1., 1. },
+        { 0.5, 1. }
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{0, 1, 4}};
+    std::array<unsigned,3> Tri2Conn{{1, 2, 4}};
+    std::array<unsigned,3> Tri3Conn{{2, 3, 4}};
+    std::array<unsigned,3> Tri4Conn{{3, 0, 4}};
+    std::array<unsigned,3> Tri5Conn{{2, 5, 6}};
+    std::array<unsigned,3> Tri6Conn{{2, 6, 7}};
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn };
+};
+
+
 struct FourDisconnectedTris
 {
     FourDisconnectedTris() = default;
@@ -213,22 +291,24 @@ struct UMRRegularTet
         { 0.0, -0.5,  0.5/std::sqrt(2.) },
         { 0.0,  0.5,  0.5/std::sqrt(2.) },
 
-        { 0.0,  0.0,  0.5/std::sqrt(2.) },
-        {-0.25, 0.25, 0.0 },
-        { 0.25, 0.25, 0.0 },
-        { 0.25,-0.25, 0.0 },
-        {-0.25,-0.25, 0.0 },
         { 0.0,  0.0, -0.5/std::sqrt(2.) },
+        {-0.25,-0.25, 0.0 },
+        { 0.25,-0.25, 0.0 },
+
+        { 0.25, 0.25, 0.0 },
+        {-0.25, 0.25, 0.0 },
+        { 0.0,  0.0,  0.5/std::sqrt(2.) },
     }};
 
-    std::array<unsigned,4> TetConn0{{0,9,7,6}};
-    std::array<unsigned,4> TetConn1{{9,1,8,5}};
-    std::array<unsigned,4> TetConn2{{7,8,2,4}};
-    std::array<unsigned,4> TetConn3{{6,5,4,3}};
-    std::array<unsigned,4> TetConn4{{7,6,9,5}};
-    std::array<unsigned,4> TetConn5{{7,4,6,5}};
-    std::array<unsigned,4> TetConn6{{7,8,4,5}};
-    std::array<unsigned,4> TetConn7{{7,9,8,5}};
+    std::array<unsigned,4> TetConn0{{0,4,6,7}};
+    std::array<unsigned,4> TetConn1{{4,1,5,8}};
+    std::array<unsigned,4> TetConn2{{6,5,2,9}};
+    std::array<unsigned,4> TetConn3{{7,8,9,3}};
+    std::array<unsigned,4> TetConn4{{6,7,4,8}};
+    std::array<unsigned,4> TetConn5{{6,9,7,8}};
+    std::array<unsigned,4> TetConn6{{6,5,9,8}};
+    std::array<unsigned,4> TetConn7{{6,4,5,8}};
+
     std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3,TetConn4,TetConn5,TetConn6,TetConn7};
 };
 
@@ -426,6 +506,323 @@ struct PatchOfRegularTrisAroundNode
     std::array<unsigned,3> Tri5Conn{{0, 5, 6}};
     std::array<unsigned,3> Tri6Conn{{0, 6, 1}};
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn};
+};
+
+struct RegularQuad
+{
+    RegularQuad() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::QUADRILATERAL_4_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.0, 0.0 },
+        { 1.0, 0.0 },
+        { 1.0, 1.0 },
+        { 0.0, 1.0 },
+    }};
+
+    std::array<unsigned,4> QuadConn{{0, 1, 2, 3}};
+    std::vector<std::array<unsigned, 4>> allElementConn{QuadConn};
+};
+
+struct UMRRegularQuad
+{
+    UMRRegularQuad() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::QUADRILATERAL_4_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.0, 0.0 },
+        { 1.0, 0.0 },
+        { 1.0, 1.0 },
+        { 0.0, 1.0 },
+        { 0.5, 0.0 },
+        { 1.0, 0.5 },
+        { 0.5, 1.0 },
+        { 0.0, 0.5 },
+        { 0.5, 0.5 }
+    }};
+
+    std::array<unsigned,4> Quad1Conn{{0, 4, 8, 7}};
+    std::array<unsigned,4> Quad2Conn{{1, 5, 8, 4}};
+    std::array<unsigned,4> Quad3Conn{{2, 6, 8, 5}};
+    std::array<unsigned,4> Quad4Conn{{3, 7, 8, 6}};
+    std::vector<std::array<unsigned, 4>> allElementConn{Quad1Conn, Quad2Conn, Quad3Conn, Quad4Conn};
+};
+
+struct RegularHex
+{
+    RegularHex() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::HEXAHEDRON_8;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.0, 0.0, 0.0 },
+        { 1.0, 0.0, 0.0 },
+        { 1.0, 1.0, 0.0 },
+        { 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 1.0 },
+        { 1.0, 0.0, 1.0 },
+        { 1.0, 1.0, 1.0 },
+        { 0.0, 1.0, 1.0 },
+    }};
+
+    std::array<unsigned,8> HexConn{{0, 1, 2, 3, 4, 5, 6, 7}};
+    std::vector<std::array<unsigned, 8>> allElementConn{HexConn};
+};
+
+struct UMRRegularHex
+{
+    UMRRegularHex() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::HEXAHEDRON_8;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.0, 0.0, 0.0 },
+        { 1.0, 0.0, 0.0 },
+        { 1.0, 1.0, 0.0 },
+        { 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 1.0 },
+        { 1.0, 0.0, 1.0 },
+        { 1.0, 1.0, 1.0 },
+        { 0.0, 1.0, 1.0 },
+        { 0.5, 0.0, 0.0 },
+        { 1.0, 0.5, 0.0 },
+        { 0.5, 1.0, 0.0 },
+        { 0.0, 0.5, 0.0 },
+        { 0.0, 0.0, 0.5 },
+        { 1.0, 0.0, 0.5 },
+        { 1.0, 1.0, 0.5 },
+        { 0.0, 1.0, 0.5 },
+        { 0.5, 0.0, 1.0 },
+        { 1.0, 0.5, 1.0 },
+        { 0.5, 1.0, 1.0 },
+        { 0.0, 0.5, 1.0 },
+        { 0.5, 0.5, 0.5 },
+        { 0.5, 0.5, 0.0 },
+        { 0.5, 0.5, 1.0 },
+        { 0.0, 0.5, 0.5 },
+        { 1.0, 0.5, 0.5 },
+        { 0.5, 0.0, 0.5 },
+        { 0.5, 1.0, 0.5 },
+    }};
+
+    std::array<unsigned,8> Hex1Conn{{0,8,21,11,12,25,20,23}};
+    std::array<unsigned,8> Hex2Conn{{1,9,21,8,13,24,20,25}};
+    std::array<unsigned,8> Hex3Conn{{2,10,21,9,14,26,20,24}};
+    std::array<unsigned,8> Hex4Conn{{3,11,21,10,15,23,20,26}};
+    std::array<unsigned,8> Hex5Conn{{12,25,20,23,4,16,22,19}};
+    std::array<unsigned,8> Hex6Conn{{13,24,20,25,5,17,22,16}};
+    std::array<unsigned,8> Hex7Conn{{14,26,20,24,6,18,22,17}};
+    std::array<unsigned,8> Hex8Conn{{15,23,20,26,7,19,22,18}};
+    std::vector<std::array<unsigned, 8>> allElementConn{Hex1Conn, Hex2Conn, Hex3Conn, Hex4Conn, Hex5Conn, Hex6Conn, Hex7Conn, Hex8Conn};
+};
+
+
+struct CubeOf12Tets
+{
+    CubeOf12Tets() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.5, -0.5, -0.5},
+        { 0.5,  0.5, -0.5},
+        {-0.5,  0.5, -0.5},
+        {-0.5, -0.5, -0.5},
+
+        { 0.5, -0.5,  0.5},
+        { 0.5,  0.5,  0.5},
+        {-0.5,  0.5,  0.5},
+        {-0.5, -0.5,  0.5},
+
+        { 0.0,  0.0, 0.0 },
+    }};
+
+    std::array<unsigned,4> TetConn0{{0,4,1,8}};
+    std::array<unsigned,4> TetConn1{{1,4,5,8}};
+    std::array<unsigned,4> TetConn2{{1,5,2,8}};
+    std::array<unsigned,4> TetConn3{{2,5,6,8}};
+    std::array<unsigned,4> TetConn4{{2,6,3,8}};
+    std::array<unsigned,4> TetConn5{{3,6,7,8}};
+    std::array<unsigned,4> TetConn6{{3,7,0,8}};
+    std::array<unsigned,4> TetConn7{{0,7,4,8}};
+    std::array<unsigned,4> TetConn8{{4,7,5,8}};
+    std::array<unsigned,4> TetConn9{{5,7,6,8}};
+    std::array<unsigned,4> TetConn10{{0,2,3,8}};
+    std::array<unsigned,4> TetConn11{{0,1,2,8}};
+    std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3,TetConn4,TetConn5,TetConn6,TetConn7,TetConn8,TetConn9,TetConn10,TetConn11};
+};
+
+struct CubeOf24Tets
+{
+  CubeOf24Tets() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 1., -1., -1.},
+        { 1.,  1., -1.},
+        {-1.,  1., -1.},
+        {-1., -1., -1.},
+
+        { 1., -1.,  1.},
+        { 1.,  1.,  1.},
+        {-1.,  1.,  1.},
+        {-1., -1.,  1.},
+
+        {-1.,  0.,  0.},
+        { 1.,  0.,  0.},
+        { 0., -1.,  0.},
+        { 0.,  1.,  0.},
+        { 0.,  0., -1.},
+        { 0.,  0.,  1.},
+
+        { 0.,  0.,  0. },
+    }};
+
+    std::array<unsigned,4> TetConn0{{0,4,9,14}};
+    std::array<unsigned,4> TetConn1{{0,9,1,14}};
+    std::array<unsigned,4> TetConn2{{1,9,5,14}};
+    std::array<unsigned,4> TetConn3{{9,4,5,14}};
+    std::array<unsigned,4> TetConn4{{1,5,11,14}};
+    std::array<unsigned,4> TetConn5{{1,11,2,14}};
+    std::array<unsigned,4> TetConn6{{2,11,6,14}};
+    std::array<unsigned,4> TetConn7{{11,5,6,14}};
+    std::array<unsigned,4> TetConn8{{2,6,8,14}};
+    std::array<unsigned,4> TetConn9{{2,8,3,14}};
+    std::array<unsigned,4> TetConn10{{3,8,7,14}};
+    std::array<unsigned,4> TetConn11{{8,6,7,14}};
+    std::array<unsigned,4> TetConn12{{3,7,10,14}};
+    std::array<unsigned,4> TetConn13{{3,10,0,14}};
+    std::array<unsigned,4> TetConn14{{0,10,4,14}};
+    std::array<unsigned,4> TetConn15{{10,7,4,14}};
+    std::array<unsigned,4> TetConn16{{4,7,13,14}};
+    std::array<unsigned,4> TetConn17{{4,13,5,14}};
+    std::array<unsigned,4> TetConn18{{5,13,6,14}};
+    std::array<unsigned,4> TetConn19{{13,7,6,14}};
+    std::array<unsigned,4> TetConn20{{0,12,3,14}};
+    std::array<unsigned,4> TetConn21{{12,2,3,14}};
+    std::array<unsigned,4> TetConn22{{0,1,12,14}};
+    std::array<unsigned,4> TetConn23{{12,1,2,14}};
+    std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3,
+      TetConn4,TetConn5,TetConn6,TetConn7,
+      TetConn8,TetConn9,TetConn10,TetConn11,
+      TetConn12,TetConn13,TetConn14,TetConn15,
+      TetConn16,TetConn17,TetConn18,TetConn19,
+      TetConn20,TetConn21,TetConn22,TetConn23};
+};
+
+struct PatchOf32Tets
+{
+  PatchOf32Tets() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+      { 0.0, 0.0, 0.0},  // Central node, 0
+
+      { 1.0, 0.0, 0.0},  // Face nodes, 1-6
+      {-1.0, 0.0, 0.0},
+      { 0.0, 1.0, 0.0},
+      { 0.0,-1.0, 0.0},
+      { 0.0, 0.0, 1.0},
+      { 0.0, 0.0,-1.0},
+
+      { 1.0, 1.0, 0.0},  // Edge nodes, 7-18
+      {-1.0,-1.0, 0.0},
+      { 1.0,-1.0, 0.0},
+      {-1.0, 1.0, 0.0},
+      { 1.0, 0.0, 1.0},
+      {-1.0, 0.0,-1.0},
+      { 1.0, 0.0,-1.0},
+      {-1.0, 0.0, 1.0},
+      { 0.0, 1.0, 1.0},
+      { 0.0,-1.0,-1.0},
+      { 0.0, 1.0,-1.0},
+      { 0.0,-1.0, 1.0}
+    }};
+
+    std::array<unsigned,4> TetConn0{{1,9,11,0}};
+    std::array<unsigned,4> TetConn1{{1,11,7,0}};
+    std::array<unsigned,4> TetConn2{{1,7,13,0}};
+    std::array<unsigned,4> TetConn3{{1,13,9,0}};
+    std::array<unsigned,4> TetConn4{{3,7,15,0}};
+    std::array<unsigned,4> TetConn5{{3,15,10,0}};
+    std::array<unsigned,4> TetConn6{{3,10,17,0}};
+    std::array<unsigned,4> TetConn7{{3,17,7,0}};
+    std::array<unsigned,4> TetConn8{{5,11,18,0}};
+    std::array<unsigned,4> TetConn9{{5,18,14,0}};
+    std::array<unsigned,4> TetConn10{{5,14,15,0}};
+    std::array<unsigned,4> TetConn11{{5,15,11,0}};
+    std::array<unsigned,4> TetConn12{{2,8,12,0}};
+    std::array<unsigned,4> TetConn13{{2,12,10,0}};
+    std::array<unsigned,4> TetConn14{{2,10,14,0}};
+    std::array<unsigned,4> TetConn15{{2,14,8,0}};
+    std::array<unsigned,4> TetConn16{{4,8,18,0}};
+    std::array<unsigned,4> TetConn17{{4,18,9,0}};
+    std::array<unsigned,4> TetConn18{{4,9,16,0}};
+    std::array<unsigned,4> TetConn19{{4,16,8,0}};
+    std::array<unsigned,4> TetConn20{{6,12,16,0}};
+    std::array<unsigned,4> TetConn21{{6,16,13,0}};
+    std::array<unsigned,4> TetConn22{{6,13,17,0}};
+    std::array<unsigned,4> TetConn23{{6,17,12,0}};
+    std::array<unsigned,4> TetConn24{{10,15,14,0}};
+    std::array<unsigned,4> TetConn25{{7,11,15,0}};
+    std::array<unsigned,4> TetConn26{{7,17,13,0}};
+    std::array<unsigned,4> TetConn27{{10,12,17,0}};
+    std::array<unsigned,4> TetConn28{{8,14,18,0}};
+    std::array<unsigned,4> TetConn29{{9,18,11,0}};
+    std::array<unsigned,4> TetConn30{{9,13,16,0}};
+    std::array<unsigned,4> TetConn31{{12,8,16,0}};
+    std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3,
+      TetConn4,TetConn5,TetConn6,TetConn7,
+      TetConn8,TetConn9,TetConn10,TetConn11,
+      TetConn12,TetConn13,TetConn14,TetConn15,
+      TetConn16,TetConn17,TetConn18,TetConn19,
+      TetConn20,TetConn21,TetConn22,TetConn23,
+      TetConn24,TetConn25,TetConn26,TetConn27,
+      TetConn28,TetConn29,TetConn30,TetConn31};
+};
+
+struct OctahedralPatchAroundNode
+{
+    OctahedralPatchAroundNode() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.0, 0.0, 0.0},  // Central node
+        { 1.0, 0.0, 0.0},  // Surface nodes
+        {-1.0, 0.0, 0.0},
+        { 0.0, 1.0, 0.0},
+        { 0.0,-1.0, 0.0},
+        { 0.0, 0.0, 1.0},
+        { 0.0, 0.0,-1.0}
+    }};
+
+    std::array<unsigned,4> TetConn0{{0, 1, 3, 5}};
+    std::array<unsigned,4> TetConn1{{0, 3, 1, 6}};
+    std::array<unsigned,4> TetConn2{{0, 4, 1, 5}};
+    std::array<unsigned,4> TetConn3{{0, 1, 4, 6}};
+    std::array<unsigned,4> TetConn4{{0, 3, 2, 5}};
+    std::array<unsigned,4> TetConn5{{0, 2, 3, 6}};
+    std::array<unsigned,4> TetConn6{{0, 2, 4, 5}};
+    std::array<unsigned,4> TetConn7{{0, 4, 2, 6}};
+
+    std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3,TetConn4,TetConn5,TetConn6,TetConn7};
+};
+
+struct RegularTetSplitAtCentroid
+{
+  RegularTetSplitAtCentroid() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.0,  0.0,  0.0 },
+        { 0.5,  0.0, -0.5/std::sqrt(2.) },
+        {-0.5,  0.0, -0.5/std::sqrt(2.) },
+        { 0.0, -0.5,  0.5/std::sqrt(2.) },
+        { 0.0,  0.5,  0.5/std::sqrt(2.) },
+    }};
+
+    std::array<unsigned,4> TetConn0{{2, 1, 4, 0}};
+    std::array<unsigned,4> TetConn1{{3, 2, 4, 0}};
+    std::array<unsigned,4> TetConn2{{1, 3, 4, 0}};
+    std::array<unsigned,4> TetConn3{{1, 2, 3, 0}};
+    std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3};
 };
 
 }

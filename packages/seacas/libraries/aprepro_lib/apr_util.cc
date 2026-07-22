@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,7 +40,7 @@
 namespace {
   std::vector<char *> allocations;
 
-  void copy_string(char *dest, const char *source, long int elements)
+  void copy_string(char *dest, const char *source, size_t elements)
   {
     char *d;
     for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
@@ -49,15 +49,15 @@ namespace {
     *d = '\0';
   }
 
-  void copy_string(char *dest, const std::string &source, long int elements)
+  void copy_string(char *dest, const std::string &source, size_t elements)
   {
     copy_string(dest, source.c_str(), elements);
   }
 
   void new_string_int(const char *from, char **to)
   {
-    int len = strlen(from);
-    *to     = new char[len + 1];
+    auto len = strlen(from);
+    *to      = new char[len + 1];
     copy_string(*to, from, len + 1);
     allocations.push_back(*to);
   }
@@ -103,8 +103,8 @@ namespace SEAMS {
   {
     std::string tmp{from1};
     tmp += from2;
-    int len = tmp.length();
-    *to     = new char[len + 1];
+    auto len = tmp.length();
+    *to      = new char[len + 1];
     copy_string(*to, tmp, len + 1);
     allocations.push_back(*to);
   }
@@ -227,7 +227,7 @@ namespace SEAMS {
         *p = '_';
       }
       else if (isupper(static_cast<int>(*p)) != 0) {
-        *p = tolower(static_cast<int>(*p));
+        *p = static_cast<char>(tolower(static_cast<int>(*p)));
       }
       p++;
     }
@@ -264,7 +264,7 @@ namespace SEAMS {
      * L [A-Za-z_]
      */
 
-    int length = strlen(var);
+    auto length = strlen(var);
     if (length == 0) {
       return false;
     }
@@ -273,7 +273,7 @@ namespace SEAMS {
       return false;
     }
 
-    for (int i = 1; i < length; i++) {
+    for (size_t i = 1; i < length; i++) {
       char c = var[i];
       if ((isalnum(c) == 0) && c != ':' && c != '_') {
         return false;

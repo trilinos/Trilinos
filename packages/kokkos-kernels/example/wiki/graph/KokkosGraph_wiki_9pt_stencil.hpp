@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef WIKI_9PT_STENCIL_H
 #define WIKI_9PT_STENCIL_H
 
@@ -25,16 +12,16 @@
 #include <cmath>
 #include <sstream>
 
-using Ordinal     = default_lno_t;
-using Offset      = default_size_type;
-using Layout      = default_layout;
+using Ordinal     = KokkosKernels::default_lno_t;
+using Offset      = KokkosKernels::default_size_type;
+using Layout      = KokkosKernels::default_layout;
 using ExecSpace   = Kokkos::DefaultExecutionSpace;
 using DeviceSpace = typename ExecSpace::memory_space;
 using Kokkos::HostSpace;
 using RowmapType  = Kokkos::View<Offset*, DeviceSpace>;
 using ColindsType = Kokkos::View<Ordinal*, DeviceSpace>;
-using Handle      = KokkosKernels::Experimental::KokkosKernelsHandle<
-    Offset, Ordinal, default_scalar, ExecSpace, DeviceSpace, DeviceSpace>;
+using Handle      = KokkosKernels::Experimental::KokkosKernelsHandle<Offset, Ordinal, KokkosKernels::default_scalar,
+                                                                ExecSpace, DeviceSpace, DeviceSpace>;
 
 namespace GraphDemo {
 Ordinal gridX       = 15;
@@ -124,10 +111,8 @@ void generate9pt(RowmapType& rowmapDevice, ColindsType& colindsDevice) {
   Offset numEdges = colinds.size();
   // Now that the graph is formed, copy rowmap and colinds to Kokkos::Views in
   // device memory The nonowning host views just alias the std::vectors.
-  Kokkos::View<Offset*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      rowmapHost(rowmap.data(), numVertices + 1);
-  Kokkos::View<Ordinal*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-      colindsHost(colinds.data(), numEdges);
+  Kokkos::View<Offset*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> rowmapHost(rowmap.data(), numVertices + 1);
+  Kokkos::View<Ordinal*, HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> colindsHost(colinds.data(), numEdges);
   // Allocate owning views on device with the correct size.
   rowmapDevice  = RowmapType("Rowmap", numVertices + 1);
   colindsDevice = ColindsType("Colinds", numEdges);

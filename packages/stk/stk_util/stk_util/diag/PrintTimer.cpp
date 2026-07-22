@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,19 +30,19 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "stk_util/diag/PrintTimer.hpp"
 #include "stk_util/diag/PrintTable.hpp"           // for operator<<, PrintTable, end_col, PrintT...
 #include "stk_util/diag/Timer.hpp"                // for getEnabledTimerMetricsMask, Timer, Time...
 #include "stk_util/diag/WriterExt.hpp"            // for operator<<
+#include "stk_util/diag/ParallelTimerImpl.hpp"
 #include "stk_util/environment/WallTime.hpp"      // for wall_time
 #include "stk_util/parallel/Parallel.hpp"         // for parallel_machine_rank, MPI_Gather, para...
 #include "stk_util/stk_config.h"                  // for STK_HAS_MPI
 #include "stk_util/util/Marshal.hpp"              // for operator>>, Marshal, operator<<
 #include "stk_util/util/Writer.hpp"               // for operator<<, Writer, dendl, pop, push
 #include "stk_util/util/WriterManip.hpp"          // for hex
-#include "stk_util/util/string_case_compare.hpp"  // for equal_case
 #include <cstddef>                                // for size_t
 #include <algorithm>                              // for find_if, max, min
 #include <functional>                             // for unary_function
@@ -54,17 +54,6 @@
 #include <string>                                 // for string, char_traits, operator<<
 #include <vector>                                 // for vector
 
-namespace stk { namespace diag { namespace { struct ParallelTimer; } } }
-
-namespace stk {
-
-template <class T>
-Marshal &operator<<(Marshal &mout, const diag::Timer::Metric<T> &t);
-
-Marshal &operator<<(Marshal &mout, const diag::Timer &t);
-
-Marshal &operator>>(Marshal &min, diag::ParallelTimer &t);
-}
 
 namespace stk {
 namespace diag {
@@ -120,7 +109,7 @@ Percent::operator()(
       strout << "(" << std::setw(5) << std::setprecision(1) << std::fixed << ratio << "%)";
     else if (ratio >= 10.0)
       strout << "(" << std::setw(5) << std::setprecision(2) << std::fixed << ratio << "%)";
-    else 
+    else
       strout << "(" << std::setw(5) << std::setprecision(3) << std::fixed << ratio << "%)";
   }
 
@@ -129,370 +118,6 @@ Percent::operator()(
 
 inline std::ostream &operator<<(std::ostream &os, const Percent &p) {
   return p(os);
-}
-
-struct ParallelTimer
-{
-  template <typename T>
-  struct Metric
-  {
-    Metric()
-      : m_value(0),
-        m_sum(0.0),
-        m_min(std::numeric_limits<double>::max()),
-        m_max(0.0)
-    {}
-
-    typename MetricTraits<T>::Type  m_value;  ///< Metric value
-    typename MetricTraits<T>::Type  m_checkpoint;  ///< Metric checkpointed value
-    double                          m_sum;    ///< Reduction sum
-    double                              m_min;    ///< Reduction min
-    double                    m_max;          ///< Reduction max
-
-    void accumulate(const Metric<T> &metric, bool checkpoint) {
-      double value = static_cast<double>(metric.m_value);
-      if (checkpoint)
-        value -= static_cast<double>(metric.m_checkpoint);
-      
-      m_sum += value;
-      m_min = std::min(m_min, value);
-      m_max = std::max(m_max, value);
-    }
-
-    Writer &dump(Writer &dout) const {
-      if (dout.shouldPrint()) {
-        dout << "Metric<" << typeid(typename MetricTraits<T>::Type) << ">" << push << dendl;
-        dout << "m_value " << m_value << dendl;
-        dout << "m_checkpoint " << m_value << dendl;
-        dout << "m_sum " << m_sum << dendl;
-        dout << "m_min " << m_min << dendl;
-        dout << "m_max " << m_max << dendl;
-        dout << pop;
-      }
-      return dout;
-    }
-  };
-
-  ParallelTimer()
-    : m_name(),
-      m_timerMask(0),
-      m_subtimerLapCount(0),
-      m_lapCount(),
-      m_cpuTime(),
-      m_wallTime(),
-      m_MPICount(),
-      m_MPIByteCount(),
-      m_heapAlloc(),
-      m_subtimerList()
-  {}
-
-  ParallelTimer(const ParallelTimer &parallel_timer)
-    : m_name(parallel_timer.m_name),
-      m_timerMask(parallel_timer.m_timerMask),
-      m_subtimerLapCount(parallel_timer.m_subtimerLapCount),
-      m_lapCount(parallel_timer.m_lapCount),
-      m_cpuTime(parallel_timer.m_cpuTime),
-      m_wallTime(parallel_timer.m_wallTime),
-      m_MPICount(parallel_timer.m_MPICount),
-      m_MPIByteCount(parallel_timer.m_MPIByteCount),
-      m_heapAlloc(parallel_timer.m_heapAlloc),
-      m_subtimerList(parallel_timer.m_subtimerList)
-  {}
-
-  ParallelTimer &operator=(const ParallelTimer &parallel_timer) {
-    m_name = parallel_timer.m_name;
-    m_timerMask = parallel_timer.m_timerMask;
-    m_subtimerLapCount = parallel_timer.m_subtimerLapCount;
-    m_lapCount = parallel_timer.m_lapCount;
-    m_cpuTime = parallel_timer.m_cpuTime;
-    m_wallTime = parallel_timer.m_wallTime;
-    m_MPICount = parallel_timer.m_MPICount;
-    m_heapAlloc = parallel_timer.m_heapAlloc;
-    m_subtimerList = parallel_timer.m_subtimerList;
-
-    return *this;
-  }
-
-  template <class T>
-  const Metric<T> &getMetric() const;
-
-  std::string                   m_name;                 ///< Name of the timer
-  TimerMask                     m_timerMask;
-  double                        m_subtimerLapCount;     ///< Sum of subtimer lap counts and m_lapCount
-
-  Metric<LapCount>              m_lapCount;             ///< Number of laps accumulated
-  Metric<CPUTime>               m_cpuTime;              ///< CPU time
-  Metric<WallTime>              m_wallTime;             ///< Wall time
-  Metric<MPICount>              m_MPICount;             ///< MPI call count
-  Metric<MPIByteCount>          m_MPIByteCount;	        ///< MPI byte count
-  Metric<HeapAlloc>             m_heapAlloc;            ///< MPI byte count
-
-  std::list<ParallelTimer>      m_subtimerList;         ///< Sub timers
-
-  Writer &dump(Writer &dout) const;
-};
-
-template<>
-const ParallelTimer::Metric<LapCount> &
-ParallelTimer::getMetric<LapCount>() const {
-  return m_lapCount;
-}
-
-
-template<>
-const ParallelTimer::Metric<CPUTime> &
-ParallelTimer::getMetric<CPUTime>() const {
-  return m_cpuTime;
-}
-
-
-template<>
-const ParallelTimer::Metric<WallTime> &
-ParallelTimer::getMetric<WallTime>() const {
-  return m_wallTime;
-}
-
-
-template<>
-const ParallelTimer::Metric<MPICount> &
-ParallelTimer::getMetric<MPICount>() const {
-  return m_MPICount;
-}
-
-
-template<>
-const ParallelTimer::Metric<MPIByteCount> &
-ParallelTimer::getMetric<MPIByteCount>() const {
-  return m_MPIByteCount;
-}
-
-
-template<>
-const ParallelTimer::Metric<HeapAlloc> &
-ParallelTimer::getMetric<HeapAlloc>() const {
-  return m_heapAlloc;
-}
-
-
-template <typename T>
-Writer &operator<<(Writer &dout, const ParallelTimer::Metric<T> &t) {
-  return t.dump(dout);
-}
-
-Writer &operator<<(Writer &dout, const ParallelTimer &parallel_timer) {
-  return parallel_timer.dump(dout);
-}
-
-Writer &
-ParallelTimer::dump(Writer &dout) const {
-  if (dout.shouldPrint()) {
-    dout << "ParallelTimer " << m_name << push << dendl;
-    dout << "m_name " << m_name << dendl;
-    dout << "m_timerMask " << hex << m_timerMask << dendl;
-    dout << "m_subtimerLapCount " << m_subtimerLapCount << dendl;
-    dout << "m_lapCount " << m_lapCount << dendl;
-    dout << "m_cpuTime " << m_cpuTime << dendl;
-    dout << "m_wallTime " << m_wallTime << dendl;
-    dout << "m_MPICount " << m_MPICount << dendl;
-    dout << "m_MPIByteCount " << m_MPIByteCount << dendl;
-    dout << "m_heapAlloc " << m_heapAlloc << dendl;
-    dout << "m_subtimerList " << m_subtimerList << dendl;
-    dout << pop;
-  }
-  return dout;
-}
-
-#ifdef __INTEL_COMPILER
-#pragma warning(push)
-#pragma warning(disable: 444)
-#endif
-class finder
-{
-public:
-  finder(const std::string &name)
-    : m_name(name)
-  {}
-
-  bool operator()(const ParallelTimer &parallel_timer) const {
-    return equal_case(parallel_timer.m_name, m_name);
-  }
-
-private:
-  std::string           m_name;
-};
-#ifdef __INTEL_COMPILER
-#pragma warning(pop)
-#endif
-
-
-void
-merge_parallel_timer(
-  ParallelTimer &       p0,
-  const ParallelTimer & p1,
-  bool                  checkpoint)
-{
-  p0.m_timerMask = p1.m_timerMask;
-  p0.m_subtimerLapCount += p1.m_subtimerLapCount;
-  p0.m_lapCount.accumulate(p1.m_lapCount, checkpoint);
-  p0.m_cpuTime.accumulate(p1.m_cpuTime, checkpoint);
-  p0.m_wallTime.accumulate(p1.m_wallTime, checkpoint);
-  p0.m_MPICount.accumulate(p1.m_MPICount, checkpoint);
-  p0.m_MPIByteCount.accumulate(p1.m_MPIByteCount, checkpoint);
-  p0.m_heapAlloc.accumulate(p1.m_heapAlloc, checkpoint);
-
-
-  for (std::list<ParallelTimer>::const_iterator p1_it = p1.m_subtimerList.begin(); p1_it != p1.m_subtimerList.end(); ++p1_it) {
-    std::list<ParallelTimer>::iterator p0_it = std::find_if(p0.m_subtimerList.begin(), p0.m_subtimerList.end(), finder((*p1_it).m_name));
-    if (p0_it == p0.m_subtimerList.end()) {
-      p0.m_subtimerList.push_back((*p1_it));
-      p0_it = --p0.m_subtimerList.end();
-      merge_parallel_timer(*p0_it, *p1_it, checkpoint);
-    }
-    else
-      merge_parallel_timer(*p0_it, *p1_it, checkpoint);
-  }
-}
-
-#ifdef STK_HAS_MPI
-size_t round_up_to_next_word(size_t value)
-{
-  const size_t SIZE_OF_WORD = 4;
-  size_t remainder = value % SIZE_OF_WORD;
-  if (remainder == 0) {
-      return value;
-  }
-  return value + SIZE_OF_WORD - remainder;
-}
-#endif
-
-void
-collect_timers(
-  Timer &               root_timer, 
-  ParallelTimer &       parallel_timer,
-  bool                  checkpoint,
-  ParallelMachine       comm)
-{
-  Marshal mout;
-  mout << root_timer;
-
-#ifdef STK_HAS_MPI
-  const int parallel_root = 0 ;
-  const int parallel_size = parallel_machine_size(comm);
-  const int parallel_rank = parallel_machine_rank(comm);
-
-  // Gather the send counts on root processor
-  std::string send_string(mout.str());
-
-  ParallelTimer root_parallel_timer;
-
-  //We need to gather the timer data in a number of 'cycles' where we
-  //only receive from a portion of the other processors each cycle.
-  //This is because buffer allocation-failures have been observed for
-  //runs on very large numbers of processors if the 'root' processor tries
-  //to allocate a buffer large enough to hold timing data from all other
-  //procesors.
-  //We will set an arbitrary limit for now, making sure that no more than
-  //64 processors' worth of timer data is gathered at a time.
-  const int max_procs_per_gather = 64;
-  int num_cycles = parallel_size/max_procs_per_gather;
-  if (parallel_size < max_procs_per_gather || num_cycles < 1) {
-    num_cycles = 1;
-  }
-
-  std::vector<char> buffer;
-
-  for(int ii=0; ii<num_cycles; ++ii) {
-    //send_count is the amount of data this processor needs to send.
-    int send_count = send_string.size();
-    int padded_send_count = round_up_to_next_word(send_count);
-    send_string.resize(padded_send_count);
-
-    std::vector<int> recv_count(parallel_size, 0);
-    int * const recv_count_ptr = recv_count.data() ;
-    std::vector<int> padded_recv_count(parallel_size, 0);
-    int * const padded_recv_count_ptr = padded_recv_count.data() ;
-  
-    //should this processor send on the current cycle ? If not, set send_count to 0.
-    if ((parallel_rank+ii)%num_cycles!=0) {
-      send_count = 0;
-    }
-
-    {
-      int result = MPI_Gather(&send_count, 1, MPI_INT,
-                              recv_count_ptr, 1, MPI_INT,
-                              parallel_root, comm);
-      if (MPI_SUCCESS != result) {
-        std::ostringstream message ;
-        message << "stk::diag::collect_timers FAILED: send_count MPI_Gather = " << result ;
-        throw std::runtime_error(message.str());
-      }
-    }
-  
-    {
-      int result = MPI_Gather(&padded_send_count, 1, MPI_INT,
-                              padded_recv_count_ptr, 1, MPI_INT,
-                              parallel_root, comm);
-      if (MPI_SUCCESS != result) {
-        std::ostringstream message ;
-        message << "stk::diag::collect_timers FAILED: padded_send_count MPI_Gather = " << result ;
-        throw std::runtime_error(message.str());
-      }
-    }
-
-    // Receive counts are only non-zero on the root processor:
-    std::vector<int> recv_displ(parallel_size + 1, 0);
-    std::vector<int> recv_end(parallel_size + 1, 0);
-  
-    for (int i = 0 ; i < parallel_size ; ++i) {
-      recv_displ[i + 1] = recv_displ[i] + padded_recv_count[i] ;
-      recv_end[i] = recv_displ[i] + recv_count[i] ;
-    }
-  
-    const int recv_size = recv_displ[parallel_size] ;
-  
-    buffer.assign(recv_size, 0);
-  
-    {
-      const char * const send_ptr = send_string.data();
-      char * const recv_ptr = recv_size ? buffer.data() : nullptr;
-      int * const recv_displ_ptr = recv_displ.data() ;
-  
-      int result = MPI_Gatherv(const_cast<char*>(send_ptr), padded_send_count, MPI_CHAR,
-                               recv_ptr, padded_recv_count_ptr, recv_displ_ptr, MPI_CHAR,
-                               parallel_root, comm);
-//      int result = MPI_Gather(const_cast<char*>(send_ptr), padded_send_count, MPI_CHAR,
-//                              recv_ptr, padded_send_count, MPI_CHAR,
-//                              parallel_root, comm);
-      if (MPI_SUCCESS != result) {
-        std::ostringstream message ;
-        message << "stk::diag::collect_timers FAILED: MPI_Gatherv = " << result ;
-        throw std::runtime_error(message.str());
-      }
-
-      std::vector<ParallelTimer> parallel_timer_vector;
-      parallel_timer_vector.reserve(parallel_size);
-  
-      if (parallel_rank == parallel_root) {
-        for (int j = 0; j < parallel_size; ++j) {
-          int received_count = recv_displ[j+1] - recv_displ[j];
-          if (received_count > 0) {
-            //grow parallel_timer_vector by 1:
-            parallel_timer_vector.resize(parallel_timer_vector.size()+1);
-            Marshal min(std::string(recv_ptr + recv_displ[j], recv_ptr + recv_end[j]));
-            //put this data into the last entry of parallel_timer_vector:
-            min >> parallel_timer_vector[parallel_timer_vector.size()-1];
-          }
-        }
-  
-        if (parallel_rank==parallel_root && send_count>0) root_parallel_timer = parallel_timer_vector[0];
-  
-        for (size_t j = 0; j < parallel_timer_vector.size(); ++j)
-          merge_parallel_timer(root_parallel_timer, parallel_timer_vector[j], checkpoint);
-      }
-    }
-  }
-  parallel_timer = root_parallel_timer;
-#endif
 }
 
 // PrintTable &printTable(PrintTable &table, MPI_Comm mpi_comm, MetricsMask metrics_mask) const;
@@ -524,9 +149,6 @@ printSubtable(
         if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
           table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<MPIByteCount>::format(timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint))
                 << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint), root_timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint)) << end_col;
-        if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-          table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint))
-                << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint), root_timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint)) << end_col;
       }
       else
         table << justify(PrintTable::Cell::LEFT) << indent(depth) << span << timer.getName() << end_col;
@@ -546,8 +168,8 @@ printSubtable(
 PrintTable &
 printSubtable(
   PrintTable &      table,
-  const ParallelTimer &         root_timer,
-  const ParallelTimer &         timer,
+  const impl::ParallelTimer &         root_timer,
+  const impl::ParallelTimer &         timer,
   MetricsMask      metrics_mask,
   int        depth,
   bool        timer_checkpoint)
@@ -585,22 +207,15 @@ printSubtable(
               << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().m_min, root_timer.getMetric<MPIByteCount>().m_sum) << end_col
               << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<MPIByteCount>::format(timer.getMetric<MPIByteCount>().m_max)
               << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().m_max, root_timer.getMetric<MPIByteCount>().m_sum) << end_col;
-      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-        table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_sum)
-              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_sum, root_timer.getMetric<HeapAlloc>().m_sum) << end_col
-              << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_min)
-              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_min, root_timer.getMetric<HeapAlloc>().m_sum) << end_col
-              << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_max)
-              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_max, root_timer.getMetric<HeapAlloc>().m_sum) << end_col;
     }
-    else 
+    else
       table << justify(PrintTable::Cell::LEFT) << indent(depth) << span << timer.m_name << end_col;
 
     table << end_row;
     depth++;
   }
 
-  for (std::list<ParallelTimer>::const_iterator it = timer.m_subtimerList.begin(); it != timer.m_subtimerList.end(); ++it)
+  for (std::list<impl::ParallelTimer>::const_iterator it = timer.m_subtimerList.begin(); it != timer.m_subtimerList.end(); ++it)
     printSubtable(table, root_timer, *it, metrics_mask, depth, timer_checkpoint);
 
   return table;
@@ -633,8 +248,6 @@ printTable(
       table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPICount>::table_header() << end_col;
     if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
       table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col;
-    if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-      table << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col;
 
     table << end_header;
 
@@ -661,9 +274,7 @@ printTable(
 
   root_timer.accumulateSubtimerLapCounts();
 
-  ParallelTimer parallel_timer;
-
-  stk::diag::collect_timers(root_timer, parallel_timer, timer_checkpoint, parallel_machine);
+  impl::ParallelTimer parallel_timer = stk::diag::impl::collect_timers(root_timer, timer_checkpoint, parallel_machine);
 
   int parallel_rank = parallel_machine_rank(parallel_machine);
   if (parallel_rank == 0) {
@@ -671,7 +282,7 @@ printTable(
       table.setAutoEndCol(false);
 
       table << end_col << end_col;
-      
+
       if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<CPUTime>::METRIC)
         table << justify(PrintTable::Cell::CENTER) << MetricTraits<CPUTime>::table_header() << end_col
               << justify(PrintTable::Cell::CENTER) << MetricTraits<CPUTime>::table_header() << end_col
@@ -688,10 +299,6 @@ printTable(
         table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col
               << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col
               << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col;
-      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-        table << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col
-              << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col
-              << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col;
 
       table << end_header;
       table << cell_width(name_width) << justify(PrintTable::Cell::CENTER) << "Timer" << (timer_checkpoint ? " (delta time)" : "") << end_col
@@ -713,16 +320,12 @@ printTable(
         table << justify(PrintTable::Cell::CENTER) << "Sum (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;
-      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-        table << justify(PrintTable::Cell::CENTER) << "Sum (% of System)" << end_col
-              << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
-              << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;
 
       table << end_header;
 
       printSubtable(table, parallel_timer, parallel_timer, metrics_mask, 0, timer_checkpoint);
     }
-    
+
     if (timer_checkpoint)
       root_timer.checkpoint();
   }
@@ -756,15 +359,15 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
 {
   double startTimeToPrintTable = stk::wall_time();
   stk::PrintTable print_table;
-  
+
   int parallel_size = parallel_machine_size(parallel_machine);
   if (parallel_size == 1)
     printTable(print_table, root_timer, metrics_mask, 40, timer_checkpoint);
   else
     printTable(print_table, root_timer, metrics_mask, 40, timer_checkpoint, parallel_machine);
-  
+
   os << print_table;
-  
+
   double durationToPrintTable = stk::wall_time() - startTimeToPrintTable;
   if (parallel_machine_rank(parallel_machine) == 0)
     printTimeToPrintTable(os, durationToPrintTable);
@@ -773,43 +376,5 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
 
 } // namespace diag
 
-Marshal &operator<<(stk::Marshal &mout, const diag::Timer &t);
-
-template <class T>
-Marshal &operator<<(Marshal &mout, const diag::Timer::Metric<T> &t) {
-  mout << t.getAccumulatedLap(false) << t.getAccumulatedLap(true);
-
-  return mout;
-}
-
-Marshal &operator<<(Marshal &mout, const diag::Timer &t) {
-  mout << t.getName() << t.getTimerMask() << t.getSubtimerLapCount()
-       << t.getMetric<diag::LapCount>() << t.getMetric<diag::CPUTime>() << t.getMetric<diag::WallTime>()
-       << t.getMetric<diag::MPICount>() << t.getMetric<diag::MPIByteCount>() << t.getMetric<diag::HeapAlloc>();
-
-  mout << t.getTimerList();
-
-  return mout;
-}
-
-Marshal &operator>>(Marshal &min, diag::ParallelTimer &t) {
-  min >> t.m_name >> t.m_timerMask >> t.m_subtimerLapCount
-      >> t.m_lapCount.m_value
-      >> t.m_lapCount.m_checkpoint
-      >> t.m_cpuTime.m_value
-      >> t.m_cpuTime.m_checkpoint
-      >> t.m_wallTime.m_value
-      >> t.m_wallTime.m_checkpoint
-      >> t.m_MPICount.m_value
-      >> t.m_MPICount.m_checkpoint
-      >> t.m_MPIByteCount.m_value
-      >> t.m_MPIByteCount.m_checkpoint
-      >> t.m_heapAlloc.m_value
-      >> t.m_heapAlloc.m_checkpoint;
-
-  min >> t.m_subtimerList;
-
-  return min;
-}
 
 } // namespace stk

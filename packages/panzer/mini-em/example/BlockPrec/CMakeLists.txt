@@ -19,26 +19,22 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
   maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
   maxwell-donut.xml maxwell-analyticSolution.xml
+  steadyState.xml steadyState2D.xml
   darcyTet.xml darcyHex.xml
   darcyTetAnalytic.xml darcyHexAnalytic.xml
   solverCG.xml solverGMRES.xml
-  solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
+  solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml solverMueLuBarrier.xml
   solverMueLuOpenMP.xml solverMueLuCuda.xml solverMueLuTruncated.xml solverMueLuTPL.xml
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
   solverML.xml
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  )
-
-TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecPerfFiles
-  SOURCE_FILES
+  solverDirect.xml
   maxwell-large.xml
   solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
   solverMueLuOpenMP.xml solverMueLuCuda.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  CATEGORIES PERFORMANCE
+  CATEGORIES BASIC PERFORMANCE
   )
 
 # rather than list all files like above, I glob all xmls
@@ -79,17 +75,22 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "Maxwell_MueLu"
-   POSTFIX_AND_ARGS_0 "order1"              --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra
-   POSTFIX_AND_ARGS_1 "order1_reuse"        --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --resetSolver
-   POSTFIX_AND_ARGS_2 "order2"              --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2 --pCoarsenSchedule="1"
-   POSTFIX_AND_ARGS_3 "order3"              --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="1"
-   POSTFIX_AND_ARGS_4 "order3,2"            --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1"
-   POSTFIX_AND_ARGS_5 "order2_matrixFree"   --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2  --pCoarsenSchedule="1" --matrixFree
-   POSTFIX_AND_ARGS_6 "order3_matrixFree"   --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3  --pCoarsenSchedule="1" --matrixFree
-   POSTFIX_AND_ARGS_7 "order3,2_matrixFree" --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1" --matrixFree
-   POSTFIX_AND_ARGS_8 "2D"                  --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=maxwell2D.xml
-   POSTFIX_AND_ARGS_9 "order1_analytic"     --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-analyticSolution.xml
-   POSTFIX_AND_ARGS_10 "order1_truncated"    --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --truncateMueLuHierarchy
+   POSTFIX_AND_ARGS_0 "order1"                      --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra
+   POSTFIX_AND_ARGS_1 "order1_reuse"                --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --resetSolver
+   POSTFIX_AND_ARGS_2 "order2"                      --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2 --pCoarsenSchedule="1"
+   POSTFIX_AND_ARGS_3 "order3"                      --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="1"
+   POSTFIX_AND_ARGS_4 "order3,2"                    --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1"
+   POSTFIX_AND_ARGS_5 "order2_matrixFree"           --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2  --pCoarsenSchedule="1" --matrixFree
+   POSTFIX_AND_ARGS_6 "order3_matrixFree"           --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3  --pCoarsenSchedule="1" --matrixFree
+   POSTFIX_AND_ARGS_7 "order3,2_matrixFree"         --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule="2,1" --matrixFree
+   POSTFIX_AND_ARGS_8 "2D"                          --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=maxwell2D.xml
+   POSTFIX_AND_ARGS_9 "order1_analytic"             --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-analyticSolution.xml
+   POSTFIX_AND_ARGS_10 "order1_truncated"           --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --truncateMueLuHierarchy
+   POSTFIX_AND_ARGS_11 "order1_barriers"            --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --barriers
+   POSTFIX_AND_ARGS_12 "order1_maxwell1_unsmoothed" --solver=Maxwell1-RS --numTimeSteps=1 --linAlgebra=Tpetra
+   POSTFIX_AND_ARGS_13 "order1_maxwell1_smoothed"   --solver=Maxwell1-SA-RS --numTimeSteps=1 --linAlgebra=Tpetra
+   POSTFIX_AND_ARGS_14 "order1_maxwell1_emin"       --solver=Maxwell1-Emin --numTimeSteps=1 --linAlgebra=Tpetra
+   POSTFIX_AND_ARGS_15 "order1_direct"              --solver=direct
    NUM_MPI_PROCS 4
    )
 
@@ -120,6 +121,47 @@ TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16"
    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   COMM mpi
+   NUM_MPI_PROCS 16
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4_newCopyAndPermute"
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D RefMaxwell newCopyAndPermute\""
+   COMM mpi
+   NUM_MPI_PROCS 4
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   ENVIRONMENT "TPETRA_USE_NEW_COPY_AND_PERMUTE=ON"
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Maxwell1_unsmoothed_Performance_4"
+   ARGS "--stacked-timer --solver=Maxwell1-RS --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D Maxwell1 unsmoothed\""
+   COMM mpi
+   NUM_MPI_PROCS 4
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_Maxwell1_smoothed_Performance_4"
+   ARGS "--stacked-timer --solver=Maxwell1-SA-RS --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D Maxwell1 smoothed\""
+   COMM mpi
+   NUM_MPI_PROCS 4
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_barriers"
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --barriers"
    COMM mpi
    NUM_MPI_PROCS 16
    CATEGORIES PERFORMANCE

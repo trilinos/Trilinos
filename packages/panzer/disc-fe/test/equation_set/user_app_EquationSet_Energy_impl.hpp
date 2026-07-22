@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef USER_APP_EQUATIONSET_ENERGY_T_HPP
@@ -75,7 +43,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
   // ********************
   // Validate and parse parameter list
   // ********************
-  {    
+  {
     Teuchos::ParameterList valid_parameters;
     this->setDefaultValidParameters(valid_parameters);
 
@@ -87,6 +55,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("CONVECTION", "OFF",
       "Enables or disables convection term in the energy equation",
       rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("ON", "OFF"))));
+    valid_parameters.set("Convection Term is in Conservation Form",false,"If set to true, put the convection term in conservation form");
 
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -97,6 +66,7 @@ EquationSet_Energy(const Teuchos::RCP<Teuchos::ParameterList>& params,
   int basis_order = params->get<int>("Basis Order");
   std::string model_id = params->get<std::string>("Model ID");
   int integration_order = params->get<int>("Integration Order");
+  m_convection_term_is_in_conservation_form = params->get<bool>("Convection Term is in Conservation Form");
 
   // ********************
   // Setup DOFs and closure models
@@ -140,8 +110,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Energy Equation
   // ********************
 
-  RCP<IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name); 
-  RCP<BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_dof_name); 
+  RCP<IntegrationRule> ir = this->getIntRuleForDOF(m_dof_name);
+  RCP<BasisIRLayout> basis = this->getBasisIRLayoutForDOF(m_dof_name);
 
   // Transient Operator
   if (this->buildTransientSupport())
@@ -167,13 +137,13 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Basis", basis);
     p.set("IR", ir);
     p.set("Multiplier", thermal_conductivity);
-    
-    RCP< Evaluator<Traits> > op = 
+
+    RCP< Evaluator<Traits> > op =
       rcp(new Integrator_GradBasisDotVector<EvalT,Traits>(p));
 
     this->template registerEvaluator<EvalT>(fm, op);
   }
-  
+
   // Convection Operator
   if (m_do_convection == "ON") {
 
@@ -188,43 +158,63 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Data Layout Scalar",ir->dl_scalar);
       p.set("Data Layout Vector",ir->dl_vector);
 
-      RCP< Evaluator<Traits> > op = 
+      RCP< Evaluator<Traits> > op =
         rcp(new ScalarToVector<EvalT,Traits>(p));
-      
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
 
     // Evaluator to assemble convection term
-    {
-      ParameterList p("Convection Operator");
-      p.set("IR", ir);
-      p.set("Operator Name", m_prefix+"TEMPERATURE_CONVECTION_OP");
-      p.set("A Name", m_prefix+"U");
-      p.set("Gradient Name", "GRAD_"+m_prefix+"TEMPERATURE");
-      p.set("Multiplier", 1.0);
+    if (m_convection_term_is_in_conservation_form) {
+      std::string residual_name = "RESIDUAL_"+m_dof_name;
+      std::string flux_name = m_prefix+"U";
+      std::vector<std::string> field_multiplier_names{m_prefix+"DENSITY",
+                                                      m_prefix+"HEAT_CAPACITY",
+                                                      m_prefix+"TEMPERATURE"};
 
-      RCP< Evaluator<Traits> > op = 
-        rcp(new Convection<EvalT,Traits>(p));
-      
+      RCP< Evaluator<Traits> > op =
+        rcp(new Integrator_GradBasisDotVector<EvalT,Traits>(EvaluatorStyle::CONTRIBUTES,
+                                                            residual_name,
+                                                            flux_name,
+                                                            *basis,
+                                                            *ir,
+                                                            -1.0,
+                                                            field_multiplier_names));
+
       this->template registerEvaluator<EvalT>(fm, op);
     }
+    else {
+      {
+        ParameterList p("Convection Operator");
+        p.set("IR", ir);
+        p.set("Operator Name", m_prefix+"TEMPERATURE_CONVECTION_OP");
+        p.set("A Name", m_prefix+"U");
+        p.set("Gradient Name", "GRAD_"+m_prefix+"TEMPERATURE");
+        p.set("Multiplier", 1.0);
 
-    // Integration operator (could sum this into source for efficiency)
-    {
-      string resName("RESIDUAL_" + m_dof_name),
-             valName(m_prefix + "TEMPERATURE_CONVECTION_OP");
-      double multiplier(1);
-      vector<string> fieldMultipliers{m_prefix + "DENSITY",
-        m_prefix + "HEAT_CAPACITY"};
-      RCP<Evaluator<Traits>> op = rcp(new
-        Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::CONTRIBUTES,
-        resName, valName, *basis, *ir, multiplier, fieldMultipliers));
-      this->template registerEvaluator<EvalT>(fm, op);
+        RCP< Evaluator<Traits> > op =
+          rcp(new Convection<EvalT,Traits>(p));
+
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+
+      // Integration operator (could sum this into source for efficiency)
+      {
+        string resName("RESIDUAL_" + m_dof_name),
+          valName(m_prefix + "TEMPERATURE_CONVECTION_OP");
+        double multiplier(1);
+        vector<string> fieldMultipliers{m_prefix + "DENSITY",m_prefix + "HEAT_CAPACITY"};
+        RCP<Evaluator<Traits>> op =
+          rcp(new Integrator_BasisTimesScalar<EvalT, Traits>(EvaluatorStyle::CONTRIBUTES,
+                                                             resName, valName, *basis, *ir, multiplier,
+                                                             fieldMultipliers));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
     }
   }
 
   // Source Operator
-  {   
+  {
     string resName("RESIDUAL_" + m_dof_name),
            valName("SOURCE_" + m_prefix + "TEMPERATURE");
     double multiplier(-1);

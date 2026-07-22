@@ -1,0 +1,67 @@
+name: snapshot-rol
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 * * 0
+
+permissions:
+  contents: read
+
+jobs:
+  rol-snapshot:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: generate-token
+        with:
+          app-id: ${{ secrets.SNAPSHOT_APP_ID }}
+          private-key: ${{ secrets.SNAPSHOT_APP_PRIVATE_KEY }}
+
+      - name: Clone Trilinos
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: develop
+          path: Trilinos
+
+      - name: Clone Kokkos
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: kokkos/kokkos
+          ref: develop
+          path: kokkos
+
+      - name: Clone ROL
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: sandialabs/rol
+          ref: develop
+          path: rol
+
+      - name: Configure git
+        run: |
+          git config --global user.name "Snapshot Action"
+          git config --global user.email "snapshot@action.com"
+
+      - name: Snapshot ROL
+        run: |
+          kokkos/scripts/snapshot.py --verbose rol Trilinos/packages/
+
+      - name: Create/update PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          path: Trilinos
+          token: ${{ steps.generate-token.outputs.token }}
+          commit-message: "Snapshot ROL"
+          title: "Snapshot of ROL"
+          body: |
+            Automatic snapshot of ROL.
+            This snapshot gets updated via a GitHub Action.
+          branch: rol-snapshot
+          base: develop
+          delete-branch: true
+          draft: true
+          labels: |
+            pkg: ROL

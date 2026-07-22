@@ -66,7 +66,7 @@
 //        typedef Topology QuadOrTriTopo ;
         enum { NodesPerElem = stk::topology_detail::topology_data<Topology>::num_nodes };
 
-        static std::vector<std::string> get_entity_rank_names(unsigned dim)
+        static std::vector<std::string> get_entity_rank_names(unsigned /*dim*/)
         {
           std::vector<std::string> names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
@@ -93,7 +93,6 @@
         {
           enum { SpatialDim = 2 };
 
-          meta_data.use_simple_fields();
           coord_field = &meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
 
           set_bounding_box(0,(double)NX,0,(double)NY);

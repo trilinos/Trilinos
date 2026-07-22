@@ -13,7 +13,7 @@ num_side_sets =   0
  after ex_inquire, error = 0
 
 after ex_get_coord, error =   0
-x coords = 
+x coords =
 
 after ex_get_coord_names, error =   0
 x coord name = 'xcoor'
@@ -23,7 +23,7 @@ num nodal attributes = 0
 after ex_get_id_map, error =   0
 
 after ex_get_qa, error =   0
-QA records = 
+QA records =
  'TESTWT'
  'testwt'
  '07/07/93'
@@ -36,7 +36,7 @@ QA records =
 after ex_inquire, error =   0
 
 after ex_get_info, error =   0
-info records = 
+info records =
  'This is the first information record.'
  ''
  ''

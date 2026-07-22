@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
+//       Kernel for Flexible Management of Complex Dependency Chains
+//
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef PHALANX_KOKKOS_VIEW_OF_VIEWS_HPP
 #define PHALANX_KOKKOS_VIEW_OF_VIEWS_HPP
 
@@ -52,7 +62,7 @@ namespace PHX {
     using OuterViewType = Kokkos::View<OuterDataType,MemorySpace>;
 
   private:
-    typename OuterViewType::HostMirror view_host_;
+    typename OuterViewType::host_mirror_type view_host_;
     OuterViewType view_device_;
     bool device_view_is_synced_;
 
@@ -159,8 +169,8 @@ namespace PHX {
     using OuterViewDataTypeUnmanagedInner = typename PHX::v_of_v_utils::add_pointer<InnerViewTypeUnmanaged,OuterViewRank>::type;
     using OuterViewManaged = Kokkos::View<OuterViewDataTypeManagedInner,OuterViewProps...>;
     using OuterViewUnmanaged = Kokkos::View<OuterViewDataTypeUnmanagedInner,OuterViewProps...>;
-    using OuterViewManagedHostMirror = typename OuterViewManaged::HostMirror;
-    using OuterViewUnmanagedHostMirror = typename OuterViewUnmanaged::HostMirror;
+    using OuterViewManagedHostMirror = typename OuterViewManaged::host_mirror_type;
+    using OuterViewUnmanagedHostMirror = typename OuterViewUnmanaged::host_mirror_type;
 
   private:
 
@@ -287,11 +297,11 @@ namespace PHX {
 
   private:
     // Inner views are mananged - used to prevent early deletion
-    typename OuterViewType::HostMirror view_host_;
+    typename OuterViewType::host_mirror_type view_host_;
     // Inner views are unmanaged by runtime construction with pointer
     // (avoids template parameter). Used to correctly initialize outer
     // device view on device.
-    typename OuterViewType::HostMirror view_host_unmanaged_;
+    typename OuterViewType::host_mirror_type view_host_unmanaged_;
     // Device view
     OuterViewType view_device_;
     // True if the host view has not been synced to device
@@ -324,14 +334,14 @@ namespace PHX {
     /// fence. Be sure to manually fence as needed.
     template<typename ExecSpace,typename... Extents>
     ViewOfViews3(const ExecSpace& e_space,const std::string name,Extents... extents)
-      : view_host_(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...),
+      : view_host_(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space(),name),extents...),
         view_device_(Kokkos::view_alloc(e_space,name),extents...),
         device_view_is_synced_(false),
         is_initialized_(true),
         use_count_(0),
         check_use_count_(true)
     {
-      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space()),view_device_);
       use_count_ = view_device_.impl_track().use_count();
     }
 
@@ -374,7 +384,7 @@ namespace PHX {
     template<typename... Extents>
     void initialize(const std::string name,Extents... extents)
     {
-      view_host_ = typename OuterViewType::HostMirror(name,extents...);
+      view_host_ = typename OuterViewType::host_mirror_type(name,extents...);
       view_device_ = OuterViewType(name,extents...);
       view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
       device_view_is_synced_ = false;
@@ -390,9 +400,9 @@ namespace PHX {
     template<typename ExecSpace,typename... Extents>
     void initialize(const ExecSpace& e_space,const std::string name,Extents... extents)
     {
-      view_host_ = typename OuterViewType::HostMirror(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...);
+      view_host_ = typename OuterViewType::host_mirror_type(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space(),name),extents...);
       view_device_ = OuterViewType(Kokkos::view_alloc(e_space,name),extents...);
-      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),view_device_);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space()),view_device_);
       device_view_is_synced_ = false;
       is_initialized_ = true;
       use_count_ = view_device_.impl_track().use_count();
@@ -507,9 +517,9 @@ namespace PHX {
     using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0)));
     using HostDeviceMirrorType = decltype(host_device);
     Kokkos::View<HostInnerViewType *,
-                 typename HostDeviceMirrorType::HostMirror::array_layout,
-                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
-                                                                                   host_device.extent(0));
+                 typename HostDeviceMirrorType::host_mirror_type::array_layout,
+                 typename HostDeviceMirrorType::host_mirror_type::device_type> host_host(host_device.label(),
+                                                                                         host_device.extent(0));
 
     for (std::size_t i=0; i < host_device.extent(0); ++i) {
       auto tmp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(i));
@@ -538,10 +548,10 @@ namespace PHX {
     using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0,0)));
     using HostDeviceMirrorType = decltype(host_device);
     Kokkos::View<HostInnerViewType **,
-                 typename HostDeviceMirrorType::HostMirror::array_layout,
-                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
-                                                                                   host_device.extent(0),
-                                                                                   host_device.extent(1));
+                 typename HostDeviceMirrorType::host_mirror_type::array_layout,
+                 typename HostDeviceMirrorType::host_mirror_type::device_type> host_host(host_device.label(),
+                                                                                         host_device.extent(0),
+                                                                                         host_device.extent(1));
 
     for (std::size_t i=0; i < host_device.extent(0); ++i) {
       for (std::size_t j=0; j < host_device.extent(1); ++j) {
@@ -571,11 +581,11 @@ namespace PHX {
     using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0,0,0)));
     using HostDeviceMirrorType = decltype(host_device);
     Kokkos::View<HostInnerViewType ***,
-                 typename HostDeviceMirrorType::HostMirror::array_layout,
-                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
-                                                                                   host_device.extent(0),
-                                                                                   host_device.extent(1),
-                                                                                   host_device.extent(2));
+                 typename HostDeviceMirrorType::host_mirror_type::array_layout,
+                 typename HostDeviceMirrorType::host_mirror_type::device_type> host_host(host_device.label(),
+                                                                                         host_device.extent(0),
+                                                                                         host_device.extent(1),
+                                                                                         host_device.extent(2));
 
     for (std::size_t i=0; i < host_device.extent(0); ++i) {
       for (std::size_t j=0; j < host_device.extent(1); ++j) {

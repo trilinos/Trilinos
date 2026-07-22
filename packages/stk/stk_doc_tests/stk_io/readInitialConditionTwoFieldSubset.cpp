@@ -78,7 +78,6 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionTwoFieldSubset)
     std::string input_filename = "9x9x9|shell:xyzXYZ|variables:element,2|times:1";
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(input_filename, "generated", stk::io::READ_MESH);
     stkIo.create_input_mesh();
 
@@ -129,9 +128,10 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionTwoFieldSubset)
                             elements);
     EXPECT_TRUE(elements.size() >= 729);
 
+    auto fieldData = pressure.data();
     for(size_t i=0; i<elements.size(); i++) {
-      double *fieldDataForElement = stk::mesh::field_data(pressure, elements[i]);
-      EXPECT_DOUBLE_EQ(sqrt(i+1), *fieldDataForElement);
+      auto fieldDataForElement = fieldData.entity_values(elements[i]);
+      EXPECT_DOUBLE_EQ(sqrt(i+1), fieldDataForElement());
     }
   }
 }

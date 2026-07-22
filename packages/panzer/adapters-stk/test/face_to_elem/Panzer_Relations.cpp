@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Panzer_Relations.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 #include "Panzer_EdgeFieldPattern.hpp"
@@ -220,7 +230,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
       }
     }
     // Now lets compute the face normals
-    typename PHX::View<double**>::HostMirror edges("temp::Edges",40, dimension_);  // overkill on 40 size
+    typename PHX::View<double**>::host_mirror_type edges("temp::Edges",40, dimension_);  // overkill on 40 size
     for (int c=0; c<num_cells; ++c) {
 
       std::vector<double> center(3,0.);

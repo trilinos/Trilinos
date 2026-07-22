@@ -66,6 +66,12 @@ struct BlockPair {
     second = rhs.second;
   }
 
+  void operator=(const BlockPair& block)
+  {
+    first = block.first;
+    second = block.second;
+  }
+
   bool operator!=(const BlockPair& rhs) const
   {
     return first->mesh_meta_data_ordinal() != rhs.first->mesh_meta_data_ordinal() ||

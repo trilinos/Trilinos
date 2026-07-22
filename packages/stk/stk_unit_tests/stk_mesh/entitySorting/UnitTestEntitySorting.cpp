@@ -16,8 +16,9 @@ class EntityLessCoords
 {
 public:
   EntityLessCoords(const stk::mesh::BulkData& bulk)
-    :mesh(bulk)
-    ,coordsBase(bulk.mesh_meta_data().coordinate_field())
+    :mesh(bulk),
+    coordsBase(bulk.mesh_meta_data().coordinate_field()),
+    coordFieldData(coordsBase->data<double>())
   { }
 
   bool operator()(stk::mesh::Entity a, stk::mesh::Entity b)
@@ -25,21 +26,21 @@ public:
     if (mesh.entity_rank(a) != stk::topology::NODE_RANK) {
       return stk::mesh::EntityLess(mesh)(a,b);
     }
-    double* aCoords = static_cast<double*>(stk::mesh::field_data(*coordsBase, a));
-    double* bCoords = static_cast<double*>(stk::mesh::field_data(*coordsBase, b));
-    if (less_than(aCoords[0], bCoords[0]))
+    auto aCoords = coordFieldData.entity_values(a);
+    auto bCoords = coordFieldData.entity_values(b);
+    if (less_than(aCoords(0_comp), bCoords(0_comp)))
     {
       return true;
     }
-    else if (equal(aCoords[0], bCoords[0]))
+    else if (equal(aCoords(0_comp), bCoords(0_comp)))
     {
-      if (less_than(aCoords[1], bCoords[1]))
+      if (less_than(aCoords(1_comp), bCoords(1_comp)))
       {
         return true;
       }
-      else if (equal(aCoords[1], bCoords[1]))
+      else if (equal(aCoords(1_comp), bCoords(1_comp)))
       {
-        if (less_than(aCoords[2], bCoords[2]))
+        if (less_than(aCoords(2_comp), bCoords(2_comp)))
         {
           return true;
         }
@@ -63,6 +64,7 @@ public:
 private:
   const stk::mesh::BulkData& mesh;
   const stk::mesh::FieldBase* coordsBase;
+  stk::mesh::ConstFieldData<double> coordFieldData;
   double tolerance = 1.0e-6;
 };
 
@@ -76,7 +78,7 @@ public:
 };
 
 
-class EntitySortingFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class EntitySortingFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
 
@@ -89,7 +91,7 @@ protected:
   {
     EntityLessCoords entityLessCoords(get_bulk());
     stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK,
-                                   [&entityLessCoords](const stk::mesh::BulkData& bulk, const stk::mesh::MeshIndex& meshIndex)
+                                   [&entityLessCoords](const stk::mesh::BulkData&, const stk::mesh::MeshIndex& meshIndex)
     {
       if(meshIndex.bucket_ordinal > 0) {
         EXPECT_TRUE(entityLessCoords((*meshIndex.bucket)[meshIndex.bucket_ordinal-1],

@@ -1,6 +1,7 @@
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_Unit_RefinementFixture.hpp>
 #include <Akri_CDMesh.hpp>
+#include <Akri_ConformingPhaseParts.hpp>
 #include <Akri_Interface_Name_Generator.hpp>
 #include <Akri_IO_Helpers.hpp>
 #include <Akri_Phase_Support.hpp>
@@ -19,7 +20,7 @@ public:
     cdmesh = std::make_unique<CDMesh>(mMesh);
     mMesh.mesh_meta_data().enable_late_fields();
     RefinementSupport::get(mMesh.mesh_meta_data()).activate_nonconformal_adaptivity(2);
-    RefinementSupport::get(mMesh.mesh_meta_data()).set_non_interface_conforming_refinement(KrinoRefinement::create(mMesh.mesh_meta_data()));
+    RefinementSupport::get(mMesh.mesh_meta_data()).set_non_interface_conforming_refinement(RefinementManager::create(mMesh.mesh_meta_data()));
   }
 
   void setup_phases()
@@ -35,11 +36,9 @@ public:
     Block_Surface_Connectivity block_surface_info;
     phase_support.set_input_block_surface_connectivity(block_surface_info);
     phase_support.register_blocks_for_level_set(surfaceIdentifier, blocks);
-    std::vector<std::tuple<stk::mesh::PartVector,
-      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
-    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, named_phases));
-    phase_support.decompose_blocks(ls_sets);
+    DecompositionPackage decomps;
+    decomps.add_levelset_decomposition(blocks, named_phases);
+    phase_support.decompose_blocks(decomps);
   }
 
   size_t get_num_elements_in_block(const stk::mesh::Part & block) const
@@ -53,6 +52,7 @@ public:
 
   void move_elements_to_phase(const std::vector<stk::mesh::EntityId> & elemIds, const PhaseTag & phase)
   {
+    const Phase_Support & phaseSupport = Phase_Support::get(mMesh.mesh_meta_data());
     stk::mesh::PartVector add_parts;
     stk::mesh::PartVector remove_parts;
 
@@ -62,7 +62,9 @@ public:
       const stk::mesh::Entity elem = mMesh.get_entity(stk::topology::ELEMENT_RANK, elemId);
       if (mMesh.is_valid(elem) && mMesh.bucket(elem).owned())
       {
-        cdmesh->determine_conformal_parts(elem, phase, add_parts, remove_parts);
+        add_parts.clear();
+        remove_parts.clear();
+        append_conforming_part_changes_for_current_parts(phaseSupport, mMesh.bucket(elem).supersets(), stk::topology::ELEMENT_RANK, phase, add_parts, remove_parts);
         remove_parts.push_back(&cdmesh->get_parent_part());
         remove_parts.push_back(&cdmesh->get_child_part());
 
@@ -94,7 +96,7 @@ TEST_F(RegularTriRefinementWithCDMesh, meshWithRebalancedElements_phaseChangedOn
   perform_iterations_of_uniform_refinement_with_uniform_marker(2);
 
   if (stk::parallel_machine_size(mComm) > 1)
-    move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor({1004, 1010, 1011, 1012, 1013}, 1);
+    move_owned_elements_with_given_ids_and_owned_attached_entities_to_processor({1003, 1010, 1011, 1012, 1013}, 1);
 
   move_elements_to_phase({1010, 1011, 1012, 1013}, phaseB);
   update_adaptivity_parent_entities();

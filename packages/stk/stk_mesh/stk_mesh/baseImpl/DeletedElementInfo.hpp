@@ -36,6 +36,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_topology/topology.hpp>
 
 namespace stk
 {
@@ -48,7 +49,24 @@ struct DeletedElementInfo
 {
     stk::mesh::Entity entity;
     stk::mesh::EntityId identifier;
-    bool isShell;
+    stk::topology topology;
+
+    bool operator<(const DeletedElementInfo& rhs) const
+    {
+      return identifier < rhs.identifier;
+    }
+    bool operator<(const stk::mesh::EntityId& rhs) const
+    {
+      return identifier < rhs;
+    }
+    bool operator==(const DeletedElementInfo& rhs) const
+    {
+      return identifier == rhs.identifier;
+    }
+    bool operator==(const stk::mesh::EntityId& rhs) const
+    {
+      return identifier == rhs;
+    }
 };
 
 typedef std::vector<DeletedElementInfo> DeletedElementInfoVector;

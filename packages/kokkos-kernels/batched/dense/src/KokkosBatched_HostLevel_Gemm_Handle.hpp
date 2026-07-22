@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP
 
 #include "KokkosBatched_Kernel_Handle.hpp"
 
@@ -40,15 +27,11 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 };
 }
 
-#define GEMM_ALGO_STRS                           \
-  "GemmTplAlgos::CUBLAS", "GemmTplAlgos::MAGMA", \
-      "GemmKokkosBatchedAlgos::KK_TEAM",         \
-      "GemmKokkosBatchedAlgos::KK_TEAMVECTOR",   \
-      "GemmKokkosBatchedAlgos::KK_SERIALSIMD",   \
-      "GemmKokkosBatchedAlgos::KK_TEAMSIMD",     \
-      "GemmKokkosBatchedAlgos::KK_SERIAL_RANK0", \
-      "GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM", \
-      "GemmKokkosBatchedAlgos::KK_DBLBUF"
+#define GEMM_ALGO_STRS                                                                  \
+  "GemmTplAlgos::CUBLAS", "GemmTplAlgos::MAGMA", "GemmKokkosBatchedAlgos::KK_TEAM",     \
+      "GemmKokkosBatchedAlgos::KK_TEAMVECTOR", "GemmKokkosBatchedAlgos::KK_SERIALSIMD", \
+      "GemmKokkosBatchedAlgos::KK_TEAMSIMD", "GemmKokkosBatchedAlgos::KK_SERIAL_RANK0", \
+      "GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM", "GemmKokkosBatchedAlgos::KK_DBLBUF"
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
 ///
@@ -59,7 +42,7 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                          SQUARE select invocations based on square matrix heuristics where M=N
 ///                          TALL   select invocations based on tall   matrix heuristics where M>N
 ///                          WIDE   select invocations based on wide   matrix heuristics where M<N
-///    
+///
 ///                        Specifies which cmake-enabled TPL algorithm to invoke:
 ///                          ARMPL    Invoke the ArmPL TPL interface  (Currently UNSUPPORTED)
 ///                          MKL      Invoke the MKL TPL interface    (Currently UNSUPPORTED)
@@ -70,7 +53,7 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                        Note: If the user selects a TPL, an error will be thrown if:
 ///                                1. The TPL is not enabled via cmake
 ///                                2. The input views do not reside on the host/device as needed
-///    
+///
 ///                        Specifies which kokkos-kernels (KK) algorithm to invoke:
 ///                          KK_SERIAL       Invoke SerialGemm     via RangePolicy(BatchSz)
 ///                          KK_TEAM         Invoke TeamGemm       via TeamPolicy(BatchSz)
@@ -96,8 +79,7 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 // clang-format on
 class BatchedGemmHandle : public BatchedKernelHandle {
  public:
-  BatchedGemmHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0, int vecLength = 0)
       : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
     if (!_tplParamsSet && kernelAlgoType == GemmTplAlgos::CUBLAS) {
@@ -114,31 +96,28 @@ class BatchedGemmHandle : public BatchedKernelHandle {
       _tplParamsSet                   = true;
     }
 #endif  // MAGMA
-  };
+  }
 
-  BatchedGemmHandle(bool tplParamsSet,
-                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(bool tplParamsSet, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
+                    int vecLength = 0)
       : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength) {
     _tplParamsSet = tplParamsSet;
-  };
+  }
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-  BatchedGemmHandle(cublasHandle_t &cublas_handle,
-                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(cublasHandle_t &cublas_handle, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
+                    int vecLength = 0)
       : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
     _tplParamsSingleton.cublas_handle = &cublas_handle;
-  };
+  }
 #endif  // CUBLAS
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
-  BatchedGemmHandle(magma_queue_t &magma_queue,
-                    int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                    int teamSize = 0, int vecLength = 0)
+  BatchedGemmHandle(magma_queue_t &magma_queue, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
+                    int vecLength = 0)
       : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
     _tplParamsSingleton.magma_queue = &magma_queue;
-  };
+  }
 #endif  // MAGMA
 
   decltype(auto) get_tpl_params() {
@@ -151,15 +130,12 @@ class BatchedGemmHandle : public BatchedKernelHandle {
 #endif
   }
 
-  std::string get_kernel_algo_type_str() const {
-    return gemm_algo_type_strs[_kernelAlgoType];
-  }
+  std::string get_kernel_algo_type_str() const { return gemm_algo_type_strs[_kernelAlgoType]; }
 
  private:
-  const char *gemm_algo_type_strs[GemmKokkosBatchedAlgos::N] = {BASE_ALGO_STRS,
-                                                                GEMM_ALGO_STRS};
+  const char *gemm_algo_type_strs[GemmKokkosBatchedAlgos::N] = {BASE_ALGO_STRS, GEMM_ALGO_STRS};
 };
 
 }  // namespace KokkosBatched
 
-#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP__
+#endif  // KOKKOSBATCHED_HOSTLEVEL_GEMM_HANDLE_DECL_HPP

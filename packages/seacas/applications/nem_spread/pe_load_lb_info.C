@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -21,6 +21,7 @@
 #include <cstddef> // for size_t
 #include <cstdio>  // for stderr, etc
 #include <cstdlib> // for exit
+#include <fmt/format.h>
 #include <string>
 
 char **qa_record_ptr, **inf_record_ptr;

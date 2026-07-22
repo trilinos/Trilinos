@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 #include <cstring>
@@ -21,7 +8,12 @@
 #include <benchmark/benchmark.h>
 #include "Benchmark_Context.hpp"
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <Kokkos_Timer.hpp>
 
 using exec_space = Kokkos::DefaultExecutionSpace;
@@ -30,7 +22,7 @@ template <class T, class DEVICE_TYPE>
 struct ZeroFunctor {
   using execution_space = DEVICE_TYPE;
   using type            = typename Kokkos::View<T, execution_space>;
-  using h_type          = typename Kokkos::View<T, execution_space>::HostMirror;
+  using h_type = typename Kokkos::View<T, execution_space>::host_mirror_type;
   type data;
   KOKKOS_INLINE_FUNCTION
   void operator()(int) const { data() = 0; }
@@ -321,6 +313,7 @@ T LoopVariant(int loop, int test) {
     case 1: return AddLoop<T>(loop);
     case 2: return CASLoop<T>(loop);
     case 3: return ExchLoop<T>(loop);
+    default: Kokkos::abort("unreachable");
   }
   return 0;
 }
@@ -331,6 +324,7 @@ T LoopVariantSerial(int loop, int test) {
     case 1: return AddLoopSerial<T>(loop);
     case 2: return CASLoopSerial<T>(loop);
     case 3: return ExchLoopSerial<T>(loop);
+    default: Kokkos::abort("unreachable");
   }
   return 0;
 }
@@ -341,6 +335,7 @@ T LoopVariantNonAtomic(int loop, int test) {
     case 1: return AddLoopNonAtomic<T>(loop);
     case 2: return CASLoopNonAtomic<T>(loop);
     case 3: return ExchLoopNonAtomic<T>(loop);
+    default: Kokkos::abort("unreachable");
   }
   return 0;
 }
@@ -390,7 +385,7 @@ static void Test_Atomic(benchmark::State& state) {
 
 static constexpr int LOOP = 100'000;
 
-BENCHMARK(Test_Atomic<int>)->Arg(LOOP)->Iterations(10);
+BENCHMARK(Test_Atomic<int>)->Arg(30'000)->Iterations(10);
 BENCHMARK(Test_Atomic<long int>)->Arg(LOOP)->Iterations(10);
 BENCHMARK(Test_Atomic<long long int>)->Arg(LOOP)->Iterations(10);
 BENCHMARK(Test_Atomic<unsigned int>)->Arg(LOOP)->Iterations(10);
@@ -398,4 +393,3 @@ BENCHMARK(Test_Atomic<unsigned long int>)->Arg(LOOP)->Iterations(10);
 BENCHMARK(Test_Atomic<unsigned long long int>)->Arg(LOOP)->Iterations(10);
 BENCHMARK(Test_Atomic<float>)->Arg(LOOP)->Iterations(10);
 BENCHMARK(Test_Atomic<double>)->Arg(LOOP)->Iterations(10);
-BENCHMARK(Test_Atomic<int>)->Arg(LOOP)->Iterations(10);

@@ -31,6 +31,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 
@@ -94,19 +95,19 @@ void BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(Multi
   RCP<BlockedMultiVector> bX       = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(rcpX);
   RCP<const BlockedMultiVector> bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
 
-#ifdef HAVE_MUELU_DEBUG
-  RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
-  if (bB.is_null() == false) {
-    // TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+  if (Behavior::debug()) {
+    RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (bB.is_null() == false) {
+      // TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    }
+    if (bX.is_null() == false) {
+      // TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
+    }
   }
-  if (bX.is_null() == false) {
-    // TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedDirectSolver::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
-  }
-#endif
 
   if (bB.is_null() == true && bX.is_null() == true) {
     // standard case (neither B nor X are blocked)

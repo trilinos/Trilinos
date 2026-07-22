@@ -1,5 +1,13 @@
-//@HEADER
-//@HEADER
+// @HEADER
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
+//       Kernel for Flexible Management of Complex Dependency Chains
+//
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef PHALANX_EXAMPLE_PRINT_UTILITIES_HPP
 #define PHALANX_EXAMPLE_PRINT_UTILITIES_HPP
 
@@ -48,7 +56,7 @@ namespace phx_example {
   {
     auto host_f = Kokkos::create_mirror_view(f);
     auto host_J_vals = Kokkos::create_mirror_view(J.values);
-    auto host_graph = Kokkos::create_mirror(J.graph); // deep_copies automagically
+    auto host_graph = KokkosSparse::create_mirror(J.graph); // deep_copies automagically
     Kokkos::deep_copy(host_f,f);
     Kokkos::deep_copy(host_J_vals,J.values);
     typename PHX::exec_space().fence();
@@ -66,7 +74,7 @@ namespace phx_example {
       *os << "f(" << i << ") = " << host_f(i) << std::endl;
 
     size_t val_index = 0;
-    for (size_t row=0; row < host_graph.numRows(); ++row) {
+    for (typename decltype(host_graph)::size_type row=0; row < host_graph.numRows(); ++row) {
       for (int j=0; j < host_graph.rowConst(row).length; ++j) {
 	*os << "J(" << row << "," << host_graph.rowConst(row).colidx(j) << ") = "
 	    << host_J_vals(val_index) << std::endl;

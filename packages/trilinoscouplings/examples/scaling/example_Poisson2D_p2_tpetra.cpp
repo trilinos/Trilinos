@@ -1,31 +1,10 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Denis Ridzal  (dridzal@sandia.gov),
-//                    Kara Peterson (kjpeter@sandia.gov).
-//
-// ************************************************************************
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   example_Poisson.cpp
@@ -665,11 +644,11 @@ int main(int argc, char *argv[]) {
 
 
 
-  // Enumerate edges 
+  // Enumerate edges
   // NOTE: Only correct in serial
   FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
   FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
-  FieldContainer<double> P1_edgeCoord(1,dim);//will be resized  
+  FieldContainer<double> P1_edgeCoord(1,dim);//will be resized
   GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord);
 
 
@@ -812,10 +791,10 @@ int main(int argc, char *argv[]) {
   }
   int numCellSeeds = P2_cellNodes.size();
 
-       
+
   // Generate map for nodes
   RCP<driver_map_type> globalMapG = rcp(new driver_map_type(INVALID_GO,&P2_ownedGIDs[0],P2_ownedNodes,0,Comm));
-    
+
   // Generate p1 map
   RCP<driver_map_type> P1_globalMap = rcp(new driver_map_type(INVALID_GO,&P1_ownedGIDs[0],P1_ownedNodes,0,Comm));
 
@@ -907,7 +886,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-    
+
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly")));
 
@@ -971,7 +950,7 @@ int main(int argc, char *argv[]) {
   FieldContainer<double> cubPoints_aux(numCubPoints_aux, cubDim_aux);
   FieldContainer<double> cubWeights_aux(numCubPoints_aux);
   myCub_aux->getCubature(cubPoints_aux, cubWeights_aux);
-  
+
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Getting basis for auxiliary P1 mesh")));
 
@@ -1572,8 +1551,6 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 /******************************* TEST MueLu ***************************************/
 /**********************************************************************************/
 
-#include "ml_LevelWrap.h"
-
 // Test MueLu
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  ParameterList   & amgList,
@@ -1618,15 +1595,15 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   if (amgType == "ML") {
     throw std::runtime_error("Error: ML does not support Tpetra objects");
   } else if (amgType == "MueLu") {
-    // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
-    RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0);
+    // Turns a Tpetra::CrsMatrix into a Xpetra::Matrix
+    RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = Xpetra::toXpetra(A0);
     // Multigrid Hierarchy
     crs_matrix_type * A1;
     RCP<Xpetra::Matrix <scalar_type, local_ordinal_type, global_ordinal_type> > xA1;
     bool userCoarseA = false;
     if (amgList.isParameter("user coarse matrix")) {
       A1=amgList.get<crs_matrix_type*>("user coarse matrix");
-      xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(*A1));
+      xA1 = Xpetra::toXpetra(rcpFromRef(*A1));
       amgList.remove("user coarse matrix");
       userCoarseA = true;
     }
@@ -1637,10 +1614,10 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     MueLu::FactoryManager<scalar_type,local_ordinal_type,global_ordinal_type,NO> M1, M2;
     if (P0 != Teuchos::null) {
       H->AddNewLevel();
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xP0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P0);
+      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xP0 = Xpetra::toXpetra(P0);
       H->GetLevel(1)->AddKeepFlag("P",MueLu::NoFactory::get(),MueLu::UserData);
       H->GetLevel(1)->Set("P", xP0);
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xR0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(R0);
+      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xR0 = Xpetra::toXpetra(R0);
       H->GetLevel(1)->AddKeepFlag("R",MueLu::NoFactory::get(),MueLu::UserData);
       H->GetLevel(1)->Set("R", xR0);
       if (mypid==0) std::cout << ">>>>>>>>>>>>>>>>>>>>> "
@@ -1659,7 +1636,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
       for (int i=0; i<data.size(); ++i)
         data[i] = 1.0;
       data = Teuchos::null;
-      RCP<Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
+      RCP<Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xnullspace = Xpetra::toXpetra(nullspace);
       H->GetLevel(1)->Set("Nullspace", xnullspace);
     }
     // Multigrid setup phase
@@ -1691,11 +1668,11 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     RCP< Belos::SolverManager<scalar_type, multivector_type, operator_type> > solver;
     if(solveType == "cg")
       solver = rcp(new Belos::PseudoBlockCGSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
-    else if (solveType == "gmres") { 
+    else if (solveType == "gmres") {
       solver = rcp(new Belos::PseudoBlockGmresSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     }
     else if (solveType == "fixed point" || solveType == "fixed-point") {
-      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));   
+      solver = rcp(new Belos::FixedPointSolMgr<scalar_type, multivector_type, operator_type>(rcpFromRef(Problem), rcp(&belosList, false)));
     }
     else {
       std::cout << "\nERROR:  Invalid solver '"<<solveType<<"'" << std::endl;
@@ -1759,19 +1736,19 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord) {
   // Not especially efficient, but effective... at least in serial!
-  
+
   int numElems        = elemToNode.dimension(0);
   int numNodesperElem = elemToNode.dimension(1);
   int dim             = nodeCoord.dimension(1);
 
   // Sanity checks
   if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
+  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1))
     throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
 
   int edge_node0_id[4]={0,1,2,3};
   int edge_node1_id[4]={1,2,3,0};
-  
+
   // Run over all the elements and start enumerating edges
   typedef std::map<std::pair<int,int>,int> en_map_type;
   en_map_type e2n;
@@ -1788,7 +1765,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
       std::pair<int,int> ep(lo,hi);
 
       int edge_id;
-      en_map_type::iterator iter = edge_map.find(ep);      
+      en_map_type::iterator iter = edge_map.find(ep);
       if(iter==edge_map.end()) {
         edge_map[ep] = num_edges;
         edge_id = num_edges;
@@ -1796,23 +1773,23 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
       }
       else
         edge_id = (*iter).second;
-      
+
       elemToEdge(i,j) = edge_id;
       elemToEdgeOrient(i,j) = (lo==elemToNode(i,edge_node0_id[j]))?1:-1;
     }
-  }      
+  }
 
   // Fill out the edge centers (clobbering data if needed)
   edgeCoord.resize(num_edges,dim);
   for(int i=0; i<numElems; i++) {
-    for(int j=0; j<4; j++) {      
+    for(int j=0; j<4; j++) {
       int n0 = elemToNode(i,edge_node0_id[j]);
       int n1 = elemToNode(i,edge_node1_id[j]);
       for(int k=0; k<dim; k++)
         edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
     }
   }
-  
+
 }
 
 /*********************************************************************************************************/
@@ -1837,7 +1814,7 @@ void PromoteMesh(const int degree,
   int P1_numNodes        = P1_nodeCoord.dimension(0);
   int P1_numEdges        = P1_edgeCoord.dimension(0);
   int dim                = P1_nodeCoord.dimension(1);
-  
+
 
   // Sanity checks
   if(P1_numNodesperElem !=4 || P2_numNodesperElem !=9 ) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
@@ -1845,19 +1822,19 @@ void PromoteMesh(const int degree,
      P2_elemToNode.dimension(0)!=numElems || P2_nodeCoord.dimension(0) != P1_numNodes+P1_numEdges+numElems)
     throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
 
-  /*Quad-9 Layout:   
-    inode3 -- inode6 -- inode2    
+  /*Quad-9 Layout:
+    inode3 -- inode6 -- inode2
     |                   |
     inode7    inode8    inode5
-    |                   |       
+    |                   |
     inode0 -- inode4 -- inode1
   */
   // Make the new el2node array
-  for(int i=0; i<numElems; i++)  {    
+  for(int i=0; i<numElems; i++)  {
     // P1 nodes
-    for(int j=0; j<P1_numNodesperElem; j++) 
+    for(int j=0; j<P1_numNodesperElem; j++)
       P2_elemToNode(i,j) = P1_elemToNode(i,j);
-    
+
     // P1 edges
     for(int j=0; j<P1_numEdgesperElem; j++)  {
       P2_elemToNode(i,P1_numNodesperElem+j) = P1_numNodes+P1_elemToEdge(i,j);
@@ -1872,23 +1849,23 @@ void PromoteMesh(const int degree,
 
   // Make the new coordinates
   // P1 nodes
-  for(int i=0; i<P1_numNodes; i++) 
+  for(int i=0; i<P1_numNodes; i++)
     for(int j=0; j<dim; j++)
       P2_nodeCoord(i,j) = P1_nodeCoord(i,j);
 
   // P1 edges
-  for(int i=0; i<P1_numEdges; i++) 
+  for(int i=0; i<P1_numEdges; i++)
     for(int j=0; j<dim; j++)
       P2_nodeCoord(P1_numNodes+i,j) = P1_edgeCoord(i,j);
 
   // P1 cells
-  for(int i=0; i<numElems; i++) 
+  for(int i=0; i<numElems; i++)
     for(int j=0; j<dim; j++) {
       P2_nodeCoord(P1_numNodes+P1_numEdges+i,j) =0;
       for(int k=0; k<P1_numNodesperElem; k++)
         P2_nodeCoord(P1_numNodes+P1_numEdges+i,j) += P1_nodeCoord(P1_elemToNode(i,k),j) / P1_numNodesperElem;
     }
-  
+
 
 
   // Update the boundary conditions
@@ -1896,10 +1873,10 @@ void PromoteMesh(const int degree,
   int edge_node1_id[4]={1,2,3,0};
 
   // P1 nodes
-  for(int i=0; i<P1_numNodes; i++) 
+  for(int i=0; i<P1_numNodes; i++)
     P2_nodeOnBoundary(i) = P1_nodeOnBoundary(i);
 
-  
+
   // P1 edges
   // Not all that efficient
   for(int i=0; i<numElems; i++) {
@@ -1908,7 +1885,7 @@ void PromoteMesh(const int degree,
       int n0 = P1_elemToNode(i,edge_node0_id[j]);
       int n1 = P1_elemToNode(i,edge_node1_id[j]);
 
-      if(P1_nodeOnBoundary(n0) && P2_nodeOnBoundary(n1)) 
+      if(P1_nodeOnBoundary(n0) && P2_nodeOnBoundary(n1))
         P2_nodeOnBoundary(P1_numNodes+P1_edge) = 1;
     }
   }
@@ -1937,13 +1914,13 @@ void CreateP1MeshFromP2Mesh(
     /*
       How "P1" elements are traversed in a P2 element
 
-      inode3 -- inode6 -- inode2    
+      inode3 -- inode6 -- inode2
 
       |   3    |     2    |
 
       inode7 -- inode8 -- inode5
 
-      |   0    |     1    |       
+      |   0    |     1    |
 
       inode0 -- inode4 -- inode1
     */
@@ -1995,7 +1972,7 @@ void CreateLinearSystem(int numWorksets,
   long long numElems = elemToNode.dimension(0);
   int numNodesPerElem = cellType.getNodeCount();
 
-  
+
     std::cout << "CreateLinearSystem:" << std::endl;
     std::cout << "     numCubPoints = " << numCubPoints << std::endl;
     std::cout << "     cubDim = " << cubDim << std::endl;
@@ -2005,7 +1982,7 @@ void CreateLinearSystem(int numWorksets,
     std::cout << "     numNodesPerElem = " << numNodesPerElem << std::endl;
     std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
     std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
-  
+
 
   if(nodeCoord.dimension(0) != Teuchos::as<int>(globalNodeIds.size())) {
     std::ostringstream errStr;
@@ -2141,7 +2118,7 @@ void CreateLinearSystem(int numWorksets,
     /**********************************************************************************/
 
     //"WORKSET CELL" loop: local cell ordinal is relative to numElems
-    
+
     Array<scalar_type> vals1(1);
     Array<global_ordinal_type> cols1(1);
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
@@ -2156,8 +2133,8 @@ void CreateLinearSystem(int numWorksets,
         int globalRow = globalNodeIds[localRow];
         double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
 
-        //rhsVector.sumIntoGlobalValue(globalRow, 0, sourceTermContribution); 
-        rhsVector->sumIntoGlobalValue(globalRow, 0, sourceTermContribution); 
+        //rhsVector.sumIntoGlobalValue(globalRow, 0, sourceTermContribution);
+        rhsVector->sumIntoGlobalValue(globalRow, 0, sourceTermContribution);
 
         // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
         for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
@@ -2184,14 +2161,14 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
   // This presumes that the P2 element has all of the P1 nodes numbered first
   // Resulting matrix is #P2nodes x #P1nodes
   double one     = 1.0;
-  double half    = 0.5;    
+  double half    = 0.5;
   double quarter = 0.25;
   int edge_node0_id[4]={0,1,2,3};
   int edge_node1_id[4]={1,2,3,0};
-  
+
   int Nelem=P2_elemToNode.dimension(0);
   if(P2_elemToNode.dimension(1) != 9) throw std::runtime_error("Unidentified element type");
-  
+
   P = rcp(new crs_matrix_type(P2_map,0));
 
   Array<scalar_type> vals1(1);

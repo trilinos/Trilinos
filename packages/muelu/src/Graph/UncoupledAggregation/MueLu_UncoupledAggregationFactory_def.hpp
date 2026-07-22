@@ -16,6 +16,7 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <sstream>
 
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
 
@@ -37,12 +38,16 @@
 #include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosGraph_Distance2Color.hpp"
 #include "KokkosGraph_MIS2.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::UncoupledAggregationFactory()
   : bDefinitionPhase_(true) {}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::~UncoupledAggregationFactory() = default;
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
@@ -72,14 +77,14 @@ RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal
   SET_VALID_ENTRY("aggregation: use interface aggregation");
   SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
   SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
-  SET_VALID_ENTRY("aggregation: compute aggregate qualities");
   SET_VALID_ENTRY("aggregation: phase 1 algorithm");
+  SET_VALID_ENTRY("aggregation: backend");
+  validParamList->getEntry("aggregation: backend").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("default", "host", "kokkos"))));
 #undef SET_VALID_ENTRY
 
   // general variables needed in AggregationFactory
   validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
   validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-  validParamList->set<RCP<const FactoryBase>>("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
 
   // special variables necessary for OnePtAggregationAlgorithm
   validParamList->set<std::string>("OnePt aggregate map name", "", "Name of input map for single node aggregates. (default='')");
@@ -128,10 +133,6 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::DeclareInpu
       Input(currentLevel, "nodeOnInterface");
     }
   }
-
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    Input(currentLevel, "AggregateQualities");
-  }
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -178,24 +179,56 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   RCP<Aggregates> aggregates;
   RCP<const Teuchos::Comm<int>> comm;
   LO numRows;
+
+  const std::string aggregationBackend = pL.get<std::string>("aggregation: backend");
+
+  // "Graph" can have type "LWGraph" or "LWGraph_kokkos".
+  // The aggregation phases can call either "BuildAggregatesNonKokkos" or "BuildAggregates".
+
+  // "aggregation: backend" can take values "default", "non-Kokkos" or "Kokkos".
+  // "default": run depending on the type of "Graph"
+  // "non-Kokkos": run the non-Kokkos aggregation, moving "Graph" to host if necessary
+  // "Kokkos": run the Kokkos aggregation, potentially move "Graph", moving "Graph" to device if necessary
+
   bool runOnHost;
   if (IsType<RCP<LWGraph>>(currentLevel, "Graph")) {
-    graph      = Get<RCP<LWGraph>>(currentLevel, "Graph");
-    aggregates = rcp(new Aggregates(*graph));
-    comm       = graph->GetComm();
-    numRows    = graph->GetNodeNumVertices();
-    runOnHost  = true;
+    if ((aggregationBackend == "default") || (aggregationBackend == "host")) {
+      graph      = Get<RCP<LWGraph>>(currentLevel, "Graph");
+      aggregates = rcp(new Aggregates(*graph));
+      comm       = graph->GetComm();
+      numRows    = graph->GetNodeNumVertices();
+      runOnHost  = true;
+    } else {
+      RCP<LWGraph> tmp_graph = Get<RCP<LWGraph>>(currentLevel, "Graph");
+      graph_kokkos           = tmp_graph->copyToDevice();
+      aggregates             = rcp(new Aggregates(*graph_kokkos));
+      comm                   = graph_kokkos->GetComm();
+      numRows                = graph_kokkos->GetNodeNumVertices();
+      runOnHost              = false;
+    }
+  } else if (IsType<RCP<LWGraph_kokkos>>(currentLevel, "Graph")) {
+    if ((aggregationBackend == "default") || (aggregationBackend == "kokkos")) {
+      graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+      aggregates   = rcp(new Aggregates(*graph_kokkos));
+      comm         = graph_kokkos->GetComm();
+      numRows      = graph_kokkos->GetNodeNumVertices();
+      runOnHost    = false;
+    } else {
+      RCP<LWGraph_kokkos> tmp_graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+      graph                                = tmp_graph_kokkos->copyToHost();
+      aggregates                           = rcp(new Aggregates(*graph));
+      comm                                 = graph->GetComm();
+      numRows                              = graph->GetNodeNumVertices();
+      runOnHost                            = true;
+    }
   } else {
-    graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
-    aggregates   = rcp(new Aggregates(*graph_kokkos));
-    comm         = graph_kokkos->GetComm();
-    numRows      = graph_kokkos->GetNodeNumVertices();
-    runOnHost    = false;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Graph has bad type.");
+  }
 
+  if (!runOnHost) {
     TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: use interface aggregation"), std::invalid_argument, "Option: 'aggregation: use interface aggregation' is not supported in the Kokkos version of uncoupled aggregation");
-    // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 or Phase 2b, but is in 2a
+    // Sanity Checking: match ML behavior is not supported in UncoupledAggregation_Kokkos in Phase 1 , but it is in 2a and 2b
     TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase1"), std::invalid_argument, "Option: 'aggregation: match ML phase1' is not supported in the Kokkos version of uncoupled aggregation");
-    TEUCHOS_TEST_FOR_EXCEPTION(pL.get<bool>("aggregation: match ML phase2b"), std::invalid_argument, "Option: 'aggregation: match ML phase2b' is not supported in the Kokkos version of uncoupled aggregation");
   }
 
   // Build
@@ -305,18 +338,73 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       if (IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: MIS-2 aggregation" << std::endl;
       labels = KokkosGraph::graph_mis2_aggregate<device_t, rowmap_t, colinds_t>(aRowptrs, aColinds, numAggs);
     }
-    auto vertex2AggId = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-    auto procWinner   = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::OverwriteAll);
-    int rank          = comm->getRank();
-    Kokkos::parallel_for(
-        Kokkos::RangePolicy<exec_space>(0, numRows),
-        KOKKOS_LAMBDA(lno_t i) {
-          procWinner(i, 0) = rank;
-          if (aggStat(i) == READY) {
-            aggStat(i)         = AGGREGATED;
-            vertex2AggId(i, 0) = labels(i);
-          }
-        });
+    {
+      size_t labelCapacity = numAggs * 1.5;
+      // until all hashmap insertions succeed...
+      while (true) {
+        // find aggregates that are not empty
+        Kokkos::UnorderedMap<LocalOrdinal, void, exec_space> used_labels(labelCapacity);
+        Kokkos::parallel_for(
+            "MueLu::UncoupledAggregationFactory::MIS2::nonempty_aggs",
+            Kokkos::RangePolicy<exec_space>(0, numRows),
+            KOKKOS_LAMBDA(lno_t i) {
+              if (aggStat(i) == READY)
+                used_labels.insert(labels(i));
+            });
+        Kokkos::fence();
+        if (used_labels.failed_insert()) {
+          // Retry with larger hashmap capacity
+          labelCapacity = (labelCapacity + 1) * 1.5;
+          continue;
+        }
+
+        // compute aggIds for non-empty aggs
+        Kokkos::View<LO*, typename device_t::memory_space> new_labels("new_labels", numAggs);
+        Kokkos::parallel_scan(
+            "MueLu::UncoupledAggregationFactory::MIS2::set_new_labels",
+            Kokkos::RangePolicy<exec_space>(0, used_labels.capacity()),
+            KOKKOS_LAMBDA(lno_t i, lno_t & update, const bool is_final) {
+              if (used_labels.valid_at(i)) {
+                auto label = used_labels.key_at(i);
+                if (is_final) {
+                  new_labels(label) = update;
+                }
+                ++update;
+              }
+            },
+            numAggs);
+
+        // reassign aggIds
+        Kokkos::parallel_for(
+            "MueLu::UncoupledAggregationFactory::MIS2::reassign_labels",
+            Kokkos::RangePolicy<exec_space>(0, numRows),
+            KOKKOS_LAMBDA(lno_t i) {
+              labels(i) = new_labels(labels(i));
+            });
+        // Hashmap insertions all succeeded and we were able to update labels
+        break;
+      }
+
+      auto vertex2AggId = aggregates->GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto procWinner   = aggregates->GetProcWinner()->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+      int rank          = comm->getRank();
+      Kokkos::parallel_for(
+          Kokkos::RangePolicy<exec_space>(0, numRows),
+          KOKKOS_LAMBDA(lno_t i) {
+            if (aggStat(i) == READY) {
+#ifdef HAVE_MUELU_DEBUG
+              KOKKOS_ASSERT(labels(i) >= 0);
+#endif
+              procWinner(i, 0)   = rank;
+              aggStat(i)         = AGGREGATED;
+              vertex2AggId(i, 0) = labels(i);
+            } else {
+              procWinner(i, 0)   = MUELU_UNASSIGNED;
+              aggStat(i)         = IGNORED;
+              vertex2AggId(i, 0) = MUELU_UNAGGREGATED;
+            }
+          });
+    }
     numNonAggregatedNodes = 0;
     aggregates->SetNumAggregates(numAggs);
   } else {
@@ -327,28 +415,44 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       }
     }
 
-    GO numGlobalRows           = 0;
-    GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
-    if (IsPrint(Statistics1))
-      MueLu_sumAll(comm, as<GO>(numRows), numGlobalRows);
+    std::vector<GO> localStats;
+    if (IsPrint(Statistics1)) {
+      localStats    = std::vector<GO>(1 + 2 * algos_.size());
+      localStats[0] = numRows;
+    }
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
-      SubFactoryMonitor sfm2(*this, "Algo \"" + phase + "\"", currentLevel);
 
+      SubFactoryMonitor sfm2(*this, "Algo \"" + phase + "\"" + (numNonAggregatedNodes == 0 ? " [skipped since no nodes are left to aggregate]" : ""), currentLevel);
       int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
-      if (runOnHost)
-        algos_[a]->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStatHost, numNonAggregatedNodes);
-      else
-        algos_[a]->BuildAggregates(pL, *graph_kokkos, *aggregates, aggStat, numNonAggregatedNodes);
+
+      algos_[a]->SetupPhase(pL, comm, numRows, numNonAggregatedNodes);
+
+      if (numNonAggregatedNodes > 0) {
+        if (runOnHost)
+          algos_[a]->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStatHost, numNonAggregatedNodes);
+        else
+          algos_[a]->BuildAggregates(pL, *graph_kokkos, *aggregates, aggStat, numNonAggregatedNodes);
+      }
       algos_[a]->SetProcRankVerbose(oldRank);
 
       if (IsPrint(Statistics1)) {
-        GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
-        GO numLocalAggs = aggregates->GetNumAggregates(), numGlobalAggs = 0;
-        MueLu_sumAll(comm, numLocalAggregated, numGlobalAggregated);
-        MueLu_sumAll(comm, numLocalAggs, numGlobalAggs);
-
-        double aggPercent = 100 * as<double>(numGlobalAggregated) / as<double>(numGlobalRows);
+        localStats[2 * a + 1] = numRows - numNonAggregatedNodes;  // num local aggregated nodes
+        localStats[2 * a + 2] = aggregates->GetNumAggregates();   // num local aggregates
+      }
+    }
+    if (IsPrint(Statistics1)) {
+      std::vector<GO> globalStats(1 + 2 * algos_.size());
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, (int)localStats.size(), localStats.data(), globalStats.data());
+      GO numGlobalRows           = globalStats[0];
+      GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
+      std::stringstream ss;
+      for (size_t a = 0; a < algos_.size(); a++) {
+        std::string phase              = algos_[a]->description();
+        GO numGlobalAggregated         = globalStats[2 * a + 1];
+        GO numGlobalAggs               = globalStats[2 * a + 2];
+        GO numGlobalNonAggregatedNodes = numGlobalRows - numGlobalAggregatedPrev;
+        double aggPercent              = 100 * as<double>(numGlobalAggregated) / as<double>(numGlobalRows);
         if (aggPercent > 99.99 && aggPercent < 100.00) {
           // Due to round off (for instance, for 140465733/140466897), we could
           // get 100.00% display even if there are some remaining nodes. This
@@ -356,13 +460,16 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           // it to display 99.99%.
           aggPercent = 99.99;
         }
-        GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
-                                << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
-                                << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
-                                << "  aggregates : " << numGlobalAggs - numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
+
+        ss << "Algo \"" + phase + "\"" + (numGlobalNonAggregatedNodes == 0 ? " [skipped since no nodes are left to aggregate]" : "") << std::endl
+           << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
+           << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
+           << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
+           << "  aggregates : " << numGlobalAggs - numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
         numGlobalAggregatedPrev = numGlobalAggregated;
         numGlobalAggsPrev       = numGlobalAggs;
       }
+      GetOStream(Statistics1) << ss.str();
     }
   }
 
@@ -372,10 +479,6 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   aggregates->ComputeAggregateSizes(true /*forceRecompute*/);
 
   Set(currentLevel, "Aggregates", aggregates);
-
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    RCP<Xpetra::MultiVector<DefaultScalar, LO, GO, Node>> aggQualities = Get<RCP<Xpetra::MultiVector<DefaultScalar, LO, GO, Node>>>(currentLevel, "AggregateQualities");
-  }
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>

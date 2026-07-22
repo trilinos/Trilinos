@@ -68,7 +68,7 @@ MueLu::ParameterListInterpreter<SC, LO, GO, NO> makeFactory(Teuchos::ParameterLi
 
 #ifdef HAVE_MUELU_BELOS
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void solve_system_hierarchy(Xpetra::UnderlyingLib& lib,
+void solve_system_hierarchy(Xpetra::UnderlyingLib& /*lib*/,
                             Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                             Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X,
                             Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& B,
@@ -98,7 +98,7 @@ void solve_system_hierarchy(Xpetra::UnderlyingLib& lib,
 
 // --------------------------------------------------------------------------------------
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void solve_system_list(Xpetra::UnderlyingLib& lib,
+void solve_system_list(Xpetra::UnderlyingLib& /*lib*/,
                        Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                        Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X,
                        Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& B,
@@ -107,9 +107,6 @@ void solve_system_list(Xpetra::UnderlyingLib& lib,
 #include "MueLu_UseShortNames.hpp"
   using Teuchos::rcp;
 
-  if (lib == Xpetra::UseEpetra) {
-    MueLuList.set("use kokkos refactor", false);
-  }
   Teuchos::RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>> H =
       MueLu::CreateXpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, MueLuList);
 
@@ -188,7 +185,7 @@ void generate_user_matrix_and_nullspace(std::string& matrixType,
 
 // --------------------------------------------------------------------------------------
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int argc, char* argv[]) {
+int main_(Teuchos::CommandLineProcessor& /*clp*/, Xpetra::UnderlyingLib /*lib*/, int /*argc*/, char* /*argv*/[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::TimeMonitor;
 

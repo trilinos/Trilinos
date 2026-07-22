@@ -45,7 +45,6 @@ namespace
 TEST(StkMeshHowTo, EnableMeshDiagnostics)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::io::fill_mesh("generated:4x4x4|sideset:xX", *bulkPtr);
 
   bulkPtr->enable_mesh_diagnostic_rule(stk::mesh::RULE_3);

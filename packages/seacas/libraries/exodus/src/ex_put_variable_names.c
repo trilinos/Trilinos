@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,7 +32,7 @@ static int ex_put_var_names_int(int exoid, char *tname, char *dnumvar, char *vna
   int  dimid;
   char errmsg[MAX_ERR_LENGTH];
 
-  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != EX_NOERR) {
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s variables defined in file id %d", tname,
                exoid);
@@ -43,10 +43,10 @@ static int ex_put_var_names_int(int exoid, char *tname, char *dnumvar, char *vna
                "ERROR: failed to locate number of %s variables in file id %d", tname, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
     }
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
-  if ((status = nc_inq_varid(exoid, vnames, varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vnames, varid)) != EX_NOERR) {
     if (status == NC_ENOTVAR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s variable names defined in file id %d", tname,
                exoid);
@@ -57,9 +57,9 @@ static int ex_put_var_names_int(int exoid, char *tname, char *dnumvar, char *vna
                tname, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
     }
-    return (EX_FATAL);
+    return EX_FATAL;
   }
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 
 /*!

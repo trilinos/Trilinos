@@ -97,24 +97,20 @@ namespace Intrepid2 {
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const ordinal_type pt) const {
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
           }
-          case OPERATOR_DIV : {
+          else if constexpr (opType == OPERATOR_DIV) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_DIV ,
                                       ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::Serial::getValues) operator is not supported");
-          }
           }
         }
       };
@@ -159,6 +155,22 @@ namespace Intrepid2 {
                                   operatorType );
     }
 
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
+                        PointViewType inputPointsconst,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
+
     virtual
     void
     getDofCoords( ScalarViewType dofCoords ) const override {
@@ -170,7 +182,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoords.extent(0)) != this->basisCardinality_, std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
       // Verify 1st dimension of output array.
-      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.extent(1) != this->basisCellTopology_.getDimension(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.extent(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
                                     ">>> ERROR: (Intrepid2::Basis_HDIV_WEDGE_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);

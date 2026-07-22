@@ -1,24 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <KokkosBlas1_rotmg.hpp>
 
 namespace Test {
 template <class View0, class PView, class RView>
-void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param,
-                     RView& ref_vals) {
+void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param, RView& ref_vals) {
   using scalar_type = typename View0::non_const_value_type;
   using YView       = typename View0::const_type;
 
@@ -26,12 +12,10 @@ void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param,
 
   KokkosBlas::rotmg(d1, d2, x1, y1_const, param);
 
-  const scalar_type eps = Kokkos::ArithTraits<scalar_type>::eps();
+  const scalar_type eps = KokkosKernels::ArithTraits<scalar_type>::eps();
   const scalar_type tol =
-#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-      100 *
-      eps;  // Guessing MKL implements sin/cos differently so need larger tol
+#if defined(KOKKOSKERNELS_ENABLE_TPL_BLAS) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
+      100 * eps;  // Guessing MKL implements sin/cos differently so need larger tol
 #else
       10 * eps;
 #endif
@@ -61,8 +45,7 @@ void test_rotmg_impl(View0& d1, View0& d2, View0& x1, View0& y1, PView& param,
 }
 
 template <class View0, class PView, class RView>
-void set_rotmg_input_ref_vals(const int test_case, View0& d1, View0& d2,
-                              View0& x1, View0& y1, PView& param,
+void set_rotmg_input_ref_vals(const int test_case, View0& d1, View0& d2, View0& x1, View0& y1, PView& param,
                               RView& ref_vals) {
   constexpr double gamma = 4096;
   Kokkos::deep_copy(param, 0.0);
@@ -211,9 +194,7 @@ void set_rotmg_input_ref_vals(const int test_case, View0& d1, View0& d2,
       ref_vals(7) = -0.25;
       ref_vals(8) = 0.0;
       break;
-    default:
-      throw std::runtime_error("rotmg test: test case unrecognized!");
-      break;
+    default: throw std::runtime_error("rotmg test: test case unrecognized!"); break;
   }
 }
 }  // namespace Test
@@ -222,8 +203,7 @@ template <class Scalar, class Device>
 int test_rotmg() {
   Kokkos::View<Scalar, Device> d1("d1"), d2("d2"), x1("x1"), y1("y1");
   Kokkos::View<Scalar[5], Device> param("param");
-  Kokkos::View<Scalar[9], Kokkos::DefaultHostExecutionSpace> ref_vals(
-      "reference values");
+  Kokkos::View<Scalar[9], Kokkos::DefaultHostExecutionSpace> ref_vals("reference values");
 
   constexpr int num_test_cases = 9;
   for (int test_case = 0; test_case < num_test_cases; ++test_case) {

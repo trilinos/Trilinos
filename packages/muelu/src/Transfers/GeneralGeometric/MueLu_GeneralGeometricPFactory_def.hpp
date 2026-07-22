@@ -839,7 +839,7 @@ void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ghostCoords->doImport(*fineCoords, *ghostImporter, Xpetra::INSERT);
 
   P                   = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0));
-  RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> PCrs = toCrsMatrix(P);
 
   ArrayRCP<size_t> iaP;
   ArrayRCP<LO> jaP;

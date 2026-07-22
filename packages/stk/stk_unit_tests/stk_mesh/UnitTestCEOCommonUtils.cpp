@@ -15,7 +15,6 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityId, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace CEOUtils

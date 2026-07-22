@@ -1,46 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 3.0
-//       Copyright (2020) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL NTESS OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include <iostream>
 
@@ -77,27 +36,18 @@
 
 template <class ExecSpace>
 static void run(benchmark::State& state) {
-  const auto m      = state.range(0);
-  const auto n      = state.range(1);
-  const auto repeat = state.range(2);
+  const auto m = state.range(0);
+  const auto n = state.range(1);
   // Declare type aliases
   using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
 
-  std::cout << "Running BLAS Level 1 DOT perfomrance experiment ("
-            << ExecSpace::name() << ")\n";
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
 
-  std::cout << "Each test input vector has a length of " << m << std::endl;
+  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
 
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> x(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), m, n);
-
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device> y(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "y"), m, n);
-
-  Kokkos::View<Scalar*, Device> result(
-      Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
+  Kokkos::View<Scalar*, Device> result(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x dot y"), n);
 
   // Declaring variable pool w/ a seeded random number;
   // a parallel random number generator, so you
@@ -106,39 +56,30 @@ static void run(benchmark::State& state) {
 
   Kokkos::fill_random(x, pool, 10.0);
   Kokkos::fill_random(y, pool, 10.0);
+  ExecSpace space;
 
+  Kokkos::fence();
   for (auto _ : state) {
-    // do a warm up run of dot:
-    KokkosBlas::dot(result, x, y);
-
-    // The live test of dot:
-
-    Kokkos::fence();
-    Kokkos::Timer timer;
-
-    for (int i = 0; i < repeat; i++) {
-      KokkosBlas::dot(result, x, y);
-      ExecSpace().fence();
-    }
-
-    // Kokkos Timer set up
-    double total = timer.seconds();
-    double avg   = total / repeat;
-    // Flops calculation for a 1D matrix dot product per test run;
-    size_t flopsPerRun = (size_t)2 * m * n;
-    printf("Avg DOT time: %f s.\n", avg);
-    printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-    state.SetIterationTime(timer.seconds());
-
-    state.counters["Avg DOT time (s):"] =
-        benchmark::Counter(avg, benchmark::Counter::kDefaults);
-    state.counters["Avg DOT FLOP/s:"] =
-        benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
+    KokkosBlas::dot(space, result, x, y);
+    space.fence();
   }
+
+  const size_t iterFlop   = (size_t)2 * m * n;
+  const size_t totalFlop  = iterFlop * state.iterations();
+  state.counters["FLOP"]  = benchmark::Counter(iterFlop);
+  state.counters["FLOPS"] = benchmark::Counter(totalFlop, benchmark::Counter::kIsRate);
 }
 
+BENCHMARK(run<Kokkos::DefaultHostExecutionSpace>)
+    ->Name("KokkosBlas_dot_mv<DefaultHostExecutionSpace>")
+    ->Unit(benchmark::kMicrosecond)
+    ->UseRealTime()
+    ->ArgNames({"m", "n"})
+    ->ArgsProduct({benchmark::CreateRange(100000, 100000000, 10), benchmark::CreateRange(5, 5, 1)});
+
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
-    ->Name("KokkosBlas_dot_mv")
-    ->ArgNames({"m", "n", "repeat"})
-    ->Args({100000, 5, 20})
-    ->UseManualTime();
+    ->Name("KokkosBlas_dot_mv<DefaultExecutionSpace>")
+    ->Unit(benchmark::kMicrosecond)
+    ->UseRealTime()
+    ->ArgNames({"m", "n"})
+    ->ArgsProduct({benchmark::CreateRange(100000, 100000000, 10), benchmark::CreateRange(5, 5, 1)});

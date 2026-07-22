@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HIP_PARALLEL_REDUCE_RANGE_HPP
 #define KOKKOS_HIP_PARALLEL_REDUCE_RANGE_HPP
@@ -84,13 +71,13 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
 
   // Make the exec_range calls call to Reduce::DeviceIterateTile
   template <class TagType>
-  __device__ inline std::enable_if_t<std::is_void<TagType>::value> exec_range(
+  __device__ inline std::enable_if_t<std::is_void_v<TagType>> exec_range(
       const Member& i, reference_type update) const {
     m_functor_reducer.get_functor()(i, update);
   }
 
   template <class TagType>
-  __device__ inline std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+  __device__ inline std::enable_if_t<!std::is_void_v<TagType>> exec_range(
       const Member& i, reference_type update) const {
     m_functor_reducer.get_functor()(TagType(), i, update);
   }
@@ -216,9 +203,17 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
       return hip_single_inter_block_reduce_scan_shmem<false, WorkTag,
                                                       value_type>(f, n);
     };
-    return Kokkos::Impl::hip_get_preferred_blocksize<ParallelReduce,
-                                                     LaunchBounds>(
-        instance, shmem_functor);
+    constexpr auto light_weight =
+        Kokkos::Experimental::WorkItemProperty::HintLightWeight;
+    constexpr typename Policy::work_item_property property;
+    if constexpr ((property & light_weight) == light_weight) {
+      return Kokkos::Impl::hip_get_max_blocksize<ParallelReduce, LaunchBounds>(
+          instance, shmem_functor);
+    } else {
+      return Kokkos::Impl::hip_get_preferred_blocksize<ParallelReduce,
+                                                       LaunchBounds>(
+          instance, shmem_functor);
+    }
   }
 
   inline void execute() {
@@ -232,16 +227,28 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
     if ((nwork > 0) || need_device_set) {
       const int block_size = local_block_size(m_functor_reducer.get_functor());
       if (block_size == 0) {
+        const unsigned int shared_memory_required =
+            hip_single_inter_block_reduce_scan_shmem<false, WorkTag,
+                                                     value_type>(
+                m_functor_reducer.get_functor(), HIPTraits::WarpSize);
+        const unsigned int shared_memory_available =
+            m_policy.space()
+                .impl_internal_space_instance()
+                ->m_deviceProp.maxSharedMemoryPerMultiProcessor;
         Kokkos::Impl::throw_runtime_exception(
             std::string("Kokkos::Impl::ParallelReduce< HIP > could not find a "
-                        "valid execution configuration."));
+                        "valid execution configuration: your kernel requires " +
+                        std::to_string(shared_memory_required) +
+                        " bytes of shared memory per block but only " +
+                        std::to_string(shared_memory_available) +
+                        " bytes per block are available."));
       }
 
       // REQUIRED ( 1 , N , 1 )
       dim3 block(1, block_size, 1);
       // use a slightly less constrained, but still well bounded limit for
       // scratch
-      int nblocks = (nwork + block.y - 1) / block.y;
+      index_type nblocks = (nwork + block.y - 1) / block.y;
       // Heuristic deciding the value of nblocks.
       // The general idea here is we want to:
       //    1. Not undersubscribe the device (i.e., we want at least
@@ -265,7 +272,8 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
         if (items_per_thread < 4) {
           int ratio = std::min(
               (nblocks + preferred_block_min - 1) / preferred_block_min,
-              (4 + items_per_thread - 1) / items_per_thread);
+              static_cast<index_type>(4 + items_per_thread - 1) /
+                  items_per_thread);
           nblocks /= ratio;
         }
       }

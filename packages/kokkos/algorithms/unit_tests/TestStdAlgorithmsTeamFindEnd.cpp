@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 
@@ -86,9 +73,9 @@ struct TestFunctorA {
 
       case 2: {
         auto it    = KE::find_end(member, KE::cbegin(myRowViewFrom),
-                               KE::cend(myRowViewFrom),
-                               KE::cbegin(myRowSearchedSeqView),
-                               KE::cend(myRowSearchedSeqView), m_binaryPred);
+                                  KE::cend(myRowViewFrom),
+                                  KE::cbegin(myRowSearchedSeqView),
+                                  KE::cend(myRowSearchedSeqView), m_binaryPred);
         resultDist = KE::distance(KE::cbegin(myRowViewFrom), it);
         Kokkos::single(Kokkos::PerTeam(member), [=, *this]() {
           m_distancesView(myRowIndex) = resultDist;
@@ -99,7 +86,7 @@ struct TestFunctorA {
 
       case 3: {
         auto it    = KE::find_end(member, myRowViewFrom, myRowSearchedSeqView,
-                               m_binaryPred);
+                                  m_binaryPred);
         resultDist = KE::distance(KE::begin(myRowViewFrom), it);
         Kokkos::single(Kokkos::PerTeam(member), [=, *this]() {
           m_distancesView(myRowIndex) = resultDist;
@@ -227,6 +214,7 @@ void test_A(const bool sequencesExist, std::size_t numTeams,
 
         break;
       }
+      default: Kokkos::abort("unreachable");
     }
 
     if (sequencesExist) {

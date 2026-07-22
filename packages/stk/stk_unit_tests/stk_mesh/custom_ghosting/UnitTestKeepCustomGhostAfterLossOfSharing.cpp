@@ -55,7 +55,6 @@ public:
     builder.set_aura_option(auraOption);
     bulk = builder.create();
     meta = &(bulk->mesh_meta_data());
-    meta->use_simple_fields();
     createParts();
   }
 

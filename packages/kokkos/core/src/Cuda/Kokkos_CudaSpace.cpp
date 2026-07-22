@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #define KOKKOS_IMPL_PUBLIC_INCLUDE
@@ -21,7 +8,12 @@
 #include <Kokkos_Macros.hpp>
 #ifdef KOKKOS_ENABLE_CUDA
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <Cuda/Kokkos_Cuda.hpp>
 #include <Cuda/Kokkos_CudaSpace.hpp>
 
@@ -31,7 +23,6 @@
 #include <algorithm>
 #include <atomic>
 
-//#include <Cuda/Kokkos_Cuda_BlockSize_Deduction.hpp>
 #include <impl/Kokkos_Error.hpp>
 
 #include <impl/Kokkos_Tools.hpp>
@@ -43,31 +34,18 @@ cudaStream_t Kokkos::Impl::cuda_get_deep_copy_stream() {
   static cudaStream_t s = nullptr;
   if (s == nullptr) {
     KOKKOS_IMPL_CUDA_SAFE_CALL(
-        (CudaInternal::singleton().cuda_stream_create_wrapper(&s)));
+        (CudaInternal::default_instance->cuda_stream_create_wrapper(&s)));
   }
   return s;
-}
-
-const std::unique_ptr<Kokkos::Cuda> &Kokkos::Impl::cuda_get_deep_copy_space(
-    bool initialize) {
-  static std::unique_ptr<Cuda> space = nullptr;
-  if (!space && initialize)
-    space = std::make_unique<Cuda>(Kokkos::Impl::cuda_get_deep_copy_stream());
-  return space;
 }
 
 namespace Kokkos {
 namespace Impl {
 
-namespace {
-
-static std::atomic<int> num_uvm_allocations(0);
-
-}  // namespace
-
 void DeepCopyCuda(void *dst, const void *src, size_t n) {
-  KOKKOS_IMPL_CUDA_SAFE_CALL((CudaInternal::singleton().cuda_memcpy_wrapper(
-      dst, src, n, cudaMemcpyDefault)));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(
+      (CudaInternal::default_instance->cuda_memcpy_wrapper(dst, src, n,
+                                                           cudaMemcpyDefault)));
 }
 
 void DeepCopyAsyncCuda(const Cuda &instance, void *dst, const void *src,
@@ -80,8 +58,7 @@ void DeepCopyAsyncCuda(const Cuda &instance, void *dst, const void *src,
 void DeepCopyAsyncCuda(void *dst, const void *src, size_t n) {
   cudaStream_t s = cuda_get_deep_copy_stream();
   KOKKOS_IMPL_CUDA_SAFE_CALL(
-      (CudaInternal::singleton().cuda_memcpy_async_wrapper(
-          dst, src, n, cudaMemcpyDefault, s)));
+      cudaMemcpyAsync(dst, src, n, cudaMemcpyDefault, s));
   Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Cuda>(
       "Kokkos::Impl::DeepCopyAsyncCuda: Deep Copy Stream Sync",
       Kokkos::Tools::Experimental::SpecialSynchronizationCases::
@@ -184,8 +161,43 @@ void *impl_allocate_common(const int device_id,
   cudaError_t error_code = cudaSuccess;
 #ifndef CUDART_VERSION
 #error CUDART_VERSION undefined!
+#elif defined(KOKKOS_ENABLE_IMPL_CUDA_UNIFIED_MEMORY)
+  // This is intended for Grace-Hopper (and future unified memory architectures)
+  // The idea is to use host allocator and then advise to keep it in HBM on the
+  // device, but that requires CUDA 12.2
+  static_assert(CUDART_VERSION >= 12020,
+                "CUDA runtime version >=12.2 required when "
+                "Kokkos_ENABLE_IMPL_CUDA_UNIFIED_MEMORY is set. "
+                "Please update your CUDA runtime version or "
+                "reconfigure with "
+                "-D Kokkos_ENABLE_IMPL_CUDA_UNIFIED_MEMORY=OFF");
+  if (arg_alloc_size) {  // cudaMemAdvise does not work with nullptr
+    error_code = cudaMallocManaged(&ptr, arg_alloc_size, cudaMemAttachGlobal);
+    if (error_code == cudaSuccess) {
+      // One would think cudaMemLocation{device_id,
+      // cudaMemLocationTypeDevice} would work but it doesn't. I.e. the order of
+      // members doesn't seem to be defined.
+      cudaMemLocation loc;
+      loc.id   = device_id;
+      loc.type = cudaMemLocationTypeDevice;
+#if CUDART_VERSION < 13000  // cudaMemAdvise_v2 was deprecated in CUDA 13, it is
+                            // now the same as cudaMemAdvise
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemAdvise_v2(
+          ptr, arg_alloc_size, cudaMemAdviseSetPreferredLocation, loc));
+#else
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMemAdvise(
+          ptr, arg_alloc_size, cudaMemAdviseSetPreferredLocation, loc));
+#endif
+    }
+  }
 #elif (defined(KOKKOS_ENABLE_IMPL_CUDA_MALLOC_ASYNC) && CUDART_VERSION >= 11020)
-  if (arg_alloc_size >= memory_threshold_g) {
+  int device_supports_cuda_malloc_async;
+  KOKKOS_IMPL_CUDA_SAFE_CALL(
+      cudaDeviceGetAttribute(&device_supports_cuda_malloc_async,
+                             cudaDevAttrMemoryPoolsSupported, device_id));
+
+  if (arg_alloc_size >= memory_threshold_g &&
+      device_supports_cuda_malloc_async == 1) {
     error_code = cudaMallocAsync(&ptr, arg_alloc_size, stream);
 
     if (error_code == cudaSuccess) {
@@ -196,18 +208,19 @@ void *impl_allocate_common(const int device_id,
             "Kokkos::Cuda: backend fence after async malloc");
       }
     }
-  } else
+  } else {
+    error_code = cudaMalloc(&ptr, arg_alloc_size);
+  }
+#else
+  error_code = cudaMalloc(&ptr, arg_alloc_size);
 #endif
-  { error_code = cudaMalloc(&ptr, arg_alloc_size); }
+
   if (error_code != cudaSuccess) {  // TODO tag as unlikely branch
     // This is the only way to clear the last error, which
     // we should do here since we're turning it into an
     // exception here
     cudaGetLastError();
-    throw Experimental::CudaRawMemoryAllocationFailure(
-        arg_alloc_size, error_code,
-        Experimental::RawMemoryAllocationFailure::AllocationMechanism::
-            CudaMalloc);
+    Kokkos::Impl::throw_bad_alloc(arg_handle.name, arg_alloc_size, arg_label);
   }
 
   if (Kokkos::Profiling::profileLibraryLoaded()) {
@@ -252,8 +265,6 @@ void *CudaUVMSpace::impl_allocate(
   Cuda::impl_static_fence(
       "Kokkos::CudaUVMSpace::impl_allocate: Pre UVM Allocation");
   if (arg_alloc_size > 0) {
-    Kokkos::Impl::num_uvm_allocations++;
-
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
     cudaError_t error_code =
         cudaMallocManaged(&ptr, arg_alloc_size, cudaMemAttachGlobal);
@@ -263,10 +274,7 @@ void *CudaUVMSpace::impl_allocate(
       // we should do here since we're turning it into an
       // exception here
       cudaGetLastError();
-      throw Experimental::CudaRawMemoryAllocationFailure(
-          arg_alloc_size, error_code,
-          Experimental::RawMemoryAllocationFailure::AllocationMechanism::
-              CudaMallocManaged);
+      Kokkos::Impl::throw_bad_alloc(name(), arg_alloc_size, arg_label);
     }
 
 #ifdef KOKKOS_IMPL_DEBUG_CUDA_PIN_UVM_TO_HOST
@@ -307,10 +315,7 @@ void *CudaHostPinnedSpace::impl_allocate(
     // we should do here since we're turning it into an
     // exception here
     cudaGetLastError();
-    throw Experimental::CudaRawMemoryAllocationFailure(
-        arg_alloc_size, error_code,
-        Experimental::RawMemoryAllocationFailure::AllocationMechanism::
-            CudaHostAlloc);
+    Kokkos::Impl::throw_bad_alloc(name(), arg_alloc_size, arg_label);
   }
   if (Kokkos::Profiling::profileLibraryLoaded()) {
     const size_t reported_size =
@@ -341,27 +346,27 @@ void CudaSpace::impl_deallocate(
     Kokkos::Profiling::deallocateData(arg_handle, arg_label, arg_alloc_ptr,
                                       reported_size);
   }
-  try {
 #ifndef CUDART_VERSION
 #error CUDART_VERSION undefined!
+#elif defined(KOKKOS_ENABLE_IMPL_CUDA_UNIFIED_MEMORY)
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(arg_alloc_ptr));
 #elif (defined(KOKKOS_ENABLE_IMPL_CUDA_MALLOC_ASYNC) && CUDART_VERSION >= 11020)
-    if (arg_alloc_size >= memory_threshold_g) {
-      Impl::cuda_device_synchronize(
-          "Kokkos::Cuda: backend fence before async free");
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(arg_alloc_ptr, m_stream));
-      Impl::cuda_device_synchronize(
-          "Kokkos::Cuda: backend fence after async free");
-    } else {
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(arg_alloc_ptr));
-    }
-#else
+  if (arg_alloc_size >= memory_threshold_g) {
+    Impl::cuda_device_synchronize(
+        "Kokkos::Cuda: backend fence before async free");
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(arg_alloc_ptr, m_stream));
+    Impl::cuda_device_synchronize(
+        "Kokkos::Cuda: backend fence after async free");
+  } else {
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(arg_alloc_ptr));
-#endif
-  } catch (...) {
   }
+#else
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(arg_alloc_ptr));
+#endif
 }
 void CudaUVMSpace::deallocate(void *const arg_alloc_ptr,
                               const size_t arg_alloc_size) const {
@@ -387,13 +392,9 @@ void CudaUVMSpace::impl_deallocate(
     Kokkos::Profiling::deallocateData(arg_handle, arg_label, arg_alloc_ptr,
                                       reported_size);
   }
-  try {
-    if (arg_alloc_ptr != nullptr) {
-      Kokkos::Impl::num_uvm_allocations--;
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
-      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(arg_alloc_ptr));
-    }
-  } catch (...) {
+  if (arg_alloc_ptr != nullptr) {
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(arg_alloc_ptr));
   }
   Cuda::impl_static_fence(
       "Kokkos::CudaUVMSpace::impl_deallocate: Post UVM Deallocation");
@@ -420,11 +421,8 @@ void CudaHostPinnedSpace::impl_deallocate(
     Kokkos::Profiling::deallocateData(arg_handle, arg_label, arg_alloc_ptr,
                                       reported_size);
   }
-  try {
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeHost(arg_alloc_ptr));
-  } catch (...) {
-  }
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaSetDevice(m_device));
+  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeHost(arg_alloc_ptr));
 }
 
 }  // namespace Kokkos
@@ -435,23 +433,28 @@ void CudaHostPinnedSpace::impl_deallocate(
 namespace Kokkos {
 namespace Impl {
 
-void cuda_prefetch_pointer(const Cuda &space, const void *ptr, size_t bytes,
+void cuda_prefetch_pointer(cudaStream_t stream, const void *ptr, size_t bytes,
                            bool to_device) {
   if ((ptr == nullptr) || (bytes == 0)) return;
   cudaPointerAttributes attr;
-  KOKKOS_IMPL_CUDA_SAFE_CALL((
-      space.impl_internal_space_instance()->cuda_pointer_get_attributes_wrapper(
-          &attr, ptr)));
+  KOKKOS_IMPL_CUDA_SAFE_CALL((cudaPointerGetAttributes(&attr, ptr)));
   // I measured this and it turns out prefetching towards the host slows
   // DualView syncs down. Probably because the latency is not too bad in the
-  // first place for the pull down. If we want to change that provde
+  // first place for the pull down. If we want to change that provide
   // cudaCpuDeviceId as the device if to_device is false
   bool is_managed = attr.type == cudaMemoryTypeManaged;
+  Cuda default_instance;
   if (to_device && is_managed &&
-      space.cuda_device_prop().concurrentManagedAccess) {
+      default_instance.cuda_device_prop().concurrentManagedAccess) {
+    const int dstDevice = default_instance.cuda_device();
+#if CUDART_VERSION >= 13000
+    cudaMemLocation loc = {cudaMemLocationTypeDevice, dstDevice};
     KOKKOS_IMPL_CUDA_SAFE_CALL(
-        (space.impl_internal_space_instance()->cuda_mem_prefetch_async_wrapper(
-            ptr, bytes, space.cuda_device())));
+        (cudaMemPrefetchAsync(ptr, bytes, loc, /*flags=*/0, stream)));
+#else
+    KOKKOS_IMPL_CUDA_SAFE_CALL(
+        (cudaMemPrefetchAsync(ptr, bytes, dstDevice, stream)));
+#endif
   }
 }
 
@@ -463,8 +466,12 @@ void cuda_prefetch_pointer(const Cuda &space, const void *ptr, size_t bytes,
 
 #include <impl/Kokkos_SharedAlloc_timpl.hpp>
 
+#if !defined(KOKKOS_ENABLE_IMPL_CUDA_UNIFIED_MEMORY)
 KOKKOS_IMPL_HOST_INACCESSIBLE_SHARED_ALLOCATION_RECORD_EXPLICIT_INSTANTIATION(
     Kokkos::CudaSpace);
+#else
+KOKKOS_IMPL_SHARED_ALLOCATION_RECORD_EXPLICIT_INSTANTIATION(Kokkos::CudaSpace);
+#endif
 KOKKOS_IMPL_SHARED_ALLOCATION_RECORD_EXPLICIT_INSTANTIATION(
     Kokkos::CudaUVMSpace);
 KOKKOS_IMPL_SHARED_ALLOCATION_RECORD_EXPLICIT_INSTANTIATION(

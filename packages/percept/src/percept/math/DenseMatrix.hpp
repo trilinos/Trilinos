@@ -505,15 +505,10 @@
                                        const DenseMatrix<RC,C>& B )
     {
       double tmp = A(r,0)*B(0,c);
-      switch (RC) {
-      default: for (unsigned k = 6; k < RC; ++k)
+      if (RC > 0) {
+        for (unsigned k = RC-1; k > 0; --k) {
           tmp += A(r,k)*B(k,c);
-      case 6: tmp += A(r,5)*B(5,c);
-      case 5: tmp += A(r,4)*B(4,c);
-      case 4: tmp += A(r,3)*B(3,c);
-      case 3: tmp += A(r,2)*B(2,c);
-      case 2: tmp += A(r,1)*B(1,c);
-      case 1: ;
+        }
       }
       return tmp;
     }

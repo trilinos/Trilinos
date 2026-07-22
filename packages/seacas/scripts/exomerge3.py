@@ -1,7 +1,7 @@
 """
 Exomerge is a lightweight Python interface for manipulating ExodusII files.
 
-Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
+Copyright(C) 1999-2025 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -42,7 +42,6 @@ import datetime
 import itertools
 import math
 import struct
-import bisect
 import colorsys
 import difflib
 import operator
@@ -57,11 +56,11 @@ if sys.version_info[0] < 3:
 import exodus3 as exodus
 
 # informal version number of this module
-__version__ = "8.6.1"
+__version__ = "8.7.0"
 VERSION = __version__
 
 # contact person for issues
-CONTACT = "Tim Kostka <tdkostk@sandia.gov>"
+CONTACT = "Sierra Help <sierra-help@sandia.gov>"
 
 # show the banner on first use
 SHOW_BANNER = True
@@ -473,31 +472,28 @@ class ExodusModel(object):
     ELEMENT_ORDER["line3"] = 2
     ELEMENT_ORDER["point"] = 1
 
-    # define components of multi-component fields
-    MULTI_COMPONENT_FIELD_SUBSCRIPTS = dict()
-    MULTI_COMPONENT_FIELD_SUBSCRIPTS["vector"] = ("x", "y", "z")
-    MULTI_COMPONENT_FIELD_SUBSCRIPTS["symmetric_3x3_tensor"] = (
-        "xx",
-        "yy",
-        "zz",
-        "xy",
-        "yz",
-        "zx",
-    )
-    MULTI_COMPONENT_FIELD_SUBSCRIPTS["full_3x3_tensor"] = (
-        "xx",
-        "yy",
-        "zz",
-        "xy",
-        "yz",
-        "zx",
-        "yx",
-        "zy",
-        "xz",
-    )
-    ALL_MULTI_COMPONENT_FIELD_SUBSCRIPTS = set(
-        itertools.chain(*list(MULTI_COMPONENT_FIELD_SUBSCRIPTS.values()))
-    )
+    # A dictionary defining the order of components in multi-component fields.
+    # See "_sort_field_names" method for details.
+    _FIELD_NAME_SUBSCRIPT_ORDER = {
+        "xx": 1,
+        "yy": 2,
+        "zz": 3,
+        "xy": 4,
+        "yz": 5,
+        "zx": 6,
+        "yx": 7,
+        "zy": 8,
+        "xz": 9,
+        "x": 10,
+        "y": 11,
+        "z": 12,
+        "s": 13,
+        "q": 14
+    }
+
+    # Regular expression used to parse field names. It splits the name into three named groups: base_name, component, and integration_point.
+    # See "_sort_field_names" method for details.
+    _FIELD_NAME_REGEX = re.compile(fr"^(?P<base_name>.*?)(?:[_]?)(?P<component>{'|'.join(_FIELD_NAME_SUBSCRIPT_ORDER.keys())})?(?:[_]?(?P<integration_point_1>\d+))?(?:[_]?(?P<integration_point_2>\d+))?$")
 
     def __init__(self):
         """Initialize the model."""
@@ -555,6 +551,7 @@ class ExodusModel(object):
         self.qa_records = []
         # title of the database
         self.title = None
+        self.num_dimension = 3
 
     def __getattr__(self, name):
         """
@@ -6914,123 +6911,56 @@ class ExodusModel(object):
         for name, values in list(self.global_variables.items()):
             values.insert(timestep_index, self._get_default_field_value(name))
 
-    def _replace_name_case(self, new_list, original_list):
-        """
-        Return the lowercase version of all strings in the given list.
-
-        Example:
-        >>> model._replace_name_case(['x', 'z', 'fred'], ['X', 'Fred', 'Z'])
-        ['X', 'Z', 'Fred']
-
-        """
-        original_case = dict((x.lower(), x) for x in original_list)
-        if len(original_case) != len(original_list):
-            self._warning(
-                "Ambiguous string case.",
-                "There are multiple strings in the list which have "
-                "identical lowercase representations.  One will be "
-                "chosen at random.",
-            )
-        for item in new_list:
-            if item.lower() not in original_case:
-                self._bug(
-                    "Unrecognized string.",
-                    'The string "%s" appears in the new list but '
-                    "not in the original list." % item,
-                )
-        return [original_case[x.lower()] for x in new_list]
-
-    def _sort_field_names(self, original_field_names):
+    def _sort_field_names(self, original_field_names: list[str]) -> list[str]:
         """
         Return field names sorted in a SIERRA-friendly manner.
 
         In order for SIERRA to recognize vectors, tensors, and element fields
         with multiple integration points, fields must be sorted in a specific
-        order.  This function provides that sort order.
+        order. This function provides that sort order.
 
         As fields within exomerge are stored in a set, exomerge has no internal
-        or natural field order.  This routine is only necessary for writing to
+        or natural field order. This routine is only necessary for writing to
         ExodusII files.
 
-        """
-        field_names = [x.lower() for x in original_field_names]
-        # Look through all fields to find multi-component fields and store
-        # these as tuples of the following form:
-        # ('base_name', 'component', integration_points)
-        multicomponent_fields = set()
-        for name in field_names:
-            # see if it has an integration point
-            if re.match(".*_[0-9]+$", name):
-                (name, integration_point) = name.rsplit("_", 1)
-                integration_point = int(integration_point)
-            else:
-                integration_point = None
-            # see if it possibly has a component
-            if re.match(".*_.+$", name):
-                component = name.rsplit("_", 1)[1]
-                if component in self.ALL_MULTI_COMPONENT_FIELD_SUBSCRIPTS:
-                    name = name.rsplit("_", 1)[0]
-                    multicomponent_fields.add((name, component, integration_point))
-        # now sort multi-component fields
-        base_names = set(x for x, _, _ in multicomponent_fields)
-        sorted_field_names = dict()
-        field_names = set(field_names)
-        for base_name in base_names:
-            # find all components of this form
-            components = set(
-                x for name, x, _ in multicomponent_fields if name == base_name
-            )
-            # find max integration point value
-            integration_points = set(
-                x
-                for name, _, x in multicomponent_fields
-                if name == base_name and x is not None
-            )
-            if integration_points:
-                integration_point_count = max(
-                    x
-                    for name, _, x in multicomponent_fields
-                    if name == base_name and x is not None
-                )
-            else:
-                integration_point_count = None
+        This method recognizes the following field naming patterns:
 
-            # see if the components match the form of something
-            matching_form = None
-            for form, included_components in list(
-                self.MULTI_COMPONENT_FIELD_SUBSCRIPTS.items()
-            ):
-                if set(included_components) == components:
-                    matching_form = form
-            if not matching_form:
-                continue
-            # see if all components and integration points are present
-            mid = [
-                "_" + x for x in self.MULTI_COMPONENT_FIELD_SUBSCRIPTS[matching_form]
-            ]
-            if integration_point_count is None:
-                last = [""]
-            else:
-                last = ["_" + str(x + 1) for x in range(integration_point_count)]
-            all_names = [base_name + m + s for s in last for m in mid]
-            if set(all_names).issubset(field_names):
-                sorted_field_names[all_names[0]] = all_names
-                field_names = field_names - set(all_names)
-        # sort field names which are not part of multicomponent fields
-        field_names = sorted(field_names)
-        # for each list of field names, find place to splice into list
-        place_to_insert = dict()
-        for name in list(sorted_field_names.keys()):
-            place = bisect.bisect_left(field_names, name)
-            if place not in place_to_insert:
-                place_to_insert[place] = [name]
-            else:
-                place_to_insert[place].append(name)
-        # splice them in
-        for place in sorted(list(place_to_insert.keys()), reverse=True):
-            for name in place_to_insert[place]:
-                field_names[place:place] = sorted_field_names[name]
-        return self._replace_name_case(field_names, original_field_names)
+        - <base_name>_<component>_<integration_point>. E.g. "unrotated_stress_xx_1"
+        - <base_name>_<integration_point>. E.g. "ln_strain_1"
+        - <base_name>_<component>. E.g. "Displacement_X" or "SIGMA_XX"
+        - <base_name>. E.g. "temperature"
+
+        Same patterns but omitting the underscore are also recognized:
+
+        - <base_name><component><integration_point>. E.g. "unrotated_stressxx1"
+        - <base_name><integration_point>. E.g. "ln_strain1"
+        - <base_name><component>. E.g. "DisplacementX" or "SIGMAXX"
+        - <base_name>. E.g. "temperature"
+
+        The sorting is done by the base name (alphabetically), then by the
+        integration point (1, 2, 3), and finally by the component
+        (according to the "_FIELD_NAME_SUBSCRIPT_ORDER" dictionary).
+        """
+
+        def _sorting_key(elem: str) -> tuple[str, int, int]:
+            """This inner function transforms each element of the list "original_field_names"
+            into another element that will be used for sorting purposes
+            """
+
+            match = self._FIELD_NAME_REGEX.match(elem.lower()).groupdict()  # type: ignore
+            base_name = str(match["base_name"])
+            if base_name == '':
+                return (elem.lower(), 0, 0, 0)
+            integration_point_1 = int(match["integration_point_1"]) if match["integration_point_1"] is not None else 0
+            integration_point_2 = int(match["integration_point_2"]) if match["integration_point_2"] is not None else 0
+
+            # Transform the component to a letter according to the _FIELD_NAME_SUBSCRIPT_ORDER
+            component = self._FIELD_NAME_SUBSCRIPT_ORDER[match["component"]] if match["component"] is not None else 0
+
+            return (base_name, integration_point_2, integration_point_1, component)
+
+        original_field_names.sort(key=_sorting_key)
+        return original_field_names
 
     def _reorder_list(self, the_list, new_index):
         """
@@ -7797,6 +7727,9 @@ class ExodusModel(object):
         exodus_file = exodus.exodus(filename, mode="r")
         if SUPPRESS_EXODUS_OUTPUT:
             sys.stdout = save_stdout
+
+        self.num_dimension = exodus_file.num_dimensions()
+
         # format timesteps to retrieve
         file_timesteps = list(exodus_file.get_times())
         if timesteps == "last_if_any":
@@ -8232,7 +8165,7 @@ class ExodusModel(object):
             "w",
             "ctype",
             self.title,
-            3,
+            self.num_dimension,
             len(self.nodes),
             self.get_element_count(element_block_ids),
             len(element_block_ids),

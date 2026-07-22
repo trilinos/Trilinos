@@ -216,11 +216,11 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   }
 
   /* get variable id of status array */
-  if (status == NC_NOERR) {
+  if (status == EX_NOERR) {
     /* if status array exists (V 2.01+), use it, otherwise assume
        object exists to be backward compatible */
 
-    if ((status = nc_get_var_int(exoid, varid, stat_vals)) != NC_NOERR) {
+    if ((status = nc_get_var_int(exoid, varid, stat_vals)) != EX_NOERR) {
       free(stat_vals);
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s status array from file id %d",
                ex_name_of_object(obj_type), exoid);
@@ -236,7 +236,7 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     free(stat_vals);
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -244,7 +244,7 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   }
 
   /* inquire previously defined dimensions */
-  if ((status = nc_inq_dimid(exoid, DIM_TIME, &timedim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_TIME, &timedim)) != EX_NOERR) {
     free(stat_vals);
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time variable in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -271,7 +271,7 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
           dims[0] = timedim;
 
           /* Determine number of entities in block */
-          if ((status = nc_inq_dimid(exoid, exi_catstr(ent_size, (i + 1)), &dims[1])) != NC_NOERR) {
+          if ((status = nc_inq_dimid(exoid, exi_catstr(ent_size, (i + 1)), &dims[1])) != EX_NOERR) {
             free(stat_vals);
             snprintf(errmsg, MAX_ERR_LENGTH,
                      "ERROR: failed to locate number of entities in "
@@ -289,7 +289,7 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
            */
 
           if ((status = nc_def_var(exoid, exi_catstr2(var_name, j, ent_type, i + 1),
-                                   nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+                                   nc_flt_code(exoid), 2, dims, &varid)) != EX_NOERR) {
             if (status != NC_ENAMEINUSE) {
               free(stat_vals);
               snprintf(errmsg, MAX_ERR_LENGTH,
@@ -315,7 +315,7 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   dims[1] = numelvardim;
   status  = nc_def_var(exoid, tab_type, NC_INT, 2, dims, &varid);
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to define %s variable truth table in file id %d",
              ex_name_of_object(obj_type), exoid);
@@ -324,7 +324,7 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   }
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -333,7 +333,7 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   /* write out the element variable truth table */
   status = nc_put_var_int(exoid, varid, var_tab);
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store variable truth table in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

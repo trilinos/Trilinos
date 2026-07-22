@@ -1,14 +1,14 @@
 /*
- * Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
-#include <fmt/core.h>
+#include <cstdlib>
+#include <fmt/format.h>
 #include <ostream>
-#include <stdlib.h>
 #include <string>
 
 #include "Ionit_Initializer.h"
@@ -22,7 +22,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "1.06";
+  std::string version = "1.09 (2025/05/01)";
 
 #ifdef SEACAS_HAVE_MPI
   void mpi_finalize()
@@ -45,8 +45,11 @@ int main(int argc, char *argv[])
   ON_BLOCK_EXIT(mpi_finalize);
 #endif
 
-  Info::Interface interFace;
-  interFace.parse_options(argc, argv);
+  Info::Interface interFace(version);
+  bool            success = interFace.parse_options(argc, argv);
+  if (!success) {
+    exit(EXIT_FAILURE);
+  }
 
   Ioss::Init::Initializer io;
 
@@ -61,8 +64,8 @@ int main(int argc, char *argv[])
     codename = codename.substr(ind + 1, codename.size());
   }
 
-  if (interFace.list_groups()) {
-    Ioss::io_info_group_info(interFace);
+  if (interFace.list_change_sets()) {
+    Ioss::io_info_change_set_info(interFace);
   }
   else {
     Ioss::io_info_file_info(interFace);

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_STRING_MANIPULATION_HPP
 #define KOKKOS_STRING_MANIPULATION_HPP
@@ -79,7 +66,7 @@ KOKKOS_INLINE_FUNCTION constexpr char *strncpy(char *dest, const char *src,
   if (count != 0) {
     char *d = dest;
     do {
-      if ((*d++ = *src++) == '\0') {
+      if (char const c = (*d++ = *src++); c == '\0') {
         while (--count != 0) {
           *d++ = '\0';
         }
@@ -108,7 +95,7 @@ KOKKOS_INLINE_FUNCTION constexpr char *strncat(char *dest, const char *src,
     for (; *d != '\0'; ++d) {
     }
     do {
-      if ((*d = *src++) == '\0') {
+      if (char const c = (*d = *src++); c == '\0') {
         break;
       }
       d++;
@@ -123,8 +110,8 @@ KOKKOS_INLINE_FUNCTION constexpr char *strncat(char *dest, const char *src,
 template <class Unsigned>
 KOKKOS_FUNCTION constexpr unsigned int to_chars_len(Unsigned val) {
   unsigned int const base = 10;
-  static_assert(std::is_integral<Unsigned>::value, "implementation bug");
-  static_assert(std::is_unsigned<Unsigned>::value, "implementation bug");
+  static_assert(std::is_integral_v<Unsigned>, "implementation bug");
+  static_assert(std::is_unsigned_v<Unsigned>, "implementation bug");
   unsigned int n = 1;
   while (val >= base) {
     val /= base;
@@ -136,8 +123,8 @@ template <class Unsigned>
 KOKKOS_FUNCTION constexpr void to_chars_impl(char *first, unsigned int len,
                                              Unsigned val) {
   unsigned int const base = 10;
-  static_assert(std::is_integral<Unsigned>::value, "implementation bug");
-  static_assert(std::is_unsigned<Unsigned>::value, "implementation bug");
+  static_assert(std::is_integral_v<Unsigned>, "implementation bug");
+  static_assert(std::is_unsigned_v<Unsigned>, "implementation bug");
   unsigned int pos = len - 1;
   while (val > 0) {
     auto const num = val % base;
@@ -161,13 +148,14 @@ struct to_chars_result {
 template <class Integral>
 KOKKOS_FUNCTION constexpr to_chars_result to_chars_i(char *first, char *last,
                                                      Integral value) {
+  // NOLINTBEGIN(bugprone-invalid-enum-default-initialization)
   using Unsigned = std::conditional_t<sizeof(Integral) <= sizeof(unsigned int),
                                       unsigned int, unsigned long long>;
-  Unsigned unsigned_val = value;
+  Unsigned unsigned_val = value;  // NOLINT(bugprone-signed-char-misuse)
   if (value == 0) {
     *first = '0';
     return {first + 1, {}};
-  } else if constexpr (std::is_signed<Integral>::value) {
+  } else if constexpr (std::is_signed_v<Integral>) {
     if (value < 0) {
       *first++     = '-';
       unsigned_val = Unsigned(~value) + Unsigned(1);
@@ -179,6 +167,7 @@ KOKKOS_FUNCTION constexpr to_chars_result to_chars_i(char *first, char *last,
   }
   to_chars_impl(first, len, unsigned_val);
   return {first + len, {}};
+  // NOLINTEND(bugprone-invalid-enum-default-initialization)
 }
 //</editor-fold>
 

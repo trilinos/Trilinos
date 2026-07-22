@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -472,7 +472,7 @@ int ne_test_piinf(int fileid)
 
   ex_copy_string(ftype, "s", 3);
 
-  return (ex_put_init_info(fileid, NPROC, NPROCF, ftype));
+  return ex_put_init_info(fileid, NPROC, NPROCF, ftype);
 }
 
 /*****************************************************************************/
@@ -480,7 +480,7 @@ int ne_test_pinig(int fileid)
 {
   int nng = NNG, neg = NEG, nebg = NEBG, nnsg = NNSG, nssg = NSSG;
 
-  return (ex_put_init_global(fileid, nng, neg, nebg, nnsg, nssg));
+  return ex_put_init_global(fileid, nng, neg, nebg, nnsg, nssg);
 }
 
 /*****************************************************************************/
@@ -493,7 +493,7 @@ int ne_test_pelbid(int fileid)
     elblk_cnt[i] = NEBCG;
   }
 
-  return (ex_put_eb_info_global(fileid, elblk_ids, elblk_cnt));
+  return ex_put_eb_info_global(fileid, elblk_ids, elblk_cnt);
 }
 
 /*****************************************************************************/
@@ -507,7 +507,7 @@ int ne_test_pnsp(int fileid)
     global_df_cnts[i] = 1;
   }
 
-  return (ex_put_ns_param_global(fileid, global_ids, global_n_cnts, global_df_cnts));
+  return ex_put_ns_param_global(fileid, global_ids, global_n_cnts, global_df_cnts);
 }
 
 /*****************************************************************************/
@@ -521,7 +521,7 @@ int ne_test_pssp(int fileid)
     global_df_cnts[i] = 1;
   }
 
-  return (ex_put_ss_param_global(fileid, global_ids, global_el_cnts, global_df_cnts));
+  return ex_put_ss_param_global(fileid, global_ids, global_el_cnts, global_df_cnts);
 }
 
 /*****************************************************************************/
@@ -979,8 +979,8 @@ int ne_test_plbpc(int fileid)
     num_elem_cmaps[iproc] = NECMAP;
   }
 
-  return (ex_put_loadbal_param_cc(fileid, num_int_nodes, num_bor_nodes, num_ext_nodes,
-                                  num_int_elems, num_bor_elems, num_node_cmaps, num_elem_cmaps));
+  return ex_put_loadbal_param_cc(fileid, num_int_nodes, num_bor_nodes, num_ext_nodes, num_int_elems,
+                                 num_bor_elems, num_node_cmaps, num_elem_cmaps);
 }
 
 /*****************************************************************************/
@@ -1011,6 +1011,6 @@ int ne_test_pcmpc(int fileid)
     emap_proc_ptr[iproc + 1] = emap_proc_ptr[iproc] + NECMAP;
   }
 
-  return (ex_put_cmap_params_cc(fileid, nmap_ids, nmap_n_cnts, nmap_proc_ptr, emap_ids, emap_e_cnts,
-                                emap_proc_ptr));
+  return ex_put_cmap_params_cc(fileid, nmap_ids, nmap_n_cnts, nmap_proc_ptr, emap_ids, emap_e_cnts,
+                               emap_proc_ptr);
 }

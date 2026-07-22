@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,7 +23,7 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
                "ERROR: failed to locate %s id %" PRId64 " in %s array in file id %d",
                ex_name_of_object(var_type), obj_id, var_obj_id, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
     obj_id_ndx = obj_id;
   }
@@ -34,7 +34,7 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
                "ERROR: failed to locate %s id %" PRId64 " in %s array in file id %d",
                ex_name_of_object(var_type), obj_id, var_obj_id, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
     obj_id_ndx = obj_id;
   }
@@ -50,22 +50,22 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
                    "Warning: no variables allowed for NULL block %" PRId64 " in file id %d", obj_id,
                    exoid);
           ex_err_fn(exoid, __func__, errmsg, EX_NULLENTITY);
-          return (EX_WARN);
+          return EX_WARN;
         }
 
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate %s id %" PRId64 " in %s array in file id %d",
                  ex_name_of_object(var_type), obj_id, var_obj_id, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
-        return (EX_FATAL);
+        return EX_FATAL;
       }
     }
   }
   if ((status = nc_inq_varid(exoid, exi_name_red_var_of_object(var_type, obj_id_ndx), varid)) !=
-      NC_NOERR) {
+      EX_NOERR) {
     if (status == NC_ENOTVAR) { /* variable doesn't exist, create it! */
       int time_dim;
-      if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
+      if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d",
                  exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -84,27 +84,27 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
       }
 
       /*    variable doesn't exist so put file into define mode  */
-      if ((status = nc_redef(exoid)) != NC_NOERR) {
+      if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
-        return (EX_FATAL);
+        return EX_FATAL;
       }
 
       /* define NetCDF variable to store reduction variable values */
       int dims[] = {time_dim, numvardim};
       if ((status = nc_def_var(exoid, exi_name_red_var_of_object(var_type, obj_id_ndx),
-                               nc_flt_code(exoid), 2, dims, varid)) != NC_NOERR) {
+                               nc_flt_code(exoid), 2, dims, varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s in file id %d",
                  ex_name_of_object(var_type), exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         exi_leavedef(exoid, __func__);
-        return (EX_FATAL);
+        return EX_FATAL;
       }
       exi_compress_variable(exoid, *varid, 2);
 
       /*    leave define mode  */
-      if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
-        return (EX_FATAL);
+      if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
+        return EX_FATAL;
       }
     }
     else {
@@ -112,10 +112,10 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
                ex_name_of_object(var_type), exi_name_red_var_of_object(var_type, obj_id_ndx),
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
   }
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 
 /*!
@@ -254,7 +254,7 @@ int ex_put_reduction_vars(int exoid, int time_step, ex_entity_type var_type, ex_
     status = nc_put_vara_double(exoid, varid, start, count, var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store %s %" PRId64 " at step %d in file id %d",
              ex_name_of_object(var_type), obj_id, time_step, exoid);

@@ -56,7 +56,7 @@
         if (m_face_breaker) delete m_face_breaker;
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
       {
         EXCEPTWATCH;
         bp.resize(2);
@@ -77,15 +77,15 @@
 
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(1);
         needed_entities[0].first = m_eMesh.edge_rank();
         setToOne(needed_entities);
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 8; }
+      virtual unsigned getNumNewElemPerElem() override { return 8; }
 
 #if USE_PERCEPT_MOAB_TET_REFINE
       typedef std::array<unsigned, 4> TetTupleTypeLocal;
@@ -160,10 +160,10 @@
       }
 
       void
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& /*nodeRegistry*/,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, std::vector<stk::mesh::Entity>::iterator& element_pool,
                                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         const CellTopologyData * const cell_topo_data = eMesh.get_cell_topology(element);
         static std::vector<TetTupleType> elems(8);
@@ -178,11 +178,9 @@
         add_parts = m_toParts;
 
         unsigned edge_marks[6] = {0,0,0,0,0,0};
-        unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 6; iedge++)
           {
             edge_marks[iedge] = 1;
-            ++num_edges_marked;
           }
 
         stk::mesh::Entity elem_nodes_local[4] = {stk::mesh::Entity()};

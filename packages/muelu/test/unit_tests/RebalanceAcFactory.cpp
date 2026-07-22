@@ -21,7 +21,6 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_DefaultComm.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
@@ -29,8 +28,6 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Parameters.hpp>
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -56,7 +53,6 @@
 #include <MueLu_SmootherFactory.hpp>
 #include <MueLu_RebalanceAcFactory.hpp>
 #include <MueLu_RepartitionInterface.hpp>
-#include <MueLu_IsorropiaInterface.hpp>
 #include <MueLu_RebalanceTransferFactory.hpp>
 #include <MueLu_RepartitionFactory.hpp>
 #include "MueLu_CoordinatesTransferFactory.hpp"
@@ -92,11 +88,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithImporter, Scalar,
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
-
-  if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   Teuchos::CommandLineProcessor clp(false);

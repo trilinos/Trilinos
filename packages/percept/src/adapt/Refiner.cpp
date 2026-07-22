@@ -34,9 +34,6 @@
 #if HAVE_OPENNURBS
 #include <percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
 #endif
-#if HAVE_CUBIT
-#include <percept/mesh/geometry/kernel/GeometryKernelPGEOM.hpp>
-#endif
 #include <percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #include <percept/mesh/geometry/kernel/GeometryFactory.hpp>
 
@@ -243,7 +240,7 @@
       std::vector<stk::mesh::Entity> elems;
       const stk::mesh::BucketVector & buckets = m_eMesh.get_bulk_data()->buckets( rank );
 
-      unsigned nele=0;
+      //unsigned nele=0;
       for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           if (on_locally_owned_part(**k) && fromPartsSelector(**k) )
@@ -270,7 +267,7 @@
                   else
                     {
                       elems.push_back(element);
-                      ++nele;
+                      //++nele;
                     }
                 }
             }
@@ -386,10 +383,10 @@
 
     // called by doMark
     void Refiner::
-    preMark(int iter, int num_registration_loops) {}
+    preMark(int /*iter*/, int /*num_registration_loops*/) {}
 
     bool Refiner::
-    postMark(int iter, int num_registration_loops) { return false; }
+    postMark(int /*iter*/, int /*num_registration_loops*/) { return false; }
 
     void Refiner::
     doBreak(int num_registration_loops)
@@ -963,7 +960,7 @@
             m_nodeRegistry->prolongate(m_eMesh.get_coordinates_field());
           }
 
-#if defined(STK_BUILT_IN_SIERRA)
+#if defined(STK_BUILT_FOR_SIERRA)
           if (m_rbar_names.size())
             m_nodeRegistry->add_rbars(m_rbar_names);
 #endif
@@ -1026,7 +1023,7 @@
 #endif
               removeOldElements(irank, ranks[irank], m_breakPattern[irank]);
               renameNewParts(ranks[irank], m_breakPattern[irank]);
-              fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
+//              fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
             }
         }
 
@@ -1215,7 +1212,6 @@
         {
 
           const stk::mesh::BucketVector & buckets = m_eMesh.get_bulk_data()->buckets( ranks_to_be_deleted[irank] );
-          int npar=0;
           int nchild=0;
           for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
@@ -1238,13 +1234,11 @@
                     }
                   else
                     {
-                      ++npar;
                       parents.insert(element);
                     }
                 }
             }
-          //std::cout << "tmp removeElements(parents) irank, size= " << ranks_to_be_deleted[irank] << " " << npar << " nchild= " << nchild << std::endl;
-
+          (void)nchild;
         }
 
       mod_begin_timer(*m_eMesh.get_bulk_data(), timerDoRefine_);
@@ -1431,16 +1425,10 @@
             std::string m2gFile = geomFile.substr(0,geomFile.length()-3) + "m2g";
 
             struct stat s;
-            if (0 == stat(m2gFile.c_str(), &s))
-              {
-#if HAVE_CUBIT
-                geomKernel = new GeometryKernelPGEOM();
-#else
-                throw std::runtime_error("CUBIT not supported on this platform");
-#endif
+            if (0 == stat(m2gFile.c_str(), &s)) {
+                throw std::runtime_error("Cubit not supported");
               }
-            else
-              {
+            else {
 #if HAVE_OPENNURBS
                 geomKernel = new GeometryKernelOpenNURBS();
 #else
@@ -1458,19 +1446,11 @@
               geomKernel->set_property("exo_large", "true");
             }
           }
-        else if(geomFile.find(".sat") != std::string::npos)
-          {
-#ifdef HAVE_ACIS
-    	    geomKernel = new GeometryKernelPGEOM();
-#else
-    	    throw std::runtime_error("ACIS not supported on this platform");
-#endif
-          }
         else
           {
             VERIFY_MSG("invalid file extension on --input_geometry file \n   "
                        "-- valid extensions are .3dm (OpenNURBS) or .e,.g,.exo \n"
-                       "for GregoryPatch Exodus files or .sat for ACIS (assumes \n"
+                       "for GregoryPatch Exodus files (assumes \n"
                        "there is also a file with the same name ending in  .m2g) - file= " + geomFile);
           }
         }
@@ -1903,7 +1883,7 @@
     bool Refiner::
     createNewNeededNodeIds(const CellTopologyData * const cell_topo_data,
                            const stk::mesh::Entity element, std::vector<NeededEntityType>& needed_entity_ranks,
-                           NewSubEntityNodesType& new_sub_entity_nodes, UniformRefinerPatternBase *breakPattern)
+                           NewSubEntityNodesType& new_sub_entity_nodes, UniformRefinerPatternBase */*breakPattern*/)
     {
       EXCEPTWATCH;
 
@@ -2018,7 +1998,7 @@
 #define EXTRA_PRINT_UR_BESDB 0
 
     void Refiner::
-    buildElementSideDB(SubDimCellToDataMap& cell_2_data_map)
+    buildElementSideDB(SubDimCellToDataMap& /*cell_2_data_map*/)
     {
 
     }
@@ -2066,7 +2046,7 @@
     // determine side part to elem part relations
     //static
     void Refiner::
-    get_side_part_relations(PerceptMesh& eMesh, bool checkParentChild, SidePartMap& side_part_map, bool debug)
+    get_side_part_relations(PerceptMesh& eMesh, bool /*checkParentChild*/, SidePartMap& side_part_map, bool debug)
     {
       EXCEPTWATCH;
 
@@ -2138,13 +2118,13 @@
                       if ( stk::mesh::is_auto_declared_part(*elem_parts[iep]) )
                         continue;
 
-                      const AutoPart *auto_part = elem_parts[iep]->attribute<AutoPart>();
+                      const AutoPart *local_auto_part = elem_parts[iep]->attribute<AutoPart>();
                       if (elem_parts[iep]->name().find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos)
                         {
-                          if (!auto_part) throw std::runtime_error("Refiner::get_side_part_relations: bad old part attribute for auto");
+                          if (!local_auto_part) throw std::runtime_error("Refiner::get_side_part_relations: bad old part attribute for auto");
                         }
 
-                      if (auto_part)
+                      if (local_auto_part)
                         {
                           continue;
                         }
@@ -2408,10 +2388,12 @@
 
     /// fix names of surfaces (changing for example surface_hex8_quad4 to surface_tet4_tri3)
     void Refiner::
-    fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
+    fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank /*rank*/, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
       stk::mesh::PartVector toParts = breakPattern->getToParts();
+
+      bool debug = true;
 
       //std::cout << "toParts.size()= " << toParts.size() << " typeid= " << typeid(*breakPattern).name()  << std::endl;
 
@@ -2423,7 +2405,7 @@
           std::string toPartName = toParts[i_part]->name();
           if ( toPartName.find("surface_", 0) == std::string::npos)
             {
-              if (0) std::cout << "tmp fixSurfaceAndEdgeSetNames:: skipping toPartName= " << toPartName << " typeid= " << typeid(*breakPattern).name()  << std::endl;
+              if (debug) std::cout << "tmp fixSurfaceAndEdgeSetNames:: skipping toPartName= " << toPartName << " typeid= " << typeid(*breakPattern).name()  << std::endl;
               continue;
             }
 
@@ -2431,7 +2413,7 @@
 
           StringStringMap::iterator map_it;
           StringStringMap str_map =  breakPattern->fixSurfaceAndEdgeSetNamesMap();
-          if (0) std::cout << "tmp fixSurfaceAndEdgeSetNamesMap:: str_map.size()= " << str_map.size()
+          if (debug) std::cout << "tmp fixSurfaceAndEdgeSetNamesMap:: str_map.size()= " << str_map.size()
             //<< " " << breakPattern->getFromTopoPartName() << "__" << breakPattern->getToTopoPartName()
                            << " typeid= " << typeid(*breakPattern).name()
                            << std::endl;
@@ -2441,13 +2423,13 @@
               std::string from_str = map_it->first;
               std::string to_str = map_it->second;
               Util::replace(newToPartName, from_str, to_str);
-              if (0)
+              if (debug)
                 std::cout << "tmp fixSurfaceAndEdgeSetNamesMap: old= " << toPartName << " new= " << newToPartName << std::endl;
             }
 
           *toPartName_p = newToPartName;
 
-          if (0)
+          if (debug)
             std::cout << "tmp fixSurfaceAndEdgeSetNamesMap:: P[" << m_eMesh.get_rank() << "] new part name= " << toParts[i_part]->name()
                       << " old part name = " << toPartName
                       << std::endl;
@@ -2498,6 +2480,55 @@
       return out;
     }
 
+    std::string Refiner::get_parent_element_topology(const std::string& surfaceName)
+    {
+      // If the sideset has a "canonical" name as in "surface_{id}",
+      // Then the sideblock name will be of the form:
+      //  * "surface_eltopo_sidetopo_id" or
+      //  * "surface_block_id_sidetopo_id"
+      // If the sideset does *not* have a canonical name, then
+      // the sideblock name will be of the form:
+      //  * "{sideset_name}_eltopo_sidetopo" or
+      //  * "{sideset_name}_block_id_sidetopo"
+      // Generated mesh will create sidesets of the form
+      //  * "surface_id_sidetopo
+
+      const stk::mesh::BulkData& bulk = *m_eMesh.get_bulk_data();
+      const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+      std::vector<std::string> tokens;
+      stk::util::tokenize(surfaceName, "_", tokens);
+
+      size_t tokenSize = tokens.size();
+
+      std::string parent_element_topology;
+
+      if(tokenSize >= 4) {
+        parent_element_topology = tokens[1];
+      } else if(tokenSize == 3) {
+        const bool allDigits = tokens[1].find_first_not_of("0123456789") == std::string::npos;
+
+        std::string parentSurfaceName;
+
+        if (allDigits) {
+          // Generated mesh format
+          parentSurfaceName = tokens[0] + "_" + tokens[1];
+          stk::mesh::Part* parentSurface = meta.get_part(parentSurfaceName);
+
+          if(nullptr != parentSurface) {
+            std::vector<const stk::mesh::Part*> touchingBlocks = meta.get_blocks_touching_surface(parentSurface);
+            if(touchingBlocks.size() == 1) {
+              convert_stk_topology_to_ioss_name(touchingBlocks[0]->topology(), parent_element_topology);
+            }
+          }
+        } else {
+          // non-canonical format
+          parent_element_topology = tokens[1];
+        }
+      }
+
+      return parent_element_topology;
+    }
+
     void Refiner::
     renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
     {
@@ -2508,7 +2539,8 @@
       bool do_strip_hashes = breakPattern->m_do_strip_hashes;
       bool do_strip_hashes_from = false;
 
-      stk::mesh::PartVector all_parts = m_eMesh.get_fem_meta_data()->get_parts();
+      stk::mesh::MetaData* meta = m_eMesh.get_fem_meta_data();
+      stk::mesh::PartVector all_parts = meta->get_parts();
 
       if (DEBUG_RENAME_NEW_PARTS)
         {
@@ -2553,21 +2585,53 @@
                   if (do_strip_hashes) newToPartName = strip_hashes(newToPartName, all_parts, breakPattern->getConvertSeparatorString(), false);
                   if (do_strip_hashes_from) newFromPartName = strip_hashes(newFromPartName, all_parts, breakPattern->getConvertSeparatorString(), false);
 
-                  m_eMesh.get_fem_meta_data()->delete_part_alias_case_insensitive(*fromParts[i_part], newToPartName);
+                  meta->delete_part_alias_case_insensitive(*fromParts[i_part], newToPartName);
 
-                  m_eMesh.get_fem_meta_data()->add_part_alias(*toParts[i_part], newToPartName);
-                  m_eMesh.get_fem_meta_data()->add_part_alias(*fromParts[i_part], newFromPartName);
+                  meta->add_part_alias(*toParts[i_part], newToPartName);
+                  meta->add_part_alias(*fromParts[i_part], newFromPartName);
+
+                  if (DEBUG_RENAME_NEW_PARTS) {
+                    std::cout << "tmp renameNewParts: to alias for " << toParts[i_part]->name() << " = " << newToPartName
+                              << " parent topo = " << get_parent_element_topology(toParts[i_part]->name()) << std::endl;
+                    std::cout << "tmp renameNewParts: from alias for " << fromParts[i_part]->name() << " = " << newFromPartName
+                              << " parent topo = " << get_parent_element_topology(fromParts[i_part]->name()) << std::endl;
+                  }
+
+                  StringStringMap::iterator map_it;
+                  StringStringMap str_map =  breakPattern->fixSurfaceAndEdgeSetNamesMap();
+                  if(rank == meta->side_rank()) {
+                    if (DEBUG_RENAME_NEW_PARTS) std::cout << "tmp renameNewParts:: str_map.size()= " << str_map.size()
+                                       << " typeid= " << typeid(*breakPattern).name()
+                                       << std::endl;
+
+                    for (map_it = str_map.begin(); map_it != str_map.end(); map_it++)
+                    {
+                      std::string from_str = map_it->first;
+                      std::string to_str = map_it->second;
+                      Util::replace(newToPartName, from_str, to_str);
+                      Util::replace(newFromPartName, from_str, to_str);
+                      if (DEBUG_RENAME_NEW_PARTS) {
+                        std::cout << "tmp renameNewParts: old toPartNane= " << toPartName << " new toPartName= " << newToPartName << std::endl;
+                        std::cout << "tmp renameNewParts: old fromPartNane= " << fromPartName << " new fromPartName= " << newFromPartName << std::endl;
+                      }
+                    }
+
+                    // This is to prevent the collapse of refined subset parts onto the same name
+                    newToPartName += ("." + get_parent_element_topology(toParts[i_part]->name()));
+                    newFromPartName += ("." + get_parent_element_topology(fromParts[i_part]->name()));
+                  }
 
                   stk::io::set_alternate_part_name(*toParts[i_part], newToPartName);
                   stk::io::set_alternate_part_name(*fromParts[i_part], newFromPartName);
-                }
 
-              if (DEBUG_RENAME_NEW_PARTS) {
-                std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << " toPartName= " << toParts[i_part]->name() << std::endl;
-                std::cout << "tmp P[" << m_eMesh.get_rank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name()
-                          << " old part name = " << fromPart->name()
-                          << std::endl;
-              }
+                  if (DEBUG_RENAME_NEW_PARTS) {
+                    std::cout << "tmp  after: fromPartName= " << fromParts[i_part]->name() << " (" << newFromPartName << ") "
+                              <<              " toPartName= " << toParts[i_part]->name()  << " (" << newToPartName << ") " << std::endl;
+                    std::cout << "tmp P[" << m_eMesh.get_rank() << "] fromPartName: " << fromPartName << " part= " << toParts[i_part]->name()
+                              << " old part name = " << fromPart->name()
+                              << std::endl;
+                  }
+                }
             }
         }
     }

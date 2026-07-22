@@ -74,7 +74,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
   typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const scalar_type tol = tolerence();
+  const scalar_type tol = tolerance();
   int errorFlag = 0;
 
   typedef Basis_HDIV_HEX_In_FEM<DeviceType,OutValueType,PointValueType> HexBasisType;

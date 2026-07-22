@@ -1,20 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_SWAP_IMPL_HPP_
 #define KOKKOSBLAS1_SWAP_IMPL_HPP_
 
@@ -42,8 +27,7 @@ struct swap_functor {
 };
 
 template <class ExecutionSpace, class XVector, class YVector>
-void Swap_Invoke(ExecutionSpace const& space, XVector const& X,
-                 YVector const& Y) {
+void Swap_Invoke(ExecutionSpace const& space, XVector const& X, YVector const& Y) {
   Kokkos::RangePolicy<ExecutionSpace> swap_policy(space, 0, X.extent(0));
   swap_functor swap_func(X, Y);
   Kokkos::parallel_for("KokkosBlas::swap", swap_policy, swap_func);

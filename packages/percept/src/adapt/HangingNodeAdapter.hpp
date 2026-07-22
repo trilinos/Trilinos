@@ -651,7 +651,7 @@
                 }
             }
         }
-        virtual bool operator()(stk::mesh::Entity element) {
+        virtual bool operator()(stk::mesh::Entity element) override {
           if (m_elements.find(element) != m_elements.end())
             return true;
           return false;

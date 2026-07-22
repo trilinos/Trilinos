@@ -32,6 +32,7 @@
 
     public:
 
+      virtual ~SmootherMetricBase() = default;
       SmootherMetricBase(PerceptMesh *eMesh) : m_topology_data(0), m_eMesh(eMesh), m_node(), m_is_nodal(false), m_combine(COP_SUM), m_debug(false) {}
 
       virtual double length_scaling_power() { return 1.0; }
@@ -39,7 +40,7 @@
 //KOKKOS_INLINE_FUNCTION
       virtual double metric(typename MeshType::MTElement element, bool& valid)=0;
 
-      virtual double grad_metric(typename MeshType::MTElement element, bool& valid, double grad[8][4]) {
+      virtual double grad_metric(typename MeshType::MTElement /*element*/, bool& /*valid*/, double /*grad*/[8][4]) {
         throw std::runtime_error("not impl SmootherMetric::grad_metric");
         return 0.0;
       }
@@ -48,7 +49,7 @@
       CombineOp get_combine_op() { return m_combine; }
 
       // ------ VVVVVVV --------
-      virtual double grad_and_hessian(typename MeshType::MTElement element, bool& valid, double grad[8][4], double hess[8][4][8][4], const bool getGrad=false, const bool getHess=false)
+      virtual double grad_and_hessian(typename MeshType::MTElement /*element*/, bool& /*valid*/, double /*grad*/[8][4], double /*hess*/[8][4][8][4], const bool /*getGrad*/=false, const bool /*getHess*/=false)
       {
         throw std::runtime_error("not impl SmootherMetric::grad_and_hessian");
         return 0.0;
@@ -383,7 +384,7 @@
       {
         double eps = f.eps();
         unsigned n = f.get_n();
-        double v[n];
+        std::vector<double> v(n);
         for (unsigned i = 0; i < n; ++i)
           {
             v[i] = u[i];
@@ -391,9 +392,9 @@
         for (unsigned i = 0; i < n; ++i)
           {
             v[i] = u[i] + eps;
-            double fp = f(v);
+            double fp = f(v.data());
             v[i] = u[i] - eps;
-            double fm = f(v);
+            double fm = f(v.data());
             g[i] = (fp -fm)/(2.0*eps);
             v[i] = u[i];
           }
@@ -427,8 +428,8 @@
       {
         double eps = f.eps();
         unsigned n = f.get_n();
-        double v[n];
-        double d[n]; // stepsize
+        std::vector<double> v(n);
+        std::vector<double> d(n); // stepsize
         for (unsigned i = 0; i < n; ++i)
           {
             v[i] = u[i];
@@ -444,32 +445,32 @@
                 v[j] = u[j];
                 v[i] += d[i];
                 v[j] += d[j];
-                double fpp = f(v);
+                double fpp = f(v.data());
 
                 v[i] = u[i];
                 v[j] = u[j];
                 v[i] -= d[i];
                 v[j] += d[j];
-                double fmp = f(v);
+                double fmp = f(v.data());
 
                 v[i] = u[i];
                 v[j] = u[j];
                 v[i] += d[i];
                 v[j] -= d[j];
-                double fpm = f(v);
+                double fpm = f(v.data());
 
                 v[i] = u[i];
                 v[j] = u[j];
                 v[i] -= d[i];
                 v[j] -= d[j];
-                double fmm = f(v);
+                double fmm = f(v.data());
 
                 //h_col_major[i * n + j] = (fpp - fmp - fpm + fmm)/(4.0*eps*eps);
                 h_col_major[i * n + j] = ((fpp+fmm) - (fmp + fpm))/(4.0*d[i]*d[j]);
                 if (h_col_major[i * n + j] != h_col_major[i * n + j])
                   {
                     f.m_debug = true;
-                    double fm1 = f(v);
+                    double fm1 = f(v.data());
                     std::cout << "nan: fpp= " << fpp << " fmp= " << fmp << " fpm= " << fpm << " fmm= " << fmm << " eps= " << eps << " fm1= " << fm1 << std::endl;
                   }
                 v[i] = u[i];
@@ -477,7 +478,7 @@
 
                 if (0)
                   {
-                    double fm2 = f(v);
+                    double fm2 = f(v.data());
                     std::cout << std::setprecision(20);
                     std::cout << "i,j= " << i << " " << j << "u= " << u[0] << " " << u[1] << " fpp= " << fpp << " fmp= " << fmp << " fpm= " << fpm << " fmm= " << fmm
                               << " fm2= " << fm2
@@ -515,8 +516,8 @@
       double operator()(double *v)
       {
         unsigned n = get_n();
-        double grad[n];
-        m_f.analytic_gradient(v, grad);
+        std::vector<double> grad(n);
+        m_f.analytic_gradient(v, grad.data());
         return grad[m_index];
       }
     };
@@ -554,11 +555,11 @@
       void operator()(F& f, const double *u, double * h_col_major)
       {
         unsigned n = m_f.get_n();
-        double grad[n];
+        std::vector<double> grad(n);
         for (unsigned i = 0; i < n; ++i)
           {
             m_g.m_index = i;
-            m_h(m_g, u, grad);
+            m_h(m_g, u, grad.data());
             for (unsigned j = 0; j < n; ++j)
               {
                 h_col_major[i * n + j] = grad[j];
@@ -592,7 +593,7 @@ public:
     bool m_use_ref_mesh;
     bool m_untangling;
 
-    HexMeshSmootherMetric(PerceptMesh * eMesh) :
+    HexMeshSmootherMetric(PerceptMesh * /*eMesh*/) :
             m_BETA_MULT(0.05),  m_use_ref_mesh(true), m_untangling(true) {}
                                 //boolean memebrs will get altered by smoother
 //private:
@@ -966,15 +967,15 @@ public:
 
       SmootherMetricUntangleImpl(PerceptMesh *eMesh);
 
-      virtual bool has_gradient() { return true; }
+      virtual bool has_gradient() override { return true; }
 
-      virtual double length_scaling_power() { return 3.0; }
+      virtual double length_scaling_power() override { return 3.0; }
 
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(typename MeshType::MTElement element, bool& valid);
+      virtual double metric(typename MeshType::MTElement element, bool& valid) override;
 
       /// computes metric and its gradient - see Mesquite::TShapeB1, TQualityMetric, TargetMetricUtil
-      virtual double grad_metric(typename MeshType::MTElement element, bool& valid, double grad[8][4])
+      virtual double grad_metric(typename MeshType::MTElement element, bool& valid, double grad[8][4]) override
       {
         JacobianUtilImpl<MeshType> jacA, jacW;
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
@@ -1039,10 +1040,10 @@ public:
     {
     public:
       SmootherMetricShapeSizeOrient(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
-      virtual double length_scaling_power() { return 1.0; }
+      virtual double length_scaling_power() override { return 1.0; }
 
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -1085,10 +1086,10 @@ public:
     public:
       SmootherMetricScaledJacobianNodal(PerceptMesh *eMesh) : SmootherMetric(eMesh)
       { m_is_nodal=true; m_combine=COP_MAX; }
-      virtual double length_scaling_power() { return 1.0; }
+      virtual double length_scaling_power() override { return 1.0; }
 
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         VERIFY_OP_ON(m_node, !=, stk::mesh::Entity(), "must set a node");
         valid = true;
@@ -1138,9 +1139,9 @@ public:
     {
     public:
       SmootherMetricScaledJacobianElemental(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
-      virtual double length_scaling_power() { return 1.0; }
+      virtual double length_scaling_power() override { return 1.0; }
 
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
         JacobianUtil jacA, jacSA, jacW;
@@ -1198,10 +1199,10 @@ public:
         identity(Ident);
       }
 
-      virtual bool has_gradient() { return true; }
+      virtual bool has_gradient() override { return true; }
 
-      virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(typename MeshType::MTElement element, bool& valid)
+      virtual double length_scaling_power() override { return 1.0; }
+      virtual double metric(typename MeshType::MTElement element, bool& valid) override
       {
         valid = true;
 
@@ -1299,7 +1300,7 @@ public:
       }//metric
 
       /// computes metric and its gradient - see Mesquite::TShapeB1, TQualityMetric, TargetMetricUtil
-      virtual double grad_metric(typename MeshType::MTElement element, bool& valid, double grad[8][4])
+      virtual double grad_metric(typename MeshType::MTElement element, bool& valid, double grad[8][4]) override
       {
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
         JacobianUtilImpl<MeshType> jacA, jacW;
@@ -1443,11 +1444,11 @@ public:
         identity(Ident);
       }
 
-      virtual bool has_gradient() { return true; }
+      virtual bool has_gradient() override { return true; }
 
-      virtual double length_scaling_power() { return 1.0; }
+      virtual double length_scaling_power() override { return 1.0; }
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
 
@@ -1523,7 +1524,7 @@ public:
       }
 
       /// computes metric and its gradient - see Mesquite::TShapeB1, TQualityMetric, TargetMetricUtil
-      virtual double grad_metric(stk::mesh::Entity element, bool& valid, double grad[8][4])
+      virtual double grad_metric(stk::mesh::Entity element, bool& valid, double grad[8][4]) override
       {
         JacobianUtil jacA, jacW;
         double A_ = 0.0, W_ = 0.0; // current and reference detJ
@@ -1653,9 +1654,9 @@ public:
     public:
       SmootherMetricShapeSizeOrientB1(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
-      virtual double length_scaling_power() { return 1.0; }
+      virtual double length_scaling_power() override { return 1.0; }
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -1720,9 +1721,9 @@ public:
     public:
       SmootherMetricShapeC1(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
-      virtual double length_scaling_power() { return 1.0; }
+      virtual double length_scaling_power() override { return 1.0; }
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -1801,9 +1802,9 @@ public:
     public:
       SmootherMetricLaplace(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
-      virtual double length_scaling_power() { return 2.0; }
+      virtual double length_scaling_power() override { return 2.0; }
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
         JacobianUtil jacA;
@@ -1838,9 +1839,9 @@ public:
     public:
       SmootherMetricLaplaceInverseVolumeWeighted(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
-      virtual double length_scaling_power() { return 2.0; }
+      virtual double length_scaling_power() override { return 2.0; }
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
         JacobianUtil jacA;
@@ -1876,9 +1877,9 @@ public:
     public:
       SmootherMetricVolumetricEnergy(PerceptMesh *eMesh) : SmootherMetric(eMesh) {}
 
-      virtual double length_scaling_power() { return 6.0; }
+      virtual double length_scaling_power() override { return 6.0; }
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
         JacobianUtil jacA;
@@ -1918,11 +1919,11 @@ public:
         identity(Ident);
       }
 
-      virtual bool has_gradient() { return false; }
+      virtual bool has_gradient() override { return false; }
 
-      virtual double length_scaling_power() { return 1.0; }
+      virtual double length_scaling_power() override { return 1.0; }
 //KOKKOS_INLINE_FUNCTION
-      virtual double metric(stk::mesh::Entity element, bool& valid)
+      virtual double metric(stk::mesh::Entity element, bool& valid) override
       {
         valid = true;
 

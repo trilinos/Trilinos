@@ -5,8 +5,9 @@
 // See packages/seacas/LICENSE for details
 
 #include "CatalystTestFixture.h"
-#include "catch.hpp"
 #include <Iovs_CatalystLogging.h>
+#include <iostream>
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE_METHOD(Iovs::CatalystLogging, "CatalystLoggingDefault", "[catalystLogging]")
 {
@@ -27,6 +28,15 @@ TEST_CASE_METHOD(Iovs::CatalystLogging, "CatalystLoggingEnabled", "[catalystLogg
   REQUIRE(isCatalystLoggingON() == true);
   REQUIRE(getLogFileName() == "foo.csv");
   REQUIRE(getLogOutputDirectoryPath() == "/projects/bar/");
+}
+
+TEST_CASE_METHOD(Iovs::CatalystLogging, "CatalystLoggingFileInvalid", "[catalystLogging]")
+{
+  Ioss::PropertyManager props;
+  props.add(Ioss::Property("CATALYST_LOGGING_ENABLED", true));
+  props.add(Ioss::Property("CATALYST_LOGGING_OUTPUT_DIRECTORY_PATH", "/dev/null/invalid/"));
+  setProperties(&props);
+  REQUIRE_NOTHROW(writeToLogFile());
 }
 
 TEST_CASE_METHOD(Iovs::CatalystLogging, "CatalystLoggingWrite", "[catalystLogging]")

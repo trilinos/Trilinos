@@ -86,6 +86,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE`_
 * `${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE`_
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
+* `${PROJECT_NAME}_Python3_FIND_VERSION`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
 * `${PROJECT_NAME}_SET_INSTALL_RPATH`_
 * `${PROJECT_NAME}_SHOW_GIT_COMMIT_PARENTS`_
@@ -99,7 +100,6 @@ a given TriBITS project are:
 * `DART_TESTING_TIMEOUT`_
 * `CMAKE_INSTALL_RPATH_USE_LINK_PATH`_
 * `MPI_EXEC_MAX_NUMPROCS`_
-* `PythonInterp_FIND_VERSION`_
 * `TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE`_
 
 These options are described below.
@@ -625,6 +625,23 @@ These options are described below.
   in the `<projectDir>/ProjectName.cmake`_ file.
 
 
+.. _${PROJECT_NAME}_Python3_FIND_VERSION:
+
+**${PROJECT_NAME}_Python3_FIND_VERSION**
+
+  Determines the version of Python that is looked for.  TriBITS requires at
+  least version "3.6".  A particular TriBITS project can require a higher
+  version of TriBITS and this is set using, for example:
+
+    set(${PROJECT_NAME}_Python3_FIND_VERSION_DEFAULT "3.8")
+
+  in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
+  user can force a more recent version of Python by configuring with, for
+  example::
+
+    -D <Project>_Python3_FIND_VERSION="3.8"
+
+
 .. _${PROJECT_NAME}_REQUIRES_PYTHON:
 
 **${PROJECT_NAME}_REQUIRES_PYTHON**
@@ -877,28 +894,12 @@ These options are described below.
   has 64 cores, a reasonable number for ``MPI_EXEC_MAX_NUMPROCS_DEFAULT`` is
   64.
 
-.. _PythonInterp_FIND_VERSION:
-
-**PythonInterp_FIND_VERSION**
-
-  Determines the version of Python that is looked for.  TriBITS requires at
-  least version "2.7".  A particular TriBITS project can require a higher
-  version of TriBITS and this is set using, for example:
-
-    set(PythonInterp_FIND_VERSION_DEFAULT "3.5.2")
-
-  in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
-  default is version "2.7".  The user can force a more recent version of
-  Python by configuring with, for example::
-
-    -D PythonInterp_FIND_VERSION="3.6.2"
-
 .. _TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE:
 
 **TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE**
 
   Determines how the function `tribits_deprecated()`_ behaves.  To change the
-  default behavor, such as call ``message(FATAL_ERROR ...)``, set::
+  default behavior, such as call ``message(FATAL_ERROR ...)``, set::
 
     set(TRIBITS_HANDLE_TRIBITS_DEPRECATED_CODE_DEFAULT  FATAL_ERROR)
 

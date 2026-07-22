@@ -1,51 +1,15 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teko_BlockImplicitLinearOp.hpp"
 #include "Teko_HierarchicalGaussSeidelPreconditionerFactory.hpp"
+#include "Teko_Utilities.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -233,7 +197,14 @@ void NestedBlockGS::upperTriangularImplicitApply(std::vector<BlockedMultiVector>
   const int blocks = blockToRow.size();
 
   for (int b = blocks - 1; b >= 0; b--) {
-    applyOp(blockToInvOp.at(b), r[b], z[b]);
+    int blockCount = Teko::blockCount(r[b]);
+    if (blockCount == 1) {
+      auto r_b = Teko::getBlock(0, r[b]);
+      auto z_b = Teko::getBlock(0, z[b]);
+      applyOp(blockToInvOp.at(b), r_b, z_b);
+    } else {
+      applyOp(blockToInvOp.at(b), r[b], z[b]);
+    }
 
     for (int i = 0; i < b; i++) {
       auto u_ib = Ab[index(i, b, blocks)];
@@ -251,7 +222,14 @@ void NestedBlockGS::lowerTriangularImplicitApply(std::vector<BlockedMultiVector>
   const int blocks = blockToRow.size();
 
   for (int b = 0; b < blocks; b++) {
-    applyOp(blockToInvOp.at(b), r[b], z[b]);
+    int blockCount = Teko::blockCount(r[b]);
+    if (blockCount == 1) {
+      auto r_b = Teko::getBlock(0, r[b]);
+      auto z_b = Teko::getBlock(0, z[b]);
+      applyOp(blockToInvOp.at(b), r_b, z_b);
+    } else {
+      applyOp(blockToInvOp.at(b), r[b], z[b]);
+    }
 
     // loop over each row
     for (int i = b + 1; i < blocks; i++) {
@@ -282,34 +260,15 @@ LinearOp HierarchicalGaussSeidelPreconditionerFactory::buildBlockInverse(
     const InverseFactory& invFact, const Teuchos::RCP<InverseFactory>& precFact,
     const BlockedLinearOp& matrix, BlockPreconditionerState& state,
     int hierarchicalBlockNum) const {
-  std::stringstream ss;
-  ss << "hierarchical_block_" << hierarchicalBlockNum;
-
-  ModifiableLinearOp& invOp  = state.getModifiableOp(ss.str());
-  ModifiableLinearOp& precOp = state.getModifiableOp("prec_" + ss.str());
-
-  if (precFact != Teuchos::null) {
-    if (precOp == Teuchos::null) {
-      precOp = precFact->buildInverse(matrix);
-      state.addModifiableOp("prec_" + ss.str(), precOp);
-    } else {
-      Teko::rebuildInverse(*precFact, matrix, precOp);
-    }
+  // special case: single 1x1 block system -- use non-block based inverses
+  const int nBlock = Teko::blockRowCount(matrix);
+  if (nBlock == 1) {
+    const auto& subblockMatrix = Teko::getBlock(0, 0, matrix);
+    return buildInverseImpl<LinearOp>(invFact, precFact, subblockMatrix, state,
+                                      hierarchicalBlockNum);
   }
 
-  if (invOp == Teuchos::null)
-    if (precOp.is_null())
-      invOp = Teko::buildInverse(invFact, matrix);
-    else
-      invOp = Teko::buildInverse(invFact, matrix, precOp);
-  else {
-    if (precOp.is_null())
-      Teko::rebuildInverse(invFact, matrix, invOp);
-    else
-      Teko::rebuildInverse(invFact, matrix, precOp, invOp);
-  }
-
-  return invOp;
+  return buildInverseImpl<BlockedLinearOp>(invFact, precFact, matrix, state, hierarchicalBlockNum);
 }
 
 void HierarchicalGaussSeidelPreconditionerFactory::initializeFromParameterList(

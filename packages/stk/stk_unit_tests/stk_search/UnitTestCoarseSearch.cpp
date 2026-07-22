@@ -46,6 +46,7 @@
 #include <sstream>
 #include <tuple>
 #include <vector>
+#include "stk_search/SearchMethod.hpp"
 
 namespace std {
 template <typename Ident, typename Proc>
@@ -126,14 +127,13 @@ void expect_search_results(int num_procs, int proc_id, const SearchResults&  sea
   }
 }
 
-template <typename FloatType>
+template <typename FloatType, typename ExecSpace=Kokkos::DefaultExecutionSpace>
 void test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
   using HostSpace = Kokkos::DefaultHostExecutionSpace;
-  using ExecSpace = Kokkos::DefaultExecutionSpace;
   using BoxType = stk::search::Box<FloatType>;
   using PointType = stk::search::Point<FloatType>;
   using BoxIdentProcType = stk::search::BoxIdentProc<BoxType, IdentProc>;
@@ -169,7 +169,13 @@ void test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algor
 
   SearchResultsViewType searchResults;
 
-  stk::search::coarse_search(domain, range, algorithm, comm, searchResults);
+  auto execSpace = ExecSpace{};
+  bool enforceSearchResultSymmetry = true;
+  bool autoSwapDomainAndRange = true;
+  bool sortSearchResults = true;
+
+  stk::search::coarse_search(domain, range, algorithm, comm, searchResults, execSpace,
+                                     enforceSearchResultSymmetry, autoSwapDomainAndRange, sortSearchResults);
 
   auto searchResultsHost = Kokkos::create_mirror_view_and_copy(HostSpace{}, searchResults);
 
@@ -208,10 +214,79 @@ void test_coarse_search_for_algorithm(stk::search::SearchMethod algorithm, MPI_C
 
   SearchResults searchResults;
 
-  stk::search::coarse_search(domain, range, algorithm, comm, searchResults);
+  bool enforceSearchResultSymmetry = true;
+  bool autoSwapDomainAndRange = true;
+  bool sortSearchResults = true;
+
+  stk::search::coarse_search(domain, range, algorithm, comm, searchResults, enforceSearchResultSymmetry, autoSwapDomainAndRange, sortSearchResults);
 
   expect_search_results(num_procs, proc_id, searchResults);
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+void test_coarse_search_with_non_default_view(stk::search::SearchMethod algorithm, MPI_Comm comm)
+{
+  using Box = stk::search::Box<double>;
+  using IdentProc = stk::search::IdentProc<int, int>;
+  using BoxIdentProc = stk::search::BoxIdentProc<Box, IdentProc>;
+  using ViewType1 = Kokkos::View<BoxIdentProc*, Kokkos::CudaSpace>;
+  using ViewType2 = Kokkos::View<BoxIdentProc*, Kokkos::CudaUVMSpace>;
+  Kokkos::Cuda execSpace{};
+
+  int myrank = stk::parallel_machine_rank(comm);
+  ViewType1 domainView("domainView", 1);
+  ViewType2 rangeView("rangeView", 1);
+  auto createBoxes = KOKKOS_LAMBDA(int idx)
+  {
+    Box box(2*myrank, 0, 0, 2*myrank+1, 1, 1);
+    domainView(idx) = BoxIdentProc{box, IdentProc(0, myrank)};
+    rangeView(idx)  = BoxIdentProc{box, IdentProc(0, myrank)};
+  };
+
+  Kokkos::parallel_for("create_boxes", 1, createBoxes);
+
+  Kokkos::View<stk::search::IdentProcIntersection<IdentProc, IdentProc>*, Kokkos::CudaSpace> results;
+  stk::search::coarse_search(domainView, rangeView, algorithm, comm, results, execSpace);
+
+  auto resultsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, results);
+
+  EXPECT_EQ(resultsHost.size(), 1U);
+  EXPECT_EQ(resultsHost(0).domainIdentProc, IdentProc(0, myrank));
+  EXPECT_EQ(resultsHost(0).rangeIdentProc, IdentProc(0, myrank));
+}
+
+void test_local_coarse_search_with_non_default_view(stk::search::SearchMethod algorithm)
+{
+  using Box = stk::search::Box<double>;
+  using Ident = int;
+  using BoxIdent = stk::search::BoxIdent<Box, Ident>;
+  using ViewType1 = Kokkos::View<BoxIdent*, Kokkos::CudaSpace>;
+  using ViewType2 = Kokkos::View<BoxIdent*, Kokkos::CudaUVMSpace>;
+  Kokkos::Cuda execSpace{};
+
+  ViewType1 domainView("domainView", 1);
+  ViewType2 rangeView("rangeView", 1);
+  auto createBoxes = KOKKOS_LAMBDA(int idx)
+  {
+    Box box(0, 0, 0, 1, 1, 1);
+    domainView(idx) = BoxIdent{box, Ident(0) };
+    rangeView(idx)  = BoxIdent{box, Ident(0)};
+  };
+
+  Kokkos::parallel_for("create_boxes", 1, createBoxes);
+
+  Kokkos::View<stk::search::IdentIntersection<Ident, Ident>*, Kokkos::CudaSpace> results;
+  stk::search::local_coarse_search(domainView, rangeView, algorithm, results, execSpace);
+
+  auto resultsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, results);
+
+  EXPECT_EQ(resultsHost.size(), 1U);
+  EXPECT_EQ(resultsHost(0).domainIdent, Ident(0));
+  EXPECT_EQ(resultsHost(0).rangeIdent,  Ident(0));
+}
+
+
+#endif
 
 TEST(stk_search, coarseSearchDoubleBoxes_KDTREE)
 {
@@ -226,7 +301,8 @@ TEST(stk_search, coarseSearchFloatBoxes_KDTREE)
 TEST(CoarseSearchCorrectness, coarseSearchDoubleBoxes_MORTON_LBVH)
 {
   test_coarse_search_for_algorithm<double>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
-  test_coarse_search_for_algorithm_with_views<double>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultExecutionSpace>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultHostExecutionSpace>(stk::search::MORTON_LBVH, MPI_COMM_WORLD);
 }
 
 TEST(CoarseSearchCorrectness, coarseSearchFloatBoxes_MORTON_LBVH)
@@ -240,8 +316,11 @@ TEST(CoarseSearchCorrectness, coarseSearchDoubleBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_algorithm<double>(stk::search::ARBORX, MPI_COMM_WORLD);
-  test_coarse_search_for_algorithm_with_views<double>(stk::search::ARBORX, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultHostExecutionSpace>(stk::search::ARBORX, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX, MPI_COMM_WORLD);
+
 }
 
 TEST(CoarseSearchCorrectness, coarseSearchFloatBoxes_ARBORX)
@@ -249,6 +328,7 @@ TEST(CoarseSearchCorrectness, coarseSearchFloatBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_algorithm<float>(stk::search::ARBORX, MPI_COMM_WORLD);
   test_coarse_search_for_algorithm_with_views<float>(stk::search::ARBORX, MPI_COMM_WORLD);
 }
@@ -292,7 +372,8 @@ void host_local_test_coarse_search_for_algorithm(stk::search::SearchMethod algor
 
   LocalSearchResults intersections;
 
-  stk::search::local_coarse_search(domain, range, algorithm, intersections);
+  bool sortSearchResults = true;
+  stk::search::local_coarse_search(domain, range, algorithm, intersections, sortSearchResults);
 
   local_expect_search_results(intersections);
 }
@@ -308,7 +389,7 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
   auto range = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("range box-ident", 2);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA(const unsigned & i) {
+    KOKKOS_LAMBDA(const unsigned & /*i*/) {
       domain[0] = {BoxType(PointType(0.1, 0.0, 0.0), PointType(0.9, 1.0, 1.0)), 0};
       domain[1] = {BoxType(PointType(0.1, 2.0, 0.0), PointType(0.9, 3.0, 1.0)), 1};
       range[0]  = {BoxType(PointType(0.6, 0.5, 0.0), PointType(1.4, 1.5, 1.0)), 2};
@@ -317,9 +398,11 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
 
   auto intersections = Kokkos::View<IdentIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
-  stk::search::local_coarse_search(domain, range, algorithm, intersections);
+  auto execSpace = stk::ngp::ExecSpace{};
+  bool sortSearchResults = true;
+  stk::search::local_coarse_search(domain, range, algorithm, intersections, execSpace, sortSearchResults);
 
-  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   local_expect_search_results(hostIntersections);
@@ -328,13 +411,17 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
 TEST(CoarseSearchCorrectness, Ngp_Local_CoarseSearchDoubleBoxes_MORTON_LBVH)
 {
   host_local_test_coarse_search_for_algorithm<double>(stk::search::MORTON_LBVH);
+std::cout<<"finished local test"<<std::endl;
   device_local_test_coarse_search_for_algorithm<double>(stk::search::MORTON_LBVH);
+std::cout<<"finished device test"<<std::endl;
 }
 
 TEST(CoarseSearchCorrectness, Ngp_Local_CoarseSearchFloatBoxes_MORTON_LBVH)
 {
   host_local_test_coarse_search_for_algorithm<float>(stk::search::MORTON_LBVH);
+std::cout<<"finished local test"<<std::endl;
   device_local_test_coarse_search_for_algorithm<float>(stk::search::MORTON_LBVH);
+std::cout<<"finished device test"<<std::endl;
 }
 
 TEST(CoarseSearchCorrectness, Ngp_Local_CoarseSearchDoubleBoxes_ARBORX)
@@ -342,6 +429,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_CoarseSearchDoubleBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   host_local_test_coarse_search_for_algorithm<double>(stk::search::ARBORX);
   device_local_test_coarse_search_for_algorithm<double>(stk::search::ARBORX);
 }
@@ -351,6 +439,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_CoarseSearchFloatBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   host_local_test_coarse_search_for_algorithm<float>(stk::search::ARBORX);
   device_local_test_coarse_search_for_algorithm<float>(stk::search::ARBORX);
 }
@@ -364,6 +453,56 @@ TEST(stk_search, Local_CoarseSearchDoubleBoxes_KDTREE)
 TEST(stk_search, Local_CoarseSearchFloatBoxes_KDTREE)
 {
   host_local_test_coarse_search_for_algorithm<float>(stk::search::KDTREE);
+}
+
+template <typename FloatType, typename ExecSpace>
+void local_test_coarse_search_for_algorithm_with_views(stk::search::SearchMethod algorithm)
+{
+  using BoxType = stk::search::Box<FloatType>;
+  using PointType = stk::search::Point<FloatType>;
+  using BoxIdentType = stk::search::BoxIdent<BoxType, Ident>;
+  using HostSpace = Kokkos::DefaultHostExecutionSpace;
+
+  auto domain = Kokkos::View<BoxIdentType*, ExecSpace>("domain box-ident", 2);
+  auto range = Kokkos::View<BoxIdentType*, ExecSpace>("range box-ident", 2);
+
+  auto domainHost = Kokkos::create_mirror_view(HostSpace{}, domain);
+  auto rangeHost  = Kokkos::create_mirror_view(HostSpace{}, range);
+
+
+  domainHost(0) = {BoxType(PointType(0.1, 0.0, 0.0), PointType(0.9, 1.0, 1.0)), 0};
+  domainHost(1) = {BoxType(PointType(0.1, 2.0, 0.0), PointType(0.9, 3.0, 1.0)), 1};
+  rangeHost(0)  = {BoxType(PointType(0.6, 0.5, 0.0), PointType(1.4, 1.5, 1.0)), 2};
+  rangeHost(1)  = {BoxType(PointType(0.6, 2.5, 0.0), PointType(1.4, 3.5, 1.0)), 3};
+
+  Kokkos::deep_copy(domain, domainHost);
+  Kokkos::deep_copy(range, rangeHost);
+  auto intersections = Kokkos::View<IdentIntersection*, ExecSpace>("intersections", 0);
+
+  auto execSpace = ExecSpace{};
+  bool sortSearchResults = true;
+  stk::search::local_coarse_search(domain, range, algorithm, intersections, execSpace, sortSearchResults);
+
+  auto hostIntersections = Kokkos::create_mirror_view(HostSpace{}, intersections);
+  Kokkos::deep_copy(hostIntersections, intersections);
+
+  local_expect_search_results(hostIntersections);
+}
+
+TEST(stk_search, Local_CoarseSearchWithViews_MORTON_LBVH)
+{
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultExecutionSpace>(stk::search::MORTON_LBVH);
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultHostExecutionSpace>(stk::search::MORTON_LBVH);
+}
+
+TEST(stk_search, Local_CoarseSearchWithViews_ARBORX)
+{
+#ifndef STK_HAS_ARBORX
+  GTEST_SKIP();
+#endif
+
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX);
+  local_test_coarse_search_for_algorithm_with_views<float, Kokkos::DefaultHostExecutionSpace>(stk::search::ARBORX);
 }
 
 
@@ -464,11 +603,8 @@ void test_coarse_search_determine_domain_and_range_communicate_on(stk::search::S
   SearchResults searchResultsDetermineOn;
   SearchResults searchResultsDetermineOff;
 
-  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsDetermineOn, true, true);
-  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsDetermineOff, true, false);
-
-  std::sort(searchResultsDetermineOn.begin(), searchResultsDetermineOn.end());
-  std::sort(searchResultsDetermineOff.begin(), searchResultsDetermineOff.end());
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsDetermineOn, true, true, true);
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsDetermineOff, true, false, true);
 
   EXPECT_EQ(searchResultsDetermineOn, searchResultsDetermineOff);
 }
@@ -541,6 +677,7 @@ TEST(stk_search, coarse_search_two_pass_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_two_pass(stk::search::ARBORX, MPI_COMM_WORLD, 2);
 }
 
@@ -562,18 +699,30 @@ void test_ident_proc_with_search_with_views(stk::search::SearchMethod searchMeth
     IdentProc id1(1, 0);
     IdentProc id2(1, 1);
 
-    BoxIdentProcViewType boxes("", 1);
+    BoxIdentProcViewType boxes("boxes", 1);
+    auto hostBoxes = Kokkos::create_mirror_view(boxes);
+
     if (procId == 0) {
-      boxes(0) = {box1, id1};
+      hostBoxes(0) = {box1, id1};
     } else if (procId == 1) {
-      boxes(0) = {box2, id2};
+      hostBoxes(0) = {box2, id2};
     }
 
-    SearchResultsViewType searchResults("", 3);
+    Kokkos::deep_copy(boxes, hostBoxes);
 
-    coarse_search(boxes, boxes, searchMethod, comm, searchResults);
+    SearchResultsViewType searchResults("searchResults", 3);
 
-    SearchResultsViewType goldResults("", 3);
+    auto execSpace = ExecSpace{};
+    bool enforceSearchResultSymmetry = true;
+    bool autoSwapDomainAndRange = true;
+    bool sortSearchResults = true;
+    coarse_search(boxes, boxes, searchMethod, comm, searchResults, execSpace,
+                         enforceSearchResultSymmetry, autoSwapDomainAndRange, sortSearchResults);
+
+    auto hostSearchResults = Kokkos::create_mirror_view(searchResults);
+    Kokkos::deep_copy(hostSearchResults, searchResults);
+
+    SearchResultsViewType::host_mirror_type goldResults("goldResults", 3);
 
     IdentProc goldId1(1, 0);
     IdentProc goldId2(1, 1);
@@ -590,11 +739,10 @@ void test_ident_proc_with_search_with_views(stk::search::SearchMethod searchMeth
       ASSERT_EQ(3u, searchResults.extent(0));
     }
 
-    Kokkos::sort(searchResults);
-    Kokkos::sort(goldResults);
+    Kokkos::sort(goldResults, stk::search::Comparator<typename SearchResultsViewType::value_type>());
 
     for (size_t i = 0; i < goldResults.extent(0); i++) {
-      EXPECT_EQ(goldResults[i], searchResults[i])
+      EXPECT_EQ(goldResults[i], hostSearchResults[i])
           << "Test comparison for proc " << procId << " failed for comparsion #" << i << std::endl;
     }
   }
@@ -623,7 +771,11 @@ void test_ident_proc_with_search(stk::search::SearchMethod searchMethod)
 
     SearchResults searchResults;
 
-    coarse_search(boxes, boxes, searchMethod, comm, searchResults);
+    bool enforceSearchResultSymmetry = true;
+    bool autoSwapDomainAndRange = true;
+    bool sortSearchResults = true;
+    coarse_search(boxes, boxes, searchMethod, comm, searchResults,
+                         enforceSearchResultSymmetry, autoSwapDomainAndRange, sortSearchResults);
 
     SearchResults goldResults;
 
@@ -668,6 +820,7 @@ TEST(stk_search, coarse_search_ident_proc_switch_ARBORX)
   GTEST_SKIP();
 #endif
   test_ident_proc_with_search(stk::search::ARBORX);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_ident_proc_with_search_with_views(stk::search::ARBORX);
 }
 
@@ -732,6 +885,7 @@ TEST(stk_search, coarse_search_one_point_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_one_point(stk::search::ARBORX);
 }
 
@@ -799,6 +953,7 @@ TEST(CoarseSearch, forDeterminingSharingAllAllCase_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_determining_sharing_all_all_case(stk::search::ARBORX);
 }
 
@@ -924,6 +1079,7 @@ TEST(CoarseSearch, forDeterminingSharingLinearAdjacentCase_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_determining_sharing_linear_adjacent_case(stk::search::ARBORX);
 }
 
@@ -932,7 +1088,32 @@ TEST(CoarseSearchScaling, forDeterminingSharingLinearAdjacentCase_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_determining_sharing_linear_adjacent_case(stk::search::ARBORX, 1000);
 }
+
+#ifdef KOKKOS_ENABLE_CUDA
+TEST(CoarseSearch, nonDefaultView_MORTON_LBVH)
+{
+  test_coarse_search_with_non_default_view(stk::search::MORTON_LBVH, stk::parallel_machine_world());
+}
+
+TEST(CoarseSearch, nonDefaultView_ARBORX)
+{
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
+  test_coarse_search_with_non_default_view(stk::search::ARBORX, stk::parallel_machine_world());
+}
+
+TEST(LocalCoarseSearch, nonDefaultView_MORTON_LBVH)
+{
+  test_local_coarse_search_with_non_default_view(stk::search::MORTON_LBVH);
+}
+
+TEST(LocalCoarseSearch, nonDefaultView_ARBORX)
+{
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
+  test_local_coarse_search_with_non_default_view(stk::search::ARBORX);
+}
+#endif
 
 } //namespace

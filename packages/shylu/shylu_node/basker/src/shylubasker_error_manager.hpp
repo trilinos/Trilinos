@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_ERROR_MANAGER
 #define SHYLUBASKER_ERROR_MANAGER
 
@@ -10,13 +19,8 @@
 
 
 /*Kokkos Includes*/
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
-
 
 /*System Includes*/
 #include <iostream>
@@ -68,7 +72,7 @@ namespace BaskerNS
             << " DOMBLK MALLOC : blk=" << thread_array(ti).error_blk
             << " subblk=" << thread_array(ti).error_subblk
             << " newsize=" << thread_array(ti).error_info
-            << std::endl;
+            << std::endl << std::flush;
         }
 
         //If on diagonal, want to compare L and U
@@ -86,7 +90,7 @@ namespace BaskerNS
             Int blkcol = thread_array(ti).error_blk;
             Int blkUrow = LU_size(blkcol)-1;
             if(LL(blkcol)(0).nnz >=
-                LU(blkcol)(blkUrow).nnz)
+               LU(blkcol)(blkUrow).nnz)
             {
               resize_U = thread_array(ti).error_info;
             }
@@ -104,7 +108,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            std::cout << " ++ resize L( tid = " << ti << " ): new size = " << resize_L << std::endl;
+            std::cout << " ++ resize L( tid = " << ti << " ): new size = " << resize_L << std::endl << std::flush;
           }
           BASKER_MATRIX &L =
             LL(thread_array(ti).error_blk)(thread_array(ti).error_subblk);
@@ -115,12 +119,6 @@ namespace BaskerNS
               L.nnz,
               resize_L);
           L.clear_pend();
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            REALLOC_INT_1DARRAY(L.inc_lvl,
-                L.nnz,
-                resize_L);
-          }
           L.mnnz = resize_L;
           L.nnz = resize_L;
         }
@@ -130,7 +128,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            std::cout << " ++ resize U( tid = " << ti << " ): new size = " << resize_U << std::endl;
+            std::cout << " ++ resize U( tid = " << ti << " ): new size = " << resize_U << std::endl << std::flush;
           }
           BASKER_MATRIX &U = 
             LU(thread_array(ti).error_blk)(0);
@@ -175,15 +173,6 @@ namespace BaskerNS
               {
                 //printf( " x gperm(%d) = %d\n",i,BASKER_MAX_IDX );
                 gperm(i) = BASKER_MAX_IDX;
-              }
-
-              //Clear incomplete ws
-              if(Options.incomplete == BASKER_TRUE)
-              {
-                for(Int i = SL.srow; i < SL.srow+SL.nrow; ++i)
-                {
-                  INC_LVL_TEMP(i) = BASKER_MAX_IDX;
-                }
               }
             }
           }//for - sb (subblks)
@@ -322,12 +311,6 @@ namespace BaskerNS
           REALLOC_ENTRY_1DARRAY(U.val,
               U.nnz,
               resize_U);
-          if(Options.incomplete == BASKER_TRUE)
-          {
-            REALLOC_INT_1DARRAY(U.inc_lvl,
-                U.nnz,
-                resize_U);
-          }
           U.mnnz = resize_U;
           U.nnz = resize_U;
         }
@@ -400,16 +383,6 @@ namespace BaskerNS
         nthread_remalloc++;
 
       }//if REMALLOC
-
-      //Reset Inc vector 
-      if(Options.inc_lvl == BASKER_TRUE)
-      {
-        //for(Int i = 0; i < INC_LVL_TEMP.extent(0); i++) //NDE - warning: comparison s and us
-        for(Int i = 0; i < static_cast<Int>( INC_LVL_TEMP.extent(0) ); i++) 
-        {
-          INC_LVL_TEMP(i) = BASKER_MAX_IDX;
-        }
-      }
     }//for all threads
 
     if(nthread_remalloc == 0)
@@ -431,7 +404,7 @@ namespace BaskerNS
   //========BTF ERROR HANDLE==============//
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::nfactor_diag_error
+  int Basker<Int,Entry,Exe_Space>::nfactor_btf_error
   (
     INT_1DARRAY thread_start_top,
     INT_1DARRAY thread_start
@@ -477,7 +450,7 @@ namespace BaskerNS
       {
         Int liwork = thread_array(ti).iws_size*thread_array(ti).iws_mult;
         Int lework = thread_array(ti).ews_size*thread_array(ti).ews_mult;
-        BASKER_ASSERT(c >= 0, "nfactor_diag_error error_blk");
+        BASKER_ASSERT(c >= 0, "nfactor_btf_error error_blk");
         if(Options.verbose == BASKER_TRUE)
         {
           std::cout << " > THREADS: " << ti
@@ -572,9 +545,9 @@ namespace BaskerNS
     }
 
     //Should never be here
-    BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
+    BASKER_ASSERT(0==1, "nfactor_btf_error, should never");
     return BASKER_SUCCESS;
-  }//end nfactor_diag_error
+  }//end nfactor_btf_error
 
 
   //======================//

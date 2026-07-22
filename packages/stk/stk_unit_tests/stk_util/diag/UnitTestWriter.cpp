@@ -33,10 +33,12 @@
 // 
 
 #include "gtest/gtest.h"
+#include "stk_util/diag/SlibDiagWriter.hpp"
 #include "stk_util/diag/WriterExt.hpp"        // for operator<<
 #include "stk_util/diag/WriterOStream.hpp"    // for operator<<
-#include "stk_util/util/IndentStreambuf.hpp"  // for indent_streambuf
+#include "stk_util/environment/EnvData.hpp"
 #include "stk_util/environment/OutputLog.hpp"
+#include "stk_util/util/IndentStreambuf.hpp"  // for indent_streambuf
 #include "stk_util/util/Writer.hpp"           // for Writer, operator<<, dendl, push, pop, dflush
 #include "stk_util/util/WriterManip.hpp"      // for operator<<, resetiosflags, setw, setfill
 #include "stk_util/util/Writer_fwd.hpp"       // for LOG_ALWAYS, LOG_MEMBERS, LOG_TRACE, LOG_TRA...
@@ -49,8 +51,6 @@
 #include <utility>                            // for pair
 #include <vector>                             // for vector, vector<>::iterator
 
-
-
 using namespace stk::diag;
 
 enum LogMask {
@@ -62,6 +62,19 @@ enum LogMask {
   LOG_TEST1             = 0x0000010,
   LOG_TEST2             = 0x0000020
 };
+
+TEST(UnitTestWriter, diag_writer_with_output_stream_specified)
+{
+  stk::EnvData::instance();
+  stk::bind_output_streams("dout>null");
+  EXPECT_NO_THROW(slibout << "pass");
+}
+
+TEST(UnitTestWriter, diag_writer_with_default_output_stream)
+{
+  stk::EnvData::instance();
+  EXPECT_NO_THROW(slibout << "pass");
+}
 
 TEST(UnitTestWriter, diagWriter_NoBlankLines)
 {

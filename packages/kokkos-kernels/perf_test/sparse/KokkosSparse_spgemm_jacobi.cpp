@@ -1,36 +1,20 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <iostream>
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_run_spgemm_jacobi.hpp"
-#include "KokkosKernels_TestUtils.hpp"
+#include "KokkosKernels_TestStringUtils.hpp"
 
 void print_options() {
   std::cerr << "Options\n" << std::endl;
-  std::cerr
-      << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA"
-      << std::endl;
+  std::cerr << "\t[Required] INPUT MATRIX: '--amtx [left_hand_side.mtx]' -- for C=AxA" << std::endl;
   std::cerr << "\t[Optional] BACKEND: '--threads [numThreads]' | '--openmp "
                "[numThreads]' | '--cuda [cudaDeviceIndex]' --> if none are "
                "specified, Serial is used (if enabled)"
             << std::endl;
-  std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB"
-            << std::endl;
+  std::cerr << "\t[Optional] --bmtx [righ_hand_side.mtx]' for C = AxB" << std::endl;
   std::cerr << "\t[Optional] OUTPUT MATRICES: '--cmtx [output_matrix.mtx]' --> "
                "to write output C=AxB"
             << std::endl;
@@ -39,17 +23,15 @@ void print_options() {
                "250k, which is max k value to choose dense accumulators. This "
                "can be increased with more memory bandwidth."
             << std::endl;
-  std::cerr
-      << "\t[Optional] The memory space used for each matrix: '--memspaces "
-         "[0|1|....15]' --> Bits representing the use of HBM for Work, C, B, "
-         "and A respectively. For example 12 = 1100, will store work arrays "
-         "and C on HBM. A and B will be stored DDR. To use this enable "
-         "multilevel memory in Kokkos, check generate_makefile.sh"
-      << std::endl;
-  std::cerr
-      << "\t[Optional] Loop scheduling: '--dynamic': Use this for dynamic "
-         "scheduling of the loops. (Better performance most of the time)"
-      << std::endl;
+  std::cerr << "\t[Optional] The memory space used for each matrix: '--memspaces "
+               "[0|1|....15]' --> Bits representing the use of HBM for Work, C, B, "
+               "and A respectively. For example 12 = 1100, will store work arrays "
+               "and C on HBM. A and B will be stored DDR. To use this enable "
+               "multilevel memory in Kokkos, check generate_makefile.sh"
+            << std::endl;
+  std::cerr << "\t[Optional] Loop scheduling: '--dynamic': Use this for dynamic "
+               "scheduling of the loops. (Better performance most of the time)"
+            << std::endl;
   std::cerr << "\t[Optional] Verbose Output: '--verbose'" << std::endl;
 }
 
@@ -62,8 +44,7 @@ static char* getNextArg(int& i, int argc, char** argv) {
   return argv[i];
 }
 
-int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
-                 char** argv) {
+int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
     if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(getNextArg(i, argc, argv));
@@ -81,8 +62,7 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       params.team_size = atoi(getNextArg(i, argc, argv));
     } else if (0 == Test::string_compare_no_case(argv[i], "--vectorsize")) {
       params.vector_size = atoi(getNextArg(i, argc, argv));
-    } else if (0 ==
-               Test::string_compare_no_case(argv[i], "--compression2step")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--compression2step")) {
       params.compression2step = true;
     } else if (0 == Test::string_compare_no_case(argv[i], "--shmem")) {
       params.shmemsize = atoi(getNextArg(i, argc, argv));
@@ -194,14 +174,12 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
       } else if (0 == Test::string_compare_no_case(algoStr, "KKDEBUG")) {
         params.algorithm = KokkosSparse::SPGEMM_KK_LP;
       } else {
-        std::cerr << "Unrecognized command line argument #" << i << ": "
-                  << argv[i] << std::endl;
+        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
         print_options();
         return 1;
       }
     } else {
-      std::cerr << "Unrecognized command line argument #" << i << ": "
-                << argv[i] << std::endl;
+      std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
       return 1;
     }
@@ -210,9 +188,9 @@ int parse_inputs(KokkosKernels::Experiment::Parameters& params, int argc,
 }
 
 int main(int argc, char** argv) {
-  using size_type = default_size_type;
-  using lno_t     = default_lno_t;
-  using scalar_t  = default_scalar;
+  using size_type = KokkosKernels::default_size_type;
+  using lno_t     = KokkosKernels::default_lno_t;
+  using scalar_t  = KokkosKernels::default_scalar;
 
   KokkosKernels::Experiment::Parameters params;
 
@@ -231,24 +209,20 @@ int main(int argc, char** argv) {
   const int num_threads = std::max(params.use_openmp, params.use_threads);
   const int device_id   = params.use_cuda - 1;
 
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
   Kokkos::print_configuration(std::cout);
 
 #if defined(KOKKOS_ENABLE_OPENMP)
   if (params.use_openmp) {
-    KokkosKernels::Experiment::run_spgemm_jacobi<
-        size_type, lno_t, scalar_t, Kokkos::OpenMP,
-        Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
+    KokkosKernels::Experiment::run_spgemm_jacobi<size_type, lno_t, scalar_t, Kokkos::OpenMP,
+                                                 Kokkos::OpenMP::memory_space, Kokkos::OpenMP::memory_space>(params);
   }
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
   if (params.use_cuda) {
-    KokkosKernels::Experiment::run_spgemm_jacobi<
-        size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space,
-        Kokkos::Cuda::memory_space>(params);
+    KokkosKernels::Experiment::run_spgemm_jacobi<size_type, lno_t, scalar_t, Kokkos::Cuda, Kokkos::Cuda::memory_space,
+                                                 Kokkos::Cuda::memory_space>(params);
   }
 #endif
 
@@ -256,9 +230,8 @@ int main(int argc, char** argv) {
   // If only serial is enabled (or no other device was specified), run with
   // serial
   if (params.use_threads) {
-    KokkosKernels::Experiment::run_spgemm_jacobi<
-        size_type, lno_t, scalar_t, Kokkos::Threads, Kokkos::HostSpace,
-        Kokkos::HostSpace>(params);
+    KokkosKernels::Experiment::run_spgemm_jacobi<size_type, lno_t, scalar_t, Kokkos::Threads, Kokkos::HostSpace,
+                                                 Kokkos::HostSpace>(params);
   }
 #endif
 
@@ -266,9 +239,8 @@ int main(int argc, char** argv) {
   // If only serial is enabled (or no other device was specified), run with
   // serial
   if (!params.use_openmp && !params.use_cuda && !params.use_threads) {
-    KokkosKernels::Experiment::run_spgemm_jacobi<
-        size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace,
-        Kokkos::HostSpace>(params);
+    KokkosKernels::Experiment::run_spgemm_jacobi<size_type, lno_t, scalar_t, Kokkos::Serial, Kokkos::HostSpace,
+                                                 Kokkos::HostSpace>(params);
   }
 #endif
 

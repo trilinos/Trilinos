@@ -1,47 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 // @HEADER
 // ***********************************************************************
 //         Zoltan2: Sandia Partitioning Ordering & Coloring Library
@@ -358,7 +323,7 @@ int main(int narg, char *arg[])
   cmdp.parse(narg, arg);
 
   // Create object that can give us test Tpetra, Xpetra
-  // and Epetra vectors for testing.
+  // vectors for testing.
 
   RCP<UserInputForTests> uinput;
   Teuchos::ParameterList params;
@@ -550,97 +515,6 @@ int main(int narg, char *arg[])
       printFailureCode(*comm, fail);
     }
   }
-
-#ifdef HAVE_EPETRA_DATA_TYPES
-  /////////////////////////////////////////////////////////////
-  // User object is Epetra_MultiVector
-  typedef Epetra_MultiVector evector_t;
-  if (!gfail){ 
-    if (rank==0)
-      std::cout << "Constructed with Epetra_MultiVector" << std::endl;
-
-    RCP<evector_t> eV = 
-        rcp(new Epetra_MultiVector(uinput->getUIEpetraCrsGraph()->RowMap(),
-                                   nVec));
-    for (int v = 0; v < nVec; v++) {
-      auto inV = inputMVector->getData(v);
-      for (int i = 0; i < eV->MyLength(); i++)
-        eV->ReplaceMyValue(i, v, inV[i]);
-    }
-        
-    RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
-    RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
-  
-    bool goodAdapter = true;
-    try {
-      eVInput = 
-        rcp(new Zoltan2::XpetraMultiVectorAdapter<evector_t>(ceV,
-              IDWeights, IDWeightsStrides));
-    }
-    catch (std::exception &e){
-      if (std::is_same<znode_t, Xpetra::EpetraNode>::value) {
-        aok = false;
-        goodAdapter = false;
-        std::cout << e.what() << std::endl;
-      }
-      else {
-        // We expect an error from Xpetra when znode_t != Xpetra::EpetraNode
-        // Ignore it, but skip tests using this matrix adapter.
-        std::cout << "Node type is not supported by Xpetra's Epetra interface;"
-                  << " Skipping this test." << std::endl;
-        std::cout << "FYI:  Here's the exception message: " << std::endl
-                  << e.what() << std::endl;
-        goodAdapter = false;
-      }
-    }
-    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 5 ", 1);
-  
-    if (goodAdapter) {
-      fail = verifyInputAdapter<evector_t>(*eVInput, *inputMVector, nVec,
-                                           IDWeights, IDWeightsStrides);
-  
-      gfail = globalFail(*comm, fail);
-  
-      if (!gfail){
-        evector_t *vMigrate =NULL;
-        try{
-          eVInput->applyPartitioningSolution(*eV, vMigrate, solution);
-        }
-        catch (std::exception &e){
-          fail = 11;
-        }
-  
-        gfail = globalFail(*comm, fail);
-  
-        if (!gfail){
-          RCP<const evector_t> cnewV(vMigrate, true);
-          RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > newInput;
-          try{
-            newInput = 
-              rcp(new Zoltan2::XpetraMultiVectorAdapter<evector_t>(cnewV));
-          }
-          catch (std::exception &e){
-            aok = false;
-            std::cout << e.what() << std::endl;
-          }
-          TEST_FAIL_AND_EXIT(*comm, aok, "XpetraMultiVectorAdapter 6 ", 1);
-    
-          if (rank==0){
-            std::cout << "Constructed with ";
-            std::cout << "Epetra_MultiVector migrated to proc 0" << std::endl;
-          }
-          fail = verifyInputAdapter<evector_t>(*newInput, *migratedMVector, 
-                                               nVec);
-          if (fail) fail += 100;
-          gfail = globalFail(*comm, fail);
-        }
-      }
-      if (gfail){
-        printFailureCode(*comm, fail);
-      }
-    }
-  }
-#endif
 
   /////////////////////////////////////////////////////////////
   // DONE

@@ -22,7 +22,7 @@
     struct SetOfEntities : public SetOfEntitiesBase<stk::mesh::Entity >::Type
     {
       SetOfEntities() {}
-      SetOfEntities(stk::mesh::BulkData& bulk) {}
+      SetOfEntities(stk::mesh::BulkData& /*bulk*/) {}
     };
 
   }

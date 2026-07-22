@@ -71,10 +71,10 @@ TEST(stk_topology, shell_side_topology) {
   EXPECT_EQ(shell.num_sides(),6u);
   EXPECT_EQ(shell.side_topology(0), stk::topology::QUAD_4);
   EXPECT_EQ(shell.side_topology(1), stk::topology::QUAD_4);
-  EXPECT_EQ(shell.side_topology(2), stk::topology::SHELL_SIDE_BEAM_2);
-  EXPECT_EQ(shell.side_topology(3), stk::topology::SHELL_SIDE_BEAM_2);
-  EXPECT_EQ(shell.side_topology(4), stk::topology::SHELL_SIDE_BEAM_2);
-  EXPECT_EQ(shell.side_topology(5), stk::topology::SHELL_SIDE_BEAM_2);
+  EXPECT_EQ(shell.side_topology(2), stk::topology::LINE_2);
+  EXPECT_EQ(shell.side_topology(3), stk::topology::LINE_2);
+  EXPECT_EQ(shell.side_topology(4), stk::topology::LINE_2);
+  EXPECT_EQ(shell.side_topology(5), stk::topology::LINE_2);
 }
 //end_shell_side_topo
 

@@ -23,9 +23,9 @@
 
 #include <Akri_RebalanceUtils.hpp>
 #include <Akri_RebalanceUtils_Impl.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_MeshHelpers.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_math/StkVector.hpp>
@@ -35,11 +35,11 @@ namespace rebalance_utils {
 
 namespace {
 
-RefinementInterface & build_refinement(stk::mesh::MetaData & meta)
+RefinementManager & build_refinement(stk::mesh::MetaData & meta)
 {
   meta.enable_late_fields();
 
-  RefinementInterface & refinement = KrinoRefinement::create(meta);
+  RefinementManager & refinement = RefinementManager::create(meta);
 
   meta.disable_late_fields();
 
@@ -103,7 +103,7 @@ void build_unadapted_single_tri_mesh(stk::mesh::BulkData & mesh)
   set_node_coordinates(mesh, 3, {0.5,1.});
 }
 
-void build_one_level_adapted_single_tri_mesh(stk::mesh::BulkData & mesh, RefinementInterface & refinement)
+void build_one_level_adapted_single_tri_mesh(stk::mesh::BulkData & mesh, RefinementManager & refinement)
 {
   build_unadapted_single_tri_mesh(mesh);
 
@@ -111,7 +111,7 @@ void build_one_level_adapted_single_tri_mesh(stk::mesh::BulkData & mesh, Refinem
   refinement.do_refinement();
 }
 
-void build_two_level_adapted_single_tri_mesh(stk::mesh::BulkData & mesh, RefinementInterface & refinement)
+void build_two_level_adapted_single_tri_mesh(stk::mesh::BulkData & mesh, RefinementManager & refinement)
 {
   build_one_level_adapted_single_tri_mesh(mesh, refinement);
 
@@ -213,7 +213,7 @@ protected:
       EXPECT_DOUBLE_EQ(goldWeight, weight);
     }
   }
-  RefinementInterface & refinement;
+  RefinementManager & refinement;
   stk::balance::DecompositionChangeList change_list{fixture.bulk_data(), {}};
 };
 
@@ -228,7 +228,6 @@ public:
     load_field(meta->declare_field<double>(stk::topology::ELEMENT_RANK, "element_weights")),
     change_list(*bulk, {})
   {
-    meta->use_simple_fields();
     AuxMetaData::create(*meta);
     double zero_val = 0.;
     stk::mesh::put_field_on_mesh(load_field, meta->universal_part(), &zero_val);
@@ -239,7 +238,7 @@ public:
 
   void refine_z_boundary()
   {
-    RefinementInterface & refinement = *refinement_ptr;
+    RefinementManager & refinement = *refinement_ptr;
     clear_refinement_marker(refinement);
     auto elem_buckets = 
       bulk->get_buckets(stk::topology::ELEMENT_RANK, bulk->mesh_meta_data().locally_owned_part());
@@ -256,7 +255,7 @@ public:
           auto * coords = field_data<double>(*meta->coordinate_field(), node);
           if(std::fabs(coords[meta->spatial_dimension()-1]-1.) <= 1e-6)
           {
-            int * elemMarker = field_data<int>(refinement.get_marker_field(), elem);
+            int * elemMarker = field_data<int>(refinement.get_marker_field_and_sync_to_host(), elem);
             *elemMarker = static_cast<int>(Refinement::RefinementMarker::REFINE);
           }
         }
@@ -292,7 +291,7 @@ protected:
   std::unique_ptr<stk::mesh::BulkData> bulk;
   std::shared_ptr<stk::mesh::MetaData> meta;
   stk::mesh::Field<double> & load_field;
-  RefinementInterface * refinement_ptr;
+  RefinementManager * refinement_ptr;
   stk::balance::DecompositionChangeList change_list;
 };
 
@@ -507,7 +506,7 @@ TEST_F(ParallelRebalanceForAdaptivityFixture3D, ParentChildRebalanceRules)
   //Verify leaf elements have their parent element on the same processor and flag for coarsening
   {
     clear_refinement_marker(refinement);
-    FieldRef markerField = refinement.get_marker_field();
+    FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
     auto elem_buckets = 
       bulk->get_buckets(stk::topology::ELEMENT_RANK, meta->locally_owned_part());
     for(auto && bucket : elem_buckets)

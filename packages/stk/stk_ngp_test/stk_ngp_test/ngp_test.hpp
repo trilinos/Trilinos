@@ -1,9 +1,12 @@
 #ifndef STK_NGP_TEST_NGP_TEST_HPP
 #define STK_NGP_TEST_NGP_TEST_HPP
+
 #include <gtest/gtest.h>
 #include "GlobalReporter.hpp"
-#include "Reporter.hpp"
 #include <Kokkos_Core.hpp>
+#if KOKKOS_VERSION >= 40200
+#include <Kokkos_Printf.hpp>
+#endif
 #include <stk_ngp_test/NgpTestDeviceMacros.hpp>
 
 namespace ngp_testing {
@@ -60,12 +63,6 @@ bool expect_near(const T a, const T b, const T tolerance) {
 #define NUM_TO_STR(x) NGP_TEST_STRINGIZE(x)
 #define LOCATION __FILE__ ":" NUM_TO_STR(__LINE__)
 
-#ifdef __HIP_DEVICE_COMPILE__
-//FIXME: unsupported indirect call to function on HIP-Clang
-#define NGP_EXPECT_TRUE(cond)
-#define NGP_ASSERT_TRUE(cond)
-
-#else
 #define NGP_EXPECT_TRUE(cond)                                   \
   do {                                                          \
     if (!(cond)) {                                              \
@@ -80,7 +77,6 @@ bool expect_near(const T a, const T b, const T tolerance) {
       return;                                                   \
     }                                                           \
   } while (false)
-#endif
 
 #define NGP_EXPECT_FALSE(cond) NGP_EXPECT_TRUE(!(cond))
 #define NGP_ASSERT_FALSE(cond) NGP_ASSERT_TRUE(!(cond))
@@ -103,12 +99,6 @@ bool expect_near(const T a, const T b, const T tolerance) {
 #define NGP_EXPECT_GE(a, b) NGP_EXPECT_TRUE((a) >= (b))
 #define NGP_ASSERT_GE(a, b) NGP_ASSERT_TRUE((a) >= (b))
 
-#ifdef __HIP_DEVICE_COMPILE__
-//FIXME: unsupported indirect call to function on HIP-Clang
-#define NGP_EXPECT_NEAR(a, b, tolerance)
-#define NGP_ASSERT_NEAR(a, b, tolerance)
-
-#else
 #define NGP_EXPECT_NEAR(a, b, tolerance)                                \
   do {                                                                  \
     if (!::ngp_testing::internal::expect_near(a, b, tolerance)) {       \
@@ -123,7 +113,6 @@ bool expect_near(const T a, const T b, const T tolerance) {
       return;                                                           \
     }                                                                   \
   } while (false)
-#endif
 
 namespace ngp_testing {
 

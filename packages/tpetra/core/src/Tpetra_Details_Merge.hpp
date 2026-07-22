@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_DETAILS_MERGE_HPP
@@ -44,8 +12,8 @@
 
 #include "TpetraCore_config.h"
 #include "Teuchos_TestForException.hpp"
-#include <algorithm> // std::sort
-#include <utility> // std::pair, std::make_pair
+#include <algorithm>  // std::sort
+#include <utility>    // std::pair, std::make_pair
 #include <stdexcept>
 
 namespace Tpetra {
@@ -69,13 +37,12 @@ namespace Details {
 /// The unsorted case is bad for asymptotics, but the asymptotics only
 /// show up with dense or nearly dense rows, which are bad for other
 /// reasons.
-template<class OrdinalType, class IndexType>
+template <class OrdinalType, class IndexType>
 IndexType
-countMergeUnsortedIndices (const OrdinalType curInds[],
-                           const IndexType numCurInds,
-                           const OrdinalType inputInds[],
-                           const IndexType numInputInds)
-{
+countMergeUnsortedIndices(const OrdinalType curInds[],
+                          const IndexType numCurInds,
+                          const OrdinalType inputInds[],
+                          const IndexType numInputInds) {
   IndexType mergeCount = 0;
 
   if (numCurInds <= numInputInds) {
@@ -89,8 +56,7 @@ countMergeUnsortedIndices (const OrdinalType curInds[],
         }
       }
     }
-  }
-  else { // numCurInds > numInputInds
+  } else {  // numCurInds > numInputInds
     // More current entries than input, so iterate linearly over
     // current entries and scan input repeatedly.
     for (IndexType curPos = 0; curPos < numCurInds; ++curPos) {
@@ -104,10 +70,8 @@ countMergeUnsortedIndices (const OrdinalType curInds[],
   }
 
 #ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (mergeCount > numInputInds, std::logic_error, "mergeCount = " <<
-     mergeCount << " > numInputInds = " << numInputInds << ".");
-#endif // HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(mergeCount > numInputInds, std::logic_error, "mergeCount = " << mergeCount << " > numInputInds = " << numInputInds << ".");
+#endif  // HAVE_TPETRA_DEBUG
   return mergeCount;
 }
 
@@ -128,44 +92,37 @@ countMergeUnsortedIndices (const OrdinalType curInds[],
 ///
 /// The sorted case is good for asymptotics, but imposes an order
 /// on the entries of each row.  Sometimes users don't want that.
-template<class OrdinalType, class IndexType>
+template <class OrdinalType, class IndexType>
 IndexType
-countMergeSortedIndices (const OrdinalType curInds[],
-                         const IndexType numCurInds,
-                         const OrdinalType inputInds[],
-                         const IndexType numInputInds)
-{
+countMergeSortedIndices(const OrdinalType curInds[],
+                        const IndexType numCurInds,
+                        const OrdinalType inputInds[],
+                        const IndexType numInputInds) {
   // Only count possible merges; don't merge yet.  If the row
   // doesn't have enough space, we want to return without side
   // effects.
-  IndexType curPos = 0;
-  IndexType inPos = 0;
+  IndexType curPos     = 0;
+  IndexType inPos      = 0;
   IndexType mergeCount = 0;
   while (inPos < numInputInds && curPos < numCurInds) {
-    const OrdinalType inVal = inputInds[inPos];
+    const OrdinalType inVal  = inputInds[inPos];
     const OrdinalType curVal = curInds[curPos];
 
-    if (curVal == inVal) { // can merge
+    if (curVal == inVal) {  // can merge
       ++mergeCount;
-      ++inPos; // go on to next input
+      ++inPos;  // go on to next input
     } else if (curVal < inVal) {
-      ++curPos; // go on to next row entry
-    } else { // curVal > inVal
-      ++inPos; // can't merge it ever, since row entries sorted
+      ++curPos;  // go on to next row entry
+    } else {     // curVal > inVal
+      ++inPos;   // can't merge it ever, since row entries sorted
     }
   }
 
 #ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (inPos > numInputInds, std::logic_error, "inPos = " << inPos <<
-     " > numInputInds = " << numInputInds << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (curPos > numCurInds, std::logic_error, "curPos = " << curPos <<
-     " > numCurInds = " << numCurInds << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (mergeCount > numInputInds, std::logic_error, "mergeCount = " <<
-     mergeCount << " > numInputInds = " << numInputInds << ".");
-#endif // HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(inPos > numInputInds, std::logic_error, "inPos = " << inPos << " > numInputInds = " << numInputInds << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(curPos > numCurInds, std::logic_error, "curPos = " << curPos << " > numCurInds = " << numCurInds << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(mergeCount > numInputInds, std::logic_error, "mergeCount = " << mergeCount << " > numInputInds = " << numInputInds << ".");
+#endif  // HAVE_TPETRA_DEBUG
 
   // At this point, 2 situations are possible:
   //
@@ -178,7 +135,6 @@ countMergeSortedIndices (const OrdinalType curInds[],
   // Either way, mergeCount gives the number of mergeable inputs.
   return mergeCount;
 }
-
 
 /// \brief Attempt to merge the input indices into the current row's
 ///   column indices, assuming that both the current row's indices and
@@ -200,14 +156,13 @@ countMergeSortedIndices (const OrdinalType curInds[],
 ///
 /// The sorted case is good for asymptotics, but imposes an order on
 /// the entries of each row.  Sometimes users don't want that.
-template<class OrdinalType, class IndexType>
+template <class OrdinalType, class IndexType>
 std::pair<bool, IndexType>
-mergeSortedIndices (OrdinalType curInds[],
-                    const IndexType midPos,
-                    const IndexType endPos,
-                    const OrdinalType inputInds[],
-                    const IndexType numInputInds)
-{
+mergeSortedIndices(OrdinalType curInds[],
+                   const IndexType midPos,
+                   const IndexType endPos,
+                   const OrdinalType inputInds[],
+                   const IndexType numInputInds) {
   // Optimize for the following cases, in decreasing order of
   // optimization concern:
   //
@@ -229,44 +184,41 @@ mergeSortedIndices (OrdinalType curInds[],
       for (IndexType k = 0; k < numInputInds; ++k) {
         curInds[k] = inputInds[k];
       }
-      std::sort (curInds, curInds + numInputInds);
-      return std::make_pair (true, numInputInds);
+      std::sort(curInds, curInds + numInputInds);
+      return std::make_pair(true, numInputInds);
+    } else {  // not enough space
+      return std::make_pair(false, numInputInds);
     }
-    else { // not enough space
-      return std::make_pair (false, numInputInds);
-    }
-  }
-  else { // current row contains indices, requiring merge
+  } else {  // current row contains indices, requiring merge
     // Only count possible merges; don't merge yet.  If the row
     // doesn't have enough space, we want to return without side
     // effects.
     const IndexType mergeCount =
-      countMergeSortedIndices<OrdinalType, IndexType> (curInds, midPos,
-                                                       inputInds,
-                                                       numInputInds);
+        countMergeSortedIndices<OrdinalType, IndexType>(curInds, midPos,
+                                                        inputInds,
+                                                        numInputInds);
     const IndexType extraSpaceNeeded = numInputInds - mergeCount;
-    const IndexType newRowLen = midPos + extraSpaceNeeded;
+    const IndexType newRowLen        = midPos + extraSpaceNeeded;
     if (newRowLen > endPos) {
-      return std::make_pair (false, newRowLen);
-    }
-    else { // we have enough space; merge in
+      return std::make_pair(false, newRowLen);
+    } else {  // we have enough space; merge in
       IndexType curPos = 0;
-      IndexType inPos = 0;
+      IndexType inPos  = 0;
       IndexType newPos = midPos;
       while (inPos < numInputInds && curPos < midPos) {
-        const OrdinalType inVal = inputInds[inPos];
+        const OrdinalType inVal  = inputInds[inPos];
         const OrdinalType curVal = curInds[curPos];
 
-        if (curVal == inVal) { // can merge
-          ++inPos; // merge and go on to next input
+        if (curVal == inVal) {  // can merge
+          ++inPos;              // merge and go on to next input
         } else if (curVal < inVal) {
-          ++curPos; // go on to next row entry
-        } else { // curVal > inVal
+          ++curPos;  // go on to next row entry
+        } else {     // curVal > inVal
           // The input doesn't exist in the row.
           // Copy it to the end; we'll sort it in later.
           curInds[newPos] = inVal;
           ++newPos;
-          ++inPos; // move on to next input
+          ++inPos;  // move on to next input
         }
       }
 
@@ -277,27 +229,23 @@ mergeSortedIndices (OrdinalType curInds[],
       }
 
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (newPos != newRowLen, std::logic_error, "mergeSortedIndices: newPos = "
-         << newPos << " != newRowLen = " << newRowLen << " = " << midPos <<
-         " + " << extraSpaceNeeded << ".  Please report this bug to the Tpetra "
-         "developers.");
-#endif // HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION(newPos != newRowLen, std::logic_error, "mergeSortedIndices: newPos = " << newPos << " != newRowLen = " << newRowLen << " = " << midPos << " + " << extraSpaceNeeded << ".  Please report this bug to the Tpetra "
+                                                                                                                                                                                                        "developers.");
+#endif  // HAVE_TPETRA_DEBUG
 
-      if (newPos != midPos) { // new entries at end; sort them in
+      if (newPos != midPos) {  // new entries at end; sort them in
         // FIXME (mfh 03 Jan 2016) Rather than sorting, it would
         // be faster (linear time) just to iterate backwards
         // through the current entries, pushing them over to make
         // room for unmerged input.  However, I'm not so worried
         // about the asymptotics here, because dense rows in a
         // sparse matrix are ungood anyway.
-        std::sort (curInds, curInds + newPos);
+        std::sort(curInds, curInds + newPos);
       }
-      return std::make_pair (true, newPos);
+      return std::make_pair(true, newPos);
     }
   }
 }
-
 
 /// \brief Attempt to merge the input indices into the current row's
 ///   column indices, assuming that both the current row's indices and
@@ -320,14 +268,13 @@ mergeSortedIndices (OrdinalType curInds[],
 /// The unsorted case is bad for asymptotics, but the asymptotics only
 /// show up with dense or nearly dense rows, which are bad for other
 /// reasons.
-template<class OrdinalType, class IndexType>
+template <class OrdinalType, class IndexType>
 std::pair<bool, IndexType>
-mergeUnsortedIndices (OrdinalType curInds[],
-                      const IndexType midPos,
-                      const IndexType endPos,
-                      const OrdinalType inputInds[],
-                      const IndexType numInputInds)
-{
+mergeUnsortedIndices(OrdinalType curInds[],
+                     const IndexType midPos,
+                     const IndexType endPos,
+                     const OrdinalType inputInds[],
+                     const IndexType numInputInds) {
   // Optimize for the following cases, in decreasing order of
   // optimization concern:
   //
@@ -349,43 +296,40 @@ mergeUnsortedIndices (OrdinalType curInds[],
       for (IndexType k = 0; k < numInputInds; ++k) {
         curInds[k] = inputInds[k];
       }
-      return std::make_pair (true, numInputInds);
+      return std::make_pair(true, numInputInds);
+    } else {  // not enough space
+      return std::make_pair(false, numInputInds);
     }
-    else { // not enough space
-      return std::make_pair (false, numInputInds);
-    }
-  }
-  else { // current row contains indices, requiring merge
+  } else {  // current row contains indices, requiring merge
     // Only count possible merges; don't merge yet.  If the row
     // doesn't have enough space, we want to return without side
     // effects.
     const IndexType mergeCount =
-      countMergeUnsortedIndices<OrdinalType, IndexType> (curInds, midPos,
-                                                         inputInds,
-                                                         numInputInds);
+        countMergeUnsortedIndices<OrdinalType, IndexType>(curInds, midPos,
+                                                          inputInds,
+                                                          numInputInds);
     const IndexType extraSpaceNeeded = numInputInds - mergeCount;
-    const IndexType newRowLen = midPos + extraSpaceNeeded;
+    const IndexType newRowLen        = midPos + extraSpaceNeeded;
     if (newRowLen > endPos) {
-      return std::make_pair (false, newRowLen);
-    }
-    else { // we have enough space; merge in
+      return std::make_pair(false, newRowLen);
+    } else {  // we have enough space; merge in
       // Iterate linearly over input.  Scan current entries
       // repeatedly.  Add new entries at end.
       IndexType newPos = midPos;
       for (IndexType inPos = 0; inPos < numInputInds; ++inPos) {
         const OrdinalType inVal = inputInds[inPos];
-        bool merged = false;
+        bool merged             = false;
         for (IndexType curPos = 0; curPos < midPos; ++curPos) {
           if (curInds[curPos] == inVal) {
             merged = true;
           }
         }
-        if (! merged) {
+        if (!merged) {
           curInds[newPos] = inVal;
           ++newPos;
         }
       }
-      return std::make_pair (true, newPos);
+      return std::make_pair(true, newPos);
     }
   }
 }
@@ -414,16 +358,15 @@ mergeUnsortedIndices (OrdinalType curInds[],
 /// The unsorted case is bad for asymptotics, but the asymptotics only
 /// show up with dense or nearly dense rows, which are bad for other
 /// reasons.
-template<class OrdinalType, class ValueType, class IndexType>
+template <class OrdinalType, class ValueType, class IndexType>
 std::pair<bool, IndexType>
-mergeUnsortedIndicesAndValues (OrdinalType curInds[],
-                               ValueType curVals[],
-                               const IndexType midPos,
-                               const IndexType endPos,
-                               const OrdinalType inputInds[],
-                               const ValueType inputVals[],
-                               const IndexType numInputInds)
-{
+mergeUnsortedIndicesAndValues(OrdinalType curInds[],
+                              ValueType curVals[],
+                              const IndexType midPos,
+                              const IndexType endPos,
+                              const OrdinalType inputInds[],
+                              const ValueType inputVals[],
+                              const IndexType numInputInds) {
   // Optimize for the following cases, in decreasing order of
   // optimization concern:
   //
@@ -446,50 +389,47 @@ mergeUnsortedIndicesAndValues (OrdinalType curInds[],
         curInds[k] = inputInds[k];
         curVals[k] = inputVals[k];
       }
-      return std::make_pair (true, numInputInds);
+      return std::make_pair(true, numInputInds);
+    } else {  // not enough space
+      return std::make_pair(false, numInputInds);
     }
-    else { // not enough space
-      return std::make_pair (false, numInputInds);
-    }
-  }
-  else { // current row contains indices, requiring merge
+  } else {  // current row contains indices, requiring merge
     // Only count possible merges; don't merge yet.  If the row
     // doesn't have enough space, we want to return without side
     // effects.
     const IndexType mergeCount =
-      countMergeUnsortedIndices<OrdinalType, IndexType> (curInds, midPos,
-                                                         inputInds,
-                                                         numInputInds);
+        countMergeUnsortedIndices<OrdinalType, IndexType>(curInds, midPos,
+                                                          inputInds,
+                                                          numInputInds);
     const IndexType extraSpaceNeeded = numInputInds - mergeCount;
-    const IndexType newRowLen = midPos + extraSpaceNeeded;
+    const IndexType newRowLen        = midPos + extraSpaceNeeded;
     if (newRowLen > endPos) {
-      return std::make_pair (false, newRowLen);
-    }
-    else { // we have enough space; merge in
+      return std::make_pair(false, newRowLen);
+    } else {  // we have enough space; merge in
       // Iterate linearly over input.  Scan current entries
       // repeatedly.  Add new entries at end.
       IndexType newPos = midPos;
       for (IndexType inPos = 0; inPos < numInputInds; ++inPos) {
         const OrdinalType inInd = inputInds[inPos];
-        bool merged = false;
+        bool merged             = false;
         for (IndexType curPos = 0; curPos < midPos; ++curPos) {
           if (curInds[curPos] == inInd) {
             merged = true;
             curVals[curPos] += inputVals[inPos];
           }
         }
-        if (! merged) {
+        if (!merged) {
           curInds[newPos] = inInd;
           curVals[newPos] = inputVals[inPos];
           ++newPos;
         }
       }
-      return std::make_pair (true, newPos);
+      return std::make_pair(true, newPos);
     }
   }
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_MERGE_HPP
+#endif  // TPETRA_DETAILS_MERGE_HPP

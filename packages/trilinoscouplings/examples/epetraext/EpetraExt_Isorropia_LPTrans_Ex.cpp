@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_CrsGraph
@@ -199,8 +207,8 @@ Teuchos::RCP<Epetra_CrsMatrix>
       coefs[j] = 1.0;
     }
 
-    int err = matrix->InsertGlobalValues(global_row, nnz_per_row,
-                                         &coefs[0], &indices[0]);
+    err = matrix->InsertGlobalValues(global_row, nnz_per_row,
+                                     &coefs[0], &indices[0]);
     if (err < 0) {
       err = matrix->ReplaceGlobalValues(global_row, nnz_per_row,
                                         &coefs[0], &indices[0]);

@@ -32,6 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+// IWYU pragma: private; include "Simd.hpp"
+
+#ifndef STK_INCLUDE_ONLY_STK_SIMD_HEADER
+static_assert(false, "Do not include simd impl files directly. Only include stk_simd/Simd.hpp");
+#endif
+
 #ifndef STK_SIMD_BOOL_HPP
 #define STK_SIMD_BOOL_HPP
 
@@ -69,7 +75,7 @@ class Bool {
     return (reinterpret_cast<const double*>(&tmp))[i];
   }
 #elif defined(__CUDACC__) || defined(__HIPCC__) || defined(USE_STK_SIMD_NONE)
-  STK_MATH_FORCE_INLINE double operator[](int i) const {
+  STK_MATH_FORCE_INLINE double operator[](int /*i*/) const {
     return _data.get() ? 1.0 : 0.0;
   }
 #else

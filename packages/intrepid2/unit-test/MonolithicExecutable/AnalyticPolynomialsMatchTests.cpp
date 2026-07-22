@@ -273,11 +273,10 @@ namespace
         if (!valuesMatch)
         {
           pointPassed = false;
-          PointScalar x = inputPointsViewHost(pointOrdinal,0);
           if (op == OPERATOR_VALUE) out << "values";
           else
           {
-            int derivativeOrder = getOperatorOrder(op);
+            derivativeOrder = getOperatorOrder(op);
             if (derivativeOrder == 1)
             {
               out << "first ";
@@ -411,7 +410,6 @@ namespace
         if (!valuesMatch)
         {
           pointPassed = false;
-          double x = inputPointsViewHost(pointOrdinal,0);
           if (op == OPERATOR_VALUE) out << "values";
           else
           {
@@ -535,9 +533,9 @@ namespace
             double alpha = i * 2.0;
             for (int j=1; i+j<=polyOrder; j++)
             {
-              const PointScalar  &x = lambda[2];
+              const PointScalar  &cx = lambda[2];
               const PointScalar   t = 1.0;
-              const OutputScalar jacobiValue = integratedJacobi(x, t, alpha, j);
+              const OutputScalar jacobiValue = integratedJacobi(cx, t, alpha, j);
               expectedValuesViewHost(fieldOrdinalOffset,pointOrdinal) = edgeFunctionValue * jacobiValue;
               fieldOrdinalOffset++;
             }
@@ -611,8 +609,6 @@ namespace
           if (!valuesMatch)
           {
             pointPassed = false;
-            PointScalar x = inputPointsViewHost(pointOrdinal,0);
-            PointScalar y = inputPointsViewHost(pointOrdinal,1);
             if (op == OPERATOR_VALUE) out << "values";
             else
             {
@@ -689,7 +685,7 @@ namespace
         // relationship between our H^1 basis and our L^2 (see the "Analytic" tests above for explicit polynomial expressions)
         // - nth derivative of H^1 fieldOrdinal i is one half of the (n-1)th derivative of L^2 fieldOrdinal i-1 (for i>=2)
         OutputScalar hgradValue = hgradOutputViewHost(fieldOrdinal,  pointOrdinal,0);
-        OutputScalar hvolValue  =  hvolOutputViewHost(fieldOrdinal-1,pointOrdinal,0);
+        OutputScalar hvolValue  =  hvolOutputViewHost.access(fieldOrdinal-1,pointOrdinal,0);
         
         OutputScalar actual = hgradValue;
         OutputScalar expected = OutputScalar(0.5 * hvolValue);
@@ -971,8 +967,8 @@ namespace
     shards::CellTopology hexTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<> >() );
     
     std::vector<EOperator> operators_dk = {OPERATOR_D1,OPERATOR_D2,OPERATOR_D3,OPERATOR_D4,OPERATOR_D5,OPERATOR_D6,OPERATOR_D7,OPERATOR_D8,OPERATOR_D9,OPERATOR_D10};
-    // for Fad types under CUDA, we sometimes run into allocation errors with the highest-k dk operators in 3D.  Not sure why (are we actually running out of memory? It seems possible, but still surprises me a little), but for now we don't test beyond D8.
-    std::vector<EOperator> operators_dk_3D = {OPERATOR_D1,OPERATOR_D2,OPERATOR_D3,OPERATOR_D4,OPERATOR_D5,OPERATOR_D6,OPERATOR_D7,OPERATOR_D8};
+    // for Fad types under CUDA, we sometimes run into allocation errors with the highest-k dk operators in 3D.  Not sure why (are we actually running out of memory? It seems possible, but still surprises me a little), but for now we don't test beyond D4.
+    std::vector<EOperator> operators_dk_3D = {OPERATOR_D1,OPERATOR_D2,OPERATOR_D3,OPERATOR_D4};
     
     // "harder" test is probably higher-order, but it's more expensive in higher dimensions.
     // the below are compromises according to spatial dimension.

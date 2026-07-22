@@ -1,11 +1,19 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef BUILDSAMPLERHPP
 #define BUILDSAMPLERHPP
 
 #include "Teuchos_Comm.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_XMLReader.hpp"
 
 // SOL Inputs
 #include "ROL_MonteCarloGenerator.hpp"

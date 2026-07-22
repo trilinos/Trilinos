@@ -50,11 +50,15 @@ struct CopyTransferUnpackInfo {
   std::vector<uint8_t>& buffer;
   uint8_t* fieldData;
   unsigned sentDataTypeKey;
-  unsigned fieldSize;
+  SearchById::Mesh_ID key;
   unsigned fieldIndex;
 
-  CopyTransferUnpackInfo(std::vector<uint8_t>& buffer_, uint8_t* fieldData_, unsigned sentDataTypeKey_, unsigned fieldSize_, unsigned fieldIndex_)
-    : buffer(buffer_), fieldData(fieldData_), sentDataTypeKey(sentDataTypeKey_), fieldSize(fieldSize_), fieldIndex(fieldIndex_) {}
+  CopyTransferUnpackInfo(std::vector<uint8_t>& buffer_, uint8_t* fieldData_, unsigned sentDataTypeKey_, SearchById::Mesh_ID key_, unsigned fieldIndex_)
+    : buffer(buffer_)
+    , fieldData(fieldData_)
+    , sentDataTypeKey(sentDataTypeKey_)
+    , key(key_)
+    , fieldIndex(fieldIndex_){}
 };
 
 class TransferCopyById : public TransferBase {
@@ -74,17 +78,14 @@ public :
   }
 
   virtual ~TransferCopyById() {}
-  virtual void coarse_search()
+  virtual void coarse_search() override
   {
     m_search.do_search(m_mesha,m_meshb,m_key_to_target_processor);
     initialize_commsparse_buffers();
   }
-  virtual void communication() {}
-  virtual void local_search() {}
-  virtual void apply()
-  {
-    do_transfer();
-  }
+  virtual void communication() override {}
+  virtual void local_search() override {}
+  virtual void apply() override { do_transfer(); }
 
   void setup_translators();
 

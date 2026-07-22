@@ -11,18 +11,17 @@ smoother ->
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -65,18 +64,17 @@ smoother ->
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -119,18 +117,15 @@ smoother ->
 Level 3
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
-BuildAggregatesRandom (Phase 2a (secondary))
-BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -173,18 +168,15 @@ smoother ->
 Level 4
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
-BuildAggregatesRandom (Phase 2a (secondary))
-BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)

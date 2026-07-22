@@ -138,12 +138,12 @@ namespace Iovs_exodus {
     bool                                    UnderscoreVectors;
     bool                                    ApplyDisplacements;
     CatalystPipelineInfo                    catalystPipelineInfo;
-    const std::string ASSEMBLY_LABEL = "label";
-    const std::string ASSEMBLY_ROOT_NAME = "IOSS";
-    const std::string ASSEMBLY_ELEMENT_BLOCKS = "element_blocks";
-    const int PDS_UNSTRUCTURED_GRID_INDEX = 0;
-    int getElementBlocksAssemblyNode();
-    vtkUnstructuredGrid* getUnstructuredGrid(int blockId);
+    const std::string                       ASSEMBLY_LABEL              = "label";
+    const std::string                       ASSEMBLY_ROOT_NAME          = "IOSS";
+    const std::string                       ASSEMBLY_ELEMENT_BLOCKS     = "element_blocks";
+    const int                               PDS_UNSTRUCTURED_GRID_INDEX = 0;
+    int                                     getElementBlocksAssemblyNode();
+    vtkUnstructuredGrid                    *getUnstructuredGrid(int blockId);
   };
 
 } // namespace Iovs_exodus

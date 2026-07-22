@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,7 @@ namespace Skinner {
   class Interface
   {
   public:
-    Interface();
+    explicit Interface(std::string app_version);
 
     bool parse_options(int argc, char **argv);
 
@@ -45,6 +45,7 @@ namespace Skinner {
     std::string outFiletype_{"unknown"};
 
   public:
+    std::string version{};
     std::string decomp_method;
     std::string compose_output{"default"};
     double      maximum_time{std::numeric_limits<double>::max()};

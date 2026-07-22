@@ -76,6 +76,15 @@ struct IsInvalid
   }
 };
 
+struct EntityCommListInfoRankLess {
+  bool operator()(const EntityCommListInfo& info, EntityRank rank) const
+  { return info.key.rank() < rank; }
+  bool operator()(EntityRank rank, const EntityCommListInfo& info) const
+  { return rank < info.key.rank(); }
+};
+
+using PairIterEntityCommListInfo = PairIter<const EntityCommListInfo*>;
+
 }
 }
 

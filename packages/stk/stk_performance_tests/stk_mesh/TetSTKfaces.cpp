@@ -74,7 +74,7 @@ TEST(tet_faces, tet_faces)
 
   double start_time = stk::cpu_time();
 
-  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
+  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
   fixture.m_meta.commit();
   fixture.generate_mesh();
 
@@ -140,7 +140,7 @@ TEST(tet_faces, minimal_tet_faces)
 
   double start_time = stk::cpu_time();
 
-  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
+  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, mesh_dims[0], mesh_dims[1], mesh_dims[2]);
   fixture.m_meta.commit();
   fixture.generate_mesh();
 

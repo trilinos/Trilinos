@@ -73,7 +73,6 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
 
   unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta, communicator);
   const std::string generatedMeshSpecification = "generated:1x1x3";
   stk::io::fill_mesh(generatedMeshSpecification, bulk);
@@ -232,7 +231,6 @@ TEST(UnitTestGhosting, WithSharedFiltered)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x6";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -297,7 +295,6 @@ TEST(UnitTestGhosting, WithShared)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x6";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();

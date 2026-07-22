@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,7 +11,6 @@
 
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
-#include "Ioss_Utils.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -20,7 +19,7 @@ namespace Ioss {
   class St_Shell9 : public ElementVariableType
   {
   public:
-    static void factory() { static St_Shell9 registerThis; }
+    static void factory() { static St_Shell9 const registerThis; }
 
   protected:
     St_Shell9() : ElementVariableType(Ioss::Shell9::name, 9) {}
@@ -65,7 +64,7 @@ namespace {
 
 void Ioss::Shell9::factory()
 {
-  static Ioss::Shell9 registerThis;
+  static Ioss::Shell9 const registerThis;
   Ioss::St_Shell9::factory();
 }
 

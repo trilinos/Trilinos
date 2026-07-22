@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /*!
 \example lesson01_mpi_only_through_Tpetra.cpp
 \brief Initialization example for a code that only uses MPI through Tpetra.
@@ -15,18 +24,15 @@
 
 // Do something with the given communicator.  In this case, we just
 // print Tpetra's version to stdout on Process 0.
-void
-exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
-{
-  if (comm->getRank () == 0) {
+void exampleRoutine(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+  if (comm->getRank() == 0) {
     // On (MPI) Process 0, print out the Tpetra software version.
-    std::cout << Tpetra::version () << std::endl << std::endl;
+    std::cout << Tpetra::version() << std::endl
+              << std::endl;
   }
 }
 
-int
-main (int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
   // These "using" declarations make the code more concise, in that
   // you don't have to write the namespace along with the class or
   // object name.  This is especially helpful with commonly used
@@ -37,7 +43,7 @@ main (int argc, char *argv[])
   // Start up MPI, if using MPI.  Trilinos doesn't have to be built
   // with MPI; it's called a "serial" build if you build without MPI.
   // Tpetra::ScopeGuard hides this implementation detail.
-  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
   {
     // Never let Tpetra objects persist after either MPI_Finalize or
@@ -49,19 +55,19 @@ main (int argc, char *argv[])
     // MPI_COMM_WORLD.  The function knows whether or not we built with
     // MPI support.  If we didn't build with MPI, we'll get a
     // "communicator" with size 1, whose only process has rank 0.
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
     // Get my process' rank, and the total number of processes.
     // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
-    const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
+    const int myRank   = comm->getRank();
+    const int numProcs = comm->getSize();
 
     if (myRank == 0) {
       cout << "Total number of processes: " << numProcs << endl;
     }
 
     // Do something with the new communicator.
-    exampleRoutine (comm);
+    exampleRoutine(comm);
 
     // This tells the Trilinos test framework that the test passed.
     if (myRank == 0) {

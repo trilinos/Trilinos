@@ -35,7 +35,7 @@
 #include "stk_balance/internal/privateDeclarations.hpp"
 #include "stk_balance/fixSplitCoincidentElements.hpp"
 #include "stk_tools/mesh_clone/MeshClone.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_transfer_util/TransientFieldTransferById.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
 
 #include <sys/stat.h> // move us
@@ -82,10 +82,8 @@ BalanceIO::BalanceIO(MPI_Comm comm, const BalanceSettings& settings)
     m_copyMeta(m_copyBulk->mesh_meta_data()),
     m_mesh(nullptr)
 {
-  m_inputMeta.use_simple_fields();
   m_inputMeta.set_coordinate_field_name(m_settings.getCoordinateFieldName());
 
-  m_copyMeta.use_simple_fields();
 }
 
 BalanceMesh& BalanceIO::initial_decomp()
@@ -110,11 +108,12 @@ BalanceMesh& BalanceIO::initial_decomp()
 void BalanceIO::write(BalanceMesh& mesh)
 {
   stk::io::StkMeshIoBroker outputBroker;
-  outputBroker.use_simple_fields();
   outputBroker.set_bulk_data(mesh.get_bulk());
+
   outputBroker.set_attribute_field_ordering_stored_by_part_ordinal(m_inputBroker.get_attribute_field_ordering_stored_by_part_ordinal());
   m_inputBroker.cache_entity_list_for_transient_steps(true);
 
+  internal::logMessage(m_comm, "Writing "+std::to_string(m_inputBroker.get_num_time_steps())+" time steps");
   stk::transfer_utils::TransientFieldTransferById transfer(m_inputBroker, outputBroker);
   transfer.transfer_and_write_transient_fields(m_settings.get_output_filename());
 

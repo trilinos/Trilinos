@@ -56,12 +56,12 @@ void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double dist
 
   std::vector<std::pair<Sphere, IdentProc>> boxVector1;
   if (procId == 0) {
-    boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId));
+    boxVector1.push_back(stk::unit_test_util::generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId));
   }
 
   std::vector<std::pair<Sphere, IdentProc>> boxVector2;
   if (procId == numProcs-1) {
-    boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
+    boxVector2.push_back(stk::unit_test_util::generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId));
   }
 
   SearchResults boxIdPairResults;
@@ -87,18 +87,18 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
 
   if (procId == 0) {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         domain[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<Sphere, IdentProc>(0, 0, 0, radius, 1, procId);
+            stk::unit_test_util::device_generateBoxIdentProc<Sphere, IdentProc>(0, 0, 0, radius, 1, procId);
     });
   }
 
   if (procId == numProcs - 1) {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
         range[0] =
-            stk::unit_test_util::simple_fields::device_generateBoxIdentProc<Sphere, IdentProc>(axisOffset, axisOffset, 0,
+            stk::unit_test_util::device_generateBoxIdentProc<Sphere, IdentProc>(axisOffset, axisOffset, 0,
                                                                                                     radius, 2, procId);
     });
   }
@@ -107,7 +107,7 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
 
   stk::search::coarse_search(domain, range, searchMethod, comm, intersections);
 
-  Kokkos::View<IdentProcIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentProcIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   if (procId == 0 || (procId == numProcs-1)) {
@@ -189,6 +189,7 @@ TEST(CoarseSearchCorrectness, OverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.5;
   const unsigned expectedNumOverlap = 1;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -200,6 +201,7 @@ TEST(CoarseSearchCorrectness, NonOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 2.0;
   const unsigned expectedNumOverlap = 0;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -211,6 +213,7 @@ TEST(CoarseSearchCorrectness, JustEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.999999999;
   const unsigned expectedNumOverlap = 1;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -222,6 +225,7 @@ TEST(CoarseSearchCorrectness, NotQuiteEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 1.00001;
   const unsigned expectedNumOverlap = 0;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -233,6 +237,7 @@ TEST(CoarseSearchCorrectness, NotQuiteEdgeOverlappingSpheres_FloatTruncation_ARB
   double distanceBetweenSphereCenters = 1.0000000001;
   const unsigned expectedNumOverlap = 0;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -244,17 +249,18 @@ void host_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod,
   std::vector<SphereIdentPair> domain;
   std::vector<SphereIdentPair> range;
 
-  domain.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1)));
+  domain.emplace_back(stk::unit_test_util::box_ident_to_pair(
+      stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1)));
 
   const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
-  range.emplace_back(stk::unit_test_util::simple_fields::box_ident_to_pair(
-      stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(
+  range.emplace_back(stk::unit_test_util::box_ident_to_pair(
+      stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(
           axisOffset, axisOffset, 0, radius, 2)));
 
   LocalSearchResults intersections;
 
-  stk::search::local_coarse_search(domain, range, searchMethod, intersections);
+  bool sortSearchResults = true;
+  stk::search::local_coarse_search(domain, range, searchMethod, intersections, sortSearchResults);
 
   ASSERT_EQ(intersections.size(), expectedNumOverlap);
 
@@ -271,28 +277,30 @@ void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, cons
   auto range = Kokkos::View<SphereIdent*, stk::ngp::ExecSpace>("range box-ident", 1);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA(const unsigned & i) {
+    KOKKOS_LAMBDA(const unsigned & /*i*/) {
       domain[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1);
+          stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1);
 
       const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
       range[0] =
-          stk::unit_test_util::simple_fields::device_generateBoxIdent<Sphere, Ident>(axisOffset, axisOffset, 0,
+          stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(axisOffset, axisOffset, 0,
                                                                                           radius, 2);
     });
 
   auto intersections = Kokkos::View<IdentIntersection*, stk::ngp::ExecSpace>("intersections", 0);
 
-  stk::search::local_coarse_search(domain, range, searchMethod, intersections);
+  auto execSpace = stk::ngp::ExecSpace{};
+  bool sortSearchResults = true;
+  stk::search::local_coarse_search(domain, range, searchMethod, intersections, execSpace, sortSearchResults);
 
-  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);
 
   for (unsigned i = 0; i < expectedNumOverlap; ++i) {
-    EXPECT_EQ(intersections(i).domainIdent, 1);
-    EXPECT_EQ(intersections(i).rangeIdent,  2);
+    EXPECT_EQ(hostIntersections(i).domainIdent, 1);
+    EXPECT_EQ(hostIntersections(i).rangeIdent,  2);
   }
 }
 
@@ -365,6 +373,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_OverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.5;
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -376,6 +385,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_NonOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 2.0;
   const unsigned expectedNumOverlap = 0;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -387,6 +397,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_JustEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.999999999;
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -398,6 +409,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_NotQuiteEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 1.0000000001;
   const unsigned expectedNumOverlap = 0;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 

@@ -25,18 +25,8 @@ namespace Iovs {
   {
 
   public:
-    CatalystManagerBase(){};
-    virtual ~CatalystManagerBase(){};
-
-    struct ParseResult
-    {
-      std::string jsonParseResult = "";
-      bool        parseFailed     = true;
-    };
-
-    virtual void parsePhactoriFile(const std::string &filepath, ParseResult &pres) = 0;
-
-    virtual void parsePhactoriString(const std::string &phactori, ParseResult &pres) = 0;
+    CatalystManagerBase() {};
+    virtual ~CatalystManagerBase() {};
 
     virtual int getCatalystOutputIDNumber() = 0;
 

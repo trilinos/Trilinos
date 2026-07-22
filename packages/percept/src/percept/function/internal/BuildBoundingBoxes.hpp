@@ -55,7 +55,7 @@
       {
         m_notInitialized=true;  // force this object to be used only once
       }
-      bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const stk::mesh::BulkData& bulkData)
+      bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase */*field*/,  const stk::mesh::BulkData& bulkData)
       {
         if (m_notInitialized)
           throw std::runtime_error("BuildBoundingBoxes::operator(): you must re-construct this object before reusing it");

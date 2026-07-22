@@ -10,7 +10,7 @@
 namespace
 {
 
-class UnitTestRuleThreeViolation : public stk::unit_test_util::simple_fields::MeshFixture
+class UnitTestRuleThreeViolation : public stk::unit_test_util::MeshFixture
 {
 protected:
   stk::mesh::EntityVector get_shared_nodes_of_element(stk::mesh::Entity elem)

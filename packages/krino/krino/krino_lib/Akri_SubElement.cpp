@@ -6,6 +6,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_ContourUtils.hpp>
 #include <Akri_SubElement.hpp>
 #include <Akri_SubElementNodeAncestry.hpp>
 #include <Akri_DiagWriter.hpp>
@@ -110,8 +111,7 @@ static bool is_on_multiple_blocks(const stk::mesh::BulkData& mesh, stk::mesh::En
   {
     if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
        !stk::mesh::is_auto_declared_part(*part) &&
-       part->subsets().empty() &&
-       part->name().compare(0,7,"refine_") != 0)
+       part->subsets().empty())
     {
       if (foundVolumePart) return true;
       foundVolumePart = true;
@@ -378,7 +378,7 @@ bool on_interface_or_io_parts_have_changed(const CDMesh & mesh, const Phase_Supp
   if (newParts != oldParts)
     return true;
   for (auto && partOrdinal : newParts)
-    if (phaseSupport.is_interface(&mesh.stk_meta().get_part(partOrdinal)))
+    if (phaseSupport.is_interface(mesh.stk_meta().get_part(partOrdinal)))
       return true;
   return false;
 }
@@ -946,7 +946,7 @@ SubElement::determine_decomposed_elem_phase(const std::vector<Surface_Identifier
   }
   else
   {
-    const PhaseTag startPhase = my_phase.empty() ? my_owner->get_phase() : my_phase;
+    const PhaseTag & startPhase = my_phase.empty() ? my_owner->get_phase() : my_phase;
     my_phase = update_phase(surfaceIDs, startPhase, my_owner->get_sorted_cutting_interfaces(), myInterfaceSigns);
   }
 
@@ -1088,7 +1088,7 @@ SubElement::maximum_relative_angle() const
 }
 
 void
-SubElement::decompose_edges(CDMesh & mesh, const InterfaceID interface_key)
+SubElement::decompose_edges(CDMesh & /*mesh*/, const InterfaceID /*interface_key*/)
 {
   const std::string & owner_type = my_owner->topology().name();
   const std::string & sub_type = topology().name();
@@ -1358,7 +1358,7 @@ SubElement_Tri_3::determine_node_signs(const CDMesh & mesh, const InterfaceID in
 }
 
 void
-SubElement_Tri_3::determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key)
+SubElement_Tri_3::determine_node_scores(const CDMesh & /*mesh*/, const InterfaceID /*interface_key*/)
 {
   // No-op, node scores are not used on tris
 }
@@ -1414,27 +1414,22 @@ SubElement_Tri_3::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
 void
 SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,3> & node_signs)
 {
+  const int caseId = ContourTri::compute_case_id(node_signs);
 
-  const int case_id =
-        (node_signs[0]+1) +
-        (node_signs[1]+1)*3 +
-        (node_signs[2]+1)*9;
+  if (caseId == 0  || // ls[0]<0 && ls[1]<0 && ls[2]<0
+      caseId == 13 || // ls[0]=0 && ls[1]=0 && ls[2]=0
+      caseId == 26)   // ls[0]>0 && ls[1]>0 && ls[2]>0
+  {
+    const int sign = (caseId==0) ? -1 : 1;
+    update_interface_signs(interface_key, sign);
+    return;
+  }
 
   NodeVec lnodes = my_nodes;
   lnodes.resize(6,(SubElementNode *)NULL);
 
-  static const unsigned case_permutations[] =
-    { 0, 0, 0, 2, 0, 0, 2, 1, 1, 1, //  0-9
-      1, 2, 2, 0, 2, 2, 1, 1, 1, 1, //  10-19
-      2, 0, 0, 2, 0, 0, 0 };        //  20-26
-  static const unsigned permute_case_ids[] =
-    { 0, 1, 2, 1, 4, 5, 2,21,24, 1, //  0-9
-      4,21, 4,13,22, 5,22,25, 2, 5, //  10-19
-     24,21,22,25,24,25,26 };        //  20-26
-
-  stk::topology topo = stk::topology::TRIANGLE_6_2D;
-  std::vector<unsigned> permute(6);
-  topo.permutation_node_ordinals(case_permutations[case_id], permute.begin());
+  const std::array<unsigned,6> & permute = ContourTri::get_permuted_node_ordinals(caseId);
+  const int permutedCaseId = ContourTri::get_permuted_case_id(caseId);
 
   const unsigned i0 = permute[0];
   const unsigned i1 = permute[1];
@@ -1447,29 +1442,17 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
   const unsigned s1 = permute[1];
   const unsigned s2 = permute[2];
 
-  const int permute_case_id = permute_case_ids[case_id];
-
-  // FIXME: Remove this diagnostic
-  std::vector<int> node_val(3);
-  node_val[2] = case_id/9;
-  node_val[1] = (case_id-9*node_val[2])/3;
-  node_val[0] =  case_id-9*node_val[2]-3*node_val[1];
-  STK_ThrowAssert(permute_case_id == (node_val[i0] + node_val[i1]*3 + node_val[i2]*9));
-
   const Simplex_Generation_Method simplexMethod = mesh.get_cdfem_support().get_simplex_generation_method();
 
-  switch (permute_case_id)
+  switch (permutedCaseId)
   {
-    case 0:  // ls[0]<0 && ls[1]<0 && ls[2]<0
     case 1:  // ls[0]=0 && ls[1]<0 && ls[2]<0
     {
       update_interface_signs(interface_key, -1);
     }
     break;
 
-    case 13: // ls[0]=0 && ls[1]=0 && ls[2]=0
     case 25: // ls[0]=0 && ls[1]>0 && ls[2]>0
-    case 26: // ls[0]>0 && ls[1]>0 && ls[2]>0
     {
       update_interface_signs(interface_key, +1);
     }
@@ -1484,7 +1467,7 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
 
       const bool diag = determine_diagonal_for_cut_triangle(simplexMethod, lnodes, i0, i1, i2, i3, i5);
 
-      const int sign = (permute_case_id==2) ? 1 : -1;
+      const int sign = (permutedCaseId==2) ? 1 : -1;
       handle_tri(lnodes, subelement_interface_signs(interface_key, sign), i0,i3,i5, s0,-1,s2, false,true,false);
       handle_quad(mesh, lnodes, subelement_interface_signs(interface_key, -sign), i3,i1,i2,i5, s0,s1,s2,-1, false,false,false,true, diag);
     }
@@ -1493,7 +1476,7 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     case 4:  // ls[0]=0 && ls[1]=0 && ls[2]<0
     case 22: // ls[0]=0 && ls[1]=0 && ls[2]>0
     {
-      const int sign = (permute_case_id==4) ? -1 : 1;
+      const int sign = (permutedCaseId==4) ? -1 : 1;
       update_interface_signs(interface_key, sign);
     }
     break;
@@ -1504,23 +1487,23 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
       lnodes[i5] = SubElementNode::common_child({lnodes[i2], lnodes[i0]});
       STK_ThrowAssert(nullptr != lnodes[i5]);
 
-      const int sign = (permute_case_id==5) ? 1 : -1;
+      const int sign = (permutedCaseId==5) ? 1 : -1;
       handle_tri(lnodes, subelement_interface_signs(interface_key,  sign), i1,i5,i0, -1,s2,s0, true,false,false);
       handle_tri(lnodes, subelement_interface_signs(interface_key, -sign), i5,i1,i2, -1,s1,s2, true,false,false);
     }
     break;
 
-    default: ThrowRuntimeError("Subelement decomposition error. case_id,permute_case_id=" << case_id << "," << permute_case_id);
+    default: ThrowRuntimeError("Subelement decomposition error. caseId, permutedCaseId=" << caseId << "," << permutedCaseId);
   }
 
   if (krinolog.shouldPrint(LOG_DEBUG))
   {
-    debug_subelements(lnodes, interface_key, case_id);
+    debug_subelements(lnodes, interface_key, caseId);
   }
 }
 
 bool
-SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_Method & simplexMethod, const NodeVec & lnodes, const int i0, const int i1, const int i2, const int i3, const int i5)
+SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_Method & simplexMethod, const NodeVec & lnodes, const int /*i0*/, const int i1, const int i2, const int i3, const int i5)
 {
   /*
    *     2 o
@@ -1543,13 +1526,12 @@ SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_M
   }
   else
   {
-    STK_ThrowAssert(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE);
+    STK_ThrowAssert(simplexMethod == CUT_QUADS_BY_DEFAULT_METHOD || simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE);
 
     // Angle-based scheme
     // Select diagonal that cuts largest angle in quad.  Since there isn't an issue with
     // conforming, this is always possible (unlike tet).
-    const int config = ElementObj::evaluate_quad(lnodes[i3],lnodes[i1],lnodes[i2],lnodes[i5]);
-    return (config == -1);
+    return ElementObj::will_cutting_quad_from_0to2_cut_largest_angle(lnodes[i3],lnodes[i1],lnodes[i2],lnodes[i5]);
   }
 }
 
@@ -1558,7 +1540,7 @@ SubElement_Tri_3::handle_tri( NodeVec & lnodes,
                                const std::vector<int> & subInterfaceSigns,
                                const int i0, const int i1, const int i2,
                                const int s0, const int s1, const int s2,
-                               const bool is_interface0, const bool is_interface1, const bool is_interface2)
+                               const bool /*is_interface0*/, const bool /*is_interface1*/, const bool /*is_interface2*/)
 {
   STK_ThrowAssert(!is_degenerate(lnodes, i0,i1,i2));
 
@@ -1578,7 +1560,7 @@ SubElement_Tri_3::handle_tri( NodeVec & lnodes,
 }
 
 void
-SubElement_Tri_3::handle_quad( CDMesh & mesh,
+SubElement_Tri_3::handle_quad( CDMesh & /*mesh*/,
     NodeVec & lnodes,
     const std::vector<int> & subInterfaceSigns,
     const int i0, const int i1, const int i2, const int i3,
@@ -1742,14 +1724,14 @@ struct FaceIntersection
 };
 
 void
-SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level)
+SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, int level)
 {
 
   if ( my_subelements.size() > 0 )
   {
     for ( auto && subelem : my_subelements )
     {
-      subelem->cut_face_interior_intersection_points(mesh, interface1, interface2, level);
+      subelem->cut_face_interior_intersection_points(mesh, level);
     }
     return;
   }
@@ -1765,7 +1747,7 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const Int
       faceNodes[i] = my_nodes[permuteNodes[iFace][i]];
 
     std::vector<ElementIntersection> faceIntersections;
-    my_owner->fill_face_interior_intersections(faceNodes, interface1, interface2, faceIntersections);
+    my_owner->fill_face_interior_intersections(faceNodes, faceIntersections);
 
     for (auto && faceIntersection : faceIntersections)
     {
@@ -1786,32 +1768,11 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const Int
       {
         STK_ThrowRequireMsg(level < 8, "Face cut recursion level exceeded.");
         cut_face_intersection_point_with_permutation(mesh, permuteNodes[iFace], permuteSides[iFace], faceNodeWeights, faceIntersection.sortedDomains);
-        cut_face_interior_intersection_points(mesh, interface1, interface2, ++level);
+        cut_face_interior_intersection_points(mesh, ++level);
         return;
       }
     }
   }
-}
-
-const unsigned **
-SubElement_Tet_4::get_permutation_side_ordinals()
-{
-  static const unsigned permutation_side_ordinals0[]  = { 0, 1, 2, 3 };
-  static const unsigned permutation_side_ordinals1[]  = { 1, 2, 0, 3 };
-  static const unsigned permutation_side_ordinals2[]  = { 2, 0, 1, 3 };
-  static const unsigned permutation_side_ordinals3[]  = { 2, 1, 3, 0 };
-  static const unsigned permutation_side_ordinals4[]  = { 1, 3, 2, 0 };
-  static const unsigned permutation_side_ordinals5[]  = { 3, 2, 1, 0 };
-  static const unsigned permutation_side_ordinals6[]  = { 3, 1, 0, 2 };
-  static const unsigned permutation_side_ordinals7[]  = { 1, 0, 3, 2 };
-  static const unsigned permutation_side_ordinals8[]  = { 0, 3, 1, 2 };
-  static const unsigned permutation_side_ordinals9[]  = { 0, 2, 3, 1 };
-  static const unsigned permutation_side_ordinals10[] = { 2, 3, 0, 1 };
-  static const unsigned permutation_side_ordinals11[] = { 3, 0, 2, 1 };
-  static const unsigned * permutation_side_ordinals[] =
-    { permutation_side_ordinals0 , permutation_side_ordinals1 , permutation_side_ordinals2, permutation_side_ordinals3 , permutation_side_ordinals4 , permutation_side_ordinals5 ,
-      permutation_side_ordinals6 , permutation_side_ordinals7 , permutation_side_ordinals8,  permutation_side_ordinals9, permutation_side_ordinals10, permutation_side_ordinals11 };
-  return permutation_side_ordinals;
 }
 
 double SubElement_Tet_4::tet_volume(const std::array<stk::math::Vector3d,4> & nodes)
@@ -1891,24 +1852,21 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
     const int permutation = edge_case_permutations[edge_case_id];
     STK_ThrowRequire(permutation >= 0);
 
-    stk::topology topo = stk::topology::TETRAHEDRON_10;
-    std::vector<unsigned> permute_nodes(10);
-    topo.permutation_node_ordinals(permutation, permute_nodes.begin());
+    const std::array<unsigned, 10> & permutedNodeOrdinals = ContourTet::get_permuted_node_ordinals_for_permutation(permutation);
+    const unsigned i0 = permutedNodeOrdinals[0];
+    const unsigned i1 = permutedNodeOrdinals[1];
+    const unsigned i2 = permutedNodeOrdinals[2];
+    const unsigned i3 = permutedNodeOrdinals[3];
+    const unsigned i5 = permutedNodeOrdinals[5];
+    const unsigned i6 = permutedNodeOrdinals[6];
+    const unsigned i7 = permutedNodeOrdinals[7];
+    const unsigned i8 = permutedNodeOrdinals[8];
 
-    const unsigned i0 = permute_nodes[0];
-    const unsigned i1 = permute_nodes[1];
-    const unsigned i2 = permute_nodes[2];
-    const unsigned i3 = permute_nodes[3];
-    const unsigned i5 = permute_nodes[5];
-    const unsigned i6 = permute_nodes[6];
-    const unsigned i7 = permute_nodes[7];
-    const unsigned i8 = permute_nodes[8];
-
-    const unsigned ** permutation_side_ordinals = get_permutation_side_ordinals();
-    const unsigned s0 = permutation_side_ordinals[permutation][0];
-    const unsigned s1 = permutation_side_ordinals[permutation][1];
-    const unsigned s2 = permutation_side_ordinals[permutation][2];
-    const unsigned s3 = permutation_side_ordinals[permutation][3];
+    const std::array<unsigned, 4> & permutedSideOrdinals = ContourTet::get_permuted_side_ordinals_for_permutation(permutation);
+    const unsigned s0 = permutedSideOrdinals[0];
+    const unsigned s1 = permutedSideOrdinals[1];
+    const unsigned s2 = permutedSideOrdinals[2];
+    const unsigned s3 = permutedSideOrdinals[3];
 
     NodeVec lnodes = my_nodes;
     lnodes.resize(10,(SubElementNode *)NULL);
@@ -2017,7 +1975,7 @@ static void determine_node_scores_on_triangle_face( const Simplex_Generation_Met
    *   0   3   1
    */
 
-  if (simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT)
+  if (simplexMethod == CUT_QUADS_BY_DEFAULT_METHOD || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT)
   {
     //  nodal edge cut length based criterion
     //  Use globally consistent comparison at nodes based on the shortest relative edge length for the cut edges that use the node.
@@ -2048,7 +2006,7 @@ static void determine_node_scores_on_triangle_face( const Simplex_Generation_Met
 }
 
 void
-SubElement_Tet_4::determine_node_scores_on_face( const CDMesh & mesh, const InterfaceID interface, const int i0, const int i1, const int i2 )
+SubElement_Tet_4::determine_node_scores_on_face( const CDMesh & mesh, const InterfaceID /*interface*/, const int i0, const int i1, const int i2 )
 {
   const Simplex_Generation_Method simplexMethod = mesh.get_cdfem_support().get_simplex_generation_method();
 
@@ -2090,78 +2048,46 @@ SubElement_Tet_4::decompose_edges(CDMesh & mesh, const InterfaceID interface_key
 void
 SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,4> & node_signs)
 {
-
   // create between 4 to 6 conforming tetrahedral subelements
 
-  const int case_id =
-        (node_signs[0]+1) +
-        (node_signs[1]+1)*3 +
-        (node_signs[2]+1)*9 +
-        (node_signs[3]+1)*27;
+  const int caseId = ContourTet::compute_case_id(node_signs);
+
+  if (caseId == 0  || // ls[0]<0 && ls[1]<0 && ls[2]<0 && ls[3]<0
+      caseId == 40 || // ls[0]=0 && ls[1]=0 && ls[2]=0 && ls[3]=0
+      caseId == 80)   // ls[0]>0 && ls[1]>0 && ls[2]>0 && ls[3]>0
+  {
+    const int sign = (caseId==0) ? -1 : 1;
+    update_interface_signs(interface_key, sign);
+    return;
+  }
 
   NodeVec lnodes = my_nodes;
   lnodes.resize(10,(SubElementNode *)NULL);
 
-  static const unsigned case_permutations[] =
-    { 0, 0, 0, 1, 0, 0, 1, 5, 0, 2, //  0-9
-      2, 6, 1, 0, 0, 1, 1,10, 2, 2, //  10-19
-      2,11, 2, 4, 1, 8, 4, 4, 3, 3, //  20-29
-      4, 3, 3, 9, 5, 7, 7, 6, 6, 9, //  30-39
-      0, 9, 9, 6, 7, 7, 7, 9,11, 3, //  40-49
-      4, 3, 3, 4, 4, 8, 3, 4, 4,11, //  50-59
-      4, 2, 2,10, 8, 1,10, 0, 1, 6, //  60-69
-      2, 2, 7, 5, 1, 0, 0, 1, 0, 0, //  70-79
-      0 };                          //  80
+  const int permutedCaseId = ContourTet::get_permuted_case_id(caseId);
+  const std::array<unsigned,10> & permutedNodeOrdinals = ContourTet::get_permuted_node_ordinals(caseId);
 
-  stk::topology topo = stk::topology::TETRAHEDRON_10;
-  std::vector<unsigned> permute_nodes(10);
-  topo.permutation_node_ordinals(case_permutations[case_id], permute_nodes.begin());
+  const unsigned i0 = permutedNodeOrdinals[0];
+  const unsigned i1 = permutedNodeOrdinals[1];
+  const unsigned i2 = permutedNodeOrdinals[2];
+  const unsigned i3 = permutedNodeOrdinals[3];
+  const unsigned i4 = permutedNodeOrdinals[4];
+  const unsigned i5 = permutedNodeOrdinals[5];
+  const unsigned i6 = permutedNodeOrdinals[6];
+  const unsigned i7 = permutedNodeOrdinals[7];
+  const unsigned i8 = permutedNodeOrdinals[8];
 
-  const unsigned i0 = permute_nodes[0];
-  const unsigned i1 = permute_nodes[1];
-  const unsigned i2 = permute_nodes[2];
-  const unsigned i3 = permute_nodes[3];
-  const unsigned i4 = permute_nodes[4];
-  const unsigned i5 = permute_nodes[5];
-  const unsigned i6 = permute_nodes[6];
-  const unsigned i7 = permute_nodes[7];
-  const unsigned i8 = permute_nodes[8];
-
-  const unsigned ** permutation_side_ordinals = get_permutation_side_ordinals();
-  const unsigned s0 = permutation_side_ordinals[case_permutations[case_id]][0];
-  const unsigned s1 = permutation_side_ordinals[case_permutations[case_id]][1];
-  const unsigned s2 = permutation_side_ordinals[case_permutations[case_id]][2];
-  const unsigned s3 = permutation_side_ordinals[case_permutations[case_id]][3];
-
-  static const unsigned permute_case_ids[] =
-    { 0, 1, 2, 1, 4, 5, 2, 5, 8, 1, //  0-9
-      4, 5, 4,13,14, 5,14,75, 2, 5, //  10-19
-      8, 5,14,75, 8,75,78, 1, 4, 5, //  20-29
-      4,13,14, 5,14,75, 4,13,14,13, //  30-39
-     40,67,14,67,76, 5,14,75,14,67, //  40-49
-     76,75,76,79, 2, 5, 8, 5,14,75, //  50-59
-      8,75,78, 5,14,75,14,67,76,75, //  60-69
-     76,79, 8,75,78,75,76,79,78,79, //  70-79
-     80 };                          //  80
-
-  const int permute_case_id = permute_case_ids[case_id];
-
-  // FIXME: Remove this diagnostic
-  std::vector<int> node_val(4);
-  node_val[3] = case_id/27;
-  node_val[2] = (case_id-27*node_val[3])/9;
-  node_val[1] = (case_id-27*node_val[3]-9*node_val[2])/3;
-  node_val[0] =  case_id-27*node_val[3]-9*node_val[2]-3*node_val[1];
-  STK_ThrowRequire(permute_case_id == (node_val[i0] + node_val[i1]*3 + node_val[i2]*9 + node_val[i3]*27));
+  const std::array<unsigned, 4> & permutedSideOrdinals = ContourTet::get_permuted_side_ordinals(caseId);
+  const unsigned s0 = permutedSideOrdinals[0];
+  const unsigned s1 = permutedSideOrdinals[1];
+  const unsigned s2 = permutedSideOrdinals[2];
+  const unsigned s3 = permutedSideOrdinals[3];
 
   const Simplex_Generation_Method simplexMethod = mesh.get_cdfem_support().get_simplex_generation_method();
   const bool globalIDsAreParallelConsistent = mesh.get_cdfem_support().get_global_ids_are_parallel_consistent();
 
-  //krinolog << "permute_case_id " << permute_case_id << stk::diag::dendl;
-
-  switch (permute_case_id)
+  switch (permutedCaseId)
   {
-    case 0:  // ls[0]<0 && ls[1]<0 && ls[2]<0 && ls[3]<0
     case 1:  // ls[0]=0 && ls[1]<0 && ls[2]<0 && ls[3]<0
     case 4:  // ls[0]=0 && ls[1]=0 && ls[2]<0 && ls[3]<0
     {
@@ -2169,10 +2095,8 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     }
     break;
 
-    case 40: // ls[0]=0 && ls[1]=0 && ls[2]=0 && ls[3]=0
     case 76: // ls[0]=0 && ls[1]=0 && ls[2]>0 && ls[3]>0
     case 79: // ls[0]=0 && ls[1]>0 && ls[2]>0 && ls[3]>0
-    case 80: // ls[0]>0 && ls[1]>0 && ls[2]>0 && ls[3]>0
     {
       update_interface_signs(interface_key, +1);
     }
@@ -2181,7 +2105,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     case 2:  // ls[0]>0 && ls[1]<0 && ls[2]<0 && ls[3]<0
     case 78: // ls[0]<0 && ls[1]>0 && ls[2]>0 && ls[3]>0
     {
-      const int sign = (permute_case_id==2) ? -1 : 1;
+      const int sign = (permutedCaseId==2) ? -1 : 1;
 
       lnodes[i4] = SubElementNode::common_child({lnodes[i0], lnodes[i1]});
       lnodes[i6] = SubElementNode::common_child({lnodes[i0], lnodes[i2]});
@@ -2203,7 +2127,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     case 5:  // ls[0]>0 && ls[1]=0 && ls[2]<0 && ls[3]<0
     case 75: // ls[0]<0 && ls[1]=0 && ls[2]>0 && ls[3]>0
     {
-      const int sign = (permute_case_id==5) ? -1 : 1;
+      const int sign = (permutedCaseId==5) ? -1 : 1;
 
       lnodes[i6] = SubElementNode::common_child({lnodes[i0], lnodes[i2]});
       lnodes[i7] = SubElementNode::common_child({lnodes[i0], lnodes[i3]});
@@ -2246,7 +2170,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
     case 13: // ls[0]=0 && ls[1]=0 && ls[2]=0 && ls[3]<0
     case 67: // ls[0]=0 && ls[1]=0 && ls[2]=0 && ls[3]>0
     {
-      const int sign = (permute_case_id==13) ? -1 : 1;
+      const int sign = (permutedCaseId==13) ? -1 : 1;
       update_interface_signs(interface_key, sign);
     }
     break;
@@ -2266,11 +2190,11 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
 
   if (krinolog.shouldPrint(LOG_DEBUG))
   {
-    debug_subelements(lnodes, interface_key, case_id);
+    debug_subelements(lnodes, interface_key, caseId);
   }
 }
 
-bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_Generation_Method & simplexMethod, const bool globalIDsAreParallelConsistent, const NodeVec & lnodes, const int i0, const int i1, const int i2, const int i3, const int i5)
+bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_Generation_Method & simplexMethod, const bool globalIDsAreParallelConsistent, const NodeVec & lnodes, const int /*i0*/, const int i1, const int i2, const int /*i3*/, const int /*i5*/)
 {
   /*
    *     2 o
@@ -2290,7 +2214,7 @@ bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_
   }
   else
   {
-    STK_ThrowRequire(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT);
+    STK_ThrowAssert(simplexMethod == CUT_QUADS_BY_DEFAULT_METHOD  || simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT);
     return SubElementNode::higher_priority_by_score_then_ancestry(*lnodes[i2],*lnodes[i1], globalIDsAreParallelConsistent);
   }
 }
@@ -2594,7 +2518,7 @@ SubElement::parametric_distance( const SubElementNode * node0, const SubElementN
   return std::sqrt(0.5*sum_sqr_dist);
 }
 
-void set_node_signs_for_edge(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2, const int node1Sign, const int node2Sign, const double crossingLocation, const CDFEM_Snapper & snapper)
+void set_node_signs_for_edge(const InterfaceID /*interface*/, const SubElementNode * node1, const SubElementNode * node2, const int node1Sign, const int node2Sign, const double crossingLocation, const CDFEM_Snapper & snapper)
 {
   if (node1Sign != node2Sign)
   {
@@ -2741,13 +2665,13 @@ SubElement::decompose(CDMesh & mesh, const InterfaceID interface_key)
 }
 
 std::vector<int>
-SubElement::get_edges_with_children(const InterfaceID & interface) const
+SubElement::get_edges_with_children(const InterfaceID & /*interface*/) const
 {
   // Iterate edges looking for any common children of the edge nodes
   const stk::topology Top = topology();
   const int num_edges = Top.num_edges();
-
   std::vector<int> edgesWithChildren;
+
   for ( int edge = 0; edge < num_edges; ++edge )
   {
     const unsigned * edge_node_ordinals = get_edge_node_ordinals(Top, edge);
@@ -2757,6 +2681,7 @@ SubElement::get_edges_with_children(const InterfaceID & interface) const
     const SubElementNode * child = SubElementNode::common_child({node0, node1});
     if( child )
     {
+      edgesWithChildren.reserve(num_edges);
       if(krinolog.shouldPrint(LOG_DEBUG))
       {
         krinolog << "Found hanging node on edge " << edge << " of element id=" << entityId() << "\n";
@@ -2801,7 +2726,7 @@ SubElement::build_quadratic_subelements(CDMesh & mesh)
 }
 
 void
-SubElement::cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level)
+SubElement::cut_face_interior_intersection_points(CDMesh & /*mesh*/, int /*level*/)
 {
 
   if (topology().num_faces() == 0)

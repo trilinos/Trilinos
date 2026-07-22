@@ -12,38 +12,9 @@
 #include <stk_math/StkVector.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_SimplexGradient.hpp>
 
 namespace krino {
-
-double calculate_gradient_magnitude_triangle(const std::array<stk::math::Vector3d,3> & x, const std::array<double,3> & d)
-{
-  const double d10 = d[1] - d[0];
-  const double d20 = d[2] - d[0];
-  const stk::math::Vector3d x10 = x[1] - x[0];
-  const stk::math::Vector3d x20 = x[2] - x[0];
-
-  const double detJ = (x10[0]*x20[1]-x20[0]*x10[1]);
-  const stk::math::Vector3d grad = d10*stk::math::Vector3d(x20[1],-x20[0],0.0) + d20*stk::math::Vector3d(-x10[1],x10[0],0.0);
-  return grad.length()/detJ;
-}
-
-double calculate_gradient_magnitude_tetrahedron(const std::array<stk::math::Vector3d,4> & x, const std::array<double,4> & d)
-{
-  const double d10 = d[1] - d[0];
-  const double d20 = d[2] - d[0];
-  const double d30 = d[3] - d[0];
-  const stk::math::Vector3d x10 = x[1] - x[0];
-  const stk::math::Vector3d x20 = x[2] - x[0];
-  const stk::math::Vector3d x30 = x[3] - x[0];
-
-  const stk::math::Vector3d x10_x_x20 = Cross(x10,x20);
-  const stk::math::Vector3d x20_x_x30 = Cross(x20,x30);
-  const stk::math::Vector3d x30_x_x10 = Cross(x30,x10);
-
-  const double detJ = Dot(x30,x10_x_x20);
-  const stk::math::Vector3d grad = d10*x20_x_x30 + d20*x30_x_x10 + d30*x10_x_x20;
-  return grad.length()/detJ;
-}
 
 double calculate_gradient_magnitude(const int npe,
     const stk::mesh::Entity * elem_nodes,
@@ -56,7 +27,7 @@ double calculate_gradient_magnitude(const int npe,
   {
     const std::array<stk::math::Vector3d,3> x{get_coordinates(elem_nodes[0]), get_coordinates(elem_nodes[1]), get_coordinates(elem_nodes[2])};
     const std::array<double,3> d{*field_data<double>(dRef, elem_nodes[0]), *field_data<double>(dRef, elem_nodes[1]), *field_data<double>(dRef, elem_nodes[2])};
-    mag_grad = calculate_gradient_magnitude_triangle(x,d);
+    mag_grad = calculate_triangle2d_gradient_magnitude(x,d);
   }
   else
   {
@@ -64,7 +35,7 @@ double calculate_gradient_magnitude(const int npe,
 
     const std::array<stk::math::Vector3d,4> x{get_coordinates(elem_nodes[0]), get_coordinates(elem_nodes[1]), get_coordinates(elem_nodes[2]), get_coordinates(elem_nodes[3])};
     const std::array<double,4> d{*field_data<double>(dRef, elem_nodes[0]), *field_data<double>(dRef, elem_nodes[1]), *field_data<double>(dRef, elem_nodes[2]), *field_data<double>(dRef, elem_nodes[3])};
-    mag_grad = calculate_gradient_magnitude_tetrahedron(x,d);
+    mag_grad = calculate_tetrahedron_gradient_magnitude(x,d);
   }
 
   return mag_grad;
@@ -81,7 +52,7 @@ double calculate_gradient_magnitude(const int npe,
   {
     const std::array<stk::math::Vector3d,3> x{stk::math::Vector3d(field_data<double>(xRef, elem_nodes[0]),2), stk::math::Vector3d(field_data<double>(xRef, elem_nodes[1]),2), stk::math::Vector3d(field_data<double>(xRef, elem_nodes[2]),2)};
     const std::array<double,3> d{*field_data<double>(dRef, elem_nodes[0]), *field_data<double>(dRef, elem_nodes[1]), *field_data<double>(dRef, elem_nodes[2])};
-    mag_grad = calculate_gradient_magnitude_triangle(x,d);
+    mag_grad = calculate_triangle2d_gradient_magnitude(x,d);
   }
   else
   {
@@ -89,7 +60,7 @@ double calculate_gradient_magnitude(const int npe,
 
     const std::array<stk::math::Vector3d,4> x{stk::math::Vector3d(field_data<double>(xRef, elem_nodes[0])), stk::math::Vector3d(field_data<double>(xRef, elem_nodes[1])), stk::math::Vector3d(field_data<double>(xRef, elem_nodes[2])), stk::math::Vector3d(field_data<double>(xRef, elem_nodes[3]))};
     const std::array<double,4> d{*field_data<double>(dRef, elem_nodes[0]), *field_data<double>(dRef, elem_nodes[1]), *field_data<double>(dRef, elem_nodes[2]), *field_data<double>(dRef, elem_nodes[3])};
-    mag_grad = calculate_gradient_magnitude_tetrahedron(x,d);
+    mag_grad = calculate_tetrahedron_gradient_magnitude(x,d);
   }
 
   return mag_grad;

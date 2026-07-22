@@ -1,0 +1,209 @@
+/*! \page tempus_tutorial_transition_03_04 Transition from Example 3 to Example 4
+ *
+ *  \section tempus_tutorial_transition_03_04_goal Goal
+ *
+ *  The primary goal of \ref example-04 is to move from a single
+ *  \ref Tempus::SolutionState to a \ref Tempus::SolutionHistory while
+ *  preserving the same \ref Thyra::ModelEvaluator-based model, the same
+ *  explicit Forward Euler update, the same simple tabular output, and the same
+ *  regression-testing workflow used in \ref example-03.
+ *
+ *  New concepts introduced are:
+ *
+ *  - \ref Tempus::SolutionHistory
+ *    - stores and manages multiple \ref Tempus::SolutionState objects
+ *      during time integration
+ *  - `Tempus::createSolutionHistoryState()`
+ *    - creates a solution history initialized with an initial solution state
+ *  - `initWorkingState()`
+ *    - initializes a working state for the next tentative time step
+ *  - `getCurrentState()`
+ *    - returns the current accepted solution state
+ *  - `getWorkingState()`
+ *    - returns the tentative working solution state
+ *  - `getCurrentTime()`
+ *    - returns the time of the current accepted solution state
+ *  - `getCurrentIndex()`
+ *    - returns the index of the current accepted solution state
+ *  - `promoteWorkingState()`
+ *    - promotes the accepted working state to become the new current state
+ *
+ *  This is the first step in moving from state-based solution management
+ *  to history-based solution management. That transition is important
+ *  because many time integration algorithms require access to multiple
+ *  states, including the current solution, tentative working states,
+ *  and previously accepted states.
+ *
+ *  \section tempus_tutorial_transition_03_04_same What stays the same
+ *
+ *  - The van der Pol model is still provided by a \ref Thyra::ModelEvaluator.
+ *  - The timestepper is still Forward Euler.
+ *  - The application still controls the time loop directly.
+ *  - The output table still reports the step index, time, \f$x_0\f$, and \f$x_1\f$.
+ *  - The regression check remains a separate final comparison.
+ *
+ *  \section tempus_tutorial_transition_03_04_snippets Selected code excerpts
+ *
+ *  The code excerpts below highlight the main changes needed to move from a
+ *  single \ref Tempus::SolutionState to a \ref Tempus::SolutionHistory.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_03_04_snippet1 Create the solution history
+ *
+ *  <b>Create a SolutionHistory.</b> The initial condition is still stored in
+ *  a \ref Tempus::SolutionState, but that state is now inserted into a
+ *  \ref Tempus::SolutionHistory.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  auto solState = Tempus::createSolutionStateX(
+ *                    model->getNominalValues().get_x()->clone_v());
+ *  solState->setIndex   (0);
+ *  solState->setTime    (0.0);
+ *  solState->setTimeStep(0.0);
+ *  solState->setSolutionStatus(Tempus::Status::PASSED);
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  auto solState = Tempus::createSolutionStateX(
+ *                    model->getNominalValues().get_x()->clone_v());
+ *  solState->setIndex   (0);
+ *  solState->setTime    (0.0);
+ *  solState->setTimeStep(0.0);
+ *  solState->setSolutionStatus(Tempus::Status::PASSED);
+ *
+ *  auto solHistory = Tempus::createSolutionHistoryState<double>(solState);
+ *  @endcode
+ *
+ *  The initial condition remains the same, but it is now managed through a
+ *  \ref Tempus::SolutionHistory.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_03_04_snippet2 Access current and working states
+ *
+ *  <b>Use SolutionHistory to access states.</b> Instead of working directly
+ *  with a single solution state, the application now asks the history object
+ *  for the current and working states.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  while (solState->getSolutionStatus() == Tempus::Status::PASSED &&
+ *         solState->getTime() < finalTime &&
+ *         solState->getIndex() < nTimeSteps) {
+ *
+ *    RCP<Thyra::VectorBase<double> > x_n   = solState->getX();
+ *    RCP<Thyra::VectorBase<double> > x_np1 = solState->getX()->clone_v();
+ *    solState->setSolutionStatus(Tempus::Status::WORKING);
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  while (solHistory->getCurrentState()->getSolutionStatus() ==
+ *           Tempus::Status::PASSED &&
+ *         solHistory->getCurrentTime() < finalTime &&
+ *         solHistory->getCurrentIndex() < nTimeSteps) {
+ *
+ *    solHistory->initWorkingState();
+ *    auto currentState = solHistory->getCurrentState();
+ *    auto workingState = solHistory->getWorkingState();
+ *    RCP<Thyra::VectorBase<double> > x_n   = currentState->getX();
+ *    RCP<Thyra::VectorBase<double> > x_np1 = workingState->getX();
+ *  @endcode
+ *
+ *  The current and tentative states are now obtained through the history
+ *  object rather than being managed manually.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_03_04_snippet3 Update metadata on the working state
+ *
+ *  <b>Assign metadata to the working state.</b> The timestep index, time,
+ *  and timestep size are associated with the working state created by the
+ *  history object.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  int index = solState->getIndex()+1;
+ *  double dt = constDT;
+ *  double time = index*dt;
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  int index = workingState->getIndex();
+ *  double dt = constDT;
+ *  double time = index*dt;
+ *  workingState->setTime(time);
+ *  workingState->setTimeStep(dt);
+ *  @endcode
+ *
+ *  The working state is initialized by the history object and then updated
+ *  with the time information for the tentative step.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_03_04_snippet4 Record and promote the working state
+ *
+ *  <b>Promote the accepted working state.</b> The step outcome is recorded
+ *  on the working state, and the history object promotes it when the step
+ *  completes.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  if ( std::isnan(Thyra::norm(*x_np1)) ) {
+ *    solState->setSolutionStatus(Tempus::Status::FAILED);
+ *  } else {
+ *    Thyra::V_V(x_n.ptr(), *x_np1);
+ *    solState->setIndex   (index);
+ *    solState->setTime    (time);
+ *    solState->setTimeStep(constDT);
+ *    solState->setSolutionStatus(Tempus::Status::PASSED);
+ *  }
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  if ( std::isnan(Thyra::norm(*x_np1)) ) {
+ *    workingState->setSolutionStatus(Tempus::Status::FAILED);
+ *  } else {
+ *    workingState->setSolutionStatus(Tempus::Status::PASSED);
+ *  }
+ *  solHistory->promoteWorkingState();
+ *  @endcode
+ *
+ *  The new solution is written into the working state, the step result is
+ *  associated with that state, and the history object manages promotion of
+ *  that state to become the new current state.
+ *
+ *  As in the updated examples, the regression comparison remains separate from
+ *  step status. Final tutorial success is determined after the loop by
+ *  combining the final state status with the result of the regression test.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \section tempus_tutorial_transition_03_04_compare How to compare the examples
+ *
+ *  A more detailed comparison can be made by diffing:
+ *  - `examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp`
+ *  - `examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp`
+ *
+ *  From the `packages/tempus` directory, a focused comparison of the main
+ *  time-integration logic between these two examples can be generated locally
+ *  in `bash` or `zsh` with:
+ *
+ *  @code{.sh}
+ *  git diff --no-index \
+ *    <(sed -n '83,184p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp) \
+ *    <(sed -n '88,195p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp)
+ *  @endcode
+ *
+ *  This ignores leading header lines (e.g., `#include` statements and
+ *  Doxygen comments) and trailing regression-testing lines.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-03.html">← Previous Example</a> |
+ *    <a href="example-04.html">Current Example</a> |
+ *    <a href="example-05.html">Next Example →</a>
+ *  </div>
+ *  \endhtmlonly
+ */

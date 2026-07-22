@@ -85,8 +85,7 @@ void UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fi
   Teuchos::ArrayRCP<const size_t> amalgRowPtr(amalgP->getLocalNumRows());
   Teuchos::ArrayRCP<const LocalOrdinal> amalgCols(amalgP->getLocalNumEntries());
   Teuchos::ArrayRCP<const Scalar> amalgVals(amalgP->getLocalNumEntries());
-  Teuchos::RCP<CrsMatrixWrap> amalgPwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(amalgP);
-  Teuchos::RCP<CrsMatrix> amalgPcrs      = amalgPwrap->getCrsMatrix();
+  Teuchos::RCP<CrsMatrix> amalgPcrs = toCrsMatrix(amalgP);
   amalgPcrs->getAllValues(amalgRowPtr, amalgCols, amalgVals);
 
   // calculate number of dof rows for new prolongator

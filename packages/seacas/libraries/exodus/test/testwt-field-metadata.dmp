@@ -13,6 +13,33 @@
 		:Basis@TESTING_SECOND_BASIS@subc_ordinal = 0, 1, 2 ;
 		:Basis@TESTING_SECOND_BASIS@xi = -1., 1., 1. ;
 		:Basis@TESTING_SECOND_BASIS@zeta = 1., -1., 1. ;
+		connect1:Field@Disp@separator = "" ;
+		connect1:Field@Disp@type = 8 ;
+		connect1:Field@Velocity@separator = "%" ;
+		connect1:Field@Velocity@type = 8 ;
+		connect2:Field@Curl@separator = "@" ;
+		connect2:Field@Curl@type = 4 ;
+		connect2:Field@Curl@type_name = "2x2x2" ;
+		connect2:Field@Gradient@separator = "-$" ;
+		connect2:Field@Gradient@type = 8, 3 ;
+		connect2:Field@Gradient@type_name = ",HGRAD_QUAD_C2_FEM" ;
+		connect3:Field@Species@cardinality = 4, 0 ;
+		connect3:Field@Species@separator = "_-" ;
+		connect3:Field@Species@suffices = "h2o,gas,ch4,methane" ;
+		connect3:Field@Species@type = 1, 4 ;
+		connect3:Field@Species@type_name = ",1x2x1" ;
+		coor_names:Field@Disp@separator = "" ;
+		coor_names:Field@Disp@type = 8 ;
+		coor_names:Field@Velocity@separator = "%" ;
+		coor_names:Field@Velocity@type = 8 ;
+  "Curl@1",
+  "Curl@2",
+  "Curl@3",
+  "Curl@4",
+  "Curl@5",
+  "Curl@6",
+  "Curl@7",
+  "Curl@8",
 		:Quad@1x2x1@cardinality = 2 ;
 		:Quad@1x2x1@eta = 0.5, -0.5 ;
 		:Quad@1x2x1@weight = 1., 1. ;
@@ -23,34 +50,3 @@
 		:Quad@2x2x2@weight = 1., 1., 1., 1., 1., 1., 1., 1. ;
 		:Quad@2x2x2@xi = -0.57735, 0.57735, -0.57735, 0.57735, -0.57735, 0.57735, -0.57735, 0.57735 ;
 		:Quad@2x2x2@zeta = -0.57735, -0.57735, -0.57735, -0.57735, 0.57735, 0.57735, 0.57735, 0.57735 ;
-		connect1:Field@Disp@separator = "" ;
-		connect1:Field@Disp@type = 8 ;
-		connect1:Field@Disp@type_name = "" ;
-		connect1:Field@Velocity@separator = "%" ;
-		connect1:Field@Velocity@type = 8 ;
-		connect1:Field@Velocity@type_name = "" ;
-		connect2:Field@Curl@separator = "@" ;
-		connect2:Field@Curl@type = 4 ;
-		connect2:Field@Curl@type_name = "2x2x2" ;
-		connect2:Field@Gradient@separator = "-$" ;
-		connect2:Field@Gradient@type = 8, 3 ;
-		connect2:Field@Gradient@type_name = ",HGRAD_QUAD_C2_FEM" ;
-		connect2:Field@Species@cardinality = 4, 0 ;
-		connect2:Field@Species@separator = "_-" ;
-		connect2:Field@Species@suffices = "h2o,gas,ch4,methane" ;
-		connect2:Field@Species@type = 1, 4 ;
-		connect2:Field@Species@type_name = ",1x2x1" ;
-		coor_names:Field@Disp@separator = "" ;
-		coor_names:Field@Disp@type = 8 ;
-		coor_names:Field@Disp@type_name = "" ;
-		coor_names:Field@Velocity@separator = "%" ;
-		coor_names:Field@Velocity@type = 8 ;
-		coor_names:Field@Velocity@type_name = "" ;
-  "Curl@1",
-  "Curl@2",
-  "Curl@3",
-  "Curl@4",
-  "Curl@5",
-  "Curl@6",
-  "Curl@7",
-  "Curl@8",

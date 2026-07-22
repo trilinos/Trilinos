@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #include <Kokkos_Macros.hpp>
@@ -26,9 +13,15 @@ static_assert(false,
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Error.hpp>
 #include <impl/Kokkos_AnalyzePolicy.hpp>
+#include <Kokkos_BitManipulation.hpp>
 #include <Kokkos_Concepts.hpp>
+#include <Kokkos_TypeInfo.hpp>
+#ifndef KOKKOS_ENABLE_IMPL_TYPEINFO
 #include <typeinfo>
+#endif
 #include <limits>
+#include <sstream>
+#include <type_traits>
 
 //----------------------------------------------------------------------------
 
@@ -40,8 +33,21 @@ struct ParallelReduceTag {};
 
 struct ChunkSize {
   int value;
+  explicit ChunkSize(int value_) : value(value_) {}
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+  template <typename T = void>
+  KOKKOS_DEPRECATED_WITH_COMMENT("ChunkSize should be constructed explicitly.")
   ChunkSize(int value_) : value(value_) {}
+#endif
 };
+
+namespace Impl {
+// Private tag that can be used to make a copy of another execution policy
+// and set the underlying execution space instance.
+// It does NOT perform any sanity check.
+// For now, it is used in Kokkos::Experimental::Graph.
+struct PolicyUpdate {};
+}  // namespace Impl
 
 /** \brief  Execution policy for work over a range of an integral type.
  *
@@ -168,6 +174,12 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
       : RangePolicy(typename traits::execution_space(), work_begin, work_end,
                     chunk_size) {}
 
+  RangePolicy(const Impl::PolicyUpdate, const RangePolicy& other,
+              typename traits::execution_space space)
+      : RangePolicy(other) {
+    this->m_space = std::move(space);
+  }
+
  public:
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
   KOKKOS_DEPRECATED_WITH_COMMENT("Use set_chunk_size instead")
@@ -192,9 +204,18 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
   /** \brief finalize chunk_size if it was set to AUTO*/
   inline void set_auto_chunk_size() {
 #ifdef KOKKOS_ENABLE_SYCL
-    if (std::is_same_v<typename traits::execution_space,
-                       Kokkos::Experimental::SYCL>) {
+    if (std::is_same_v<typename traits::execution_space, Kokkos::SYCL>) {
       // chunk_size <=1 lets the compiler choose the workgroup size when
+      // launching kernels
+      m_granularity      = 1;
+      m_granularity_mask = 0;
+      return;
+    }
+#endif
+#ifdef KOKKOS_ENABLE_OPENACC
+    if (std::is_same_v<typename traits::execution_space,
+                       Kokkos::Experimental::OpenACC>) {
+      // chunk_size <=1 lets the compiler choose the chunk size when
       // launching kernels
       m_granularity      = 1;
       m_granularity_mask = 0;
@@ -204,9 +225,9 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
     auto concurrency = static_cast<int64_t>(m_space.concurrency());
     if (concurrency == 0) concurrency = 1;
 
-    if (m_granularity > 0) {
-      if (!Impl::is_integral_power_of_two(m_granularity))
-        Kokkos::abort("RangePolicy blocking granularity must be power of two");
+    if (m_granularity > 0 &&
+        !Kokkos::has_single_bit(static_cast<unsigned>(m_granularity))) {
+      Kokkos::abort("RangePolicy blocking granularity must be power of two");
     }
 
     int64_t new_chunk_size = 1;
@@ -243,46 +264,48 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
 
   // To be replaced with std::in_range (c++20)
   template <typename IndexType>
-  static void check_conversion_safety(const IndexType bound) {
+  static void check_conversion_safety([[maybe_unused]] const IndexType bound) {
+    // Checking that the round-trip conversion preserves input index value
+    if constexpr (std::is_convertible_v<member_type, IndexType>) {
 #if !defined(KOKKOS_ENABLE_DEPRECATED_CODE_4) || \
     defined(KOKKOS_ENABLE_DEPRECATION_WARNINGS)
+      bool warn = false;
 
-    std::string msg =
-        "Kokkos::RangePolicy bound type error: an unsafe implicit conversion "
-        "is performed on a bound (" +
-        std::to_string(bound) +
-        "), which may "
-        "not preserve its original value.\n";
-    bool warn = false;
+      if constexpr (std::is_arithmetic_v<member_type> &&
+                    (std::is_signed_v<IndexType> !=
+                     std::is_signed_v<member_type>)) {
+        // check signed to unsigned
+        if constexpr (std::is_signed_v<IndexType>)
+          warn |= (bound < static_cast<IndexType>(
+                               std::numeric_limits<member_type>::min()));
 
-    if constexpr (std::is_signed_v<IndexType> !=
-                  std::is_signed_v<member_type>) {
-      // check signed to unsigned
-      if constexpr (std::is_signed_v<IndexType>)
-        warn |= (bound < static_cast<IndexType>(
-                             std::numeric_limits<member_type>::min()));
+        // check unsigned to signed
+        if constexpr (std::is_signed_v<member_type>)
+          warn |= (bound > static_cast<IndexType>(
+                               std::numeric_limits<member_type>::max()));
+      }
 
-      // check unsigned to signed
-      if constexpr (std::is_signed_v<member_type>)
-        warn |= (bound > static_cast<IndexType>(
-                             std::numeric_limits<member_type>::max()));
-    }
+      // check narrowing
+      warn |=
+          (static_cast<IndexType>(static_cast<member_type>(bound)) != bound);
 
-    // check narrowing
-    warn |= (static_cast<IndexType>(static_cast<member_type>(bound)) != bound);
+      if (warn) {
+        std::string msg =
+            "Kokkos::RangePolicy bound type error: an unsafe implicit "
+            "conversion is performed on a bound (" +
+            std::to_string(bound) +
+            "), which may not preserve its original value.\n";
 
-    if (warn) {
 #ifndef KOKKOS_ENABLE_DEPRECATED_CODE_4
-      Kokkos::abort(msg.c_str());
+        Kokkos::abort(msg.c_str());
 #endif
 
 #ifdef KOKKOS_ENABLE_DEPRECATION_WARNINGS
-      Kokkos::Impl::log_warning(msg);
+        Kokkos::Impl::log_warning(msg);
+#endif
+      }
 #endif
     }
-#else
-    (void)bound;
-#endif
   }
 
  public:
@@ -323,25 +346,23 @@ class RangePolicy : public Impl::PolicyTraits<Properties...> {
    private:
     member_type m_begin;
     member_type m_end;
-    WorkRange();
-    WorkRange& operator=(const WorkRange&);
   };
 };
 
-RangePolicy()->RangePolicy<>;
+RangePolicy() -> RangePolicy<>;
 
-RangePolicy(int64_t, int64_t)->RangePolicy<>;
-RangePolicy(int64_t, int64_t, ChunkSize const&)->RangePolicy<>;
+RangePolicy(int64_t, int64_t) -> RangePolicy<>;
+RangePolicy(int64_t, int64_t, ChunkSize const&) -> RangePolicy<>;
 
-RangePolicy(DefaultExecutionSpace const&, int64_t, int64_t)->RangePolicy<>;
+RangePolicy(DefaultExecutionSpace const&, int64_t, int64_t) -> RangePolicy<>;
 RangePolicy(DefaultExecutionSpace const&, int64_t, int64_t, ChunkSize const&)
-    ->RangePolicy<>;
+    -> RangePolicy<>;
 
 template <typename ES, typename = std::enable_if_t<is_execution_space_v<ES>>>
-RangePolicy(ES const&, int64_t, int64_t)->RangePolicy<ES>;
+RangePolicy(ES const&, int64_t, int64_t) -> RangePolicy<ES>;
 
 template <typename ES, typename = std::enable_if_t<is_execution_space_v<ES>>>
-RangePolicy(ES const&, int64_t, int64_t, ChunkSize const&)->RangePolicy<ES>;
+RangePolicy(ES const&, int64_t, int64_t, ChunkSize const&) -> RangePolicy<ES>;
 
 }  // namespace Kokkos
 
@@ -510,26 +531,29 @@ struct PerThreadValue {
 template <class iType, class... Args>
 struct ExtractVectorLength {
   static inline iType value(
-      std::enable_if_t<std::is_integral<iType>::value, iType> val, Args...) {
+      std::enable_if_t<std::is_integral_v<iType>, iType> val, Args...) {
     return val;
   }
-  static inline std::enable_if_t<!std::is_integral<iType>::value, int> value(
-      std::enable_if_t<!std::is_integral<iType>::value, iType>, Args...) {
+  static inline std::enable_if_t<!std::is_integral_v<iType>, int> value(
+      std::enable_if_t<!std::is_integral_v<iType>, iType>, Args...) {
     return 1;
   }
 };
 
 template <class iType, class... Args>
-inline std::enable_if_t<std::is_integral<iType>::value, iType>
-extract_vector_length(iType val, Args...) {
+inline std::enable_if_t<std::is_integral_v<iType>, iType> extract_vector_length(
+    iType val, Args...) {
   return val;
 }
 
 template <class iType, class... Args>
-inline std::enable_if_t<!std::is_integral<iType>::value, int>
-extract_vector_length(iType, Args...) {
+inline std::enable_if_t<!std::is_integral_v<iType>, int> extract_vector_length(
+    iType, Args...) {
   return 1;
 }
+
+// Causes abnormal program termination if level is not `0` or `1`
+void team_policy_check_valid_storage_level_argument(int level);
 
 }  // namespace Impl
 
@@ -572,9 +596,6 @@ struct ScratchRequest {
   }
 };
 
-// Throws a runtime exception if level is not `0` or `1`
-void team_policy_check_valid_storage_level_argument(int level);
-
 /** \brief  Execution policy for parallel work over a league of teams of
  * threads.
  *
@@ -613,6 +634,49 @@ class TeamPolicy
   template <class... OtherProperties>
   friend class TeamPolicy;
 
+  static int validate_league_size_argument(int league_size) {
+    if (league_size < 0) {
+      std::stringstream err;
+      err << "Kokkos::TeamPolicy error: league_size (" << league_size
+          << ") must be greater than or equal to 0";
+      Kokkos::abort(err.str().c_str());
+    }
+    return league_size;
+  }
+  static int validate_team_size_argument(int team_size) {
+    if (team_size < 1) {
+      std::stringstream err;
+      err << "Kokkos::TeamPolicy error: team_size (" << team_size
+          << ") must be greater than or equal to 1";
+      Kokkos::abort(err.str().c_str());
+    }
+    return team_size;
+  }
+  static int validate_vector_length_argument(int vector_length) {
+    if (vector_length < 1) {
+      std::stringstream err;
+      err << "Kokkos::TeamPolicy error: vector_length (" << vector_length
+          << ") must be greater than or equal to 1";
+      Kokkos::abort(err.str().c_str());
+    }
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_5
+    int const vector_length_max = internal_policy::vector_length_max();
+    if (vector_length > vector_length_max) {
+      std::stringstream err;
+      err << "Kokkos::TeamPolicy error: vector_length (" << vector_length
+          << ") exceeds the maximum allowed (" << vector_length_max << ")";
+      Kokkos::abort(err.str().c_str());
+    }
+    if (!Kokkos::has_single_bit(static_cast<unsigned>(vector_length))) {
+      std::stringstream err;
+      err << "Kokkos::TeamPolicy error: vector_length (" << vector_length
+          << ") must be a power of 2";
+      Kokkos::abort(err.str().c_str());
+    }
+#endif
+    return vector_length;
+  }
+
  public:
   using traits = Impl::PolicyTraits<Properties...>;
 
@@ -621,47 +685,46 @@ class TeamPolicy
   TeamPolicy() : internal_policy(0, AUTO) {}
 
   /** \brief  Construct policy with the given instance of the execution space */
-  TeamPolicy(const typename traits::execution_space& space_,
-             int league_size_request, int team_size_request,
-             int vector_length_request = 1)
-      : internal_policy(space_, league_size_request, team_size_request,
-                        vector_length_request) {}
+  TeamPolicy(const typename traits::execution_space& space_, int league_size,
+             int team_size, int vector_length = 1)
+      : internal_policy(space_, validate_league_size_argument(league_size),
+                        validate_team_size_argument(team_size),
+                        validate_vector_length_argument(vector_length)) {}
 
-  TeamPolicy(const typename traits::execution_space& space_,
-             int league_size_request, const Kokkos::AUTO_t&,
-             int vector_length_request = 1)
-      : internal_policy(space_, league_size_request, Kokkos::AUTO(),
-                        vector_length_request) {}
+  TeamPolicy(const typename traits::execution_space& space_, int league_size,
+             Kokkos::AUTO_t, int vector_length = 1)
+      : internal_policy(space_, validate_league_size_argument(league_size),
+                        Kokkos::AUTO,
+                        validate_vector_length_argument(vector_length)) {}
 
-  TeamPolicy(const typename traits::execution_space& space_,
-             int league_size_request, const Kokkos::AUTO_t&,
-             const Kokkos::AUTO_t&)
-      : internal_policy(space_, league_size_request, Kokkos::AUTO(),
-                        Kokkos::AUTO()) {}
-  TeamPolicy(const typename traits::execution_space& space_,
-             int league_size_request, const int team_size_request,
-             const Kokkos::AUTO_t&)
-      : internal_policy(space_, league_size_request, team_size_request,
-                        Kokkos::AUTO()) {}
+  TeamPolicy(const typename traits::execution_space& space_, int league_size,
+             Kokkos::AUTO_t, Kokkos::AUTO_t)
+      : internal_policy(space_, league_size, Kokkos::AUTO, Kokkos::AUTO) {}
+
+  TeamPolicy(const typename traits::execution_space& space_, int league_size,
+             const int team_size, Kokkos::AUTO_t)
+      : internal_policy(space_, validate_league_size_argument(league_size),
+                        validate_team_size_argument(team_size), Kokkos::AUTO) {}
+
   /** \brief  Construct policy with the default instance of the execution space
    */
-  TeamPolicy(int league_size_request, int team_size_request,
-             int vector_length_request = 1)
-      : internal_policy(league_size_request, team_size_request,
-                        vector_length_request) {}
+  TeamPolicy(int league_size, int team_size, int vector_length = 1)
+      : internal_policy(validate_league_size_argument(league_size),
+                        validate_team_size_argument(team_size),
+                        validate_vector_length_argument(vector_length)) {}
 
-  TeamPolicy(int league_size_request, const Kokkos::AUTO_t&,
-             int vector_length_request = 1)
-      : internal_policy(league_size_request, Kokkos::AUTO(),
-                        vector_length_request) {}
+  TeamPolicy(int league_size, Kokkos::AUTO_t, int vector_length = 1)
+      : internal_policy(validate_league_size_argument(league_size),
+                        Kokkos::AUTO,
+                        validate_vector_length_argument(vector_length)) {}
 
-  TeamPolicy(int league_size_request, const Kokkos::AUTO_t&,
-             const Kokkos::AUTO_t&)
-      : internal_policy(league_size_request, Kokkos::AUTO(), Kokkos::AUTO()) {}
-  TeamPolicy(int league_size_request, const int team_size_request,
-             const Kokkos::AUTO_t&)
-      : internal_policy(league_size_request, team_size_request,
-                        Kokkos::AUTO()) {}
+  TeamPolicy(int league_size, Kokkos::AUTO_t, Kokkos::AUTO_t)
+      : internal_policy(validate_league_size_argument(league_size),
+                        Kokkos::AUTO, Kokkos::AUTO) {}
+
+  TeamPolicy(int league_size, int team_size, Kokkos::AUTO_t)
+      : internal_policy(validate_league_size_argument(league_size),
+                        validate_team_size_argument(team_size), Kokkos::AUTO) {}
 
   template <class... OtherProperties>
   TeamPolicy(const TeamPolicy<OtherProperties...> p) : internal_policy(p) {
@@ -670,49 +733,105 @@ class TeamPolicy
     internal_policy::traits::operator=(p);
   }
 
+  TeamPolicy(const Impl::PolicyUpdate tag, const TeamPolicy& other,
+             typename traits::execution_space space)
+      : internal_policy(tag, other, std::move(space)) {}
+
  private:
   TeamPolicy(const internal_policy& p) : internal_policy(p) {}
 
  public:
   inline TeamPolicy& set_chunk_size(int chunk) {
-    static_assert(std::is_same<decltype(internal_policy::set_chunk_size(chunk)),
-                               internal_policy&>::value,
-                  "internal set_chunk_size should return a reference");
+    static_assert(
+        std::is_same_v<decltype(internal_policy::set_chunk_size(chunk)),
+                       internal_policy&>,
+        "internal set_chunk_size should return a reference");
     return static_cast<TeamPolicy&>(internal_policy::set_chunk_size(chunk));
   }
 
   inline TeamPolicy& set_scratch_size(const int& level,
                                       const Impl::PerTeamValue& per_team) {
-    static_assert(std::is_same<decltype(internal_policy::set_scratch_size(
-                                   level, per_team)),
-                               internal_policy&>::value,
+    static_assert(std::is_same_v<decltype(internal_policy::set_scratch_size(
+                                     level, per_team)),
+                                 internal_policy&>,
                   "internal set_chunk_size should return a reference");
 
-    team_policy_check_valid_storage_level_argument(level);
+    Impl::team_policy_check_valid_storage_level_argument(level);
     return static_cast<TeamPolicy&>(
         internal_policy::set_scratch_size(level, per_team));
   }
   inline TeamPolicy& set_scratch_size(const int& level,
                                       const Impl::PerThreadValue& per_thread) {
-    team_policy_check_valid_storage_level_argument(level);
+    Impl::team_policy_check_valid_storage_level_argument(level);
     return static_cast<TeamPolicy&>(
         internal_policy::set_scratch_size(level, per_thread));
   }
   inline TeamPolicy& set_scratch_size(const int& level,
                                       const Impl::PerTeamValue& per_team,
                                       const Impl::PerThreadValue& per_thread) {
-    team_policy_check_valid_storage_level_argument(level);
+    Impl::team_policy_check_valid_storage_level_argument(level);
     return static_cast<TeamPolicy&>(
         internal_policy::set_scratch_size(level, per_team, per_thread));
   }
   inline TeamPolicy& set_scratch_size(const int& level,
                                       const Impl::PerThreadValue& per_thread,
                                       const Impl::PerTeamValue& per_team) {
-    team_policy_check_valid_storage_level_argument(level);
+    Impl::team_policy_check_valid_storage_level_argument(level);
     return static_cast<TeamPolicy&>(
         internal_policy::set_scratch_size(level, per_team, per_thread));
   }
 };
+
+// Execution space not provided deduces to TeamPolicy<>
+
+TeamPolicy() -> TeamPolicy<>;
+
+TeamPolicy(int, int) -> TeamPolicy<>;
+TeamPolicy(int, int, int) -> TeamPolicy<>;
+TeamPolicy(int, Kokkos::AUTO_t const&) -> TeamPolicy<>;
+TeamPolicy(int, Kokkos::AUTO_t const&, int) -> TeamPolicy<>;
+TeamPolicy(int, Kokkos::AUTO_t const&, Kokkos::AUTO_t const&) -> TeamPolicy<>;
+TeamPolicy(int, int, Kokkos::AUTO_t const&) -> TeamPolicy<>;
+
+// DefaultExecutionSpace deduces to TeamPolicy<>
+
+TeamPolicy(DefaultExecutionSpace const&, int, int) -> TeamPolicy<>;
+TeamPolicy(DefaultExecutionSpace const&, int, int, int) -> TeamPolicy<>;
+TeamPolicy(DefaultExecutionSpace const&, int, Kokkos::AUTO_t const&)
+    -> TeamPolicy<>;
+TeamPolicy(DefaultExecutionSpace const&, int, Kokkos::AUTO_t const&, int)
+    -> TeamPolicy<>;
+TeamPolicy(DefaultExecutionSpace const&, int, Kokkos::AUTO_t const&,
+           Kokkos::AUTO_t const&) -> TeamPolicy<>;
+TeamPolicy(DefaultExecutionSpace const&, int, int, Kokkos::AUTO_t const&)
+    -> TeamPolicy<>;
+
+// ES != DefaultExecutionSpace deduces to TeamPolicy<ES>
+
+template <typename ES,
+          typename = std::enable_if_t<Kokkos::is_execution_space_v<ES>>>
+TeamPolicy(ES const&, int, int) -> TeamPolicy<ES>;
+
+template <typename ES,
+          typename = std::enable_if_t<Kokkos::is_execution_space_v<ES>>>
+TeamPolicy(ES const&, int, int, int) -> TeamPolicy<ES>;
+
+template <typename ES,
+          typename = std::enable_if_t<Kokkos::is_execution_space_v<ES>>>
+TeamPolicy(ES const&, int, Kokkos::AUTO_t const&) -> TeamPolicy<ES>;
+
+template <typename ES,
+          typename = std::enable_if_t<Kokkos::is_execution_space_v<ES>>>
+TeamPolicy(ES const&, int, Kokkos::AUTO_t const&, int) -> TeamPolicy<ES>;
+
+template <typename ES,
+          typename = std::enable_if_t<Kokkos::is_execution_space_v<ES>>>
+TeamPolicy(ES const&, int, Kokkos::AUTO_t const&, Kokkos::AUTO_t const&)
+    -> TeamPolicy<ES>;
+
+template <typename ES,
+          typename = std::enable_if_t<Kokkos::is_execution_space_v<ES>>>
+TeamPolicy(ES const&, int, int, Kokkos::AUTO_t const&) -> TeamPolicy<ES>;
 
 namespace Impl {
 
@@ -742,15 +861,15 @@ struct TeamThreadRangeBoundariesStruct {
   const iType start;
   const iType end;
   enum { increment = 1 };
-  const TeamMemberType& thread;
+  const TeamMemberType& member;
 
   KOKKOS_INLINE_FUNCTION
   TeamThreadRangeBoundariesStruct(const TeamMemberType& arg_thread,
-                                  const iType& arg_end)
-      : start(
-            ibegin(0, arg_end, arg_thread.team_rank(), arg_thread.team_size())),
-        end(iend(0, arg_end, arg_thread.team_rank(), arg_thread.team_size())),
-        thread(arg_thread) {}
+                                  const iType& arg_count)
+      : start(ibegin(0, arg_count, arg_thread.team_rank(),
+                     arg_thread.team_size())),
+        end(iend(0, arg_count, arg_thread.team_rank(), arg_thread.team_size())),
+        member(arg_thread) {}
 
   KOKKOS_INLINE_FUNCTION
   TeamThreadRangeBoundariesStruct(const TeamMemberType& arg_thread,
@@ -759,7 +878,7 @@ struct TeamThreadRangeBoundariesStruct {
                      arg_thread.team_size())),
         end(iend(arg_begin, arg_end, arg_thread.team_rank(),
                  arg_thread.team_size())),
-        thread(arg_thread) {}
+        member(arg_thread) {}
 };
 
 template <typename iType, class TeamMemberType>
@@ -788,15 +907,15 @@ struct TeamVectorRangeBoundariesStruct {
   const iType start;
   const iType end;
   enum { increment = 1 };
-  const TeamMemberType& thread;
+  const TeamMemberType& member;
 
   KOKKOS_INLINE_FUNCTION
   TeamVectorRangeBoundariesStruct(const TeamMemberType& arg_thread,
-                                  const iType& arg_end)
-      : start(
-            ibegin(0, arg_end, arg_thread.team_rank(), arg_thread.team_size())),
-        end(iend(0, arg_end, arg_thread.team_rank(), arg_thread.team_size())),
-        thread(arg_thread) {}
+                                  const iType& arg_count)
+      : start(ibegin(0, arg_count, arg_thread.team_rank(),
+                     arg_thread.team_size())),
+        end(iend(0, arg_count, arg_thread.team_rank(), arg_thread.team_size())),
+        member(arg_thread) {}
 
   KOKKOS_INLINE_FUNCTION
   TeamVectorRangeBoundariesStruct(const TeamMemberType& arg_thread,
@@ -805,7 +924,7 @@ struct TeamVectorRangeBoundariesStruct {
                      arg_thread.team_size())),
         end(iend(arg_begin, arg_end, arg_thread.team_rank(),
                  arg_thread.team_size())),
-        thread(arg_thread) {}
+        member(arg_thread) {}
 };
 
 template <typename iType, class TeamMemberType>
@@ -816,9 +935,9 @@ struct ThreadVectorRangeBoundariesStruct {
   enum { increment = 1 };
 
   KOKKOS_INLINE_FUNCTION
-  constexpr ThreadVectorRangeBoundariesStruct(const TeamMemberType,
-                                              const index_type& count) noexcept
-      : start(static_cast<index_type>(0)), end(count) {}
+  constexpr ThreadVectorRangeBoundariesStruct(
+      const TeamMemberType, const index_type& arg_count) noexcept
+      : start(static_cast<index_type>(0)), end(arg_count) {}
 
   KOKKOS_INLINE_FUNCTION
   constexpr ThreadVectorRangeBoundariesStruct(
@@ -968,9 +1087,9 @@ struct TeamThreadMDRange<Rank<N, OuterDir, InnerDir>, TeamHandle> {
   static constexpr auto par_vector = Impl::TeamMDRangeParVector::NotParVector;
 
   static constexpr Iterate direction =
-      OuterDir == Iterate::Default
-          ? layout_iterate_type_selector<ArrayLayout>::outer_iteration_pattern
-          : iter;
+      OuterDir == Iterate::Default ? Impl::layout_iterate_type_selector<
+                                         ArrayLayout>::outer_iteration_pattern
+                                   : iter;
 
   template <class... Args>
   KOKKOS_FUNCTION TeamThreadMDRange(TeamHandleType const& team_, Args&&... args)
@@ -983,8 +1102,8 @@ struct TeamThreadMDRange<Rank<N, OuterDir, InnerDir>, TeamHandle> {
 };
 
 template <typename TeamHandle, typename... Args>
-TeamThreadMDRange(TeamHandle const&, Args&&...)
-    ->TeamThreadMDRange<Rank<sizeof...(Args), Iterate::Default>, TeamHandle>;
+KOKKOS_DEDUCTION_GUIDE TeamThreadMDRange(TeamHandle const&, Args&&...)
+    -> TeamThreadMDRange<Rank<sizeof...(Args), Iterate::Default>, TeamHandle>;
 
 template <typename Rank, typename TeamHandle>
 struct ThreadVectorMDRange;
@@ -1004,9 +1123,9 @@ struct ThreadVectorMDRange<Rank<N, OuterDir, InnerDir>, TeamHandle> {
   static constexpr auto par_vector = Impl::TeamMDRangeParVector::ParVector;
 
   static constexpr Iterate direction =
-      OuterDir == Iterate::Default
-          ? layout_iterate_type_selector<ArrayLayout>::outer_iteration_pattern
-          : iter;
+      OuterDir == Iterate::Default ? Impl::layout_iterate_type_selector<
+                                         ArrayLayout>::outer_iteration_pattern
+                                   : iter;
 
   template <class... Args>
   KOKKOS_INLINE_FUNCTION ThreadVectorMDRange(TeamHandleType const& team_,
@@ -1020,8 +1139,8 @@ struct ThreadVectorMDRange<Rank<N, OuterDir, InnerDir>, TeamHandle> {
 };
 
 template <typename TeamHandle, typename... Args>
-ThreadVectorMDRange(TeamHandle const&, Args&&...)
-    ->ThreadVectorMDRange<Rank<sizeof...(Args), Iterate::Default>, TeamHandle>;
+KOKKOS_DEDUCTION_GUIDE ThreadVectorMDRange(TeamHandle const&, Args&&...)
+    -> ThreadVectorMDRange<Rank<sizeof...(Args), Iterate::Default>, TeamHandle>;
 
 template <typename Rank, typename TeamHandle>
 struct TeamVectorMDRange;
@@ -1041,9 +1160,9 @@ struct TeamVectorMDRange<Rank<N, OuterDir, InnerDir>, TeamHandle> {
   static constexpr auto par_vector = Impl::TeamMDRangeParVector::ParVector;
 
   static constexpr Iterate direction =
-      iter == Iterate::Default
-          ? layout_iterate_type_selector<ArrayLayout>::outer_iteration_pattern
-          : iter;
+      iter == Iterate::Default ? Impl::layout_iterate_type_selector<
+                                     ArrayLayout>::outer_iteration_pattern
+                               : iter;
 
   template <class... Args>
   KOKKOS_INLINE_FUNCTION TeamVectorMDRange(TeamHandleType const& team_,
@@ -1057,8 +1176,8 @@ struct TeamVectorMDRange<Rank<N, OuterDir, InnerDir>, TeamHandle> {
 };
 
 template <typename TeamHandle, typename... Args>
-TeamVectorMDRange(TeamHandle const&, Args&&...)
-    ->TeamVectorMDRange<Rank<sizeof...(Args), Iterate::Default>, TeamHandle>;
+KOKKOS_DEDUCTION_GUIDE TeamVectorMDRange(TeamHandle const&, Args&&...)
+    -> TeamVectorMDRange<Rank<sizeof...(Args), Iterate::Default>, TeamHandle>;
 
 template <typename Rank, typename TeamHandle, typename Lambda,
           typename ReducerValueType>
@@ -1105,7 +1224,7 @@ KOKKOS_INLINE_FUNCTION void parallel_reduce(
                                   Kokkos::HIP>
 #elif defined(KOKKOS_ENABLE_SYCL)
                 || std::is_same_v<typename TeamHandle::execution_space,
-                                  Kokkos::Experimental::SYCL>
+                                  Kokkos::SYCL>
 #endif
   )
     policy.team.vector_reduce(
@@ -1141,7 +1260,7 @@ KOKKOS_INLINE_FUNCTION void parallel_reduce(
                                   Kokkos::HIP>
 #elif defined(KOKKOS_ENABLE_SYCL)
                 || std::is_same_v<typename TeamHandle::execution_space,
-                                  Kokkos::Experimental::SYCL>
+                                  Kokkos::SYCL>
 #endif
   )
     policy.team.vector_reduce(
@@ -1160,15 +1279,21 @@ KOKKOS_INLINE_FUNCTION void parallel_for(
 namespace Impl {
 
 template <typename FunctorType, typename TagType,
-          bool HasTag = !std::is_void<TagType>::value>
+          bool HasTag = !std::is_void_v<TagType>>
 struct ParallelConstructName;
 
 template <typename FunctorType, typename TagType>
 struct ParallelConstructName<FunctorType, TagType, true> {
   ParallelConstructName(std::string const& label) : label_ref(label) {
     if (label.empty()) {
+#ifdef KOKKOS_ENABLE_IMPL_TYPEINFO
+      default_name =
+          std::string(TypeInfo<std::remove_const_t<FunctorType>>::name()) +
+          "/" + std::string(TypeInfo<TagType>::name());
+#else
       default_name = std::string(typeid(FunctorType).name()) + "/" +
                      typeid(TagType).name();
+#endif
     }
   }
   std::string const& get() {
@@ -1182,7 +1307,11 @@ template <typename FunctorType, typename TagType>
 struct ParallelConstructName<FunctorType, TagType, false> {
   ParallelConstructName(std::string const& label) : label_ref(label) {
     if (label.empty()) {
-      default_name = std::string(typeid(FunctorType).name());
+#ifdef KOKKOS_ENABLE_IMPL_TYPEINFO
+      default_name = TypeInfo<std::remove_const_t<FunctorType>>::name();
+#else
+      default_name = typeid(FunctorType).name();
+#endif
     }
   }
   std::string const& get() {
@@ -1205,30 +1334,30 @@ struct PatternImplSpecializationFromTag;
 
 template <class... Args>
 struct PatternImplSpecializationFromTag<Kokkos::ParallelForTag, Args...>
-    : type_identity<ParallelFor<Args...>> {};
+    : std::type_identity<ParallelFor<Args...>> {};
 
 template <class... Args>
 struct PatternImplSpecializationFromTag<Kokkos::ParallelReduceTag, Args...>
-    : type_identity<ParallelReduce<Args...>> {};
+    : std::type_identity<ParallelReduce<Args...>> {};
 
 template <class... Args>
 struct PatternImplSpecializationFromTag<Kokkos::ParallelScanTag, Args...>
-    : type_identity<ParallelScan<Args...>> {};
+    : std::type_identity<ParallelScan<Args...>> {};
 
 template <class PatternImpl>
 struct PatternTagFromImplSpecialization;
 
 template <class... Args>
 struct PatternTagFromImplSpecialization<ParallelFor<Args...>>
-    : type_identity<ParallelForTag> {};
+    : std::type_identity<ParallelForTag> {};
 
 template <class... Args>
 struct PatternTagFromImplSpecialization<ParallelReduce<Args...>>
-    : type_identity<ParallelReduceTag> {};
+    : std::type_identity<ParallelReduceTag> {};
 
 template <class... Args>
 struct PatternTagFromImplSpecialization<ParallelScan<Args...>>
-    : type_identity<ParallelScanTag> {};
+    : std::type_identity<ParallelScanTag> {};
 
 }  // end namespace Impl
 

@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
+//
+// Copyright 2012 NTESS and the Zoltan contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>

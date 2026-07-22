@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_IO.hpp>
 
@@ -36,7 +35,7 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                                            Nullspace->getMap()->getComm(),
                                                                            Xpetra::LocallyReplicated);
 
-  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, Nullspace->getNumVectors());
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, Nullspace->getNumVectors(), false);
   const Scalar ONE                                                                     = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar ZERO                                                                    = Teuchos::ScalarTraits<Scalar>::zero();
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace, *Nullspace, ZERO);
@@ -44,11 +43,9 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::HostSpace> Q("Q", Nullspace->getNumVectors(), Nullspace->getNumVectors());
   int LDQ;
   {
-    auto dots = tempMV->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto dots = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
     Kokkos::deep_copy(Q, dots);
-    int strides[2];
-    Q.stride(strides);
-    LDQ = strides[1];
+    LDQ = Q.stride(1);
   }
 
   Teuchos::LAPACK<LocalOrdinal, Scalar> lapack;
@@ -75,9 +72,11 @@ void Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Project X onto orthonormal nullspace
   // Nullspace_ ^T * X
-  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
+  if (tempMV_.is_null() || tempMV_->getNumVectors() != X.getNumVectors())
+    tempMV_ = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& tempMV = tempMV_;
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace_, X, ZERO);
-  auto dots      = tempMV->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto dots      = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
   bool doProject = true;
   for (size_t i = 0; i < X.getNumVectors(); i++) {
     for (size_t j = 0; j < Nullspace_->getNumVectors(); j++) {
@@ -112,10 +111,10 @@ Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Amesos2Smoother(cons
   // TODO: It would be great is Amesos2 provides directly this kind of logic for us
   if (type_ == "" || Amesos2::query(type_) == false) {
     std::string oldtype = type_;
-#if defined(HAVE_AMESOS2_SUPERLU)
-    type_ = "Superlu";
-#elif defined(HAVE_AMESOS2_KLU2)
+#if defined(HAVE_AMESOS2_KLU2)
     type_ = "Klu";
+#elif defined(HAVE_AMESOS2_SUPERLU)
+    type_ = "Superlu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
     type_ = "Superludist";
 #elif defined(HAVE_AMESOS2_BASKER)
@@ -169,6 +168,10 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     this->GetOStream(Warnings0) << "MueLu::Amesos2Smoother::Setup(): Setup() has already been called" << std::endl;
 
   RCP<Matrix> A = Factory::Get<RCP<Matrix> >(currentLevel, "A");
+  auto A_block  = rcp_dynamic_cast<BlockedCrsMatrix>(A);
+  if (A_block) {
+    A = A_block->Merge();
+  }
 
   // Do a quick check if we need to modify the matrix
   RCP<const Map> rowMap = A->getRowMap();
@@ -198,19 +201,19 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
         elements[k] = Teuchos::as<GO>(k);
       colMap           = MapFactory::Build(rowMap->lib(), gblNumCols * rowMap->getComm()->getSize(), elements, Teuchos::ScalarTraits<GO>::zero(), rowMap->getComm());
       importer         = ImportFactory::Build(rowMap, colMap);
-      ghostedNullspace = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors());
+      ghostedNullspace = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors(), false);
       ghostedNullspace->doImport(*Nullspace, *importer, Xpetra::INSERT);
     } else {
       ghostedNullspace = Nullspace;
       colMap           = rowMap;
     }
 
-    using ATS         = Kokkos::ArithTraits<SC>;
+    using ATS         = KokkosKernels::ArithTraits<SC>;
     using impl_Scalar = typename ATS::val_type;
-    using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+    using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
     using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
-    typedef typename Matrix::local_matrix_type KCRS;
+    typedef typename Matrix::local_matrix_device_type KCRS;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
     typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -233,8 +236,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
 
     // form normalization * nullspace * nullspace^T
     {
-      auto lclNullspace        = Nullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      auto lclGhostedNullspace = ghostedNullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto lclNullspace        = Nullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto lclGhostedNullspace = ghostedNullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
       Kokkos::parallel_for(
           "MueLu:Amesos2Smoother::fixNullspace_1", range_type(0, lclNumRows + 1),
           KOKKOS_LAMBDA(const size_t i) {
@@ -278,7 +281,7 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     }
 
     RCP<Matrix> newA       = rcp(new CrsMatrixWrap(rowMap, colMap, 0));
-    RCP<CrsMatrix> newAcrs = rcp_dynamic_cast<CrsMatrixWrap>(newA)->getCrsMatrix();
+    RCP<CrsMatrix> newAcrs = toCrsMatrix(newA);
     newAcrs->setAllValues(newRowPointers, newColIndices, newValues);
     newAcrs->expertStaticFillComplete(A->getDomainMap(), A->getRangeMap(),
                                       importer, A->getCrsGraph()->getExporter());
@@ -289,7 +292,7 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     factorA = A;
   }
 
-  RCP<Tpetra_CrsMatrix> tA = Utilities::Op2NonConstTpetraCrs(factorA);
+  RCP<const Tpetra_CrsMatrix> tA = toTpetra(factorA);
 
   prec_ = Amesos2::create<Tpetra_CrsMatrix, Tpetra_MultiVector>(type_, tA);
   TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
@@ -311,10 +314,17 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool /* InitialGuessIsZero */) const {
   TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
+  RCP<BlockedMultiVector> blockedX = rcp_dynamic_cast<BlockedMultiVector>(rcpFromRef(X));
+  bool blocked                     = blockedX != Teuchos::null;
+  if (blocked) {
+    this->ApplyBlocked(X, B);
+    return;
+  }
+
   RCP<Tpetra_MultiVector> tX, tB;
   if (!useTransformation_) {
-    tX = Utilities::MV2NonConstTpetraMV2(X);
-    tB = Utilities::MV2NonConstTpetraMV2(const_cast<MultiVector&>(B));
+    tX = toTpetra(Teuchos::rcpFromRef(X));
+    tB = toTpetra(Teuchos::rcpFromRef(const_cast<MultiVector&>(B)));
   } else {
     // Copy data of the original vectors into the transformed ones
     size_t numVectors = X.getNumVectors();
@@ -330,8 +340,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
       B_data[i] = Bdata[i];
     }
 
-    tX = Utilities::MV2NonConstTpetraMV2(*X_);
-    tB = Utilities::MV2NonConstTpetraMV2(*B_);
+    tX = toTpetra(X_);
+    tB = toTpetra(B_);
   }
 
   prec_->setX(tX);
@@ -359,6 +369,41 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
       projection_->projectOut(X);
     }
   }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ApplyBlocked(MultiVector& X, const MultiVector& B) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(useTransformation_, Exceptions::RuntimeError,
+                             "MueLu::Amesos2Smoother::ApplyBlocked: useTransformation_ == true is not supported");
+
+  Teuchos::ParameterList pL = this->GetParameterList();
+  const auto fixNullspace   = pL.get<bool>("fix nullspace");
+  TEUCHOS_TEST_FOR_EXCEPTION(fixNullspace, Exceptions::RuntimeError,
+                             "MueLu::Amesos2Smoother::ApplyBlocked: \"fix nullspace\" == true is not supported");
+
+  RCP<BlockedMultiVector> blockedX       = rcp_dynamic_cast<BlockedMultiVector>(rcpFromRef(X));
+  RCP<const BlockedMultiVector> blockedB = rcp_dynamic_cast<const BlockedMultiVector>(rcpFromRef(B));
+  TEUCHOS_TEST_FOR_EXCEPTION(blockedX == Teuchos::null || blockedB == Teuchos::null, Exceptions::RuntimeError,
+                             "MueLu::Amesos2Smoother::ApplyBlocked: Input and/or output vector are not BlockedMultiVector!");
+
+  RCP<MultiVector> mergedX = blockedX->Merge();
+  RCP<MultiVector> mergedB = blockedB->Merge();
+
+  RCP<Tpetra_MultiVector> tX, tB;
+  tX = toTpetra(mergedX);
+  tB = toTpetra(mergedB);
+
+  prec_->setX(tX);
+  prec_->setB(tB);
+
+  prec_->solve();
+
+  prec_->setX(Teuchos::null);
+  prec_->setB(Teuchos::null);
+
+  RCP<MultiVector> xx = Teuchos::rcp(new BlockedMultiVector(blockedX->getBlockedMap(), mergedX));
+  SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
+  X.update(one, *xx, zero);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -415,5 +460,4 @@ size_t Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmooth
 }
 }  // namespace MueLu
 
-#endif  // HAVE_MUELU_AMESOS2
 #endif  // MUELU_AMESOS2SMOOTHER_DEF_HPP

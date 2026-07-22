@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -57,7 +57,7 @@ C     --   none
       include 'gp_attrot.blk'
       INCLUDE 'argparse.inc'
 
-      CHARACTER*2048 FILIN, FILOUT, SCRATCH, SYNTAX, HELP
+      CHARACTER*2048 FILIN, FILOUT, SCRATCH, SYNTAX, HELP, VALUE
       CHARACTER*80 SCRSTR
 
 C... String containing name of common element topology in model
@@ -99,7 +99,8 @@ C     --A - the dynamic numeric memory base array
 
 C .. Get filename from command line.  If not specified, emit error message
       SYNTAX =
-     *  'Syntax is: "grepos [-name_length len] [-64] file_in file_out"'
+     *  'Syntax is: "grepos [-name_length len] [-64] ' //
+     $     '[-change_set #] file_in file_out"'
       HELP = 'Documentation: https://sandialabs.github.io' //
      $     '/seacas-docs/sphinx/html/index.html#grepos'
       NARG = argument_count()
@@ -108,30 +109,6 @@ C .. Get filename from command line.  If not specified, emit error message
         CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
         CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
         GOTO 60
-      end if
-
-C ... Parse options...
-      name_len = 0
-      l64bit = .false.
-      if (narg .gt. 2) then
-        iarg = 1
-        do
-          CALL get_argument(iarg,FILIN, LNAM)
-          if (filin(:lnam) .eq. '-name_length') then
-            CALL get_argument(iarg+1,FILIN, LNAM)
-            read (filin(:lnam), '(i10)') name_len
-            iarg = iarg + 2
-          else if (filin(:lnam) .eq. '-64') then
-            l64bit = .true.
-            iarg = iarg + 1
-          else
-            SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
-            CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
-            CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
-            CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
-          end if
-          if (iarg .gt. narg-2) exit
-        end do
       end if
 
 C     --Open the input database and read the initial variables
@@ -159,6 +136,53 @@ C     --Open the input database and read the initial variables
          CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
          GOTO 60
       END IF
+
+C ... Parse options...
+      name_len = 0
+      l64bit = .false.
+      if (narg .gt. 2) then
+        iarg = 1
+        do
+          CALL get_argument(iarg,FILIN, LNAM)
+          if (filin(:lnam) .eq. '-name_length') then
+            CALL get_argument(iarg+1,FILIN, LNAM)
+            read (filin(:lnam), '(i10)') name_len
+            iarg = iarg + 2
+          else if (filin(:lnam) .eq. '-64') then
+            l64bit = .true.
+            iarg = iarg + 1
+          else if (filin(:lnam) .eq. '-change_set' .or.
+     *      filin(:lnam) .eq. '--change_set') then
+C ... Convert `value` to an integer.
+            CALL get_argument(iarg+1,value,  lv)
+            iarg = iarg + 2
+            read (value(:lv), '(i10)') nchange
+C ... Check that file contains at least that many change sets...
+            ndbr = iand(ndbin, EX_FILE_ID_MASK)
+            call exinq(ndbr, EX_INQ_NUM_CHILD_GROUPS,
+     $           idum, rdum, cdum, ierr)
+            if (nchange .gt. idum) then
+               write (SCRATCH,*) 'Selected change set', nchange,
+     $              'but there are only ', idum, ' change sets in file.'
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDERR', SCRATCH(:LSCRATCH))
+               goto 60
+            else
+               write (scratch,99) nchange
+ 99            format(1x,'NOTE: Selecting change set ', i3)
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDSPEC', scratch(:lscratch))
+               ndbin = ndbr + nchange
+            end if
+          else
+            SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
+            CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
+            CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
+            CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
+          end if
+          if (iarg .gt. narg-2) exit
+        end do
+      end if
 
       call exgini(ndbin, title, ndim, numnp, numel, nelblk,
      *     numnps, numess, ierr)
@@ -420,7 +444,7 @@ C     ... Snap
          call mdrsrv('ssblk', issblk, nelblk)
          call mdrsrv('iscrn', iscrnp, numnp)
          call mdrsrv('iscre', iscrep, numel)
-         do 30 i=1, numsnp
+         do i=1, numsnp
            if (ismtyp(i) .eq. ISNAP) then
               call snap(ndbin, a, ia, i, a(kxn), a(kyn), a(kzn), ndim,
      *         numnp, numess, ia(kidss), ia(kness), ia(kixess),
@@ -432,7 +456,7 @@ C     ... Snap
      *         nelblk, ia(kidelb), ia(knelb), ia(knlnk), ia(klink),
      *         ia(issblk), ia(iscrnp), ia(iscrep))
            end if
- 30      continue
+         end do
          call mddel('ssblk')
          call mddel('iscrn')
          call mddel('iscre')
@@ -1188,7 +1212,7 @@ C ... NOTE: VARNP and VAREL are treated as doubly-dimensioned arrays
 C           dimensioned as (NUMEL, NVAREL)
       iostep = 0
 
-      do 110 istep = 1, nsteps
+      do istep = 1, nsteps
         if (ia(kitims+istep-1) .eq. 0) then
           iostep = iostep + 1
            CALL DBISTE (NDBIN, '*', istep,
@@ -1254,7 +1278,7 @@ C     number element blocks, and truth table.
            WRITE (*, 10000) IOSTEP, TIME
 10000      FORMAT (' ', I8, ' time steps processed.  Time = ',1PE10.3)
         end if
- 110  continue
+      end do
 
  120  CONTINUE
       WRITE (SCRSTR, '(I9)', IOSTAT=K) IOSTEP
@@ -1288,7 +1312,7 @@ C     number element blocks, and truth table.
  900  FORMAT(/,'WARNING: ',A,i5,' is a different size in the output',
      $     /,9x,'database than in the input database. The ',
      $     /,9x,'variables on this ',A,' will be transferred',
-     $     /,9x,'incorrectly. Contact gdsjaar@sandia.gov',
+     $     /,9x,'incorrectly. Contact sierra-help@sandia.gov',
      $     /,9x,'if you need this capability.')
       END
 
@@ -1310,15 +1334,15 @@ C     number element blocks, and truth table.
       logical IEVOK(nblk,nvar)
       INTEGER ITMP(NVAR+iextra,nblk)
 
-      do 20 i=1, nvar
-        do 10 ielb = 1, nblk
+      do i=1, nvar
+        do ielb = 1, nblk
           if (ievok(ielb,i)) then
             itmp(i,ielb) = 1
           else
             itmp(i,ielb) = 0
           end if
- 10     continue
- 20   continue
+        end do
+      end do
 
       do i=1, iextra
         do ielb = 1, nblk
@@ -1344,11 +1368,11 @@ C     number element blocks, and truth table.
       if (ndim .ge. 2) names(2)(:maxnam) = 'centroid_y'
       if (ndim .eq. 3) names(3)(:maxnam) = 'centroid_z'
 
-      do 20 i=1, nelblk
-        do 10 j=1, nvarel
+      do i=1, nelblk
+        do j=1, nvarel
           isevok(i,j) = 1
- 10     continue
- 20   continue
+        end do
+      end do
 
       return
       end
@@ -1377,9 +1401,9 @@ C     number element blocks, and truth table.
 
       SUBROUTINE PRTT(NELBLK, NVAREL, truth)
       LOGICAL TRUTH(NELBLK, NVAREL)
-      DO 10 I=1, NELBLK
+      DO I=1, NELBLK
          WRITE (*,*) (TRUTH(I,IVAR),IVAR=1,NVAREL)
- 10   CONTINUE
+      END DO
       RETURN
       END
 
@@ -1393,12 +1417,12 @@ C   This is currently used in the sideset mirroring code
       character*(MXSTLN) comtop
 
       comtop = blktyp(1)(:3)
-      do 10 i=2, nelblk
+      do i=2, nelblk
          if (blktyp(i)(:3) .ne. comtop(:3)) then
             comtop = 'MULTIPLE_TOPOLOGIES'
             return
          end if
- 10   continue
+      end do
       return
       end
 

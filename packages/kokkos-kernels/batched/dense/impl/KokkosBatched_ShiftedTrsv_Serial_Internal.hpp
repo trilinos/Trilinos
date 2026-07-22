@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_SHIFTED_TRSV_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_SHIFTED_TRSV_SERIAL_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_SHIFTED_TRSV_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_SHIFTED_TRSV_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -36,19 +23,16 @@ namespace KokkosBatched {
 
 struct SerialShiftedTrsvInternalLower {
   template <typename ScalarType, typename ValueTypeA, typename ValueTypeB>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType lambda,
-                                           const ValueTypeA *KOKKOS_RESTRICT A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType lambda, const ValueTypeA *KOKKOS_RESTRICT A,
                                            const int as0, const int as1,
-                                           /* */ ValueTypeB *KOKKOS_RESTRICT b,
-                                           const int bs0,
+                                           /* */ ValueTypeB *KOKKOS_RESTRICT b, const int bs0,
                                            const int *KOKKOS_RESTRICT blks) {
     const int as = as0 + as1;
 
     int p = 0;
     for (; p < m;) {
       const int blk = blks[p], iend = m - p - blk;
-      assert(((blk == 1) || (blk == 2)) &&
-             "ShiftedTrsvLower: blocks are not 1x1 or 2x2");
+      assert(((blk == 1) || (blk == 2)) && "ShiftedTrsvLower: blocks are not 1x1 or 2x2");
       if (blk == 1) {
         const auto alpha11                = A[p * as] - lambda;
         ValueTypeB *KOKKOS_RESTRICT beta1 = b + p * bs0;
@@ -84,9 +68,7 @@ struct SerialShiftedTrsvInternalLower {
           const ValueTypeA *KOKKOS_RESTRICT A21 = A + p * as + 2 * as0;
           ValueTypeB *KOKKOS_RESTRICT b2        = beta1 + 2 * bs0;
 
-          for (int i = 0; i < iend; ++i)
-            b2[i * bs0] -=
-                (A21[i * as0] * (*beta1) + A21[i * as0 + as1] * (*beta2));
+          for (int i = 0; i < iend; ++i) b2[i * bs0] -= (A21[i * as0] * (*beta1) + A21[i * as0 + as1] * (*beta2));
         }
       }
       p += blk;
@@ -101,11 +83,9 @@ struct SerialShiftedTrsvInternalLower {
 
 struct SerialShiftedTrsvInternalUpper {
   template <typename ScalarType, typename ValueTypeA, typename ValueTypeB>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType lambda,
-                                           const ValueTypeA *KOKKOS_RESTRICT A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ScalarType lambda, const ValueTypeA *KOKKOS_RESTRICT A,
                                            const int as0, const int as1,
-                                           /**/ ValueTypeB *KOKKOS_RESTRICT b,
-                                           const int bs0,
+                                           /**/ ValueTypeB *KOKKOS_RESTRICT b, const int bs0,
                                            const int *KOKKOS_RESTRICT blks) {
     const int as = as0 + as1;
 
@@ -114,10 +94,9 @@ struct SerialShiftedTrsvInternalUpper {
     int p = m - 1;
     for (; p >= 0;) {
       const int blk = blks[p], iend = p + 1 - blk;
-      assert(((blk == 1) || (blk == 2)) &&
-             "ShiftedTrsvUpper: blocks are not 1x1 or 2x2");
+      assert(((blk == 1) || (blk == 2)) && "ShiftedTrsvUpper: blocks are not 1x1 or 2x2");
       if (blk == 1) {
-        const auto alpha11                   = A[p * as] - lambda;
+        const auto alpha11                     = A[p * as] - lambda;
         /**/ ValueTypeB *KOKKOS_RESTRICT beta1 = b + p * bs0;
 
         // with KOKKOS_RESTRICT a compiler assumes that the pointer is not
@@ -148,9 +127,7 @@ struct SerialShiftedTrsvInternalUpper {
 
         if (iend) {
           const ValueTypeA *KOKKOS_RESTRICT A01 = A + p_minus_one * as1;
-          for (int i = 0; i < iend; ++i)
-            b0[i * bs0] -=
-                (A01[i * as0] * (*beta1) + A01[i * as0 + as1] * (*beta2));
+          for (int i = 0; i < iend; ++i) b0[i * bs0] -= (A01[i * as0] * (*beta1) + A01[i * as0 + as1] * (*beta2));
         }
       }
       p -= blk;

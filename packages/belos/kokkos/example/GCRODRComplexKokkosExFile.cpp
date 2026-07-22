@@ -54,12 +54,16 @@ bool success = true;
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
 
+  const ST one  = SCT::one();
+  const ST zero = SCT::zero();
+
 bool verbose = true;
 try {
-  int frequency = 25;        // frequency of status test output.
+  int frequency = -1;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
   int maxsubspace = 300;     // maximum number of blocks the solver can use for the subspace
+  int numRecycledBlocks = 20;
   int maxrestarts = 5;       // number of restarts allowed
   bool expresidual = false;  // use explicit residual
   std::string filename("mhd1280b.mtx"); // example matrix
@@ -92,10 +96,10 @@ try {
   OT numRows = crsMat.numRows();
 
   Teuchos::RCP<MV> X = Teuchos::rcp( new MV(numRows, numrhs) );
-  X->MvRandom();
+  X->MvInit( one );
   Teuchos::RCP<MV> B = Teuchos::rcp( new MV(numRows, numrhs) );
   OPT::Apply(*A,*X,*B);
-  X->MvInit(0.0);
+  X->MvInit( zero );
 
   //
   // ********Other information used by block solver***********
@@ -109,12 +113,13 @@ try {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Recycled Blocks", numRecycledBlocks );
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Explicit Residual Test", expresidual); // Use explicit residual
 
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-		   Belos::StatusTestDetails + Belos::FinalSummary + Belos::TimingDetails);
+               Belos::StatusTestDetails + Belos::FinalSummary + Belos::TimingDetails);
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
   }
@@ -153,6 +158,7 @@ try {
   //
   Belos::ReturnType ret;
   ret = newSolver->solve();
+  int numIters1 = newSolver->getNumIters();
 
   //
   // Compute actual residuals.
@@ -168,16 +174,36 @@ try {
   std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
   for ( int i=0; i<numrhs; i++) {
     MT actRes = actual_resids[i]/rhs_norm[i];
-    std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+    if (verbose)
+      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
     if (actRes > tol) badRes = true;
   }
 
-  if (ret!=Belos::Converged || badRes) {
+  if (verbose) { std::cout << "First solve took " << numIters1 << " iterations." << std::endl; }
+
+  // Resolve linear system with same rhs and recycled space
+  X->MvInit( zero );
+  newSolver->reset(Belos::Problem);
+  ret = newSolver->solve();
+  int numIters2 = newSolver->getNumIters();
+
+  if (verbose) { std::cout << "Second solve took " << numIters2 << " iterations." << std::endl; }
+
+  // Resolve linear system (again) with same rhs and recycled space
+  X->MvInit( zero );
+  newSolver->reset(Belos::Problem);
+  ret = newSolver->solve();
+  int numIters3 = newSolver->getNumIters();
+
+  if (verbose) { std::cout << "Third solve took " << numIters3 << " iterations." << std::endl; }
+
+  //
+  if (ret!=Belos::Converged || badRes || numIters1 < numIters2 || numIters2 < numIters3) {
     success = false;
-    std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
+    std::cout << std::endl << "ERROR: Belos GCRODR TEST FAILED!" << std::endl;
   } else {
     success = true;
-    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    std::cout << std::endl << "SUCCESS: Belos GCRODR TEST PASSED!" << std::endl;
   }
 
   }

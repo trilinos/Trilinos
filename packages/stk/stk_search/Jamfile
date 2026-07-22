@@ -44,7 +44,6 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_search-root-inc)
-    <define>STK_BUILT_IN_SIERRA
   : usage-requirements
     <include>$(stk_search-root-inc)
   : build-dir $(stk_search-builddir)
@@ -150,7 +149,7 @@ lib stk_search
     /sierra/stk_util//stk_util_diag
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_math//stk_math
-    /tpl/ArborX//arborx
+    /tpl/arborx//arborx
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -170,9 +169,7 @@ if ! $(releasable-arg) {
 exe stk_search_integration_tester
   :
     [ glob
-      $(stk_search-root)/../stk_integration_tests/stk_search/*.cpp
-      $(stk_search-root)/../stk_integration_tests/stk_search/kdtree/*.cpp
-      $(stk_search-root)/../stk_integration_tests/stk_search/morton_lbvh/*.cpp
+      $(stk_search-root)/../stk_integration_tests/stk_search/UnitTestNaluPerformance.cpp
     ]
     /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_main
@@ -186,8 +183,6 @@ exe stk_search_doc_tests
   :
     [ glob 
       $(stk_search-root)/../stk_doc_tests/stk_search/*.cpp 
-      $(stk_search-root)/../stk_doc_tests/stk_search/kdtree/*.cpp 
-      $(stk_search-root)/../stk_doc_tests/stk_search/morton_lbvh/*.cpp 
     ]
     /sierra/stk_search//stk_search
     /sierra/stk_search_util//stk_search_util_base
@@ -201,10 +196,7 @@ exe stk_search_utest
   :
     [ glob
       $(stk_search-root)/../stk_unit_tests/stk_search/*.cpp
-      $(stk_search-root)/../stk_unit_tests/stk_search/kdtree/*.cpp
-      $(stk_search-root)/../stk_unit_tests/stk_search/morton_lbvh/*.cpp
     ]
-    [ glob $(stk_search-root)/testsForDocumentation/*.cpp ]
     /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_math//stk_math

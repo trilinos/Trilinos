@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Xpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #ifndef XPETRA_TPETRAMULTIVECTOR_DECL_HPP
 #define XPETRA_TPETRAMULTIVECTOR_DECL_HPP
 
@@ -73,10 +37,10 @@ class TpetraVector;
 
 // Because we aren't including the header...
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > toXpetra(RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec);
+RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec);
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > toXpetra(RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec);
+RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec);
 
 template <class Scalar,
           class LocalOrdinal,
@@ -92,16 +56,16 @@ class TpetraMultiVector
   //@{
 
   //! Basic constuctor.
-  TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t NumVectors, bool zeroOut = true);
+  TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> &map, size_t NumVectors, bool zeroOut = true);
 
   //! Copy constructor (performs a deep copy).
   TpetraMultiVector(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Teuchos::DataAccess copyOrView = Teuchos::Copy);
 
   //! Create multivector by copying two-dimensional array of local data.
-  TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors);
+  TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors);
 
   //! Create multivector by copying array of views of local data.
-  TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors);
+  TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar>> &ArrayOfPtrs, size_t NumVectors);
 
   virtual ~TpetraMultiVector();
 
@@ -132,10 +96,10 @@ class TpetraMultiVector
   //@{
 
   //! Return a Vector which is a const view of column j.
-  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getVector(size_t j) const;
+  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> getVector(size_t j) const;
 
   //! Return a Vector which is a nonconst view of column j.
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getVectorNonConst(size_t j);
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> getVectorNonConst(size_t j);
 
   //! Const view of the local values in a particular vector of this multivector.
   Teuchos::ArrayRCP<const Scalar> getData(size_t j) const;
@@ -147,19 +111,19 @@ class TpetraMultiVector
   void get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const;
 
   //! Fill the given array with a copy of this multivector's local values.
-  void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const;
+  void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar>> ArrayOfPtrs) const;
 
   //! Const persisting (1-D) view of this multivector's local values.
   Teuchos::ArrayRCP<const Scalar> get1dView() const;
 
   //! Return const persisting pointers to values.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar>> get2dView() const;
 
   //! Nonconst persisting (1-D) view of this multivector's local values.
   Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
 
   //! Return non-const persisting pointers to values.
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar>> get2dViewNonConst();
 
   //@}
 
@@ -245,7 +209,7 @@ class TpetraMultiVector
   //{@
   // Implements DistObject interface
 
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const;
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> getMap() const;
 
   void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import<LocalOrdinal, GlobalOrdinal, Node> &importer, CombineMode CM);
 
@@ -271,7 +235,7 @@ class TpetraMultiVector
 
   void endExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export<LocalOrdinal, GlobalOrdinal, Node> &exporter, CombineMode CM);
 
-  void replaceMap(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map);
+  void replaceMap(const RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> &map);
 
   //@}
 
@@ -279,27 +243,27 @@ class TpetraMultiVector
   //@{
 
   //! TpetraMultiVector constructor to wrap a Tpetra::MultiVector object
-  TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec);
+  TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &vec);
 
   //! Get the underlying Tpetra multivector
-  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const;
+  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> getTpetra_MultiVector() const;
 
   //! Set seed for Random function.
   void setSeed(unsigned int seed);
 
   typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
-  virtual typename dual_view_type::t_host_const_um getHostLocalView(Access::ReadOnlyStruct) const;
+  virtual typename dual_view_type::t_host_const_um getLocalViewHost(Tpetra::Access::ReadOnlyStruct) const;
 
-  virtual typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const;
+  virtual typename dual_view_type::t_dev_const_um getLocalViewDevice(Tpetra::Access::ReadOnlyStruct) const;
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::OverwriteAllStruct) const;
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Tpetra::Access::OverwriteAllStruct) const;
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const;
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Tpetra::Access::OverwriteAllStruct) const;
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::ReadWriteStruct) const;
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Tpetra::Access::ReadWriteStruct) const;
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const;
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Tpetra::Access::ReadWriteStruct) const;
 
  protected:
   /// \brief Implementation of the assignment operator (operator=);
@@ -309,7 +273,7 @@ class TpetraMultiVector
 
  private:
   //! The Tpetra::MultiVector which this class wraps.
-  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;
+  RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec_;
 
 };  // TpetraMultiVector class
 
@@ -317,7 +281,7 @@ class TpetraMultiVector
 
 // Things we actually need
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > toXpetra(RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec) {
+RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
   if (!vec.is_null())
     return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
 
@@ -325,7 +289,23 @@ RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > toXpetra(RCP<Tpetra
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > toXpetra(RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec) {
+RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
+  if (!vec.is_null())
+    return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+  return Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
+  if (!vec.is_null())
+    return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+  return Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<const Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
   if (!vec.is_null())
     return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
 
@@ -344,6 +324,18 @@ Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &toTpetra(MultiVe
   typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVectorClass;
   XPETRA_DYNAMIC_CAST(TpetraMultiVectorClass, x, tX, "toTpetra");
   return *tX.getTpetra_MultiVector();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetra(const Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &X) {
+  return Teuchos::rcp_dynamic_cast<Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(X, true)->getTpetra_MultiVector();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetra(const Teuchos::RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &X) {
+  return Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(X, true)->getTpetra_MultiVector();
 }
 
 }  // namespace Xpetra

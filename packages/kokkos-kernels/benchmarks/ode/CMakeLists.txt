@@ -1,0 +1,5 @@
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+kokkoskernels_add_benchmark(ode_runge_kutta SOURCES KokkosODE_RK.cpp)
+kokkoskernels_add_benchmark(ode_bdf_solver  SOURCES KokkosODE_BDF.cpp)

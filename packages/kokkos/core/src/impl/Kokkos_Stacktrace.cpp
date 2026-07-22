@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #define KOKKOS_IMPL_PUBLIC_INCLUDE
@@ -78,12 +65,12 @@ std::string demangle(const std::string& name) {
 
 class Stacktrace {
  public:
-  Stacktrace()                  = delete;
-  Stacktrace(const Stacktrace&) = delete;
+  Stacktrace()                             = delete;
+  Stacktrace(const Stacktrace&)            = delete;
   Stacktrace& operator=(const Stacktrace&) = delete;
   Stacktrace(Stacktrace&&)                 = delete;
-  Stacktrace& operator=(Stacktrace&&) = delete;
-  ~Stacktrace()                       = delete;
+  Stacktrace& operator=(Stacktrace&&)      = delete;
+  ~Stacktrace()                            = delete;
 
   // These are public only to avoid wasting an extra stacktrace line.
   // See save_stacktrace below.
@@ -102,6 +89,7 @@ class Stacktrace {
           trace[i] = std::string(symbols[i]);
         }
       }
+      // NOLINTNEXTLINE(bugprone-multi-level-implicit-pointer-conversion)
       free(symbols);
       return trace;
     }

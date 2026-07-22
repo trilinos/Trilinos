@@ -17,12 +17,9 @@
 #include "MueLu_SmootherPrototype.hpp"
 
 #include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_IfpackSmoother_fwd.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2)
 #include "MueLu_Ifpack2Smoother_fwd.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
-#endif
 
 #if defined(HAVE_MUELU_BELOS)
 #include "MueLu_BelosSmoother_fwd.hpp"
@@ -158,12 +155,12 @@ class TrilinosSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOr
   //
 
   //! Smoother
-  RCP<SmootherPrototype> sEpetra_, sTpetra_, sBelos_, sStratimikos_;
+  RCP<SmootherPrototype> sTpetra_, sBelos_, sStratimikos_;
   mutable RCP<SmootherPrototype> s_;
 
   // Records for the case if something goes wrong
-  bool triedEpetra_, triedTpetra_, triedBelos_, triedStratimikos_;
-  std::string errorEpetra_, errorTpetra_, errorBelos_, errorStratimikos_;
+  bool triedTpetra_, triedBelos_, triedStratimikos_;
+  std::string errorTpetra_, errorBelos_, errorStratimikos_;
 
 };  // class TrilinosSmoother
 

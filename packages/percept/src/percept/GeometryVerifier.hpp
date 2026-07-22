@@ -23,14 +23,13 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
-//using namespace Intrepid;
 using namespace shards;
 
 
   namespace percept
   {
 
-    template<typename T> class Histogram;
+    template<typename T> struct Histogram;
 
     class GeometryVerifier
     {

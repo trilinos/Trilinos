@@ -35,7 +35,6 @@
 #define STK_REMOTE_SELECTOR_UPDATER_HPP
 
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
@@ -51,6 +50,7 @@
 #include "ElemElemGraphImpl.hpp"
 
 namespace stk { namespace mesh {
+class BulkData;
 
 class RemoteSelectorUpdater : public stk::mesh::ModificationObserver
 {
@@ -60,6 +60,16 @@ public:
     : stk::mesh::ModificationObserver(stk::mesh::ModificationObserverPriority::APPLICATION)
     , bulkData(bulk), remoteActiveSelector(remoteActiveSelector_), selector(sel)
     {
+    }
+
+    virtual void entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& ordinalVec)
+    {
+      check_if_active_toggled(entity, ordinalVec);
+    }
+
+    virtual void entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& ordinalVec)
+    {
+      check_if_active_toggled(entity, ordinalVec);
     }
 
     virtual void entity_added(stk::mesh::Entity entity)
@@ -80,12 +90,13 @@ public:
 
     virtual void finished_modification_end_notification()
     {
-        if (numModifiedElems > 0) {
+        if (numModifiedElems > 0 || activePartToggled) {
             stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData,
                                                                          bulkData.get_face_adjacent_element_graph(),
                                                                          selector,
                                                                          remoteActiveSelector);
-            numModifiedElems = 0;
+            numModifiedElems  = 0;
+            activePartToggled = false;
         }
     }
 
@@ -93,14 +104,16 @@ public:
     {
         valuesToReduce.clear();
         valuesToReduce.push_back(numModifiedElems);
+        valuesToReduce.push_back(activePartToggled ? 1 : 0);
     }
 
     virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
     {
-        numModifiedElems = reducedValues[0];
+        numModifiedElems  = reducedValues[0];
+        activePartToggled = reducedValues[1] != 0;
     }
 
-    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec & /*elemProcPairsToMove*/)
     {
         stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData,
                                                                      bulkData.get_face_adjacent_element_graph(),
@@ -108,11 +121,36 @@ public:
                                                                      remoteActiveSelector);
         numModifiedElems = 0;
     }
+
+    void toggle_updater(const bool toggle) {
+      updaterIsActive = toggle;
+    }
+
 private:
+    void check_if_active_toggled(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& ordinalVec)
+    {
+      if(updaterIsActive && !activePartToggled && bulkData.is_valid(entity) && bulkData.entity_rank(entity) == stk::topology::ELEM_RANK) {
+        // Entity could be newly created but not in any bucket
+        stk::mesh::Bucket *bucketPtr = bulkData.bucket_ptr(entity);
+        if((nullptr == bucketPtr) || bucketPtr->owned()) {
+          const MetaData & meta = bulkData.mesh_meta_data();
+          for(auto ordinal : ordinalVec) {
+            stk::mesh::Part& part = meta.get_part(ordinal);
+            if(selector(part)) {
+              activePartToggled = true;
+              return;
+            }
+          }
+        }
+      }
+    }
+
     stk::mesh::BulkData &bulkData;
     stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector;
     stk::mesh::Selector selector;
     size_t numModifiedElems = 0;
+    bool activePartToggled{false};
+    bool updaterIsActive{true};
 };
 
 }} // end stk mesh namespaces

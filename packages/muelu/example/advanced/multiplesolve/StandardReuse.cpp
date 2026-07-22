@@ -18,6 +18,8 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
+#include <Xpetra_MatrixFactory2.hpp>
+
 #include <MueLu.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_Factory.hpp>
@@ -205,10 +207,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
   Teuchos::ParameterList paramList;
   paramList.set("verbosity", "none");
-  if (lib == Xpetra::UseEpetra) {
-    out << "Setting: \"use kokkos refactor\" to: false" << std::endl;
-    paramList.set("use kokkos refactor", false);
-  }
   if (xmlFileName != "") {
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
   }

@@ -45,6 +45,8 @@ namespace SLU {
 #include "slu_util.h"
 #include "superlu_enum_consts.h"
 
+#undef EMPTY
+
 void
 at_plus_a(
           const int n,      /* number of columns in matrix A. */

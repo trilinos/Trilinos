@@ -36,7 +36,6 @@ class StkInterface
       , m_bulkDataOutPtr(stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create())
       , m_metaDataOutPtr(m_bulkDataOutPtr->mesh_meta_data_ptr())
     {
-      m_metaDataOutPtr->use_simple_fields();
       check_sideset_size();
       check_sideset_uniqueness();
       initialize_output_mesh();

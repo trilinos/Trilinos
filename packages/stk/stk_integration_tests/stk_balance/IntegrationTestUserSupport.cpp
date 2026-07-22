@@ -30,25 +30,17 @@ namespace
 {
 using stk::unit_test_util::build_mesh;
 
-TEST(Stkbalance, DISABLED_Ticket15830)
-{
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "rs1.rsout");
-
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
-  stk::mesh::BulkData& bulk = *bulkPtr;
-
-  EXPECT_NO_THROW(stk::io::fill_mesh_with_auto_decomp(filename, bulk));
-}
-
 void getMaxMinForNodes(stk::mesh::BulkData& bulk, stk::mesh::EntityVector& nodes, std::vector<double>& minCoord, std::vector<double>& maxCoord, const stk::mesh::FieldBase & coordField)
 {
+  auto coordFieldData = coordField.data<double>();
   for(stk::mesh::Entity node : nodes)
   {
-    double *coord = static_cast<double*>(stk::mesh::field_data(coordField, node));
-    for(unsigned j=0;j<bulk.mesh_meta_data().spatial_dimension();++j)
+    auto coord = coordFieldData.entity_values(node);
+    int spatialDimension = bulk.mesh_meta_data().spatial_dimension();
+    for(stk::mesh::ComponentIdx j=0_comp; j<spatialDimension; ++j)
     {
-      minCoord[j] = std::min(minCoord[j], coord[j]);
-      maxCoord[j] = std::max(maxCoord[j], coord[j]);
+      minCoord[j] = std::min(minCoord[j], coord(j));
+      maxCoord[j] = std::max(maxCoord[j], coord(j));
     }
   }
 }
@@ -132,7 +124,7 @@ TEST(Stkbalance, NumOverlappingBB)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 3) return;
 
   const std::string dummyFileName("ARefLA.e");
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", dummyFileName);
+  std::string filename = stk::unit_test_util::get_option("-i", dummyFileName);
 
   std::vector<double> coordMinOnProc(3, std::numeric_limits<double>::max());
   std::vector<double> coordMaxOnProc(3, std::numeric_limits<double>::lowest());
@@ -190,7 +182,7 @@ TEST(Stkbalance, modifyMeshIfNeeded)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 3) return;
 
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "ARefLA.e");
+  std::string filename = stk::unit_test_util::get_option("-i", "ARefLA.e");
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
@@ -283,7 +275,7 @@ TEST(Stkbalance, modifyMeshIfNeeded)
 // actually check anything.
 TEST(Stkbalance, checkForDegenerateElements)
 {
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "ZDZ.e");
+  std::string filename = stk::unit_test_util::get_option("-i", "ZDZ.e");
 
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;

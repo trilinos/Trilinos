@@ -1,6 +1,8 @@
 import importlib
 
 from . getTypeName import getTypeName, getDefaultScalarType, ROL_classes, ROL_members
+from pyrol.pyrol.Teuchos import ParameterList
+
 
 __version__ = '0.1.0'
 def version():
@@ -16,9 +18,17 @@ def getWrapper(classname):
 
 defaultScalarType = getDefaultScalarType()
 
-supported_objects = {"Bounds", "Constraint", "LinearOperator",
-                     "LinearConstraint", "Objective", "Problem", "Solver",
-                     "Vector", "getCout", "getParametersFromXmlFile"}
+supported_objects = {"Bounds",
+                     "Constraint",
+                     "getCout", 
+                     "getParametersFromXmlFile", 
+                     "getParametersFromYamlFile",
+                     "LinearConstraint", 
+                     "LinearOperator",
+                     "Objective", 
+                     "Problem", 
+                     "Solver",
+                     "Vector"}
 
 unsupported = importlib.import_module('.unsupported', 'pyrol')
 

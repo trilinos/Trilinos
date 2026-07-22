@@ -24,10 +24,8 @@
 #endif
 
 #include <TpetraCore_config.h>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Details_KokkosTeuchosTimerInjection.hpp>
-
-#include <KokkosKernels_config.h>
-#include <KokkosKernels_Controls.hpp>
 
 #ifndef MUELU_AUTOMATIC_TEST_ETI_NAME
 #error "The macro MUELU_AUTOMATIC_TEST_ETI_NAME was not defined"
@@ -55,35 +53,19 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   if (comm->getSize() > 1) {
     out->setOutputToRootOnly(0);
   }
-#endif
-
-  // Tpetra nodes call Kokkos::execution_space::initialize if the execution
-  // space is not initialized, but they don't call Kokkos::initialize.
-  // Teuchos::GlobalMPISession captures its command-line arguments for later
-  // use that Tpetra takes advantage of.
-  //
-  // We call Kokkos::initialize() after MPI so that MPI has the chance to bind
-  // processes correctly before Kokkos touches things.
-  Kokkos::initialize(argc, argv);
-
-  // Create handles for cuBLAS and cuSPARSE. Otherwise they get
-  // created on the first call to these libraries, and that can mess
-  // up timings.
-  KokkosKernels::Experimental::Controls controls;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-  controls.getCublasHandle();
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  controls.getCusparseHandle();
+  Tpetra::initialize(&argc, &argv, comm);
+#else
+  Tpetra::initialize(&argc, &argv);
 #endif
   Kokkos::fence();
+
   bool success = true;
   bool verbose = true;
   try {
     // Parameters
     Teuchos::CommandLineProcessor clp(false);
     std::string node = "";
-    clp.setOption("node", &node, "node type (serial | openmp | cuda | hip)");
+    clp.setOption("node", &node, "node type (serial | openmp | cuda | hip | sycl)");
     bool config = false;
     clp.setOption("config", "noconfig", &config, "display kokkos configuration");
 #ifdef HAVE_TEUCHOS_STACKTRACE
@@ -116,24 +98,6 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
 
     auto lib = xpetraParameters.GetLib();
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      // TAW: we might want to simplify the following logic block.
-      //      In fact, there are examples/tests which only run with Tpetra
-      //      We might need a feature that allows to run Epetra/Tpetra only
-      //      We still need to make sure that the test compiles (i.e., we
-      //      need some preprocessor flags/macros RUN_WITH_EPETRA and RUN_WITH_TPETRA
-#if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-      // Both Epetra and Tpetra (with double, int, int) enabled
-      return MUELU_AUTOMATIC_TEST_ETI_NAME<double, int, int, Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
-      *out << "Skip running with Epetra since both Epetra and Tpetra are enabled but Tpetra is not instantiated on double, int, int." << std::endl;
-#endif  // end Tpetra instantiated on double, int, int
-#else
-      throw RuntimeError("Epetra is not available");
-#endif
-    }
-
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
       auto inst = xpetraParameters.GetInstantiation();
@@ -364,7 +328,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  Kokkos::finalize();
+  Tpetra::finalize();
 
   return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

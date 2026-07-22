@@ -56,6 +56,8 @@ TEST_F(NestedDecomposer, SubdomainMapping_FinalProcCountNotEvenlyDivisible)
 
   setup_initial_mesh("generated:1x1x6");
   EXPECT_THROW(setup_decomposer(3), std::logic_error);
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainMapping_FinalProcCountTooSmall)
@@ -64,6 +66,8 @@ TEST_F(NestedDecomposer, SubdomainMapping_FinalProcCountTooSmall)
 
   setup_initial_mesh("generated:1x1x6");
   EXPECT_THROW(setup_decomposer(1), std::logic_error);
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainMapping_EqualInitialAndFinalProcCount)
@@ -73,6 +77,8 @@ TEST_F(NestedDecomposer, SubdomainMapping_EqualInitialAndFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(2);
   test_subdomain_mapping({{0}, {1}});
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainMapping_LargerFinalProcCount)
@@ -82,6 +88,8 @@ TEST_F(NestedDecomposer, SubdomainMapping_LargerFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(6);
   test_subdomain_mapping({{0, 1, 2}, {3, 4, 5}});
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainDecomposition_SingleProcInitialAndFinal)
@@ -91,6 +99,8 @@ TEST_F(NestedDecomposer, SubdomainDecomposition_SingleProcInitialAndFinal)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(1);
   EXPECT_TRUE(is_nested_decomp());
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainDecomposition_SingleProcInitialToMultipleFinal)
@@ -100,6 +110,8 @@ TEST_F(NestedDecomposer, SubdomainDecomposition_SingleProcInitialToMultipleFinal
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(3);
   EXPECT_TRUE(is_nested_decomp());
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainDecomposition_FinalProcNotEvenlyDivisible)
@@ -108,6 +120,8 @@ TEST_F(NestedDecomposer, SubdomainDecomposition_FinalProcNotEvenlyDivisible)
 
   setup_initial_mesh("generated:1x1x6");
   EXPECT_THROW(setup_decomposer(3), std::logic_error);
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainDecomposition_FinalProcCountTooSmall)
@@ -116,6 +130,8 @@ TEST_F(NestedDecomposer, SubdomainDecomposition_FinalProcCountTooSmall)
 
   setup_initial_mesh("generated:1x1x6");
   EXPECT_THROW(setup_decomposer(1), std::logic_error);
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainDecomposition_EqualInitialAndFinalProcCount)
@@ -125,6 +141,8 @@ TEST_F(NestedDecomposer, SubdomainDecomposition_EqualInitialAndFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(2);
   EXPECT_TRUE(is_nested_decomp());
+
+  clean_up_decomposer();
 }
 
 TEST_F(NestedDecomposer, SubdomainDecomposition_LargerFinalProcCount)
@@ -134,6 +152,8 @@ TEST_F(NestedDecomposer, SubdomainDecomposition_LargerFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(4);
   EXPECT_TRUE(is_nested_decomp());
+
+  clean_up_decomposer();
 }
 
 
@@ -150,9 +170,9 @@ public:
     m_balanceSettings.set_use_nested_decomp(useNestedDecomp);
     m_balanceSettings.setDecompMethod(decompMethod);
 
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::rebalance(m_ioBroker, m_balanceSettings);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
   }
 };
 
@@ -163,6 +183,8 @@ TEST_F(NestedRebalance, Bar)
   setup_initial_mesh("1x1x8");
   rebalance_mesh(4);
   test_decomposed_mesh_element_distribution({2, 2, 2, 2});
+
+  clean_up_temporary_files();
 }
 
 TEST_F(NestedRebalance, Plate)
@@ -172,6 +194,8 @@ TEST_F(NestedRebalance, Plate)
   setup_initial_mesh("1x4x4");
   rebalance_mesh(4);
   test_decomposed_mesh_element_distribution({4, 4, 4, 4});
+
+  clean_up_temporary_files();
 }
 
 TEST_F(NestedRebalance, Cube)
@@ -181,6 +205,8 @@ TEST_F(NestedRebalance, Cube)
   setup_initial_mesh("4x4x4");
   rebalance_mesh(8);
   test_decomposed_mesh_element_distribution({8, 8, 8, 8, 8, 8, 8, 8});
+
+  clean_up_temporary_files();
 }
 
 }

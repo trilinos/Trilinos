@@ -82,7 +82,7 @@ int main(int argc, char **argv)
   /* Write element block names */
   for (int i = 0; i < num_elem_blk; i++) {
     char block_names[32];
-    sprintf(block_names, "block_%c", i + 'A');
+    snprintf(block_names, 32, "block_%c", i + 'A');
     EXCHECK(ex_put_name(exoid, EX_ELEM_BLOCK, blocks[i].id, block_names));
   }
 
@@ -106,11 +106,12 @@ int main(int argc, char **argv)
       "Curl@3",        "Curl@4",        "Curl@5",        "Curl@6",           "Curl@7",
       "Curl@8",        "Species_h2o-0", "Species_gas-0", "Species_ch4-0",    "Species_methane-0",
       "Species_h2o-1", "Species_gas-1", "Species_ch4-1", "Species_methane-1"};
-  int num_block_vars = sizeof(var_names) / sizeof(var_names[0]);
+  int num_total_vars = sizeof(var_names) / sizeof(var_names[0]);
   int num_node_vars  = 6;
+  int num_block_vars[3];
 
-  EXCHECK(ex_put_variable_param(exoid, EX_ELEM_BLOCK, num_block_vars));
-  EXCHECK(ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_block_vars, var_names));
+  EXCHECK(ex_put_variable_param(exoid, EX_ELEM_BLOCK, num_total_vars));
+  EXCHECK(ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_total_vars, var_names));
   EXCHECK(ex_put_variable_param(exoid, EX_NODAL, num_node_vars));
   EXCHECK(ex_put_variable_names(exoid, EX_NODAL, num_node_vars, var_names));
 
@@ -131,7 +132,7 @@ int main(int argc, char **argv)
     int cardinality =
         field.cardinality[0] != 0 ? field.cardinality[0] : ex_field_cardinality(field.type[0]);
     for (int i = 0; i < cardinality; i++) {
-      const char *name = ex_component_field_name(&field, (int[]){i + 1});
+      const char *name = ex_component_field_name(&field, (int[]){i + 1, 0});
       assert(strcmp(var_names[vname++], name) == 0);
     }
   }
@@ -152,11 +153,11 @@ int main(int argc, char **argv)
     int cardinality =
         field.cardinality[0] != 0 ? field.cardinality[0] : ex_field_cardinality(field.type[0]);
     for (int i = 0; i < cardinality; i++) {
-      const char *name = ex_component_field_name(&field, (int[]){i + 1});
+      const char *name = ex_component_field_name(&field, (int[]){i + 1, 0});
       assert(strcmp(var_names[vname++], name) == 0);
     }
   }
-
+  num_block_vars[0] = 6;
   {
     double Q        = 1.0 / sqrt(3.0);
     double xi[]     = {-Q, Q, -Q, Q, -Q, Q, -Q, Q};
@@ -229,11 +230,12 @@ int main(int argc, char **argv)
                                         .nesting             = 1,
                                         .component_separator = {'@'}};
     EXCHECK(ex_put_field_metadata(exoid, field2));
+    num_block_vars[1] = 35;
   }
 
   {
     struct ex_field field = (ex_field){.entity_type = EX_ELEM_BLOCK,
-                                       .entity_id   = blocks[1].id,
+                                       .entity_id   = blocks[2].id,
                                        .name        = "Species",
                                        .type        = {EX_FIELD_TYPE_USER_DEFINED, EX_QUADRATURE},
                                        .type_name   = {",1x2x1"},
@@ -242,6 +244,7 @@ int main(int argc, char **argv)
                                        .component_separator = {'_', '-'}};
     EXCHECK(ex_put_field_metadata(exoid, field));
     EXCHECK(ex_put_field_suffices(exoid, field, "h2o,gas,ch4,methane"));
+    num_block_vars[2] = 4;
   }
 
   { /* Output time steps ... */
@@ -251,16 +254,18 @@ int main(int argc, char **argv)
       EXCHECK(ex_put_time(exoid, ts + 1, &time_val));
 
       /* write variables */
+      int var_idx_off = 1;
       for (int k = 0; k < num_elem_blk; k++) {
         double *var_vals = (double *)calloc(blocks[k].num_entry, CPU_word_size);
-        for (int var_idx = 0; var_idx < num_block_vars; var_idx++) {
+        for (int var_idx = 0; var_idx < num_block_vars[k]; var_idx++) {
           for (int elem = 0; elem < blocks[k].num_entry; elem++) {
             var_vals[elem] = (double)(var_idx + 2) * time_val + elem;
           }
-          EXCHECK(ex_put_var(exoid, ts + 1, EX_ELEM_BLOCK, var_idx + 1, blocks[k].id,
+          EXCHECK(ex_put_var(exoid, ts + 1, EX_ELEM_BLOCK, var_idx + var_idx_off, blocks[k].id,
                              blocks[k].num_entry, var_vals));
         }
         free(var_vals);
+        var_idx_off += num_block_vars[k];
       }
     }
   }

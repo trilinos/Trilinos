@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_OPENACC_PARALLEL_REDUCE_TEAM_HPP
 #define KOKKOS_OPENACC_PARALLEL_REDUCE_TEAM_HPP
@@ -163,13 +150,24 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer_v<ValueType>>
 parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
                     iType, Impl::OpenACCTeamMember>& loop_boundaries,
                 const Lambda& lambda, ValueType& result) {
-  ValueType tmp = ValueType();
-  iType j_start =
-      loop_boundaries.team.team_rank() / loop_boundaries.team.vector_length();
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>, Lambda,
+      ValueType>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+  using value_type           = typename wrapped_reducer_type::value_type;
+
+  wrapped_reducer_type wrapped_reducer(lambda);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
+  iType j_start = loop_boundaries.member.team_rank() /
+                  loop_boundaries.member.vector_length();
   if (j_start == 0) {
 #pragma acc loop seq
     for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++)
       lambda(i, tmp);
+    wrapped_reducer.final(&tmp);
     result = tmp;
   }
 }
@@ -180,15 +178,25 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<Kokkos::is_reducer_v<ReducerType>>
 parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
                     iType, Impl::OpenACCTeamMember>& loop_boundaries,
                 const Lambda& lambda, const ReducerType& reducer) {
-  using ValueType = typename ReducerType::value_type;
-  ValueType tmp;
-  reducer.init(tmp);
-  iType j_start =
-      loop_boundaries.team.team_rank() / loop_boundaries.team.vector_length();
+  using value_type            = typename ReducerType::value_type;
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>,
+      ReducerType, value_type>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+
+  wrapped_reducer_type wrapped_reducer(reducer);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
+  iType j_start = loop_boundaries.member.team_rank() /
+                  loop_boundaries.member.vector_length();
   if (j_start == 0) {
 #pragma acc loop seq
     for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++)
       lambda(i, tmp);
+
+    wrapped_reducer.final(&tmp);
     reducer.reference() = tmp;
   }
 }
@@ -200,14 +208,25 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer_v<ValueType>>
 parallel_reduce(const Impl::ThreadVectorRangeBoundariesStruct<
                     iType, Impl::OpenACCTeamMember>& loop_boundaries,
                 const Lambda& lambda, ValueType& result) {
-  ValueType tmp = ValueType();
-  iType j_start =
-      loop_boundaries.team.team_rank() % loop_boundaries.team.vector_length();
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>, Lambda,
+      ValueType>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+  using value_type           = typename wrapped_reducer_type::value_type;
+
+  wrapped_reducer_type wrapped_reducer(lambda);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
+  iType j_start = loop_boundaries.member.team_rank() %
+                  loop_boundaries.member.vector_length();
   if (j_start == 0) {
 #pragma acc loop seq
     for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++) {
       lambda(i, tmp);
     }
+    wrapped_reducer.final(&tmp);
     result = tmp;
   }
 }
@@ -218,16 +237,26 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<Kokkos::is_reducer_v<ReducerType>>
 parallel_reduce(const Impl::ThreadVectorRangeBoundariesStruct<
                     iType, Impl::OpenACCTeamMember>& loop_boundaries,
                 const Lambda& lambda, const ReducerType& reducer) {
-  using ValueType = typename ReducerType::value_type;
-  ValueType tmp;
-  reducer.init(tmp);
-  iType j_start =
-      loop_boundaries.team.team_rank() % loop_boundaries.team.vector_length();
+  using value_type            = typename ReducerType::value_type;
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>,
+      ReducerType, value_type>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+
+  wrapped_reducer_type wrapped_reducer(reducer);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
+  iType j_start = loop_boundaries.member.team_rank() %
+                  loop_boundaries.member.vector_length();
   if (j_start == 0) {
 #pragma acc loop seq
     for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++) {
       lambda(i, tmp);
     }
+
+    wrapped_reducer.final(&tmp);
     reducer.reference() = tmp;
   }
 }
@@ -239,14 +268,25 @@ KOKKOS_INLINE_FUNCTION void parallel_reduce(
     const Impl::TeamVectorRangeBoundariesStruct<iType, Impl::OpenACCTeamMember>&
         loop_boundaries,
     const Lambda& lambda, ValueType& result) {
-  ValueType tmp = ValueType();
-  iType j_start =
-      loop_boundaries.team.team_rank() % loop_boundaries.team.vector_length();
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>, Lambda,
+      ValueType>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+  using value_type           = typename wrapped_reducer_type::value_type;
+
+  wrapped_reducer_type wrapped_reducer(lambda);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
+  iType j_start = loop_boundaries.member.team_rank() %
+                  loop_boundaries.member.vector_length();
   if (j_start == 0) {
 #pragma acc loop seq
     for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++) {
       lambda(i, tmp);
     }
+    wrapped_reducer.final(&tmp);
     result = tmp;
   }
 }
@@ -273,10 +313,22 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer_v<ValueType>>
 parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
                     iType, Impl::OpenACCTeamMember>& loop_boundaries,
                 const Lambda& lambda, ValueType& result) {
-  ValueType tmp = ValueType();
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>, Lambda,
+      ValueType>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+  using value_type           = typename wrapped_reducer_type::value_type;
+
+  wrapped_reducer_type wrapped_reducer(lambda);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
 #pragma acc loop worker reduction(+ : tmp)
   for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++)
     lambda(i, tmp);
+
+  wrapped_reducer.final(&tmp);
   result = tmp;
 }
 
@@ -314,11 +366,22 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer_v<ValueType>>
 parallel_reduce(const Impl::ThreadVectorRangeBoundariesStruct<
                     iType, Impl::OpenACCTeamMember>& loop_boundaries,
                 const Lambda& lambda, ValueType& result) {
-  ValueType tmp = ValueType();
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>, Lambda,
+      ValueType>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+  using value_type           = typename wrapped_reducer_type::value_type;
+
+  wrapped_reducer_type wrapped_reducer(lambda);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
 #pragma acc loop vector reduction(+ : tmp)
   for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++) {
     lambda(i, tmp);
   }
+  wrapped_reducer.final(&tmp);
   result = tmp;
 }
 
@@ -357,11 +420,23 @@ KOKKOS_INLINE_FUNCTION void parallel_reduce(
     const Impl::TeamVectorRangeBoundariesStruct<iType, Impl::OpenACCTeamMember>&
         loop_boundaries,
     const Lambda& lambda, ValueType& result) {
-  ValueType tmp = ValueType();
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::OpenACCTeamMember::execution_space>, Lambda,
+      ValueType>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+  using value_type           = typename wrapped_reducer_type::value_type;
+
+  wrapped_reducer_type wrapped_reducer(lambda);
+  value_type tmp;
+  wrapped_reducer.init(&tmp);
+
 #pragma acc loop vector reduction(+ : tmp)
   for (iType i = loop_boundaries.start; i < loop_boundaries.end; i++) {
     lambda(i, tmp);
   }
+
+  wrapped_reducer.final(&tmp);
   result = tmp;
 }
 

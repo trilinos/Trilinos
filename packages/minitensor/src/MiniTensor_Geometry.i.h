@@ -593,4 +593,3 @@ ParametricGrid<T, N>::traverse(Visitor & visitor) const
 } // namespace minitensor
 
 #endif // MiniTensor_Geometry_i_h
-

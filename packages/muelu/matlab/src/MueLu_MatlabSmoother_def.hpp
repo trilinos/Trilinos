@@ -6,10 +6,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-
-#include "MueLu_MatlabSmoother_decl.hpp"
 #ifndef MUELU_MATLABSMOOTHER_DEF_HPP
 #define MUELU_MATLABSMOOTHER_DEF_HPP
+#include "MueLu_MatlabSmoother_decl.hpp"
 #include "MueLu_MatlabUtils_decl.hpp"
 
 #if defined(HAVE_MUELU_MATLAB)

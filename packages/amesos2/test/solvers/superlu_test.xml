@@ -5,24 +5,7 @@
     <Parameter name="complex" type="bool" value="false"/>
     <ParameterList name="SuperLU">
       
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<ParameterList name="single iterrefine">
-	  <!-- For epetra, we cannot specify types, so solver_run_params are the most meaningful -->
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="SLU_SINGLE"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="double iterrefine">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="IterRefine" type="string" value="SLU_DOUBLE"/>
-	  </ParameterList>
-	</ParameterList>
-	<!-- A non-list entry for epetra denotes a default run, name, type, and value are arbitrary -->
-	<Parameter name="defaultrun" type="bool" value="true"/>
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<!-- these `run*' sublist names are arbitrary -->
 	<ParameterList name="run0">

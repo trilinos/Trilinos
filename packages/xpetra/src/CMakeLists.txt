@@ -84,25 +84,8 @@ SET(HEADERS "")
 
 APPEND_GLOB(SOURCES
   Utils/Xpetra_Utils.cpp
-  Utils/Xpetra_EpetraUtils.cpp
   Platform/Xpetra_DefaultPlatform.cpp
   )
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  APPEND_GLOB(SOURCES
-    Map/Xpetra_EpetraMap.cpp
-    Map/Xpetra_EpetraMapFactory.cpp
-    Import/Xpetra_EpetraImport.cpp
-    Export/Xpetra_EpetraExport.cpp
-    MultiVector/Xpetra_EpetraMultiVector.cpp
-    MultiVector/Xpetra_EpetraIntMultiVector.cpp
-    MultiVector/Xpetra_EpetraMultiVectorFactory.cpp
-    CrsGraph/Xpetra_EpetraCrsGraph.cpp
-    CrsMatrix/Xpetra_EpetraCrsMatrix.cpp
-    Vector/Xpetra_EpetraVector.cpp
-    Vector/Xpetra_EpetraIntVector.cpp
-    Vector/Xpetra_EpetraVectorFactory.cpp
-    )
-ENDIF()
 
 # Create the .hpp file in BUILD/packages/xpetra/src
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsMatrix   NOSIERRABJAM)
@@ -113,25 +96,15 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph    
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix          NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Export             NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Map                NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Matrix             NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/MultiVector        NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Utils              NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/StridedMap         NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Vector             NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/Import             NOSIERRABJAM)
 
 
 #TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
-# mfh 18 Dec 2014: The "real" Kokkos(Classic) is now the TpetraClassic
-# subpackage of Tpetra.  Thus, we have to test whether Tpetra is
-# enabled, not whether Kokkos is enabled.  Furthermore, it wasn't
-# previously correct to test if Kokkos was enabled, since Kokkos could
-# have been enabled without the KokkosClassic subpackage having been
-# enabled.
-#
-#IF (NOT ${PROJECT_NAME}_ENABLE_Kokkos)
-IF (NOT ${PROJECT_NAME}_ENABLE_Tpetra)
-  TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/FakeKokkos)
-  APPEND_GLOB(HEADERS FakeKokkos/*.hpp)
-ENDIF()
 
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsGraph)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/CrsMatrix)
@@ -145,10 +118,12 @@ TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockedMap)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/MultiVector)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockedMultiVector)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/BlockedVector)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Matrix)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Operator)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Platform)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/RowGraph)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/RowMatrix)
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/StridedMap)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Utils/ForwardDeclaration)
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vector)
@@ -165,6 +140,7 @@ APPEND_GLOB(HEADERS Export/*.hpp)
 APPEND_GLOB(HEADERS Headers/*.hpp)
 APPEND_GLOB(HEADERS Import/*.hpp)
 APPEND_GLOB(HEADERS Map/*.hpp)
+APPEND_GLOB(HEADERS Matrix/*.hpp)
 APPEND_GLOB(HEADERS BlockedMap/*.hpp)
 APPEND_GLOB(HEADERS MultiVector/*.hpp)
 APPEND_GLOB(HEADERS BlockedMultiVector/*.hpp)
@@ -173,6 +149,7 @@ APPEND_GLOB(HEADERS Operator/*.hpp)
 APPEND_GLOB(HEADERS Platform/*.hpp)
 APPEND_GLOB(HEADERS RowGraph/*.hpp)
 APPEND_GLOB(HEADERS RowMatrix/*.hpp)
+APPEND_GLOB(HEADERS StridedMap/*.hpp)
 APPEND_GLOB(HEADERS Utils/ForwardDeclaration/*.hpp)
 APPEND_GLOB(HEADERS Utils/*.hpp)
 APPEND_GLOB(HEADERS Vector/*.hpp)

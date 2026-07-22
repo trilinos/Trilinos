@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 #define KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
@@ -56,10 +43,9 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 }
 
 #define N_BASE_ALGOS BaseKokkosBatchedAlgos::N
-#define BASE_ALGO_STRS                                                      \
-  "BaseHeuristicAlgos::SQUARE", "BaseHeuristicAlgos::TALL",                 \
-      "BaseHeuristicAlgos::WIDE", "BaseTplAlgos::ARMPL", "BaseTplAlgosMKL", \
-      "BaseKokkosBatchedAlgos::KK_SERIAL"
+#define BASE_ALGO_STRS                                                                                         \
+  "BaseHeuristicAlgos::SQUARE", "BaseHeuristicAlgos::TALL", "BaseHeuristicAlgos::WIDE", "BaseTplAlgos::ARMPL", \
+      "BaseTplAlgosMKL", "BaseKokkosBatchedAlgos::KK_SERIAL"
 
 /// \brief TplParams abstracts underlying handle or execution queue type.
 struct TplParams {
@@ -145,8 +131,7 @@ class BatchedKernelHandle {
   int vecLen       = 0;
   bool enableDebug = false;
 
-  BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
-                      int teamSize = 0, int vecLength = 0)
+  BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0, int vecLength = 0)
       : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType) {
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || ARMPL_BUILD < 1058
     if (_kernelAlgoType == BaseTplAlgos::ARMPL) {
@@ -157,13 +142,11 @@ class BatchedKernelHandle {
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 #endif  // !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-  };
+  }
 
   int get_kernel_algo_type() const { return _kernelAlgoType; }
 
-  std::string get_kernel_algo_type_str() const {
-    return algo_type_strs[_kernelAlgoType];
-  }
+  std::string get_kernel_algo_type_str() const { return algo_type_strs[_kernelAlgoType]; }
 
   decltype(auto) get_tpl_params() const {
 #if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)

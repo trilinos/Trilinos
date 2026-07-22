@@ -1,47 +1,15 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
-#ifndef PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
-#define PANZER_GATHER_SOLUTION_BLOCKED_EPETRA_IMPL_HPP
+#ifndef PANZER_GATHER_SOLUTION_BLOCKED_TPETRA_IMPL_HPP
+#define PANZER_GATHER_SOLUTION_BLOCKED_TPETRA_IMPL_HPP
 
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -248,7 +216,7 @@ panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,Nod
 GatherSolution_BlockedTpetra(
   const Teuchos::RCP<const BlockedDOFManager> & indexer,
   const Teuchos::ParameterList& p)
-  : gidIndexer_(indexer)
+  : globalIndexer_(indexer)
   , has_tangent_fields_(false)
 {
   typedef std::vector< std::vector<std::string> > vvstring;
@@ -282,7 +250,7 @@ GatherSolution_BlockedTpetra(
       tangentFields_[fd].resize(tangent_field_names[fd].size());
       for (std::size_t i=0; i<tangent_field_names[fd].size(); ++i) {
         tangentFields_[fd][i] =
-          PHX::MDField<const ScalarT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
+          PHX::MDField<const RealT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
         this->addDependentField(tangentFields_[fd][i]);
       }
     }
@@ -300,17 +268,57 @@ GatherSolution_BlockedTpetra(
 // **********************************************************************
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */,
+postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& /* fm */)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
-  fieldIds_.resize(gatherFields_.size());
+  const Workset & workset_0 = (*d.worksets_)[0];
+  const std::string blockId = this->wda(workset_0).block_id;
 
+  fieldIds_.resize(gatherFields_.size());
+  fieldOffsets_.resize(gatherFields_.size());
+  productVectorBlockIndex_.resize(gatherFields_.size());
+  int maxElementBlockGIDCount = -1;
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
-    // get field ID from DOF manager
-    const std::string& fieldName = indexerNames_[fd];
-    fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
+
+    const std::string fieldName = indexerNames_[fd];
+    const int globalFieldNum = globalIndexer_->getFieldNum(fieldName); // Field number in the aggregate BlockDOFManager
+    productVectorBlockIndex_[fd] = globalIndexer_->getFieldBlock(globalFieldNum);
+    const auto& subGlobalIndexer = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fd]];
+    fieldIds_[fd] = subGlobalIndexer->getFieldNum(fieldName); // Field number in the sub-global-indexer
+
+    const std::vector<int>& offsets = subGlobalIndexer->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+    fieldOffsets_[fd] = PHX::View<int*>("GatherSolution_BlockedTpetra(Tangent):fieldOffsets",offsets.size());
+    auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
+    for (std::size_t i=0; i < offsets.size(); ++i)
+      hostOffsets(i) = offsets[i];
+    Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
+    maxElementBlockGIDCount = std::max(subGlobalIndexer->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
+  }
+
+  // We will use one workset lid view for all fields, but has to be
+  // sized big enough to hold the largest elementBlockGIDCount in the
+  // ProductVector.
+  worksetLIDs_ = PHX::View<LO**>("ScatterResidual_BlockedTpetra(Tangent):worksetLIDs",
+                                                gatherFields_[0].extent(0),
+                                                maxElementBlockGIDCount);
+
+  // Set up storage for tangentFields using view of views
+  if (has_tangent_fields_) {
+
+    size_t inner_vector_max_size = 0;
+    for (std::size_t fd = 0; fd < tangentFields_.size(); ++fd)
+      inner_vector_max_size = std::max(inner_vector_max_size,tangentFields_[fd].size());
+    tangentFieldsVoV_.initialize("GatherSolution_BlockedTpetra<Tangent>::tangentFieldsVoV_",gatherFields_.size(),inner_vector_max_size);
+
+    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
+      for (std::size_t i=0; i<tangentFields_[fd].size(); ++i) {
+        tangentFieldsVoV_.addView(tangentFields_[fd][i].get_static_view(),fd,i);
+      }
+    }
+
+    tangentFieldsVoV_.syncHostToDevice();
   }
 
   indexerNames_.clear();  // Don't need this anymore
@@ -330,75 +338,72 @@ template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   using Teuchos::RCP;
-   using Teuchos::ArrayRCP;
-   using Teuchos::ptrFromRef;
-   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ptrFromRef;
+  using Teuchos::rcp_dynamic_cast;
 
-   using Thyra::VectorBase;
-   using Thyra::SpmdVectorBase;
-   using Thyra::ProductVectorBase;
+  using Thyra::VectorBase;
+  using Thyra::SpmdVectorBase;
+  using Thyra::ProductVectorBase;
 
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setShowProcRank(true);
-   out.setOutputToRootOnly(-1);
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setShowProcRank(true);
+  out.setOutputToRootOnly(-1);
 
-   std::vector<std::pair<int,GO> > GIDs;
-   std::vector<LO> LIDs;
+  const PHX::View<const int*> & localCellIds = this->wda(workset).getLocalCellIDs();
 
-   // for convenience pull out some objects from workset
-   std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  Teuchos::RCP<ProductVectorBase<double> > blockedSolution;
+  if (useTimeDerivativeSolutionVector_)
+    blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
+  else
+    blockedSolution = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
 
-   Teuchos::RCP<ProductVectorBase<double> > x;
-   if (useTimeDerivativeSolutionVector_)
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_dxdt());
-   else
-     x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x());
+  // Loop over fields to gather
+  int currentWorksetLIDSubBlock = -1;
+  for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size(); fieldIndex++) {
+    // workset LIDs only change if in different sub blocks 
+    if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
+      const auto& blockIndexer = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fieldIndex]];
+      const std::string blockId = this->wda(workset).block_id;
+      const int num_dofs = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fieldIndex]]->getElementBlockGIDCount(blockId);
+      blockIndexer->getElementLIDs(localCellIds,worksetLIDs_,num_dofs); 
+      currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
+    }
 
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      LO cellLocalId = localCellIds[worksetCellIndex];
+    const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
+    const auto& subblockSolution = *((rcp_dynamic_cast<Thyra::TpetraVector<RealT,LO,GO,NodeT>>(blockedSolution->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
+    const auto kokkosSolution = subblockSolution.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-      gidIndexer_->getElementGIDsPair(cellLocalId,GIDs,blockId);
+    // Class data fields for lambda capture
+    const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];
+    const PHX::View<const LO**> worksetLIDs = worksetLIDs_;
+    const PHX::View<ScalarT**> fieldValues = gatherFields_[fieldIndex].get_static_view();        
 
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         // used for doing local ID lookups
-         RCP<const MapType> x_map = blockedContainer_->getMapForBlock(GIDs[i].first);
+    if (has_tangent_fields_) { 
+      const int numTangents = tangentFields_[fieldIndex].size();
+      const auto tangentFieldsDevice = tangentFieldsVoV_.getViewDevice();
+      const auto kokkosTangents = Kokkos::subview(tangentFieldsDevice,fieldIndex,Kokkos::ALL());
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
+        for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+          const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
+	       fieldValues(cell,basis).zero();
+          fieldValues(cell,basis).val() = kokkosSolution(rowLID,0);
+          for (int i_tangent=0; i_tangent<numTangents; ++i_tangent)
+            fieldValues(cell,basis).fastAccessDx(i_tangent) = kokkosTangents(i_tangent)(cell,basis);
+        }
+      });
+    } else {
+      Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
+        for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
+          const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
+	       fieldValues(cell,basis).zero();
+          fieldValues(cell,basis) = kokkosSolution(rowLID,0);
+        }
+      });
+    }
+  }
 
-         LIDs[i] = x_map->getLocalElement(GIDs[i].second);
-      }
-
-      // loop over the fields to be gathered
-      Teuchos::ArrayRCP<const double> local_x;
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         int indexerId = gidIndexer_->getFieldBlock(fieldNum);
-
-         // grab local data for inputing
-         RCP<SpmdVectorBase<double> > block_x = rcp_dynamic_cast<SpmdVectorBase<double> >(x->getNonconstVectorBlock(indexerId));
-         block_x->getLocalData(ptrFromRef(local_x));
-
-         const std::vector<int> & elmtOffset = gidIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-         // loop over basis functions and fill the fields
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-
-            if (!has_tangent_fields_)
-              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = local_x[lid];
-            else {
-              (gatherFields_[fieldIndex])(worksetCellIndex,basis).val() = local_x[lid];
-              for (std::size_t i=0; i<tangentFields_[fieldIndex].size(); ++i)
-                (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(i) =
-                  tangentFields_[fieldIndex][i](worksetCellIndex,basis).val();
-            }
-         }
-      }
-   }
 }
 
 // **********************************************************************

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #include <Kokkos_Macros.hpp>
@@ -41,8 +28,7 @@ struct Dynamic {};
 // Schedule Wrapper Type
 template <class T>
 struct Schedule {
-  static_assert(std::is_same<T, Static>::value ||
-                    std::is_same<T, Dynamic>::value,
+  static_assert(std::is_same_v<T, Static> || std::is_same_v<T, Dynamic>,
                 "Kokkos: Invalid Schedule<> type.");
   using schedule_type = Schedule;
   using type          = T;
@@ -51,7 +37,7 @@ struct Schedule {
 // Specify Iteration Index Type
 template <typename T>
 struct IndexType {
-  static_assert(std::is_integral<T>::value, "Kokkos: Invalid IndexType<>.");
+  static_assert(std::is_integral_v<T>, "Kokkos: Invalid IndexType<>.");
   using index_type = IndexType;
   using type       = T;
 };
@@ -128,49 +114,58 @@ struct LaunchBounds {
 
 namespace Kokkos {
 
-#define KOKKOS_IMPL_IS_CONCEPT(CONCEPT)                        \
+#define KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(TYPEDEF)         \
   template <typename T>                                        \
-  struct is_##CONCEPT {                                        \
+  struct is_##TYPEDEF {                                        \
    private:                                                    \
     template <typename U>                                      \
-    using have_t = typename U::CONCEPT;                        \
+    using have_t = typename U::TYPEDEF;                        \
     template <typename U>                                      \
-    using have_type_t = typename U::CONCEPT##_type;            \
+    using have_type_t = typename U::TYPEDEF##_type;            \
                                                                \
    public:                                                     \
     static constexpr bool value =                              \
-        std::is_base_of<detected_t<have_t, T>, T>::value ||    \
-        std::is_base_of<detected_t<have_type_t, T>, T>::value; \
+        std::is_base_of_v<detected_t<have_t, T>, T> ||         \
+        std::is_base_of_v<detected_t<have_type_t, T>, T>;      \
     constexpr operator bool() const noexcept { return value; } \
   };                                                           \
   template <typename T>                                        \
-  inline constexpr bool is_##CONCEPT##_v = is_##CONCEPT<T>::value;
+  inline constexpr bool is_##TYPEDEF##_v = is_##TYPEDEF<T>::value;
+
+#define KOKKOS_IMPL_DEFINE_CONCEPT_AND_TRAIT_FROM_TYPEDEF(TYPEDEF,       \
+                                                          CXX20_CONCEPT) \
+  KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(TYPEDEF)                         \
+  template <typename T>                                                  \
+  concept CXX20_CONCEPT = is_##TYPEDEF##_v<T>;
 
 // Public concept:
 
-KOKKOS_IMPL_IS_CONCEPT(memory_space)
-KOKKOS_IMPL_IS_CONCEPT(memory_traits)
-KOKKOS_IMPL_IS_CONCEPT(execution_space)
-KOKKOS_IMPL_IS_CONCEPT(execution_policy)
-KOKKOS_IMPL_IS_CONCEPT(array_layout)
-KOKKOS_IMPL_IS_CONCEPT(reducer)
-KOKKOS_IMPL_IS_CONCEPT(team_handle)
+KOKKOS_IMPL_DEFINE_CONCEPT_AND_TRAIT_FROM_TYPEDEF(memory_space, MemorySpace)
+KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(memory_traits)
+KOKKOS_IMPL_DEFINE_CONCEPT_AND_TRAIT_FROM_TYPEDEF(execution_space,
+                                                  ExecutionSpace)
+KOKKOS_IMPL_DEFINE_CONCEPT_AND_TRAIT_FROM_TYPEDEF(execution_policy,
+                                                  ExecutionPolicy)
+KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(array_layout)
+KOKKOS_IMPL_DEFINE_CONCEPT_AND_TRAIT_FROM_TYPEDEF(reducer, Reducer)
+KOKKOS_IMPL_DEFINE_CONCEPT_AND_TRAIT_FROM_TYPEDEF(team_handle, TeamHandle)
 namespace Experimental {
-KOKKOS_IMPL_IS_CONCEPT(work_item_property)
-KOKKOS_IMPL_IS_CONCEPT(hooks_policy)
+KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(work_item_property)
+KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(hooks_policy)
 }  // namespace Experimental
 
 namespace Impl {
 
 // Implementation concept:
 
-KOKKOS_IMPL_IS_CONCEPT(thread_team_member)
-KOKKOS_IMPL_IS_CONCEPT(host_thread_team_member)
-KOKKOS_IMPL_IS_CONCEPT(graph_kernel)
+KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(thread_team_member)
+KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(host_thread_team_member)
+KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF(graph_kernel)
 
 }  // namespace Impl
 
-#undef KOKKOS_IMPL_IS_CONCEPT
+#undef KOKKOS_IMPL_DEFINE_TRAIT_FROM_TYPEDEF
+#undef KOKKOS_IMPL_DEFINE_CONCEPT_AND_TRAIT_FROM_TYPEDEF
 
 }  // namespace Kokkos
 
@@ -292,44 +287,6 @@ struct is_space {
 
   using execution_space = typename is_exe::space;
   using memory_space    = typename is_mem::space;
-
-  // For backward compatibility, deprecated in favor of
-  // Kokkos::Impl::HostMirror<S>::host_mirror_space
-
- private:
-  // The actual definitions for host_memory_space and host_execution_spaces are
-  // in do_not_use_host_memory_space and do_not_use_host_execution_space to be
-  // able to use them within this class without deprecation warnings.
-  using do_not_use_host_memory_space = std::conditional_t<
-      std::is_same<memory_space, Kokkos::HostSpace>::value
-#if defined(KOKKOS_ENABLE_CUDA)
-          || std::is_same<memory_space, Kokkos::CudaUVMSpace>::value ||
-          std::is_same<memory_space, Kokkos::CudaHostPinnedSpace>::value
-#elif defined(KOKKOS_ENABLE_HIP)
-          || std::is_same<memory_space, Kokkos::HIPHostPinnedSpace>::value ||
-          std::is_same<memory_space, Kokkos::HIPManagedSpace>::value
-#elif defined(KOKKOS_ENABLE_SYCL)
-          || std::is_same<memory_space,
-                          Kokkos::Experimental::SYCLSharedUSMSpace>::value ||
-          std::is_same<memory_space,
-                       Kokkos::Experimental::SYCLHostUSMSpace>::value
-#endif
-      ,
-      memory_space, Kokkos::HostSpace>;
-
-  using do_not_use_host_execution_space = std::conditional_t<
-#if defined(KOKKOS_ENABLE_CUDA)
-      std::is_same<execution_space, Kokkos::Cuda>::value ||
-#elif defined(KOKKOS_ENABLE_HIP)
-      std::is_same<execution_space, Kokkos::HIP>::value ||
-#elif defined(KOKKOS_ENABLE_SYCL)
-      std::is_same<execution_space, Kokkos::Experimental::SYCL>::value ||
-#elif defined(KOKKOS_ENABLE_OPENMPTARGET)
-      std::is_same<execution_space,
-                   Kokkos::Experimental::OpenMPTarget>::value ||
-#endif
-          false,
-      Kokkos::DefaultHostExecutionSpace, execution_space>;
 };
 
 }  // namespace Kokkos
@@ -357,7 +314,7 @@ struct MemorySpaceAccess {
    *  2. All execution spaces that can access DstMemorySpace can also access
    *     SrcMemorySpace.
    */
-  enum { assignable = std::is_same<DstMemorySpace, SrcMemorySpace>::value };
+  enum { assignable = std::is_same_v<DstMemorySpace, SrcMemorySpace> };
 
   /**\brief  For all DstExecSpace::memory_space == DstMemorySpace
    *         DstExecSpace can access SrcMemorySpace.
@@ -442,7 +399,7 @@ struct SpaceAccessibility {
   // If same memory space or not accessible use the AccessSpace
   // else construct a device with execution space and memory space.
   using space = std::conditional_t<
-      std::is_same<typename AccessSpace::memory_space, MemorySpace>::value ||
+      std::is_same_v<typename AccessSpace::memory_space, MemorySpace> ||
           !exe_access::accessible,
       AccessSpace,
       Kokkos::Device<typename AccessSpace::execution_space, MemorySpace>>;

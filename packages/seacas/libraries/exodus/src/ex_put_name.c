@@ -37,19 +37,19 @@ int exi_put_assembly_name(int exoid, ex_entity_type obj_type, ex_entity_id entit
   /* See if an assembly with this id has already been defined or exists on file... */
   int  entlst_id = 0;
   char errmsg[MAX_ERR_LENGTH];
-  if (nc_inq_varid(exoid, VAR_ENTITY_ASSEMBLY(entity_id), &entlst_id) == NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_ENTITY_ASSEMBLY(entity_id), &entlst_id) == EX_NOERR) {
     int status;
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
     size_t length = strlen(name) + 1;
-    if ((status = nc_put_att_text(exoid, entlst_id, EX_ATTRIBUTE_NAME, length, name)) != NC_NOERR) {
+    if ((status = nc_put_att_text(exoid, entlst_id, EX_ATTRIBUTE_NAME, length, name)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store assembly name %s in file id %d",
                name, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+      if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
       }
@@ -57,7 +57,7 @@ int exi_put_assembly_name(int exoid, ex_entity_type obj_type, ex_entity_id entit
     }
     /* Update the maximum_name_length attribute on the file. */
     exi_update_max_name_length(exoid, length - 1);
-    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -114,7 +114,7 @@ int ex_put_name(int exoid, ex_entity_type obj_type, ex_entity_id entity_id, cons
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, vobj, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vobj, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s names in file id %d",
              ex_name_of_object(obj_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

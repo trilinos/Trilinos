@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_FRANCIS_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_FRANCIS_SERIAL_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_FRANCIS_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_FRANCIS_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -32,12 +19,11 @@ namespace KokkosBatched {
 ///
 struct SerialFrancisInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const int mbeg, const int mend, const int morg,
-      /* */ ValueType *HH, const int hs0, const int hs1,
-      const Kokkos::complex<ValueType> lambda1,
-      const Kokkos::complex<ValueType> lambda2, const bool is_complex,
-      /* */ Kokkos::pair<ValueType, ValueType> *GG, const bool request_schur) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const int mbeg, const int mend, const int morg,
+                                           /* */ ValueType *HH, const int hs0, const int hs1,
+                                           const Kokkos::complex<ValueType> lambda1,
+                                           const Kokkos::complex<ValueType> lambda2, const bool is_complex,
+                                           /* */ Kokkos::pair<ValueType, ValueType> *GG, const bool request_schur) {
     typedef ValueType value_type;
 
     const int hs = hs0 + hs1;
@@ -73,25 +59,21 @@ struct SerialFrancisInternal {
       // this needs m>=3
       // v = M e_1 = (H*H - 2 Re(lambda) H + |lambda|^2 I)e_1
       value_type s, t;
-      const value_type h00 = H[0 * hs0 + 0 * hs1], h01 = H[0 * hs0 + 1 * hs1],
-                       h10 = H[1 * hs0 + 0 * hs1], h11 = H[1 * hs0 + 1 * hs1],
+      const value_type h00 = H[0 * hs0 + 0 * hs1], h01 = H[0 * hs0 + 1 * hs1], h10 = H[1 * hs0 + 0 * hs1],
+                       h11       = H[1 * hs0 + 1 * hs1],
                        /* */ h21 = H[2 * hs0 + 1 * hs1];
       if (is_complex) {
         s = 2 * lambda1.real();
         t = lambda1.real() * lambda1.real() + lambda1.imag() * lambda1.imag();
       } else {
-        const value_type val = H[(m - 1) * hs];
-        const auto dist_lambda1 =
-            Kokkos::ArithTraits<value_type>::abs(lambda1.real() - val);
-        const auto dist_lambda2 =
-            Kokkos::ArithTraits<value_type>::abs(lambda2.real() - val);
-        const value_type lambda =
-            dist_lambda1 < dist_lambda2 ? lambda1.real() : lambda2.real();
-        s = 2 * lambda;
-        t = lambda * lambda;
+        const value_type val    = H[(m - 1) * hs];
+        const auto dist_lambda1 = KokkosKernels::ArithTraits<value_type>::abs(lambda1.real() - val);
+        const auto dist_lambda2 = KokkosKernels::ArithTraits<value_type>::abs(lambda2.real() - val);
+        const value_type lambda = dist_lambda1 < dist_lambda2 ? lambda1.real() : lambda2.real();
+        s                       = 2 * lambda;
+        t                       = lambda * lambda;
       }
-      v[0] =
-          h00 * h00 + h01 * h10 /* H^2 e_1 */ - s * h00 /* 2 Re(lambda) */ + t;
+      v[0] = h00 * h00 + h01 * h10 /* H^2 e_1 */ - s * h00 /* 2 Re(lambda) */ + t;
       v[1] = h10 * h00 + h11 * h10 /*         */ - s * h10;
       v[2] = h21 * h10;
     }
@@ -112,9 +94,8 @@ struct SerialFrancisInternal {
 
       const int mm = m < 4 ? m : 4, nn = m;
       value_type *Hs = H - mbeg_mult_hs0;
-      SerialApplyLeftRightGivensInternal ::invoke(
-          G[0], G[1], mm + mbeg, nn + mrst, H, H + hs0, H + 2 * hs0, Hs,
-          Hs + hs1, Hs + 2 * hs1, hs0, hs1);
+      SerialApplyLeftRightGivensInternal ::invoke(G[0], G[1], mm + mbeg, nn + mrst, H, H + hs0, H + 2 * hs0, Hs,
+                                                  Hs + hs1, Hs + 2 * hs1, hs0, hs1);
     }
 
     /// 1. chase the bulge
@@ -155,9 +136,8 @@ struct SerialFrancisInternal {
       value_type *a2  = a1 + hs1;
       value_type *a3  = a2 + hs1;
 
-      SerialApplyLeftRightGivensInternal ::invoke(G[0], G[1], mm + mbeg,
-                                                  nn + mrst, a1t, a2t, a3t, a1,
-                                                  a2, a3, hs0, hs1);
+      SerialApplyLeftRightGivensInternal ::invoke(G[0], G[1], mm + mbeg, nn + mrst, a1t, a2t, a3t, a1, a2, a3, hs0,
+                                                  hs1);
       /// -----------------------------------------------------
       H_part2x2.mergeToATL(H_part3x3);
     }
@@ -181,8 +161,7 @@ struct SerialFrancisInternal {
       value_type *a2t = a1t + hs0;
       value_type *a1  = H_part3x3.A01 - mbeg_mult_hs0;
       value_type *a2  = a1 + hs1;
-      SerialApplyLeftRightGivensInternal ::invoke(G[0], mm + mbeg, nn + mrst,
-                                                  a1t, a2t, a1, a2, hs0, hs1);
+      SerialApplyLeftRightGivensInternal ::invoke(G[0], mm + mbeg, nn + mrst, a1t, a2t, a1, a2, hs0, hs1);
 
       /// -----------------------------------------------------
       H_part2x2.mergeToATL(H_part3x3);
@@ -192,11 +171,10 @@ struct SerialFrancisInternal {
   }
 
   template <typename ValueType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(
-      const int mbeg, const int mend, const int morg,
-      /* */ ValueType *HH, const int hs0, const int hs1,
-      const Kokkos::complex<ValueType> lambda1,
-      const Kokkos::complex<ValueType> lambda2, const bool is_complex) {
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const int mbeg, const int mend, const int morg,
+                                                /* */ ValueType *HH, const int hs0, const int hs1,
+                                                const Kokkos::complex<ValueType> lambda1,
+                                                const Kokkos::complex<ValueType> lambda2, const bool is_complex) {
     return invoke(mbeg, mend, morg, HH, hs0, hs1, lambda1, lambda2, is_complex,
                   (Kokkos::pair<ValueType, ValueType> *)NULL, false);
   }

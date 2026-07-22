@@ -2,6 +2,7 @@
 #define UNITTESTUTILS_OPTIONS_PARSING
 
 #include <sstream>
+#include "stk_util/stk_config.h"
 #include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <string>
 
@@ -54,27 +55,7 @@ T get_command_line_option(const std::string &option, const T &defaultValue)
     return val;
 }
 
-namespace simple_fields {
-
-inline
-bool has_option(const std::string& option) {
-  return stk::unit_test_util::has_option(option);
-}
-
-inline
-std::string get_option(const std::string& option, const std::string defaultString="no") {
-  return stk::unit_test_util::get_option(option, defaultString);
-}
-
-template <typename T>
-T get_command_line_option(const std::string &option, const T &defaultValue) {
-  return stk::unit_test_util::get_command_line_option(option, defaultValue);
-}
-
-} // namespace simple_fields
-
 }
 }
 
 #endif
-

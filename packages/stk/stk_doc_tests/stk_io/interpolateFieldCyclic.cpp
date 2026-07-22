@@ -69,7 +69,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
     //+ The value of the field at each node is 0.0 at time 0.0,
     //+ 10.0 at time 10.0, and 20.0 at time 20.0
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:1x1x1|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -121,7 +120,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
     //+
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t idx = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     stkIo.create_input_mesh();
 
@@ -157,10 +155,11 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
       // ============================================================
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 'expected'
+      auto temperatureData = temperature.data();
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
-        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-        double *fieldData = stk::mesh::field_data(temperature, node);
-        EXPECT_DOUBLE_EQ(expected, *fieldData);
+        [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+        auto nodeTemperatureData = temperatureData.entity_values(node);
+        EXPECT_DOUBLE_EQ(expected, nodeTemperatureData());
       });
 
       time += delta_time;

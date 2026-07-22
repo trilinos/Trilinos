@@ -3,7 +3,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -416,10 +416,6 @@ namespace Iocgns {
     else if (m_meshType == Ioss::MeshType::UNSTRUCTURED) {
       handle_unstructured_blocks();
     }
-#if IOSS_ENABLE_HYBRID
-    else if (mesh_type == Ioss::MeshType::HYBRID) {
-    }
-#endif
     else {
       std::ostringstream errmsg;
       fmt::print(errmsg, "ERROR: CGNS: Mesh is not Unstructured or Structured which are the only "
@@ -804,6 +800,15 @@ namespace Iocgns {
   {
     Utils::get_step_times(get_file_pointer(), m_timesteps, get_region(), timeScaleFactor,
                           myProcessor);
+  }
+
+  std::vector<double> ParallelDatabaseIO::get_db_step_times_nl()
+  {
+    std::vector<double> timesteps;
+
+    Utils::get_step_times(get_file_pointer(), timesteps, nullptr, timeScaleFactor, myProcessor);
+
+    return timesteps;
   }
 
   void ParallelDatabaseIO::write_adjacency_data()
@@ -1198,11 +1203,9 @@ namespace Iocgns {
           size_t               ep_data_size = ent_proc.size() * sizeof(int64_t);
           get_field_internal(css, ep_field, Data(ent_proc), ep_data_size);
           for (size_t i = 0; i < ent_proc.size(); i += 2) {
-            int64_t node = ent_proc[i + 0];
-            int64_t proc = ent_proc[i + 1];
-            if (proc < idata[node - 1]) {
-              idata[node - 1] = proc;
-            }
+            int64_t node    = ent_proc[i + 0];
+            int64_t proc    = ent_proc[i + 1];
+            idata[node - 1] = std::min(idata[node - 1], proc);
           }
         }
         else {
@@ -1215,11 +1218,9 @@ namespace Iocgns {
           size_t           ep_data_size = ent_proc.size() * sizeof(int);
           get_field_internal(css, ep_field, Data(ent_proc), ep_data_size);
           for (size_t i = 0; i < ent_proc.size(); i += 2) {
-            int node = ent_proc[i + 0];
-            int proc = ent_proc[i + 1];
-            if (proc < idata[node - 1]) {
-              idata[node - 1] = proc;
-            }
+            int node        = ent_proc[i + 0];
+            int proc        = ent_proc[i + 1];
+            idata[node - 1] = std::min(idata[node - 1], proc);
           }
         }
       }
@@ -1594,7 +1595,7 @@ namespace Iocgns {
     int         id   = sb->get_property("id").get_int();
     const auto &sset = decomp->m_sideSets[id];
 
-    auto num_to_get = field.verify(data_size);
+    int64_t num_to_get = field.verify(data_size);
     if (num_to_get > 0) {
       int64_t entity_count = sb->entity_count();
       if (num_to_get != entity_count) {
@@ -2263,7 +2264,8 @@ namespace Iocgns {
 
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
-        auto coord_lambda = [=, &coord](const char *ordinate, int ordinal) {
+        auto coord_lambda = [&coord, phys_dimension, rmax, rmin, base, zone, &rdata, num_to_get,
+                             this](const char *ordinate, int ordinal) {
           // Data required by upper classes store x0, y0, z0, ... xn,
           // yn, zn. Data stored in cgns file is x0, ..., xn, y0,
           // ..., yn, z0, ..., zn so we have to allocate some scratch

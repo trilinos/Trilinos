@@ -1,20 +1,7 @@
 /*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-//
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ * SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+ */
 
 #ifndef KOKKOS_PROFILING_C_INTERFACE_HPP
 #define KOKKOS_PROFILING_C_INTERFACE_HPP
@@ -28,9 +15,13 @@
 #include <stdbool.h>
 #endif
 
-#define KOKKOSP_INTERFACE_VERSION 20211015
+#define KOKKOSP_INTERFACE_VERSION 20240906
 
 // Profiling
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct Kokkos_Profiling_KokkosPDeviceInfo {
   size_t deviceID;
@@ -266,5 +257,9 @@ struct Kokkos_Profiling_EventSet {
                                                     // interface without
                                                     // changing struct layout
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // KOKKOS_PROFILING_C_INTERFACE_HPP

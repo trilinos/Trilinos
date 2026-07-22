@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 #include <algorithm>
@@ -65,9 +52,7 @@ struct TestFunctorA {
         m_distancesView(myRowIndex, 0) = resultDist1;
         m_distancesView(myRowIndex, 1) = resultDist2;
       });
-    }
-#if not defined KOKKOS_ENABLE_OPENMPTARGET
-    else if (m_apiPick == 2) {
+    } else if (m_apiPick == 2) {
       using value_type = typename ViewType::value_type;
       auto itPair =
           KE::minmax_element(member, KE::cbegin(myRowView), KE::cend(myRowView),
@@ -84,7 +69,7 @@ struct TestFunctorA {
     else if (m_apiPick == 3) {
       using value_type = typename ViewType::value_type;
       auto itPair      = KE::minmax_element(member, myRowView,
-                                       CustomLessThanComparator<value_type>{});
+                                            CustomLessThanComparator<value_type>{});
       resultDist1      = KE::distance(KE::begin(myRowView), itPair.first);
       resultDist2      = KE::distance(KE::begin(myRowView), itPair.second);
 
@@ -93,7 +78,6 @@ struct TestFunctorA {
         m_distancesView(myRowIndex, 1) = resultDist2;
       });
     }
-#endif
 
     // store result of checking if all members have their local
     // values matching the one stored in m_distancesView
@@ -160,7 +144,7 @@ void test_A(std::size_t numTeams, std::size_t numCols, int apiId) {
       stdDistance[1] = KE::distance(KE::cbegin(myRow), itPair.second);
     } else {
       auto itPair    = std::minmax_element(KE::cbegin(myRow), KE::cend(myRow),
-                                        CustomLessThanComparator<value_type>{});
+                                           CustomLessThanComparator<value_type>{});
       stdDistance[0] = KE::distance(KE::cbegin(myRow), itPair.first);
       stdDistance[1] = KE::distance(KE::cbegin(myRow), itPair.second);
     }
@@ -178,8 +162,6 @@ template <class LayoutTag, class ValueType>
 void run_all_scenarios() {
   for (int numTeams : teamSizesToTest) {
     for (const auto& numCols : {0, 1, 2, 13, 101, 1444, 5113}) {
-      // for OpenMPTarget we need to avod api accepting a custom
-      // comparator because it is not supported
       for (int apiId : {0, 1, 2, 3}) {
         test_A<LayoutTag, ValueType>(numTeams, numCols, apiId);
       }
@@ -188,11 +170,9 @@ void run_all_scenarios() {
 }
 
 TEST(std_algorithms_minmax_element_team_test, test) {
-#if not defined KOKKOS_ENABLE_OPENMPTARGET
   run_all_scenarios<DynamicTag, int>();
   run_all_scenarios<StridedTwoRowsTag, double>();
   run_all_scenarios<StridedThreeRowsTag, int>();
-#endif
 }
 
 }  // namespace TeamMinMaxElement

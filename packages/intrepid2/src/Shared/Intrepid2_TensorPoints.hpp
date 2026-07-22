@@ -24,6 +24,8 @@ namespace Intrepid2 {
 */
   template<class PointScalar, typename DeviceType>
   class TensorPoints {
+  public:
+    using value_type = PointScalar;
   protected:
     Kokkos::Array< ScalarView<PointScalar,DeviceType>, Parameters::MaxTensorComponents> pointTensorComponents_; // each component has dimensions (P,D)
     ordinal_type numTensorComponents_;

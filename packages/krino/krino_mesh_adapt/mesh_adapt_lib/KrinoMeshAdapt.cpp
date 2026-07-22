@@ -15,10 +15,11 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/environment/Env.hpp>
+#include "Akri_TransitionElementEdgeMarker.hpp"
 
 namespace krino {
 
-void refine_mesh_with_params(stk::mesh::BulkData & mesh, const MeshAdaptAlgorithmParameters &algParams, const stk::ParallelMachine comm)
+void refine_mesh_with_params(stk::mesh::BulkData & mesh, const MeshAdaptAlgorithmParameters &algParams, const stk::ParallelMachine /*comm*/)
 {
   stk::diag::Timer refinementTimer("Refinement", sierra::Diag::sierraTimer());
   stk::mesh::Part * activePart = nullptr;
@@ -31,6 +32,7 @@ void refine_mesh_with_params(stk::mesh::BulkData & mesh, const MeshAdaptAlgorith
            << " edges, " << counts[2] << " faces, " << counts[3] << " elements" << std::endl;
 
   refinement.do_uniform_refinement(algParams.numUniformRefinementLevels);
+  refinement.delete_parent_elements();
 
   stk::mesh::comm_mesh_counts(mesh, counts);
 

@@ -1,43 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #include <iostream>
 #include <random>
@@ -75,7 +43,7 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
   int recvcount = 0;
 
   char stackByte0, stackByte1;
-void *sbuf, *rbuf;
+  void *sbuf, *rbuf;
   if (nullBufs) {
     sbuf = nullptr;
     rbuf = nullptr;
@@ -100,7 +68,7 @@ void *sbuf, *rbuf;
   MPIX_Alltoall(sbuf, sendcount, MPI_BYTE, rbuf,
                 recvcount, MPI_BYTE, mpixComm);
 
-  MPIX_Comm_free(mpixComm);
+  MPIX_Comm_free(&mpixComm);
 
   // we just require that we got this far
   success = true;
@@ -117,11 +85,11 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
 
-  int sendcount, recvcount; // alltoall
+  int sendcount, recvcount;  // alltoall
 
   // seeded rng so all ranks generate the same count
   std::mt19937 rng(seed);
-  std::uniform_int_distribution<int> dist(1, 100);  
+  std::uniform_int_distribution<int> dist(1, 100);
   sendcount = dist(rng);
   recvcount = sendcount;
 
@@ -130,23 +98,23 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   MPIX_Comm_init(&mpixComm, comm);
 
   // allocate send/recv bufs
-  Kokkos::View<char *, typename Device::memory_space> 
-    sbuf("sbuf", sendcount * size),
-    exp("exp", recvcount * size),
-    act("act", recvcount * size);
+  Kokkos::View<char *, typename Device::memory_space>
+      sbuf("sbuf", sendcount * size),
+      exp("exp", recvcount * size),
+      act("act", recvcount * size);
 
   // fill send buf
-  Kokkos::parallel_for(sbuf.size(), KOKKOS_LAMBDA (size_t i) {sbuf(i) = i;});
+  Kokkos::parallel_for(
+      sbuf.size(), KOKKOS_LAMBDA(size_t i) { sbuf(i) = i; });
 
   // Use reference and MPI_Advance implementation to fill buffers
   Fake_Alltoall(sbuf.data(), sendcount, MPI_BYTE,
                 exp.data(), recvcount, MPI_BYTE, comm);
 
-
   MPIX_Alltoall(sbuf.data(), sendcount, MPI_BYTE,
                 act.data(), recvcount, MPI_BYTE, mpixComm);
 
-  MPIX_Comm_free(mpixComm);
+  MPIX_Comm_free(&mpixComm);
 
   // two recv buffers should be the same
   auto exp_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), exp);
@@ -173,51 +141,50 @@ static MPI_Comm tpetra_default_comm_as_mpi_comm() {
 
 TEUCHOS_UNIT_TEST(MpiAdvance, AllToAll_nothing) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, false, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, AllToAll_nothing_null) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, true, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, AllToAll_nothing_same) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, false, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, AllToAll_nothing_nullsame) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, true, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, AllToAll_random) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_random<device_type>(comm, 42, out, success);
 }
 
 // Let Tpetra initialize Kokkos
 // We define this because we don't also include ${TEUCHOS_STD_UNIT_TEST_MAIN}
 // in the CMakeLists.txt
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   const int errCode =
-    Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+      Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
   return errCode;
 }

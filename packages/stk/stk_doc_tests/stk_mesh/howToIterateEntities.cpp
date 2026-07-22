@@ -48,7 +48,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/FieldData.hpp"  // for FieldData
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector, etc
 namespace stk { namespace mesh { class Part; } }
 
@@ -64,7 +64,6 @@ TEST(StkMeshHowTo, iterateSidesetNodes_BucketLoop_ContiguousFieldDataWithinBucke
                                                    .set_spatial_dimension(3)
                                                    .create();
   stk::mesh::MetaData &stkMeshMeta = stkMesh->mesh_meta_data();
-  stkMeshMeta.use_simple_fields();
   stk::mesh::Field<double> &temperatureField = stkMeshMeta.declare_field<double>(stk::topology::NODE_RANK, "temperature");
   stk::mesh::put_field_on_entire_mesh(temperatureField);
 
@@ -78,13 +77,14 @@ TEST(StkMeshHowTo, iterateSidesetNodes_BucketLoop_ContiguousFieldDataWithinBucke
 
   const stk::mesh::BucketVector &boundaryNodeBuckets = stkMesh->get_buckets(stk::topology::NODE_RANK, boundaryNodesSelector);
 
+  stk::mesh::FieldData<double> temperatureData = temperatureField.data<stk::mesh::ReadWrite>();
   constexpr double prescribedTemperatureValue = 2.0;
   for (size_t bucketIndex = 0; bucketIndex < boundaryNodeBuckets.size(); ++bucketIndex) {
     const stk::mesh::Bucket &nodeBucket = *boundaryNodeBuckets[bucketIndex];
-    double *temperatureValues = stk::mesh::field_data(temperatureField, nodeBucket);
+    stk::mesh::BucketValues<double> temperatureValues = temperatureData.bucket_values(nodeBucket);
 
-    for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex) {
-      temperatureValues[nodeIndex] = prescribedTemperatureValue;
+    for (stk::mesh::EntityIdx nodeIndex : nodeBucket.entities()) {
+      temperatureValues(nodeIndex) = prescribedTemperatureValue;
     }
   }
 
@@ -100,7 +100,6 @@ TEST(StkMeshHowTo, iterateSidesetNodes_ForEachEntity_FieldDataAccess)
                                                    .set_spatial_dimension(3)
                                                    .create();
   stk::mesh::MetaData &stkMeshMeta = stkMesh->mesh_meta_data();
-  stkMeshMeta.use_simple_fields();
   stk::mesh::Field<double> &temperatureField = stkMeshMeta.declare_field<double>(stk::topology::NODE_RANK, "temperature");
   stk::mesh::put_field_on_entire_mesh(temperatureField);
 
@@ -113,11 +112,12 @@ TEST(StkMeshHowTo, iterateSidesetNodes_ForEachEntity_FieldDataAccess)
   stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
 
   constexpr double prescribedTemperatureValue = 2.0;
+  stk::mesh::FieldData<double> temperatureData = temperatureField.data<stk::mesh::ReadWrite>();
 
   stk::mesh::for_each_entity_run(*stkMesh, stk::topology::NODE_RANK, boundaryNodesSelector,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      double *temperatureValues = stk::mesh::field_data(temperatureField, node);
-      *temperatureValues = prescribedTemperatureValue;
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+      auto temperatureValues = temperatureData.entity_values(node);
+      temperatureValues() = prescribedTemperatureValue;
     });
 
   testUtils::testTemperatureFieldSetCorrectly(temperatureField, boundaryNodesSelector, prescribedTemperatureValue);

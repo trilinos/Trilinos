@@ -1,50 +1,17 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_TYPEG_ALGORITHMFACTORY_H
 #define ROL_TYPEG_ALGORITHMFACTORY_H
 
 #include "ROL_TypeG_AugmentedLagrangianAlgorithm.hpp"
+#include "ROL_TypeG_AugmentedLagrangianAlgorithm2.hpp"
 #include "ROL_TypeG_MoreauYosidaAlgorithm.hpp"
 #include "ROL_TypeG_InteriorPointAlgorithm.hpp"
 #include "ROL_TypeG_StabilizedLCLAlgorithm.hpp"
@@ -56,13 +23,15 @@ namespace TypeG {
 /** \enum   ROL::EAlgorithmG
     \brief  Enumeration of generally constrained algorithm types.
 
-    \arg    ALGORITHM_G_AUGMENTEDLAGRANGIAN describe
-    \arg    ALGORITHM_G_MOREAUYOSIDA        describe
-    \arg    ALGORITHM_G_INTERIORPOINT       describe
-    \arg    ALGORITHM_G_STABILIZEDLCL       describe
+    \arg    ALGORITHM_G_AUGMENTEDLAGRANGIAN  describe
+    \arg    ALGORITHM_G_AUGMENTEDLAGRANGIAN2 describe
+    \arg    ALGORITHM_G_MOREAUYOSIDA         describe
+    \arg    ALGORITHM_G_INTERIORPOINT        describe
+    \arg    ALGORITHM_G_STABILIZEDLCL        describe
  */
 enum EAlgorithmG{
   ALGORITHM_G_AUGMENTEDLAGRANGIAN = 0,
+  ALGORITHM_G_AUGMENTEDLAGRANGIAN2,
   ALGORITHM_G_MOREAUYOSIDA,
   ALGORITHM_G_INTERIORPOINT,
   ALGORITHM_G_STABILIZEDLCL,
@@ -72,26 +41,28 @@ enum EAlgorithmG{
 inline std::string EAlgorithmGToString(EAlgorithmG alg) {
   std::string retString;
   switch(alg) {
-    case ALGORITHM_G_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian"; break;
-    case ALGORITHM_G_MOREAUYOSIDA:        retString = "Moreau-Yosida";          break;
-    case ALGORITHM_G_INTERIORPOINT:       retString = "Interior Point";         break;
-    case ALGORITHM_G_STABILIZEDLCL:       retString = "Stabilized LCL";         break;
-    case ALGORITHM_G_LAST:                retString = "Last Type (Dummy)";    break;
-    default:                              retString = "INVALID EAlgorithmG";
+    case ALGORITHM_G_AUGMENTEDLAGRANGIAN:  retString = "Augmented Lagrangian";   break;
+    case ALGORITHM_G_AUGMENTEDLAGRANGIAN2: retString = "Augmented Lagrangian 2"; break;
+    case ALGORITHM_G_MOREAUYOSIDA:         retString = "Moreau-Yosida";          break;
+    case ALGORITHM_G_INTERIORPOINT:        retString = "Interior Point";         break;
+    case ALGORITHM_G_STABILIZEDLCL:        retString = "Stabilized LCL";         break;
+    case ALGORITHM_G_LAST:                 retString = "Last Type (Dummy)";      break;
+    default:                               retString = "INVALID EAlgorithmG";
   }
   return retString;
 }
 
 /** \brief  Verifies validity of a AlgorithmG enum.
-  
+
     \param  ls  [in]  - enum of the AlgorithmG
     \return 1 if the argument is a valid AlgorithmG; 0 otherwise.
   */
 inline int isValidAlgorithmG(EAlgorithmG alg){
-  return( (alg == ALGORITHM_G_AUGMENTEDLAGRANGIAN) ||
-          (alg == ALGORITHM_G_MOREAUYOSIDA)        ||
-          (alg == ALGORITHM_G_INTERIORPOINT)       ||
-          (alg == ALGORITHM_G_STABILIZEDLCL)       ||
+  return( (alg == ALGORITHM_G_AUGMENTEDLAGRANGIAN)  ||
+          (alg == ALGORITHM_G_AUGMENTEDLAGRANGIAN2) ||
+          (alg == ALGORITHM_G_MOREAUYOSIDA)         ||
+          (alg == ALGORITHM_G_INTERIORPOINT)        ||
+          (alg == ALGORITHM_G_STABILIZEDLCL)        ||
           (alg == ALGORITHM_G_LAST)
         );
 }
@@ -127,16 +98,24 @@ inline EAlgorithmG StringToEAlgorithmG(std::string s) {
 }
 
 template<typename Real>
-inline Ptr<TypeG::Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant = nullPtr) {
-  EAlgorithmG ealg = StringToEAlgorithmG(parlist.sublist("Step").get("Type","Augmented Lagrangian"));
+inline Ptr<TypeG::Algorithm<Real>> AlgorithmFactory(ParameterList &parlist, const Ptr<Secant<Real>> &secant) {
+  std::string stepType = parlist.sublist("Step").get("Type","Augmented Lagrangian");
+  EAlgorithmG ealg = StringToEAlgorithmG(stepType);
   switch(ealg) {
-    case ALGORITHM_G_AUGMENTEDLAGRANGIAN: return makePtr<TypeG::AugmentedLagrangianAlgorithm<Real>>(parlist,secant);
-    case ALGORITHM_G_MOREAUYOSIDA:        return makePtr<TypeG::MoreauYosidaAlgorithm<Real>>(parlist,secant);
-    case ALGORITHM_G_INTERIORPOINT:       return makePtr<TypeG::InteriorPointAlgorithm<Real>>(parlist,secant);
-    case ALGORITHM_G_STABILIZEDLCL:       return makePtr<TypeG::StabilizedLCLAlgorithm<Real>>(parlist,secant);
-    default:                              return nullPtr;
+    case ALGORITHM_G_AUGMENTEDLAGRANGIAN:  return makePtr<TypeG::AugmentedLagrangianAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_G_AUGMENTEDLAGRANGIAN2: return makePtr<TypeG::AugmentedLagrangianAlgorithm2<Real>>(parlist,secant);
+    case ALGORITHM_G_MOREAUYOSIDA:         return makePtr<TypeG::MoreauYosidaAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_G_INTERIORPOINT:        return makePtr<TypeG::InteriorPointAlgorithm<Real>>(parlist,secant);
+    case ALGORITHM_G_STABILIZEDLCL:        return makePtr<TypeG::StabilizedLCLAlgorithm<Real>>(parlist,secant);
+    default:                               return nullPtr;
   }
 }
+
+template<class Real>
+Ptr<TypeG::Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
+  return AlgorithmFactory<Real>(parlist, nullPtr);
+}
+
 } // namespace TypeG
 } // namespace ROL
 

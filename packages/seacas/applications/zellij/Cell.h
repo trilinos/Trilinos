@@ -150,7 +150,7 @@ public:
   double m_offY{0.0};
 
 private:
-  //! The UnitCell that occupies this location in the grid / latice
+  //! The UnitCell that occupies this location in the grid / lattice
   std::shared_ptr<UnitCell> m_unitCell;
 
   //! The MPI ranks of all surrounding cells in order:

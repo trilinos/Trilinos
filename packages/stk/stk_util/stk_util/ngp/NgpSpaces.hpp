@@ -34,14 +34,36 @@
 #ifndef STK_NGP_NGPSPACES_HPP
 #define STK_NGP_NGPSPACES_HPP
 
+#include "stk_util/stk_config.h"
 #include <Kokkos_Core.hpp>
 
 namespace stk {
 namespace ngp {
 
 using ExecSpace = Kokkos::DefaultExecutionSpace;
-
 using HostExecSpace = Kokkos::DefaultHostExecutionSpace;
+
+#ifndef KOKKOS_HAS_SHARED_HOST_PINNED_SPACE
+#ifndef _MSC_VER
+#warning "Kokkos::SharedHostPinnedSpace is not defined."
+#else
+#pragma message("Kokkos::SharedHostPinnedSpace is not defined.")
+#endif
+using HostPinnedSpace = Kokkos::HostSpace;
+#else
+using HostPinnedSpace = Kokkos::SharedHostPinnedSpace;
+#endif
+
+#ifndef KOKKOS_HAS_SHARED_SPACE
+#ifndef _MSC_VER
+#warning "Kokkos::SharedSpace is not defined."
+#else
+#pragma message("Kokkos::SharedSpace is not defined.")
+#endif
+using UVMMemSpace = Kokkos::HostSpace;
+#else
+using UVMMemSpace = Kokkos::SharedSpace;
+#endif
 
 #ifdef KOKKOS_ENABLE_CUDA
 using MemSpace = Kokkos::CudaSpace;
@@ -51,35 +73,7 @@ using MemSpace = Kokkos::HIPSpace;
 using MemSpace = ExecSpace::memory_space;
 #endif
 
-#ifdef KOKKOS_HAS_SHARED_SPACE
-using UVMMemSpace = Kokkos::SharedSpace;
-#else
-#ifdef KOKKOS_ENABLE_CUDA
-#ifdef KOKKOS_ENABLE_CUDA_UVM
-using UVMMemSpace = Kokkos::CudaUVMSpace;
-#else
-using UVMMemSpace = Kokkos::CudaHostPinnedSpace;
-#endif
-#elif defined(KOKKOS_ENABLE_HIP)
-using UVMMemSpace = Kokkos::HIPHostPinnedSpace;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using UVMMemSpace = Kokkos::OpenMP;
-#else
-using UVMMemSpace = Kokkos::HostSpace;
-#endif
-#endif
-
-#ifdef KOKKOS_HAS_SHARED_SPACE
-using HostPinnedSpace = Kokkos::SharedHostPinnedSpace;
-#else
-#ifdef KOKKOS_ENABLE_CUDA
-using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
-#elif defined(KOKKOS_ENABLE_HIP)
-using HostPinnedSpace = Kokkos::HIPHostPinnedSpace;
-#else
-using HostPinnedSpace = MemSpace;
-#endif
-#endif
+using HostMemSpace = HostExecSpace::memory_space;
 
 #ifdef KOKKOS_ENABLE_HIP
 template <typename ExecutionSpace>
@@ -108,6 +102,99 @@ using DeviceTeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
 #endif
 
 using ScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;
+
+
+// Detect if the host and device memory spaces are unified
+constexpr bool DeviceAccessibleFromHost = Kokkos::SpaceAccessibility<HostExecSpace, ExecSpace::memory_space>::accessible;
+
+
+struct HostSpace {
+  using exec_space = HostExecSpace;
+  using mem_space = HostMemSpace;
+};
+
+
+#if defined(STK_ENABLE_GPU)
+
+  struct DeviceSpace {
+    using exec_space = ExecSpace;
+    using mem_space = MemSpace;
+  };
+
+  struct UVMDeviceSpace {
+    using exec_space = ExecSpace;
+    using mem_space = UVMMemSpace;
+  };
+
+  struct HostPinnedDeviceSpace {
+    using exec_space = ExecSpace;
+    using mem_space = HostPinnedSpace;
+  };
+
+#else
+
+  #if defined(STK_USE_DEVICE_MESH)
+
+    // Fake device space that lives on host, for testing and debugging purposes only (wasteful and poorly-performing)
+    struct DeviceSpace {
+      using exec_space = HostExecSpace;
+      using mem_space = HostMemSpace;
+    };
+
+    struct UVMDeviceSpace {
+      using exec_space = HostExecSpace;
+      using mem_space = HostMemSpace;
+    };
+
+    struct HostPinnedDeviceSpace {
+      using exec_space = HostExecSpace;
+      using mem_space = HostMemSpace;
+    };
+
+  #else
+
+    // Alias device to host, to disable specialized device code
+    using DeviceSpace = HostSpace;
+    using UVMDeviceSpace = HostSpace;
+    using HostPinnedDeviceSpace = HostSpace;
+
+  #endif
+
+#endif
+
+template <typename T>
+concept is_host_space = requires
+{
+  requires std::is_same_v<T, HostSpace>;
+};
+
+template <typename T>
+concept is_device_space = requires
+{
+  requires std::is_same_v<T, DeviceSpace> ||
+           std::is_same_v<T, UVMDeviceSpace> ||
+           std::is_same_v<T, HostPinnedDeviceSpace>;
+  requires !is_host_space<T>;
+};
+
+template <typename T>
+concept is_ngp_space = requires
+{
+  requires is_host_space<T> || is_device_space<T>;
+};
+
+template <typename T>
+concept is_host_exec_space = requires
+{
+  requires std::is_same_v<T, HostExecSpace>;
+};
+
+template <typename T>
+concept is_device_exec_space = requires
+{
+  requires std::is_same_v<T, ExecSpace>;
+  requires !is_host_exec_space<T>;
+};
 
 }
 }

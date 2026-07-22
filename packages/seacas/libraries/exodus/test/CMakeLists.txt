@@ -154,8 +154,10 @@ IF ( NETCDF_NCDUMP_BINARY )
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${cbind_OLDTESTS} )
-    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
-    set_property(TARGET ${testName} PROPERTY C_STANDARD 99)
+    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX ADDED_EXE_TARGET_NAME_OUT ${testName}_TARGET_NAME )
+    IF ( ${testName}_TARGET_NAME )
+      set_property(TARGET ${testName} PROPERTY C_STANDARD 99)
+    ENDIF()
   ENDFOREACH ( testName )
 
   TRIBITS_ADD_TEST(

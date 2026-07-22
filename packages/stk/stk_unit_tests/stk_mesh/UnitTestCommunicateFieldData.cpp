@@ -77,13 +77,14 @@ TEST(CommunicateFieldData, communicate)
   stk::mesh::Part& owned_part = meta.locally_owned_part();
   const stk::mesh::BucketVector& owned_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK,owned_part);
 
+  auto fieldData = field.data<stk::mesh::ReadWrite>();
   for(size_t i=0; i<owned_node_buckets.size(); ++i) {
     stk::mesh::Bucket& bucket = *owned_node_buckets[i];
-    for(size_t j=0; j<bucket.size(); ++j) {
+    auto bucketFieldData = fieldData.bucket_values(bucket);
+    for(stk::mesh::EntityIdx j : bucket.entities()) {
       stk::mesh::Entity node = bucket[j];
       double value = myProc*100 + bulk.identifier(node);
-      double* data = stk::mesh::field_data(field, node);
-      *data = value;
+      bucketFieldData(j,0_comp) = value;
     }
   }
 
@@ -94,14 +95,15 @@ TEST(CommunicateFieldData, communicate)
 
   stk::mesh::Part& aura_part = meta.aura_part();
   const stk::mesh::BucketVector& aura_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, aura_part);
+  fieldData = field.data<stk::mesh::ReadWrite>();
   for(size_t i=0; i<aura_node_buckets.size(); ++i) {
     stk::mesh::Bucket& bucket = *aura_node_buckets[i];
-    for(size_t j=0; j<bucket.size(); ++j) {
+    auto bucketFieldData = fieldData.bucket_values(bucket);
+    for(stk::mesh::EntityIdx j : bucket.entities()) {
       stk::mesh::Entity node = bucket[j];
       int owner = bulk.parallel_owner_rank(node);
       double value = owner*100 + bulk.identifier(node);
-      double* data = stk::mesh::field_data(field, node);
-      EXPECT_EQ(*data, value);
+      EXPECT_EQ(bucketFieldData(j,0_comp), value);
     }
   }
 }
@@ -112,11 +114,9 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = stk::parallel_machine_size(communicator);
-  if (numProcs != 2) {
-    return;
-  }
-  int myProc = stk::parallel_machine_rank(communicator);
+  const int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs != 2) { GTEST_SKIP(); }
+  const int myProc = stk::parallel_machine_rank(communicator);
 
   const unsigned spatialDim = 2;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
@@ -153,13 +153,14 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
   stk::mesh::Part& owned_part = meta.locally_owned_part();
   const stk::mesh::BucketVector& owned_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK,owned_part);
 
+  auto fieldData = field.data<stk::mesh::ReadWrite>();
   for(size_t i=0; i<owned_node_buckets.size(); ++i) {
     stk::mesh::Bucket& bucket = *owned_node_buckets[i];
-    for(size_t j=0; j<bucket.size(); ++j) {
+    auto bucketFieldData = fieldData.bucket_values(bucket);
+    for(stk::mesh::EntityIdx j : bucket.entities()) {
       stk::mesh::Entity node = bucket[j];
       double value = myProc*100 + bulk.identifier(node);
-      double* data = stk::mesh::field_data(field, node);
-      *data = value;
+      bucketFieldData(j,0_comp) = value;
     }
   }
 
@@ -169,12 +170,11 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
   int num_ghosted_nodes = 0;
   for(size_t i=0; i<ghosted_buckets.size(); ++i) {
     stk::mesh::Bucket& bucket = *ghosted_buckets[i];
-    for(size_t j=0; j<bucket.size(); ++j) {
+    auto bucketFieldData = fieldData.bucket_values(bucket);
+    for(stk::mesh::EntityIdx j : bucket.entities()) {
       ++num_ghosted_nodes;
-      stk::mesh::Entity node = bucket[j];
       double garbage = -1.2345;
-      double* data = stk::mesh::field_data(field, node);
-      *data = garbage;
+      bucketFieldData(j,0_comp) = garbage;
     }
   }
   if (myProc == 0) {
@@ -187,14 +187,15 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
   std::vector<const stk::mesh::FieldBase*> fields(1, &field);
   stk::mesh::communicate_field_data(bulk, fields);
 
+  fieldData = field.data<stk::mesh::ReadWrite>();
   for(size_t i=0; i<ghosted_buckets.size(); ++i) {
     stk::mesh::Bucket& bucket = *ghosted_buckets[i];
-    for(size_t j=0; j<bucket.size(); ++j) {
+    auto bucketFieldData = fieldData.bucket_values(bucket);
+    for(stk::mesh::EntityIdx j : bucket.entities()) {
       stk::mesh::Entity node = bucket[j];
       int owner = bulk.parallel_owner_rank(node);
       double value = owner*100 + bulk.identifier(node);
-      double* data = stk::mesh::field_data(field, node);
-      EXPECT_EQ(value, *data);
+      EXPECT_EQ(value, bucketFieldData(j,0_comp));
     }
   }
 }

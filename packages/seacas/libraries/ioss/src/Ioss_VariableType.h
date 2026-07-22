@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -110,6 +110,8 @@ namespace Ioss {
 
     VariableType(const VariableType &)            = delete;
     VariableType &operator=(const VariableType &) = delete;
+    VariableType(VariableType &&)                 = delete;
+    VariableType &operator=(VariableType &&)      = delete;
     virtual ~VariableType()                       = default;
 
     virtual void print() const;
@@ -143,8 +145,8 @@ namespace Ioss {
     VariableType(const std::string &type, int comp_count, bool delete_me = false);
 
   private:
-    const std::string name_;
-    int               componentCount;
+    const std::string name_{};
+    int               componentCount{};
 
     static bool build_variable_type(const std::string &raw_type);
   };

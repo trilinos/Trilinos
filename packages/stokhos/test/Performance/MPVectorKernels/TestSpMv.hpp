@@ -1,43 +1,12 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <iostream>
 
 // MP::Vector and Matrix
@@ -135,7 +104,7 @@ test_mpvector_spmv(const int ensemble_length,
   //------------------------------
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length, ensemble_length);
@@ -149,9 +118,15 @@ test_mpvector_spmv(const int ensemble_length,
     // The VectorType may be dynamic (with allocated memory)
     // so cannot pass a VectorType value to the device.
     // Get an array-of-intrinsic View and fill that view.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
     typename vector_type::array_type xx( x );
     typename vector_type::array_type yy( y );
     typename matrix_values_type::array_type mm( matrix_values );
+#else
+    typename vector_type::type xx( x );
+    typename vector_type::type yy( y );
+    typename matrix_values_type::type mm( matrix_values );
+#endif
 
     Kokkos::deep_copy( xx , value_type(1.0) );
     Kokkos::deep_copy( yy , value_type(1.0) );
@@ -223,7 +198,7 @@ test_scalar_spmv(const int ensemble_length,
   std::vector<matrix_type> matrix(ensemble_length);
   for (int e=0; e<ensemble_length; ++e) {
     matrix_graph_type matrix_graph =
-      Kokkos::create_staticcrsgraph<matrix_graph_type>(
+      KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
         std::string("test crs graph"), fem_graph);
     matrix_values_type matrix_values =
       matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length);

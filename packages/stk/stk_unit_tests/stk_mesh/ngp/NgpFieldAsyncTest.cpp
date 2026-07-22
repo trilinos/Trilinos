@@ -64,7 +64,7 @@
 #define TEST_ONLY_ON_CUDA(testname) testname
 #endif
 
-class NgpAsyncDeepCopyFixture : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpAsyncDeepCopyFixture : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpAsyncDeepCopyFixture()
@@ -99,23 +99,23 @@ public:
 
   void setup_multi_block_mesh_with_field_per_block()
   {
-    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(m_numBlocks);
-    std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(m_numBlocks);
+    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(m_numBlocks);
+    std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
 
     setup_field_per_block();
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 
   void setup_multi_block_mesh_with_fields_on_all_blocks()
   {
-    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(m_numBlocks);
-    std::vector<double> coordinates = stk::unit_test_util::simple_fields::get_many_block_coordinates(m_numBlocks);
+    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(m_numBlocks);
+    std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
 
     setup_fields_on_all_blocks();
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 
@@ -354,13 +354,12 @@ public:
     stk::mesh::EntityVector elems;
     stk::mesh::get_selected_entities(stk::mesh::Selector(*field), get_bulk().buckets(stk::topology::ELEM_RANK), elems);
     unsigned multiplier = m_multiplier * scale;
-
+    auto fieldData = field->data();
     for(auto elem : elems) {
-      int* data = reinterpret_cast<int*>(stk::mesh::field_data(*field, elem));
-      unsigned numComponents = stk::mesh::field_scalars_per_entity(*field, elem);
-      for(unsigned j = 0; j < numComponents; j++) {
+      auto data = fieldData.entity_values(elem);
+      for(stk::mesh::ComponentIdx j : data.components()) {
         unsigned expectedValue = get_bulk().identifier(elem) * multiplier + j;
-        EXPECT_EQ((int)expectedValue, data[j]);
+        EXPECT_EQ((int)expectedValue, data(j));
       }
     }
   }
@@ -385,12 +384,11 @@ public:
   {
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, selector, elements);
-
+    auto stkIntFieldData = stkIntField.data<stk::mesh::ReadWrite>();
     for(stk::mesh::Entity elem : elements) {
-      int* data = reinterpret_cast<int*>(stk::mesh::field_data(stkIntField, elem));
-      const unsigned numComponents = stk::mesh::field_scalars_per_entity(stkIntField, elem);
-      for(unsigned j = 0; j < numComponents; j++) {
-        data[j] = get_bulk().identifier(elem) * multiplier + j;
+      auto data = stkIntFieldData.entity_values(elem);
+      for(stk::mesh::ComponentIdx j : data.components()) {
+        data(j) = get_bulk().identifier(elem) * multiplier + j;
       }
     }
   }
@@ -414,10 +412,10 @@ private:
   template<typename FieldType, typename Func>
   void check_result_on_host(FieldType field, stk::mesh::EntityVector elems, Func&& testValues)
   {
+    auto fieldData = field->data();
     for(auto elem : elems) {
-      int* data = reinterpret_cast<int*>(stk::mesh::field_data(*field, elem));
-      unsigned numComponents = stk::mesh::field_scalars_per_entity(*field, elem);
-      for(unsigned j = 0; j < numComponents; j++) {
+      auto data = fieldData.entity_values(elem);
+      for(stk::mesh::ComponentIdx j : data.components()) {
         testValues(data, elem, j);
       }
     }
@@ -426,10 +424,10 @@ private:
   template<typename FieldType>
   void check_result_on_host_expect_init_data(FieldType field, stk::mesh::EntityVector& elems)
   {
-    auto expectInitData = [](int* data, stk::mesh::Entity entity, unsigned component)
+    auto expectInitData = [](stk::mesh::EntityValues<int> data, stk::mesh::Entity /*entity*/, stk::mesh::ComponentIdx component)
     {
       int expectedValue = component;
-      EXPECT_EQ(data[component], expectedValue);
+      EXPECT_EQ(data(component), expectedValue);
     };
 
     check_result_on_host(field, elems, expectInitData);
@@ -438,10 +436,10 @@ private:
   template<typename FieldType>
   void check_result_on_host_expect_multiplied_data(FieldType field, stk::mesh::EntityVector& elems, unsigned multiplier)
   {
-    auto expectInitData = [this, multiplier](int* data, stk::mesh::Entity elem, unsigned component)
+    auto expectInitData = [this, multiplier](stk::mesh::EntityValues<int> data, stk::mesh::Entity elem, stk::mesh::ComponentIdx component)
     {
       int expectedValue = get_bulk().identifier(elem) * multiplier + component;
-      EXPECT_EQ(data[component], expectedValue);
+      EXPECT_EQ(data(component), expectedValue);
     };
 
     check_result_on_host(field, elems, expectInitData);

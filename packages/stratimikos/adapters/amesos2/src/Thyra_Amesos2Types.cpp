@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //         Stratimikos: Thyra-based strategies for linear solvers
-//                Copyright (2006) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
-// ***********************************************************************
+// Copyright 2006 NTESS and the Stratimikos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #include "Thyra_Amesos2Types.hpp"
 
@@ -63,6 +29,9 @@ const Amesos2::ESolverType Amesos2::solverTypeValues[Amesos2::numSolverTypes] =
 #ifdef HAVE_AMESOS2_PARDISO_MKL
   ,Amesos2::PARDISO_MKL
 #endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+  ,Amesos2::CSS_MKL
+#endif
 #ifdef HAVE_AMESOS2_CHOLMOD
   ,Amesos2::CHOLMOD
 #endif
@@ -71,6 +40,18 @@ const Amesos2::ESolverType Amesos2::solverTypeValues[Amesos2::numSolverTypes] =
 #endif
 #ifdef HAVE_AMESOS2_MUMPS
   ,Amesos2::MUMPS
+#endif
+#ifdef HAVE_AMESOS2_UMFPACK
+  ,Amesos2::UMFPACK
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+  ,Amesos2::TACHO
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+  ,Amesos2::STRUMPACK
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
+  ,Amesos2::CUSOLVER
 #endif
 };
 
@@ -92,6 +73,9 @@ const char* Amesos2::solverTypeNames[Amesos2::numSolverTypes] =
 #ifdef HAVE_AMESOS2_PARDISO_MKL
   ,"PARDISOMKL"
 #endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+  ,"CSSMKL"
+#endif
 #ifdef HAVE_AMESOS2_CHOLMOD
   ,"Cholmod"
 #endif
@@ -100,6 +84,18 @@ const char* Amesos2::solverTypeNames[Amesos2::numSolverTypes] =
 #endif
 #ifdef HAVE_AMESOS2_MUMPS
   ,"MUMPS"
+#endif
+#ifdef HAVE_AMESOS2_UMFPACK
+  ,"UMFPACK"
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+  ,"TACHO"
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+  ,"STRUMPACK"
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
+  ,"cuSOLVER"
 #endif
 };
 
@@ -121,6 +117,9 @@ const bool Amesos2::supportsUnsymmetric[Amesos2::numSolverTypes] =
 #ifdef HAVE_AMESOS2_PARDISO_MKL
   ,true
 #endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+  ,true
+#endif
 #ifdef HAVE_AMESOS2_CHOLMOD
   ,false //don't know, being conservative
 #endif
@@ -128,6 +127,18 @@ const bool Amesos2::supportsUnsymmetric[Amesos2::numSolverTypes] =
   ,false //don't know, being conservative
 #endif
 #ifdef HAVE_AMESOS2_MUMPS
+  ,true
+#endif
+#ifdef HAVE_AMESOS2_UMFPACK
+  ,true
+#endif
+#ifdef HAVE_AMESOS2_SHYLU_NODETACHO
+  ,false
+#endif
+#ifdef HAVE_AMESOS2_STRUMPACK
+  ,true
+#endif
+#ifdef HAVE_AMESOS2_CUSOLVER
   ,true
 #endif
 };

@@ -102,6 +102,30 @@ bool Surface_Manager::has_levelset(const std::string & surfName) const
   return false;
 }
 
+void Surface_Manager::clear()
+{
+  myLevelSetSurfaces.clear();
+  myBoundingSurfaces.clear();
+}
+
+BoundingSurface & Surface_Manager::get_bounding_surface(const std::string & surfName) const
+{
+  for (auto&& boundingSurface : myBoundingSurfaces)
+    if (boundingSurface->name() == surfName)
+      return *boundingSurface;
+
+  ThrowRuntimeError("No bounding surface with name " << surfName);
+}
+
+LevelSet & Surface_Manager::get_levelset(const std::string & surfName) const
+{
+  for (auto&& ls : myLevelSetSurfaces)
+    if (ls->name() == surfName || ls->get_composite_name() == surfName)
+      return *ls;
+
+  ThrowRuntimeError("No levelset with name " << surfName);
+}
+
 void Surface_Manager::add_levelset(LevelSet * ls)
 {
   myLevelSetSurfaces.emplace_back(ls);

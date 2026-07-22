@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,62 +30,58 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_mesh_base_FieldBase_hpp
 #define stk_mesh_base_FieldBase_hpp
 
-#include <any>
-#include <stddef.h>                     // for NULL
+#include <stddef.h>                     // for size_t
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction, etc
 #include <stk_mesh/base/FieldState.hpp>  // for FieldState
-#include <stk_mesh/base/Types.hpp>      // for FieldTraits, EntityRank, etc
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
 #include <stk_mesh/base/NgpFieldBase.hpp>
-#include <stk_mesh/base/FieldSyncDebugging.hpp>
-#include <stk_mesh/base/StkFieldSyncDebugger.hpp>
-#include <string>                       // for string
+#include <stk_mesh/base/ConstFieldData.hpp>
+#include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/ConstFieldDataBytes.hpp>
+#include <stk_mesh/base/FieldDataBytes.hpp>
+#include <stk_mesh/base/FieldDataBase.hpp>
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include <stk_util/util/SimpleArrayOps.hpp>  // for Copy
 #include <stk_util/util/CSet.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
+#include <string>                       // for string
 #include <type_traits>
 
-namespace shards { class ArrayDimTag; }
-
-namespace stk::mesh 
+namespace stk::mesh
 {
 
 class BulkData;
 class MetaData;
 class UnitTestFieldImpl;
 class FieldBase;
-template<typename T, template <typename> class NgpDebugger> class DeviceField;
+template<typename T, typename NgpMemSpace> class DeviceField;
+
+template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+NgpField<T, NgpMemSpace>& get_updated_ngp_field_async(const FieldBase&, const stk::ngp::ExecSpace&);
+
+template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+NgpField<T, NgpMemSpace>& get_updated_ngp_field_async(const FieldBase&, stk::ngp::ExecSpace&&);
 
 namespace impl {
 class FieldRepository;
-NgpFieldBase* get_ngp_field(const FieldBase & field);
-void set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField);
-stk::CSet & get_attributes(FieldBase & field);
+FieldDataBase* get_host_data(const FieldBase& field);
+FieldDataBase* get_device_data(const FieldBase& field);
+NgpFieldBase* get_ngp_field(const FieldBase& field);
+void set_ngp_field(const FieldBase& stkField, NgpFieldBase* ngpField);
+void modify_field_meta_data(FieldBase& field);
+stk::CSet & get_attributes(FieldBase& field);
 }
-
-namespace legacy {
-unsigned field_array_rank(const FieldBase & field);
-const shards::ArrayDimTag * const * dimension_tags(const FieldBase & field);
-}
-
-struct FieldMetaData
-{
-  unsigned char* m_data = nullptr;
-  int m_bytesPerEntity = 0;
-  int m_firstDimension = 0;
-};
-
-typedef std::vector<FieldMetaData> FieldMetaDataVector;
 
 //----------------------------------------------------------------------
 /** \ingroup stk_stk_mesh_module
@@ -100,12 +96,14 @@ class FieldBase
 {
 public:
   using value_type = void;
+  using InitValsViewType = Kokkos::View<std::byte*, stk::ngp::HostPinnedSpace>;
 
   FieldBase() = delete;
   FieldBase(const FieldBase &) = delete;
   FieldBase & operator=(const FieldBase &) = delete;
 
-  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const = 0;
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo, const std::string fieldName = "",
+                            const EntityRank fieldRank = InvalidEntityRank) const = 0;
 
    /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
@@ -116,6 +114,9 @@ public:
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
    */
   unsigned mesh_meta_data_ordinal() const { return m_ordinal; }
+
+  // The ordinal of this Field in the list of all Fields of just one rank
+  unsigned field_ranked_ordinal() const { return m_rankedOrdinal; }
 
   /** \brief  Application-defined text name of this field */
   const std::string & name() const { return m_name ; }
@@ -129,28 +130,16 @@ public:
    */
   const DataTraits & data_traits() const { return m_data_traits ; }
 
+  Layout host_data_layout() const { return m_hostDataLayout; }
+  Layout device_data_layout() const { return m_deviceDataLayout; }
+
   /** \brief  Number of states of this field */
   unsigned number_of_states() const { return m_num_states ; }
 
   /** \brief  FieldState of this field */
   FieldState state() const { return m_this_state; }
 
-  /** \brief  Multi-dimensional array rank of this field,
-   *          which is zero for a scalar field.
-   */
-  STK_DEPRECATED_MSG("FieldBase::field_array_rank() is no longer supported since it represents the number of "
-                     "extra Field template parameters, which are being removed.")
-  unsigned field_array_rank() const;
-
   EntityRank entity_rank() const { return m_entity_rank; }
-
-  /** \brief  Multi-dimensional
-   *          \ref shards::ArrayDimTag "array dimension tags"
-   *          of this field.
-   */
-  STK_DEPRECATED_MSG("FieldBase::dimension_tags() is no longer supported since it holds the "
-                     "extra Field template parameters, which are being removed.")
-  const shards::ArrayDimTag * const * dimension_tags() const;
 
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
@@ -185,43 +174,58 @@ public:
     return field_state(fstate) != nullptr;
   }
 
-  const void* get_initial_value() const
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 2026
+  STK_DEPRECATED const std::byte* get_initial_value() const
+  {
+    return m_field_states[0]->m_initial_value.data();
+  }
+
+  STK_DEPRECATED std::byte* get_initial_value() {
+    return m_field_states[0]->m_initial_value.data();
+  }
+#endif
+
+  const InitValsViewType& get_initial_value_bytes() const
   {
     return m_field_states[0]->m_initial_value;
   }
-  
-  void* get_initial_value() {
+
+  InitValsViewType& get_initial_value_bytes()
+  {
     return m_field_states[0]->m_initial_value;
   }
-  
+
   unsigned get_initial_value_num_bytes() const {
-    return m_field_states[0]->m_initial_value_num_bytes;
+    return m_field_states[0]->m_initial_value.extent(0);
   }
 
   virtual ~FieldBase() {
+    delete m_hostFieldData;
+    delete m_deviceFieldData;
     delete m_ngpField;
-
-    if (state() == StateNone) {
-      void*& init_val = m_initial_value;
-
-      delete [] reinterpret_cast<char*>(init_val);
-      init_val = nullptr;
-    }
   }
 
-  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const { return out; }
+  virtual std::ostream& print_data(std::ostream& out, const MeshIndex& /*mi*/) const { return out; }
 
   stk::mesh::BulkData& get_mesh() const
   { return *m_mesh; }
 
-  // This should only be accessed by the stk::mesh::BulkData class
-  inline const FieldMetaDataVector& get_meta_data_for_field() const {
-    return m_field_meta_data;
+  // Access the cached copy of the host-side FieldMetaData array
+  inline const FieldMetaData* get_meta_data_for_field() const {
+    return m_cachedFieldMetaData;
   }
 
-  // This should only be accessed by the stk::mesh::BulkData class
-  inline FieldMetaDataVector& get_meta_data_for_field() {
-    return m_field_meta_data;
+  inline FieldMetaData* get_meta_data_for_field() {
+    return m_cachedFieldMetaData;
+  }
+
+  inline unsigned get_num_buckets_for_field() const {
+    return static_cast<ConstFieldDataBytes<stk::ngp::HostSpace>&>(*m_hostFieldData).m_numBuckets;
+  }
+
+  // Access the cached copy of the host-side FieldMetaData array
+  inline void update_cached_field_meta_data() {
+    m_cachedFieldMetaData = static_cast<ConstFieldDataBytes<stk::ngp::HostSpace>&>(*m_hostFieldData).m_fieldMetaData;
   }
 
   unsigned length(const stk::mesh::Part& part) const;
@@ -241,6 +245,10 @@ public:
 
   bool defined_on(const stk::mesh::Part& part) const;
 
+  bool defined_on(const stk::mesh::Bucket& bucket) const;
+
+  bool defined_on(const stk::mesh::Entity& entity) const;
+
   void modify_on_host() const;
   void modify_on_device() const;
   void modify_on_host(const Selector& s) const;
@@ -248,44 +256,652 @@ public:
   bool need_sync_to_host() const;
   bool need_sync_to_device() const;
   void sync_to_host() const;
-  void sync_to_host(const stk::ngp::ExecSpace& newExecSpace) const;
+  void sync_to_host(const stk::ngp::ExecSpace& execSpace) const;
   void sync_to_device() const;
-  void sync_to_device(const stk::ngp::ExecSpace& newExecSpace) const;
+  void sync_to_device(const stk::ngp::ExecSpace& execSpace) const;
   void clear_sync_state() const;
   void clear_host_sync_state() const;
   void clear_device_sync_state() const;
-
-  unsigned synchronized_count() const
-  {
-    if (get_ngp_field() != nullptr) {
-      return get_ngp_field()->synchronized_count();
-    }
-    return get_mesh().synchronized_count();
-  }
-
-  size_t num_syncs_to_host() const;
-  size_t num_syncs_to_device() const;
-  bool has_ngp_field() const { return get_ngp_field() != nullptr; }
   void fence() const;
+  void fence(const stk::ngp::ExecSpace& execSpace) const;
 
-  template <typename StkDebugger>
-  void make_field_sync_debugger() const {
-    if (!(m_stkFieldSyncDebugger.has_value())) {
-      m_stkFieldSyncDebugger = std::any(StkDebugger(this));
+  // This counts every instance of data movement from the device to the host.
+  size_t num_syncs_to_host() const;
+
+  // This counts every instance of data movement from the host to the device,
+  // including both explicit syncs after data modification on the host and
+  // updating device Bucket contents after a host mesh modification.  If both
+  // are needed at the same time, the data movement is combined into one
+  // transaction and counted once.  Initialization of device data at first
+  // access will count as one sync unless host data is additionally marked as
+  // modified, where it will then count as two syncs.
+  size_t num_syncs_to_device() const;
+
+  bool has_ngp_field() const { return get_ngp_field() != nullptr; }
+  bool has_device_data() const { return m_deviceFieldData != nullptr; }
+
+  bool has_unified_device_storage() const {
+#ifdef STK_UNIFIED_MEMORY
+    return host_data_layout() == device_data_layout();
+#else
+    return false;
+#endif
+  }
+
+  void rotate_multistate_data(bool alsoRotateOnDevice = false);
+
+protected:
+  void update_host_field_data() const
+  {
+    if (m_hostFieldData->needs_update()) {
+      STK_ThrowErrorMsg("Trying to access host FieldData when there has been a device mesh modification.  Please "
+                        "first call NgpMesh::update_bulk_data().");
+    }
+    if (get_mesh().in_modifiable_state()) {
+      stk::mesh::impl::sync_buckets_from_partitions(get_mesh());
     }
   }
 
-  template <typename StkDebugger>
-  StkDebugger & get_field_sync_debugger() const {
-    return std::any_cast<StkDebugger&>(m_stkFieldSyncDebugger);
+  template <typename T, typename Space, Layout DataLayout>
+  void update_or_create_device_field_data() const
+  {
+    static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, typename Space::mem_space>::accessible);
+
+    if (m_deviceFieldData != nullptr) {
+      if (m_deviceFieldData->needs_update()) {
+        m_deviceFieldData->update(stk::ngp::ExecSpace(), host_data_layout(), need_sync_to_device());
+        increment_num_syncs_to_device();
+      }
+    }
+    else {
+      m_deviceFieldData =
+          new FieldData<T, Space, DataLayout>(static_cast<FieldDataBytes<stk::ngp::HostSpace>*>(m_hostFieldData),
+                                              const_cast<FieldDataCopyTracking*>(m_deviceFieldDataCopyTracking.data()));
+      m_deviceMemorySpace = Space();
+
+      m_deviceFieldData->set_mesh(&get_mesh());
+      if (m_deviceFieldData->needs_update()) {
+        m_deviceFieldData->update(stk::ngp::ExecSpace(), host_data_layout(), need_sync_to_device());
+        increment_num_syncs_to_device();
+      }
+      clear_host_sync_state();
+    }
   }
 
-  void rotate_multistate_data(bool rotateNgpFieldViews = false);
+  template <typename T, typename Space, Layout DataLayout, typename ExecSpace>
+  void async_update_or_create_device_field_data(const ExecSpace& execSpace) const
+  {
+    static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, typename Space::mem_space>::accessible);
 
- private:
-  unsigned legacy_field_array_rank() const;
-  const shards::ArrayDimTag * const * legacy_dimension_tags() const;
+    if (m_deviceFieldData != nullptr) {
+      if (m_deviceFieldData->needs_update()) {
+        m_deviceFieldData->update(execSpace, host_data_layout(), need_sync_to_device());
+        increment_num_syncs_to_device();
+      }
+    }
+    else {
+      m_deviceFieldData =
+          new FieldData<T, Space, DataLayout>(static_cast<FieldDataBytes<stk::ngp::HostSpace>*>(m_hostFieldData),
+                                              const_cast<FieldDataCopyTracking*>(m_deviceFieldDataCopyTracking.data()));
+      m_deviceMemorySpace = Space();
 
+      m_deviceFieldData->set_mesh(&get_mesh());
+      if (m_deviceFieldData->needs_update()) {
+        m_deviceFieldData->update(execSpace, host_data_layout(), need_sync_to_device());
+        increment_num_syncs_to_device();
+      }
+      clear_host_sync_state();
+    }
+  }
+
+  template <typename T, typename Space, Layout DataLayout>
+  void check_field_data_cast([[maybe_unused]] const FieldBase& fieldBase) const
+  {
+#ifdef STK_FIELD_BOUNDS_CHECK
+    if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+      STK_ThrowRequireMsg(fieldBase.data_traits().type_info == typeid(T),
+                          "Called FieldBase::data() with inconsistent datatype template parameter for Field '" <<
+                          name() << "'.  The provided type is '" << typeid(T).name() << "' but the actual type is '" <<
+                          fieldBase.data_traits().type_info.name() << "'.");
+      STK_ThrowRequireMsg(fieldBase.host_data_layout() == DataLayout,
+                          "Called FieldBase::data() with inconsistent host data layout template parameter for " <<
+                          "Field '" << name() << "'.  The provided layout is '" << DataLayout <<
+                          "' but the actual layout is '" << fieldBase.host_data_layout() << "'.");
+    }
+    else {
+      STK_ThrowRequireMsg(fieldBase.data_traits().type_info == typeid(T),
+                          "Called FieldBase::data() with inconsistent datatype template parameter for Field '" <<
+                          name() << "'.  The provided type is '" << typeid(T).name() << "' but the actual type is '" <<
+                          fieldBase.data_traits().type_info.name() << "'.");
+      STK_ThrowRequireMsg(fieldBase.device_data_layout() == DataLayout,
+                          "Called FieldBase::data() with inconsistent device data layout template parameter for " <<
+                          "Field '" << name() << "'.  The provided layout is '" << DataLayout <<
+                          "' but the actual layout is '" << fieldBase.device_data_layout() << "'.");
+      STK_ThrowRequireMsg(fieldBase.m_deviceMemorySpace.type() == typeid(Space),
+                          "Called FieldBase::data() with inconsistent device memory space template parameter for " <<
+                          "Field '" << name() << "'.  The provided memory space is '" << typeid(Space).name() <<
+                          "' but the actual memory space is '" << fieldBase.m_deviceMemorySpace.type().name() << "'.");
+    }
+#endif
+  }
+
+  template <typename T, typename Space, Layout DataLayout>
+  FieldData<T, Space, DataLayout>& field_data_handle(const FieldBase& fieldBase) const
+  {
+    if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+      update_host_field_data();
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<FieldData<T, stk::ngp::HostSpace, DataLayout>*>(fieldBase.m_hostFieldData);
+    }
+    else {
+      update_or_create_device_field_data<T, Space, DataLayout>();
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<FieldData<T, Space, DataLayout>*>(fieldBase.m_deviceFieldData);
+    }
+  }
+
+  template <typename T, typename Space, Layout DataLayout>
+  ConstFieldData<T, Space, DataLayout>& const_field_data_handle(const FieldBase& fieldBase) const
+  {
+    if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+      update_host_field_data();
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<ConstFieldData<T, stk::ngp::HostSpace, DataLayout>*>(fieldBase.m_hostFieldData);
+    }
+    else {
+      update_or_create_device_field_data<T, Space, DataLayout>();
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<ConstFieldData<T, Space, DataLayout>*>(fieldBase.m_deviceFieldData);
+    }
+  }
+
+
+  template <typename T, typename Space, Layout DataLayout, typename ExecSpace>
+  FieldData<T, Space, DataLayout>& async_field_data_handle(const FieldBase& fieldBase,
+                                                           const ExecSpace& execSpace) const
+  {
+    if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+      update_host_field_data();
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<FieldData<T, stk::ngp::HostSpace, DataLayout>*>(fieldBase.m_hostFieldData);
+    }
+    else {
+      async_update_or_create_device_field_data<T, Space, DataLayout, ExecSpace>(execSpace);
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<FieldData<T, Space, DataLayout>*>(fieldBase.m_deviceFieldData);
+    }
+  }
+
+  template <typename T, typename Space, Layout DataLayout, typename ExecSpace>
+  ConstFieldData<T, Space, DataLayout>& async_const_field_data_handle(const FieldBase& fieldBase,
+                                                                      const ExecSpace& execSpace) const
+  {
+    if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+      update_host_field_data();
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<ConstFieldData<T, stk::ngp::HostSpace, DataLayout>*>(fieldBase.m_hostFieldData);
+    }
+    else {
+      async_update_or_create_device_field_data<T, Space, DataLayout, ExecSpace>(execSpace);
+      check_field_data_cast<T, Space, DataLayout>(fieldBase);
+      return *static_cast<ConstFieldData<T, Space, DataLayout>*>(fieldBase.m_deviceFieldData);
+    }
+  }
+
+
+  // Can't specialize a class member function -- only a class or free function
+  template <typename T, FieldAccessTag FieldAccess, typename Space, Layout DataLayout>
+  struct FieldDataHelper {
+    using FieldDataType = FieldData<T, Space, DataLayout>;
+    static FieldDataType& field_data(const FieldBase& fieldBase) {
+      return fieldBase.field_data_handle<T, Space, DataLayout>(fieldBase);
+    }
+  };
+
+  template <typename T, typename Space, Layout DataLayout>
+  struct FieldDataHelper<T, ReadOnly, Space, DataLayout> {
+    using FieldDataType = ConstFieldData<T, Space, DataLayout>;
+    static FieldDataType& field_data(const FieldBase& fieldBase) {
+      return fieldBase.const_field_data_handle<T, Space, DataLayout>(fieldBase);
+    }
+  };
+
+  template <typename T, typename Space, Layout DataLayout>
+  struct FieldDataHelper<T, ConstUnsynchronized, Space, DataLayout> {
+    using FieldDataType = ConstFieldData<T, Space, DataLayout>;
+    static FieldDataType& field_data(const FieldBase& fieldBase) {
+      return fieldBase.const_field_data_handle<T, Space, DataLayout>(fieldBase);
+    }
+  };
+
+  template <typename T, FieldAccessTag FieldAccess, typename Space>
+  struct AutoLayoutFieldDataBuilder {
+    using FieldDataType = typename FieldDataHelper<T, FieldAccess, Space, Layout::Auto>::FieldDataType;
+    static FieldDataType build_field_data(const FieldBase& fieldBase, const char* file, int line) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        // Build from a properly-cast FieldData so that we can update it properly first while still taking
+        // advantage of copy elision by directly returning the newly-constructed FieldData object.
+        if (fieldBase.host_data_layout() == Layout::Right) {
+          auto fieldDataRight = FieldDataHelper<T, FieldAccess, Space, Layout::Right>::field_data(fieldBase);
+          return typename FieldDataHelper<T, FieldAccess, Space, Layout::Auto>::FieldDataType(fieldDataRight,
+                                                                                              FieldAccess, file, line);
+        }
+        else if (fieldBase.host_data_layout() == Layout::Left) {
+          auto fieldDataLeft = FieldDataHelper<T, FieldAccess, Space, Layout::Left>::field_data(fieldBase);
+          return typename FieldDataHelper<T, FieldAccess, Space, Layout::Auto>::FieldDataType(fieldDataLeft,
+                                                                                              FieldAccess, file, line);
+        }
+        else {
+          STK_ThrowErrorMsg("Host data layout of " << fieldBase.host_data_layout() << " is unsupported.  It must be "
+                            "either Layout::Right or Layout::Left.");
+          return typename FieldDataHelper<T, FieldAccess, Space, Layout::Auto>::FieldDataType(); // Keep compiler happy
+        }
+      }
+      else {
+        STK_ThrowErrorMsg("Layout::Auto access to Field data is only available on the host.");
+        return typename FieldDataHelper<T, FieldAccess, Space, Layout::Auto>::FieldDataType(); // Keep compiler happy
+      }
+    }
+  };
+
+
+  template <typename T, FieldAccessTag FieldAccess, typename Space, Layout DataLayout, typename ExecSpace>
+  struct AsyncFieldDataHelper {
+    using FieldDataType = FieldData<T, Space, DataLayout>;
+    static FieldDataType& field_data(const FieldBase& fieldBase, const ExecSpace& execSpace) {
+      return fieldBase.async_field_data_handle<T, Space, DataLayout, ExecSpace>(fieldBase, execSpace);
+    }
+  };
+
+  template <typename T, typename Space, Layout DataLayout, typename ExecSpace>
+  struct AsyncFieldDataHelper<T, ReadOnly, Space, DataLayout, ExecSpace> {
+    using FieldDataType = ConstFieldData<T, Space, DataLayout>;
+    static FieldDataType& field_data(const FieldBase& fieldBase, const ExecSpace& execSpace) {
+      return fieldBase.async_const_field_data_handle<T, Space, DataLayout, ExecSpace>(fieldBase, execSpace);
+    }
+  };
+
+  template <typename T, typename Space, Layout DataLayout, typename ExecSpace>
+  struct AsyncFieldDataHelper<T, ConstUnsynchronized, Space, DataLayout, ExecSpace> {
+    using FieldDataType = ConstFieldData<T, Space, DataLayout>;
+    static FieldDataType& field_data(const FieldBase& fieldBase, const ExecSpace& execSpace) {
+      return fieldBase.async_const_field_data_handle<T, Space, DataLayout, ExecSpace>(fieldBase, execSpace);
+    }
+  };
+
+  template <typename T, FieldAccessTag FieldAccess, typename Space, typename ExecSpace>
+  struct AsyncAutoLayoutFieldDataBuilder {
+    using FieldDataType =
+        typename AsyncFieldDataHelper<T, FieldAccess, Space, Layout::Auto, ExecSpace>::FieldDataType;
+    static FieldDataType build_field_data(const FieldBase& fieldBase, const ExecSpace& execSpace,
+                                          const char* file, int line) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        // Build from a properly-cast FieldData so that we can update it properly first while still taking
+        // advantage of copy elision by directly returning the newly-constructed FieldData object.
+        if (fieldBase.host_data_layout() == Layout::Right) {
+          auto fieldDataRight =
+              AsyncFieldDataHelper<T, FieldAccess, Space, Layout::Right, ExecSpace>::field_data(fieldBase,
+                                                                                                execSpace);
+          return typename
+              AsyncFieldDataHelper<T, FieldAccess, Space, Layout::Auto, ExecSpace>::FieldDataType(fieldDataRight,
+                                                                                                  FieldAccess,
+                                                                                                  file, line);
+        }
+        else if (fieldBase.host_data_layout() == Layout::Left) {
+          auto fieldDataLeft =
+              AsyncFieldDataHelper<T, FieldAccess, Space, Layout::Left, ExecSpace>::field_data(fieldBase,
+                                                                                               execSpace);
+          return typename
+              AsyncFieldDataHelper<T, FieldAccess, Space, Layout::Auto, ExecSpace>::FieldDataType(fieldDataLeft,
+                                                                                                  FieldAccess,
+                                                                                                  file, line);
+        }
+        else {
+          STK_ThrowErrorMsg("Host data layout of " << fieldBase.host_data_layout() << " is unsupported.  It must be "
+                            "either Layout::Right or Layout::Left.");
+          return typename AsyncFieldDataHelper<T, FieldAccess, Space, Layout::Auto, ExecSpace>::FieldDataType(); // Keep compiler happy
+        }
+      }
+      else {
+        STK_ThrowErrorMsg("Layout::Auto access to Field data is only available on the host.");
+        return typename AsyncFieldDataHelper<T, FieldAccess, Space, Layout::Auto, ExecSpace>::FieldDataType(); // Keep compiler happy
+      }
+    }
+  };
+
+  template <typename ConstnessType, typename Space>
+  struct FieldDataBytesHelper {
+    using FieldDataBytesType = std::conditional_t<std::is_const_v<ConstnessType>, ConstFieldDataBytes<Space>,
+                                                                                  FieldDataBytes<Space>>;
+  };
+
+  void print_host_access_error([[maybe_unused]] FieldAccessTag hostAccessTag,
+      const FieldDataCopyTracking& hostCopyTracking,
+      [[maybe_unused]] FieldAccessTag deviceAccessTag,
+      const FieldDataCopyTracking& deviceCopyTracking) const
+  {
+    if (hostCopyTracking.m_line > 0 && deviceCopyTracking.m_line > 0) {
+      STK_ThrowErrorMsg("Trying to access host-side FieldData with access tag " << hostAccessTag <<
+                        " from " << source_location_string(hostCopyTracking.m_file, hostCopyTracking.m_line, "") <<
+                        " while device-side FieldData with access tag " << deviceAccessTag <<
+                        " from " << source_location_string(deviceCopyTracking.m_file, deviceCopyTracking.m_line, "") <<
+                        " is still in use for Field '" << name() << "'.");
+    }
+    else {
+      STK_ThrowErrorMsg("Trying to access host-side FieldData with access tag " << hostAccessTag <<
+                        " while device-side FieldData with access tag " << deviceAccessTag <<
+                        " is still in use for Field '" << name() << "'.");
+    }
+  }
+
+  void print_device_access_error([[maybe_unused]] FieldAccessTag deviceAccessTag,
+      const FieldDataCopyTracking& deviceCopyTracking,
+      [[maybe_unused]] FieldAccessTag hostAccessTag,
+      const FieldDataCopyTracking& hostCopyTracking) const
+  {
+    if (hostCopyTracking.m_line > 0 && deviceCopyTracking.m_line > 0) {
+      STK_ThrowErrorMsg("Trying to access device-side FieldData with access tag " << deviceAccessTag <<
+                        " from " << source_location_string(deviceCopyTracking.m_file, deviceCopyTracking.m_line, "") <<
+                        " while host-side FieldData with access tag " << hostAccessTag <<
+                        " from " << source_location_string(hostCopyTracking.m_file, hostCopyTracking.m_line, "") <<
+                        " is still in use for Field '" << name() << "'.");
+    }
+    else {
+      STK_ThrowErrorMsg("Trying to access device-side FieldData with access tag " << deviceAccessTag <<
+                        " while host-side FieldData with access tag " << hostAccessTag <<
+                        " is still in use for Field '" << name() << "'.");
+    }
+  }
+
+  template <FieldAccessTag FieldAccess, typename Space>
+  void check_lifetimes([[maybe_unused]] const char* file, [[maybe_unused]] int line) const
+  {
+#ifdef STK_USE_DEVICE_MESH
+    if constexpr (FieldAccess == ReadOnly) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        if (has_device_data()) {
+          if (m_deviceFieldData->has_copies(ReadWrite) || m_deviceFieldData->has_copies(OverwriteAll)) {
+            const FieldDataCopyTracking hostCopyTracking{file, line, 1};
+            if (m_deviceFieldData->has_copies(ReadWrite)) {
+              print_host_access_error(FieldAccess, hostCopyTracking,
+                                      ReadWrite, m_deviceFieldData->copy_tracking(ReadWrite));
+            }
+            if (m_deviceFieldData->has_copies(OverwriteAll)) {
+              print_host_access_error(FieldAccess, hostCopyTracking,
+                                      OverwriteAll, m_deviceFieldData->copy_tracking(OverwriteAll));
+            }
+          }
+        }
+      }
+      else {
+        if (m_hostFieldData->has_copies(ReadWrite) || m_hostFieldData->has_copies(OverwriteAll)) {
+          const FieldDataCopyTracking deviceCopyTracking{file, line, 1};
+          if (m_hostFieldData->has_copies(ReadWrite)) {
+            print_device_access_error(FieldAccess, deviceCopyTracking,
+                                      ReadWrite, m_hostFieldData->copy_tracking(ReadWrite));
+          }
+          if (m_hostFieldData->has_copies(OverwriteAll)) {
+            print_device_access_error(FieldAccess, deviceCopyTracking,
+                                      OverwriteAll, m_hostFieldData->copy_tracking(OverwriteAll));
+          }
+        }
+      }
+    }
+    if constexpr (FieldAccess == ReadWrite || FieldAccess == OverwriteAll) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        if (has_device_data()) {
+          if (m_deviceFieldData->has_copies(ReadWrite) || m_deviceFieldData->has_copies(ReadOnly) ||
+              m_deviceFieldData->has_copies(OverwriteAll)) {
+            const FieldDataCopyTracking hostCopyTracking{file, line, 1};
+            if (m_deviceFieldData->has_copies(ReadWrite)) {
+              print_host_access_error(FieldAccess, hostCopyTracking,
+                                      ReadWrite, m_deviceFieldData->copy_tracking(ReadWrite));
+            }
+            if (m_deviceFieldData->has_copies(ReadOnly)) {
+              print_host_access_error(FieldAccess, hostCopyTracking,
+                                      ReadOnly, m_deviceFieldData->copy_tracking(ReadOnly));
+            }
+            if (m_deviceFieldData->has_copies(OverwriteAll)) {
+              print_host_access_error(FieldAccess, hostCopyTracking,
+                                      OverwriteAll, m_deviceFieldData->copy_tracking(OverwriteAll));
+            }
+          }
+        }
+      }
+      else {
+        if (m_hostFieldData->has_copies(ReadWrite) || m_hostFieldData->has_copies(ReadOnly) ||
+            m_hostFieldData->has_copies(OverwriteAll)) {
+          const FieldDataCopyTracking deviceCopyTracking{file, line, 1};
+          if (m_hostFieldData->has_copies(ReadWrite)) {
+            print_device_access_error(FieldAccess, deviceCopyTracking,
+                                      ReadWrite, m_hostFieldData->copy_tracking(ReadWrite));
+          }
+          if (m_hostFieldData->has_copies(ReadOnly)) {
+            print_device_access_error(FieldAccess, deviceCopyTracking,
+                                      ReadOnly, m_hostFieldData->copy_tracking(ReadOnly));
+          }
+          if (m_hostFieldData->has_copies(OverwriteAll)) {
+            print_device_access_error(FieldAccess, deviceCopyTracking,
+                                      OverwriteAll, m_hostFieldData->copy_tracking(OverwriteAll));
+          }
+        }
+      }
+    }
+#endif
+  }
+
+public:
+
+  // This function is intended to be used when you have a persistent copy of a FieldData object
+  // that was acquired with the stk::mesh::Unsynchronized or stk::mesh::ConstUnsynchronized
+  // access tag.  The unsynchronized variants will not do any automatic data movement between
+  // memory spaces, so this synchronize() function is your opportunity to force the same
+  // operations.  Call this right before using your persistent FieldData copy, with the
+  // FieldAccessTag and MemorySpace matching what you are about to do with your data.  Your
+  // persistent copy will then be updated appropriately before use.
+  //
+  // This function is completely unnecessary for the normal workflow of reacquiring your
+  // FieldData instance with a FieldBase::data() call before each use.
+
+  template <FieldAccessTag FieldAccess = ReadOnly,
+            typename Space = stk::ngp::HostSpace>
+  void synchronize() const
+  {
+    if constexpr (FieldAccess == ReadWrite || FieldAccess == ReadOnly) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        sync_to_host();
+      }
+      else {
+        sync_to_device();
+      }
+    }
+
+    if constexpr (FieldAccess == ReadWrite) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        modify_on_host();
+      }
+      else {
+        modify_on_device();
+      }
+    }
+    else if constexpr (FieldAccess == OverwriteAll) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        clear_device_sync_state();
+        modify_on_host();
+      }
+      else {
+        clear_host_sync_state();
+        modify_on_device();
+      }
+    }
+  }
+
+  // This function is the same as described above, except that it takes a Kokkos execution space
+  // argument that will be used to run any synchronization operations that may need to take
+  // place.  This is intended for asynchronous execution.
+
+  template <FieldAccessTag FieldAccess = ReadOnly,
+            typename Space = stk::ngp::HostSpace,
+            typename ExecSpace = stk::ngp::ExecSpace>
+  void synchronize([[maybe_unused]] const ExecSpace& execSpace) const
+  {
+    if constexpr (FieldAccess == ReadWrite || FieldAccess == ReadOnly) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        sync_to_host(execSpace);
+      }
+      else {
+        sync_to_device(execSpace);
+      }
+    }
+
+    if constexpr (FieldAccess == ReadWrite) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        modify_on_host();
+      }
+      else {
+        modify_on_device();
+      }
+    }
+    else if constexpr (FieldAccess == OverwriteAll) {
+      if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+        clear_device_sync_state();
+        modify_on_host();
+      }
+      else {
+        clear_host_sync_state();
+        modify_on_device();
+      }
+    }
+  }
+
+  // Acquire a temporary copy of a FieldData object to access your data in the desired memory space.
+  // It is best to acquire it right before using it in a computational algorithm, and then let it go
+  // out of scope and be destroyed when you are finished with it.  The lifetime of this object cannot
+  // overlap with one for the same Field in the opposite memory space.  Lifetimes can overlap in the
+  // same memory space, but you must remember to always reacquire this object after a mesh modification.
+  // Debug builds will trap these errors.  The four template parameters are:
+  //
+  //   T : Mandatory parameter with the Field datatype.  This must match the type that the Field
+  //     was originally registered with, or this function will throw.  Use a templated Field
+  //     instance to omit this parameter.
+  //
+  //   FieldAccessTag : Optional tag indicating how you will access the data.  Options are:
+
+  //     - stk::mesh::ReadOnly      : Sync data to memory space and do not mark modified; Disallow modification [default]
+  //     - stk::mesh::ReadWrite     : Sync data to memory space and mark modified; Allow modification
+  //     - stk::mesh::OverwriteAll  : Do not sync data and mark modified; Allow modification
+
+  //     - stk::mesh::Unsynchronized       : Do not sync data and do not mark modified; Allow modification
+  //     - stk::mesh::ConstUnsynchronized  : Do not sync data and do not mark modified; Disallow modification
+  //
+  //     This will control automatic synchronization between memory spaces so that you are guaranteed
+  //     to be using up-to-date data wherever accessed.  The Unsynchronized variants are intended for
+  //     users who must store persistent copies of their FieldData objects.  You must call the above
+  //     synchronize() function before running your algorithm that uses your persistent copy, with the
+  //     same access tag and memory space that you would otherwise have used, to get the data movement
+  //     correct.  Do not use the Unsynchronized access tags for normal workflows.
+  //
+  //   Space : Optional struct that defines the Kokkos memory space and execution space that you want
+  //     to access.  It can be either a stk::ngp::HostSpace or an arbitrary device-space struct of your
+  //     choosing.  STK provides a stk::ngp::DeviceSpace struct for you if you want to use it on device.
+  //     The default template parameter is stk::ngp::HostSpace.
+  //
+  //   Layout : Optional data layout that must match the layout that the Field was originally
+  //     registered with.  This can be values of stk::mesh::Layout::Left or stk::mesh::Layout::Right.
+  //     If you did nothing special for field registration, this will always default to the correct
+  //     value.  If you overrode the host-side data layout at Field registration, you need to
+  //     manually provide the same value here.  This will always be Layout::Left on device and
+  //     will default to Layout::Right on host in a "normal" build and Layout::Left on host in
+  //     a STK_UNIFIED_MEMORY build.  You can use a templated Field instance to always omit this
+  //     tag, regardless of customization.
+  //
+  // Some sample usage for a FieldBase instance of a Field<double>:
+  //
+  //   auto fieldData = myField.data<double>();                       <-- Read-only access to host data
+  //   auto fieldData = myField.data<double, stk::mesh::ReadWrite>(); <-- Read-write access to host data
+  //   auto fieldData = myField.data<double, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  <-- Read-only access to device data
+  //   auto fieldData = myField.data<double, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(); <-- Read-write access to device data
+
+  template <typename T,
+            FieldAccessTag FieldAccess = ReadOnly,
+            typename Space = stk::ngp::HostSpace,
+            Layout DataLayout = DefaultLayoutSelector<Space>::layout>
+  typename std::enable_if_t<is_field_datatype_v<T>,
+                            typename FieldDataHelper<T, FieldAccess, Space, DataLayout>::FieldDataType>
+  data(
+       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+  {
+    check_lifetimes<FieldAccess, Space>(file, line);
+    synchronize<FieldAccess, Space>();
+
+    if constexpr (DataLayout == Layout::Auto) {
+      return AutoLayoutFieldDataBuilder<T, FieldAccess, Space>::build_field_data(*this, file, line);
+    }
+    else {
+      return typename FieldDataHelper<T, FieldAccess, Space, DataLayout>::FieldDataType(
+            FieldDataHelper<T, FieldAccess, Space, DataLayout>::field_data(*this), FieldAccess, file, line);
+    }
+  }
+
+
+  // This is the same as described above, except you can pass in a custom execution space argument
+  // that will be used to run any data syncing or updating after a mesh modification that may
+  // be necessary.  This is for asynchronous execution.
+
+  template <typename T,
+            FieldAccessTag FieldAccess = ReadOnly,
+            typename Space = stk::ngp::HostSpace,
+            Layout DataLayout = DefaultLayoutSelector<Space>::layout,
+            typename ExecSpace = stk::ngp::ExecSpace>
+  typename std::enable_if_t<is_field_datatype_v<T>,
+                            typename FieldDataHelper<T, FieldAccess, Space, DataLayout>::FieldDataType>
+  data(const ExecSpace& execSpace,
+       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+  {
+    check_lifetimes<FieldAccess, Space>(file, line);
+    synchronize<FieldAccess, Space>(execSpace);
+
+    if constexpr (DataLayout == Layout::Auto) {
+      return AsyncAutoLayoutFieldDataBuilder<T, FieldAccess, Space, ExecSpace>::build_field_data(*this, execSpace,
+                                                                                                 file, line);
+    }
+    else {
+      return typename AsyncFieldDataHelper<T, FieldAccess, Space, DataLayout, ExecSpace>::FieldDataType(
+            AsyncFieldDataHelper<T, FieldAccess, Space, DataLayout, ExecSpace>::field_data(*this, execSpace),
+            FieldAccess, file, line);
+    }
+  }
+
+
+  // Acquire a reference to a FieldDataBytes object in the desired memory space.  This is intended for
+  // low-level access to the raw bytes behind the data when the datatype and layout of the Field
+  // are not known.  There is no automatic data synchronization or marking performed, and very
+  // few consistency checks and no bounds-checking performed.  This is intended for internal
+  // STK Mesh use only.
+  //
+  //   auto& fieldDataBytes = myField.data_bytes<const std::byte>();  <-- Read-only access to host data
+  //   auto& fieldDataBytes = myField.data_bytes<std::byte>();        <-- Read-write access to host data
+  //   auto& fieldDataBytes = myField.data_bytes<const std::byte, stk::ngp::DeviceSpace>();  <-- Read-only access to device data
+  //   auto& fieldDataBytes = myField.data_bytes<std::byte, stk::ngp::DeviceSpace>();        <-- Read-write access to device data
+
+  template <typename ConstnessType, typename Space = stk::ngp::HostSpace>
+  typename FieldDataBytesHelper<ConstnessType, Space>::FieldDataBytesType& data_bytes() const
+  {
+    if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
+      return static_cast<typename FieldDataBytesHelper<ConstnessType, stk::ngp::HostSpace>::FieldDataBytesType&>(
+            *m_hostFieldData);
+    }
+    else {
+      STK_ThrowRequireMsg(has_device_data(),
+                          "You must fully-construct the device FieldData object through a FieldBase::data() call "
+                          "before requesting a subset of it through FieldBase::data_bytes()");
+      return dynamic_cast<typename FieldDataBytesHelper<ConstnessType, Space>::FieldDataBytesType&>(
+            *m_deviceFieldData);
+    }
+  }
+
+
+private:
   stk::ngp::ExecSpace& get_execution_space() const {
     return m_execSpace;
   }
@@ -307,12 +923,12 @@ public:
   template<class A>
     const A * declare_attribute_no_delete(const A * a) {
       return m_attribute.template insert_no_delete<A>(a);
-    }   
+    }
 
   template<class A>
     const A * declare_attribute_with_delete(const A * a) {
       return m_attribute.template insert_with_delete<A>(a);
-    }   
+    }
 
   template<class A>
     bool remove_attribute(const A * a) {
@@ -327,30 +943,37 @@ public:
     }
   }
 
+  void modify_field_meta_data() {
+    ++(m_fieldMetaDataModCount());
+  }
+
+  void construct_missing_device_states();
 
   //  Associate this field with a bulk data.
   //  Note, a field can be associated with one and only one bulk data object
   void set_mesh(stk::mesh::BulkData* bulk);
 
+  FieldDataBase* get_host_data() const { return m_hostFieldData; }
+  FieldDataBase* get_device_data() const { return m_deviceFieldData; }
   NgpFieldBase * get_ngp_field() const { return m_ngpField; }
   void set_ngp_field(NgpFieldBase * ngpField) const;
 
   void increment_num_syncs_to_host() const;
   void increment_num_syncs_to_device() const;
 
-  void set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes);
+  void set_initial_value(const void* new_initial_value, unsigned num_bytes);
 
   void insert_restriction(const char     * arg_method ,
                           const Part       & arg_part ,
                           const unsigned     arg_num_scalars_per_entity ,
                           const unsigned     arg_first_dimension ,
-                          const void*        arg_init_value = NULL);
+                          const void*        arg_init_value = nullptr);
 
   void insert_restriction(const char     * arg_method ,
                           const Selector   & arg_selector ,
                           const unsigned     arg_num_scalars_per_entity ,
                           const unsigned     arg_first_dimension ,
-                          const void*        arg_init_value = NULL);
+                          const void*        arg_init_value = nullptr);
 
   void verify_and_clean_restrictions( const Part& superset, const Part& subset );
 
@@ -362,80 +985,103 @@ public:
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
 
-  friend NgpFieldBase* impl::get_ngp_field(const FieldBase & stkField);
-  friend void impl::set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField);
+  friend FieldDataBase* impl::get_host_data(const FieldBase& stkField);
+  friend FieldDataBase* impl::get_device_data(const FieldBase& stkField);
+  friend NgpFieldBase* impl::get_ngp_field(const FieldBase& stkField);
+  friend void impl::set_ngp_field(const FieldBase& stkField, NgpFieldBase* ngpField);
+  friend void impl::modify_field_meta_data(FieldBase& stkField);
 
-  friend unsigned legacy::field_array_rank(const FieldBase & field);
-  friend const shards::ArrayDimTag * const * legacy::dimension_tags(const FieldBase & field);
-
-  template <typename T, template <typename> class NgpDebugger> friend class HostField;
-  template <typename T, template <typename> class NgpDebugger> friend class DeviceField;
-  template <typename Scalar, class Tag1, class Tag2, class Tag3, class Tag4, class Tag5, class Tag6, class Tag7> friend class Field;
+  template <typename T, typename NgpMemSpace> friend class HostField;
+  template <typename T, typename NgpMemSpace> friend class DeviceField;
+  template <typename Scalar, Layout HostLayout> friend class Field;
+  template <typename T, typename NgpMemSpace> friend
+      NgpField<T, NgpMemSpace>& get_updated_ngp_field_async(const FieldBase&, const stk::ngp::ExecSpace&);
+  template <typename T, typename NgpMemSpace> friend
+      NgpField<T, NgpMemSpace>& get_updated_ngp_field_async(const FieldBase&, stk::ngp::ExecSpace&&);
 
 protected:
-  FieldBase(MetaData                   * arg_mesh_meta_data,
-            stk::topology::rank_t        arg_entity_rank,
-            unsigned                     arg_ordinal,
-            const std::string          & arg_name,
-            const DataTraits           & arg_traits,
-            unsigned                     arg_rank,
-            const shards::ArrayDimTag  * const * arg_dim_tags,
-            unsigned                     arg_number_of_states,
-            FieldState                   arg_this_state)
+  FieldBase(MetaData* arg_mesh_meta_data,
+            stk::topology::rank_t arg_entity_rank,
+            unsigned arg_ordinal,
+            unsigned arg_ranked_ordinal,
+            const std::string& arg_name,
+            const DataTraits& arg_traits,
+            unsigned arg_number_of_states,
+            FieldState arg_this_state,
+            Layout hostDataLayout,
+            Layout deviceDataLayout,
+            FieldDataBase* hostFieldData)
     : m_mesh(nullptr),
+      m_hostFieldData(hostFieldData),
+      m_deviceFieldData(nullptr),
       m_entity_rank(arg_entity_rank),
       m_name(arg_name),
       m_num_states(arg_number_of_states),
-      m_field_rank( arg_rank ),
       m_restrictions(),
-      m_initial_value(nullptr),
-      m_initial_value_num_bytes(0),
+      m_initial_value("Init-Vals-"+arg_name, 0),
       m_data_traits( arg_traits ),
       m_meta_data(arg_mesh_meta_data),
       m_ordinal(arg_ordinal),
+      m_rankedOrdinal(arg_ranked_ordinal),
       m_this_state(arg_this_state),
       m_ngpField(nullptr),
       m_numSyncsToHost(0),
       m_numSyncsToDevice(0),
       m_modifiedOnHost(false),
       m_modifiedOnDevice(false),
-      m_execSpace(Kokkos::DefaultExecutionSpace())
+      m_hostDataLayout(hostDataLayout),
+      m_deviceDataLayout(deviceDataLayout),
+      m_execSpace(Kokkos::DefaultExecutionSpace()),
+      m_defaultExecSpace(Kokkos::DefaultExecutionSpace()),
+      m_deviceFieldName(Kokkos::view_alloc(Kokkos::WithoutInitializing, m_name), m_name.size()+1),
+      m_fieldMetaDataModCount("FieldMetaDataModCount"),
+      m_hostFieldDataCopyTracking{},
+      m_deviceFieldDataCopyTracking{}
   {
     FieldBase * const pzero = nullptr ;
-    const shards::ArrayDimTag * const dzero = nullptr ;
-    Copy<MaximumFieldStates>(    m_field_states , pzero );
-    Copy<MaximumFieldDimension>( m_dim_tags ,     dzero );
+    Copy<MaximumFieldStates>(m_field_states, pzero);
 
-    for ( unsigned i = 0 ; i < arg_rank ; ++i ) {
-      m_dim_tags[i] = arg_dim_tags[i];
-    }
+    std::strcpy(m_deviceFieldName.data(), m_name.c_str());
+
+    auto& constFieldDataBytes = static_cast<ConstFieldDataBytes<stk::ngp::HostSpace>&>(*m_hostFieldData);
+    constFieldDataBytes.set_field_name(m_deviceFieldName.data());
+    constFieldDataBytes.set_field_meta_data_mod_count_pointer(m_fieldMetaDataModCount.data());
+    constFieldDataBytes.set_copy_tracking(m_hostFieldDataCopyTracking.data());
   }
 
 private:
-  FieldMetaDataVector m_field_meta_data;
-
   stk::mesh::BulkData* m_mesh;
+
+  FieldDataBase* m_hostFieldData;
+  mutable FieldDataBase* m_deviceFieldData;
+  mutable std::any m_deviceMemorySpace;
+  FieldMetaData* m_cachedFieldMetaData;
+
   EntityRank m_entity_rank;
   const std::string m_name;
   const unsigned m_num_states;
-  unsigned m_field_rank;
-  FieldBase                  * m_field_states[ MaximumFieldStates ];
-  const shards::ArrayDimTag  * m_dim_tags[ MaximumFieldDimension ];
+  FieldBase* m_field_states[ MaximumFieldStates ];
   FieldRestrictionVector m_restrictions;
-  void*                        m_initial_value;
-  unsigned                     m_initial_value_num_bytes;
-  CSet                         m_attribute;
-  const DataTraits           & m_data_traits ;
-  MetaData             * const m_meta_data ;
-  const unsigned               m_ordinal ;
-  const FieldState             m_this_state ;
-  mutable NgpFieldBase       * m_ngpField;
-  mutable size_t               m_numSyncsToHost;
-  mutable size_t               m_numSyncsToDevice;
-  mutable bool                 m_modifiedOnHost;
-  mutable bool                 m_modifiedOnDevice;
-  mutable stk::ngp::ExecSpace  m_execSpace;
-  mutable std::any m_stkFieldSyncDebugger;
+  InitValsViewType m_initial_value;
+  CSet m_attribute;
+  const DataTraits& m_data_traits;
+  MetaData* const m_meta_data;
+  const unsigned m_ordinal;
+  const unsigned m_rankedOrdinal;
+  const FieldState m_this_state;
+  mutable NgpFieldBase* m_ngpField;
+  mutable size_t m_numSyncsToHost;
+  mutable size_t m_numSyncsToDevice;
+  mutable bool m_modifiedOnHost;
+  mutable bool m_modifiedOnDevice;
+  Layout m_hostDataLayout;
+  Layout m_deviceDataLayout;
+  mutable stk::ngp::ExecSpace m_execSpace;
+  stk::ngp::ExecSpace m_defaultExecSpace;
+  DeviceStringType m_deviceFieldName;
+  mutable FieldMetaDataModCountType m_fieldMetaDataModCount;
+  std::array<FieldDataCopyTracking, NumTrackedFieldAccessTags> m_hostFieldDataCopyTracking;
+  std::array<FieldDataCopyTracking, NumTrackedFieldAccessTags> m_deviceFieldDataCopyTracking;
 };
 
 /** \brief  Print the field type, text name, and number of states. */
@@ -452,6 +1098,14 @@ std::ostream & print_restrictions( std::ostream & ,
                                    const FieldBase & );
 
 namespace impl {
+inline FieldDataBase* get_host_data(const FieldBase& stkField) {
+  return stkField.get_host_data();
+}
+
+inline FieldDataBase* get_device_data(const FieldBase& stkField) {
+  return stkField.get_device_data();
+}
+
 inline NgpFieldBase* get_ngp_field(const FieldBase & stkField) {
   return stkField.get_ngp_field();
 }
@@ -459,6 +1113,11 @@ inline NgpFieldBase* get_ngp_field(const FieldBase & stkField) {
 inline void set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField) {
   stkField.set_ngp_field(ngpField);
 }
+
+inline void modify_field_meta_data(FieldBase& field) {
+  field.modify_field_meta_data();
+}
+
 }
 
 //
@@ -472,7 +1131,7 @@ inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
 }
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, unsigned bucket_id) {
-  STK_ThrowAssert(bucket_id < f.get_meta_data_for_field().size());
+  STK_ThrowAssert(bucket_id < f.get_num_buckets_for_field());
   return f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
 }
 
@@ -518,43 +1177,34 @@ inline unsigned field_scalars_per_entity(const FieldBase& f, Entity e) {
 inline unsigned field_extent0_per_entity(const FieldBase& f, const Bucket& b) {
   STK_ThrowAssert(f.entity_rank() == b.entity_rank());
   STK_ThrowAssert(&f.get_mesh() == &b.mesh());
-  return f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
+  return f.get_meta_data_for_field()[b.bucket_id()].m_numComponentsPerEntity;
 }
 
 inline unsigned field_extent0_per_entity(const FieldBase& f, unsigned bucket_id) {
-  return f.get_meta_data_for_field()[bucket_id].m_firstDimension;
+  return f.get_meta_data_for_field()[bucket_id].m_numComponentsPerEntity;
 }
 
 inline unsigned field_extent0_per_entity(const FieldBase& f, Entity e) {
   BulkData& bulk(f.get_mesh());
   STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
-  return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
+  return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_numComponentsPerEntity;
 }
 
 
 inline unsigned field_extent1_per_entity(const FieldBase& f, const Bucket& b) {
   STK_ThrowAssert(f.entity_rank() == b.entity_rank());
   STK_ThrowAssert(&f.get_mesh() == &b.mesh());
-  const unsigned numBytesPerScalar = f.data_traits().size_of;
-  const unsigned numBytesPerEntity = f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
-  const unsigned firstDimension = f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
-  return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+  return f.get_meta_data_for_field()[b.bucket_id()].m_numCopiesPerEntity;
 }
 
 inline unsigned field_extent1_per_entity(const FieldBase& f, unsigned bucket_id) {
-  const unsigned numBytesPerScalar = f.data_traits().size_of;
-  const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
-  const unsigned firstDimension = f.get_meta_data_for_field()[bucket_id].m_firstDimension;
-  return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+  return f.get_meta_data_for_field()[bucket_id].m_numCopiesPerEntity;
 }
 
 inline unsigned field_extent1_per_entity(const FieldBase& f, Entity e) {
   BulkData& bulk(f.get_mesh());
   STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
-  const unsigned numBytesPerScalar = f.data_traits().size_of;
-  const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_bytesPerEntity;
-  const unsigned firstDimension = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
-  return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+  return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_numCopiesPerEntity;
 }
 
 
@@ -562,13 +1212,10 @@ inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, 
   STK_ThrowAssert(f.entity_rank() == b.entity_rank());
   STK_ThrowAssert(&f.get_mesh() == &b.mesh());
   if (dimension == 0) {
-    return f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
+    return f.get_meta_data_for_field()[b.bucket_id()].m_numComponentsPerEntity;
   }
   else if (dimension == 1) {
-    const unsigned numBytesPerScalar = f.data_traits().size_of;
-    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
-    const unsigned firstDimension = f.get_meta_data_for_field()[b.bucket_id()].m_firstDimension;
-    return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+    return f.get_meta_data_for_field()[b.bucket_id()].m_numCopiesPerEntity;
   }
   else {
     const unsigned numBytesPerEntity = f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity;
@@ -578,13 +1225,10 @@ inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, 
 
 inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, unsigned bucket_id) {
   if (dimension == 0) {
-    return f.get_meta_data_for_field()[bucket_id].m_firstDimension;
+    return f.get_meta_data_for_field()[bucket_id].m_numComponentsPerEntity;
   }
   else if (dimension == 1) {
-    const unsigned numBytesPerScalar = f.data_traits().size_of;
-    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
-    const unsigned firstDimension = f.get_meta_data_for_field()[bucket_id].m_firstDimension;
-    return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+    return f.get_meta_data_for_field()[bucket_id].m_numCopiesPerEntity;
   }
   else {
     const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity;
@@ -596,13 +1240,10 @@ inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, 
   BulkData& bulk(f.get_mesh());
   STK_ThrowAssert(f.entity_rank() == bulk.entity_rank(e));
   if (dimension == 0) {
-    return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
+    return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_numComponentsPerEntity;
   }
   else if (dimension == 1) {
-    const unsigned numBytesPerScalar = f.data_traits().size_of;
-    const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_bytesPerEntity;
-    const unsigned firstDimension = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_firstDimension;
-    return (numBytesPerEntity != 0) ? numBytesPerEntity/(numBytesPerScalar*firstDimension) : 0;
+    return f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_numCopiesPerEntity;
   }
   else {
     const unsigned numBytesPerEntity = f.get_meta_data_for_field()[bulk.bucket(e).bucket_id()].m_bytesPerEntity;
@@ -614,7 +1255,7 @@ inline unsigned field_extent_per_entity(const FieldBase& f, unsigned dimension, 
 inline bool field_is_allocated_for_bucket(const FieldBase& f, const Bucket& b) {
   STK_ThrowAssert(&b.mesh() == &f.get_mesh());
   //return true if field and bucket have the same rank and the field is associated with the bucket
-  STK_ThrowAssert(f.get_meta_data_for_field().size() > b.bucket_id());
+  STK_ThrowAssert(b.bucket_id() < f.get_num_buckets_for_field());
   return (is_matching_rank(f, b) && 0 != f.get_meta_data_for_field()[b.bucket_id()].m_bytesPerEntity);
 }
 
@@ -643,127 +1284,67 @@ struct FieldBasePtrLess {
 //  size everywhere.
 //
 
-template <typename StkDebugger>
-void debug_stale_access_entity_check(const FieldBase& stkField, const Entity& entity, const char* fileName, int lineNumber)
-{
-  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
-  {
-    if (stkField.has_ngp_field()) {
-      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_entity_check(entity, fileName, lineNumber);
-    }
-  }
-}
-
-template <typename StkDebugger>
-void debug_stale_access_entity_check(const FieldBase& stkField, const unsigned bucketId, unsigned bucketOrd, const char* fileName, int lineNumber)
-{
-  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
-  {
-    if (stkField.has_ngp_field()) {
-      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_entity_check(bucketId, bucketOrd, fileName, lineNumber);
-    }
-  }
-}
-
-template <typename StkDebugger>
-void debug_stale_access_bucket_check(const FieldBase& stkField, const Bucket& bucket, const char* fileName, int lineNumber)
-{
-  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
-  {
-    if (stkField.has_ngp_field()) {
-      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_bucket_check(bucket, fileName, lineNumber);
-    }
-  }
-}
-
-template <typename StkDebugger>
-void debug_stale_access_bucket_check(const FieldBase& stkField, const unsigned& bucketId, const char* fileName, int lineNumber)
-{
-  if constexpr (std::is_same_v<StkDebugger, StkFieldSyncDebugger>)
-  {
-    if (stkField.has_ngp_field()) {
-      stkField.get_field_sync_debugger<StkDebugger>().host_stale_access_bucket_check(bucketId, fileName, lineNumber);
-    }
-  }
-}
-
-template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
+template<class FieldType>
 inline
 typename FieldType::value_type*
-field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord, const int knownSize,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord, const int knownSize)
 {
   STK_ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity >= knownSize,
                  "field name= " << f.name() << "knownSize= " << knownSize << ", m_bytesPerEntity= "
                  << f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity);
-  STK_ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != NULL);
-
-  debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
+  STK_ThrowAssert(f.get_meta_data_for_field()[bucket_id].m_data != nullptr);
 
   return reinterpret_cast<typename FieldType::value_type*>(f.get_meta_data_for_field()[bucket_id].m_data +
                                                            knownSize * bucket_ord);
 }
 
-template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
+template<class FieldType>
 inline
 typename FieldType::value_type*
-field_data(const FieldType & f, const unsigned bucket_id,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+field_data(const FieldType & f, const unsigned bucket_id)
 {
-  debug_stale_access_bucket_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, fileName, lineNumber);
-
   return reinterpret_cast<typename FieldType::value_type*>(f.get_meta_data_for_field()[bucket_id].m_data);
 }
 
-template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
+template<class FieldType>
 inline
 typename FieldType::value_type*
-field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord)
 {
-  debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
-
-  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[bucket_id];
-  return reinterpret_cast<typename FieldType::value_type*>(field_meta_data.m_data +
-                                                           field_meta_data.m_bytesPerEntity * bucket_ord);
+  const FieldMetaData& fieldMetaData = f.get_meta_data_for_field()[bucket_id];
+  return reinterpret_cast<typename FieldType::value_type*>(fieldMetaData.m_data +
+                                                           fieldMetaData.m_bytesPerEntity * bucket_ord);
 }
 
-template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
+template<class FieldType>
 inline
 typename FieldType::value_type*
-field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord)
 {
   STK_ThrowAssert(f.entity_rank() == b.entity_rank());
   STK_ThrowAssert(&f.get_mesh() == &b.mesh());
 
-  debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), b[bucket_ord], fileName, lineNumber);
-
-  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-  return reinterpret_cast<typename FieldType::value_type*>(field_meta_data.m_data +
-                                                           field_meta_data.m_bytesPerEntity * bucket_ord);
+  const FieldMetaData& fieldMetaData = f.get_meta_data_for_field()[b.bucket_id()];
+  return reinterpret_cast<typename FieldType::value_type*>(fieldMetaData.m_data +
+                                                           fieldMetaData.m_bytesPerEntity * bucket_ord);
 }
 
-template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
+template<class FieldType>
 inline
 typename FieldType::value_type*
-field_data(const FieldType & f, const Bucket& b,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+field_data(const FieldType & f, const Bucket& b)
 {
   STK_ThrowAssert(f.entity_rank() == b.entity_rank());
   STK_ThrowAssert(&b.mesh() == &f.get_mesh());
 
-  debug_stale_access_bucket_check<StkDebugger>(static_cast<const FieldBase&>(f), b, fileName, lineNumber);
-
-  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-  return reinterpret_cast<typename FieldType::value_type*>(field_meta_data.m_data);
+  const FieldMetaData& fieldMetaData = f.get_meta_data_for_field()[b.bucket_id()];
+  return reinterpret_cast<typename FieldType::value_type*>(fieldMetaData.m_data);
 }
 
-template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
+template<class FieldType>
 inline
 typename FieldType::value_type*
-field_data(const FieldType & f, Entity e,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+field_data(const FieldType & f, Entity e)
 {
   const MeshIndex& mi = f.get_mesh().mesh_index(e);
   STK_ThrowAssertMsg(f.entity_rank() == mi.bucket->entity_rank(),
@@ -771,27 +1352,306 @@ field_data(const FieldType & f, Entity e,
                  << f.get_mesh().entity_key(e) << ". The rank of the field and entity must match.");
   STK_ThrowAssert(&f.get_mesh() == &mi.bucket->mesh());
 
-  debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), e, fileName, lineNumber);
-
-  const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
-  return reinterpret_cast<typename FieldType::value_type*>(field_meta_data.m_data +
-                                                           field_meta_data.m_bytesPerEntity * mi.bucket_ordinal);
+  const FieldMetaData& fieldMetaData = f.get_meta_data_for_field()[mi.bucket->bucket_id()];
+  return reinterpret_cast<typename FieldType::value_type*>(fieldMetaData.m_data +
+                                                           fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal);
 }
 
-namespace legacy {
-
-// These functions will be removed when the deprecated legacy Field handling is removed.  Do not use!
-
-inline unsigned field_array_rank(const FieldBase & field)
+// Helper function for running an algorithm on a FieldBase instance that is datatype-
+// specific, but you do not know the datatype behind the untemplated FieldBase.  This
+// will query the FieldBase for its datatype and perform a run-time switch to call your
+// algorithm with that same type.  Your functor or templated lambda must accept the
+// FieldBase as its first argument.  Additional arguments may be passed to this function
+// and they will be forwarded to your functor.
+//
+//   auto fieldAlg = [&]<typename T>(const stk::mesh::FieldBase& fieldBase, int extraArg) {
+//     // Do type-specific operations with FieldBase and extraArg
+//   }
+//
+//   stk::mesh::field_datatype_execute(fieldBase, fieldAlg, 3);
+//
+template <typename F, typename... Args>
+inline
+void field_datatype_execute(const FieldBase& fieldBase, F&& f, Args&&... args)
 {
-  return field.legacy_field_array_rank();
+  if (fieldBase.type_is<double>()) {
+    std::forward<F>(f).template operator()<double>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<int>()) {
+    std::forward<F>(f).template operator()<int>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<unsigned int>()) {
+    std::forward<F>(f).template operator()<unsigned int>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<unsigned long>()) {
+    std::forward<F>(f).template operator()<unsigned long>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<float>()) {
+    std::forward<F>(f).template operator()<float>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<long double>()) {
+    std::forward<F>(f).template operator()<long double>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<long>()) {
+    std::forward<F>(f).template operator()<long>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<long long>()) {
+    std::forward<F>(f).template operator()<long long>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<unsigned long long>()) {
+    std::forward<F>(f).template operator()<unsigned long long>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<short>()) {
+    std::forward<F>(f).template operator()<short>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<unsigned short>()) {
+    std::forward<F>(f).template operator()<unsigned short>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<char>()) {
+    std::forward<F>(f).template operator()<char>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<unsigned char>()) {
+    std::forward<F>(f).template operator()<unsigned char>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<signed char>()) {
+    std::forward<F>(f).template operator()<signed char>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<std::complex<double>>()) {
+    std::forward<F>(f).template operator()<std::complex<double>>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<std::complex<float>>()) {
+    std::forward<F>(f).template operator()<std::complex<float>>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<Kokkos::complex<double>>()) {
+    std::forward<F>(f).template operator()<Kokkos::complex<double>>(fieldBase, std::forward<Args>(args)...);
+  }
+  else if (fieldBase.type_is<Kokkos::complex<float>>()) {
+    std::forward<F>(f).template operator()<Kokkos::complex<float>>(fieldBase, std::forward<Args>(args)...);
+  }
 }
 
-inline const shards::ArrayDimTag * const * dimension_tags(const FieldBase & field)
+
+// Helper function for running an algorithm on a FieldBase instance when the host data
+// layout is unknown.  Layout::Auto can be used in this circumstance, but it comes
+// with a ~30% performance penalty.  The run-time query and switch is done here once
+// outside the algorithm, so the cost is negligible.
+//
+//   stk::mesh::field_data_execute<double, stk::mesh::ReadWrite>(myField,
+//     [&](auto& fieldData) {
+//       auto entityValues = fieldData.entity_values(entity);
+//       for (stk::mesh::ComponentIdx component : entityValues.components()) {
+//         entityValues(component) = 0.0;
+//       }
+//     }
+//   );
+//
+template <typename T, FieldAccessTag FieldAccess, typename Alg>
+inline
+void field_data_execute(const FieldBase& fieldBase, Alg&& alg)
 {
-  return field.legacy_dimension_tags();
+  if (fieldBase.host_data_layout() == Layout::Right) {
+    auto fieldData = fieldBase.data<T, FieldAccess, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData);
+  }
+  else if (fieldBase.host_data_layout() == Layout::Left) {
+    auto fieldData = fieldBase.data<T, FieldAccess, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host Field data layout: " << fieldBase.host_data_layout());
+  }
 }
 
+// Helper function for running an algorithm on two FieldBase instances when the host data
+// layout is unknown.  Layout::Auto can be used in this circumstance, but it comes
+// with a ~30% performance penalty.  The run-time query and switch is done here once
+// outside the algorithm, so the cost is negligible.
+//
+//   stk::mesh::field_data_execute<double, double, stk::mesh::ReadOnly, stk::mesh::ReadWrite>(field1, field2,
+//     [&](auto& fieldData1, auto& fieldData2) {
+//       auto entityValues1 = fieldData1.entity_values(entity);
+//       auto entityValues2 = fieldData2.entity_values(entity);
+//       for (stk::mesh::ComponentIdx component : entityValues.components()) {
+//         entityValues2(component) = entityValues1(component);
+//       }
+//     }
+//   );
+//
+template <typename T1, typename T2, FieldAccessTag FieldAccess1, FieldAccessTag FieldAccess2, typename Alg>
+inline
+void field_data_execute(const FieldBase& fieldBase1, const FieldBase& fieldBase2, Alg&& alg)
+{
+  if (fieldBase1.host_data_layout() == Layout::Right && fieldBase2.host_data_layout() == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2);
+  }
+  else if (fieldBase1.host_data_layout() == Layout::Left && fieldBase2.host_data_layout() == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2);
+  }
+  else if (fieldBase1.host_data_layout() == Layout::Right && fieldBase2.host_data_layout() == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2);
+  }
+  else if (fieldBase1.host_data_layout() == Layout::Left && fieldBase2.host_data_layout() == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host Field data layouts: " << fieldBase1.host_data_layout() << " and " <<
+                      fieldBase2.host_data_layout());
+  }
+}
+
+// Helper function for running an algorithm on three FieldBase instances when the host data
+// layout is unknown.  Layout::Auto can be used in this circumstance, but it comes
+// with a ~30% performance penalty.  The run-time query and switch is done here once
+// outside the algorithm, so the cost is negligible.
+//
+//   stk::mesh::field_data_execute<double, double, stk::mesh::ReadOnly, stk::mesh::ReadOnly, stk::mesh::ReadWrite>(field1, field2, field3
+//     [&](auto& fieldData1, auto& fieldData2, auto& fieldData3) {
+//       auto entityValues1 = fieldData1.entity_values(entity);
+//       auto entityValues2 = fieldData2.entity_values(entity);
+//       auto entityValues3 = fieldData3.entity_values(entity);
+//       for (stk::mesh::ComponentIdx component : entityValues.components()) {
+//         entityValues3(component) = entityValues1(component) + entityValues2(component);
+//       }
+//     }
+//   );
+//
+template <typename T1, typename T2, typename T3, FieldAccessTag FieldAccess1, FieldAccessTag FieldAccess2, FieldAccessTag FieldAccess3, typename Alg>
+inline
+void field_data_execute(const FieldBase& fieldBase1, const FieldBase& fieldBase2, const FieldBase& fieldBase3, Alg&& alg)
+{
+  auto fieldLayout1 = fieldBase1.host_data_layout();
+  auto fieldLayout2 = fieldBase2.host_data_layout();
+  auto fieldLayout3 = fieldBase3.host_data_layout();
+
+  if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layouts detected. " <<
+                      fieldLayout1 << ", " << fieldLayout2 << ", and " << fieldLayout3);
+  }
+}
+
+// Helper function for running an algorithm on a FieldBase instance when the datatype
+// and the host data layout is unknown.  Layout::Auto can be used in this circumstance,
+// but it comes with a 3x performance penalty.  The run-time query and switch is done
+// here once outside the algorithm, so the cost is small.  Const-ness of the data is
+// controlled through the const-ness of the std::byte datatype template parameter.
+// The "entity" argument can be anything accepted by the entity_bytes() call.
+//
+//   stk::mesh::entity_bytes_execute<std::byte>(myField, entity,
+//     [&](auto& entityBytes) {
+//       for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
+//         entityBytes(byte) = static_cast<std::byte>(0);
+//       }
+//     }
+//   );
+//
+template <typename ConstnessType, typename EntityType, typename Alg>
+inline
+void entity_bytes_execute(const FieldBase& fieldBase, const EntityType& entity, Alg&& alg)
+{
+  auto fieldDataBytes = fieldBase.data_bytes<ConstnessType>();
+
+  if (fieldBase.host_data_layout() == Layout::Right) {
+    auto entityBytes = fieldDataBytes.template entity_bytes<Layout::Right>(entity);
+    alg(entityBytes);
+  }
+  else if (fieldBase.host_data_layout() == Layout::Left) {
+    auto entityBytes = fieldDataBytes.template entity_bytes<Layout::Left>(entity);
+    alg(entityBytes);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host Field data layout: " << fieldBase.host_data_layout());
+  }
+}
+
+// Helper function for running an algorithm on a FieldBase instance when the datatype
+// and the host data layout is unknown.  Layout::Auto can be used in this circumstance,
+// but it comes with a 3x performance penalty.  The run-time query and switch is done
+// here once outside the algorithm, so the cost is small.  Const-ness of the data is
+// controlled through the const-ness of the std::byte datatype template parameter.
+// The "bucket" argument can be anything accepted by the bucket_bytes() call.
+//
+//   stk::mesh::bucket_bytes_execute<std::byte>(myField, bucket,
+//     [&](auto& bucketBytes) {
+//       for (stk::mesh::EntityIdx entityIdx : bucketBytes.entities()) {
+//         for (stk::mesh::ByteIdx byte : bucketBytes.bytes()) {
+//           bucketBytes(entityIdx, byte) = static_cast<std::byte>(0);
+//         }
+//       }
+//     }
+//   );
+//
+template <typename ConstnessType, typename BucketType, typename Alg>
+inline
+void bucket_bytes_execute(const FieldBase& fieldBase, const BucketType& bucket, Alg&& alg)
+{
+  auto fieldDataBytes = fieldBase.data_bytes<ConstnessType>();
+  if (fieldBase.host_data_layout() == Layout::Right) {
+    auto bucketBytes = fieldDataBytes.template bucket_bytes<Layout::Right>(bucket);
+    alg(bucketBytes);
+  }
+  else if (fieldBase.host_data_layout() == Layout::Left) {
+    auto bucketBytes = fieldDataBytes.template bucket_bytes<Layout::Left>(bucket);
+    alg(bucketBytes);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host Field data layout: " << fieldBase.host_data_layout());
+  }
 }
 
 } //namespace stk::mesh

@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_SOLVE_UTV_DECL_HPP__
-#define __KOKKOSBATCHED_SOLVE_UTV_DECL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_SOLVE_UTV_DECL_HPP
+#define KOKKOSBATCHED_SOLVE_UTV_DECL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -46,13 +33,11 @@ namespace KokkosBatched {
 
 template <typename MemberType, typename ArgAlgo>
 struct TeamVectorSolveUTV {
-  template <typename UViewType, typename TViewType, typename VViewType,
-            typename pViewType, typename XViewType, typename BViewType,
-            typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &member, const int matrix_rank, const UViewType &U,
-      const TViewType &T, const VViewType &V, const pViewType &p,
-      const XViewType &X, const BViewType &B, const wViewType &w);
+  template <typename UViewType, typename TViewType, typename VViewType, typename pViewType, typename XViewType,
+            typename BViewType, typename wViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int matrix_rank, const UViewType &U,
+                                           const TViewType &T, const VViewType &V, const pViewType &p,
+                                           const XViewType &X, const BViewType &B, const wViewType &w);
 };
 
 }  // namespace KokkosBatched

@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _THYRA_FROSCH_FACTORY_DEF_HPP
 #define _THYRA_FROSCH_FACTORY_DEF_HPP
@@ -73,9 +41,7 @@ namespace Thyra {
     bool FROSchFactory<SC,LO,GO,NO>::isCompatible(const LinearOpSourceBase<SC>& fwdOpSrc) const
     {
         const ConstLinearOpBasePtr fwdOp = fwdOpSrc.getOp();
-        if (ThyraUtils<SC,LO,GO,NO>::isEpetra(fwdOp)) {
-            return true;
-        } else if (ThyraUtils<SC,LO,GO,NO>::isTpetra(fwdOp)) {
+        if (ThyraUtils<SC,LO,GO,NO>::isTpetra(fwdOp)) {
             return true;
         } else {
             return false;
@@ -107,15 +73,13 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOp));
 
         // Check whether it is Epetra/Tpetra
-        bool bIsEpetra  = ThyraUtils<SC,LO,GO,NO>::isEpetra(fwdOp);
         bool bIsTpetra  = ThyraUtils<SC,LO,GO,NO>::isTpetra(fwdOp);
         bool bIsBlocked = ThyraUtils<SC,LO,GO,NO>::isBlockedOperator(fwdOp);
-        TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == true  && bIsTpetra == true));
-        TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == bIsTpetra) && bIsBlocked == false);
-        TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra != bIsTpetra) && bIsBlocked == true);
+        TEUCHOS_TEST_FOR_EXCEPT((bIsTpetra == false) && bIsBlocked == false);
+        TEUCHOS_TEST_FOR_EXCEPT((bIsTpetra == true) && bIsBlocked == true);
 
         // Check whether to use HalfPrecision
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
         const bool useHalfPrecision = paramList_->get<bool>("Use Half Precision", false);
 #endif
 
@@ -135,7 +99,7 @@ namespace Thyra {
 
         // Abstract SchwarzPreconditioner
         RCP<SchwarzPreconditioner<SC,LO,GO,NO> > schwarzPreconditioner = null;
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
         RCP<SchwarzPreconditioner<HalfSC,LO,GO,NO> > halfSchwarzPreconditioner = null;
 #endif
         const bool startingOver = (precOp.is_null() || !paramList_->isParameter("Recycling") || !paramList_->get("Recycling",true));
@@ -200,7 +164,7 @@ namespace Thyra {
                 } else {
                     FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
                 }
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
                 if (useHalfPrecision)
                 {
                     auto ANonConst = rcp_const_cast<XMatrix>(A);
@@ -263,7 +227,7 @@ namespace Thyra {
                 } else {
                     FROSCH_ASSERT(false,"ERROR: Specify a valid DofOrdering.");
                 }
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
                 if (useHalfPrecision)
                 {
                     auto ANonConst = rcp_const_cast<XMatrix>(A);
@@ -355,10 +319,9 @@ namespace Thyra {
 
             LinearOpBasePtr thyraPrecOp = null;
 
-#if defined(HAVE_XPETRA_TPETRA)
             if (bIsTpetra) {
                 RCP<Tpetra::Operator<SC,LO,GO,NO> > tpOp;
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
                 if (halfSchwarzPreconditioner != null)
                 {
                     halfSchwarzPreconditioner->compute();
@@ -375,10 +338,9 @@ namespace Thyra {
                 }
                 thyraPrecOp = Thyra::createLinearOp(tpOp);
             } else
-#endif
             {
                 RCP<Operator<SC,LO,GO,NO> > xpOp;
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
                 if (halfSchwarzPreconditioner != null) {
                     halfSchwarzPreconditioner->compute();
                     xpOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(rcp (new HalfPrecOp (halfSchwarzPreconditioner)));
@@ -391,7 +353,7 @@ namespace Thyra {
 
                 ConstVectorSpaceBasePtr thyraRangeSpace  = ThyraUtils<SC,LO,GO,NO>::toThyra(schwarzPreconditioner->getRangeMap());
                 ConstVectorSpaceBasePtr thyraDomainSpace = ThyraUtils<SC,LO,GO,NO>::toThyra(schwarzPreconditioner->getDomainMap());
-                thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsEpetra,bIsTpetra);
+                thyraPrecOp = fROSchLinearOp<SC,LO,GO,NO>(thyraRangeSpace,thyraDomainSpace,xpOp,bIsTpetra);
             }
             TEUCHOS_TEST_FOR_EXCEPT(is_null(thyraPrecOp));
 
@@ -400,20 +362,18 @@ namespace Thyra {
         } else {
             // cast to SchwarzPreconditioner
             RCP<Operator<SC,LO,GO,NO> > xpetraOp;
-#if defined(HAVE_XPETRA_TPETRA)
             if (bIsTpetra) {
                 RCP<Thyra::TpetraLinearOp<SC,LO,GO,NO> > thyra_precOp = rcp_dynamic_cast<Thyra::TpetraLinearOp<SC,LO,GO,NO>>(precOp, true);
                 RCP<Tpetra::Operator<SC,LO,GO,NO> > tpOp = thyra_precOp->getTpetraOperator();
                 RCP<TpetraPreconditioner<SC,LO,GO,NO> > tpetra_precOp = rcp_dynamic_cast<TpetraPreconditioner<SC,LO,GO,NO>>(tpOp, true);
                 xpetraOp = rcp_dynamic_cast<Operator<SC,LO,GO,NO> >(tpetra_precOp->getSchwarzPreconditioner());
             } else
-#endif
             {
                 RCP<FROSchLinearOp<SC,LO,GO,NO> > fROSch_LinearOp = rcp_dynamic_cast<FROSchLinearOp<SC,LO,GO,NO> >(precOp,true);
                 xpetraOp = fROSch_LinearOp->getXpetraOperator();
             }
 
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
             if (useHalfPrecision)
             {
                 if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("RGDSWPreconditioner") ||
@@ -548,10 +508,6 @@ namespace Thyra {
 
                     RCP<const TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const TpetraMap<LO,GO,NO>(repeatedMapTmp));
                     repeatedMap = rcp_dynamic_cast<ConstXMap>(xTpetraRepeatedMap);
-                } else {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
-#endif
                 }
             }
             FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory: repeatedMap.is_null()");
@@ -572,10 +528,6 @@ namespace Thyra {
 
                     RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraCoordinatesList(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(coordinatesListTmp));
                     coordinatesList = rcp_dynamic_cast<ConstXMultiVector>(xTpetraCoordinatesList);
-                } else {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
-#endif
                 }
             }
             FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory: coordinatesList.is_null()");
@@ -596,10 +548,6 @@ namespace Thyra {
 
                     RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraNullSpaceBasis(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(nullSpaceBasisTmp));
                     nullSpaceBasis = rcp_dynamic_cast<ConstXMultiVector>(xTpetraNullSpaceBasis);
-                } else {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
-#endif
                 }
             }
             FROSCH_ASSERT(!nullSpaceBasis.is_null(),"FROSch::FROSchFactory: nullSpaceBasis.is_null()");

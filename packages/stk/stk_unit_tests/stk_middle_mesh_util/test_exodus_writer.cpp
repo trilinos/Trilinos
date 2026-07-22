@@ -66,14 +66,15 @@ void check_vertex_coordinates(std::unique_ptr<stk::mesh::BulkData>& bulkDataPtr,
 
       EXPECT_EQ(meshVerts.size(), stkVerts.size());
       const stk::mesh::FieldBase& stkCoordField = *(metaData.coordinate_field());
+      auto stkCoordFieldData = stkCoordField.data<double>();
       for (int j=0; j < nverts; ++j)
       {
-        double* stkVertCoords = reinterpret_cast<double*>(stk::mesh::field_data(stkCoordField, stkVerts[j]));
+        auto stkVertCoords = stkCoordFieldData.entity_values(stkVerts[j]);
         utils::Point meshVertCoords = meshVerts[j]->get_point_orig(0);
 
-        for (int d=0; d < 3; ++d)
+        for (stk::mesh::ComponentIdx d=0_comp; d < 3_comp; ++d)
         {
-          EXPECT_NEAR(stkVertCoords[d], meshVertCoords[d], 1e-13);
+          EXPECT_NEAR(stkVertCoords(d), meshVertCoords[d], 1e-13);
         }
       }
 
@@ -109,17 +110,18 @@ void check_simple_field(std::unique_ptr<stk::mesh::BulkData>& bulkDataPtr, int d
 {
   int idx = 0;
   stk::mesh::EntityRank rank = dim == 0 ? stk::topology::NODE_RANK : stk::topology::ELEM_RANK;
+  auto fieldData = field.data<double>();
   for (stk::mesh::Bucket* bucket : bulkDataPtr->buckets(rank))
     for (const stk::mesh::Entity& entity : *bucket)
     {
-      double* fieldData = reinterpret_cast<double*>(stk::mesh::field_data(field, entity));
+      auto entityData = fieldData.entity_values(entity);
 
       double valBase = idx;
-      for (int i=0; i < 2; ++i)
-        for (int j=0; j < 4; ++j)
+      for (stk::mesh::CopyIdx i=0_copy; i < 2; ++i)
+        for (stk::mesh::ComponentIdx j=0_comp; j < 4; ++j)
         {
-          int valOffset = i*4 + j;
-          EXPECT_NEAR(fieldData[i*4 + j], valBase + valOffset, 1e-13);
+          int valOffset = static_cast<int>(i*4) + j;
+          EXPECT_NEAR(entityData(i, j), valBase + valOffset, 1e-13);
         }
 
       idx++;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #include <Kokkos_Macros.hpp>
@@ -110,7 +97,7 @@ class ScratchMemorySpace {
     // Note: for team scratch m_offset is 0, since every
     // thread will get back the same shared pointer
     void* tmp           = m_iter + m_offset * size;
-    uintptr_t increment = size * m_multiplier;
+    uintptr_t increment = static_cast<uintptr_t>(size) * m_multiplier;
 
     // Cast to uintptr_t to avoid problems with pointer arithmetic using SYCL
     const auto end_iter =

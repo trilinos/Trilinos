@@ -1,7 +1,7 @@
-C     Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+C     Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 C     of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C     NTESS, the U.S. Government retains certain rights in this software.
-C     
+C
 C     See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE PREB1 (OPTION, NOUT, IEL0, NLISEL, LISEL,
@@ -157,9 +157,9 @@ C     ... Print either all values (if not all same), or the common values
             end do
          end if
       end if
-      
+
       RETURN
-      
+
 10000 FORMAT (1X, '  Blk Index  Global ID       ', A, '  ', A)
 10001 FORMAT (1X, '  Blk Index   Local ID       ', A, '  ', A)
 10010 FORMAT (1X, I11, I11, 5X, 8I11, :, /,

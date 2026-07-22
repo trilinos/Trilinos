@@ -84,7 +84,7 @@ TEST( UnitTestGloballyShared, DISABLED_keyhole_3x1 )
   }
 
   // Create the fixture
-  stk::mesh::fixtures::simple_fields::QuadFixture qf(MPI_COMM_WORLD,NX,NY);
+  stk::mesh::fixtures::QuadFixture qf(MPI_COMM_WORLD,NX,NY);
   qf.m_meta.commit();
   if (p_rank <= 1) {
     qf.generate_mesh(parallel_distribution[p_rank]);

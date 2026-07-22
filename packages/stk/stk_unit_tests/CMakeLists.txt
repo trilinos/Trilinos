@@ -1,6 +1,12 @@
 STK_SUBPACKAGE(Unit_tests)
 
+message("STKUnit_tests")
+
 STK_ADD_TEST_DIRECTORIES(stk_util)
+
+if(${PROJECT_NAME}_ENABLE_STKEmend AND STK_HAS_MPI)
+  STK_ADD_TEST_DIRECTORIES(stk_emend)
+endif()
 
 if(${PROJECT_NAME}_ENABLE_STKMath)
   STK_ADD_TEST_DIRECTORIES(stk_math)
@@ -43,6 +49,10 @@ ENDIF()
 
 IF(${PROJECT_NAME}_ENABLE_STKMiddle_mesh)
   STK_ADD_TEST_DIRECTORIES(stk_middle_mesh)
+ENDIF()
+
+IF(${PROJECT_NAME}_ENABLE_STKMiddle_mesh_util)
+  STK_ADD_TEST_DIRECTORIES(stk_middle_mesh_util)
 ENDIF()
 
 IF(${PROJECT_NAME}_ENABLE_STKTransfer)

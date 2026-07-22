@@ -172,12 +172,12 @@ try {
     if (actRes > tol) badRes = true;
   }
 
-  if (ret!=Belos::Converged || badRes) {
-    success = false;
-    std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
-  } else {
+  if (ret==Belos::Converged && !badRes) {
     success = true;
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+  } else {
+    success = false;
+    std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
   }
 
   }

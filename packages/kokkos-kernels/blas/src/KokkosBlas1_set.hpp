@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS1_SET_HPP_
 #define KOKKOSBLAS1_SET_HPP_
@@ -27,10 +14,11 @@ namespace KokkosBlas {
 
 struct SerialSet {
   template <typename ScalarType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha,
-                                           const AViewType &A) {
-    return Impl::SerialSetInternal::invoke(
-        A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_1());
+  KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A) {
+    if constexpr (AViewType::rank() == 1)
+      return Impl::SerialSetInternal::invoke(A.extent(0), alpha, A.data(), A.stride(0));
+    else
+      return Impl::SerialSetInternal::invoke(A.extent(0), A.extent(1), alpha, A.data(), A.stride(0), A.stride(1));
   }
 };
 
@@ -41,12 +29,11 @@ struct SerialSet {
 template <typename MemberType>
 struct TeamSet {
   template <typename ScalarType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A) {
-    return Impl::TeamSetInternal::invoke(member, A.extent(0), A.extent(1),
-                                         alpha, A.data(), A.stride_0(),
-                                         A.stride_1());
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A) {
+    if constexpr (AViewType::rank() == 1)
+      return Impl::TeamSetInternal::invoke(member, A.extent(0), alpha, A.data(), A.stride(0));
+    else
+      return Impl::TeamSetInternal::invoke(member, A.extent(0), A.extent(1), alpha, A.data(), A.stride(0), A.stride(1));
   }
 };
 
@@ -57,12 +44,12 @@ struct TeamSet {
 template <typename MemberType>
 struct TeamVectorSet {
   template <typename ScalarType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const ScalarType alpha,
-                                           const AViewType &A) {
-    return Impl::TeamVectorSetInternal::invoke(member, A.extent(0), A.extent(1),
-                                               alpha, A.data(), A.stride_0(),
-                                               A.stride_1());
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ScalarType alpha, const AViewType &A) {
+    if constexpr (AViewType::rank() == 1)
+      return Impl::TeamVectorSetInternal::invoke(member, A.extent(0), alpha, A.data(), A.stride(0));
+    else
+      return Impl::TeamVectorSetInternal::invoke(member, A.extent(0), A.extent(1), alpha, A.data(), A.stride(0),
+                                                 A.stride(1));
   }
 };
 

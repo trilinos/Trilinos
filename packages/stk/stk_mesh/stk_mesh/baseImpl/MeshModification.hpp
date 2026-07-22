@@ -37,10 +37,10 @@
 
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityCommListInfo.hpp>
 #include "stk_mesh/base/EntityKey.hpp"
 #include "stk_mesh/base/EntityParallelState.hpp"
+#include "stk_mesh/base/NgpTypes.hpp"
 #include "stk_mesh/baseImpl/DeletedEntityCache.hpp"
 
 namespace stk {
@@ -57,10 +57,15 @@ public:
     enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
     enum modification_optimization {MOD_END_SORT, MOD_END_NO_SORT };
 
-    MeshModification(stk::mesh::BulkData& bulkData) : m_bulkData(bulkData), m_entity_states(),
-            m_deleted_entity_cache(bulkData), m_sync_state(MODIFIABLE), m_sync_count(0), m_did_any_shared_entity_change_parts(false)
+    MeshModification(stk::mesh::BulkData& bulkData)
+      : m_bulkData(bulkData),
+        m_entity_states(),
+        m_deleted_entity_cache(bulkData),
+        m_sync_state(MODIFIABLE),
+        m_synchronizedCount(0),
+        m_did_any_shared_entity_change_parts(false)
     {
-        m_entity_states.push_back(Deleted);
+      m_entity_states.push_back(Deleted);
     }
 
     ~MeshModification() {}
@@ -71,17 +76,21 @@ public:
     void set_sync_state_synchronized() { m_sync_state = SYNCHRONIZED; }
     void set_sync_state_modifiable() { m_sync_state = MODIFIABLE; }
 
-    size_t synchronized_count() const { return m_sync_count ; }
-    void increment_sync_count() { ++m_sync_count; }
-    void set_sync_count(size_t syncCount) { m_sync_count = syncCount; }
+    size_t synchronized_count() const { return m_synchronizedCount; }
+    void increment_sync_count() {
+      ++m_synchronizedCount;
+    }
+    void set_sync_count(size_t syncCount) {
+      m_synchronizedCount = syncCount;
+    }
 
-    bool modification_begin(const std::string description);
+    bool modification_begin(const std::string& description, bool resetSymGhostInfo, bool isSyncToHost=false);
 
     bool modification_end(modification_optimization opt=MOD_END_SORT);
     bool resolve_node_sharing();
     bool modification_end_after_node_sharing_resolution();
 
-    void change_entity_owner( const EntityProcVec & arg_change);
+    bool change_entity_owner( const EntityProcVec & arg_change);
 
     void internal_resolve_shared_modify_delete(
          const std::vector<EntityParallelState>& remotely_modified_shared_entities,
@@ -115,6 +124,8 @@ public:
 
     const DeletedEntityCache& get_deleted_entity_cache() const { return m_deleted_entity_cache; }
     void delete_shared_entities_which_are_no_longer_in_owned_closure(EntityProcVec& entitiesToRemoveFromSharing);
+    void internal_change_entity_owner( const std::vector<EntityProc> & local_change,
+                                             modification_optimization mod_optimization );
 private:
     bool remote_owner_destroyed(EntityKey key, const std::vector<EntityParallelState>& pllStates) const;
     void reset_shared_entity_changed_parts() { m_did_any_shared_entity_change_parts = false; }
@@ -145,7 +156,7 @@ private:
     DeletedEntityCache m_deleted_entity_cache;
 
     BulkDataSyncState m_sync_state;
-    size_t m_sync_count;
+    size_t m_synchronizedCount;
     bool m_did_any_shared_entity_change_parts;
 };
 

@@ -162,7 +162,7 @@ int run (int argc, char *argv[])
     
     // Perform solve
     Belos::ReturnType ret = solver.solve();
-    
+
     // Compute actual residuals.
     bool badRes = false;
     std::vector<MT> actual_resids (numrhs);

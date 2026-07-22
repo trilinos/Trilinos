@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef PANZER_STK_MODEL_EVALUATOR_FACTORY_HPP
@@ -117,7 +85,15 @@ namespace panzer_stk {
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     //@}
 
-#ifdef PANZER_HAVE_EPETRA_STACK
+    /** \brief Set the Stratimikos Linear Solver sublist used to
+        create the LinearOpWithSolve factory.
+
+        This function is optional to call. The default list is pull
+        from the main parameter list in "Solution
+        Control->NOX->Direction->Newton->Stratimikos Linear Solver".
+     */
+    void setStratimikosList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
+
     /** \brief Builds the model evaluators for a panzer assembly
         \param[in] comm (Required) Teuchos communicator.  Must be non-null.
         \param[in] global_data (Required) A fully constructed (all members allocated) global data object used to control parameter library and output support. Must be non-null.
@@ -131,7 +107,6 @@ namespace panzer_stk {
                       const panzer::BCStrategyFactory & bc_factory,
                       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                       bool meConstructionOn=true);
-#endif
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
 
@@ -147,11 +122,9 @@ namespace panzer_stk {
     template <typename BuilderT>
     int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
 
-#ifdef PANZER_HAVE_EPETRA_STACK
     void buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const bool write_graphviz_file=false,
                         const std::string& graphviz_file_prefix="");
-#endif
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
 
@@ -199,7 +172,6 @@ namespace panzer_stk {
     bool isTransient() const
     { return m_is_transient; }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
     /** Clone the internal model evaluator, but use new physics blocks. Note that
       * the physics blocks must be in some sense compatible with the original set.
       */
@@ -212,7 +184,6 @@ namespace panzer_stk {
                               bool is_transient,bool is_explicit,
                               const Teuchos::Ptr<const Teuchos::ParameterList> & bc_list=Teuchos::null,
                               const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & physics_me=Teuchos::null) const;
-#endif
 
     /** \brief Setup the initial conditions in a model evaluator. Note that this
       *        is entirely self contained.
@@ -241,7 +212,6 @@ namespace panzer_stk {
                                 const Teuchos::ParameterList & user_data_pl,
                                 int workset_size) const;
 
-#ifdef PANZER_HAVE_EPETRA_STACK
     /** This method is to assist with construction of the model evaluators.
       */
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> >
@@ -254,7 +224,6 @@ namespace panzer_stk {
                         const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
                         const Teuchos::RCP<panzer::GlobalData> & global_data,
                         bool is_transient,double t_init) const;
-#endif
 
 
     bool useDynamicCoordinates() const
@@ -326,7 +295,8 @@ namespace panzer_stk {
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
 
-
+    void registerMeshWithClosureModelFactories(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+                                               panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory);
   private:
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_physics_me;
@@ -353,6 +323,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::WorksetContainer> m_wkstContainer;
 
     bool useDynamicCoordinates_;
+    Teuchos::RCP<Teuchos::ParameterList> m_stratimikos_params;
   };
 
 template<typename ScalarT>

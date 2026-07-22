@@ -38,12 +38,12 @@
 // clang-format off
 #include <Ioss_Field.h>                            // for Field, etc
 #include <Ioss_PropertyManager.h>                  // for PropertyManager
+#include <Ioss_SideBlock.h>                        // for SideBlock
 #include <stddef.h>                                // for size_t
 #include <algorithm>                               // for swap
 #include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/BulkData.hpp>              // for BulkData
 #include <stk_mesh/base/Selector.hpp>              // for Selector
 #include <stk_util/parallel/Parallel.hpp>          // for ParallelMachine
 #include <stk_util/util/ParameterList.hpp>         // for Type

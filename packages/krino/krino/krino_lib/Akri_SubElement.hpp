@@ -53,10 +53,10 @@ public:
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key);
 
   void handle_hanging_children(CDMesh & mesh, const InterfaceID & interface);
-  virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children) {}
+  virtual void fix_hanging_children(CDMesh & /*mesh*/, const InterfaceID & /*interface*/, const std::vector<int> & /*edges_with_children*/) {}
 
   virtual void build_quadratic_subelements(CDMesh & mesh);
-  virtual void cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level = 0);
+  virtual void cut_face_interior_intersection_points(CDMesh & mesh, int level = 0);
 
   static void get_edge_position(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, double & position );
 
@@ -156,7 +156,7 @@ public:
   virtual void decompose_edges(CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children) override;
   virtual void build_quadratic_subelements(CDMesh & mesh) override;
-  virtual void cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level = 0) override;
+  virtual void cut_face_interior_intersection_points(CDMesh & mesh, int level = 0) override;
 
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;
@@ -165,7 +165,6 @@ public:
 protected:
   void perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,4> & node_signs);
   void determine_node_scores_on_face( const CDMesh & mesh, const InterfaceID interface, const int i0, const int i1, const int i2 );
-  static const unsigned ** get_permutation_side_ordinals();
   static double tet_volume(const std::array<stk::math::Vector3d,4> & nodes);
 
   bool is_degenerate( NodeVec & lnodes,
@@ -341,9 +340,9 @@ public:
   : SubElementChildNode(in_owner, parents, weights) {}
 
   virtual ~SubElementSteinerNode() {}
-  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & /*mesh*/) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
-  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * owner ) const override {
+  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * /*owner*/ ) const override {
     throw std::runtime_error("Incorrect usage of SubElementSteinerNode.  The type of node only has one owner.");
   }
 };
@@ -359,7 +358,7 @@ public:
   virtual ~SubElementEdgeNode() {}
 
   double get_position() const { STK_ThrowAssert(get_num_parents() == 2); return get_parent_weights()[1]; }
-  double get_position(const SubElementNode *parent1, const SubElementNode *parent2) const { STK_ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
+  double get_position(const SubElementNode *parent1, [[maybe_unused]] const SubElementNode *parent2) const { STK_ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
 
 private:
   bool check_parents(const SubElementNode *parent1, const SubElementNode *parent2) const {
@@ -380,7 +379,7 @@ public:
       stk::mesh::EntityId meshNodeId);
 
   virtual ~SubElementMidSideNode() {}
-  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & /*mesh*/) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
   virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override {
     return 0.5 * my_parent1->owner_coords(in_owner) + 0.5 * my_parent2->owner_coords(in_owner);

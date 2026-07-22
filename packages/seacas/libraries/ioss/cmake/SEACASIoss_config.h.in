@@ -7,9 +7,13 @@
 
 #cmakedefine SEACAS_HAVE_FAODEL
 
+#cmakedefine SEACAS_HAVE_S3
+
 #cmakedefine SEACAS_HAVE_DATAWARP
 
 #cmakedefine SEACAS_HAVE_EXODUS
+
+#cmakedefine SEACAS_HAVE_EXONULL
 
 #cmakedefine SEACAS_HAVE_CGNS
 

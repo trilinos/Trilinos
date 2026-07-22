@@ -14,6 +14,7 @@
 #include <Akri_VolumePreservingSnappingLimiter.hpp>
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_Intersection_Points.hpp>
+#include <Akri_Quality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_Unit_InterfaceGeometry.hpp>
 
@@ -139,7 +140,7 @@ protected:
     }
   }
 
-  bool is_node_in_assigned_nodes_for_indices(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node, const std::vector<unsigned> & nodeIndices)
+  bool is_node_in_assigned_nodes_for_indices(const stk::mesh::BulkData & /*mesh*/, const stk::mesh::Entity node, const std::vector<unsigned> & nodeIndices)
   {
     for (auto nodeIndex : nodeIndices)
       if (this->get_assigned_node_for_index(nodeIndex) == node)
@@ -470,7 +471,7 @@ protected:
         const stk::math::Vector3d snapLocation = compute_intersection_point_location(mMesh.mesh_meta_data().spatial_dimension(), coordsField, intersectionPoint);
         const double minAcceptableQuality = std::max(minQualityThatIsForSureNotInverted, cutQualityEstimate);
 
-        const double postSnapQuality = compute_quality_if_node_is_snapped_terminating_early_if_below_threshold(mMesh, elementSelector, coordsField, snapNode, snapLocation, qualityMetric, minAcceptableQuality);
+        const double postSnapQuality = compute_quality_if_node_is_moved_terminating_early_if_below_threshold(mMesh, elementSelector, coordsField, snapNode, snapLocation, qualityMetric, minAcceptableQuality);
         if (qualityMetric.is_first_quality_metric_better_than_second(postSnapQuality, minAcceptableQuality))
         {
           allowedSnapIndices.push_back(intPtIndex);

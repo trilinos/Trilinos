@@ -35,17 +35,20 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp *.h)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp *.h)
 
 IF(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${STK_TOPLEVEL_SOURCE_DIR}/stk_util)
 ELSE()
   add_library(stk_util_ngp INTERFACE ${HEADERS})
+  target_link_libraries(stk_util_ngp INTERFACE stk_util_util)
 
   target_include_directories(stk_util_ngp INTERFACE
     $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_util>
     $<INSTALL_INTERFACE:include>
   )
+
+  INSTALL(TARGETS stk_util_ngp EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION

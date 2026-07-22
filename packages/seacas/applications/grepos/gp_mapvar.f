@@ -46,7 +46,7 @@ C     well when trying to reduce the size of NOLD
       if (isseq) then
          return
       end if
-      
+
       do 30 ivar = 1, nvar
         do 10 i = 1, nnew
           scr(i) = vars(map(i) + nold * (ivar-1) )

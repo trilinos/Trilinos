@@ -20,6 +20,8 @@ public:
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & LSFields);
 
+  using AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements;
+
   virtual bool might_have_interior_or_face_intersections() const override { return mySurfaceIdentifiers.size() > 1; }
   virtual void prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const override;
@@ -37,6 +39,9 @@ private:
   std::vector<stk::mesh::Selector> get_levelset_element_selectors() const;
   void build_levelset_facets_if_needed(const stk::mesh::BulkData & mesh) const;
   void build_levelset_facets(const stk::mesh::BulkData & mesh) const;
+
+  void set_node_signs_from_nodal_levelsets(const stk::mesh::BulkData & mesh,
+      const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
 
   std::vector<LS_Field> myLSFields;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;

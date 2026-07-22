@@ -18,7 +18,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MasterList.hpp"
-#include "Xpetra_Access.hpp"
+#include "Tpetra_Access.hpp"
 
 namespace MueLu {
 
@@ -91,7 +91,7 @@ class NullspaceFunctor {
   LO numPDEs;
   LO nullspaceDim;
   typedef typename NullspaceType::value_type SC;
-  typedef Kokkos::ArithTraits<SC> ATS;
+  typedef KokkosKernels::ArithTraits<SC> ATS;
 
  public:
   NullspaceFunctor(NullspaceType nullspace_, CoordsType coords_, MeanCoordsType mean_, LO numPDEs_, LO nullspaceDim_)
@@ -178,12 +178,12 @@ void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& c
         Coords->meanValue(hostMeans);
         Kokkos::View<typename RealValuedMultiVector::impl_scalar_type*, Kokkos::HostSpace> hostMeanView(hostMeans.getRawPtr(), hostMeans.size());
         Kokkos::deep_copy(meanView, hostMeanView);
-        coordsView = Coords->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        coordsView = Coords->getLocalViewDevice(Tpetra::Access::ReadOnly);
         GetOStream(Runtime1) << "Generating nullspace with rotations: dimension = " << nullspaceDim << std::endl;
       } else
         GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
 
-      nullspace = MultiVectorFactory::Build(A->getDomainMap(), nullspaceDim);
+      nullspace = MultiVectorFactory::Build(A->getDomainMap(), nullspaceDim, true);
 
       fillNullspaceVector(nullspace, numPDEs, nullspaceDim, coordsView, meanView);
     }
@@ -203,7 +203,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillNullspaceVector(const RCP<MultiVector>& nullspace, LocalOrdinal numPDEs, LocalOrdinal nullspaceDim, CoordsType coordsView, MeanCoordsType meanView) const {
   RCP<BlockedMultiVector> bnsp = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(nullspace);
   if (bnsp.is_null() == true) {
-    auto nullspaceView = nullspace->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto nullspaceView = nullspace->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
     int numBlocks = nullspace->getLocalLength() / numPDEs;
     if (nullspaceDim > numPDEs)

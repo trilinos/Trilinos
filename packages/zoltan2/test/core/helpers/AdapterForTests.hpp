@@ -1,46 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file AdapterForTests.hpp
@@ -226,21 +190,6 @@ private:
                                    std::vector<int> & strides,
                                    int stride);
   
-#ifdef HAVE_EPETRA_DATA_TYPES
-  /*! \brief Method to set up strided vector data from a multi-vector
-   *  \param[in] data is the epetra multi-vector
-   *  \param[out] coords is the vector of strided coordinate data
-   *  \param[out] strides is the vector of strides
-   *  \param[in] stride is the stride to apply to data set
-   *
-   * \return
-   */
-  template <typename T>
-  void InitializeEpetraVectorData(const RCP<T> &data,
-                                         std::vector<const zscalar_t *> &coords,
-                                         std::vector<int> & strides,
-                                         int stride);
-#endif
 };
 
 
@@ -383,33 +332,6 @@ AdapterWithTemplateName
     globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = data->getLocalNumCols();
   }
-#ifdef HAVE_EPETRA_DATA_TYPES
-  else if(input_type == "epetra_vector")
-  {
-    RCP<Epetra_Vector> data = uinput->getUIEpetraVector();
-    globalIds = (zgno_t *)data->Map().MyGlobalElements();
-    localCount = data->MyLength();
-  }
-  else if(input_type == "epetra_multivector")
-  {
-    int nvec = pList.get<int>("vector_dimension");
-    RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
-    globalIds = (zgno_t *)data->Map().MyGlobalElements();
-    localCount = data->MyLength();
-  }
-  else if(input_type == "epetra_crs_graph")
-  {
-    RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
-    globalIds = (zgno_t *)data->Map().MyGlobalElements();
-    localCount = data->NumMyCols();
-  }
-  else if(input_type == "epetra_crs_matrix")
-  {
-    RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
-    globalIds = (zgno_t *)data->Map().MyGlobalElements();
-    localCount = data->NumMyCols();
-  }
-#endif
 
   result.adapterType = AT_basic_id_t;
   result.adapter = new Zoltan2_TestingFramework::basic_id_t(zlno_t(localCount),
@@ -490,21 +412,7 @@ AdapterWithTemplateName AdapterFactory::getXpetraMVAdapterForInput(
     }
     result.adapterType = AT_xMV_xMV_t;
   }
-#ifdef HAVE_EPETRA_DATA_TYPES
-  else if(input_type == "epetra_multivector")
-  {
-    int nvec = pList.get<int>("vector_dimension");
-    RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
-    RCP<const Epetra_MultiVector> const_data = rcp_const_cast<const Epetra_MultiVector>(data);
-    
-    if(weights.empty())
-      result.adapter = new xMV_eMV_t(const_data);
-    else
-      result.adapter = new xMV_eMV_t(const_data,weights,weightStrides);
-    result.adapterType = AT_xMV_eMV_t;
-  }
-#endif
-  
+
   if(result.adapter == nullptr)
     std::cerr << "Input data chosen not compatible with xpetra multi-vector adapter." << std::endl;
 
@@ -624,34 +532,7 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsGraphAdapterFor
       Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_1);
     }
   }
-#ifdef HAVE_EPETRA_DATA_TYPES
 
-  else if(input_type == "epetra_crs_graph")
-  {
-    RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
-    RCP<const Epetra_CrsGraph> const_data = rcp_const_cast<const Epetra_CrsGraph>(data);
-    xCG_eCG_t * ia = new xCG_eCG_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
-    adapters.main.adapterType = AT_xCG_eCG_t;
-    adapters.main.adapter = ia;
-    if(!vtx_weights.empty())
-    {
-      for(int i = 0; i < (int)vtx_weights.size(); i++)
-        ia->setVertexWeights(vtx_weights[i],vtx_weightStride[i],i);
-    }
-    
-    if(!edge_weights.empty())
-    {
-      for(int i = 0; i < (int)edge_weights.size(); i++)
-        ia->setEdgeWeights(edge_weights[i],edge_weightStride[i],i);
-    }
-
-    if (uinput->hasUICoordinates()) {
-      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_1);
-    }
-  }
-#endif
-  
   if(adapters.main.adapter == nullptr) {
     std::cerr << "Input data chosen not compatible with "
               << "XpetraCrsGraph adapter." << std::endl;
@@ -762,31 +643,7 @@ AdapterWithOptionalCoordinateAdapter AdapterFactory::getXpetraCrsMatrixAdapterFo
       Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_2);
     }
   }
-#ifdef HAVE_EPETRA_DATA_TYPES
-  else if(input_type == "epetra_crs_matrix")
-  {
-    RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
-    RCP<const Epetra_CrsMatrix> const_data = rcp_const_cast<const Epetra_CrsMatrix>(data);
-    
-    // new adapter
-    xCM_eCM_t *ia = new xCM_eCM_t(const_data, (int)weights.size());
-    adapters.main.adapterType = AT_xCM_eCM_t;
-    adapters.main.adapter = ia;
 
-    // if we have weights set them
-    if(!weights.empty())
-    {
-      for(int i = 0; i < (int)weights.size(); i++)
-         ia->setWeights(weights[i],strides[i],i);
-    }
-
-    if (uinput->hasUICoordinates()) {
-      adapters.coordinate = getXpetraMVAdapterForInput(uinput, pCopy, comm);
-      Z2_TEST_UPCAST_COORDS(adapters.coordinate.adapterType, SET_COORDS_INPUT_2);
-    }
-  }
-#endif
-  
   if(adapters.main.adapter == nullptr)
   {
     std::cerr << "Input data chosen not compatible with "
@@ -974,52 +831,7 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
                                                    coords, entry_strides,
                                                    weights,weightStrides);
   }
-  
-#ifdef HAVE_EPETRA_DATA_TYPES
-  else if(input_type == "epetra_vector")
-  {
-    RCP<Epetra_Vector> data = uinput->getUIEpetraVector();
-    globalIds = (zgno_t *)data->Map().MyGlobalElements();
-    localCount = static_cast<zlno_t>(data->MyLength());
-    
-    // get strided data
-    std::vector<const zscalar_t *> coords;
-    std::vector<int> entry_strides;
-    InitializeEpetraVectorData(data,coords,entry_strides,stride);
-    if(weights.empty())
-    {
-      result.adapter = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
-                                                     coords[0], entry_strides[0]);
-    }else{
-      result.adapter = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
-                                                     coords[0], entry_strides[0],
-                                                     true,
-                                                     weights[0],
-                                                     weightStrides[0]);
-      
-    }
-    
-    //    delete [] epetravectors;
-  }
-  else if(input_type == "epetra_multivector")
-  {
-    int nvec = pList.get<int>("vector_dimension");
-    RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
-    globalIds = (zgno_t *)data->Map().MyGlobalElements();
-    localCount = data->MyLength();
-    
-    std::vector<const zscalar_t *> coords;
-    std::vector<int> entry_strides;
-    InitializeEpetraVectorData(data,coords,entry_strides,stride);
-    
-    // make vector!
-    result.adapter = new Zoltan2_TestingFramework::basic_vector_adapter(localCount, globalIds,
-                                                   coords, entry_strides,
-                                                   weights,weightStrides);
-  }
-  
-#endif
-  
+
   return result;
 }
 
@@ -1107,84 +919,6 @@ void AdapterFactory::InitializeVectorData(const RCP<T> &data,
   //  printf("clean up coordarr and tpetravectors...\n\n\n");
   delete [] petravectors;
 }
-
-#ifdef HAVE_EPETRA_DATA_TYPES
-
-template <typename T>
-void AdapterFactory::InitializeEpetraVectorData(const RCP<T> &data,
-                                                 std::vector<const zscalar_t *> &coords,
-                                                 std::vector<int> & strides,
-                                                 int stride){
-  size_t localCount = data->MyLength();
-  size_t nvecs = data->NumVectors();
-  size_t vecsize = nvecs * localCount;
-  
-  //  printf("Number of vectors by data: %zu\n", nvecs);
-  //  printf("Size of data: %zu\n", vecsize);
-  
-  std::vector<zscalar_t *> epetravectors(nvecs);
-  zscalar_t ** arr;
-  //  printf("get data from epetra vector..\n");
-  data->ExtractView(&arr);
-  
-  for(size_t k = 0; k < nvecs; k++)
-  {
-    epetravectors[k] = arr[k];
-  }
-  
-  size_t idx = 0;
-  basic_vector_adapter::scalar_t *coordarr =
-    new basic_vector_adapter::scalar_t[vecsize];
-
-  if(stride == 1 || stride != (int)nvecs)
-  {
-    for (size_t i = 0; i < nvecs; i++) {
-      for (size_t j = 0; j < localCount; j++) {
-        coordarr[idx++] = epetravectors[i][j];
-      }
-    }
-  }else
-  {
-    for (size_t j = 0; j < localCount; j++) {
-      for (size_t i = 0; i < nvecs; i++) {
-        coordarr[idx++] = epetravectors[i][j];
-      }
-    }
-  }
-  
-  // debugging
-//  printf("Made coordarr : {");
-//  for (zlno_t i = 0; i < vecsize; i++){
-//    printf("%1.2g ",coordarr[i]);
-//  }
-//  printf("}\n");
-  
-  coords = std::vector<const zscalar_t *>(nvecs);
-  strides = std::vector<int>(nvecs);
-  
-  for (size_t i = 0; i < nvecs; i++) {
-    if(stride == 1)
-      coords[i] = &coordarr[i*localCount];
-    else
-      coords[i] = &coordarr[i];
-    
-    strides[i] = stride;
-  }
-  
-//  printf("Made coords...\n");
-//  for (size_t i = 0; i < nvecs; i++){
-//    const zscalar_t * tmp = coords[i];
-//    printf("coord %zu: {",i);
-//    for(size_t j = 0; j < localCount; j++)
-//    {
-//      printf("%1.2g ", tmp[j]);
-//    }
-//    printf("}\n");
-//  }
-  
-}
-#endif
-
 
 // pamgen adapter
 AdapterWithTemplateName

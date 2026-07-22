@@ -33,16 +33,19 @@
 // 
 
 #include "gtest/gtest.h"
+#include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingProbe.hpp"
 #include "stk_util/parallel/Parallel.hpp"      // for parallel_machine_rank, parallel_machine_size
 
 #ifdef STK_HAS_MPI
 
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlocking.hpp"
+#include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingPrepost.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternBlockingBuffer.hpp"
 #include "stk_util/parallel/DataExchangeKnownPatternNonBlocking.hpp"
 #include "stk_util/parallel/DataExchangeKnownPatternNonBlockingBuffer.hpp"
+#include "stk_util/parallel/DataExchangeKnownPatternUserDataNonBlocking.hpp"
 
 
 #include <vector>
@@ -65,7 +68,7 @@ using DataExchangeNonBlockingKnown = stk::DataExchangeKnownPatternNonBlocking;
 template <typename T>
 using DataExchangeNonBlockingBufferKnown = stk::DataExchangeKnownPatternNonBlockingBuffer<T>;
 using DataExchangeNonBlockingCommBufferKnown = stk::DataExchangeKnownPatternNonBlockingCommBuffer;
-
+using DataExchangeNonBlockingPtr = stk::DataExchangeKnownPatternUserDataNonBlocking;
 
 
 template <typename T>
@@ -231,6 +234,8 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
 
     explicit DenseParallelCommTesterBase(bool split_last = false)
     {
+      if (split_last) { /*silly statement to get past build warning*/ }
+
       recvLists.resize(commSize);
       sendLists.resize(commSize);
 
@@ -245,10 +250,10 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
       set_send_buffers_values();
     }
 
-    void set_recv_buffer_sizes(std::vector< std::vector<T> >& recvLists)
+    void set_recv_buffer_sizes(std::vector< std::vector<T> >& rcvLists)
     {
       for (int src=0; src < commSize; ++src) {
-        recvLists[src].resize(this->get_size(src, myrank));
+        rcvLists[src].resize(this->get_size(src, myrank));
       }
     }
 
@@ -256,10 +261,10 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
 
     virtual int get_num_recvs() override { return commSize; }
 
-    void test_results(std::vector< std::vector<T> >& recvLists)
+    void test_results(std::vector< std::vector<T> >& rcvLists)
     {
       for (int src=0; src < commSize; ++src) {
-        test_recv_vals(recvLists[src], src);
+        test_recv_vals(rcvLists[src], src);
       }
     }
 
@@ -275,15 +280,15 @@ class DenseParallelCommTesterBase : public ParallelCommTester<T>
       }
     }
 
-    void test_send_ranks(std::vector< std::vector<T> >& sendLists)
+    void test_send_ranks(std::vector< std::vector<T> >& sndLists)
     {
-      test_ranks_inner(sendLists);
+      test_ranks_inner(sndLists);
     }
 
 
-    void test_recv_ranks(std::vector<std::vector<T>>& recvLists)
+    void test_recv_ranks(std::vector<std::vector<T>>& recvListsArg)
     {
-      test_ranks_inner(recvLists);
+      test_ranks_inner(recvListsArg);
     }
 
 
@@ -321,6 +326,13 @@ class DenseParallelCommTester : public ::testing::Test,
 using DenseParallelCommTesterInt = DenseParallelCommTester<int>;
 using DenseParallelCommTesterDouble = DenseParallelCommTester<double>;
 
+template <typename ExchangerTypeT>
+class DenseParallelCommTesterIntT : public ::testing::Test,
+                                    public DenseParallelCommTesterBase<int>
+{
+  using ExchangerType = ExchangerTypeT;
+};
+
 // test when process i only sends to i + 1 and i + 2 (with wrap around)
 template <typename T>
 class NeighborParallelCommTesterBase : public ParallelCommTester<T>
@@ -348,22 +360,49 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
       set_send_buffers_values();
     }
 
-    void set_recv_buffer_sizes(std::vector< std::vector<T> >& recvLists)
+    void set_recv_buffer_sizes(std::vector< std::vector<T> >& rcvLists)
     {
       int src1 = (myrank - 1 + commSize) % commSize;
       int src2 = (myrank - 2 + commSize) % commSize;
-      recvLists[src1].resize(this->get_size(src1, myrank));
-      recvLists[src2].resize(this->get_size(src2, myrank));
+      rcvLists[src1].resize(this->get_size(src1, myrank));
+      rcvLists[src2].resize(this->get_size(src2, myrank));
     }
 
     virtual int get_num_sends() override { return std::min(2, commSize); }
 
     virtual int get_num_recvs() override { return std::min(2, commSize); }
+    
+    std::vector<int> get_dest_ranks()
+    {
+      int dest1 = (myrank + 1) % commSize;
+      int dest2 = (myrank + 2) % commSize;
+      if (dest1 == dest2)
+      {
+        return {dest1};
+      } else
+      {
+        return {dest1, dest2};
+      }
+    }
+  
+  std::vector<int> get_src_ranks()
+  {
+    int src1 = (myrank - 1 + commSize) % commSize;
+    int src2 = (myrank - 2 + commSize) % commSize;
+    
+    if (src1 == src2)
+    {
+      return {src1};
+    } else
+    {
+      return {src1, src2};
+    }
+  }
 
-    void test_results(std::vector< std::vector<T> >& recvLists)
+    void test_results(std::vector< std::vector<T> >& rcvLists)
     {
       for (int src=0; src < commSize; ++src) {
-        test_recv_vals(recvLists[src], src);
+        test_recv_vals(rcvLists[src], src);
       }
     }
 
@@ -382,10 +421,10 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
       }
     }
 
-    void test_send_ranks(std::vector<std::vector<T>>& sendLists)
+    void test_send_ranks(std::vector<std::vector<T>>& sndLists)
     {
 
-      std::vector<int> sendRanks = get_ranks(sendLists);
+      std::vector<int> sendRanks = get_ranks(sndLists);
 
       int len = sendRanks.size();
       int dest1 = (myrank + 1) % commSize;
@@ -404,9 +443,9 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
       }
     }
 
-    void test_recv_ranks(std::vector<std::vector<T>>& recvLists)
+    void test_recv_ranks(std::vector<std::vector<T>>& rcvLists)
     {
-      auto recvRanks = get_ranks(recvLists);
+      auto recvRanks = get_ranks(rcvLists);
 
       int len = recvRanks.size();
       int dest1 = (myrank - 1 + commSize) % commSize;
@@ -455,6 +494,14 @@ using NeighborParallelCommTesterInt = NeighborParallelCommTester<int>;
 using NeighborParallelCommTesterDouble = NeighborParallelCommTester<double>;
 
 
+}
+
+TEST(UnknownPatternExchanger, StringToEnum)
+{
+  EXPECT_EQ(stk::stringToUnknownPatternExchangerEnum("Default"), stk::UnknownPatternExchanger::Default);
+  EXPECT_EQ(stk::stringToUnknownPatternExchangerEnum("Probe"),   stk::UnknownPatternExchanger::Probe);
+  EXPECT_EQ(stk::stringToUnknownPatternExchangerEnum("Prepost"), stk::UnknownPatternExchanger::Prepost);
+  EXPECT_ANY_THROW(stk::stringToUnknownPatternExchangerEnum("foo"));
 }
 
 //-----------------------------------------------------------------------------
@@ -841,36 +888,123 @@ TEST_F(NeighborParallelCommTesterDouble, ClassBlocking)
   }
 }
 
+namespace {
+  using ExchangerTypes = ::testing::Types<DataExchangeNonBlocking,
+                                          stk::DataExchangeUnknownPatternNonBlockingProbe,
+                                          stk::DataExchangeUnknownPatternNonBlockingPrepost>;
+                                          
+  class NameGenerator
+  {
+    public:
+      template <typename T>
+      static std::string GetName(int)
+      {
+        if constexpr (std::is_same_v<T, stk::DataExchangeUnknownPatternNonBlockingProbe>)
+        {
+          return "DataExchangeUnknownPatternNonBlockingProbe";
+        } else if constexpr (std::is_same_v<T, stk::DataExchangeUnknownPatternNonBlockingPrepost>)
+        {
+          return "DataExchangeUnknownPatternNonBlockingPrepost";        
+        } else
+        {
+          return "OtherDataExchanger";
+        }
+      }
+  };                                          
+}
 
-TEST_F(DenseParallelCommTesterInt, ClassNonBlocking)
+TYPED_TEST_SUITE(DenseParallelCommTesterIntT, ExchangerTypes, NameGenerator);
+
+TYPED_TEST(DenseParallelCommTesterIntT, ClassNonBlocking)
 {
-  DataExchangeNonBlocking exchanger1(comm);
-  DataExchangeNonBlocking exchanger2(comm);
+  using ExchType = TypeParam;
+  using ElemType = int;
+  
+  ExchType exchanger1(this->comm);
+  ExchType exchanger2(this->comm);
 
   EXPECT_FALSE(exchanger1.are_recvs_in_progress());
   EXPECT_FALSE(exchanger1.are_sends_in_progress());
   EXPECT_FALSE(exchanger2.are_recvs_in_progress());
   EXPECT_FALSE(exchanger2.are_sends_in_progress());
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = this->get_send_lists();
+  auto& recvListsTest = this->get_receive_lists();
 
   for (int i=0; i < 100; ++i) {
-    set_offset(i);
-    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
-    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+    this->set_offset(i);
+    
+    std::vector< std::vector<ElemType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElemType> > recvLists2 = recvListsTest;
 
-    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger1.start_nonblocking(sendListsTest, recvListsTest);
     exchanger2.start_nonblocking(sendLists2, recvLists2);
 
     EXPECT_TRUE(exchanger1.are_recvs_in_progress());
     EXPECT_TRUE(exchanger1.are_sends_in_progress());
     EXPECT_TRUE(exchanger2.are_recvs_in_progress());
     EXPECT_TRUE(exchanger2.are_sends_in_progress());
-    exchanger1.post_nonblocking_receives(recvLists);
+    exchanger1.post_nonblocking_receives(recvListsTest);
     exchanger2.post_nonblocking_receives(recvLists2);
-    test_send_ranks(sendLists);
-    test_recv_ranks(recvLists);
+    
+    this->test_send_ranks(sendListsTest);
+    this->test_recv_ranks(recvListsTest);
+
+    this->test_send_ranks(sendLists2);
+    this->test_recv_ranks(recvLists2);
+
+    auto f = [&](int rank, std::vector<int>& buf) { this->test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(recvListsTest, f);
+    EXPECT_FALSE(exchanger1.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger1.are_sends_in_progress());
+    this->test_results(recvListsTest);
+
+    exchanger2.complete_receives(recvLists2, f);
+    EXPECT_FALSE(exchanger2.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger2.are_sends_in_progress());
+    this->test_results(recvLists2);
+
+    exchanger1.complete_sends();
+    EXPECT_FALSE(exchanger1.are_recvs_in_progress());
+    EXPECT_FALSE(exchanger1.are_sends_in_progress());
+
+    exchanger2.complete_sends();
+    EXPECT_FALSE(exchanger2.are_sends_in_progress());
+    EXPECT_FALSE(exchanger2.are_recvs_in_progress());
+  }
+}
+
+/*
+TEST_F(DenseParallelCommTesterInt, ClassNonBlockingPrepost)
+{
+  stk::DataExchangeUnknownPatternNonBlockingPrepost exchanger1(comm);
+  stk::DataExchangeUnknownPatternNonBlockingPrepost exchanger2(comm);
+
+  EXPECT_FALSE(exchanger1.are_recvs_in_progress());
+  EXPECT_FALSE(exchanger1.are_sends_in_progress());
+  EXPECT_FALSE(exchanger2.are_recvs_in_progress());
+  EXPECT_FALSE(exchanger2.are_sends_in_progress());
+
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
+
+  for (int i=0; i < 100; ++i) {
+    set_offset(i);
+    std::vector< std::vector<ElementType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElementType> > recvLists2 = recvListsTest;
+
+    exchanger1.start_nonblocking(sendListsTest, recvLists);
+    exchanger2.start_nonblocking(sendLists2, recvLists2);
+
+    EXPECT_TRUE(exchanger1.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger1.are_sends_in_progress());
+    EXPECT_TRUE(exchanger2.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger2.are_sends_in_progress());
+    exchanger1.post_nonblocking_receives(recvListsTest);
+    exchanger2.post_nonblocking_receives(recvLists2);
+    test_send_ranks(sendListsTest);
+    test_recv_ranks(recvListsTest);
 
     test_send_ranks(sendLists2);
     test_recv_ranks(recvLists2);
@@ -896,28 +1030,29 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlocking)
     EXPECT_FALSE(exchanger2.are_recvs_in_progress());
   }
 }
+*/
 
 TEST_F(DenseParallelCommTesterInt, ClassNonBlockingKnownPattern)
 {
   DataExchangeNonBlockingKnown exchanger1(comm);
   DataExchangeNonBlockingKnown exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
   set_recv_buffer_sizes(recvLists);
 
   for (int i=0; i < 100; ++i) {
     set_offset(i);
-    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
-    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+    std::vector< std::vector<ElementType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElementType> > recvLists2 = recvListsTest;
 
-    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger1.start_nonblocking(sendListsTest, recvLists);
     exchanger2.start_nonblocking(sendLists2, recvLists2);
 
     auto f = [&](int rank, std::vector<int>& buf) { test_recv_vals(buf, rank); };
 
-    exchanger1.complete_receives(recvLists, f);
-    test_results(recvLists);
+    exchanger1.complete_receives(recvListsTest, f);
+    test_results(recvListsTest);
 
     exchanger2.complete_receives(recvLists2, f);
     test_results(recvLists2);
@@ -927,13 +1062,93 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingKnownPattern)
   }
 }
 
+TEST_F(DenseParallelCommTesterInt, ClassNonBlockingUserDataKnownPattern)
+{
+  DataExchangeNonBlockingPtr exchanger(comm);
+  
+  for (int i=0; i < 1; ++i)
+  {
+    set_offset(i);
+    std::vector<int> allSendBufs, allRecvBufs;
+    std::vector<stk::PointerAndSize> sendBufPointers, recvBufPointers;
+    std::vector<int> sendRanks, recvRanks;
+    
+    size_t totalSendSize = 0;
+    size_t totalRecvSize = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      totalSendSize += get_size(myrank, rank);
+      totalRecvSize += get_size(rank, myrank);      
+    }
+    
+    allSendBufs.reserve(totalSendSize);
+    allRecvBufs.resize(totalRecvSize);
+    
+    size_t valuesSent = 0;
+    size_t valuesReceived = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      int sendCount = get_size(myrank, rank);
+      int recvCount = get_size(rank, myrank);
+      
+      for (int j=0; j < sendCount; ++j)
+      {
+        allSendBufs.push_back(get_value(myrank, rank, j));
+      }
+      auto sendBufBegin = reinterpret_cast<unsigned char*>(allSendBufs.data() + valuesSent);
+      sendBufPointers.emplace_back(sendBufBegin, sendCount * sizeof(int));
+      sendRanks.push_back(rank);
+      valuesSent += sendCount;
+      
+      auto recvBufBegin = reinterpret_cast<unsigned char*>(allRecvBufs.data() + valuesReceived);
+      recvRanks.push_back(rank);
+      recvBufPointers.emplace_back(recvBufBegin, recvCount * sizeof (int));
+      valuesReceived += recvCount;
+    }
+    
+    exchanger.start_nonblocking(sendBufPointers, sendRanks,
+                                recvBufPointers, recvRanks);
+    
+    std::vector<bool> senderRankSeen(commSize, false);
+    auto unpacker = [&](int senderRank, const stk::PointerAndSize& buf)
+    {
+      size_t offset = 0;
+      for (int rank=0; rank < senderRank; ++rank)
+      {
+        offset += get_size(rank, myrank);
+      }
+      
+      int recvCount  = get_size(senderRank, myrank);
+      const int* ptr = reinterpret_cast<const int*>(buf.ptr);      
+      EXPECT_EQ(buf.size, recvCount * sizeof(int));
+      EXPECT_EQ(ptr, allRecvBufs.data() + offset);
+      
+      for (int k=0; k < recvCount; ++k)
+      {
+        int expectedValue = get_value(senderRank, myrank, k);
+        EXPECT_EQ(ptr[k],                  expectedValue);
+        EXPECT_EQ(allRecvBufs[k + offset], expectedValue);
+      }
+      senderRankSeen[senderRank] = true;    
+    };
+    
+    exchanger.complete_receives(recvBufPointers, recvRanks, unpacker);
+    for (bool val : senderRankSeen)
+    {
+      EXPECT_TRUE(val);
+    }
+    
+    exchanger.complete_sends();    
+  }
+}
+
 TEST_F(DenseParallelCommTesterInt, ClassNonBlockingBufferKnownPattern)
 {
   DataExchangeNonBlockingBufferKnown<int> exchanger1(comm);
   DataExchangeNonBlockingBufferKnown<int> exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
   set_recv_buffer_sizes(recvLists);
 
   for (int i=0; i < 100; ++i) {
@@ -942,10 +1157,10 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingBufferKnownPattern)
     //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
 
     for (int rank=0; rank < commSize; ++rank) {
-      exchanger1.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
-      exchanger2.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
-      exchanger1.get_recv_buf(rank).resize(recvLists[rank].size());
-      exchanger2.get_recv_buf(rank).resize(recvLists[rank].size());
+      exchanger1.get_send_buf(rank).assign(sendListsTest[rank].begin(), sendListsTest[rank].end());
+      exchanger2.get_send_buf(rank).assign(sendListsTest[rank].begin(), sendListsTest[rank].end());
+      exchanger1.get_recv_buf(rank).resize(recvListsTest[rank].size());
+      exchanger2.get_recv_buf(rank).resize(recvListsTest[rank].size());
     }
 
     exchanger1.start_nonblocking();
@@ -972,8 +1187,8 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
   DataExchangeNonBlockingCommBufferKnown exchanger1(comm);
   DataExchangeNonBlockingCommBufferKnown exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
   set_recv_buffer_sizes(recvLists);
 
   for (int i=0; i < 100; ++i) {
@@ -984,13 +1199,13 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
     for (int phase=0; phase < 2; ++phase)
     {
       for (int rank=0; rank < commSize; ++rank) {
-        for (auto& val : sendLists[rank]) {
+        for (auto& val : sendListsTest[rank]) {
           exchanger1.get_send_buf(rank).pack(val);
           exchanger2.get_send_buf(rank).pack(val);
         }
 
-        exchanger1.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
-        exchanger2.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
+        exchanger1.set_recv_buffer_size(rank, sizeof(int)*recvListsTest[rank].size());
+        exchanger2.set_recv_buffer_size(rank, sizeof(int)*recvListsTest[rank].size());
       }
 
       if (phase == 0)
@@ -1006,7 +1221,7 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
     exchanger1.start_nonblocking();
     exchanger2.start_nonblocking();
 
-    auto f = [&](int rank, stk::CommBuffer& buf) {};
+    auto f = [&](int /*rank*/, stk::CommBuffer& /*buf*/) {};
 
     exchanger1.complete_receives(f);
     auto recvListsCopy = copy_recv_bufs<int>(exchanger1);
@@ -1032,20 +1247,20 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlocking)
   DataExchangeNonBlocking exchanger1(comm);
   DataExchangeNonBlocking exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
 
   for (int i=0; i < 100; ++i) {
     set_offset(i);
-    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
-    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+    std::vector< std::vector<ElementType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElementType> > recvLists2 = recvListsTest;
 
-    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger1.start_nonblocking(sendListsTest, recvListsTest);
     exchanger2.start_nonblocking(sendLists2, recvLists2);
-    exchanger1.post_nonblocking_receives(recvLists);
+    exchanger1.post_nonblocking_receives(recvListsTest);
     exchanger2.post_nonblocking_receives(recvLists2);
-    test_send_ranks(sendLists);
-    test_recv_ranks(recvLists);
+    test_send_ranks(sendListsTest);
+    test_recv_ranks(recvListsTest);
 
     test_send_ranks(sendLists2);
     test_recv_ranks(recvLists2);
@@ -1093,19 +1308,19 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingBuffer)
 
     exchanger1.post_nonblocking_receives();
 
-    auto f = [](int rank, std::vector<int>&) {};
+    auto f = [](int , std::vector<int>&) {};
 
     exchanger1.complete_receives(f);
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
     EXPECT_TRUE(exchanger1.are_sends_in_progress());
     EXPECT_ANY_THROW(exchanger1.get_send_buf(0));
-    std::vector< std::vector<int> >recvLists = copy_recv_bufs(exchanger1);
-    test_recv_ranks(recvLists);
-    test_results(recvLists);
+    std::vector< std::vector<int> >recvListsTest = copy_recv_bufs(exchanger1);
+    test_recv_ranks(recvListsTest);
+    test_results(recvListsTest);
 
     exchanger1.complete_sends();
-    std::vector< std::vector<int> > sendLists = copy_send_bufs(exchanger1);
-    test_send_ranks(sendLists);
+    std::vector< std::vector<int> > sendListsTest = copy_send_bufs(exchanger1);
+    test_send_ranks(sendListsTest);
 
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
     EXPECT_FALSE(exchanger1.are_sends_in_progress());
@@ -1147,7 +1362,7 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingCommBuffer)
 
     exchanger1.post_nonblocking_receives();
 
-    auto f = [](int rank, stk::CommBuffer&) {};
+    auto f = [](int , stk::CommBuffer&) {};
 
     exchanger1.complete_receives(f);
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
@@ -1158,8 +1373,8 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingCommBuffer)
     test_results(recvLists);
 
     exchanger1.complete_sends();
-    std::vector< std::vector<int> > sendLists = copy_send_bufs<int>(exchanger1);
-    test_send_ranks(sendLists);
+    std::vector< std::vector<int> > sendListsTest = copy_send_bufs<int>(exchanger1);
+    test_send_ranks(sendListsTest);
 
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
     EXPECT_FALSE(exchanger1.are_sends_in_progress());
@@ -1173,22 +1388,22 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingKnownPattern)
   DataExchangeNonBlockingKnown exchanger1(comm);
   DataExchangeNonBlockingKnown exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
   set_recv_buffer_sizes(recvLists);
 
   for (int i=0; i < 100; ++i) {
     set_offset(i);
-    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
-    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+    std::vector< std::vector<ElementType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElementType> > recvLists2 = recvListsTest;
 
-    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger1.start_nonblocking(sendListsTest, recvListsTest);
     exchanger2.start_nonblocking(sendLists2, recvLists2);
 
     auto f = [&](int rank, std::vector<double>& buf) { test_recv_vals(buf, rank); };
 
-    exchanger1.complete_receives(recvLists, f);
-    test_results(recvLists);
+    exchanger1.complete_receives(recvListsTest, f);
+    test_results(recvListsTest);
 
     exchanger2.complete_receives(recvLists2, f);
     test_results(recvLists2);
@@ -1198,14 +1413,94 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingKnownPattern)
   }
 }
 
+TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingUserDataKnownPattern)
+{
+  DataExchangeNonBlockingPtr exchanger(comm);
+  
+  for (int i=0; i < 1; ++i)
+  {
+    set_offset(i);
+    std::vector<double> allSendBufs, allRecvBufs;
+    std::vector<stk::PointerAndSize> sendBufPointers, recvBufPointers;
+    std::vector<int> sendRanks, recvRanks;
+    
+    size_t totalSendSize = 0;
+    size_t totalRecvSize = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      totalSendSize += get_size(myrank, rank);
+      totalRecvSize += get_size(rank, myrank);      
+    }
+    
+    allSendBufs.reserve(totalSendSize);
+    allRecvBufs.resize(totalRecvSize);
+    
+    size_t valuesSent = 0;
+    size_t valuesReceived = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      int sendCount = get_size(myrank, rank);
+      int recvCount = get_size(rank, myrank);
+      
+      for (int j=0; j < sendCount; ++j)
+      {
+        allSendBufs.push_back(get_value(myrank, rank, j));
+      }
+      auto sendBufBegin = reinterpret_cast<unsigned char*>(allSendBufs.data() + valuesSent);
+      sendBufPointers.emplace_back(sendBufBegin, sendCount * sizeof(double));
+      sendRanks.push_back(rank);
+      valuesSent += sendCount;
+      
+      auto recvBufBegin = reinterpret_cast<unsigned char*>(allRecvBufs.data() + valuesReceived);
+      recvRanks.push_back(rank);
+      recvBufPointers.emplace_back(recvBufBegin, recvCount * sizeof(double));
+      valuesReceived += recvCount;
+    }
+    
+    exchanger.start_nonblocking(sendBufPointers, sendRanks,
+                                recvBufPointers, recvRanks);
+    
+    std::vector<bool> senderRankSeen(commSize, false);
+    auto unpacker = [&](int senderRank, const stk::PointerAndSize& buf)
+    {
+      size_t offset = 0;
+      for (int rank=0; rank < senderRank; ++rank)
+      {
+        offset += get_size(rank, myrank);
+      }
+      
+      int recvCount  = get_size(senderRank, myrank);
+      const double* ptr = reinterpret_cast<const double*>(buf.ptr);      
+      EXPECT_EQ(buf.size, recvCount * sizeof(double));
+      EXPECT_EQ(ptr, allRecvBufs.data() + offset);
+      
+      for (int k=0; k < recvCount; ++k)
+      {
+        int expectedValue = get_value(senderRank, myrank, k);
+        EXPECT_EQ(ptr[k],                  expectedValue);
+        EXPECT_EQ(allRecvBufs[k + offset], expectedValue);
+      }
+      senderRankSeen[senderRank] = true;    
+    };
+    
+    exchanger.complete_receives(recvBufPointers, recvRanks, unpacker);
+    for (bool val : senderRankSeen)
+    {
+      EXPECT_TRUE(val);
+    }
+    
+    exchanger.complete_sends();    
+  }
+}
+
 
 TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingBufferKnownPattern)
 {
   DataExchangeNonBlockingBufferKnown<double> exchanger1(comm);
   DataExchangeNonBlockingBufferKnown<double> exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
   set_recv_buffer_sizes(recvLists);
 
   for (int i=0; i < 100; ++i) {
@@ -1214,10 +1509,10 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingBufferKnownPattern)
     //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
 
     for (int rank=0; rank < commSize; ++rank) {
-      exchanger1.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
-      exchanger2.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
-      exchanger1.get_recv_buf(rank).resize(recvLists[rank].size());
-      exchanger2.get_recv_buf(rank).resize(recvLists[rank].size());
+      exchanger1.get_send_buf(rank).assign(sendListsTest[rank].begin(), sendListsTest[rank].end());
+      exchanger2.get_send_buf(rank).assign(sendListsTest[rank].begin(), sendListsTest[rank].end());
+      exchanger1.get_recv_buf(rank).resize(recvListsTest[rank].size());
+      exchanger2.get_recv_buf(rank).resize(recvListsTest[rank].size());
     }
 
     exchanger1.start_nonblocking();
@@ -1244,8 +1539,8 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingCommBufferKnownPattern)
   DataExchangeNonBlockingCommBufferKnown exchanger1(comm);
   DataExchangeNonBlockingCommBufferKnown exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
   set_recv_buffer_sizes(recvLists);
 
   for (int i=0; i < 100; ++i) {
@@ -1256,13 +1551,13 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingCommBufferKnownPattern)
     for (int phase=0; phase < 2; ++phase)
     {
       for (int rank=0; rank < commSize; ++rank) {
-        for (auto& val : sendLists[rank]) {
+        for (auto& val : sendListsTest[rank]) {
           exchanger1.get_send_buf(rank).pack(val);
           exchanger2.get_send_buf(rank).pack(val);
         }
 
-        exchanger1.set_recv_buffer_size(rank, sizeof(double)*recvLists[rank].size());
-        exchanger2.set_recv_buffer_size(rank, sizeof(double)*recvLists[rank].size());
+        exchanger1.set_recv_buffer_size(rank, sizeof(double)*recvListsTest[rank].size());
+        exchanger2.set_recv_buffer_size(rank, sizeof(double)*recvListsTest[rank].size());
       }
 
       if (phase == 0)
@@ -1278,7 +1573,7 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingCommBufferKnownPattern)
     exchanger1.start_nonblocking();
     exchanger2.start_nonblocking();
 
-    auto f = [&](int rank, stk::CommBuffer& buf) {};
+    auto f = [&](int , stk::CommBuffer& ) {};
 
     exchanger1.complete_receives(f);
     auto recvListsCopy = copy_recv_bufs<double>(exchanger1);
@@ -1305,30 +1600,30 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlocking)
   EXPECT_FALSE(exchanger1.are_recvs_in_progress());
   EXPECT_FALSE(exchanger1.are_sends_in_progress());
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
 
   for (int i=0; i < 100; ++i) {
     set_offset(i);
 
     if (i % 2 == 0) {
-      exchanger1.start_nonblocking(sendLists, recvLists);
+      exchanger1.start_nonblocking(sendListsTest, recvListsTest);
     } else {
-      exchanger1.start_nonblocking(sendLists, recvLists, get_num_recvs());
+      exchanger1.start_nonblocking(sendListsTest, recvListsTest, get_num_recvs());
     }
 
     EXPECT_TRUE(exchanger1.are_recvs_in_progress());
     EXPECT_TRUE(exchanger1.are_sends_in_progress());
-    exchanger1.post_nonblocking_receives(recvLists);
-    test_send_ranks(sendLists);
-    test_recv_ranks(recvLists);
+    exchanger1.post_nonblocking_receives(recvListsTest);
+    test_send_ranks(sendListsTest);
+    test_recv_ranks(recvListsTest);
 
     auto f = [&](int rank, std::vector<int>& buf) { test_recv_vals(buf, rank); };
 
-    exchanger1.complete_receives(recvLists, f);
+    exchanger1.complete_receives(recvListsTest, f);
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
     EXPECT_TRUE(exchanger1.are_sends_in_progress());
-    test_results(recvLists);
+    test_results(recvListsTest);
 
     exchanger1.complete_sends();
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
@@ -1341,22 +1636,22 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingKnownPattern)
   DataExchangeNonBlockingKnown exchanger1(comm);
   DataExchangeNonBlockingKnown exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
   set_recv_buffer_sizes(recvLists);
 
   for (int i=0; i < 100; ++i) {
     set_offset(i);
-    std::vector< std::vector<ElementType> > sendLists2 = sendLists;
-    std::vector< std::vector<ElementType> > recvLists2 = recvLists;
+    std::vector< std::vector<ElementType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElementType> > recvLists2 = recvListsTest;
 
-    exchanger1.start_nonblocking(sendLists, recvLists);
+    exchanger1.start_nonblocking(sendListsTest, recvListsTest);
     exchanger2.start_nonblocking(sendLists2, recvLists2);
 
     auto f = [&](int rank, std::vector<int>& buf) { test_recv_vals(buf, rank); };
 
-    exchanger1.complete_receives(recvLists, f);
-    test_results(recvLists);
+    exchanger1.complete_receives(recvListsTest, f);
+    test_results(recvListsTest);
 
     exchanger2.complete_receives(recvLists2, f);
     test_results(recvLists2);
@@ -1366,14 +1661,94 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingKnownPattern)
   }
 }
 
+TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingUserDataKnownPattern)
+{
+  DataExchangeNonBlockingPtr exchanger(comm);
+  
+  for (int i=0; i < 1; ++i)
+  {
+    set_offset(i);
+    std::vector<int> allSendBufs, allRecvBufs;
+    std::vector<stk::PointerAndSize> sendBufPointers, recvBufPointers;
+    std::vector<int> sendRanks = get_dest_ranks();
+    std::vector<int> recvRanks = get_src_ranks();
+    
+    size_t totalSendSize = 0;
+    size_t totalRecvSize = 0;
+    for (int rank : sendRanks)
+    {
+      totalSendSize += get_size(myrank, rank);
+    }
+    
+    for (int rank : recvRanks)
+    {
+      totalRecvSize += get_size(rank, myrank);
+    }
+    
+    allSendBufs.reserve(totalSendSize);
+    allRecvBufs.resize(totalRecvSize);
+    
+    size_t valuesSent = 0;
+    size_t valuesReceived = 0;
+    for (int rank : sendRanks)
+    {
+      int sendCount = get_size(myrank, rank);
+      for (int j=0; j < sendCount; ++j)
+      {
+        allSendBufs.push_back(get_value(myrank, rank, j));
+      }
+      auto sendBufBegin = reinterpret_cast<unsigned char*>(allSendBufs.data() + valuesSent);
+      sendBufPointers.emplace_back(sendBufBegin, sendCount * sizeof(int));
+      valuesSent += sendCount;      
+    }
+    
+    for (int rank : recvRanks)
+    {
+      int recvCount = get_size(rank, myrank);      
+      auto recvBufBegin = reinterpret_cast<unsigned char*>(allRecvBufs.data() + valuesReceived);
+      recvBufPointers.emplace_back(recvBufBegin, recvCount * sizeof (int));
+      valuesReceived += recvCount;
+    }
+    
+    exchanger.start_nonblocking(sendBufPointers, sendRanks,
+                                recvBufPointers, recvRanks);
+    
+    auto unpacker = [&](int senderRank, const stk::PointerAndSize& buf)
+    {
+      size_t offset = 0;
+      auto senderRankIt = std::find(recvRanks.begin(), recvRanks.end(), senderRank);
+      EXPECT_NE(senderRankIt, recvRanks.end());
+      for (auto it = recvRanks.begin(); it != senderRankIt; ++it)
+      {
+        offset += get_size(*it, myrank);
+      }
+      
+      int recvCount  = get_size(senderRank, myrank);
+      const int* ptr = reinterpret_cast<const int*>(buf.ptr);      
+      EXPECT_EQ(buf.size, recvCount * sizeof(int));
+      EXPECT_EQ(ptr, allRecvBufs.data() + offset);
+      
+      for (int k=0; k < recvCount; ++k)
+      {
+        int expectedValue = get_value(senderRank, myrank, k);
+        EXPECT_EQ(ptr[k],                  expectedValue);
+        EXPECT_EQ(allRecvBufs[k + offset], expectedValue);
+      }
+    };
+    
+    exchanger.complete_receives(recvBufPointers, recvRanks, unpacker);
+    exchanger.complete_sends();
+  }
+}
+
 TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingBufferKnownPattern)
 {
   DataExchangeNonBlockingBufferKnown<int> exchanger1(comm);
   DataExchangeNonBlockingBufferKnown<int> exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
-  set_recv_buffer_sizes(recvLists);
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
+  set_recv_buffer_sizes(recvListsTest);
 
   for (int i=0; i < 100; ++i) {
     set_offset(i);
@@ -1381,10 +1756,10 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingBufferKnownPattern)
     //std::vector< std::vector<ElementType> > recvLists2 = recvLists;
 
     for (int rank=0; rank < commSize; ++rank) {
-      exchanger1.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
-      exchanger2.get_send_buf(rank).assign(sendLists[rank].begin(), sendLists[rank].end());
-      exchanger1.get_recv_buf(rank).resize(recvLists[rank].size());
-      exchanger2.get_recv_buf(rank).resize(recvLists[rank].size());
+      exchanger1.get_send_buf(rank).assign(sendListsTest[rank].begin(), sendListsTest[rank].end());
+      exchanger2.get_send_buf(rank).assign(sendListsTest[rank].begin(), sendListsTest[rank].end());
+      exchanger1.get_recv_buf(rank).resize(recvListsTest[rank].size());
+      exchanger2.get_recv_buf(rank).resize(recvListsTest[rank].size());
     }
 
     exchanger1.start_nonblocking();
@@ -1411,9 +1786,9 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
   DataExchangeNonBlockingCommBufferKnown exchanger1(comm);
   DataExchangeNonBlockingCommBufferKnown exchanger2(comm);
 
-  auto& sendLists = get_send_lists();
-  auto& recvLists = get_receive_lists();
-  set_recv_buffer_sizes(recvLists);
+  auto& sendListsTest = get_send_lists();
+  auto& recvListsTest = get_receive_lists();
+  set_recv_buffer_sizes(recvListsTest);
 
   for (int i=0; i < 100; ++i) {
     set_offset(i);
@@ -1423,13 +1798,13 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
     for (int phase=0; phase < 2; ++phase)
     {
       for (int rank=0; rank < commSize; ++rank) {
-        for (auto& val : sendLists[rank]) {
+        for (auto& val : sendListsTest[rank]) {
           exchanger1.get_send_buf(rank).pack(val);
           exchanger2.get_send_buf(rank).pack(val);
         }
 
-        exchanger1.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
-        exchanger2.set_recv_buffer_size(rank, sizeof(int)*recvLists[rank].size());
+        exchanger1.set_recv_buffer_size(rank, sizeof(int)*recvListsTest[rank].size());
+        exchanger2.set_recv_buffer_size(rank, sizeof(int)*recvListsTest[rank].size());
       }
 
       if (phase == 0)
@@ -1445,7 +1820,7 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingCommBufferKnownPattern)
     exchanger1.start_nonblocking();
     exchanger2.start_nonblocking();
 
-    auto f = [&](int rank, stk::CommBuffer& buf) {};
+    auto f = [&](int , stk::CommBuffer& ) {};
 
     exchanger1.complete_receives(f);
     auto recvListsCopy = copy_recv_bufs<int>(exchanger1);
@@ -1492,7 +1867,7 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingBuffer)
 
     exchanger1.post_nonblocking_receives();
 
-    auto f = [](int rank, std::vector<int>&) {};
+    auto f = [](int , std::vector<int>&) {};
 
     exchanger1.complete_receives(f);
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
@@ -1504,8 +1879,8 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingBuffer)
     exchanger1.complete_sends();
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
     EXPECT_FALSE(exchanger1.are_sends_in_progress());
-    std::vector< std::vector<int> > sendLists = copy_send_bufs(exchanger1);
-    test_send_ranks(sendLists);
+    std::vector< std::vector<int> > sendListsTest = copy_send_bufs(exchanger1);
+    test_send_ranks(sendListsTest);
   }
 }
 
@@ -1544,7 +1919,7 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingCommBuffer)
 
     exchanger1.post_nonblocking_receives();
 
-    auto f = [](int rank, stk::CommBuffer&) {};
+    auto f = [](int , stk::CommBuffer&) {};
 
     exchanger1.complete_receives(f);
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
@@ -1555,8 +1930,8 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingCommBuffer)
     test_results(recvLists);
 
     exchanger1.complete_sends();
-    std::vector< std::vector<int> > sendLists = copy_send_bufs<int>(exchanger1);
-    test_send_ranks(sendLists);
+    std::vector< std::vector<int> > sendListsTest = copy_send_bufs<int>(exchanger1);
+    test_send_ranks(sendListsTest);
 
     EXPECT_FALSE(exchanger1.are_recvs_in_progress());
     EXPECT_FALSE(exchanger1.are_sends_in_progress());

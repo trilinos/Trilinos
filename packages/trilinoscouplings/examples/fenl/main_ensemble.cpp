@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Stokhos.hpp"
@@ -50,7 +59,7 @@ void run_samples(
   Kokkos::Example::FENL::Perf& perf_total)
 {
   typedef typename CoeffFunctionType::RandomVariableView RV;
-  typedef typename RV::HostMirror HRV;
+  typedef typename RV::host_mirror_type HRV;
   const int dim = cmd.USE_UQ_DIM;
   RV rv("KL Random Variables", dim);
   HRV hrv = Kokkos::create_mirror_view(rv);
@@ -122,7 +131,7 @@ void run_samples(
 
   typedef typename Sacado::MP::Vector<Storage> Scalar;
   typedef typename CoeffFunctionType::RandomVariableView RV;
-  typedef typename RV::HostMirror HRV;
+  typedef typename RV::host_mirror_type HRV;
   static const int VectorSize = Storage::static_size;
 
   // Group points into ensembles

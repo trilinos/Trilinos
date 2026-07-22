@@ -1,44 +1,10 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_Assert.hpp"
@@ -48,14 +14,14 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 StieltjesPCEBasis(
-   ordinal_type p,
+   ordinal_type ap,
    const Teuchos::RCP<const Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce_,
    const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad_,
    bool use_pce_quad_points_,
-   bool normalize,
+   bool anormalize,
    bool project_integrals_,
    const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_) :
-  RecurrenceBasis<ordinal_type, value_type>("Stieltjes PCE", p, normalize),
+  RecurrenceBasis<ordinal_type, value_type>("Stieltjes PCE", ap, anormalize),
   pce(pce_),
   quad(quad_),
   pce_weights(quad->getQuadWeights()),
@@ -63,7 +29,7 @@ StieltjesPCEBasis(
   pce_vals(),
   phi_vals(),
   use_pce_quad_points(use_pce_quad_points_),
-  fromStieltjesMat(p+1,pce->size()),
+  fromStieltjesMat(ap+1,pce->size()),
   project_integrals(project_integrals_),
   basis(pce->basis()),
   Cijk(Cijk_),
@@ -131,20 +97,20 @@ template <typename ordinal_type, typename value_type>
 bool
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
-			      Teuchos::Array<value_type>& alpha,
-			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta,
-			      Teuchos::Array<value_type>& gamma) const
+			      Teuchos::Array<value_type>& aalpha,
+			      Teuchos::Array<value_type>& abeta,
+			      Teuchos::Array<value_type>& adelta,
+			      Teuchos::Array<value_type>& agamma) const
 {
   ordinal_type nqp = phi_vals.size();
   Teuchos::Array<value_type> nrm(n);
   Teuchos::Array< Teuchos::Array<value_type> > vals(nqp);
   for (ordinal_type i=0; i<nqp; i++)
     vals[i].resize(n);
-  stieltjes(0, n, pce_weights, pce_vals, alpha, beta, nrm, vals);
+  stieltjes(0, n, pce_weights, pce_vals, aalpha, abeta, nrm, vals);
   for (ordinal_type i=0; i<n; i++) {
-    delta[i] = value_type(1.0);
-    gamma[i] = value_type(1.0);
+    adelta[i] = value_type(1.0);
+    agamma[i] = value_type(1.0);
   }
 
   // Save basis functions at quad point values
@@ -197,7 +163,7 @@ stieltjes(ordinal_type nstart,
 	  Teuchos::Array<value_type>& a,
 	  Teuchos::Array<value_type>& b,
 	  Teuchos::Array<value_type>& nrm,
-	  Teuchos::Array< Teuchos::Array<value_type> >& phi_vals) const
+	  Teuchos::Array< Teuchos::Array<value_type> >& aphi_vals) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::StieltjesPCEBasis -- Discretized Stieltjes Procedure");
@@ -207,9 +173,9 @@ stieltjes(ordinal_type nstart,
   ordinal_type start = nstart;
   if (nstart == 0) {
     if (project_integrals)
-      integrateBasisSquaredProj(0, a, b, weights, points, phi_vals, val1, val2);
+      integrateBasisSquaredProj(0, a, b, weights, points, aphi_vals, val1, val2);
     else
-      integrateBasisSquared(0, a, b, weights, points, phi_vals, val1, val2);
+      integrateBasisSquared(0, a, b, weights, points, aphi_vals, val1, val2);
     nrm[0] = val1;
     a[0] = val2/val1;
     b[0] = value_type(1);
@@ -217,9 +183,9 @@ stieltjes(ordinal_type nstart,
   }
   for (ordinal_type i=start; i<nfinish; i++) {
     if (project_integrals)
-      integrateBasisSquaredProj(i, a, b, weights, points, phi_vals, val1, val2);
+      integrateBasisSquaredProj(i, a, b, weights, points, aphi_vals, val1, val2);
     else
-      integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
+      integrateBasisSquared(i, a, b, weights, points, aphi_vals, val1, val2);
     // std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
     // 	      << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(val1 < 0.0, std::logic_error,
@@ -244,16 +210,16 @@ integrateBasisSquared(ordinal_type k,
 		      const Teuchos::Array<value_type>& b,
 		      const Teuchos::Array<value_type>& weights,
 		      const Teuchos::Array<value_type>& points,
-		      Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
+		      Teuchos::Array< Teuchos::Array<value_type> >& aphi_vals,
 		      value_type& val1, value_type& val2) const
 {
-  evaluateRecurrence(k, a, b, points, phi_vals);
+  evaluateRecurrence(k, a, b, points, aphi_vals);
   ordinal_type nqp = weights.size();
   val1 = value_type(0);
   val2 = value_type(0);
   for (ordinal_type i=0; i<nqp; i++) {
-    val1 += weights[i]*phi_vals[i][k]*phi_vals[i][k];
-    val2 += weights[i]*phi_vals[i][k]*phi_vals[i][k]*points[i];
+    val1 += weights[i]*aphi_vals[i][k]*aphi_vals[i][k];
+    val2 += weights[i]*aphi_vals[i][k]*aphi_vals[i][k]*points[i];
   }
 }
 
@@ -288,27 +254,27 @@ integrateBasisSquaredProj(
   const Teuchos::Array<value_type>& b,
   const Teuchos::Array<value_type>& weights,
   const Teuchos::Array<value_type>& points,
-  Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
+  Teuchos::Array< Teuchos::Array<value_type> >& aphi_vals,
   value_type& val1, value_type& val2) const
 {
   ordinal_type nqp = weights.size();
   ordinal_type npc = basis->size();
-  const Teuchos::Array<value_type>& norms = basis->norm_squared();
+  const Teuchos::Array<value_type>& anorms = basis->norm_squared();
 
   // Compute PC expansion of phi_k in original basis
-  evaluateRecurrence(k, a, b, points, phi_vals);
+  evaluateRecurrence(k, a, b, points, aphi_vals);
   for (ordinal_type j=0; j<npc; j++) {
     value_type c = value_type(0);
     for (ordinal_type i=0; i<nqp; i++)
-      c += weights[i]*phi_vals[i][k]*basis_values[i][j];
-    c /= norms[j];
+      c += weights[i]*aphi_vals[i][k]*basis_values[i][j];
+    c /= anorms[j];
     phi_pce_coeffs[j] = c;
   }
 
   // Compute \int phi_k^2(\eta) d\eta
   val1 = value_type(0);
   for (ordinal_type j=0; j<npc; j++)
-    val1 += phi_pce_coeffs[j]*phi_pce_coeffs[j]*norms[j];
+    val1 += phi_pce_coeffs[j]*phi_pce_coeffs[j]*anorms[j];
 
   // Compute \int \eta phi_k^2(\eta) d\eta
   val2 = value_type(0);
@@ -342,15 +308,15 @@ transformCoeffsFromStieltjes(const value_type *in, value_type *out) const
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-cloneWithOrder(ordinal_type p) const
+cloneWithOrder(ordinal_type ap) const
 {
-   return Teuchos::rcp(new Stokhos::StieltjesPCEBasis<ordinal_type,value_type>(p,*this));
+   return Teuchos::rcp(new Stokhos::StieltjesPCEBasis<ordinal_type,value_type>(ap,*this));
 }
 
 template <typename ordinal_type, typename value_type>
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-StieltjesPCEBasis(ordinal_type p, const StieltjesPCEBasis& sbasis) :
-  RecurrenceBasis<ordinal_type, value_type>(p, sbasis),
+StieltjesPCEBasis(ordinal_type ap, const StieltjesPCEBasis& sbasis) :
+  RecurrenceBasis<ordinal_type, value_type>(ap, sbasis),
   pce(sbasis.pce),
   quad(sbasis.quad),
   pce_weights(quad->getQuadWeights()),
@@ -358,7 +324,7 @@ StieltjesPCEBasis(ordinal_type p, const StieltjesPCEBasis& sbasis) :
   pce_vals(sbasis.pce_vals),
   phi_vals(),
   use_pce_quad_points(sbasis.use_pce_quad_points),
-  fromStieltjesMat(p+1,pce->size()),
+  fromStieltjesMat(ap+1,pce->size()),
   project_integrals(sbasis.project_integrals),
   basis(pce->basis()),
   Cijk(sbasis.Cijk),

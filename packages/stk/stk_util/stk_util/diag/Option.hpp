@@ -76,7 +76,7 @@ struct OptionDescription
  * interface so that a help description may be generated.
  *
  */
-struct Option : public OptionDescription
+struct Option
 {
   /**
    * Creates a new <b>Option</b> instance.
@@ -163,18 +163,6 @@ struct Option : public OptionDescription
     return m_value;
   }
 
-  /**
-   * @brief Member function <b>describe</b> prints a description of the option to
-   * the stream.
-   *
-   * @param os      a <b>std::ostream</b> reference to print to
-   *        description to.
-   *
-   * @return      a <b>std::ostream</b> reference to the output
-   *        stream.
-   */
-  virtual std::ostream &describe(std::ostream &os) const;
-
   operator std::string &() {
     return m_value;
   }
@@ -187,7 +175,7 @@ struct Option : public OptionDescription
 };
 
 
-struct OptionMaskName
+struct OptionMaskName : public OptionDescription
 {
   /**
    * Creates a new <b>OptionMaskName</b> instance.
@@ -217,7 +205,7 @@ struct OptionMaskName
     return m_name < o.m_name;
   }
 
-  virtual std::ostream &describe(std::ostream &os) const;
+  virtual std::ostream &describe(std::ostream &os) const override;
 
   std::string    m_name;
   OptionMask    m_mask;
@@ -323,7 +311,7 @@ public:
     m_optionMaskNameMap.mask(name, l_mask, description);
   }
 
-  std::ostream &describe(std::ostream &os) const;
+  std::ostream &describe(std::ostream &os) const override;
 
 protected:
   OptionMaskNameMap    m_optionMaskNameMap;  ///< Mask name vector

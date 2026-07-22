@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_DRIVER_IMPL_HPP__
 #define __TACHO_DRIVER_IMPL_HPP__
@@ -30,11 +22,29 @@ namespace Tacho {
 
 template <typename VT, typename DT>
 Driver<VT, DT>::Driver()
-    : _method(1), _order_connected_graph_separately(0), _m(0), _nnz(0), _ap(), _h_ap(), _aj(), _h_aj(), _perm(),
-      _h_perm(), _peri(), _h_peri(), _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
-      _h_peri_graph(), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024), _serial_thres_size(-1),
-      _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0), _device_level_cut(0), _device_factor_thres(128),
-      _device_solve_thres(128), _variant(2), _nstreams(16), _max_num_superblocks(-1) {}
+    : _method_setup(1), _method(1), _order_connected_graph_separately(true), _graph_algo_type(-1), _m(0), _nnz(0),
+      _ap(), _h_ap(), _aj(), _h_aj(), _perm(), _h_perm(), _peri(), _h_peri(),
+      _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
+      _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024),
+#ifdef TACHO_DEPRECATED_PARAMETERS
+      _serial_thres_size(-1), _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0),
+#endif
+      _device_level_cut(0), _device_factor_thres(64), _device_solve_thres(128),
+      #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+      _variant(2),
+      #else
+      _variant(-1), // sequential by default
+      #endif
+      _nstreams(16), _team_on_user_stream(false), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(0), _pivot_tol(0.0),
+#if defined(KOKKOS_ENABLE_HIP)
+      _store_transpose(true)
+#else
+      _store_transpose(false)
+#endif
+#ifdef TACHO_DEPRECATED_PARAMETERS
+      , _max_num_superblocks(-1)
+#endif
+     {}
 
 ///
 /// duplicate the object
@@ -68,10 +78,12 @@ void Driver<VT, DT>::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - 
                                    const bool is_positive_definite) {
   switch (symmetric) {
   case 0: {
+    _method_setup = LU;
     _method = LU;
     break;
   }
   case 1: {
+    _method_setup = SymLU;
     _method = SymLU;
     break;
   }
@@ -81,9 +93,11 @@ void Driver<VT, DT>::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - 
           std::is_same<value_type, Kokkos::complex<float>>::value ||
           std::is_same<value_type, Kokkos::complex<double>>::value) {
         // real symmetric posdef
+        _method_setup = Cholesky;
         _method = Cholesky;
       }
     } else { // real or complex symmetric indef
+      _method_setup = LDL;
       _method = LDL;
     }
     break;
@@ -95,21 +109,43 @@ void Driver<VT, DT>::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - 
 }
 
 template <typename VT, typename DT>
-void Driver<VT, DT>::setSolutionMethod(const int method) { // 1 - Chol, 2 - LDL, 3 - LU
+void Driver<VT, DT>::setSolutionMethod(const int method) { // 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - LU
   {
     std::stringstream ss;
-    ss << "Error: the given method (" << method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
-    TACHO_TEST_FOR_EXCEPTION(method != Cholesky && method != LDL && method != SymLU, std::logic_error,
+    ss << "Error: the given method (" << method << ") is not supported, 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - SymLU";
+    TACHO_TEST_FOR_EXCEPTION(method != LDL_nopiv && method != Cholesky && method != LDL && method != SymLU, std::logic_error,
                              ss.str().c_str());
   }
+  _method_setup = method;
   _method = method;
 }
 
 template <typename VT, typename DT>
-void Driver<VT, DT>::setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately) {
+void Driver<VT, DT>::setFactorizationMethod(const int method) { // 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - LU
+  {
+    std::stringstream ss;
+    ss << "Error: the given method (" << method << ") is not supported, 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - SymLU";
+    TACHO_TEST_FOR_EXCEPTION(method != LDL_nopiv && method != Cholesky && method != LDL && method != SymLU, std::logic_error,
+                             ss.str().c_str());
+  }
+  if (_method_setup == method || method == 1) {
+    // switch only if it is the same as method_setup or chol
+    _method = method;
+    _N->setSolutionMethod(_method);
+  }
+}
+
+template <typename VT, typename DT>
+void Driver<VT, DT>::setOrderConnectedGraphSeparately(const bool order_connected_graph_separately) {
   _order_connected_graph_separately = order_connected_graph_separately;
 }
 
+template <typename VT, typename DT>
+void Driver<VT, DT>::setGraphAlgorithmType(const int graph_algo_type) {
+  _graph_algo_type = graph_algo_type;
+}
+
+#ifdef TACHO_DEPRECATED_PARAMETERS
 ///
 /// tasking options
 ///
@@ -129,13 +165,16 @@ template <typename VT, typename DT>
 void Driver<VT, DT>::setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks) {
   _max_num_superblocks = max_num_superblocks;
 }
+#endif
 
 ///
 /// Level set tools options
 ///
+#ifdef TACHO_DEPRECATED_PARAMETERS
 template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetScheduling(const bool levelset) {
   _levelset = levelset;
 }
+#endif
 
 template <typename VT, typename DT>
 void Driver<VT, DT>::setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut) {
@@ -150,24 +189,53 @@ void Driver<VT, DT>::setLevelSetOptionDeviceFunctionThreshold(const ordinal_type
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
-#if !defined(TACHO_HAVE_CUSPARSE) && !defined(KOKKOS_ENABLE_HIP)
-  if (variant == 3) {
-    TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "variant 3 requires CuSparse or rocSparce");
-  }
-#endif
+  #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
   if (variant > 3 || variant < 0) {
    TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "levelset algorithm variants range from 0 to 3");
   }
+  #else
+  if (variant > 3 || variant < -1) {
+   TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "levelset algorithm variants range from -1 to 3 (-1 for serial)");
+  }
+  #endif
   _variant = variant;
 }
 
-template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionNumStreams(const ordinal_type nstreams) {
+template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionNumStreams(const ordinal_type nstreams, const bool team_on_user_stream) {
   _nstreams = nstreams;
+  _team_on_user_stream = team_on_user_stream;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::setPivotTolerance(const mag_type pivot_tol) {
+  _pivot_tol = pivot_tol;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::shiftDiagonal(const int option) {
+  _shift_diag = option;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
+  _pivot_tol = 0.0;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance(const int option) {
+  _replace_tiny_pivot = option;
+  if (option == 1) {
+    using arith_traits = ArithTraits<value_type>;
+    _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
+  } else {
+    _pivot_tol = 0.0;
+  }
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::storeExplicitTranspose(bool flag) {
+  _store_transpose = flag;
 }
 
 ///
 /// get interface
 ///
+template <typename VT, typename DT> ordinal_type Driver<VT, DT>::getNumNonZerosU() const { return _nnz_u; }
 template <typename VT, typename DT> ordinal_type Driver<VT, DT>::getNumSupernodes() const { return _nsupernodes; }
 
 template <typename VT, typename DT> typename Driver<VT, DT>::ordinal_type_array Driver<VT, DT>::getSupernodes() const {
@@ -187,11 +255,11 @@ typename Driver<VT, DT>::ordinal_type_array Driver<VT, DT>::getInversePermutatio
 // internal only
 template <typename VT, typename DT> int Driver<VT, DT>::analyze() {
   int r_val(0);
-  if (_m < _small_problem_thres) {
+  if (_m <= _small_problem_thres) {
     /// do nothing
     if (_verbose) {
-      printf("TachoSolver: Analyze\n");
-      printf("====================\n");
+      printf("TachoSolver: Analyze (Small Problem)\n");
+      printf("====================================\n");
       printf("  Linear system A\n");
       printf("             number of equations:                             %10d\n", _m);
       printf("\n");
@@ -209,6 +277,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze() {
         G.setOption(METIS_OPTION_CCORDER, one_i);
       }
 #endif
+      if (_graph_algo_type >= 0) {
+        G.setAlgorithm(_graph_algo_type);
+      }
       G.reorder(_verbose);
 
       _h_perm_graph = G.PermVector();
@@ -226,6 +297,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze() {
           G.setOption(METIS_OPTION_CCORDER, one_i);
         }
 #endif
+        if (_graph_algo_type >= 0) {
+          G.setAlgorithm(_graph_algo_type);
+        }
         G.reorder(_verbose);
 
         _h_perm = G.PermVector();
@@ -250,6 +324,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze_linear_system() 
     symbolic_tools_type S(_m, _h_ap, _h_aj, _h_perm, _h_peri);
     S.symbolicFactorize(_verbose);
 
+    _nnz_u = S.NumNonzerosU();
     _nsupernodes = S.NumSupernodes();
     _stree_level = S.SupernodesTreeLevel();
     _stree_roots = S.SupernodesTreeRoots();
@@ -295,6 +370,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze_condensed_graph(
     S.symbolicFactorize(_verbose);
     S.evaporateSymbolicFactors(_h_aw_graph, _verbose);
 
+    _nnz_u = S.NumNonzerosU();
     _nsupernodes = S.NumSupernodes();
     _stree_level = S.SupernodesTreeLevel();
     _stree_roots = S.SupernodesTreeRoots();
@@ -331,14 +407,18 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze_condensed_graph(
 
 template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
   if (_verbose) {
-    printf("TachoSolver: Initialize\n");
-    printf("=======================\n");
+    printf("TachoSolver: Initialize(method = %d)\n",_method_setup);
+    printf("====================================\n");
+  }
+  if (_method != _method_setup) {
+    // Reset method
+    setFactorizationMethod(_method_setup);
   }
 
   ///
   /// initialize numeric tools
   ///
-  if (_m < _small_problem_thres) {
+  if (_m <= _small_problem_thres) {
     /// do nothing
   } else {
     ///
@@ -347,10 +427,10 @@ template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
     NumericToolsFactory<VT, DT> factory;
     factory.setBaseMember(_method, _m, _ap, _aj, _perm, _peri, _nsupernodes, _supernodes, _gid_super_panel_ptr,
                           _gid_super_panel_colidx, _sid_super_panel_ptr, _sid_super_panel_colidx,
-                          _blk_super_panel_colidx, _stree_parent, _stree_ptr, _stree_children, _stree_level,
-                          _stree_roots, _verbose);
+                          _blk_super_panel_colidx, _stree_parent, _stree_ptr, _stree_children, _stree_level, _stree_roots,
+                          _verbose);
 
-    factory.setLevelSetMember(_variant, _device_level_cut, _device_factor_thres, _device_solve_thres, _nstreams);
+    factory.setLevelSetMember(_variant, _device_level_cut, _device_factor_thres, _device_solve_thres, _store_transpose, _nstreams, _team_on_user_stream);
 
     factory.createObject(_N);
   }
@@ -358,35 +438,103 @@ template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
 }
 
 template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_type_array &ax) {
+  return factorize(ax, _method_setup);
+}
+
+template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_type_array &ax, ordinal_type method) {
+  using arith_traits = ArithTraits<value_type>;
+  if (method != _method) {
+    setFactorizationMethod(method);
+  }
+
+  const mag_type zero(0);
+  mag_type shift(0.0);
+  if (_shift_diag != 0 || _replace_tiny_pivot > 1) {
+    const ordinal_type m = _m;
+    Kokkos::RangePolicy<exec_space> range_policy(0, m);
+
+    // resize workspace (flag may be set per factorization)
+    Kokkos::resize(_dv, _m);
+
+    // Compute alpha = ||A||_2
+    value_type alpha(zero);
+    //for (size_t i=0; i<ax.extent(0); i++) alpha += arith_traits::conj(ax(i)) * ax(i);
+    const auto ap = _ap;
+    const auto aj = _aj;
+    const auto dv = _dv;
+    // * parallel-sum among rows
+    Kokkos::parallel_for(
+      range_policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+        dv(i) = zero;
+        for (size_type k=ap(i); k<ap(i+1); k++) {
+          dv(i) += arith_traits::conj(ax(k)) * ax(k);
+        }
+      });
+    // * atomic_sum row-sums
+    Kokkos::parallel_reduce(
+      range_policy, KOKKOS_LAMBDA (int i, value_type &tmp) {
+        tmp += dv(i);
+      }, alpha);
+    // Compute shift = sqrt(eps) * ||A||_2
+    shift = Kokkos::sqrt(arith_traits::abs(alpha * arith_traits::epsilon()));
+  }
+  // internally keep track of the current shift
+  if (_shift_diag != 0) {
+    _shift = shift;
+  } else {
+    _shift = zero;
+  }
+  // internally save the pivot tol
+  if (_replace_tiny_pivot > 1) {
+    _pivot_tol = shift;
+  } else if (_replace_tiny_pivot != 1) {
+    _pivot_tol = zero;
+  }
+
   if (_verbose) {
     switch (_method) {
+    case LDL_nopiv: {
+      printf("TachoSolver: Factorize LDL (no pivot)\n");
+      printf("=====================================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
+      break;
+    }
     case Cholesky: {
       printf("TachoSolver: Factorize Cholesky\n");
       printf("===============================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case LDL: {
       printf("TachoSolver: Factorize LDL\n");
       printf("==========================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case SymLU: {
       printf("TachoSolver: Factorize SymLU\n");
       printf("============================\n");
+      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
+      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     }
+    if (_m <= _small_problem_thres) {
+      printf( " Small matrix\n" );
+    }
   }
-
-  if (_m < _small_problem_thres) {
-    factorize_small_host(ax);
+  if (_m <= _small_problem_thres) {
+    factorize_small_host(ax, _shift);
   } else {
-    _N->factorize(ax, _verbose);
+    _N->factorize(ax, _store_transpose, _shift, _pivot_tol, _verbose);
   }
   return 0;
 }
 
-template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(const value_type_array &ax) {
+template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(const value_type_array &ax, const mag_type shift) {
   double t_copy(0), t_factor(0);
   {
     Kokkos::Timer timer;
@@ -398,18 +546,21 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       const size_type jbeg = _h_ap(i), jend = _h_ap(i + 1);
       for (size_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = _h_aj(j);
-        const bool flag = ((_method == Cholesky && i <= col) || /// upper
-                           (_method == LDL && i >= col) ||      /// lower
-                           (_method == SymLU));                 /// full matrix
+        const bool flag = ((_method == LDL_nopiv && i <= col) || /// upper
+                           (_method == Cholesky  && i <= col) || /// upper
+                           (_method == LDL && i >= col) ||       /// lower
+                           (_method == SymLU));                  /// full matrix
         if (flag)
           _A(i, col) = h_ax(j);
+        if (i == col) _A(i, col) += value_type(shift);
       }
     }
     t_copy = timer.seconds();
 
     timer.reset();
     switch (_method) {
-    case Cholesky: {
+    case LDL_nopiv:
+    case Cholesky : {
       Tacho::Chol<Uplo::Upper, Algo::External>::invoke(_A);
       break;
     }
@@ -429,7 +580,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     }
     default: {
       std::stringstream ss;
-      ss << "Error: the solution method (" << _method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
+      ss << "Error: the solution method (" << _method << ") is not supported, 0 -  LDL no-pivot, 1 - Chol, 2 - LDL, 3 - SymLU";
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str().c_str());
     }
     }
@@ -437,8 +588,23 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
   }
 
   if (_verbose) {
-    printf("Summary: NumericTools (SmallDenseFactorization)\n");
-    printf("===============================================\n");
+    switch (_method) {
+    case Cholesky: {
+      printf("TachoSolver: Factorize Cholesky (SmallDenseFactorization)\n");
+      printf("=========================================================\n");
+      break;
+    }
+    case LDL: {
+      printf("TachoSolver: Factorize LDL (SmallDenseFactorization)\n");
+      printf("====================================================\n");
+      break;
+    }
+    case SymLU: {
+      printf("TachoSolver: Factorize SymLU (SmallDenseFactorization)\n");
+      printf("======================================================\n");
+      break;
+    }
+    }
     printf("  Time\n");
     printf("             time for copying A into supernodes:              %10.6f s\n", t_copy);
     printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
@@ -453,6 +619,11 @@ template <typename VT, typename DT>
 int Driver<VT, DT>::solve(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t) {
   if (_verbose) {
     switch (_method) {
+    case LDL_nopiv: {
+      printf("TachoSolver: Solve LDL (no pivot)\n");
+      printf("=================================\n");
+      break;
+    }
     case Cholesky: {
       printf("TachoSolver: Solve Cholesky\n");
       printf("===========================\n");
@@ -471,7 +642,7 @@ int Driver<VT, DT>::solve(const value_type_matrix &x, const value_type_matrix &b
     }
   }
 
-  if (_m < _small_problem_thres) {
+  if (_m <= _small_problem_thres) {
     solve_small_host(x, b, t);
   } else {
     TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) || t.extent(1) < x.extent(1), std::logic_error,
@@ -495,7 +666,8 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
 
     timer.reset();
     switch (_method) {
-    case Cholesky: {
+    case LDL_nopiv:
+    case Cholesky : {
       auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x);
       Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
       Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
@@ -545,11 +717,11 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
 
 template <typename VT, typename DT>
 double Driver<VT, DT>::computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x,
-                                               const value_type_matrix &b) {
+                                               const value_type_matrix &b, const mag_type shift) {
   CrsMatrixBase<value_type, device_type> A;
   A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-  return Tacho::computeRelativeResidual(A, x, b);
+  return Tacho::computeRelativeResidual(A, x, b, shift, _verbose);
 }
 
 template <typename VT, typename DT>
@@ -561,9 +733,9 @@ void Driver<VT, DT>::computeSpMV(const value_type_array &ax, const value_type_ma
 }
 
 template <typename VT, typename DT> int Driver<VT, DT>::exportFactorsToCrsMatrix(crs_matrix_type &A) {
-  if (_m < _small_problem_thres) {
+  if (_m <= _small_problem_thres) {
     typedef ArithTraits<value_type> ats;
-    const typename ats::mag_type zero(0);
+    const mag_type zero(0);
 
     /// count nonzero elements in dense U
     const ordinal_type m = _m;
@@ -639,6 +811,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
     _h_perm_graph = ordinal_type_array_host();
     _h_peri_graph = ordinal_type_array_host();
 
+    _nnz_u = 0;
     _nsupernodes = 0;
     _supernodes = ordinal_type_array();
 
@@ -657,11 +830,64 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
     _stree_roots = ordinal_type_array_host();
 
     _A = value_type_matrix_host();
+    _D = value_type_matrix_host();
+    _P = ordinal_type_array_host();
+    _dv = value_type_array();
 
     _verbose = 0;
     _small_problem_thres = 1024;
   }
   return 0;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
+    printf("\n");
+    printf("TachoSolver: Parameters\n");
+    printf("=======================\n");
+    switch (_method) {
+    case LDL_nopiv: {
+      printf("Factorize LDL (no pivot, variant = %d)\n",_variant);
+      break;
+    }
+    case Cholesky: {
+      printf("Factorize Cholesky (variant = %d)\n",_variant);
+      break;
+    }
+    case LDL: {
+      printf("Factorize LDL (variant = %d)\n",_variant);
+      break;
+    }
+    case SymLU: {
+      printf("Factorize SymLU (variant = %d)\n",_variant);
+      break;
+    }
+  }
+  // ** options
+  printf( " verbose             = %d\n", _verbose );             // print
+  printf( " store_transpose     = %s\t (store transpose explicitly)\n", (_store_transpose ? "true" : "false"));
+  printf( " small_problem_thres = %d\t (smaller than this, use lapack)\n\n", _small_problem_thres);
+
+#ifdef TACHO_DEPRECATED_PARAMETERS
+  // // ** tasking options
+  printf( " **DEPRECATED** serial_thres_size = %d (serialization threshold size)\n", _serial_thres_size);
+  printf( " **DEPRECATED** mb = %d (block size for byblocks algorithms)\n", _mb);
+  printf( " **DEPRECATED** nb = %d (panel size for panel algorithms)\n", _nb);
+  printf( " **DEPRECATED** max_num_superblocks = %d (superblocks in the memoyrpool)\n\n", _max_num_superblocks);
+  printf( " **DEPRECATED** front_update_mode = %d (front update mode 0 - lock, 1 - atomic)\n", _front_update_mode);
+#endif
+
+  // ** levelset options
+#ifdef TACHO_DEPRECATED_PARAMETERS
+  printf( " **DEPRECATED** levelset = %s (use level set code instead of tasking)\n", (_levelset ? "true" : "false"));
+#endif
+  printf( " device_level_cut    = %d\t (above this level, matrices are computed on device)\n", _device_level_cut);
+  printf( " device_factor_thres = %d\t (bigger than this threshold, device function is used)\n",  _device_factor_thres);
+  printf( " device_solve_thres  = %d\t (bigger than this threshold, device function is used)\n", _device_solve_thres);
+  printf( " nstreams            = %d\t (on device, multi streams are used)\n\n", _nstreams);
+
+  printf( " pivot_tol           = %e\t (tolerance for tiny pivot perturbation)\n", _pivot_tol);
+
+
 }
 
 } // namespace Tacho

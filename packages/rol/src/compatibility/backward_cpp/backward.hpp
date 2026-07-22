@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 /*
  * backward.hpp
  * Copyright 2013 Google Inc. All Rights Reserved.
@@ -1184,9 +1193,9 @@ private:
 			return r; // damned, that's a stripped file that you got there!
 		}
 
-		r.handle = move(bfd_handle);
-		r.symtab = move(symtab);
-		r.dynamic_symtab = move(dynamic_symtab);
+		r.handle = std::move(bfd_handle);
+		r.symtab = std::move(symtab);
+		r.dynamic_symtab = std::move(dynamic_symtab);
 		return r;
 	}
 
@@ -2045,8 +2054,8 @@ private:
 				// If we have a valid elf handle, return the new elf handle
 				// and file handle and discard the original ones
 				if (debuglink_elf) {
-					elf_handle = move(debuglink_elf);
-					file_handle = move(debuglink_file);
+					elf_handle =  std::move(debuglink_elf);
+					file_handle = std::move(debuglink_file);
 				}
 			}
 		}
@@ -2068,9 +2077,9 @@ private:
 
 		dwarf_handle.reset(dwarf_debug);
 
-		r.file_handle = move(file_handle);
-		r.elf_handle = move(elf_handle);
-		r.dwarf_handle = move(dwarf_handle);
+		r.file_handle  = std::move(file_handle);
+		r.elf_handle   = std::move(elf_handle);
+		r.dwarf_handle = std::move(dwarf_handle);
 
 		return r;
 	}
@@ -3180,7 +3189,6 @@ public:
 	bool is_open() const { return _file->is_open(); }
 
 	lines_t& get_lines(unsigned line_start, unsigned line_count, lines_t& lines) {
-		using namespace std;
 		// This function make uses of the dumbest algo ever:
 		//	1) seek(0)
 		//	2) read lines one by one and discard until line_start
@@ -3192,7 +3200,7 @@ public:
 
 		_file->clear();
 		_file->seekg(0);
-		string line;
+                std::string line;
 		unsigned line_idx;
 
 		for (line_idx = 1; line_idx < line_start; ++line_idx) {
@@ -3590,7 +3598,6 @@ private:
 			Colorize& colorize, Color::type color_code,
 			int context_size)
 	{
-		using namespace std;
 		typedef SnippetFactory::lines_t lines_t;
 
 		lines_t lines = _snippets.get_snippet(source_loc.filename,

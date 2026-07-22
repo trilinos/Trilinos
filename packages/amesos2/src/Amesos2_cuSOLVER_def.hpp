@@ -100,6 +100,10 @@ template <class Matrix, class Vector>
 int
 cuSOLVER<Matrix,Vector>::numericFactorization_impl()
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+#endif
+
   int err = 0;
   if(do_optimization()) { // just supporting one rank right now
     this->matrixA_->returnValues_kokkos_view(device_nzvals_view_);
@@ -160,7 +164,6 @@ cuSOLVER<Matrix,Vector>::solve_impl(
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
     const bool initialize_data = true;
@@ -179,7 +182,7 @@ cuSOLVER<Matrix,Vector>::solve_impl(
   int err = 0;
 
   if ( this->root_ ) {  // Do solve!
-#ifdef HAVE_AMESOS2_TIMER
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
@@ -251,9 +254,12 @@ cuSOLVER<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Paramete
   if( parameterList->isParameter("Reorder") ){
     RCP<const ParameterEntryValidator> reorder_validator = valid_params->getEntry("Reorder").validator();
     parameterList->getEntry("Reorder").setValidator(reorder_validator);
-  }
-
+    }
+#ifdef HAVE_AMESOS2_METIS
   data_.bReorder = parameterList->get<bool>("Reorder", true);
+#else
+  data_.bReorder = parameterList->get<bool>("Reorder", false);
+#endif
 }
 
 template <class Matrix, class Vector>
@@ -262,11 +268,14 @@ cuSOLVER<Matrix,Vector>::getValidParameters_impl() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
-  if( is_null(valid_params) ){
+  if (is_null(valid_params)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
+#ifdef HAVE_AMESOS2_METIS
     pl->set("Reorder", true, "Whether GIDs contiguous");
-
+#else
+    pl->set("Reorder", false, "Whether GIDs contiguous");
+#endif
     valid_params = pl;
   }
 
@@ -293,6 +302,16 @@ cuSOLVER<Matrix,Vector>::loadA_impl(EPhase current_phase)
   }
 
   return true;
+}
+
+template <class Matrix, class Vector>
+void
+cuSOLVER<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                       const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " cuSOLVER current parameters:" << std::endl;
+  out << "  > Reorder = " << (data_.bReorder ? "YES" : "NO") << std::endl;
+  out << std::endl;
 }
 
 template<class Matrix, class Vector>

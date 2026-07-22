@@ -25,12 +25,13 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
-#include <Trilinos_Util_iohb.h>
+#include <Tpetra_Util_iohb.h>
 
 //I/O for Matrix Market files
 #include <MatrixMarket_Tpetra.hpp>
@@ -114,7 +115,7 @@ int main(int argc, char *argv[])
 
     if (MyPID == 0) {
 
-      info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+      info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
       // find maximum NNZ over all rows
       vector<int> rnnz(dim,0);
       for (int *ri=rowind; ri<rowind+nnz; ++ri) {

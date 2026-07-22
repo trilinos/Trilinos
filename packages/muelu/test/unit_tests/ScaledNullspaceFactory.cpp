@@ -21,7 +21,6 @@
 #include <MueLu_ScaledNullspaceFactory.hpp>
 #include <MueLu_NullspaceFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
-#include <MueLu_TentativePFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
 #include <MueLu_SmootherFactory.hpp>
@@ -32,18 +31,12 @@ namespace MueLuTests {
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ScaledNullspaceFactory, Test0, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar, GlobalOrdinal, Node);
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   Teuchos::Array<magnitude_type> results(2);
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
-  // Do not run this test for Epetra
-  if (lib == Xpetra::UseEpetra) {
-    TEST_EQUALITY(1, 1);
-    return;
-  }
 
   // Build a Matrix
   GlobalOrdinal nEle       = 20;

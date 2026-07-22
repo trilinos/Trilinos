@@ -39,6 +39,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Types.hpp"      // for EntityCommInfo
+#include "stk_mesh/base/BulkData.hpp"
 #include "stk_util/util/NamedPair.hpp"
 
 TEST(EntityCommDatabase, testCommMapChangeListener)
@@ -115,5 +116,39 @@ TEST(EntityCommDatabase, insertAndErase)
 
   commDB.erase(entityKeys[1], stk::mesh::EntityCommInfo(SHARED, otherProc));
   EXPECT_TRUE(commDB.entity_comm(entityKeys[1]) == -1);
+}
+
+TEST(EntityCommDatabase, insertAndErase_SYMM_INFO)
+{
+  stk::mesh::EntityCommDatabase commDB;
+  std::vector<int> entityCommIndices(2, -1);
+  std::vector<stk::mesh::EntityKey> entityKeys =
+  {stk::mesh::EntityKey(stk::topology::NODE_RANK, 1),
+   stk::mesh::EntityKey(stk::topology::NODE_RANK, 2)};
+  int owner = 0;
+
+  const unsigned GHOSTED = 1;
+  const int otherProc1 = 1;
+  const int otherProc2 = 2;
+
+  for (unsigned i=0; i<entityKeys.size(); ++i) {
+    std::pair<int, bool> result =
+        commDB.insert(entityKeys[i], stk::mesh::EntityCommInfo(GHOSTED, otherProc1), owner);
+    EXPECT_TRUE(result.second);
+    EXPECT_FALSE(result.first == -1);
+    entityCommIndices[i] = result.first;
+
+    result = commDB.insert(entityKeys[i], stk::mesh::EntityCommInfo(stk::mesh::BulkData::SYMM_INFO+GHOSTED, otherProc2), owner);
+    EXPECT_TRUE(result.second);
+    EXPECT_EQ(entityCommIndices[i], result.first);
+  }
+
+  commDB.erase(entityKeys[0], stk::mesh::BulkData::SYMM_INFO);
+  commDB.erase(entityKeys[1], GHOSTED);
+
+  EXPECT_FALSE(commDB.entity_comm(entityKeys[0]) == -1);
+  EXPECT_TRUE(commDB.entity_comm(entityKeys[1]) == -1);
+
+  EXPECT_TRUE(commDB.comm(entityKeys[1]).empty());
 }
 

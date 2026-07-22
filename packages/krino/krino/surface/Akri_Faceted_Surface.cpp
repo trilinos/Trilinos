@@ -38,8 +38,6 @@ static int find_destination_proc_for_facet(const std::vector<BoundingBox> & proc
 template<class FACET>
 static void unpack_and_append_facets_from_proc(stk::CommSparse & commSparse, const int recvProc, std::vector<FACET> & facetVec)
 {
-  std::array<stk::math::Vector3d,FACET::DIM> facetCoords;
-
   stk::CommBuffer & b = commSparse.recv_buffer(recvProc);
   if (b.remaining())
   {
@@ -248,7 +246,7 @@ static void fill_intersecting_nonlocal_facets(const BoundingBox & localFacetBBox
 }
 
 template<class FACET>
-void Faceted_Surface<FACET>::prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length)
+void Faceted_Surface<FACET>::prepare_to_compute(const double /*time*/, const BoundingBox & point_bbox, const double truncation_length)
 {
   build_local_facets(point_bbox);
 
@@ -350,6 +348,19 @@ stk::math::Vector3d Faceted_Surface<FACET>::closest_point(const stk::math::Vecto
 }
 
 template<class FACET>
+stk::math::Vector3d Faceted_Surface<FACET>::closest_point_normal(const stk::math::Vector3d &x) const
+{
+  if (my_facet_tree->empty())
+    return stk::math::Vector3d::ZERO;
+
+  std::vector<const FACET*> nearestFacets;
+  my_facet_tree->find_closest_entities( x, nearestFacets, 0. );
+  STK_ThrowRequire( !nearestFacets.empty() );
+
+  return compute_closest_point_normal(x, nearestFacets);
+}
+
+template<class FACET>
 size_t Faceted_Surface<FACET>::storage_size() const
 {
   size_t store_size = sizeof(Faceted_Surface<FACET>);
@@ -378,10 +389,17 @@ static std::vector<const FACET*> find_candidate_surface_facets_for_intersection_
 }
 
 template<class FACET>
-std::pair<int, double> Faceted_Surface<FACET>::compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double edgeCrossingTol) const
+std::pair<int, double> Faceted_Surface<FACET>::compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double /*edgeCrossingTol*/) const
 {
-  const double dist0 = point_signed_distance(pt0);
-  const double dist1 = point_signed_distance(pt1);
+  const double narrowBand = (pt0-pt1).length();
+
+  const double dist0 = truncated_point_signed_distance(pt0, narrowBand, narrowBand);
+  if (dist0 == narrowBand)
+    return {0, -1.};
+  const double dist1 = truncated_point_signed_distance(pt1, narrowBand, narrowBand);
+  if (dist1 == narrowBand)
+      return {0, -1.};
+
   if (sign_change(dist0, dist1))
   {
     constexpr double tightEnoughTolToCalcDistanceAtSignedDistCrossing = 0.001;

@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*!
@@ -82,7 +50,7 @@
 // It tends to makes the function declaration easier to read.
 template <class TpetraOperatorType>
 class PowerMethod {
-public:
+ public:
   typedef typename TpetraOperatorType::scalar_type scalar_type;
   typedef typename TpetraOperatorType::local_ordinal_type local_ordinal_type;
   typedef typename TpetraOperatorType::global_ordinal_type global_ordinal_type;
@@ -90,7 +58,8 @@ public:
   // The type of a Tpetra vector with the same template parameters as
   // those of TpetraOperatorType.
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> vec_type;
+                         global_ordinal_type, node_type>
+      vec_type;
   // The type of the norm of the above Tpetra::Vector specialization.
   typedef typename vec_type::mag_type magnitude_type;
 
@@ -110,15 +79,14 @@ public:
   // out: output stream to which to print the current status of the
   //   power method.
   static scalar_type
-  run (const TpetraOperatorType& A,
-       const int niters,
-       const magnitude_type tolerance,
-       std::ostream& out)
-  {
+  run(const TpetraOperatorType& A,
+      const int niters,
+      const magnitude_type tolerance,
+      std::ostream& out) {
     using std::endl;
     typedef Teuchos::ScalarTraits<scalar_type> STS;
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    const int myRank = A.getMap ()->getComm ()->getRank ();
+    const int myRank = A.getMap()->getComm()->getRank();
 
     // Create three vectors for iterating the power method.  Since the
     // power method computes z = A*q, q should be in the domain of A and
@@ -127,15 +95,15 @@ public:
     // get into the habit of thinking whether a particular vector
     // "belongs" in the domain or range of the matrix.)  The residual
     // vector "resid" is of course in the range of A.
-    vec_type q (A.getDomainMap ());
-    vec_type z (A.getRangeMap ());
-    vec_type resid (A.getRangeMap ());
+    vec_type q(A.getDomainMap());
+    vec_type z(A.getRangeMap());
+    vec_type resid(A.getRangeMap());
 
     // Fill the iteration vector z with random numbers to start.
     // Don't have grand expectations about the quality of our
     // pseudorandom number generator, but it is usually good enough
     // for eigensolvers.
-    z.randomize ();
+    z.randomize();
 
     // lambda: Current approximation of the eigenvalue of maximum magnitude.
     // normz: 2-norm of the current iteration vector z.
@@ -148,12 +116,12 @@ public:
     // number operators and know how to convert from a float or
     // double, but don't have conversion operators for int.  Thus,
     // using Teuchos::ScalarTraits makes this code maximally general.
-    scalar_type lambda = STS::zero ();
-    magnitude_type normz = STM::zero ();
-    magnitude_type residual = STM::zero ();
+    scalar_type lambda      = STS::zero();
+    magnitude_type normz    = STM::zero();
+    magnitude_type residual = STM::zero();
 
-    const scalar_type one  = STS::one ();
-    const scalar_type zero = STS::zero ();
+    const scalar_type one  = STS::one();
+    const scalar_type zero = STS::zero();
 
     // How often to report progress in the power method.  Reporting
     // progress requires computing a residual, which can be expensive.
@@ -164,33 +132,32 @@ public:
     // Do the power method, until the method has converged or the
     // maximum iteration count has been reached.
     for (int iter = 0; iter < niters; ++iter) {
-      normz = z.norm2 ();       // Compute the 2-norm of z
-      q.scale (one / normz, z); // q := z / normz
-      A.apply (q, z);           // z := A * q
-      lambda = q.dot (z);       // Approx. max eigenvalue
+      normz = z.norm2();        // Compute the 2-norm of z
+      q.scale(one / normz, z);  // q := z / normz
+      A.apply(q, z);            // z := A * q
+      lambda = q.dot(z);        // Approx. max eigenvalue
 
       // Compute and report the residual norm every reportFrequency
       // iterations, or if we've reached the maximum iteration count.
       if (iter % reportFrequency == 0 || iter + 1 == niters) {
-        resid.update (one, z, -lambda, q, zero); // z := A*q - lambda*q
-        residual = resid.norm2 (); // 2-norm of the residual vector
-	if (myRank == 0) {
-	  out << "Iteration " << iter << ":" << endl
-	      << "- lambda = " << lambda << endl
-	      << "- ||A*q - lambda*q||_2 = " << residual << endl;
-	}
+        resid.update(one, z, -lambda, q, zero);  // z := A*q - lambda*q
+        residual = resid.norm2();                // 2-norm of the residual vector
+        if (myRank == 0) {
+          out << "Iteration " << iter << ":" << endl
+              << "- lambda = " << lambda << endl
+              << "- ||A*q - lambda*q||_2 = " << residual << endl;
+        }
       }
       if (residual < tolerance) {
-	if (myRank == 0) {
-	  out << "Converged after " << iter << " iterations" << endl;
-	}
+        if (myRank == 0) {
+          out << "Converged after " << iter << " iterations" << endl;
+        }
         break;
-      }
-      else if (iter+1 == niters) {
-	if (myRank == 0) {
-	  out << "Failed to converge after " << niters
-	      << " iterations" << endl;
-	}
+      } else if (iter + 1 == niters) {
+        if (myRank == 0) {
+          out << "Failed to converge after " << niters
+              << " iterations" << endl;
+        }
         break;
       }
     }
@@ -198,18 +165,16 @@ public:
   }
 };
 
-int
-main (int argc, char *argv[])
-{
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::ArrayRCP;
+int main(int argc, char* argv[]) {
+  using std::cout;
+  using std::endl;
   using Teuchos::arcp;
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
-  using std::cout;
-  using std::endl;
 
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::Vector<>::scalar_type scalar_type;
@@ -220,16 +185,17 @@ main (int argc, char *argv[])
   typedef typename crs_matrix_type::nonconst_global_inds_host_view_type gids_type;
   typedef typename crs_matrix_type::nonconst_values_host_view_type vals_type;
 
-  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
     // Never create Tpetra objects at main() scope.
     // Never allow them to persist past ScopeGuard's destructor.
-    auto comm = Tpetra::getDefaultComm ();
+    auto comm = Tpetra::getDefaultComm();
 
     const size_t myRank = comm->getRank();
-    //const size_t numProcs = comm->getSize();
+    // const size_t numProcs = comm->getSize();
     if (myRank == 0) {
-      cout << Tpetra::version () << endl << endl;
+      cout << Tpetra::version() << endl
+           << endl;
     }
 
     // The number of rows and columns in the matrix.
@@ -239,9 +205,9 @@ main (int argc, char *argv[])
     // equations on each processor.
     const global_ordinal_type indexBase = 0;
     RCP<const map_type> map =
-      rcp (new map_type (numGblIndices, indexBase, comm));
+        rcp(new map_type(numGblIndices, indexBase, comm));
 
-    const size_t numMyElements = map->getLocalNumElements ();
+    const size_t numMyElements = map->getLocalNumElements();
 
     // If you like, you may get the list of global indices that the
     // calling process owns.  This is unnecessary if you don't mind
@@ -251,42 +217,43 @@ main (int argc, char *argv[])
     //   map->getLocalElementList ();
 
     if (myRank == 0) {
-      cout << endl << "Creating the sparse matrix" << endl;
+      cout << endl
+           << "Creating the sparse matrix" << endl;
     }
 
     // Create a Tpetra sparse matrix whose rows have distribution
     // given by the Map.  We expect at most three entries per row.
-    RCP<crs_matrix_type> A (new crs_matrix_type (map, 3));
+    RCP<crs_matrix_type> A(new crs_matrix_type(map, 3));
 
     // Fill the sparse matrix, one row at a time.
-    const scalar_type two = static_cast<scalar_type> (2.0);
-    const scalar_type negOne = static_cast<scalar_type> (-1.0);
+    const scalar_type two    = static_cast<scalar_type>(2.0);
+    const scalar_type negOne = static_cast<scalar_type>(-1.0);
     for (local_ordinal_type lclRow = 0;
-	 lclRow < static_cast<local_ordinal_type> (numMyElements);
-	 ++lclRow) {
-      const global_ordinal_type gblRow = map->getGlobalElement (lclRow);
+         lclRow < static_cast<local_ordinal_type>(numMyElements);
+         ++lclRow) {
+      const global_ordinal_type gblRow = map->getGlobalElement(lclRow);
       // A(0, 0:1) = [2, -1]
       if (gblRow == 0) {
-	A->insertGlobalValues (gblRow,
-			       tuple<global_ordinal_type> (gblRow, gblRow + 1),
-			       tuple<scalar_type> (two, negOne));
+        A->insertGlobalValues(gblRow,
+                              tuple<global_ordinal_type>(gblRow, gblRow + 1),
+                              tuple<scalar_type>(two, negOne));
       }
       // A(N-1, N-2:N-1) = [-1, 2]
-      else if (static_cast<Tpetra::global_size_t> (gblRow) == numGblIndices - 1) {
-	A->insertGlobalValues (gblRow,
-			       tuple<global_ordinal_type> (gblRow - 1, gblRow),
-			       tuple<scalar_type> (negOne, two));
+      else if (static_cast<Tpetra::global_size_t>(gblRow) == numGblIndices - 1) {
+        A->insertGlobalValues(gblRow,
+                              tuple<global_ordinal_type>(gblRow - 1, gblRow),
+                              tuple<scalar_type>(negOne, two));
       }
       // A(i, i-1:i+1) = [-1, 2, -1]
       else {
-	A->insertGlobalValues (gblRow,
-			       tuple<global_ordinal_type> (gblRow - 1, gblRow, gblRow + 1),
-			       tuple<scalar_type> (negOne, two, negOne));
+        A->insertGlobalValues(gblRow,
+                              tuple<global_ordinal_type>(gblRow - 1, gblRow, gblRow + 1),
+                              tuple<scalar_type>(negOne, two, negOne));
       }
     }
 
     // Tell the sparse matrix that we are done adding entries to it.
-    A->fillComplete ();
+    A->fillComplete();
 
     // Number of iterations
     const int niters = 500;
@@ -295,9 +262,10 @@ main (int argc, char *argv[])
 
     // Run the power method and report the result.
     scalar_type lambda =
-      PowerMethod<crs_matrix_type>::run (*A, niters, tolerance, cout);
+        PowerMethod<crs_matrix_type>::run(*A, niters, tolerance, cout);
     if (myRank == 0) {
-      cout << endl << "Estimated max eigenvalue: " << lambda << endl;
+      cout << endl
+           << "Estimated max eigenvalue: " << lambda << endl;
     }
 
     //
@@ -311,21 +279,21 @@ main (int argc, char *argv[])
     // Increase diagonal dominance
     //
     if (myRank == 0) {
-      cout << endl << "Increasing magnitude of A(0,0), "
-	"solving again" << endl;
+      cout << endl
+           << "Increasing magnitude of A(0,0), solving again" << endl;
     }
 
     // Must call resumeFill() before changing the matrix.
-    A->resumeFill ();
+    A->resumeFill();
 
-    if (A->getRowMap ()->isNodeGlobalElement (0)) {
-      // Get a copy of the row with with global index 0.  Modify the
+    if (A->getRowMap()->isNodeGlobalElement(0)) {
+      // Get a copy of the row with global index 0.  Modify the
       // diagonal entry of that row.  Submit the modified values to
       // the matrix.
       const global_ordinal_type idOfFirstRow = 0;
-      size_t numEntriesInRow = A->getNumEntriesInGlobalRow (idOfFirstRow);
-      vals_type rowvals ("vals",numEntriesInRow);
-      gids_type rowinds ("gids",numEntriesInRow);
+      size_t numEntriesInRow                 = A->getNumEntriesInGlobalRow(idOfFirstRow);
+      vals_type rowvals("vals", numEntriesInRow);
+      gids_type rowinds("gids", numEntriesInRow);
 
       // Fill rowvals and rowinds with the values resp. (global)
       // column indices of the sparse matrix entries owned by the
@@ -343,12 +311,12 @@ main (int argc, char *argv[])
       // The parentheses after rowinds and rowvalues indicate "a view
       // of the Array's data."  Array::operator() returns an
       // ArrayView.
-      A->getGlobalRowCopy (idOfFirstRow, rowinds, rowvals, numEntriesInRow);
+      A->getGlobalRowCopy(idOfFirstRow, rowinds, rowvals, numEntriesInRow);
       for (size_t i = 0; i < numEntriesInRow; i++) {
-	if (rowinds[i] == idOfFirstRow) {
-	  // We have found the diagonal entry; modify it.
-	  rowvals[i] *= 10.0;
-	}
+        if (rowinds[i] == idOfFirstRow) {
+          // We have found the diagonal entry; modify it.
+          rowvals[i] *= 10.0;
+        }
       }
       // "Replace global values" means modify the values, but not the
       // structure of the sparse matrix.  If the specified columns
@@ -356,18 +324,19 @@ main (int argc, char *argv[])
       // method throws an exception.  If you want to modify the
       // structure (by adding new entries), you'll need to call
       // insertGlobalValues().
-      A->replaceGlobalValues (idOfFirstRow, rowinds, rowvals);
+      A->replaceGlobalValues(idOfFirstRow, rowinds, rowvals);
     }
 
     // Call fillComplete() again to signal that we are done changing the
     // matrix.
-    A->fillComplete ();
+    A->fillComplete();
 
     // Run the power method again.
-    lambda = PowerMethod<crs_matrix_type>::run (*A, niters, tolerance,
-						cout);
+    lambda = PowerMethod<crs_matrix_type>::run(*A, niters, tolerance,
+                                               cout);
     if (myRank == 0) {
-      cout << endl << "Estimated max eigenvalue: " << lambda << endl;
+      cout << endl
+           << "Estimated max eigenvalue: " << lambda << endl;
     }
 
     // This tells the Trilinos test framework that the test passed.
@@ -377,4 +346,3 @@ main (int argc, char *argv[])
   }
   return 0;
 }
-

@@ -1,6 +1,6 @@
 ADD_SUBDIRECTORY(models)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(
+ROL_COPY_FILES_TO_BINARY_DIR(
   Project3dimDataCopy
   SOURCE_FILES
     mesh/diffuser-tet-clip.jou

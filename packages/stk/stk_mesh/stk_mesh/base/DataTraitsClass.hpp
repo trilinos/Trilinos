@@ -110,7 +110,7 @@ public:
     buf.unpack<T>( x , n ); 
   }  
 
-  void print( std::ostream & s , const void * v , std::size_t n ) const
+  void print( std::ostream & , const void * , std::size_t ) const
   { STK_ThrowErrorMsg( "not supported" ); }
 
   void sum( void * , const void * , std::size_t ) const

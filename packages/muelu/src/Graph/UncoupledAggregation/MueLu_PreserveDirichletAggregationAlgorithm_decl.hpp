@@ -20,7 +20,7 @@
 
 namespace MueLu {
 /*!
-  @class PreserveDirichletAggregationAlgorithm class.
+  @class PreserveDirichletAggregationAlgorithm
   @brief Builds one-to-one aggregates for all Dirichlet boundary nodes. For some applications this might
          be necessary. (default = off)
 

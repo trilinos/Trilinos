@@ -1,43 +1,10 @@
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <iostream>
@@ -48,8 +15,7 @@
 #include "ROL_Ptr.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_StackedTimer.hpp"
 
 #include "ROL_Stream.hpp"
@@ -69,14 +35,14 @@ using size_type = std::vector<RealT>::size_type;
 
 void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
-int main( int argc, char* argv[] ) 
+int main( int argc, char* argv[] )
 {
   using ROL::Ptr;
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
-  int myRank = Teuchos::GlobalMPISession::getRank();
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
+  int myRank = ROL::GlobalMPISession::getRank();
 
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
@@ -137,7 +103,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  using RealT             = double;
   // using size_type         = std::vector<RealT>::size_type;  // Unused
   // using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
@@ -191,11 +156,11 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   }
 
   // Add MGRIT parameter list stuff
-  int sweeps    = pl->get("MGRIT Sweeps", 1); 
+  int sweeps    = pl->get("MGRIT Sweeps", 1);
   RealT omega   = pl->get("MGRIT Relaxation",2.0/3.0);
   int numLevels = pl->get("MGRIT Levels",3);
   double relTol = pl->get("MGRIT Krylov Relative Tolerance",1e-4);
-  
+
   if(myRank==0) {
     (*outStream) << "Sweeps = " << sweeps    << std::endl;
     (*outStream) << "Omega = "  << omega     << std::endl;
@@ -245,7 +210,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   if(myRank==0)
     (*outStream) << std::endl;
 
-  // check jacobi is reducing the norm 
+  // check jacobi is reducing the norm
   if(false) {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
@@ -264,7 +229,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
         res_0 = norm_res;
       if(myRank==0)
         (*outStream) << "NORM RES = " << norm_res << "  " << norm_res/res_0<< std::endl;
-    
+
       pint_con->applyWathenInverse(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
 
       kkt_x_out->axpy(omega,*kkt_diff);                                                // x_{i+1} = x_i + omega*dx_i
@@ -303,7 +268,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     Teuchos::ParameterList parlist;
     parlist.set("Absolute Tolerance",1.e-1);
     parlist.set("Relative Tolerance",relTol);
- 
+
     ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
 
     int flag = 0, iter = 0;

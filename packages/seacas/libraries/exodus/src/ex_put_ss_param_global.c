@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -32,9 +32,9 @@
 int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int *side_cnts,
                            const void_int *df_cnts)
 {
-  int varid;
+  int varid = 0;
 
-  int  status;
+  int  status = 0;
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
@@ -44,7 +44,7 @@ int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int
   }
 
   /* Get the variable ID for the vector of global side set IDs */
-  if ((status = nc_inq_varid(exoid, VAR_SS_IDS_GLOBAL, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_SS_IDS_GLOBAL, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_SS_IDS_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -59,7 +59,7 @@ int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int
   else {
     status = nc_put_var_int(exoid, varid, global_ids);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable \"%s\" to file ID %d",
              VAR_SS_IDS_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -68,7 +68,7 @@ int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int
   }
 
   /* Get the variable ID for the vector of global side-set side counts */
-  if ((status = nc_inq_varid(exoid, VAR_SS_SIDE_CNT_GLOBAL, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_SS_SIDE_CNT_GLOBAL, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_SS_SIDE_CNT_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -83,7 +83,7 @@ int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int
   else {
     status = nc_put_var_int(exoid, varid, side_cnts);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put variable \"%s\" in file ID %d",
              VAR_SS_SIDE_CNT_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -92,7 +92,7 @@ int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int
   }
 
   /* Get the variable ID for the number of dist. factors in each side set */
-  if ((status = nc_inq_varid(exoid, VAR_SS_DF_CNT_GLOBAL, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_SS_DF_CNT_GLOBAL, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_SS_DF_CNT_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -107,7 +107,7 @@ int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int
   else {
     status = nc_put_var_int(exoid, varid, df_cnts);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output variable \"%s\" in file ID %d",
              VAR_SS_DF_CNT_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

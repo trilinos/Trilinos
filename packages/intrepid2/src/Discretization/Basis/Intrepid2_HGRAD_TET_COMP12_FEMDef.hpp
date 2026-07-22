@@ -126,23 +126,23 @@ namespace Intrepid2 {
       return -1;
     }
     
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename outputValueViewType,
              typename inputPointViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_TET_COMP12_FEM::Serial<opType>::
+    Basis_HGRAD_TET_COMP12_FEM::Serial<OpType>::
     getValues(       outputValueViewType output,
                const inputPointViewType  input ) {
-      switch (opType) {
-      case OPERATOR_VALUE: {
+
+      if constexpr (OpType == OPERATOR_VALUE) {
         const typename inputPointViewType::value_type r = input(0);
         const typename inputPointViewType::value_type s = input(1);
         const typename inputPointViewType::value_type t = input(2);
 
         // initialize output 
         for (auto i=0;i<10;++i) 
-          output.access(i) = 0.0;
+          output(i) = 0.0;
         
         const auto subtet = getLocalSubTet( r, s, t );
         
@@ -153,133 +153,129 @@ namespace Intrepid2 {
           typename inputPointViewType::value_type aux = 0.0;
           switch (subtet) {
           case 0:
-            output.access(0) = 1. - 2. * (r + s + t);
-            output.access(4) = 2. * r;
-            output.access(6) = 2. * s;
-            output.access(7) = 2. * t;
+            output(0) = 1. - 2. * (r + s + t);
+            output(4) = 2. * r;
+            output(6) = 2. * s;
+            output(7) = 2. * t;
             break;
           case 1:
-            output.access(1) = 2. * r - 1.;
-            output.access(4) = 2. - 2. * (r + s + t);
-            output.access(5) = 2. * s;
-            output.access(8) = 2. * t;
+            output(1) = 2. * r - 1.;
+            output(4) = 2. - 2. * (r + s + t);
+            output(5) = 2. * s;
+            output(8) = 2. * t;
             break;
           case 2:
-            output.access(2) = 2. * s - 1.;
-            output.access(5) = 2. * r;
-            output.access(6) = 2. - 2. * (r + s + t);
-            output.access(9) = 2. * t;
+            output(2) = 2. * s - 1.;
+            output(5) = 2. * r;
+            output(6) = 2. - 2. * (r + s + t);
+            output(9) = 2. * t;
             break;
           case 3:
-            output.access(3) = 2. * t - 1.;
-            output.access(7) = 2. - 2. * (r + s + t);
-            output.access(8) = 2. * r;
-            output.access(9) = 2. * s;
+            output(3) = 2. * t - 1.;
+            output(7) = 2. - 2. * (r + s + t);
+            output(8) = 2. * r;
+            output(9) = 2. * s;
             break;
           case 4:
-            output.access(4) = 1. - 2. * (s + t);
-            output.access(5) = 2. * (r + s) - 1.;
-            output.access(8) = 2. * (r + t) - 1.;
+            output(4) = 1. - 2. * (s + t);
+            output(5) = 2. * (r + s) - 1.;
+            output(8) = 2. * (r + t) - 1.;
             aux = 2. - 4. * r;
             break;
           case 5:
-            output.access(5) = 2. * (r + s) - 1.;
-            output.access(8) = 2. * (r + t) - 1.;
-            output.access(9) = 2. * (s + t) - 1.;
+            output(5) = 2. * (r + s) - 1.;
+            output(8) = 2. * (r + t) - 1.;
+            output(9) = 2. * (s + t) - 1.;
             aux = 4. - 4. * (r + s + t);
             break;
           case 6:
-            output.access(7) = 1. - 2. * (r + s);
-            output.access(8) = 2. * (r + t) - 1.;
-            output.access(9) = 2. * (s + t) - 1.;
+            output(7) = 1. - 2. * (r + s);
+            output(8) = 2. * (r + t) - 1.;
+            output(9) = 2. * (s + t) - 1.;
             aux = 2. - 4. * t;
             break;
           case 7:
-            output.access(4) = 1. - 2. * (s + t);
-            output.access(7) = 1. - 2. * (r + s);
-            output.access(8) = 2. * (r + t) - 1.;
+            output(4) = 1. - 2. * (s + t);
+            output(7) = 1. - 2. * (r + s);
+            output(8) = 2. * (r + t) - 1.;
             aux = 4. * s;
             break;
           case 8:
-            output.access(4) = 1. - 2. * (s + t);
-            output.access(5) = 2. * (r + s) - 1.;
-            output.access(6) = 1. - 2. * (r + t);
+            output(4) = 1. - 2. * (s + t);
+            output(5) = 2. * (r + s) - 1.;
+            output(6) = 1. - 2. * (r + t);
             aux = 4. * t;
             break;
           case 9:
-            output.access(5) = 2. * (r + s) - 1.;
-            output.access(6) = 1. - 2. * (r + t);
-            output.access(9) = 2. * (s + t) - 1.;
+            output(5) = 2. * (r + s) - 1.;
+            output(6) = 1. - 2. * (r + t);
+            output(9) = 2. * (s + t) - 1.;
             aux = 2. - 4. * s;
             break;
           case 10:
-            output.access(6) = 1. - 2. * (r + t);
-            output.access(7) = 1. - 2. * (r + s);
-            output.access(9) = 2. * (s + t) - 1.;
+            output(6) = 1. - 2. * (r + t);
+            output(7) = 1. - 2. * (r + s);
+            output(9) = 2. * (s + t) - 1.;
             aux = 4. * r;
             break;
           case 11:
-            output.access(4) = 1. - 2. * (s + t);
-            output.access(6) = 1. - 2. * (r + t);
-            output.access(7) = 1. - 2. * (r + s);
+            output(4) = 1. - 2. * (s + t);
+            output(6) = 1. - 2. * (r + t);
+            output(7) = 1. - 2. * (r + s);
             aux = 4. * (r + s + t) - 2.;
             break;
           }
           for (auto i=4;i<10;++i)
-            output.access(i) += aux/6.0;
+            output(i) += aux/6.0;
         }
-        break;
       }
-      case OPERATOR_GRAD: {
+      else if constexpr (OpType == OPERATOR_GRAD) {
         const typename inputPointViewType::value_type r = input(0);
         const typename inputPointViewType::value_type s = input(1);
         const typename inputPointViewType::value_type t = input(2);
         
-        output.access(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
-        output.access(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
-        output.access(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;
-        output.access(1,0) = -0.375 + (5*r)/2.;
-        output.access(1,1) = 0.;
-        output.access(1,2) = 0.;
-        output.access(2,0) = 0.;
-        output.access(2,1) = -0.375 + (5*s)/2.;
-        output.access(2,2) = 0.;
-        output.access(3,0) = 0.;
-        output.access(3,1) = 0.;
-        output.access(3,2) = -0.375 + (5*t)/2.;
-        output.access(4,0) = (-35*(-1 + 2*r + s + t))/12.;
-        output.access(4,1) = (-4 - 35*r + 5*s + 10*t)/12.;
-        output.access(4,2) = (-4 - 35*r + 10*s + 5*t)/12.;
-        output.access(5,0) = (-1 + 5*r + 40*s - 5*t)/12.;
-        output.access(5,1) = (-1 + 40*r + 5*s - 5*t)/12.;
-        output.access(5,2) = (-5*(-1 + r + s + 2*t))/12.;
-        output.access(6,0) = (-4 + 5*r - 35*s + 10*t)/12.;
-        output.access(6,1) = (-35*(-1 + r + 2*s + t))/12.;
-        output.access(6,2) = (-4 + 10*r - 35*s + 5*t)/12.;
-        output.access(7,0) = (-4 + 5*r + 10*s - 35*t)/12.;
-        output.access(7,1) = (-4 + 10*r + 5*s - 35*t)/12.;
-        output.access(7,2) = (-35*(-1 + r + s + 2*t))/12.;
-        output.access(8,0) = (-1 + 5*r - 5*s + 40*t)/12.;
-        output.access(8,1) = (-5*(-1 + r + 2*s + t))/12.;
-        output.access(8,2) = (-1 + 40*r - 5*s + 5*t)/12.;
-        output.access(9,0) = (-5*(-1 + 2*r + s + t))/12.;
-        output.access(9,1) = (-1 - 5*r + 5*s + 40*t)/12.;
-        output.access(9,2) = (-1 - 5*r + 40*s + 5*t)/12.;
-        break;
+        output(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
+        output(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
+        output(0,2) = (-17 + 20*r + 20*s + 20*t)/8.;
+        output(1,0) = -0.375 + (5*r)/2.;
+        output(1,1) = 0.;
+        output(1,2) = 0.;
+        output(2,0) = 0.;
+        output(2,1) = -0.375 + (5*s)/2.;
+        output(2,2) = 0.;
+        output(3,0) = 0.;
+        output(3,1) = 0.;
+        output(3,2) = -0.375 + (5*t)/2.;
+        output(4,0) = (-35*(-1 + 2*r + s + t))/12.;
+        output(4,1) = (-4 - 35*r + 5*s + 10*t)/12.;
+        output(4,2) = (-4 - 35*r + 10*s + 5*t)/12.;
+        output(5,0) = (-1 + 5*r + 40*s - 5*t)/12.;
+        output(5,1) = (-1 + 40*r + 5*s - 5*t)/12.;
+        output(5,2) = (-5*(-1 + r + s + 2*t))/12.;
+        output(6,0) = (-4 + 5*r - 35*s + 10*t)/12.;
+        output(6,1) = (-35*(-1 + r + 2*s + t))/12.;
+        output(6,2) = (-4 + 10*r - 35*s + 5*t)/12.;
+        output(7,0) = (-4 + 5*r + 10*s - 35*t)/12.;
+        output(7,1) = (-4 + 10*r + 5*s - 35*t)/12.;
+        output(7,2) = (-35*(-1 + r + s + 2*t))/12.;
+        output(8,0) = (-1 + 5*r - 5*s + 40*t)/12.;
+        output(8,1) = (-5*(-1 + r + 2*s + t))/12.;
+        output(8,2) = (-1 + 40*r - 5*s + 5*t)/12.;
+        output(9,0) = (-5*(-1 + 2*r + s + t))/12.;
+        output(9,1) = (-1 - 5*r + 5*s + 40*t)/12.;
+        output(9,2) = (-1 - 5*r + 40*s + 5*t)/12.;
       }
-      case OPERATOR_MAX: {
+      else if constexpr (OpType == OPERATOR_MAX) {
         const ordinal_type jend = output.extent(1);
         const ordinal_type iend = output.extent(0);
 
         for (ordinal_type j=0;j<jend;++j)
           for (auto i=0;i<iend;++i)
-            output.access(i, j) = 0.0;
-        break;
+            output(i, j) = 0.0;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true , 
                                   ">>> ERROR (Basis_HGRAD_TET_COMP12_FEM): Operator type not implemented" );
-      }
       }
     }
 
@@ -349,12 +345,13 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   Basis_HGRAD_TET_COMP12_FEM<DT,OT,PT>::
   Basis_HGRAD_TET_COMP12_FEM() {
-    this->basisCardinality_  = 10;
-    this->basisDegree_       = 1;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<11> >() );
-    this->basisType_         = BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+    const ordinal_type spaceDim = 3;
+    this->basisCardinality_     = 10;
+    this->basisDegree_          = 1;
+    this->basisCellTopologyKey_ = shards::Tetrahedron<4>::key;
+    this->basisType_            = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
     {
       // Basis-dependent intializations
@@ -391,7 +388,7 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_, spaceDim);
 
     dofCoords(0,0) = 0.0;   dofCoords(0,1) = 0.0; dofCoords(0,2) = 0.0;
     dofCoords(1,0) = 1.0;   dofCoords(1,1) = 0.0; dofCoords(1,2) = 0.0;
@@ -407,6 +404,53 @@ namespace Intrepid2 {
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
-}
 
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_TET_COMP12_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perThreadSpaceSize = 0;
+  }
+
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_TET_COMP12_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim <= 0) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_COMP12_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      (void) threadScratchLevel; //avoid unused variable warning
+
+      const int numPoints = inputPoints.extent(0);
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HGRAD_TET_COMP12_FEM::Serial<OPERATOR_VALUE>::getValues( output, input);
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HGRAD_TET_COMP12_FEM::Serial<OPERATOR_GRAD>::getValues( output, input);
+          });
+          break;
+        default: {}
+    }
+  }
+  
+}// namespace Intrepid2
 #endif

@@ -77,7 +77,6 @@
 
 /* Tpetra timers */
 #cmakedefine HAVE_TPETRA_MMM_TIMINGS
-#cmakedefine HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
 /* Define when enabling Kokkos in Tpetra */
 #cmakedefine HAVE_TPETRACORE_KOKKOS

@@ -19,7 +19,7 @@
 namespace MueLu {
 
 /*!
-  @class StructuredLineDetectionFactory class.
+  @class StructuredLineDetectionFactory
   @brief Factory building line detection information on structured meshes
 */
 

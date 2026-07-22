@@ -34,7 +34,7 @@ public:
   {
     elem_fixture.generate_mesh();
     check_entity_counts();
-    Phase_Support::get(stk_meta()).add_decomposed_part(stk_meta().universal_part());
+    Phase_Support::get(stk_meta()).force_cdfem_use_case_for_minimal_unit_tests();
     Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
     const NodeToCapturedDomainsMap nodesToCapturedDomains;
     interfaceGeometry = std::make_unique<LevelSetInterfaceGeometry>(AuxMetaData::get(stk_meta()).active_part(), CDFEM_Support::get(stk_meta()), Phase_Support::get(stk_meta()));

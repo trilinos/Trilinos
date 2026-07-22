@@ -1,47 +1,11 @@
-/*
-//@HEADER
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //                Shards : Shared Discretization Tools
-//                 Copyright 2008, 2011 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Carter Edwards (hcedwar@sandia.gov),
-//                    Pavel Bochev (pbboche@sandia.gov), or
-//                    Denis Ridzal (dridzal@sandia.gov).
-//
-// ************************************************************************
-//@HEADER
-*/
+// Copyright 2008-2011 NTESS and the Shards contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #include <Shards_CellTopologyManagedData.hpp>
 
@@ -183,7 +147,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   const unsigned                                  node_count_,
   const std::vector< const CellTopologyData * > & edges ,
   const std::vector< unsigned >                 & edge_node_map ,
-  const CellTopologyData                        * base )
+  const CellTopologyData                        * pbase )
   : m_name(name_),
     m_subcell(),
     m_node_map()
@@ -200,13 +164,13 @@ CellTopologyManagedData::CellTopologyManagedData(
     if(node_count_edge0 != edges[i]->node_count ) edge_homogeneity = false;
   }
 
-  const bool error_base = base && (
-    base->base         != base ||
-    base->vertex_count != base->node_count ||
-    base->vertex_count != vertex_count_ ||
-    base->edge_count   != edges.size() );
+  const bool error_base = pbase && (
+    pbase->base         != pbase ||
+    pbase->vertex_count != pbase->node_count ||
+    pbase->vertex_count != vertex_count_ ||
+    pbase->edge_count   != edges.size() );
 
-  const bool error_base_self = ! base && ( vertex_count_ != node_count_ );
+  const bool error_base_self = ! pbase && ( vertex_count_ != node_count_ );
 
   const bool error_edge = edge_map_size != edge_node_map.size();
 
@@ -231,7 +195,7 @@ CellTopologyManagedData::CellTopologyManagedData(
     edge_map_size += edges[i]->node_count ;
   }
 
-  base = (base == NULL ? this : base) ;                            // PBB 12-03-08
+  pbase = (pbase == NULL ? this : pbase) ;                            // PBB 12-03-08
   name = m_name.c_str();
   key  = cellTopologyKey( 2, 0, edge_count_, vertex_count_, node_count_ );
   dimension              = 2 ;
@@ -266,7 +230,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   const std::vector< unsigned >                 & edge_node_map ,
   const std::vector< const CellTopologyData * > & faces ,
   const std::vector< unsigned >                 & face_node_map ,
-  const CellTopologyData                        * base ) 
+  const CellTopologyData                        * pbase ) 
   : m_name(name_),
     m_subcell(),
     m_node_map()
@@ -291,13 +255,13 @@ CellTopologyManagedData::CellTopologyManagedData(
   }
   
   // Set error flags for base, edges and faces
-  const bool error_base = base && (base->base         != base             ||
-                                   base->vertex_count != base->node_count ||
-                                   base->vertex_count != vertex_count_    ||
-                                   base->edge_count   != edges.size()     ||
-                                   base->side_count   != faces.size() );
+  const bool error_base = pbase && (pbase->base         != pbase             ||
+                                   pbase->vertex_count != pbase->node_count ||
+                                   pbase->vertex_count != vertex_count_    ||
+                                   pbase->edge_count   != edges.size()     ||
+                                   pbase->side_count   != faces.size() );
   
-  const bool error_base_self = ! base && ( vertex_count_ != node_count_ );
+  const bool error_base_self = ! pbase && ( vertex_count_ != node_count_ );
   
   const bool error_edge = edge_map_size != edge_node_map.size();
   
@@ -342,7 +306,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   }
   
   // Fill CellTopologyData with custom cell data: default base is the custom cell itself
-  base = (base == NULL ? this : base) ;                           
+  pbase = (pbase == NULL ? this : pbase) ;                           
   name = m_name.c_str();
   key  = cellTopologyKey( 3, 
                           face_count_, 

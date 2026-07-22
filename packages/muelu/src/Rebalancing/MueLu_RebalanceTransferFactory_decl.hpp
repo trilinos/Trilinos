@@ -30,7 +30,7 @@
 namespace MueLu {
 
 /*!
-  @class RebalanceTransferFactory class.
+  @class RebalanceTransferFactory
   @brief Applies permutation to grid transfer operators.
   @ingroup MueLuTransferClasses
 */
@@ -48,10 +48,10 @@ class RebalanceTransferFactory : public TwoLevelFactoryBase {
   //@{
 
   //! Constructor.
-  RebalanceTransferFactory() {}
+  RebalanceTransferFactory();
 
   //! Destructor.
-  virtual ~RebalanceTransferFactory() {}
+  virtual ~RebalanceTransferFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
 

@@ -37,7 +37,6 @@
 #include "mpi.h"
 
 #include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/BulkData.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
 
 #include "stk_balance/balanceUtils.hpp"
@@ -46,6 +45,9 @@
 #include <memory>
 
 namespace stk {
+
+namespace mesh { class BulkData; }
+
 namespace balance {
 
 class BalanceIO

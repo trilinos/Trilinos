@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -141,7 +141,7 @@ C  INPUT THE NEW CENTER IF NEEDED
             I3 = JJ
          END IF
 
-C  CALCULATE HOW TO DIVIDE UP THE ORIGINAL INERVALS
+C     CALCULATE HOW TO DIVIDE UP THE ORIGINAL INTERVALS
 
          IF (NINT(L1) .EQ. 0) THEN
             NN1 = 0

@@ -13,7 +13,11 @@
 #include <cfloat>
 #include <cmath>
 #include <limits>
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_ScalarTraits.hpp"
 
 namespace minitensor {
@@ -101,7 +105,11 @@ typename Sacado::ScalarType<T>::type
 not_a_number()
 {
   using S = typename Sacado::ScalarType<T>::type;
+#if KOKKOS_VERSION >= 40799
+  return KokkosKernels::ArithTraits<S>::nan();
+#else
   return Kokkos::ArithTraits<S>::nan();
+#endif
 }
 
 //
@@ -116,7 +124,11 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon()
 {
   using S = typename Sacado::ScalarType<T>::type;
+#if KOKKOS_VERSION >= 40799
+  return KokkosKernels::ArithTraits<S>::epsilon();
+#else
   return Kokkos::ArithTraits<S>::epsilon();
+#endif
 }
 
 //

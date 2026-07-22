@@ -24,41 +24,85 @@ namespace Intrepid2 {
       \brief Functor to contractFieldField see Intrepid2::ArrayTools for more
     */ 
     template < typename outFieldViewType , typename leftFieldViewType , typename rightFieldViewType >
-    struct F_contractFieldField{
+    struct F_contractFieldFieldScalar{
       outFieldViewType     _outputFields;
       leftFieldViewType    _leftFields;
       rightFieldViewType   _rightFields;
       const bool _sumInto; 
-      typedef typename outFieldViewType::value_type value_type;
 
       KOKKOS_INLINE_FUNCTION
-      F_contractFieldField(outFieldViewType outputFields_,
+      F_contractFieldFieldScalar(outFieldViewType outputFields_,
               leftFieldViewType leftFields_,
               rightFieldViewType rightFields_,
               const bool sumInto_) 
-        : _outputFields(outputFields_), _leftFields(leftFields_), _rightFields(rightFields_), _sumInto(sumInto_) {}
+        : _outputFields(outputFields_), _leftFields(leftFields_), _rightFields(rightFields_), _sumInto(sumInto_) {}      
       
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cl, lbf, rbf;
-        unrollIndex( cl, lbf, rbf, 
-                           _outputFields.extent(0),
-                           _outputFields.extent(1),
-                           _outputFields.extent(2),
-                           iter );
+      void operator()(const size_type cl, const size_type lbf, const size_type rbf) const {
+        const ordinal_type npts = _leftFields.extent(2);
 
-        const size_type npts = _leftFields.extent(2);
+        _outputFields( cl, lbf, rbf ) *= (_sumInto ? 1.0 : 0.0); 
+        for (ordinal_type qp = 0; qp < npts; ++qp) 
+          _outputFields( cl, lbf, rbf ) += _leftFields(cl, lbf, qp)*_rightFields(cl, rbf, qp);
+      }
+    };
+
+    template < typename outFieldViewType , typename leftFieldViewType , typename rightFieldViewType >
+    struct F_contractFieldFieldVector{
+      outFieldViewType     _outputFields;
+      leftFieldViewType    _leftFields;
+      rightFieldViewType   _rightFields;
+      const bool _sumInto; 
+
+      KOKKOS_INLINE_FUNCTION
+      F_contractFieldFieldVector(outFieldViewType outputFields_,
+              leftFieldViewType leftFields_,
+              rightFieldViewType rightFields_,
+              const bool sumInto_) 
+        : _outputFields(outputFields_), _leftFields(leftFields_), _rightFields(rightFields_), _sumInto(sumInto_) {}      
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cl, const size_type lbf, const size_type rbf) const {
+        const ordinal_type npts = _leftFields.extent(2);
+        const ordinal_type iend = _leftFields.extent(3);
+
+        _outputFields( cl, lbf, rbf ) *= (_sumInto ? 1.0 : 0.0); 
+        for (ordinal_type qp = 0; qp < npts; ++qp) 
+          for (ordinal_type i = 0; i < iend; ++i) 
+            _outputFields( cl, lbf, rbf ) += _leftFields(cl, lbf, qp, i)*_rightFields(cl, rbf, qp, i);
+      }
+    };
+
+    template < typename outFieldViewType , typename leftFieldViewType , typename rightFieldViewType >
+    struct F_contractFieldFieldTensor{
+      outFieldViewType     _outputFields;
+      leftFieldViewType    _leftFields;
+      rightFieldViewType   _rightFields;
+      const bool _sumInto; 
+
+      KOKKOS_INLINE_FUNCTION
+      F_contractFieldFieldTensor(outFieldViewType outputFields_,
+              leftFieldViewType leftFields_,
+              rightFieldViewType rightFields_,
+              const bool sumInto_) 
+        : _outputFields(outputFields_), _leftFields(leftFields_), _rightFields(rightFields_), _sumInto(sumInto_) {}      
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cl, const size_type lbf, const size_type rbf) const {
+        const ordinal_type npts = _leftFields.extent(2);
         const ordinal_type iend = _leftFields.extent(3);
         const ordinal_type jend = _leftFields.extent(4);
 
-        _outputFields( cl, lbf, rbf ) *= (_sumInto ? 1 : 0); 
-        for (size_type qp = 0; qp < npts; ++qp) 
+        _outputFields( cl, lbf, rbf ) *= (_sumInto ? 1.0 : 0.0); 
+        for (ordinal_type qp = 0; qp < npts; ++qp) 
           for (ordinal_type i = 0; i < iend; ++i) 
             for (ordinal_type j = 0; j < jend; ++j) 
               _outputFields( cl, lbf, rbf ) += _leftFields(cl, lbf, qp, i, j)*_rightFields(cl, rbf, qp, i, j);
       }
     };
-    } //end namespace
+
+
+  } //end namespace
 
   template<typename DeviceType>
   template<typename outputFieldValueType, class ...outputFieldProperties,
@@ -71,14 +115,24 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                       const bool sumInto ) {
 
-    typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outFieldViewType;
-    typedef Kokkos::DynRankView<leftFieldValueType,leftFieldProperties...> leftFieldViewType;
-    typedef Kokkos::DynRankView<rightFieldValueType,rightFieldProperties...> rightFieldViewType;
-    typedef FunctorArrayTools::F_contractFieldField<outFieldViewType, leftFieldViewType, rightFieldViewType> FunctorType;
-
-    const size_type loopSize = leftFields.extent(0)*leftFields.extent(1)*rightFields.extent(1);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(outputFields, leftFields, rightFields, sumInto) );
+    using outFieldViewType = Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>;
+    using leftFieldViewType = Kokkos::DynRankView<leftFieldValueType,leftFieldProperties...>;
+    using rightFieldViewType = Kokkos::DynRankView<rightFieldValueType,rightFieldProperties...>;
+    
+    using range_policy_type = Kokkos::MDRangePolicy< ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+    const range_policy_type policy( { 0, 0, 0 },
+                                    { /*C*/ leftFields.extent(0), /*F*/ leftFields.extent(1), /*F*/ rightFields.extent(1) } );
+    if (rightFields.rank() == 3) {
+      using FunctorType = FunctorArrayTools::F_contractFieldFieldScalar<outFieldViewType, leftFieldViewType, rightFieldViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputFields, leftFields, rightFields, sumInto) );
+    } else
+    if (rightFields.rank() == 4) {
+      using FunctorType = FunctorArrayTools::F_contractFieldFieldVector<outFieldViewType, leftFieldViewType, rightFieldViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputFields, leftFields, rightFields, sumInto) );
+    } else {
+      using FunctorType = FunctorArrayTools::F_contractFieldFieldTensor<outFieldViewType, leftFieldViewType, rightFieldViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputFields, leftFields, rightFields, sumInto) );
+    }    
   }
 
 
@@ -87,54 +141,110 @@ namespace Intrepid2 {
       \brief Functor to contractDataField see Intrepid2::ArrayTools for more
     */ 
     template < typename outputFieldsViewType , typename inputDataViewType , typename inputFieldsViewType >
-    struct F_contractDataField {
+    struct F_contractDataFieldScalar {
       outputFieldsViewType  _outputFields;
       inputDataViewType     _inputData;
       inputFieldsViewType   _inputFields;
-      const bool _sumInto; 
-      typedef typename outputFieldsViewType::value_type value_type;
+      const bool _sumInto;
 
       KOKKOS_INLINE_FUNCTION
-      F_contractDataField(outputFieldsViewType outputFields_,
+      F_contractDataFieldScalar(outputFieldsViewType outputFields_,
               inputDataViewType inputData_,
               inputFieldsViewType inputFields_,
               const bool sumInto_) 
         : _outputFields(outputFields_), _inputData(inputData_), _inputFields(inputFields_), _sumInto(sumInto_) {}
 
       KOKKOS_DEFAULTED_FUNCTION
-      ~F_contractDataField() = default;
+      ~F_contractDataFieldScalar() = default;
       
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        size_type cl, bf;
-        unrollIndex( cl, bf, 
-                           _inputFields.extent(0),
-                           _inputFields.extent(1),
-                           iter );
-        
-        auto result = Kokkos::subview( _outputFields, cl, bf );
+      void operator()(const size_type cl, const size_type bf) const {       
+        const size_type npts = _inputFields.extent(2);
+        _outputFields(cl, bf) *= (_sumInto ? 1 : 0); 
 
-        const auto field = Kokkos::subview( _inputFields, cl, bf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-        const auto data  = Kokkos::subview( _inputData,   cl,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+        if(_inputData.extent(1) != 1)
+          for (size_type qp = 0; qp < npts; ++qp)
+            _outputFields(cl, bf) += _inputFields(cl, bf, qp) * _inputData(cl, qp);
+        else
+          for (size_type qp = 0; qp < npts; ++qp)
+            _outputFields(cl, bf) += _inputFields(cl, bf, qp) * _inputData(cl, 0);
+      }
+    };
 
-        const size_type npts = field.extent(0);
-        const ordinal_type iend = field.extent(1);
-        const ordinal_type jend = field.extent(2);
+    template < typename outputFieldsViewType , typename inputDataViewType , typename inputFieldsViewType >
+    struct F_contractDataFieldVector {
+      outputFieldsViewType  _outputFields;
+      inputDataViewType     _inputData;
+      inputFieldsViewType   _inputFields;
+      const bool _sumInto;
 
-        result() *= (_sumInto ? 1 : 0); 
+      KOKKOS_INLINE_FUNCTION
+      F_contractDataFieldVector(outputFieldsViewType outputFields_,
+              inputDataViewType inputData_,
+              inputFieldsViewType inputFields_,
+              const bool sumInto_) 
+        : _outputFields(outputFields_), _inputData(inputData_), _inputFields(inputFields_), _sumInto(sumInto_) {}
+
+      KOKKOS_DEFAULTED_FUNCTION
+      ~F_contractDataFieldVector() = default;
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cl, const size_type bf) const {    
+        const size_type npts = _inputFields.extent(2);
+        const ordinal_type iend = _inputFields.extent(3);
+
+        _outputFields(cl, bf) *= (_sumInto ? 1 : 0); 
+
+        if(_inputData.extent(1) != 1)
+          for (size_type qp = 0; qp < npts; ++qp)
+            for (ordinal_type i = 0; i < iend; ++i)
+                _outputFields(cl, bf) += _inputFields(cl, bf, qp, i) * _inputData(cl, qp, i);
+        else
+          for (size_type qp = 0; qp < npts; ++qp)
+            for (ordinal_type i = 0; i < iend; ++i)
+                _outputFields(cl, bf) += _inputFields(cl, bf, qp, i) * _inputData(cl, 0, i);
+      }
+    };
+
+
+    template < typename outputFieldsViewType , typename inputDataViewType , typename inputFieldsViewType >
+    struct F_contractDataFieldTensor {
+      outputFieldsViewType  _outputFields;
+      inputDataViewType     _inputData;
+      inputFieldsViewType   _inputFields;
+      const bool _sumInto;
+
+      KOKKOS_INLINE_FUNCTION
+      F_contractDataFieldTensor(outputFieldsViewType outputFields_,
+              inputDataViewType inputData_,
+              inputFieldsViewType inputFields_,
+              const bool sumInto_) 
+        : _outputFields(outputFields_), _inputData(inputData_), _inputFields(inputFields_), _sumInto(sumInto_) {}
+
+      KOKKOS_DEFAULTED_FUNCTION
+      ~F_contractDataFieldTensor() = default;
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cl, const size_type bf) const {
+        const size_type npts = _inputFields.extent(2);
+        const ordinal_type iend = _inputFields.extent(3);
+        const ordinal_type jend = _inputFields.extent(4);
+
+        _outputFields(cl, bf) *= (_sumInto ? 1 : 0); 
 
         if(_inputData.extent(1) != 1)
           for (size_type qp = 0; qp < npts; ++qp)
             for (ordinal_type i = 0; i < iend; ++i)
               for (ordinal_type j = 0; j < jend; ++j)
-                result() += field(qp, i, j) * data(qp, i, j);
+                _outputFields(cl, bf) += _inputFields(cl, bf, qp, i, j) * _inputData(cl, qp, i, j);
         else
           for (size_type qp = 0; qp < npts; ++qp)
             for (ordinal_type i = 0; i < iend; ++i)
               for (ordinal_type j = 0; j < jend; ++j)
-                result() += field(qp, i, j) * data(0, i, j);
+                _outputFields(cl, bf) += _inputFields(cl, bf, qp, i, j) * _inputData(cl, 0, i, j);
       }
     };
+
     } //namespace
 
   template<typename DeviceType>
@@ -148,14 +258,25 @@ namespace Intrepid2 {
                      const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>   inputFields,
                      const bool sumInto ) {
 
-    typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>                 outputFieldsViewType;
-    typedef Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>                   inputDataViewType;
-    typedef Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>                  inputFieldsViewType;
-    typedef FunctorArrayTools::F_contractDataField<outputFieldsViewType, inputDataViewType, inputFieldsViewType>  FunctorType;
+    using outputFieldsViewType = Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>;
+    using inputDataViewType = Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>;
+    using inputFieldsViewType = Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>;
 
-    const size_type loopSize = inputFields.extent(0)*inputFields.extent(1);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields, sumInto) );
+    using range_policy_type = Kokkos::MDRangePolicy< ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    const range_policy_type policy( { 0, 0 }, { /*C*/ inputFields.extent(0), /*F*/ inputFields.extent(1)} );
+
+    if (inputFields.rank() == 3) {
+      using  FunctorType = FunctorArrayTools::F_contractDataFieldScalar<outputFieldsViewType, inputDataViewType, inputFieldsViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields, sumInto) );
+    }
+    else if (inputFields.rank() == 4) {
+      using  FunctorType = FunctorArrayTools::F_contractDataFieldVector<outputFieldsViewType, inputDataViewType, inputFieldsViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields, sumInto) );
+    }
+    else {
+      using  FunctorType = FunctorArrayTools::F_contractDataFieldTensor<outputFieldsViewType, inputDataViewType, inputFieldsViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputFields, inputData, inputFields, sumInto) );
+    }
   }
 
 
@@ -164,40 +285,88 @@ namespace Intrepid2 {
       \brief Functor to contractDataData see Intrepid2::ArrayTools for more
     */ 
     template < typename outputDataViewType , typename inputDataLeftViewType , typename inputDataRightViewType >
-    struct F_contractDataData {
+    struct F_contractDataDataScalar {
       outputDataViewType  _outputData;
       inputDataLeftViewType   _inputDataLeft;
       inputDataRightViewType  _inputDataRight;
       const bool _sumInto; 
-      typedef typename outputDataViewType::value_type value_type;
 
       KOKKOS_INLINE_FUNCTION
-      F_contractDataData(outputDataViewType outputData_,
+      F_contractDataDataScalar(outputDataViewType outputData_,
               inputDataLeftViewType inputDataLeft_,
               inputDataRightViewType inputDataRight_,
               const bool sumInto_) 
         : _outputData(outputData_), _inputDataLeft(inputDataLeft_), _inputDataRight(inputDataRight_), _sumInto(sumInto_) {}
 
       KOKKOS_DEFAULTED_FUNCTION
-      ~F_contractDataData() = default;
+      ~F_contractDataDataScalar() = default;
       
       KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter) const {
-        const size_type cl = iter;
-        
-        auto result = Kokkos::subview( _outputData, cl );
-        const auto left  = Kokkos::subview( _inputDataLeft,  cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-        const auto right = Kokkos::subview( _inputDataRight, cl, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+      void operator()(const size_type cl) const {
+        size_type npts = _inputDataLeft.extent(1);
+        _outputData(cl) *= (_sumInto ? 1 : 0); 
+        for (size_type qp = 0; qp < npts; ++qp)  
+          _outputData(cl) += _inputDataLeft(cl, qp)*_inputDataRight(cl, qp);
+      }
+    };
 
-        size_type npts = left.extent(0);
-        ordinal_type iend = left.extent(1);
-        ordinal_type jend = left.extent(2);
+        template < typename outputDataViewType , typename inputDataLeftViewType , typename inputDataRightViewType >
+    struct F_contractDataDataVector {
+      outputDataViewType  _outputData;
+      inputDataLeftViewType   _inputDataLeft;
+      inputDataRightViewType  _inputDataRight;
+      const bool _sumInto; 
 
-        result() *= (_sumInto ? 1 : 0); 
+      KOKKOS_INLINE_FUNCTION
+      F_contractDataDataVector(outputDataViewType outputData_,
+              inputDataLeftViewType inputDataLeft_,
+              inputDataRightViewType inputDataRight_,
+              const bool sumInto_) 
+        : _outputData(outputData_), _inputDataLeft(inputDataLeft_), _inputDataRight(inputDataRight_), _sumInto(sumInto_) {}
+
+      KOKKOS_DEFAULTED_FUNCTION
+      ~F_contractDataDataVector() = default;
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cl) const {
+        size_type npts = _inputDataLeft.extent(1);
+        ordinal_type iend = _inputDataLeft.extent(2);
+
+        _outputData(cl) *= (_sumInto ? 1 : 0); 
+        for (size_type qp = 0; qp < npts; ++qp) 
+          for (ordinal_type i = 0; i < iend; ++i) 
+            _outputData(cl) += _inputDataLeft(cl, qp, i)*_inputDataRight(cl, qp, i);
+      }
+    };
+
+    template < typename outputDataViewType , typename inputDataLeftViewType , typename inputDataRightViewType >
+    struct F_contractDataDataTensor {
+      outputDataViewType  _outputData;
+      inputDataLeftViewType   _inputDataLeft;
+      inputDataRightViewType  _inputDataRight;
+      const bool _sumInto; 
+
+      KOKKOS_INLINE_FUNCTION
+      F_contractDataDataTensor(outputDataViewType outputData_,
+              inputDataLeftViewType inputDataLeft_,
+              inputDataRightViewType inputDataRight_,
+              const bool sumInto_) 
+        : _outputData(outputData_), _inputDataLeft(inputDataLeft_), _inputDataRight(inputDataRight_), _sumInto(sumInto_) {}
+
+      KOKKOS_DEFAULTED_FUNCTION
+      ~F_contractDataDataTensor() = default;
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cl) const {
+        size_type npts = _inputDataLeft.extent(1);
+        ordinal_type iend = _inputDataLeft.extent(2);
+        ordinal_type jend = _inputDataLeft.extent(3);
+
+        _outputData(cl) *= (_sumInto ? 1 : 0); 
         for (size_type qp = 0; qp < npts; ++qp) 
           for (ordinal_type i = 0; i < iend; ++i) 
             for (ordinal_type j = 0; j < jend; ++j) 
-              result() += left(qp, i, j)*right(qp, i, j);
+              _outputData(cl) += _inputDataLeft(cl, qp, i, j)*_inputDataRight(cl, qp, i, j);
       }
     };
     } //namespace
@@ -212,14 +381,25 @@ namespace Intrepid2 {
                     const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                     const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                     const bool sumInto ) {
-    typedef Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>       outputDataViewType;
-    typedef Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>    inputDataLeftViewType;
-    typedef Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...>   inputDataRightViewType;
-    typedef FunctorArrayTools::F_contractDataData<outputDataViewType, inputDataLeftViewType, inputDataRightViewType> FunctorType;
+    using outputDataViewType = Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>;
+    using inputDataLeftViewType = Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>;
+    using inputDataRightViewType = Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...>;
 
     const size_type loopSize = inputDataLeft.extent(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight, sumInto) );
+
+    if (inputDataLeft.rank() == 2) {
+      using FunctorType = FunctorArrayTools::F_contractDataDataScalar<outputDataViewType, inputDataLeftViewType, inputDataRightViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight, sumInto) );
+    }
+    else if (inputDataLeft.rank() == 3) {
+      using FunctorType = FunctorArrayTools::F_contractDataDataVector<outputDataViewType, inputDataLeftViewType, inputDataRightViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight, sumInto) );
+    }
+    else {
+      using FunctorType = FunctorArrayTools::F_contractDataDataTensor<outputDataViewType, inputDataLeftViewType, inputDataRightViewType>;
+      Kokkos::parallel_for( policy, FunctorType(outputData, inputDataLeft, inputDataRight, sumInto) );    
+    }
   }
 
 

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//         Stratimikos: Thyra-based strategies for linear solvers
+//
+// Copyright 2006 NTESS and the Stratimikos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 # Belos Tpetra Preconditioning in Stratimikos
 
 The adapters in this directory allow a (unpreconditioned) Belos solver using Tpetra linear algebra to be called from a Stratimikos input deck as a preconditioner to another Belos solver.  

@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file  example_01_l1.cpp
@@ -46,7 +12,7 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
 
@@ -91,7 +57,7 @@ int main(int argc, char *argv[]) {
   using RealT = double;
 
   /*** Initialize communicator. ***/
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
 
@@ -311,39 +277,41 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     z->zero();
     if (useParametricControl) {
-      // Linearly interpolate between optimal values for angular velocity
-      // amplitude and Strouhal number obtained for Re=200, 1000 in
-      //     JW He, R Glowinski, R Metcalfe, A Nordlander, J Periaux
-      //     Active Control and Drag Optimization for Flow Past a
-      //     Circular Cylinder
-      //     Journal of Computation Physics, 163, pg. 83-117, 2000.
-      RealT Re   = parlist->sublist("Problem").get("Reynolds Number",200.0);
-      RealT amp0 = 6.0 - (Re - 200.0)/1600.0;
-      RealT Se0  = 0.74 - (Re - 200.0) * (0.115/800.0);
-      RealT amp  = parlist->sublist("Problem").sublist("Initial Guess").get("Amplitude", amp0);
-      RealT Se   = parlist->sublist("Problem").sublist("Initial Guess").get("Strouhal Number", Se0);
-      RealT ph   = parlist->sublist("Problem").sublist("Initial Guess").get("Phase Shift", 0.0);
-      for( int k=0; k<nt; ++k ) {
-        ROL::Ptr<std::vector<RealT>> zn
-          = ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k))->getParameter()->getVector();
-        (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
+      bool readFromFile = parlist->sublist("Initial Guess").get("Read From File",false);
+      if (!readFromFile) {
+        // Linearly interpolate between optimal values for angular velocity
+        // amplitude and Strouhal number obtained for Re=200, 1000 in
+        //     JW He, R Glowinski, R Metcalfe, A Nordlander, J Periaux
+        //     Active Control and Drag Optimization for Flow Past a
+        //     Circular Cylinder
+        //     Journal of Computation Physics, 163, pg. 83-117, 2000.
+        RealT Re2  = parlist->sublist("Problem").get("Reynolds Number",200.0);
+        RealT amp0 = 6.0 - (Re2 - 200.0)/1600.0;
+        RealT Se0  = 0.74 - (Re2 - 200.0) * (0.115/800.0);
+        RealT amp  = parlist->sublist("Problem").sublist("Initial Guess").get("Amplitude", amp0);
+        RealT Se   = parlist->sublist("Problem").sublist("Initial Guess").get("Strouhal Number", Se0);
+        RealT ph   = parlist->sublist("Problem").sublist("Initial Guess").get("Phase Shift", 0.0);
+        for( int k=0; k<nt; ++k ) {
+          ROL::Ptr<std::vector<RealT>> zn
+            = ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k))->getParameter()->getVector();
+          (*zn)[0] = -amp * std::sin(2.0 * M_PI * Se * timeStamp[k].t[0] + ph);
+        }
+      }
+      else {
+        for (int k = 1; k < nt; ++k) {
+          std::stringstream zname;
+          zname << "initial_control." << k-1 << ".txt";
+          std::fstream zfile;
+          zfile.open(zname.str(),std::ios::in);
+	  if (!zfile.is_open()) std::cout << "CANNOT OPEN " << zname.str() << std::endl;
+          zfile >> (*(ROL::dynamicPtrCast<PDE_OptVector<RealT>>(z->get(k-1))->getParameter()->getVector()))[0];
+          zfile.close();
+        }
       }
     }
     //parlist->sublist("Step").sublist("Trust Region").sublist("TRN").sublist("Solver").set("Subproblem Solver", "NCG"); 
     algo = ROL::makePtr<ROL::TypeP::TrustRegionAlgorithm<RealT>>(*parlist); 
     //algo = ROL::makePtr<ROL::TypeP::ProxGradientAlgorithm<RealT>>(*parlist); 	
-    ROL::Ptr<ROL::Vector<RealT>> ztemp = z->clone(); 
-    ztemp->randomize(); 
-    ROL::Ptr<ROL::Vector<RealT>> pztemp = z->clone(); 
-
-//    RealT ptol = 1.0; 
-//    nobj->prox(*pztemp, *ztemp, 1.0, ptol); 
-//
-//    pztemp->axpy(-1.0, *ztemp); 
-//
-//    *outStream << "Error = "
-//               << pztemp->norm() << std::endl; 
-//
     //ROL::OptimizationProblem<RealT> problem(obj,z);// need to change this
     //ROL::OptimizationSolver<RealT> solver(problem,*parlist);// need to change this
     std::clock_t timer = std::clock();

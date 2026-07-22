@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -215,6 +178,13 @@ int tTpetraThyraConverter::runTest(int verbosity, std::ostream& stdstrm, std::os
   failcount += status ? 0 : 1;
   totalrun++;
 
+  status = test_blockThyraToTpetraTpetraVec(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"blockThyraToTpetraTpetraVec\" ... PASSED",
+                       "   \"blockThyraToTpetraTpetraVec\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
   status = test_single_blockThyraToTpetra(verbosity, failstrm);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"single_blockThyraToTpetra\" ... PASSED",
                        "   \"single_blockThyraToTpetra\" ... FAILED");
@@ -225,6 +195,13 @@ int tTpetraThyraConverter::runTest(int verbosity, std::ostream& stdstrm, std::os
   status = test_blockTpetraToThyra(verbosity, failstrm);
   Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"blockTpetraToThyra\" ... PASSED",
                        "   \"blockTpetraToThyra\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
+  status = test_blockTpetraToThyraTpetraVec(verbosity, failstrm);
+  Teko_TEST_MSG_tpetra(stdstrm, 1, "   \"blockTpetraToThyraTpetraVec\" ... PASSED",
+                       "   \"blockTpetraToThyraTpetraVec\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -291,6 +268,53 @@ bool tTpetraThyraConverter::test_blockThyraToTpetra(int verbosity, std::ostream&
   TEST_MSG("   4. comparing Tpetra to Thyra");
   ST result = compareTpetraMVToThyra(*eX, tX, verbosity, os);
   TEST_ASSERT(result == 0.0, "\n   tTpetraThyraConverter::test_blockThyraToTpetra: "
+                                 << toString(status)
+                                 << ": Tpetra MV is compared to Thyra MV (maxdiff = " << result
+                                 << ")");
+
+  return allPassed;
+}
+
+bool tTpetraThyraConverter::test_blockThyraToTpetraTpetraVec(int verbosity, std::ostream& os) {
+  bool status;
+  bool allPassed = true;
+
+  const Teuchos::Comm<int>& Comm = *GetComm_tpetra();
+  const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm =
+      Thyra::convertTpetraToThyraComm(rcpFromRef(Comm));
+
+  LO myElmts     = 1000;
+  auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(),
+                                                            myElmts, 0, Teuchos::rcpFromRef(Comm)));
+
+  // build vector space
+  const RCP<const Thyra::VectorSpaceBase<ST> > vs =
+      Thyra::createVectorSpace<ST, LO, GO, NT>(tpetraMap);
+  const RCP<const Thyra::VectorSpaceBase<ST> > prodVS = Thyra::productVectorSpace(vs, 2);
+
+  // from the vector space build an tpetra map
+  TEST_MSG("\n   1. creating Map");
+  const RCP<const Tpetra::Map<LO, GO, NT> > map =
+      Teko::TpetraHelpers::thyraVSToTpetraMap(*prodVS, tComm);
+
+  // create a vector
+  const RCP<Thyra::MultiVectorBase<ST> > tX = Thyra::createMembers<ST>(prodVS, 5);
+  Thyra::randomize<ST>(-10.0, 10.0, tX.ptr());
+
+  TEST_MSG("   2. creating MultiVector");
+
+  const RCP<Tpetra::MultiVector<ST, LO, GO, NT> > eX =
+      rcp(new Tpetra::MultiVector<ST, LO, GO, NT>(map, 5));
+  TEST_MSG("   3. calling blockThyraToTpetra");
+  Teko::TpetraHelpers::blockThyraToTpetra(tX, *eX);
+
+  TEST_ASSERT(eX != Teuchos::null, "\n   tTpetraThyraConverter::test_blockThyraToTpetraTpetraVec "
+                                       << toString(status)
+                                       << ": blockThyraToTpetra returns not null");
+
+  TEST_MSG("   4. comparing Tpetra to Thyra");
+  ST result = compareTpetraMVToThyra(*eX, tX, verbosity, os);
+  TEST_ASSERT(result == 0.0, "\n   tTpetraThyraConverter::test_blockThyraToTpetraTpetraVec: "
                                  << toString(status)
                                  << ": Tpetra MV is compared to Thyra MV (maxdiff = " << result
                                  << ")");
@@ -378,6 +402,44 @@ bool tTpetraThyraConverter::test_blockTpetraToThyra(int verbosity, std::ostream&
 
   ST result = compareTpetraMVToThyra(eX, tX, verbosity, os);
   TEST_ASSERT(result == 0.0, "\n   tTpetraThyraConverter::test_blockTpetraToThyra: "
+                                 << toString(status)
+                                 << ": Tpetra MV is compared to Thyra MV (maxdiff = " << result
+                                 << ")");
+
+  return allPassed;
+}
+
+bool tTpetraThyraConverter::test_blockTpetraToThyraTpetraVec(int verbosity, std::ostream& os) {
+  bool status;
+  bool allPassed = true;
+
+  const Teuchos::Comm<int>& Comm = *GetComm_tpetra();
+  const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm =
+      Thyra::convertTpetraToThyraComm(rcpFromRef(Comm));
+
+  LO myElmts     = 1000;
+  auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(),
+                                                            myElmts, 0, Teuchos::rcpFromRef(Comm)));
+
+  // build vector space
+  const RCP<const Thyra::VectorSpaceBase<ST> > vs =
+      Thyra::createVectorSpace<ST, LO, GO, NT>(tpetraMap);
+  const RCP<const Thyra::VectorSpaceBase<ST> > prodVS = Thyra::productVectorSpace(vs, 2);
+
+  // from the vector space build an tpetra map
+  const RCP<const Tpetra::Map<LO, GO, NT> > map =
+      Teko::TpetraHelpers::thyraVSToTpetraMap(*prodVS, tComm);
+
+  // build an tpetra multivector
+  Tpetra::MultiVector<ST, LO, GO, NT> eX(map, 3);
+  eX.randomize();
+
+  // build a Thyra copy of this Tpetra_MultiVector
+  const RCP<Thyra::MultiVectorBase<ST> > tX = Thyra::createMembers(prodVS, eX.getNumVectors());
+  Teko::TpetraHelpers::blockTpetraToThyra(eX, tX.ptr());
+
+  ST result = compareTpetraMVToThyra(eX, tX, verbosity, os);
+  TEST_ASSERT(result == 0.0, "\n   tTpetraThyraConverter::test_blockTpetraToThyraTpetraVec: "
                                  << toString(status)
                                  << ": Tpetra MV is compared to Thyra MV (maxdiff = " << result
                                  << ")");

@@ -59,7 +59,6 @@ TEST(PartToBucket, hex)
     return;
   }
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x1";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -110,7 +109,6 @@ TEST(PartToBucket, hexWithSingleSideset)
     return;
   }
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x1|sideset:X";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -173,7 +171,6 @@ TEST(PartToBucket, hexWithTwoSidesets)
     return;
   }
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x1|sideset:XY";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -239,7 +236,6 @@ TEST(PartToBucket, twoHex)
     return;
   }
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x2";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -391,7 +387,6 @@ void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification,
     return;
   }
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
   stkMeshIoBroker.populate_bulk_data();
@@ -480,7 +475,6 @@ TEST(PartToBucket, hexWithThreeSidesets)
     return;
   }
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
 
   //generated-mesh 'sideset:xYz' syntax adds face surfaces on 3 sides of the mesh,
   //(minimum 'x' side, maximum 'y' side, minimum 'z' side)

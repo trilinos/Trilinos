@@ -41,7 +41,6 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_integration_tests-root)
-    <define>STK_BUILT_IN_SIERRA
   : usage-requirements
     <include>$(stk_integration_tests-root)
   : build-dir $(stk_integration_tests-builddir)
@@ -134,6 +133,8 @@ exe stk_integration_tests
         $(stk_integration_tests-root)/stk_mesh/face_creation/skin_mesh/*.cpp  
         $(stk_integration_tests-root)/stk_mesh/face_creation/user_created/*.cpp
         $(stk_integration_tests-root)/stk_mesh/face_creation/user_support/*.cpp
+        $(stk_integration_tests-root)/stk_search/SearchMeshTest.cpp
+        $(stk_integration_tests-root)/stk_util/*.cpp
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//stk_mesh_fixtures
@@ -147,7 +148,7 @@ exe mock_sparc
         $(stk_integration_tests-root)/mock_apps/mock_sparc.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
@@ -160,7 +161,7 @@ exe mock_aria
         $(stk_integration_tests-root)/mock_apps/mock_aria.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
@@ -173,7 +174,7 @@ exe mock_salinas
         $(stk_integration_tests-root)/mock_apps/mock_salinas.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
@@ -186,7 +187,7 @@ exe mock_fuego
         $(stk_integration_tests-root)/mock_apps/mock_fuego.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
     /sierra/stk_util//stk_util_parallel
@@ -199,7 +200,7 @@ exe mock_conservative_transfer_mpmd
         $(stk_integration_tests-root)/mock_apps/mock_conservative_transfer_mpmd.cpp 
     ]
     /sierra/stk_middle_mesh//stk_middle_mesh
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_util//stk_util_command_line
@@ -214,7 +215,7 @@ exe mock_conservative_transfer_spmd
     /sierra/stk_middle_mesh//stk_middle_mesh
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_unit_test_utils//stk_unit_test_utils
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_util//stk_util_command_line
   : <tag>@sierra-exec-tag
   ;

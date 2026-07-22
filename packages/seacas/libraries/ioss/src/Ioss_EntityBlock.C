@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -38,10 +38,8 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string 
   // error message.
   topology_ = ElementTopology::factory(entity_type, true);
   if (topology_ == nullptr) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg, "ERROR: The topology type '{}' is not supported on '{}' in file '{}'",
-               entity_type, name(), io_database->get_filename());
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format("ERROR: The topology type '{}' is not supported on '{}' in file '{}'",
+                           entity_type, name(), io_database->get_filename()));
   }
 
   if (topology()->master_element_name() != entity_type && topology()->name() != entity_type) {

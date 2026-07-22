@@ -16,14 +16,20 @@
 
 #include "MeshTransfer.hpp"
 
-
 using namespace percept;
 
 int main(int argc,  char **argv)
 {
-  MeshTransfer ev;
-  ev.run(argc, argv);
+  stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
+  Kokkos::initialize(argc,argv);  
 
-  // Q: bcarnes: should run return an arg for the program on exit?
+  { // destroy object after run
+    MeshTransfer ev(comm);
+    ev.run(argc, argv);
+  }
+
+  Kokkos::finalize();
+  stk::parallel_machine_finalize();
+
   return 0;
 }

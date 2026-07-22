@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2025 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -13,7 +13,11 @@ Usage:  epup --subcycle <cycle_count> ...normal epu options...
    Runs multiple copies of epu simultaneously to create <cycle_count>
    sub-files from the original files.
 
-   ->->-> Send email to gdsjaar@sandia.gov for epup support.<-<-<-
+   ->->-> Send email to sierra-help@sandia.gov for epup support.<-<-<-
+      or enter issue at https://github.com/sandialabs/seacas/issues
+   Uses: GNU Parallel,
+   	 O. Tange (2018): GNU Parallel 2018, Mar 2018, ISBN 9781387509881,
+	 DOI https://doi.org/10.5281/zenodo.1146014
 
 EPU_USAGE_EOF
 exit 1
@@ -49,7 +53,8 @@ cycles=-1
 pushd $(dirname "${0}") > /dev/null
 basedir=$(pwd -P)
 popd > /dev/null
-if [ -x ${basedir}/epu -a -x ${basedir}/parallel -a -x ${basedir}/getopt.seacas ]; then
+
+if [ -x ${basedir}/epu -a -x ${basedir}/getopt.seacas ]; then
     ACCESS_BIN=$basedir
 elif [ "$ACCESS" == "" ]; then
     ACCESS_BIN=@ACCESSDIR@/bin
@@ -57,8 +62,18 @@ else
     ACCESS_BIN=${ACCESS}/bin
 fi
 
+if command -v ${basedir}/parallel >/dev/null 2>&1; then
+    PARALLEL=$basedir/parallel
+elif command -v parallel >/dev/null 2>&1; then
+    PARALLEL=parallel
+elif command -v ${ACCESS_BIN}/parallel >/dev/null 2>&1; then
+    PARALLEL=${ACCESS_BIN}/parallel
+else
+    echo "ERROR: Could not find an executable named \"parallel\" for use with the script"	
+    exit 1
+fi
+
 EPU=${ACCESS_BIN}/epu
-PARALLEL=${ACCESS_BIN}/parallel
 SEQ="seq -w"
 if [ $# -eq 0 ] ; then
   usage

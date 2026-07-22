@@ -36,6 +36,8 @@
 #include "HCURLStructuredAssembly.hpp"
 #include "HVOLStandardAssembly.hpp"
 #include "HVOLStructuredAssembly.hpp"
+#include "VectorWeightedGRADGRADStandardAssembly.hpp"
+#include "VectorWeightedGRADGRADStructuredAssembly.hpp"
 
 enum FormulationChoice
 {
@@ -44,6 +46,7 @@ enum FormulationChoice
   Hdiv,    // (div, div)   + (value, value)
   Hcurl,   // (curl, curl) + (value, value)
   L2,      // (value, value)
+  VectorWeightedPoisson,
   UnknownFormulation
 };
 
@@ -81,11 +84,12 @@ std::string to_string(AlgorithmChoice choice)
 std::string to_string(FormulationChoice choice)
 {
   switch (choice) {
-    case Poisson: return "Poisson";
-    case Hgrad:   return "Hgrad";
-    case Hdiv:    return "Hdiv";
-    case Hcurl:   return "Hcurl";
-    case L2:      return "L2";
+    case Poisson:               return "Poisson";
+    case Hgrad:                 return "Hgrad";
+    case Hdiv:                  return "Hdiv";
+    case Hcurl:                 return "Hcurl";
+    case L2:                    return "L2";
+    case VectorWeightedPoisson: return "VectorWeightedPoisson";
     
     default:      return "Unknown FormulationChoice";
   }
@@ -230,10 +234,12 @@ getMeshWidths(int basisCardinality, int maxStiffnessEntryCount, int maxElements)
   return meshWidths;
 }
 
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2=spaceDim>
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationChoice formulation,
-                                        Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                        double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+                                                                   Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                                                   double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
+                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight1 = Teuchos::null,
+                                                                   Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -247,15 +253,19 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationCh
       return performStandardQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStandardQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case VectorWeightedPoisson:
+      return performStandardQuadratureVectorWeightedGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       return Intrepid2::ScalarView<Scalar,DeviceType>();
   }
 }
 
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2=spaceDim>
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(FormulationChoice formulation,
-                                          Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                          double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+                                                                     Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                                                     double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
+                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight1 = Teuchos::null,
+                                                                     Teuchos::RCP<Kokkos::Array<Scalar,spaceDim2>> vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -269,6 +279,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(Formulation
       return performStructuredQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStructuredQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case VectorWeightedPoisson:
+      return performStructuredQuadratureVectorWeightedGRADGRAD<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       return Intrepid2::ScalarView<Scalar,DeviceType>();
   }
@@ -280,12 +292,13 @@ typename BasisFamily::BasisPtr getBasisForFormulation(FormulationChoice formulat
   Intrepid2::EFunctionSpace fs;
   switch (formulation)
   {
-    case Poisson: fs = FUNCTION_SPACE_HGRAD; break;
-    case Hgrad:   fs = FUNCTION_SPACE_HGRAD; break;
-    case Hdiv:    fs = FUNCTION_SPACE_HDIV;  break;
-    case Hcurl:   fs = FUNCTION_SPACE_HCURL; break;
-    case L2:      fs = FUNCTION_SPACE_HVOL;  break;
-    case UnknownFormulation: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown formulation");
+    case Poisson:               fs = FUNCTION_SPACE_HGRAD; break;
+    case Hgrad:                 fs = FUNCTION_SPACE_HGRAD; break;
+    case Hdiv:                  fs = FUNCTION_SPACE_HDIV;  break;
+    case Hcurl:                 fs = FUNCTION_SPACE_HCURL; break;
+    case L2:                    fs = FUNCTION_SPACE_HVOL;  break;
+    case VectorWeightedPoisson: fs = FUNCTION_SPACE_HGRAD; break;
+    default:                    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown formulation");
   }
   
   auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
@@ -350,7 +363,7 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
   map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > worksetSizeMap; // keys are maps p -> worksetSize
   
   vector<AlgorithmChoice> allAlgorithmChoices {Standard, NonAffineTensor, AffineTensor, Uniform};
-  vector<FormulationChoice> allFormulationChoices {Poisson, Hgrad, Hdiv, Hcurl, L2};
+  vector<FormulationChoice> allFormulationChoices {Poisson, Hgrad, Hdiv, Hcurl, L2, VectorWeightedPoisson};
   
   // skip calibration case; want that to span workset sizes in a particular way…
   vector<Mode> allModes {Test,BestSerial,BestOpenMP_16,BestCuda,Precalibrated};
@@ -590,6 +603,48 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
           worksetSizeMap[affineTensorKey][7] =     1;
           worksetSizeMap[affineTensorKey][8] =     1;
         }
+        {
+          // VectorWeightedPoisson
+          // These calibrations were run 5-25-24 on an M2 Ultra, on a fork expected to be merged into Trilinos develop soon.
+          FormulationChoice formulation = VectorWeightedPoisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for VectorWeightedPoisson - these are for meshes that range from 32,768 for p=1 to 128 for p=10
+          worksetSizeMap[standardKey][1]  = 4096;
+          worksetSizeMap[standardKey][2]  = 1024;
+          worksetSizeMap[standardKey][3]  =   32;
+          worksetSizeMap[standardKey][4]  =    4;
+          worksetSizeMap[standardKey][5]  =    1;
+          worksetSizeMap[standardKey][6]  =    1;
+          worksetSizeMap[standardKey][7]  =    1;
+          worksetSizeMap[standardKey][8]  =    1;
+          worksetSizeMap[standardKey][9]  =    1;
+          worksetSizeMap[standardKey][10] =    1;
+          
+          worksetSizeMap[nonAffineTensorKey][1]  = 2048;
+          worksetSizeMap[nonAffineTensorKey][2]  = 2048;
+          worksetSizeMap[nonAffineTensorKey][3]  = 128;
+          worksetSizeMap[nonAffineTensorKey][4]  = 16;
+          worksetSizeMap[nonAffineTensorKey][5]  = 2;
+          worksetSizeMap[nonAffineTensorKey][6]  = 1;
+          worksetSizeMap[nonAffineTensorKey][7]  = 1;
+          worksetSizeMap[nonAffineTensorKey][8]  = 1;
+          worksetSizeMap[nonAffineTensorKey][9]  = 1;
+          worksetSizeMap[nonAffineTensorKey][10] = 1;
+           
+          worksetSizeMap[affineTensorKey][1]  = 32768;
+          worksetSizeMap[affineTensorKey][2]  =  8192;
+          worksetSizeMap[affineTensorKey][3]  =   128;
+          worksetSizeMap[affineTensorKey][4]  =     8;
+          worksetSizeMap[affineTensorKey][5]  =     2;
+          worksetSizeMap[affineTensorKey][6]  =     1;
+          worksetSizeMap[affineTensorKey][7]  =     1;
+          worksetSizeMap[affineTensorKey][8]  =     1;
+          worksetSizeMap[affineTensorKey][9]  =     1;
+          worksetSizeMap[affineTensorKey][10] =     1;
+        }
       } // BestSerial case
         break;
       case BestOpenMP_16:
@@ -774,6 +829,48 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
           worksetSizeMap[affineTensorKey][7] =    16;
           worksetSizeMap[affineTensorKey][8] =    16;
         }
+        {
+          // VectorWeightedPoisson
+          // These calibrations were run 5-25-24 on an M2 Ultra, on a fork expected to be merged into Trilinos develop soon.
+          FormulationChoice formulation = VectorWeightedPoisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          // best for VectorWeightedPoisson - these are for meshes that range from 32,768 for p=1 to 128 for p=10
+          worksetSizeMap[standardKey][1]  = 16384;
+          worksetSizeMap[standardKey][2]  = 16384;
+          worksetSizeMap[standardKey][3]  =  8192;
+          worksetSizeMap[standardKey][4]  =  1024;
+          worksetSizeMap[standardKey][5]  =  1024;
+          worksetSizeMap[standardKey][6]  =  1024;
+          worksetSizeMap[standardKey][7]  =   512;
+          worksetSizeMap[standardKey][8]  =   256;
+          worksetSizeMap[standardKey][9]  =   128;
+          worksetSizeMap[standardKey][10] =    32;
+          
+          worksetSizeMap[nonAffineTensorKey][1]  = 32768;
+          worksetSizeMap[nonAffineTensorKey][2]  =  8192;
+          worksetSizeMap[nonAffineTensorKey][3]  =  8192;
+          worksetSizeMap[nonAffineTensorKey][4]  =  4096;
+          worksetSizeMap[nonAffineTensorKey][5]  =  4096;
+          worksetSizeMap[nonAffineTensorKey][6]  =    64;
+          worksetSizeMap[nonAffineTensorKey][7]  =    32;
+          worksetSizeMap[nonAffineTensorKey][8]  =    32;
+          worksetSizeMap[nonAffineTensorKey][9]  =    16;
+          worksetSizeMap[nonAffineTensorKey][10] =    16;
+           
+          worksetSizeMap[affineTensorKey][1]  = 32768;
+          worksetSizeMap[affineTensorKey][2]  = 16384;
+          worksetSizeMap[affineTensorKey][3]  =  8192;
+          worksetSizeMap[affineTensorKey][4]  =  4096;
+          worksetSizeMap[affineTensorKey][5]  =  4096;
+          worksetSizeMap[affineTensorKey][6]  =  2048;
+          worksetSizeMap[affineTensorKey][7]  =    32;
+          worksetSizeMap[affineTensorKey][8]  =    16;
+          worksetSizeMap[affineTensorKey][9]  =    16;
+          worksetSizeMap[affineTensorKey][10] =    16;
+        }
       } // BestOpenMP_16 case
         break;
       case BestCuda:
@@ -953,6 +1050,23 @@ map<tuple<Mode,FormulationChoice,AlgorithmChoice>,map<int,int> > getWorksetSizeM
           worksetSizeMap[affineTensorKey][7] =  256;
           worksetSizeMap[affineTensorKey][8] =  128;
         } // L^2 formulation
+        {
+          // VectorWeightedPoisson
+          // TODO: set this with some actual calibration result values.  For now, we just borrow from Poisson
+          
+          FormulationChoice formulation = VectorWeightedPoisson;
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey {mode,formulation,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey {mode,formulation,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey {mode,formulation,AffineTensor};
+          
+          tuple<Mode,FormulationChoice,AlgorithmChoice> standardKey_Poisson {mode,Poisson,Standard};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> nonAffineTensorKey_Poisson {mode,Poisson,NonAffineTensor};
+          tuple<Mode,FormulationChoice,AlgorithmChoice> affineTensorKey_Poisson {mode,Poisson,AffineTensor};
+          
+          worksetSizeMap[standardKey]        = worksetSizeMap[standardKey_Poisson];
+          worksetSizeMap[nonAffineTensorKey] = worksetSizeMap[nonAffineTensorKey_Poisson];
+          worksetSizeMap[affineTensorKey]    = worksetSizeMap[affineTensorKey_Poisson];
+        }
     } // BestCuda case
         break;
       case Precalibrated:
@@ -1128,6 +1242,7 @@ int main( int argc, char* argv[] )
       return -1;
     }
     
+    Teuchos::RCP<Kokkos::Array<double,spaceDim>> vectorWeight1, vectorWeight2; // used for VectorWeightedPoisson
     vector<FormulationChoice> formulationChoices;
     if (formulationChoiceString == "All")
     {
@@ -1152,6 +1267,17 @@ int main( int argc, char* argv[] )
     else if (formulationChoiceString == "L2")
     {
       formulationChoices = vector<FormulationChoice>{L2};
+    }
+    else if (formulationChoiceString == "VectorWeightedPoisson")
+    {
+      formulationChoices = vector<FormulationChoice>{VectorWeightedPoisson};
+      vectorWeight1 = Teuchos::rcp( new Kokkos::Array<double, spaceDim>() );
+      vectorWeight2 = Teuchos::rcp( new Kokkos::Array<double, spaceDim>() );
+      for (int d=0; d<spaceDim; d++)
+      {
+        (*vectorWeight1)[d] = 1.0;
+        (*vectorWeight2)[d] = 1.0;
+      }
     }
     else
     {
@@ -1337,13 +1463,13 @@ int main( int argc, char* argv[] )
     }
     else
     {
-     std::vector<AlgorithmChoice> algorithmChoices {Standard,NonAffineTensor,AffineTensor,Uniform};
+     std::vector<AlgorithmChoice> algorithmChoices2 {Standard,NonAffineTensor,AffineTensor,Uniform};
       WorksetForAlgorithmChoice worksetForAlgorithmChoice;
       for (auto formulationChoice : formulationChoices)
       {
         for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
         {
-          for (auto algorithmChoice : algorithmChoices)
+          for (auto algorithmChoice : algorithmChoices2)
           {
             worksetForAlgorithmChoice[algorithmChoice] = worksetSizeMap[{mode,formulationChoice,algorithmChoice}][polyOrder];
           }
@@ -1369,7 +1495,7 @@ int main( int argc, char* argv[] )
           int polyOrder       = std::get<0>(testCase);
           auto formulation    = std::get<1>(testCase);
           auto gridDims       = std::get<2>(testCase);
-          auto worksetSizeMap = std::get<3>(testCase);
+          auto worksetSizeMap2 = std::get<3>(testCase);
           if (formulation != previousFormulation)
           {
             std::cout << "\n\n***** Formulation: " << to_string(formulation) << " *******\n";
@@ -1387,7 +1513,9 @@ int main( int argc, char* argv[] )
           std::map<AlgorithmChoice, Intrepid2::ScalarView<Scalar,DeviceType> > assembledMatrices;
           for (auto algorithmChoice : algorithmChoices)
           {
-            int worksetSize = worksetSizeMap[algorithmChoice];
+            int worksetSize = 1;
+            if (worksetSizeMap2.find(algorithmChoice) != worksetSizeMap2.end())
+              worksetSize = worksetSizeMap2[algorithmChoice];
             if (mode == Calibration)
             {
               // if this workset size is bigger than the optimal for p-1, skip it -- it's highly
@@ -1428,13 +1556,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:
@@ -1456,13 +1584,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:
@@ -1485,13 +1613,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:
@@ -1520,13 +1648,13 @@ int main( int argc, char* argv[] )
                 case Nodal:
                 {
                   using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Hierarchical:
                 {
                   using BasisFamily = HierarchicalBasisFamily<DeviceType>;
-                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+                  assembledMatrix = performStructuredQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount, vectorWeight1, vectorWeight2);
                 }
                   break;
                 case Serendipity:

@@ -58,7 +58,7 @@ tribits_add_advanced_test(reduced_tarball
       -D${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE=${${CMAKE_PROJECT_NAME}_CONFIGURE_OPTIONS_FILE}
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
+      -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
       -D${CMAKE_PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON
       -D${CMAKE_PROJECT_NAME}_ASSERT_DEFINED_DEPENDENCIES=OFF
       ../trilinos-${Trilinos_VERSION}-Source
@@ -112,7 +112,7 @@ tribits_add_advanced_test(simpleBuildAgainstTrilinos_by_package_build_tree
     ARGS
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
+      -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
       -DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/cmake_packages
       -DCMAKE_BUILD_TYPE=DEBUG
       simpleBuildAgainstTrilinos
@@ -191,7 +191,7 @@ tribits_add_advanced_test(find_package_Trilinos
     ARGS
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
+      -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
       -DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/install
       ${CMAKE_CURRENT_SOURCE_DIR}/find_package_Trilinos
     PASS_REGULAR_EXPRESSION_ALL
@@ -234,7 +234,7 @@ tribits_add_advanced_test(simpleBuildAgainstTrilinos
     ARGS
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-      -DCMAKE_Fortan_COMPILER=${CMAKE_Fortran_COMPILER}
+      -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
       -DCMAKE_PREFIX_PATH=${PROJECT_BINARY_DIR}/install
       -DCMAKE_BUILD_TYPE=DEBUG
       ${PROJECT_SOURCE_DIR}/demos/simpleBuildAgainstTrilinos

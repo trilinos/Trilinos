@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_REPLACEDIAGONALCRSMATRIX_DEF_HPP
@@ -51,12 +19,10 @@
 
 namespace Tpetra {
 
-template<class SC, class LO, class GO, class NT>
-LO
-replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
-    const Vector<SC, LO, GO, NT>& newDiag) {
-
-  using map_type = Map<LO, GO, NT>;
+template <class SC, class LO, class GO, class NT>
+LO replaceDiagonalCrsMatrix(CrsMatrix<SC, LO, GO, NT>& matrix,
+                            const Vector<SC, LO, GO, NT>& newDiag) {
+  using map_type        = Map<LO, GO, NT>;
   using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;
   // using vec_type = ::Tpetra::Vector<SC, LO, GO, NT>;
 
@@ -75,19 +41,18 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
   }
   auto colMapPtr = matrix.getColMap();
 
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (colMapPtr.get () == nullptr, std::invalid_argument,
-     "replaceDiagonalCrsMatrix: "
-     "Input matrix must have a nonnull column Map.");
+  TEUCHOS_TEST_FOR_EXCEPTION(colMapPtr.get() == nullptr, std::invalid_argument,
+                             "replaceDiagonalCrsMatrix: "
+                             "Input matrix must have a nonnull column Map.");
 
-  const map_type& rowMap = *rowMapPtr;
-  const map_type& colMap = *colMapPtr;
-  const LO myNumRows = static_cast<LO>(matrix.getLocalNumRows());
+  const map_type& rowMap           = *rowMapPtr;
+  const map_type& colMap           = *colMapPtr;
+  const LO myNumRows               = static_cast<LO>(matrix.getLocalNumRows());
   const bool isFillCompleteOnInput = matrix.isFillComplete();
 
   if (Tpetra::Details::Behavior::debug()) {
     TEUCHOS_TEST_FOR_EXCEPTION(!rowMap.isSameAs(*newDiag.getMap()), std::runtime_error,
-        "Row map of matrix and map of input vector do not match.");
+                               "Row map of matrix and map of input vector do not match.");
   }
 
   // KJ: This fence is necessary for UVM. Views used in the row map and colmap
@@ -99,15 +64,14 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
     matrix.resumeFill();
 
   Teuchos::ArrayRCP<const SC> newDiagData = newDiag.getVector(0)->getData();
-  LO numReplacedEntriesPerRow = 0;
+  LO numReplacedEntriesPerRow             = 0;
 
   auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
 
   // Loop over all local rows to replace the diagonal entry row by row
   for (LO lclRowInd = 0; lclRowInd < myNumRows; ++lclRowInd) {
-
     // Get row and column indices of the diagonal entry
-    const GO gblInd = rowMap.getGlobalElement(lclRowInd);
+    const GO gblInd    = rowMap.getGlobalElement(lclRowInd);
     const LO lclColInd = colMap.getLocalElement(gblInd);
 
     // If the row map is not one-to-one, the diagonal may not be on this proc.
@@ -121,11 +85,11 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
     numReplacedEntriesPerRow = matrix.replaceLocalValues(lclRowInd, oneLO,
                                                          vals, cols);
 
-    // Check for success of replacement. 
+    // Check for success of replacement.
     // numReplacedEntriesPerRow is one if the diagonal was replaced.
-    // numReplacedEntriesPerRow is zero if the diagonal is not on 
+    // numReplacedEntriesPerRow is zero if the diagonal is not on
     // this processor.  For example, in a 2D matrix distribution, gblInd may
-    // be in both the row and column map, but the diagonal may not be on 
+    // be in both the row and column map, but the diagonal may not be on
     // this processor.
     if (numReplacedEntriesPerRow == oneLO) {
       ++numReplacedDiagEntries;
@@ -138,19 +102,17 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
   return numReplacedDiagEntries;
 }
 
-} // namespace Tpetra
+}  // namespace Tpetra
 //
 // Explicit instantiation macro
 //
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_REPLACEDIAGONALCRSMATRIX_INSTANT(SCALAR,LO,GO,NODE)      \
-                                                                        \
-  template                                                              \
-  LO replaceDiagonalCrsMatrix(                                          \
-                              CrsMatrix<SCALAR, LO, GO, NODE>& matrix, \
-                              const Vector<SCALAR, LO, GO, NODE>& newDiag); \
-                                                                        \
+#define TPETRA_REPLACEDIAGONALCRSMATRIX_INSTANT(SCALAR, LO, GO, NODE) \
+                                                                      \
+  template LO replaceDiagonalCrsMatrix(                               \
+      CrsMatrix<SCALAR, LO, GO, NODE>& matrix,                        \
+      const Vector<SCALAR, LO, GO, NODE>& newDiag);
 
-#endif // #ifndef TPETRA_REPLACEDIAGONALCRSMATRIX_DEF_HPP
+#endif  // #ifndef TPETRA_REPLACEDIAGONALCRSMATRIX_DEF_HPP

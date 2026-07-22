@@ -13,7 +13,7 @@
 #include "ioss_export.h"
 
 namespace Ioss {
-  class IOSS_EXPORT Sphere : public Ioss::ElementTopology
+  class IOSS_EXPORT Sphere final : public Ioss::ElementTopology
   {
 
   public:

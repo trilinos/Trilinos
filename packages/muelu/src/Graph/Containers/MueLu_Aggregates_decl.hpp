@@ -12,8 +12,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <Kokkos_StaticCrsGraph.hpp>
-
 #include "MueLu_Aggregates_fwd.hpp"
 
 #include <Xpetra_Map_fwd.hpp>
@@ -267,7 +265,7 @@ class Aggregates : public BaseClass {
 
   //! Print the object with some verbosity level to an FancyOStream object.
   // using MueLu::Describable::describe; // overloading, not hiding
-  void print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
+  void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = verbLevel_default) const;
 
  private:
   LO numAggregates_;        ///< Number of aggregates on this processor
@@ -319,7 +317,7 @@ class Aggregates : public BaseClass {
    * from different parts of MueLu that require such data on the host device.
    */
   mutable
-      typename aggregates_sizes_type::HostMirror aggregateSizesHost_;
+      typename aggregates_sizes_type::host_mirror_type aggregateSizesHost_;
 
   //! Aggregates represented as Kokkos graph type
   mutable local_graph_type graph_;

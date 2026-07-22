@@ -65,19 +65,19 @@ public:
     void set_priority(ModificationObserverPriority priority) { m_priority = priority; }
     ModificationObserverPriority get_priority() const { return m_priority; }
 
-    virtual void entity_parts_added(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+    virtual void entity_parts_added(stk::mesh::Entity, const stk::mesh::OrdinalVector&)
     {
     }
 
-    virtual void entity_parts_removed(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& parts)
+    virtual void entity_parts_removed(stk::mesh::Entity, const stk::mesh::OrdinalVector&)
     {
     }
 
-    virtual void entity_added(stk::mesh::Entity entity)
+    virtual void entity_added(stk::mesh::Entity)
     {
     }
 
-    virtual void entity_deleted(stk::mesh::Entity entity)
+    virtual void entity_deleted(stk::mesh::Entity)
     {
     }
 
@@ -93,23 +93,23 @@ public:
     {
     }
 
-    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &)
     {
     }
 
-    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &)
     {
     }
 
-    virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
+    virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank)
     {
     }
 
-    virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
+    virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank)
     {
     }
 
-    virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
+    virtual void local_buckets_changed_notification(stk::mesh::EntityRank)
     {
     }
 
@@ -118,15 +118,15 @@ public:
         valuesToReduce.clear();
     }
 
-    virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
+    virtual void set_reduced_values(const std::vector<size_t> &)
     {
     }
 
-    virtual void relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    virtual void relation_destroyed(Entity, Entity, ConnectivityOrdinal)
     {
     }
 
-    virtual void relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    virtual void relation_declared(Entity, Entity, ConnectivityOrdinal)
     {
     }
 

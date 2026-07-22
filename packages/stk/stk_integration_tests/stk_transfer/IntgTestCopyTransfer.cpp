@@ -54,7 +54,7 @@
 #include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyById.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyByIdMpmdMeshAdapter.hpp"
-#include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
+#include "stk_transfer_util/TransferCopyByIdStkMeshAdapter.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyTranslator.hpp"
 
 namespace
@@ -64,6 +64,7 @@ using stk::unit_test_util::build_mesh;
 typedef stk::mesh::Field<int>    ScalarIntField;
 typedef stk::mesh::Field<double> ScalarDoubleField;
 typedef stk::mesh::Field<double> VectorDoubleField;
+typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
 
 void build_mesh(stk::mesh::MetaData & meta,
                 stk::mesh::BulkData & mesh,
@@ -343,17 +344,12 @@ std::string field_prefix(stk::mesh::EntityRank rank)
 
 using SearchByIdTypes = ::testing::Types<stk::transfer::SearchByIdCommAll, stk::transfer::SearchByIdGeometric>;
 
-#ifdef TYPED_TEST_SUITE
-  TYPED_TEST_SUITE(CopyTransferFixture, SearchByIdTypes);
-#else
-  TYPED_TEST_CASE(CopyTransferFixture, SearchByIdTypes);
-#endif
+TYPED_TEST_SUITE(CopyTransferFixture, SearchByIdTypes, );
 
 template <class SearchById>
 class CopyTransferFixture : public ::testing::Test
 {
 public:
-  typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
   void init(stk::ParallelMachine global_pm, int color, std::vector<int> mesh_color_ownership = {0, 0})
   {
     pm = global_pm;
@@ -371,7 +367,6 @@ public:
     if (commOwnsMesh[0])
     {
       metaA = stk::mesh::MeshBuilder().set_spatial_dimension(spatial_dimension).create_meta_data();
-      metaA->use_simple_fields();
       meshA = stk::mesh::MeshBuilder(pmSub).create(metaA);
       build_mesh(*metaA, *meshA, info.num_elements, info.num_nodes, info.element_ids, element_ownerA, &info.elem_node_ids[0], info.node_sharingA, info.coordinates, create_faces);
     }
@@ -381,7 +376,6 @@ public:
     if (commOwnsMesh[1])
     {
       metaB = stk::mesh::MeshBuilder().set_spatial_dimension(spatial_dimension).create_meta_data();
-      metaB->use_simple_fields();
       meshB = stk::mesh::MeshBuilder(pmSub).create(metaB);
       build_mesh(*metaB, *meshB, info.num_elements, info.num_nodes, info.element_ids, element_ownerB, &info.elem_node_ids[0], info.node_sharingB, info.coordinates, create_faces);
     }
@@ -1041,7 +1035,6 @@ TYPED_TEST(CopyTransferFixture, copy001T011Face)
   auto & mesh_b = *this->meshB;
   this->run_test([&, p_rank](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         stk::mesh::Entity elem1 = mesh_a.get_entity(stk::topology::ELEM_RANK, 1);
@@ -1246,7 +1239,6 @@ TEST(Transfer, copy001T011Shell)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
       stk::util::sort_and_unique(key_to_target_processor);
@@ -1462,7 +1454,6 @@ TYPED_TEST(CopyTransferFixture, copy000T012)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
@@ -1546,7 +1537,6 @@ TYPED_TEST(CopyTransferFixture, copy000T012_multipleTargets)
 
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
@@ -1661,7 +1651,6 @@ TYPED_TEST(CopyTransferFixture, copy0011T1010)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 1);
@@ -1827,7 +1816,6 @@ TEST(Transfer, copy0T_)
     //  > transfer(transferSource, transferTarget, "copy0T_ unit test");
 
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1944,7 +1932,6 @@ TEST(Transfer, copy_T0)
     stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -2072,7 +2059,6 @@ TEST(Transfer, copy00_T_11)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -2232,7 +2218,6 @@ TEST(Transfer, copy00___T___11)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -2310,7 +2295,7 @@ void test_mismatched_data_type_copy_transfer(unsigned sendBufferSize, unsigned r
   }
 
   unsigned sendBufferDataSize = sendBufferSize * sizeof(SENDTYPE);
-  unsigned recvBufferDataSize = recvBufferSize * sizeof(RECVTYPE);
+//  unsigned recvBufferDataSize = recvBufferSize * sizeof(RECVTYPE);
   int communicatingProc = 1 - stk::parallel_machine_rank(MPI_COMM_WORLD);
   const uint8_t* sendData = reinterpret_cast<const uint8_t*>(sendBuffer.data());
 
@@ -2356,7 +2341,7 @@ void test_mismatched_data_type_copy_transfer(unsigned sendBufferSize, unsigned r
                                                                   &translateLongDouble,
                                                                   &translateDouble };
 
-  dataTranslators[sentDataType]->translate(tmpBuffer.data(), newBufferSize, recvType, recvBuffer.data(), recvBufferDataSize);
+  dataTranslators[sentDataType]->translate(tmpBuffer.data(), sendBufferSize, 1, recvType, recvBuffer.data(), recvBufferSize, 1);
 
   unsigned numEntries = std::min(sendBufferSize, recvBufferSize);
 
@@ -2418,7 +2403,7 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   stk::mesh::put_field_on_mesh(*fieldBaseA, metaA.universal_part(), &intInitVals);
 
   std::string meshDescA = "0,1,QUAD_4_2D,1,2,4,3,block_1";
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkA, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDescA, coords));
+  stk::unit_test_util::setup_text_mesh(bulkA, stk::unit_test_util::get_full_text_mesh_desc(meshDescA, coords));
 
   std::shared_ptr<stk::mesh::BulkData> bulkBPtr = build_mesh(2, MPI_COMM_WORLD);
   stk::mesh::MetaData& metaB = bulkBPtr->mesh_meta_data();
@@ -2433,7 +2418,7 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   } else {
     meshDescB = "1,1,QUAD_4_2D,1,2,4,3,block_1";
   }
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkB, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDescB, coords));
+  stk::unit_test_util::setup_text_mesh(bulkB, stk::unit_test_util::get_full_text_mesh_desc(meshDescB, coords));
 
   // Set up CopyTransfer
   stk::mesh::EntityVector entitiesA;

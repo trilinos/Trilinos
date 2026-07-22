@@ -36,6 +36,8 @@ KLU2<Matrix,Vector>::KLU2(
   : SolverCore<Amesos2::KLU2,Matrix,Vector>(A, X, B)
   , transFlag_(0)
   , is_contiguous_(true)
+  , use_gather_(true)
+  , debug_level_(0)
 {
   ::KLU2::klu_defaults<klu2_dtype, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
@@ -170,6 +172,19 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
       // is the only error/throw we currently have a unit test for.
       if(data_.numeric_ == nullptr) {
         info = 1;
+        if(debug_level_ > 0) {
+          std::cout << " ** Amesos2::KLU2::numericFactorization failed with status = ";
+          if(data_.common_.status == KLU_OK)
+            std::cout << "KLU_OK **\n";
+          else if (data_.common_.status == KLU_SINGULAR)
+            std::cout << "KLU_SINGULAR **\n";
+          else if (data_.common_.status == KLU_OUT_OF_MEMORY)
+            std::cout << "KLU_OUT_OF_MEMORY **\n";
+          else if (data_.common_.status == KLU_INVALID)
+            std::cout << "KLU_INVALID **\n";
+          else if (data_.common_.status == KLU_TOO_LARGE) 
+            std::cout << "KLU_TOO_LARGE **\n";
+        }
       }
 
       // This is set after numeric factorization complete as pivoting can be used;
@@ -185,7 +200,7 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
   TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error,
-      "KLU2 numeric factorization failed");
+      "KLU2 numeric factorization failed(info="+std::to_string(info)+")");
 
   return(info);
 }
@@ -201,18 +216,32 @@ KLU2<Matrix,Vector>::solve_impl(
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
+  if (debug_level_ > 0) {
+    if (this->root_) std::cout << "\n == Amesos2_KLU2::solve_impl ==" << std::endl;
+    if (debug_level_ == 1) {
+      B->description();
+    } else {
+      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      if (!is_null(B->getMap())) B->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      std::cout << std::endl;
+      B->describe(*fancy, Teuchos::VERB_EXTREME);
+    }
+  }
 
   bool bDidAssignX;
   bool bDidAssignB;
+  bool use_gather = use_gather_; // user param
+  use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
+  use_gather = (use_gather && (std::is_same<vector_scalar_type, float>::value ||
+                               std::is_same<vector_scalar_type, double>::value)); // only for double or float vectors
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
     const bool initialize_data = true;
     const bool do_not_initialize_data = false;
     if ( single_proc_optimization() && nrhs == 1 ) {
-      // no msp creation
+      // no map creation
       bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
         host_solve_array_t>::do_get(initialize_data, B, bValues_, as<size_t>(ld_rhs));
 
@@ -220,19 +249,37 @@ KLU2<Matrix,Vector>::solve_impl(
         host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
-
-      bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(initialize_data, B, bValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
-
-      // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
-      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+      if (use_gather) {
+        int rval = B->gather(bValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
+                             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+        if (rval == 0) {
+          X->gather(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
+                    (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+          bDidAssignB = true;  // TODO : find when we can avoid deep-copy
+          bDidAssignX = false; // TODO : find when we can avoid scatter
+        } else {
+          use_gather = false;
+        }
+      }
+      if (!use_gather) {
+        const EDistribution dist = (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED;
+        if (distributionMap_.is_null()) {
+          typedef MultiVecAdapter<Vector> MVA;
+          distributionMap_ = Util::getDistributionMap<
+            typename MVA::local_ordinal_t, typename MVA::global_ordinal_t,
+            typename MVA::global_size_t,   typename MVA::node_t>(
+              dist, B->getGlobalLength(), B->getComm(),
+              this->rowIndexBase_, B->getMap());
+        }
+        auto distMapPtr = Teuchos::ptrInArg(*distributionMap_);
+        bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(initialize_data, B, bValues_,
+            as<size_t>(ld_rhs), distMapPtr, dist);
+        // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+            as<size_t>(ld_rhs), distMapPtr, dist);
+      }
 
       // klu_tsolve is going to put the solution x into the input b.
       // Copy b to x then solve in x.
@@ -341,19 +388,39 @@ KLU2<Matrix,Vector>::solve_impl(
 
   // if bDidAssignX, then we solved straight to the adapter's X memory space without
   // requiring additional memory allocation, so the x data is already in place.
+  // TODO: should we check bDidAssignB?
   if(!bDidAssignX) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
-
+    if (use_gather) {
+      int rval = X->scatter(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
+                            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+      if (rval != 0) use_gather = false;
+    }
+    if (!use_gather) {
+      const EDistribution dist = (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED;
+      if (!distributionMap_.is_null()) {
+        Util::put_1d_data_helper_kokkos_view<
+          MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+            as<size_t>(ld_rhs), Teuchos::ptrInArg(*distributionMap_), dist);
+      } else {
+        Util::put_1d_data_helper_kokkos_view<
+          MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+            as<size_t>(ld_rhs), dist, this->rowIndexBase_);
+      }
+    }
   }
-
+  if (debug_level_ > 0) {
+    if (debug_level_ == 1) {
+      X->description();
+    } else {
+      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      if (!is_null(X->getMap())) X->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      std::cout << std::endl;
+      X->describe(*fancy, Teuchos::VERB_EXTREME);
+    }
+  }
   return(ierr);
 }
 
@@ -391,6 +458,13 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
   if( parameterList->isParameter("IsContiguous") ){
     is_contiguous_ = parameterList->get<bool>("IsContiguous");
   }
+  if( parameterList->isParameter("UseCustomGather") ){
+    use_gather_ = parameterList->get<bool>("UseCustomGather");
+  }
+
+  if( parameterList->isParameter("DebugLevel") ){
+    debug_level_ = parameterList->get<int>("DebugLevel");
+  }
 }
 
 
@@ -411,6 +485,8 @@ KLU2<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("Equil", true, "Whether to equilibrate the system before solve, does nothing now");
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+    pl->set("UseCustomGather", true, "Whether to use new matrix-gather routine");
+    pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
 
     setStringToIntegralParameter<int>("Trans", "NOTRANS",
                                       "Solve for the transpose system or not",
@@ -432,52 +508,93 @@ bool
 KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
+#ifdef HAVE_AMESOS2_TIMERS
+  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+#endif
 
   if(current_phase == SOLVE)return(false);
+  if (debug_level_ > 0 && current_phase == NUMFACT) {
+    if (this->root_) {
+      std::cout << "\n == Amesos2_KLU2::loadA_impl";
+      if (current_phase == PREORDERING) std::cout << "(PreOrder)";
+      if (current_phase == SYMBFACT) std::cout << "(SymFact)";
+      if (current_phase == NUMFACT)  std::cout << "(NumFact)";
+      std::cout << " ==" << std::endl;
+    }
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    this->matrixA_->describe(*fancy, (debug_level_ == 1 ? Teuchos::VERB_LOW : Teuchos::VERB_EXTREME));
+  }
 
   if ( single_proc_optimization() ) {
     // Do nothing in this case - Crs raw pointers will be used
   }
   else
   {
-
+    // Only the root image needs storage allocated
+    if( this->root_ ) {
+      if (host_nzvals_view_.extent(0) != this->globalNumNonZeros_) 
+        Kokkos::resize(host_nzvals_view_, this->globalNumNonZeros_);
+      if (host_rows_view_.extent(0) != this->globalNumNonZeros_)
+        Kokkos::resize(host_rows_view_, this->globalNumNonZeros_);
+      if (host_col_ptr_view_.extent(0) != (this->globalNumRows_ + 1))
+        Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
+    }
+    local_ordinal_type nnz_ret = -1;
+    bool use_gather = use_gather_; // user param
+    use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
+    use_gather = (use_gather && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value)); // only for double or float
+    {
 #ifdef HAVE_AMESOS2_TIMERS
-  Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
+      if (use_gather) {
+        bool column_major = true;
+        if (!is_contiguous_) {
+          auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
+          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                       this->transpose_map, this->nzvals_t, column_major, current_phase);
+        } else {
+          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                           this->transpose_map, this->nzvals_t, column_major, current_phase);
+        }
+        // gather failed (e.g., not implemened for KokkosCrsMatrix)
+        // in case of the failure, it falls back to the original "do_get"
+        if (nnz_ret < 0) use_gather = false;
+      }
+      if (!use_gather) {
+        Util::get_ccs_helper_kokkos_view<
+          MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
+          ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            ARBITRARY,
+            this->rowIndexBase_);
+      }
+    }
 
-  // Only the root image needs storage allocated
-  if( this->root_ ) {
-    host_nzvals_view_ = host_value_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
-    host_rows_view_ = host_ordinal_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("host_rows_view_"), this->globalNumNonZeros_);
-    host_col_ptr_view_ = host_ordinal_type_array(
-      Kokkos::ViewAllocateWithoutInitializing("host_col_ptr_view_"), this->globalNumRows_ + 1);
-  }
-
-  local_ordinal_type nnz_ret = 0;
-  {
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
-#endif
-
-    Util::get_ccs_helper_kokkos_view<
-      MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
-      ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        ARBITRARY,
-        this->rowIndexBase_);
-  }
-
-  if( this->root_ ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
-                        std::runtime_error,
-                        "Did not get the expected number of non-zero vals");
-  }
-
+    // gather return the total nnz_ret on every MPI process
+    if (use_gather || this->root_) {
+      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+                          std::runtime_error,
+                          "Amesos2_KLU2 loadA_impl: Did not get the expected number of non-zero vals("
+                          +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
+    }
   } //end else single_process_optim_check = false
 
   return true;
+}
+
+
+template <class Matrix, class Vector>
+void
+KLU2<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                   const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " KLU2 current parameters:" << std::endl;
+  out << "  > Trans = " << transFlag_ << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > UseCustomGather = " << (use_gather_ ? "YES" : "NO") << std::endl;
+  out << "  > DebugLevel = " << debug_level_ << std::endl;
+  out << std::endl;
 }
 
 

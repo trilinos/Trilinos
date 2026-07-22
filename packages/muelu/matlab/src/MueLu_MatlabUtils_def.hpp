@@ -11,9 +11,10 @@
 #define MUELU_MATLABUTILS_DEF_HPP
 
 #include "MueLu_MatlabUtils_decl.hpp"
+#include <mex.h>
 
-#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_EPETRA)
-#error "Muemex types require MATLAB, Epetra and Tpetra."
+#if !defined(HAVE_MUELU_MATLAB) || !defined(HAVE_MUELU_TPETRA)
+#error "Muemex types require MATLAB and Tpetra."
 #else
 
 using Teuchos::RCP;
@@ -104,16 +105,6 @@ template <>
 MuemexType getMuemexType<RCP<Xpetra_Matrix_complex> >() { return XPETRA_MATRIX_COMPLEX; }
 
 template <>
-MuemexType getMuemexType(const RCP<Epetra_CrsMatrix>& data) { return EPETRA_CRSMATRIX; }
-template <>
-MuemexType getMuemexType<RCP<Epetra_CrsMatrix> >() { return EPETRA_CRSMATRIX; }
-
-template <>
-MuemexType getMuemexType(const RCP<Epetra_MultiVector>& data) { return EPETRA_MULTIVECTOR; }
-template <>
-MuemexType getMuemexType<RCP<Epetra_MultiVector> >() { return EPETRA_MULTIVECTOR; }
-
-template <>
 MuemexType getMuemexType(const RCP<MAggregates>& data) { return AGGREGATES; }
 template <>
 MuemexType getMuemexType<RCP<MAggregates> >() { return AGGREGATES; }
@@ -128,7 +119,7 @@ MuemexType getMuemexType(const RCP<MGraph>& data) { return GRAPH; }
 template <>
 MuemexType getMuemexType<RCP<MGraph> >() { return GRAPH; }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <>
 MuemexType getMuemexType(const RCP<FieldContainer_ordinal>& data) { return FIELDCONTAINER_ORDINAL; }
 template <>
@@ -424,73 +415,25 @@ RCP<Tpetra_CrsMatrix_complex> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex> >
 template <>
 RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmat = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmat);
+  return Xpetra::toXpetra(tmat);
 }
 
 template <>
 RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmat = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraCrs_To_XpetraMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmat);
+  return Xpetra::toXpetra(tmat);
 }
 
 template <>
 RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tpetraMV = loadDataFromMatlab<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraMultiVector_To_XpetraMultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
+  return Xpetra::toXpetra(tpetraMV);
 }
 
 template <>
 RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tpetraMV = loadDataFromMatlab<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraMultiVector_To_XpetraMultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
-}
-
-template <>
-RCP<Epetra_CrsMatrix> loadDataFromMatlab<RCP<Epetra_CrsMatrix> >(const mxArray* mxa) {
-  RCP<Epetra_CrsMatrix> matrix;
-  try {
-    int* colptr;
-    int* rowind;
-    double* vals = mxGetPr(mxa);
-    int nr       = mxGetM(mxa);
-    int nc       = mxGetN(mxa);
-    if (rewrap_ints) {
-      colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-      rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-    } else {
-      rowind = (int*)mxGetIr(mxa);
-      colptr = (int*)mxGetJc(mxa);
-    }
-    Epetra_SerialComm Comm;
-    Epetra_Map RangeMap(nr, 0, Comm);
-    Epetra_Map DomainMap(nc, 0, Comm);
-    matrix = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, RangeMap, DomainMap, 0));
-    /* Do the matrix assembly */
-    for (int i = 0; i < nc; i++) {
-      for (int j = colptr[i]; j < colptr[i + 1]; j++) {
-        // global row, # of entries, value array, column indices array
-        matrix->InsertGlobalValues(rowind[j], 1, &vals[j], &i);
-      }
-    }
-    matrix->FillComplete(DomainMap, RangeMap);
-    if (rewrap_ints) {
-      delete[] rowind;
-      delete[] colptr;
-    }
-  } catch (std::exception& e) {
-    mexPrintf("An error occurred while setting up an Epetra matrix:\n");
-    std::cout << e.what() << std::endl;
-  }
-  return matrix;
-}
-
-template <>
-RCP<Epetra_MultiVector> loadDataFromMatlab<RCP<Epetra_MultiVector> >(const mxArray* mxa) {
-  int nr = mxGetM(mxa);
-  int nc = mxGetN(mxa);
-  Epetra_SerialComm Comm;
-  Epetra_BlockMap map(nr * nc, 1, 0, Comm);
-  return rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, map, mxGetPr(mxa), nr, nc));
+  return Xpetra::toXpetra(tpetraMV);
 }
 
 template <>
@@ -606,22 +549,22 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph> >(const mxArray* mxa) {
     tgraph->insertGlobalIndices((mm_GlobalOrd)i, cols(rows[i], entriesPerRow[i]));
   }
   tgraph->fillComplete(map, map);
-  RCP<MGraph> mgraph = rcp(new MueLu::Graph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
+  RCP<MGraph> mgraph = rcp(new MueLu::LWGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
   // Set boundary nodes
   int numBoundaryNodes = mxGetNumberOfElements(boundaryNodes);
-  bool* boundaryFlags  = new bool[nRows];
+  Kokkos::View<bool*, typename mm_node_t::memory_space> boundaryFlags("boundaryFlags", nRows);
+  // NOTE: This will not work correctly for non-CPU Node types
   for (int i = 0; i < nRows; i++) {
     boundaryFlags[i] = false;
   }
   for (int i = 0; i < numBoundaryNodes; i++) {
     boundaryFlags[boundaryList[i]] = true;
   }
-  ArrayRCP<bool> boundaryNodesInput(boundaryFlags, 0, nRows, true);
-  mgraph->SetBoundaryNodeMap(boundaryNodesInput);
+  mgraph->SetBoundaryNodeMap(boundaryFlags);
   return mgraph;
 }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <>
 RCP<FieldContainer_ordinal> loadDataFromMatlab<RCP<FieldContainer_ordinal> >(const mxArray* mxa) {
   if (mxGetClassID(mxa) != mxINT32_CLASS)
@@ -712,25 +655,25 @@ mxArray* saveDataToMatlab(RCP<Xpetra_ordinal_vector>& data) {
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& data) {
-  RCP<Xpetra_MultiVector_double> xmv = MueLu::TpetraMultiVector_To_XpetraMultiVector(data);
+  RCP<Xpetra_MultiVector_double> xmv = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmv);
 }
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& data) {
-  RCP<Xpetra_MultiVector_complex> xmv = MueLu::TpetraMultiVector_To_XpetraMultiVector(data);
+  RCP<Xpetra_MultiVector_complex> xmv = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmv);
 }
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra_CrsMatrix_double>& data) {
-  RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = TpetraCrs_To_XpetraMatrix(data);
+  RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmat);
 }
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra_CrsMatrix_complex>& data) {
-  RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = TpetraCrs_To_XpetraMatrix(data);
+  RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmat);
 }
 
@@ -1006,20 +949,6 @@ mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_Glo
 }
 
 template <>
-mxArray* saveDataToMatlab(RCP<Epetra_CrsMatrix>& data) {
-  RCP<Xpetra_Matrix_double> xmat = EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data);
-  return saveDataToMatlab(xmat);
-}
-
-template <>
-mxArray* saveDataToMatlab(RCP<Epetra_MultiVector>& data) {
-  mxArray* output = mxCreateDoubleMatrix(data->GlobalLength(), data->NumVectors(), mxREAL);
-  double* dataPtr = mxGetPr(output);
-  data->ExtractCopy(dataPtr, data->GlobalLength());
-  return output;
-}
-
-template <>
 mxArray* saveDataToMatlab(RCP<MAggregates>& data) {
   // Set up array of inputs for matlab constructAggregates
   int numNodes = data->GetVertex2AggId()->getData(0).size();
@@ -1083,9 +1012,9 @@ mxArray* saveDataToMatlab(RCP<MAggregates>& data) {
         throw runtime_error("Cannot store invalid aggregates in MATLAB - fewer root nodes than aggregates.");
     }
   }
-  dataIn[4]                      = mxCreateNumericArray(1, aggArrayDims, mxINT32_CLASS, mxREAL);
-  int* as                        = (int*)mxGetData(dataIn[4]);  // list of aggregate sizes
-  ArrayRCP<mm_LocalOrd> aggSizes = data->ComputeAggregateSizes();
+  dataIn[4]     = mxCreateNumericArray(1, aggArrayDims, mxINT32_CLASS, mxREAL);
+  int* as       = (int*)mxGetData(dataIn[4]);  // list of aggregate sizes
+  auto aggSizes = data->ComputeAggregateSizes();
   for (int i = 0; i < numAggs; i++) {
     as[i] = aggSizes[i];
   }
@@ -1119,7 +1048,7 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
     entriesPerCol[i] = 0;
   }
   for (int i = 0; i < numRows; i++) {
-    ArrayView<const mm_LocalOrd> neighbors = data->getNeighborVertices(i);  // neighbors has the column indices for row i
+    ArrayView<typename MGraph::local_ordinal_type> neighbors = data->getNeighborVertices_av(i);  // neighbors has the column indices for row i
     memcpy(iter, neighbors.getRawPtr(), sizeof(mm_LocalOrd) * neighbors.size());
     entriesPerRow[i] = neighbors.size();
     for (int j = 0; j < neighbors.size(); j++) {
@@ -1166,9 +1095,9 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   delete[] entriesPerRow;
   delete[] entriesPerCol;
   // Construct list of boundary nodes
-  const ArrayRCP<const bool> boundaryFlags = data->GetBoundaryNodeMap();
-  int numBoundaryNodes                     = 0;
-  for (int i = 0; i < boundaryFlags.size(); i++) {
+  auto boundaryFlags   = data->GetBoundaryNodeMap();
+  int numBoundaryNodes = 0;
+  for (int i = 0; i < (int)boundaryFlags.size(); i++) {
     if (boundaryFlags[i])
       numBoundaryNodes++;
   }
@@ -1177,7 +1106,7 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   mxArray* boundaryList = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
   int* dest             = (int*)mxGetData(boundaryList);
   int* destIter         = dest;
-  for (int i = 0; i < boundaryFlags.size(); i++) {
+  for (int i = 0; i < (int)boundaryFlags.size(); i++) {
     if (boundaryFlags[i]) {
       *destIter = i;
       destIter++;
@@ -1189,7 +1118,7 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   return out[0];
 }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <>
 mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data) {
   int rank = data->rank();

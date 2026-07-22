@@ -1,33 +1,46 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_ALGORITHMS_UNITTESTS_TEST_SORT_BY_KEY_HPP
 #define KOKKOS_ALGORITHMS_UNITTESTS_TEST_SORT_BY_KEY_HPP
 
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.random;
+import kokkos.sort;
+#else
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <Kokkos_Sort.hpp>
+#endif
 
 #include <utility>  // pair
+
+#if defined(KOKKOS_ENABLE_ONEDPL)
+#define KOKKOS_IMPL_ONEDPL_VERSION                            \
+  ONEDPL_VERSION_MAJOR * 10000 + ONEDPL_VERSION_MINOR * 100 + \
+      ONEDPL_VERSION_PATCH
+#define KOKKOS_IMPL_ONEDPL_VERSION_GREATER_EQUAL(MAJOR, MINOR, PATCH) \
+  (KOKKOS_IMPL_ONEDPL_VERSION >= ((MAJOR)*10000 + (MINOR)*100 + (PATCH)))
+#endif
+
+#ifndef KOKKOS_IMPL_ONEDPL_VERSION_GREATER_EQUAL
+#define KOKKOS_IMPL_ONEDPL_VERSION_GREATER_EQUAL(MAJOR, MINOR, PATH) 0
+#endif
 
 namespace Test {
 namespace SortImpl {
 
 struct Less {
+#if !defined(KOKKOS_ENABLE_ONEDPL) || \
+    KOKKOS_IMPL_ONEDPL_VERSION_GREATER_EQUAL(2022, 8, 0)
+  // Test with a comparator that isn't trivially copyable if oneDPL is not
+  // enabled or if oneDPL version >= 2022.8.0
+  Kokkos::View<int *> dummy;
+#endif
+
   template <class ValueType>
   KOKKOS_INLINE_FUNCTION bool operator()(const ValueType &lhs,
                                          const ValueType &rhs) const {
@@ -36,6 +49,13 @@ struct Less {
 };
 
 struct Greater {
+#if !defined(KOKKOS_ENABLE_ONEDPL) || \
+    KOKKOS_IMPL_ONEDPL_VERSION_GREATER_EQUAL(2022, 8, 0)
+  // Test with a comparator that isn't trivially copyable if oneDPL is not
+  // enabled or if oneDPL version >= 2022.8.0
+  Kokkos::View<int *> dummy;
+#endif
+
   template <class ValueType>
   KOKKOS_INLINE_FUNCTION bool operator()(const ValueType &lhs,
                                          const ValueType &rhs) const {
@@ -69,7 +89,7 @@ void iota(ExecutionSpace const &space, ViewType const &v,
           typename ViewType::value_type value = 0) {
   using ValueType = typename ViewType::value_type;
   Kokkos::parallel_for(
-      "ArborX::Algorithms::iota",
+      "Kokkos::Algorithms::iota",
       Kokkos::RangePolicy<ExecutionSpace>(space, 0, v.extent(0)),
       KOKKOS_LAMBDA(int i) { v(i) = value + (ValueType)i; });
 }
@@ -83,8 +103,20 @@ TEST(TEST_CATEGORY, SortByKeyEmptyView) {
   Kokkos::View<int *, ExecutionSpace> keys("keys", 0);
   Kokkos::View<float *, ExecutionSpace> values("values", 0);
 
-  ASSERT_NO_THROW(
-      Kokkos::Experimental::sort_by_key(ExecutionSpace(), keys, values));
+  // checking that it does not throw
+  Kokkos::Experimental::sort_by_key(ExecutionSpace(), keys, values);
+}
+
+// Test #7036
+TEST(TEST_CATEGORY, SortByKeyEmptyViewHost) {
+  using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
+
+  // does not matter if we use int or something else
+  Kokkos::View<int *, ExecutionSpace> keys("keys", 0);
+  Kokkos::View<float *, ExecutionSpace> values("values", 0);
+
+  // checking that it does not throw
+  Kokkos::Experimental::sort_by_key(ExecutionSpace(), keys, values);
 }
 
 TEST(TEST_CATEGORY, SortByKey) {
@@ -171,12 +203,12 @@ TEST(TEST_CATEGORY, SortByKeyStaticExtents) {
   Kokkos::View<int[10], ExecutionSpace> keys("keys");
 
   Kokkos::View<int[10], ExecutionSpace> values_static("values_static");
-  ASSERT_NO_THROW(
-      Kokkos::Experimental::sort_by_key(space, keys, values_static));
+  // checking that it does not throw
+  Kokkos::Experimental::sort_by_key(space, keys, values_static);
 
   Kokkos::View<int *, ExecutionSpace> values_dynamic("values_dynamic", 10);
-  ASSERT_NO_THROW(
-      Kokkos::Experimental::sort_by_key(space, keys, values_dynamic));
+  // checking that it does not throw
+  Kokkos::Experimental::sort_by_key(space, keys, values_dynamic);
 }
 
 template <typename ExecutionSpace, typename Keys, typename Values>
@@ -222,7 +254,9 @@ TEST(TEST_CATEGORY, SortByKeyWithStrides) {
   ASSERT_EQ(sort_fails, 0u);
 }
 
-TEST(TEST_CATEGORY, SortByKeyKeysLargerThanValues) {
+TEST(TEST_CATEGORY_DEATH, SortByKeyKeysLargerThanValues) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+
   using ExecutionSpace = TEST_EXECSPACE;
 
   // does not matter if we use int or something else
@@ -238,4 +272,8 @@ TEST(TEST_CATEGORY, SortByKeyKeysLargerThanValues) {
 }
 
 }  // namespace Test
+
+#undef KOKKOS_IMPL_ONEDPL_VERSION
+#undef KOKKOS_IMPL_ONEDPL_VERSION_GREATER_EQUAL
+
 #endif

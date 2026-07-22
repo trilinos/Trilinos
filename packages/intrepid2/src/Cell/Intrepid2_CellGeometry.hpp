@@ -46,6 +46,8 @@ namespace Intrepid2
   class CellGeometry
   {
     public:
+    using value_type = PointScalar;
+    
     /*! Supported types for CellGeometry */
     enum CellGeometryType {
         UNIFORM_GRID   /// each grid division has the same dimensions

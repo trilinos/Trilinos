@@ -3,6 +3,8 @@
 
 #cmakedefine HAVE_NOX_DEBUG
 
+#cmakedefine HAVE_NOX_EXPLICIT_INSTANTIATION
+
 #cmakedefine WITH_PRERELEASE
 
 #cmakedefine FINITE_VALUE_HAVE_GLOBAL_ISINF
@@ -12,21 +14,13 @@
 
 #cmakedefine HAVE_LOCA_ANASAZI
 
-#cmakedefine HAVE_NOX_AMESOS
-
 #cmakedefine HAVE_NOX_BELOS
-
-#cmakedefine HAVE_NOX_EPETRAEXT
-
-#cmakedefine HAVE_NOX_ML_EPETRA
 
 #cmakedefine HAVE_NOX_STRATIMIKOS
 
 #cmakedefine HAVE_NOX_TEKO
 
 #cmakedefine HAVE_NOX_THYRA
-
-#cmakedefine NOX_ENABLE_STRATIMIKOS_EPETRA_STACK
 
 /* template qualifier required for calling template methods from non-template
    code */

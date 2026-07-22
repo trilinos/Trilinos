@@ -1,25 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
+// #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
@@ -40,8 +27,7 @@ struct ParamTag {
   typedef D diag;
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 struct Functor_TestBatchedTeamTrsm {
   using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b;
@@ -49,22 +35,20 @@ struct Functor_TestBatchedTeamTrsm {
   ScalarType _alpha;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamTrsm(const ScalarType alpha, const ViewType &a,
-                              const ViewType &b)
+  Functor_TestBatchedTeamTrsm(const ScalarType alpha, const ViewType &a, const ViewType &b)
       : _a(a), _b(b), _alpha(alpha) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &,
-                                         const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const MemberType &member) const {
     const int k = member.league_rank();
 
     auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::TeamTrsm<
-        MemberType, typename ParamTagType::side, typename ParamTagType::uplo,
-        typename ParamTagType::trans, typename ParamTagType::diag,
-        AlgoTagType>::invoke(member, _alpha, aa, bb);
+    KokkosBatched::TeamTrsm<MemberType, typename ParamTagType::side, typename ParamTagType::uplo,
+                            typename ParamTagType::trans, typename ParamTagType::diag, AlgoTagType>::invoke(member,
+                                                                                                            _alpha, aa,
+                                                                                                            bb);
   }
 
   inline void run() {
@@ -75,31 +59,27 @@ struct Functor_TestBatchedTeamTrsm {
     Kokkos::Profiling::pushRegion(name.c_str());
 
     const int league_size = _b.extent(0);
-    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size,
-                                                             Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size, Kokkos::AUTO);
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_trsm(const int N, const int BlkSize, const int NumCols) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ScalarType alpha(1.0);
 
-  const bool is_side_right =
-      std::is_same<typename ParamTagType::side, Side::Right>::value;
-  const int b_nrows = is_side_right ? NumCols : BlkSize;
-  const int b_ncols = is_side_right ? BlkSize : NumCols;
-  ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize),
-      b0("b0", N, b_nrows, b_ncols), b1("b1", N, b_nrows, b_ncols);
+  const bool is_side_right = std::is_same<typename ParamTagType::side, Side::Right>::value;
+  const int b_nrows        = is_side_right ? NumCols : BlkSize;
+  const int b_ncols        = is_side_right ? BlkSize : NumCols;
+  ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize), b0("b0", N, b_nrows, b_ncols),
+      b1("b1", N, b_nrows, b_ncols);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a0, random, value_type(1.0));
   Kokkos::fill_random(b0, random, value_type(1.0));
 
@@ -108,18 +88,15 @@ void impl_test_batched_trsm(const int N, const int BlkSize, const int NumCols) {
   Kokkos::deep_copy(a1, a0);
   Kokkos::deep_copy(b1, b0);
 
-  Functor_TestBatchedTeamTrsm<DeviceType, ViewType, ScalarType, ParamTagType,
-                              Algo::Trsm::Unblocked>(alpha, a0, b0)
+  Functor_TestBatchedTeamTrsm<DeviceType, ViewType, ScalarType, ParamTagType, Algo::Trsm::Unblocked>(alpha, a0, b0)
       .run();
-  Functor_TestBatchedTeamTrsm<DeviceType, ViewType, ScalarType, ParamTagType,
-                              AlgoTagType>(alpha, a1, b1)
-      .run();
+  Functor_TestBatchedTeamTrsm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(alpha, a1, b1).run();
 
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror b0_host = Kokkos::create_mirror_view(b0);
-  typename ViewType::HostMirror b1_host = Kokkos::create_mirror_view(b1);
+  typename ViewType::host_mirror_type b0_host = Kokkos::create_mirror_view(b0);
+  typename ViewType::host_mirror_type b1_host = Kokkos::create_mirror_view(b1);
 
   Kokkos::deep_copy(b0_host, b0);
   Kokkos::deep_copy(b1_host, b1);
@@ -140,40 +117,27 @@ void impl_test_batched_trsm(const int N, const int BlkSize, const int NumCols) {
 }  // namespace TeamTrsm
 }  // namespace Test
 
-template <typename DeviceType, typename ValueType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ValueType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 int test_batched_team_trsm() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
-    Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType,
-                                           ParamTagType, AlgoTagType>(0, 10, 4);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> ViewType;
+    Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(0, 10, 4);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType,
-                                             ParamTagType, AlgoTagType>(1024, i,
-                                                                        4);
-      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType,
-                                             ParamTagType, AlgoTagType>(1024, i,
-                                                                        1);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1024, i, 4);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1024, i, 1);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType,
-                                           ParamTagType, AlgoTagType>(0, 10, 4);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> ViewType;
+    Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(0, 10, 4);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType,
-                                             ParamTagType, AlgoTagType>(1024, i,
-                                                                        4);
-      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType,
-                                             ParamTagType, AlgoTagType>(1024, i,
-                                                                        1);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1024, i, 4);
+      Test::TeamTrsm::impl_test_batched_trsm<DeviceType, ViewType, ScalarType, ParamTagType, AlgoTagType>(1024, i, 1);
     }
   }
 #endif

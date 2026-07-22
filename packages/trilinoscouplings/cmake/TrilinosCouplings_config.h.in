@@ -1,5 +1,8 @@
 /* src/TrilinosCouplings_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if explicit (template) instantiation is enabled. */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_EXPLICIT_INSTANTIATION
+
 /* Define if want to build amesos */
 #cmakedefine HAVE_AMESOS
 
@@ -47,6 +50,9 @@
 
 /* Define if want trilinoscouplings examples use Isorropia+Zoltan */
 #cmakedefine TrilinosCouplings_ENABLE_Isorropia
+
+/* Define if want trilinoscouplings examples use Tpetra+Zoltan2 */
+#cmakedefine TrilinosCouplings_ENABLE_Zoltan2Core
 
 /* mfh 09 Apr 2014: Define if MueLu is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_MUELU

@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file  example_01.cpp
@@ -47,8 +13,7 @@
 */
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -57,11 +22,11 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Problem.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_ParameterList.hpp"
-
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_SerialDenseSolver.hpp"
+#include "ROL_LAPACK.hpp"
+#include "ROL_LinearAlgebra.hpp"
 
 template<class Real>
 class FEM {
@@ -75,7 +40,7 @@ private:
   int prob_;
   Real E_;
   Real nu_;
-  Teuchos::SerialDenseMatrix<int,Real> KE_;
+  ROL::LA::Matrix<Real> KE_;
 
 public:
 
@@ -202,7 +167,7 @@ public:
     return false;
   }
 
-  void set_boundary_conditions(Teuchos::SerialDenseVector<int, Real> &U) {
+  void set_boundary_conditions(ROL::LA::Vector<Real> &U) {
     for (int i=0; i<U.length(); i++) {
       if ( check_on_boundary(i) ) {
         U(i) = 0.0;
@@ -226,7 +191,7 @@ public:
     }
   }
 
-  void build_force(Teuchos::SerialDenseVector<int, Real> &F) {
+  void build_force(ROL::LA::Vector<Real> &F) {
     F.resize(numU());
     F.putScalar(0.0);
     switch(prob_) {
@@ -235,7 +200,7 @@ public:
     }
   }
 
-  void build_jacobian(Teuchos::SerialDenseMatrix<int, Real> &K, const std::vector<Real> &z,
+  void build_jacobian(ROL::LA::Matrix<Real> &K, const std::vector<Real> &z,
                       bool transpose = false) {
     // Fill jacobian
     K.shape(2*(nx_+1)*(ny_+1),2*(nx_+1)*(ny_+1));
@@ -270,7 +235,7 @@ public:
     }
   }
 
-  void build_jacobian(Teuchos::SerialDenseMatrix<int, Real> &K, const std::vector<Real> &z, 
+  void build_jacobian(ROL::LA::Matrix<Real> &K, const std::vector<Real> &z, 
                       const std::vector<Real> &v, bool transpose = false) {
     // Fill jacobian
     K.shape(2*(nx_+1)*(ny_+1),2*(nx_+1)*(ny_+1));
@@ -466,24 +431,22 @@ public:
     ROL::Ptr<const vector> zp = getVector(z);
 
     // Assemble Jacobian
-    Teuchos::SerialDenseMatrix<int, Real> K;
+    ROL::LA::Matrix<Real> K;
     FEM_->build_jacobian(K,*zp);
     // Assemble RHS
-    Teuchos::SerialDenseVector<int, Real> F(K.numRows());
+    ROL::LA::Vector<Real> F(K.numRows());
     FEM_->build_force(F);
     // Solve
-    Teuchos::SerialDenseVector<int, Real> U(K.numCols());
-    Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix( Teuchos::rcpFromRef(K) );
-    solver.setVectors( Teuchos::rcpFromRef(U), Teuchos::rcpFromRef(F) );
-    solver.factorWithEquilibration(true);
-    solver.factor();
-    solver.solve();
-    FEM_->set_boundary_conditions(U);
+    ROL::Ptr<ROL::LAPACK<int, Real>> lapack = ROL::makePtr<ROL::LAPACK<int,Real>>();
+    int info;
+    int n = K.numRows();
+    lapack->POTRF('U',n,K.values(),n,&info);
+    lapack->POTRS('U',n,1,K.values(),n,F.values(),n,&info);
+    FEM_->set_boundary_conditions(F);
     // Retrieve solution
-    up->resize(U.length(),0.0);
-    for (uint i=0; i<static_cast<uint>(U.length()); i++) {
-      (*up)[i] = U(i);
+    up->resize(F.length(),0.0);
+    for (uint i=0; i<static_cast<uint>(F.length()); i++) {
+      (*up)[i] = F(i);
     }
     // Compute residual
     this->value(c,u,z,tol);
@@ -497,10 +460,10 @@ public:
     ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
-    vector V;
-    V.assign(vp->begin(),vp->end());
-    FEM_->set_boundary_conditions(V);
-    FEM_->apply_jacobian(*jvp,V,*zp);
+    vector lV;
+    lV.assign(vp->begin(),vp->end());
+    FEM_->set_boundary_conditions(lV);
+    FEM_->apply_jacobian(*jvp,lV,*zp);
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
@@ -525,25 +488,23 @@ public:
     ROL::Ptr<const vector> zp = getVector(z);
 
     // Assemble Jacobian
-    Teuchos::SerialDenseMatrix<int, Real> K;
+    ROL::LA::Matrix<Real> K;
     FEM_->build_jacobian(K,*zp);
     // Solve
-    Teuchos::SerialDenseVector<int, Real> U(K.numCols());
-    Teuchos::SerialDenseVector<int, Real> F(vp->size());
+    ROL::LA::Vector<Real> F(vp->size());
     for (uint i=0; i<vp->size(); i++) {
       F(i) = (*vp)[i];
     }
-    Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(Teuchos::rcpFromRef(K));
-    solver.setVectors(Teuchos::rcpFromRef(U),Teuchos::rcpFromRef(F));
-    solver.factorWithEquilibration(true);
-    solver.factor();
-    solver.solve();
-    FEM_->set_boundary_conditions(U);
+    ROL::Ptr<ROL::LAPACK<int, Real>> lapack = ROL::makePtr<ROL::LAPACK<int,Real>>();
+    int info;
+    int n = K.numRows();
+    lapack->POTRF('U',n,K.values(),n,&info);
+    lapack->POTRS('U',n,1,K.values(),n,F.values(),n,&info);
+    FEM_->set_boundary_conditions(F);
     // Retrieve solution
-    ijvp->resize(U.length(),0.0);
-    for (uint i=0; i<static_cast<uint>(U.length()); i++) {
-      (*ijvp)[i] = U(i);
+    ijvp->resize(F.length(),0.0);
+    for (uint i=0; i<static_cast<uint>(F.length()); i++) {
+      (*ijvp)[i] = F(i);
     }
   }
 
@@ -555,10 +516,10 @@ public:
     ROL::Ptr<const vector> zp = getVector(z);
 
     // apply jacobian
-    vector V;
-    V.assign(vp->begin(),vp->end());
-    FEM_->set_boundary_conditions(V);
-    FEM_->apply_jacobian(*ajvp,V,*zp);
+    vector lV;
+    lV.assign(vp->begin(),vp->end());
+    FEM_->set_boundary_conditions(lV);
+    FEM_->apply_jacobian(*ajvp,lV,*zp);
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
@@ -572,10 +533,10 @@ public:
     vector U;
     U.assign(up->begin(),up->end());
     FEM_->set_boundary_conditions(U);
-    std::vector<Real> V;
-    V.assign(vp->begin(),vp->end());
-    FEM_->set_boundary_conditions(V);
-    FEM_->apply_adjoint_jacobian(*ajvp,U,*zp,V);
+    std::vector<Real> lV;
+    lV.assign(vp->begin(),vp->end());
+    FEM_->set_boundary_conditions(lV);
+    FEM_->apply_adjoint_jacobian(*ajvp,U,*zp,lV);
   }
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v,
@@ -586,25 +547,23 @@ public:
      ROL::Ptr<const vector> zp = getVector(z);
 
     // Assemble Jacobian
-    Teuchos::SerialDenseMatrix<int, Real> K;
+    ROL::LA::Matrix<Real> K;
     FEM_->build_jacobian(K,*zp);
     // Solve
-    Teuchos::SerialDenseVector<int, Real> U(K.numCols());
-    Teuchos::SerialDenseVector<int, Real> F(vp->size());
+    ROL::LA::Vector<Real> F(vp->size());
     for (uint i=0; i<vp->size(); i++) {
       F(i) = (*vp)[i];
     }
-    Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(Teuchos::rcpFromRef(K));
-    solver.setVectors(Teuchos::rcpFromRef(U), Teuchos::rcpFromRef(F));
-    solver.factorWithEquilibration(true);
-    solver.factor();
-    solver.solve();
-    FEM_->set_boundary_conditions(U);
+    ROL::Ptr<ROL::LAPACK<int, Real>> lapack = ROL::makePtr<ROL::LAPACK<int,Real>>();
+    int info;
+    int n = K.numRows();
+    lapack->POTRF('U',n,K.values(),n,&info);
+    lapack->POTRS('U',n,1,K.values(),n,F.values(),n,&info);
+    FEM_->set_boundary_conditions(F);
     // Retrieve solution
-    iajvp->resize(U.length(),0.0);
-    for (int i=0; i<U.length(); i++) {
-      (*iajvp)[i] = U(i);
+    iajvp->resize(F.length(),0.0);
+    for (int i=0; i<F.length(); i++) {
+      (*iajvp)[i] = F(i);
     }
   }
 
@@ -811,10 +770,10 @@ public:
     hv.zero();
     if ( !useLC_ ) {
       vector KV(vp->size(),0.0);
-      vector V;
-      V.assign(vp->begin(),vp->end());
-      FEM_->set_boundary_conditions(V);
-      FEM_->apply_jacobian(KV,V,*zp);
+      vector lV;
+      lV.assign(vp->begin(),vp->end());
+      FEM_->set_boundary_conditions(lV);
+      FEM_->apply_jacobian(KV,lV,*zp);
       for (uint i=0; i<vp->size(); i++) {
         (*hvp)[i] = 2.0*KV[i];
       }
@@ -865,10 +824,10 @@ public:
       std::vector<Real> U;
       U.assign(up->begin(),up->end());
       FEM_->set_boundary_conditions(U);
-      std::vector<Real> V;
-      V.assign(vp->begin(),vp->end());
-      FEM_->set_boundary_conditions(V);
-      FEM_->apply_adjoint_jacobian(*hvp,U,*zp,V);
+      std::vector<Real> lV;
+      lV.assign(vp->begin(),vp->end());
+      FEM_->set_boundary_conditions(lV);
+      FEM_->apply_adjoint_jacobian(*hvp,U,*zp,lV);
       for (uint i=0; i<hvp->size(); i++) {
         (*hvp)[i] *= 2.0;
       }
@@ -892,9 +851,9 @@ public:
       vector U;
       U.assign(up->begin(),up->end());
       FEM_->set_boundary_conditions(U);
-      vector V;
-      V.assign(vp->begin(),vp->end());
-      FEM_->set_boundary_conditions(V);
+      vector lV;
+      lV.assign(vp->begin(),vp->end());
+      FEM_->set_boundary_conditions(lV);
       FEM_->apply_adjoint_jacobian(*hvp,U,*zp,*vp,U);
     }
   }
@@ -904,8 +863,8 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  typedef typename std::vector<RealT>::size_type uint;
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  typedef typename std::vector<RealT>::size_type luint;
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -922,11 +881,11 @@ int main(int argc, char *argv[]) {
   try {
     // FEM problem description.
     int prob = 1;  // prob = 0 is the MBB beam example, prob = 1 is the cantilever beam example.
-    uint nx  = 30; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
-    uint ny  = 10; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
+    luint nx  = 30; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
+    luint ny  = 10; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
     int P    = 1;  // SIMP penalization power.
     RealT frac = 0.4;      // Volume fraction.
-    ROL::Ptr<FEM<RealT> > pFEM = ROL::makePtr<FEM<RealT>>(nx,ny,P,prob);
+    ROL::Ptr<FEM<RealT>> pFEM = ROL::makePtr<FEM<RealT>>(nx,ny,P,prob);
     // Read optimization input parameter list.
     std::string filename = "input_ex02.xml";
     auto parlist = ROL::getParametersFromXmlFile( filename );
@@ -943,36 +902,39 @@ int main(int argc, char *argv[]) {
     // Initialize bound constraints.
     ROL::Ptr<std::vector<RealT>> lo_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numZ(),1.e-3);
     ROL::Ptr<std::vector<RealT>> hi_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numZ(),1.0);
-    ROL::Ptr<ROL::Vector<RealT> > lop = ROL::makePtr<ROL::StdVector<RealT>>(lo_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > hip = ROL::makePtr<ROL::StdVector<RealT>>(hi_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> lop = ROL::makePtr<ROL::StdVector<RealT>>(lo_ptr);
+    ROL::Ptr<ROL::Vector<RealT>> hip = ROL::makePtr<ROL::StdVector<RealT>>(hi_ptr);
     bound = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
     // Initialize control vector.
-    ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>> (pFEM->numZ(), frac);
+    ROL::Ptr<std::vector<RealT>> z_ptr = ROL::makePtr<std::vector<RealT>> (pFEM->numZ(), frac);
     ROL::StdVector<RealT> z(z_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtrFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT>> zp = ROL::makePtrFromRef(z);
     // Initialize state vector.
-    ROL::Ptr<std::vector<RealT> > u_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
+    ROL::Ptr<std::vector<RealT>> u_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
     ROL::StdVector<RealT> u(u_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtrFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT>> up = ROL::makePtrFromRef(u);
     // Initialize adjoint vector.
-    ROL::Ptr<std::vector<RealT> > p_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
+    ROL::Ptr<std::vector<RealT>> p_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
     ROL::StdVector<RealT> p(p_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > pp = ROL::makePtrFromRef(p);
+    ROL::Ptr<ROL::Vector<RealT>> pp = ROL::makePtrFromRef(p);
     // Initialize multiplier vector.
-    ROL::Ptr<std::vector<RealT> > l_ptr = ROL::makePtr<std::vector<RealT>>(1, 0.0);
+    ROL::Ptr<std::vector<RealT>> l_ptr = ROL::makePtr<std::vector<RealT>>(1, 0.0);
     ROL::StdVector<RealT> l(l_ptr);
-    ROL::Ptr<ROL::Vector<RealT> > lp = ROL::makePtrFromRef(l);
+    ROL::Ptr<ROL::Vector<RealT>> lp = ROL::makePtrFromRef(l);
     // Initialize objective function.
     pobj = ROL::makePtr<Objective_TopOpt<RealT>>(pFEM);
     // Initialize reduced objective function.
     robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobj,pcon,up,zp,pp);
-    // Run optimization.
-    ROL::OptimizationProblem<RealT> problem(robj, zp, bound, vcon, lp); 
+
+    // Define optimization problem.
+    ROL::Ptr<ROL::Problem<RealT>> problem = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
+    problem->addBoundConstraint(bound);
+    problem->addLinearConstraint("Volume Constraint",vcon,lp);
+    problem->finalize(false,true,*outStream);
     bool derivCheck = true;  // Derivative check flag.
-    if (derivCheck) {
-      problem.check(*outStream);
-    }
-    ROL::OptimizationSolver<RealT> solver(problem, *parlist);
+    if (derivCheck) problem->check(true,*outStream);
+    // Solve optimization problem.
+    ROL::Solver<RealT> solver(problem, *parlist);
     solver.solve(*outStream);
   }
   catch (std::logic_error& err) {

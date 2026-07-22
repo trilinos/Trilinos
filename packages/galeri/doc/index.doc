@@ -75,11 +75,16 @@ matrix, and solves the linear system using AztecOO.
 
 /*!
 <!-- ---------------------------------------------------------------- -->
-\page gl_Copyright Copyright
+\page gl_Copyright Copyright and License
 
 \verbatim
-Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-license for use of this work by or on behalf of the U.S. Government.
+Copyright 2006 National Technology & Engineering Solutions of Sandia,
+LLC (NTESS). Under the terms of Contract DE-NA0003525 with NTESS, the
+U.S. Government retains certain rights in this software.
+
+SPDX-License-Identifier: BSD-3-Clause
+
+Copyright (c) 2006 ETHZ/NTESS and the Galeri contributors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are

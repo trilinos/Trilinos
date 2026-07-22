@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -69,13 +69,13 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
 
   /* See if any entries are stored in this file */
   int dimid;
-  if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dnumentries, &dimid) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   size_t num_entries;
   int    status;
-  if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -90,7 +90,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (start_entity_num + num_entities - 1 > num_entries) {
+  if (start_entity_num + num_entities - 1 > (int64_t)num_entries) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start index (%" PRId64 ") + entity count (%" PRId64
              ") is larger than total number of entities (%zu) in file id %d",
@@ -100,7 +100,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   }
 
   int mapid;
-  if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
+  if (nc_inq_varid(exoid, vmap, &mapid) != EX_NOERR) {
     /* generate portion of the default map (1..num_entries) */
     if (ex_int64_status(exoid) & EX_MAPS_INT64_API) {
       int64_t *lmap = (int64_t *)map;
@@ -132,7 +132,7 @@ int ex_get_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     status = nc_get_vara_int(exoid, mapid, start, count, map);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s id map in file id %d", tname, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

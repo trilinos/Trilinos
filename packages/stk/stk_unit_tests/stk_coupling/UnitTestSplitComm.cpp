@@ -34,6 +34,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/SplitComms.hpp>
@@ -151,6 +152,30 @@ TEST(UnitTestSplitComm, get_other_colors_3_colors)
     EXPECT_EQ(0, otherColors[0]);
     EXPECT_EQ(1, otherColors[1]);
   }
+}
+
+TEST(UnitTestSplitComm, outputP0_3_colors)
+{
+  int numWorldProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numWorldProcs != 3) { GTEST_SKIP(); }
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int myColor = myRank;
+
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  splitComms.set_free_comms_in_destructor(true);
+  EXPECT_EQ(myColor, splitComms.get_local_color());
+
+  MPI_Comm myComm = splitComms.get_split_comm();
+  int myRankOnMyColor = stk::parallel_machine_rank(myComm);
+  EXPECT_EQ(0, myRankOnMyColor);
+
+  std::ostringstream oss;
+  stk::set_outputP0(&oss, myComm);
+  std::string expected("expected output");
+  stk::outputP0() << expected;
+  EXPECT_EQ(expected, oss.str());
+
+  stk::reset_default_output_streams(MPI_COMM_WORLD);
 }
 
 TEST(UnitTestSplitComm, split_comms_comm_world)

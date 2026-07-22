@@ -14,7 +14,7 @@ namespace
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-class VertexWeightSettings : public stk::unit_test_util::simple_fields::MeshFixture
+class VertexWeightSettings : public stk::unit_test_util::MeshFixture
 {
 public:
 
@@ -27,7 +27,7 @@ public:
 
   virtual ~VertexWeightSettings() {}
 
-  void setup_mesh_with_global_element_count_set(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+  void setup_mesh_with_global_element_count_set(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption /*auraOption*/)
   {
     stk::io::fill_mesh(meshSpecification, get_bulk());
     set_global_element_count();
@@ -87,19 +87,21 @@ private:
 
   void set_vertex_weight_for_local_element(const std::vector<double> &vector_of_data, stk::mesh::Entity element)
   {
-    double*vertex_weight = stk::mesh::field_data(*vertexWeightField, element);
+    auto vertexWeightFieldData = vertexWeightField->data<stk::mesh::ReadWrite>();
+    auto vertex_weight = vertexWeightFieldData.entity_values(element);
     unsigned id = get_bulk().identifier(element);
-    *vertex_weight = vector_of_data[id-1];
+    vertex_weight() = vector_of_data[id-1];
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
 
   void check_graph_vertex_weights(const std::vector<BalanceGlobalNumber>& vertexIds, const std::vector<double>& vertexWeights)
   {
+    auto vertexWeightFieldData = vertexWeightField->data();
     for(size_t i=0; i<vertexIds.size(); ++i) {
       stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, vertexIds[i]);
-      double*vertex_weight = stk::mesh::field_data(*vertexWeightField, elem);
-      EXPECT_EQ(*vertex_weight, vertexWeights[i]);
+      auto vertex_weight = vertexWeightFieldData.entity_values(elem);
+      EXPECT_EQ(vertex_weight(), vertexWeights[i]);
     }
   }
 

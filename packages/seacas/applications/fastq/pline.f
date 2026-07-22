@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -287,18 +287,18 @@ C  GENERATE THE CIRCLE
   150          CONTINUE
             ENDIF
 
-C     ELIPSE
+C     ELLIPSE
 
          ELSEIF (KT .EQ. 7)THEN
 
-C  GET THE ELIPSE PARAMETERS
+C  GET THE ELLIPSE PARAMETERS
 
             CALL ELPSPR (MP, KT, KNUM, COOR, LINKP, IP1, IP2,
      &         IABS(IP3), IP3, XCEN, YCEN, THETA1, THETA2, TANG, ICCW,
      &         ICW, AVALUE, BVALUE, ERR)
             IF (ERR) GOTO 340
 
-C  GENERATE THE ELIPSE
+C  GENERATE THE ELLIPSE
 
             ANG = THETA1
             DEL = TANG * DFF

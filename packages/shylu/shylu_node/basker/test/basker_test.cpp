@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -6,11 +15,7 @@
 #include "shylubasker_decl.hpp"
 #include "shylubasker_def.hpp"
  
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
 
 using namespace std;
 
@@ -22,15 +27,11 @@ int main(int argc, char* argv[])
   */
 
   //typedef long long Int;
-  typedef long Int;
   //typedef int Int;
-  typedef double Entry;
-  #ifdef BASKER_KOKKOS
-  typedef Kokkos::OpenMP Exe_Space;
-  #else
-  typedef void*          Exe_Space;
-  #endif
-    
+  using Int = long;
+  using Entry = double;
+  using Exe_Space = Kokkos::DefaultHostExecutionSpace;
+
   cout << "basker_test: filename, nthreads should be passed as command line args" << endl; 
 
   std::string fname = std::string(argv[1]);
@@ -43,11 +44,9 @@ int main(int argc, char* argv[])
   Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(nthreads));
 
   {
-  #ifdef BASKER_KOKKOS
   cout << "hwloc aval: " << Kokkos::hwloc::available()<<endl;
   cout << "numa count: " << Kokkos::hwloc::get_available_numa_count() << endl;
   cout << "thrd numa:  " << Kokkos::hwloc::get_available_cores_per_numa() << endl;
-  #endif
 
   //Read in MTX
   //Note: Adapted from Siva's original bsk_util
@@ -204,7 +203,5 @@ int main(int argc, char* argv[])
   //}//After
   //Kokkos::fence();
   }
-  //#ifdef BASKER_KOKKOS
   Kokkos::finalize();
-  //#endif
 }

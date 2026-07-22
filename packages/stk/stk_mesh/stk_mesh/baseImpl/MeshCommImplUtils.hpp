@@ -39,7 +39,6 @@
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 
 #include <vector>
@@ -48,6 +47,7 @@
 
 namespace stk {
 namespace mesh {
+class BulkData;
 namespace impl {
 
 //----------------------------------------------------------------------
@@ -78,7 +78,7 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
                                        stk::CommSparse& comm,
                                        EntityKey expected_key);
 
-void pack_and_send_induced_parts_from_sharers_to_owners(const BulkData& bulkData, stk::CommSparse& comm, EntityCommListInfoVector& entity_comm_list);
+void pack_and_send_induced_parts_from_sharers_to_owners(const BulkData& bulkData, stk::CommSparse& comm, const EntityCommListInfoVector& entity_comm_list);
 
 bool pack_and_send_modified_shared_entity_states(stk::CommSparse& comm,
                                                  const BulkData& bulk,
@@ -120,33 +120,6 @@ bool is_received_entity_in_local_shared_entity_list(
                       const std::vector<shared_entity_type>::iterator &shared_itr,
                       const std::vector<shared_entity_type>& shared_entities_this_proc,
                       const shared_entity_type &shared_entity_from_other_proc);
-
-bool ghost_id_is_found_in_comm_data(const PairIterEntityComm& comm_data,
-                                    int entity_owner,
-                                    int ghost_id);
-
-bool all_ghost_ids_are_found_in_comm_data(const PairIterEntityComm& comm_data,
-                                          int entity_owner,
-                                          const std::vector<int>& recvd_ghost_ids);
-
-void comm_shared_procs(PairIterEntityComm commInfo,
-                       std::vector<int>& sharingProcs);
-
-void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs);
-
-void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs);
-
-inline
-bool is_comm_ordered(const PairIterEntityComm& ec)
-{
-  int n = ec.size();
-  for (int i=1; i<n; ++i) {
-    if (!(ec[i-1] < ec[i])) {
-      return false;
-    }
-  }
-  return true;
-}
 
 } // namespace impl
 } // namespace mesh

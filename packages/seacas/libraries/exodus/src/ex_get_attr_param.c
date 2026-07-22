@@ -84,12 +84,12 @@ int ex_get_attr_param(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, i
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimid(exoid, dnumobjatt, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumobjatt, &dimid)) != EX_NOERR) {
     /* dimension is undefined */
     *num_attrs = 0;
   }
   else {
-    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_attr_per_entry)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_attr_per_entry)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of attributes in %s %" PRId64 " in file id %d",
                ex_name_of_object(obj_type), obj_id, exoid);

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022, 2024, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -246,10 +246,10 @@ C     here and then refuse to run...
         if (ntimes .gt. 1 .and. nblksa .gt. 1) then
         write (*,500)
  500      format(10x,/,
-     *      'FATAL ERROR: Mapvar is buggy and cannot correctly'
+     *      'FATAL ERROR: Mapvar is buggy and cannot correctly',
      *      ' handle interpolating a mesh with nodal variables,',
      *      /,14x,'multiple timesteps and multiple element blocks.',
-     *      /,14x,'See https://github.com/sandialabs/seacas/packages'
+     *      /,14x,'See https://github.com/sandialabs/seacas/packages',
      *      '/seacas/MAPVAR.md')
         stop('INTERNAL ERROR')
       end if
@@ -258,11 +258,11 @@ C ... Warn if multiple blocks...
         if (ntimes .gt. 1 .and. nblksa .gt. 1) then
           write (*,600)
  600      format(10x,/,
-     *      'WARNING: Mapvar is buggy and might not correctly'
+     *      'WARNING: Mapvar is buggy and might not correctly',
      *      ' handle interpolating a mesh with nodal variables',
      *      /,9x,'and multiple element blocks. Shared nodes',
      *      ' might be incorrect.',
-     *      /,9x,'See https://github.com/sandialabs/seacas/packages'
+     *      /,9x,'See https://github.com/sandialabs/seacas/packages',
      *      '/seacas/MAPVAR.md')
         end if
       end if
@@ -516,7 +516,7 @@ C else icompl = 0
         ICOMPL = 1
         IF (IM .GT. 1)THEN
 C ... Get the block b id from the previous time through...
-C     `IA(NMAP)` is the root of the `MP(1:3,1:MBLK)` array. 
+C     `IA(NMAP)` is the root of the `MP(1:3,1:MBLK)` array.
 C                      ida    idb    isc    ida    ida    idb         isc
 C     Memory ordering (1,1), (2,1), (3,1), (1,2), (2,2), (3,2), ..., (3,3)-
 C                     +0     +1     +2     +3     +4     +5

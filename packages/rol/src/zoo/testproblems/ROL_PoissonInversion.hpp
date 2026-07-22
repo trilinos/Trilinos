@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file
@@ -57,7 +23,8 @@
 #include "ROL_TestProblem.hpp"
 #include "ROL_HelperFunctions.hpp"
 
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_LAPACK.hpp"
+#include "ROL_LinearAlgebra.hpp"
 
 namespace ROL {
 namespace ZOO {
@@ -248,7 +215,7 @@ public:
     }
 
     // Solve Tridiagonal System Using LAPACK's SPD Tridiagonal Solver
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nu_;
     int nhrs = 1;
@@ -501,7 +468,7 @@ public:
 
 
     // Compute dense Hessian.
-    Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
+    ROL::LA::Matrix<Real> H(dim, dim);
     Objective_PoissonInversion<Real> & obj = *this; 
     H = computeDenseHessian<Real>(obj, x);
 
@@ -530,12 +497,19 @@ public:
     }
 
     // Compute dense inverse Hessian.
-    Teuchos::SerialDenseMatrix<int, Real> invH = computeInverse<Real>(H);
+    ROL::LA::Matrix<Real> invH = computeInverse<Real>(H);
 
-    // Apply dense inverse Hessian.
-    Teuchos::SerialDenseVector<int, Real> hv_teuchos(Teuchos::View, &((*hvp)[0]), dim);
-    const Teuchos::SerialDenseVector<int, Real> v_teuchos(Teuchos::View, &(vp[0]), dim);
-    hv_teuchos.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, invH, v_teuchos, 0.0);
+    // Apply dense inverse Hessian using view constructors
+    ROL::LA::Vector<Real> hv_la(ROL::LA::View, &((*hvp)[0]), dim);
+    ROL::LA::Vector<Real> v_la(ROL::LA::View, &(vp[0]), dim);
+    
+    // Apply matrix-vector multiply: hv_la = invH * v_la
+    for (int i = 0; i < dim; i++) {
+      hv_la(i) = 0.0;
+      for (int j = 0; j < dim; j++) {
+        hv_la(i) += invH(i,j) * v_la(j);
+      }
+    }
   }
 
 };
@@ -569,13 +543,13 @@ public:
     // Get Solution
     ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
     Real h = 1.0/((Real)n+1), pt = 0.0, k1 = 1.0, k2 = 2.0;
-    for( int i = 0; i < n; i++ ) {
-      pt = (Real)(i+1)*h;
+    for( int li = 0; li < n; li++ ) {
+      pt = (Real)(li+1)*h;
       if ( pt >= 0.0 && pt < 0.5 ) {
-        (*xp)[i] = std::log(k1);
+        (*xp)[li] = std::log(k1);
       }
       else if ( pt >= 0.5 && pt < 1.0 ) {
-        (*xp)[i] = std::log(k2); 
+        (*xp)[li] = std::log(k2);
       }
     }
     return ROL::makePtr<StdVector<Real>>(xp);

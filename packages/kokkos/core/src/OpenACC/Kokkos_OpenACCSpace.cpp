@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #define KOKKOS_IMPL_PUBLIC_INCLUDE
 
@@ -67,16 +54,7 @@ void *Kokkos::Experimental::OpenACCSpace::impl_allocate(
   ptr = acc_malloc(arg_alloc_size);
 
   if (!ptr) {
-    size_t alignment = 1;  // OpenACC does not handle alignment
-    using Kokkos::Experimental::RawMemoryAllocationFailure;
-    auto failure_mode =
-        arg_alloc_size > 0
-            ? RawMemoryAllocationFailure::FailureMode::OutOfMemoryError
-            : RawMemoryAllocationFailure::FailureMode::InvalidAllocationSize;
-    auto alloc_mechanism =
-        RawMemoryAllocationFailure::AllocationMechanism::OpenACCMalloc;
-    throw RawMemoryAllocationFailure(arg_alloc_size, alignment, failure_mode,
-                                     alloc_mechanism);
+    Kokkos::Impl::throw_bad_alloc(name(), arg_alloc_size, arg_label);
   }
 
   if (Kokkos::Profiling::profileLibraryLoaded()) {

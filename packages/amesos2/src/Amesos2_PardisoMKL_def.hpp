@@ -19,8 +19,6 @@
 #ifndef AMESOS2_PARDISOMKL_DEF_HPP
 #define AMESOS2_PARDISOMKL_DEF_HPP
 
-#include <map>
-
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_toString.hpp>
 #include <Teuchos_StandardParameterEntryValidators.hpp>
@@ -44,7 +42,15 @@ namespace Amesos2 {
     , n_(Teuchos::as<int_t>(this->globalNumRows_))
     , perm_(this->globalNumRows_)
     , nrhs_(0)
+    , partial_facto_ (0)
+    , schur_size_ (0)
+    , schur_out_ptr_(nullptr)
+    , pardiso_initialized_(false)
+    , only_forward_solve_(false)
+    , only_backward_solve_(false)
     , is_contiguous_(true)
+    , msglvl_(0)
+    , debug_level_(0)
   {
     // set the default matrix type
     set_pardiso_mkl_matrix_type();
@@ -56,6 +62,7 @@ namespace Amesos2 {
     for( int i = 0; i < 64; ++i ){
       iparm_[i] = iparm_temp[i];
     }
+    iparm_[0] = 1; // do not use solver defaults
 
     // set single or double precision
     if constexpr ( std::is_same_v<solver_magnitude_type, PMKL::_REAL_t> ) {
@@ -80,14 +87,14 @@ namespace Amesos2 {
      */
     int_t error = 0;
     void *bdummy, *xdummy;
-
-    if( this->root_ ){
+    if( this->root_ && pardiso_initialized_){
       int_t phase = -1;         // release all internal solver memory
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+      pardiso_initialized_ = false;
     }
 
     check_pardiso_mkl_error(Amesos2::CLEAN, error);
@@ -109,24 +116,49 @@ namespace Amesos2 {
   int
   PardisoMKL<Matrix,Vector>::symbolicFactorization_impl()
   {
-    int_t error = 0;
+    using Teuchos::as;
 
+    int_t error = 0;
     if( this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor symbFactTimer( this->timers_.symFactTime_ );
 #endif
 
+      solver_scalar_type bdummy, xdummy; // to be cased to void*
+      if( pardiso_initialized_){
+        int_t phase = -1;         // release all internal solver memory
+        function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
+                               const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
+                               nzvals_view_.data(), rowptr_view_.data(),
+                               colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
+                               const_cast<int_t*>(&msglvl_), as<void*>(&bdummy), as<void*>(&xdummy), &error );
+        if (msglvl_ > 0 && error != 0) {
+          if (error != 0) {
+            std::cout << " PardisoMKL::symbolicFactorization: clean-up failed with " << error << std::endl;
+          } else {
+            std::cout << " PardisoMKL::symbolicFactorization: cleaned-up before calling symbolic" << error;
+          }
+        }
+        pardiso_initialized_ = false;
+      }
       int_t phase = 11;
-      void *bdummy, *xdummy;
-
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
+                             const_cast<int_t*>(&msglvl_), as<void*>(&bdummy), as<void*>(&xdummy), &error );
+      pardiso_initialized_ = true;
     }
-
     check_pardiso_mkl_error(Amesos2::SYMBFACT, error);
+
+    if (msglvl_ > 0 && this->root_) {
+      std::cout << " PardisoMKL::symbolicFactorization done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.symFactTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
+    }
 
     // Pardiso only lets you retrieve the total number of factor
     // non-zeros, not for each individually.  We should document how
@@ -141,24 +173,46 @@ namespace Amesos2 {
   int
   PardisoMKL<Matrix,Vector>::numericFactorization_impl()
   {
-    int_t error = 0;
+    using Teuchos::as;
 
+    int_t error = 0;
     if( this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor numFactTimer( this->timers_.numFactTime_ );
 #endif
 
       int_t phase = 22;
-      void *bdummy, *xdummy;
-
+      solver_scalar_type bdummy; // to be casted to void*
+      solver_scalar_type *xdummy = schur_out_.data();
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
-                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
-    }
+                             const_cast<int_t*>(&msglvl_), as<void*>(&bdummy), as<void*>(xdummy), &error );
 
+      if (error == 0 && partial_facto_ != 0) {
+        if (schur_out_ptr_ != nullptr) {
+          // copy schur out if the output pointer is valid (assuming enough space has been allocated)
+          // Pardiso returns the Schur complement in row-major
+          // So, we transpose it to store in column-major
+          for (size_t i = 0; i < schur_size_; i++) {
+            for (size_t j = 0; j < schur_size_; j++) {
+              schur_out_ptr_[i+j*schur_size_] = as<scalar_type>(schur_out_[j+i*schur_size_]);
+            }
+          }
+        }
+      }
+    }
     check_pardiso_mkl_error(Amesos2::NUMFACT, error);
+
+    if (msglvl_ > 0 && this->root_) {
+      std::cout << " PardisoMKL::numericFactorization done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.numFactTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
+    }
 
     return( 0 );
   }
@@ -176,10 +230,17 @@ namespace Amesos2 {
     // Get B data
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     nrhs_ = as<int_t>(X->getGlobalNumVectors());
-
-    const size_t val_store_size = as<size_t>(ld_rhs * nrhs_);
-    xvals_.resize(val_store_size);
-    bvals_.resize(val_store_size);
+    if (debug_level_ > 0) {
+      if (this->root_) std::cout << "\n == Amesos2_PardisoMKL::solve_impl ==" << std::endl;
+      if (debug_level_ == 1) {
+        B->description();
+      } else {
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        if (!is_null(B->getMap())) B->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+        std::cout << std::endl;
+        B->describe(*fancy, Teuchos::VERB_EXTREME);
+      }
+    }
 
     {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
@@ -187,9 +248,15 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
-      Util::get_1d_copy_helper<
-        MultiVecAdapter<Vector>,
-        solver_scalar_type>::do_get(B, bvals_(),
+      const bool initialize_data = true;
+      const bool do_not_initialize_data = false;
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solver_scalar_view>::do_get(initialize_data, B, bvals_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_solver_scalar_view>::do_get(do_not_initialize_data, X, xvals_,
           as<size_t>(ld_rhs),
           (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
           this->rowIndexBase_);
@@ -200,8 +267,40 @@ namespace Amesos2 {
       Teuchos::TimeMonitor solveTimer( this->timers_.solveTime_ );
 #endif
 
-      const int_t phase = 33;
-
+      int_t phase = 33; // forward & backward solve
+      if (only_forward_solve_) {
+        // forward solve
+        phase = 331;
+        if (wvals_.extent(0) != n_ || wvals_.extent(1) != nrhs_) {
+          Kokkos::resize(wvals_, n_, nrhs_);
+        }
+      } else if (only_backward_solve_) {
+        // backward solve
+        phase = 333;
+        if (wvals_.extent(0) != n_ || wvals_.extent(1) != nrhs_) {
+          Kokkos::resize(wvals_, n_, nrhs_);
+        }
+        // for consistent interface with other solvers (e.g., ShyLU-Basker)
+        //  scatter RHS vectors (based on schur-part)
+        //  input RHS for backward-solve has interior part followed by schur complement
+        size_t n1 = 0;
+        size_t n2 = this->globalNumCols_-schur_size_;
+        for (global_size_type i=0; i<n_; i++) {
+          if (schur_part_(i) == 1) {
+            for (size_t j=0; j<nrhs_; j++) {
+              wvals_(i,j) = bvals_(n2,j);
+            }
+            n2 ++;
+          } else {
+            for (size_t j=0; j<nrhs_; j++) {
+              wvals_(i,j) = bvals_(n1,j);
+            }
+            n1 ++;
+          }
+        }
+      }
+      solver_scalar_type *b_in  = (only_backward_solve_ ? wvals_.data() : bvals_.data());
+      solver_scalar_type *x_out = (only_forward_solve_  ? wvals_.data() : xvals_.data());
       function_map::pardiso( pt_,
                              const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_),
@@ -215,10 +314,29 @@ namespace Amesos2 {
                              &nrhs_,
                              const_cast<int_t*>(iparm_),
                              const_cast<int_t*>(&msglvl_),
-                             as<void*>(bvals_.getRawPtr()),
-                             as<void*>(xvals_.getRawPtr()), &error );
+                             as<void*>(b_in),
+                             as<void*>(x_out), &error );
+      if (only_forward_solve_) {
+        // for consistent interface with other solvers (e.g., ShyLU-Basker)
+        //  gather solution vectors (based on schur-part)
+        //  output vector should have interior part followed by schur complement
+        size_t n1 = 0;
+        size_t n2 = this->globalNumCols_-schur_size_;
+        for (global_size_type i=0; i<n_; i++) {
+          if (schur_part_(i) == 1) {
+            for (size_t j=0; j<nrhs_; j++) {
+              xvals_(n2,j) = wvals_(i,j);
+            }
+            n2 ++;
+          } else {
+            for (size_t j=0; j<nrhs_; j++) {
+              xvals_(n1,j) = wvals_(i,j);
+            }
+            n1 ++;
+          }
+        }
+      }
     }
-
     check_pardiso_mkl_error(Amesos2::SOLVE, error);
 
     /* Export X from root to the global space */
@@ -227,12 +345,31 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-      Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,
-        solver_scalar_type>::do_put(X, xvals_(),
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solver_scalar_view>::do_put(X, xvals_,
           as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-  }
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+    }
+    if (debug_level_ > 0) {
+      if (debug_level_ == 1) {
+        X->description();
+      } else {
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        if (!is_null(X->getMap())) X->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+        std::cout << std::endl;
+        X->describe(*fancy, Teuchos::VERB_EXTREME);
+      }
+    }
+    if (msglvl_ > 0 && this->root_) {
+      std::cout << " PardisoMKL::solve done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.vecRedistTime_.totalElapsedTime()
+                << " + " << this->timers_.solveTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
+    }
 
     return( 0 );
 }
@@ -289,6 +426,14 @@ namespace Amesos2 {
       iparm_[9] = getIntegralValue<int>(*parameterList, "IPARM(10)");
     }
 
+    // Scale vector for stability
+    if( parameterList->isParameter("IPARM(11)") )
+    {
+      RCP<const ParameterEntryValidator> mwm_validator = valid_params->getEntry("IPARM(11)").validator();
+      parameterList->getEntry("IPARM(11)").setValidator(mwm_validator);
+      iparm_[10] = getIntegralValue<int>(*parameterList, "IPARM(11)");
+    }
+
     // First check if the control object requests a transpose solve.
     // Then solver specific options can override this.
     iparm_[11] = this->control_.useTranspose_ ? 2 : 0;
@@ -325,13 +470,21 @@ namespace Amesos2 {
       iparm_[23] = getIntegralValue<int>(*parameterList, "IPARM(24)");
     }
   
-    // Parallelization scheme for the forward and backward solv
+    // Parallelization scheme for the forward and backward solve
     if( parameterList->isParameter("IPARM(25)") )
     {
       RCP<const ParameterEntryValidator> par_fbsolve_validator = valid_params->getEntry("IPARM(25)").validator();
       parameterList->getEntry("IPARM(25)").setValidator(par_fbsolve_validator);
       iparm_[24] = getIntegralValue<int>(*parameterList, "IPARM(25)");
     } 
+
+    // Check matrix
+    if( parameterList->isParameter("IPARM(27)") )
+    {
+      RCP<const ParameterEntryValidator> check_validator = valid_params->getEntry("IPARM(27)").validator();
+      parameterList->getEntry("IPARM(27)").setValidator(check_validator);
+      iparm_[26] = getIntegralValue<int>(*parameterList, "IPARM(27)");
+    }
 
     // Graph compression scheme for METIS.
     if( parameterList->isParameter("IPARM(60)") )
@@ -341,8 +494,56 @@ namespace Amesos2 {
       iparm_[59] = getIntegralValue<int>(*parameterList, "IPARM(60)");
     } 
     
+    // Partial factorization
+    // Note: partial_facto_ == 1 means iparam_[35] = 2 (compute and factor Schur)
+    // while partial_facto_ == 2 means iparam_[35] = 1 (only compute Schur)
+    if(parameterList->isParameter("PartialFacto")) {
+      partial_facto_ = parameterList->get<int>("PartialFacto");
+      if (partial_facto_ == 1)
+        iparm_[35] = 2; // calculate and factor Schur complement
+      else if (partial_facto_ == 2)
+        iparm_[35] = 1; // calculate Schur complement
+    }
+    if(parameterList->isParameter("SchurPart")) {
+      // copy schur-part to the internal view (in case the user-pointer go out of scope?)
+      auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
+      Kokkos::resize(schur_part_, this->globalNumCols_);
+
+      schur_size_ = 0;
+      for (global_size_type i=0; i<this->globalNumCols_; i++) {
+        schur_part_(i) = schur_part_ptr[i]; // keep track or schur part
+        perm_[i] = schur_part_ptr[i];       // input for pardiso
+        if (perm_[i] == 1) schur_size_ ++;
+      }
+      // allocate internal storage to store the schur complement (user may not want it and may not provide a valid pointer?)
+      size_t schur_size_2 = schur_size_*schur_size_;
+      Kokkos::resize(schur_out_, (schur_size_2 > 0 ? schur_size_2 : 1));
+
+    }
+    if(parameterList->isParameter("SchurOut")) {
+      // store schur-part to the internal view (if user wants the output, then the pointer should stay, so no need for internal view?)
+      schur_out_ptr_ = parameterList->get<scalar_type*>("SchurOut");
+    }
+    if(parameterList->isParameter("OnlyForwardSolve")) {
+      only_forward_solve_ = parameterList->get<bool>("OnlyForwardSolve");
+    }
+    if(parameterList->isParameter("OnlyBackwardSolve")) {
+      only_backward_solve_ = parameterList->get<bool>("OnlyBackwardSolve");
+    }
+
+
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
+    if( parameterList->isParameter("MessageLevel") ){
+      msglvl_ = parameterList->get<int>("MessageLevel");
+    }
+    if(parameterList->isParameter("verbose")){
+      bool verbose = parameterList->get<bool>("verbose");
+      if (verbose) msglvl_ = 1;
+    }
+    if( parameterList->isParameter("DebugLevel") ){
+      debug_level_ = parameterList->get<int>("DebugLevel");
     }
   }
 
@@ -462,11 +663,32 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("IPARM(10)", as<int>(iparm_temp[9]) , "Pivoting perturbation",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
+    pl->set("IPARM(11)", as<int>(iparm_temp[10]) , "Scaling vectors",
+            anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     pl->set("IPARM(18)", as<int>(iparm_temp[17]), "Report the number of non-zero elements in the factors",
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
+    pl->set("IPARM(27)", as<int>(iparm_temp[26]) , "Check input matrix",
+            anyNumberParameterEntryValidator(preferred_int, accept_int));
+
+    scalar_type *dummy_scalar_ptr;
+    const local_ordinal_type *dummy_ordinal_ptr;
+    pl->set("PartialFacto", 0,
+            "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
+    pl->set("SchurPart", dummy_ordinal_ptr,
+            "Specify rows/columns belonging to Schur complement for partial factorization");
+    pl->set("SchurOut", dummy_scalar_ptr,
+            "Store output Schur complement from partial factorization");
+    pl->set("OnlyForwardSolve", false,
+            "Perform only the forward substitution");
+    pl->set("OnlyBackwardSolve", false,
+            "Perform only the backward substitution");
+
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+    pl->set("MessageLevel", 0, "PardisoMKL message level (0 to turn off message, and 1 to turn on message");
+    pl->set("verbose", false, "Set PardisoMKL message level to be 1");
+    pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
 
     valid_params = pl;
   }
@@ -483,6 +705,17 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
+  if (debug_level_ > 0) {
+    if (this->root_) {
+      std::cout << "\n == Amesos2_PardisoMKL::loadA_impl";
+      if (current_phase == PREORDERING) std::cout << "(PreOrder)";
+      if (current_phase == SYMBFACT) std::cout << "(SymFact)";
+      if (current_phase == NUMFACT)  std::cout << "(NumFact)";
+      std::cout << " ==" << std::endl;
+    }
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    this->matrixA_->describe(*fancy, (debug_level_ == 1 ? Teuchos::VERB_LOW : Teuchos::VERB_EXTREME));
+  }
 
   // PardisoMKL does not need matrix data in the pre-ordering phase
   if( current_phase == PREORDERING ) return( false );
@@ -492,7 +725,6 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Kokkos::resize(colind_view_, this->globalNumNonZeros_);
     Kokkos::resize(rowptr_view_, this->globalNumRows_ + 1);
   }
-
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
@@ -515,16 +747,48 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
+PardisoMKL<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                         const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " PardisoMKL current parameters:" << std::endl;
+  out << "  > IPARM(2)  = " << iparm_[1]  << std::endl;
+  out << "  > IPARM(4)  = " << iparm_[3]  << std::endl;
+  out << "  > IPARM(8)  = " << iparm_[7]  << std::endl;
+  out << "  > IPARM(10) = " << iparm_[9]  << std::endl;
+  out << "  > IPARM(11) = " << iparm_[10] << std::endl;
+  out << "  > IPARM(12) = " << iparm_[11] << std::endl;
+  out << "  > IPARM(13) = " << iparm_[12] << std::endl;
+  out << "  > IPARM(18) = " << iparm_[17] << std::endl;
+  out << "  > IPARM(24) = " << iparm_[23] << std::endl;
+  out << "  > IPARM(25) = " << iparm_[24] << std::endl;
+  out << "  > IPARM(27) = " << iparm_[26] << std::endl;
+  out << "  > IPARM(60) = " << iparm_[59] << std::endl;
+  out << "  > PartialFacto = " << partial_facto_;
+  if (partial_facto_ == 0)
+    out << " (no partial factorization)" << std::endl;
+  if (partial_facto_ == 1)
+    out << " (compute and factor schur complement : iparam_[35] = 2)" << std::endl;
+  if (partial_facto_ == 2)
+    out << " (only compute schur complement : iparam_[35] = 1)" << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > MessageLevel = " << msglvl_ << std::endl;
+  out << "  > DebugLevel   = " << debug_level_ << std::endl;
+  out << std::endl;
+}
+
+
+template <class Matrix, class Vector>
+void
 PardisoMKL<Matrix,Vector>::check_pardiso_mkl_error(EPhase phase,
                                                    int_t error) const
 {
   int error_i = error;
   Teuchos::broadcast(*(this->getComm()), 0, &error_i); // We only care about root's value
 
-  if( error == 0 ) return;      // No error
+  if( error_i == 0 ) return;      // No error
 
   std::string errmsg = "Other error";
-  switch( error ){
+  switch( error_i ){
   case -1:
     errmsg = "PardisoMKL reported error: 'Input inconsistent'";
     break;
@@ -602,16 +866,11 @@ const char* PardisoMKL<Matrix,Vector>::name = "PARDISOMKL";
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t
-PardisoMKL<Matrix,Vector>::msglvl_ = 0;
-
-template <class Matrix, class Vector>
-const typename PardisoMKL<Matrix,Vector>::int_t
 PardisoMKL<Matrix,Vector>::maxfct_ = 1;
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t
 PardisoMKL<Matrix,Vector>::mnum_ = 1;
-
 
 } // end namespace Amesos
 

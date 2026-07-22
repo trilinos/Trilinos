@@ -1,31 +1,12 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
+
 #include "Teuchos_TestingHelpers.hpp"
 
 #include "Sacado.hpp"
@@ -113,7 +94,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::View<FadFadType**,Layout,Device> ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;
@@ -161,7 +142,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::DynRankView<FadFadType,Layout,Device> ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;
@@ -210,10 +191,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::DynRankView<FadFadType,Layout,Device> DRViewType;
   typedef typename DRViewType::size_type size_type;
-  typedef typename DRViewType::HostMirror host_view_type;
+  typedef typename DRViewType::host_mirror_type host_view_type;
 
   typedef Kokkos::View<FadFadType**,Layout,Device> NoDynViewType;
-  typedef typename NoDynViewType::HostMirror host_nondynrankview_type;
+  typedef typename NoDynViewType::host_mirror_type host_nondynrankview_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;
@@ -268,10 +249,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::DynRankView<FadFadType,Layout,Device> DRViewType;
   typedef typename DRViewType::size_type size_type;
-  typedef typename DRViewType::HostMirror host_view_type;
+  typedef typename DRViewType::host_mirror_type host_view_type;
 
   typedef Kokkos::View<FadFadType**,Layout,Device> NoDynViewType;
-  typedef typename NoDynViewType::HostMirror host_nondynrankview_type;
+  typedef typename NoDynViewType::host_mirror_type host_nondynrankview_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;

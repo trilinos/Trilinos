@@ -1,24 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef KOKKOS_BLAS1_IMPL_ABS_HPP_
-#define KOKKOS_BLAS1_IMPL_ABS_HPP_
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBLAS1_IMPL_ABS_HPP_
+#define KOKKOSBLAS1_IMPL_ABS_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -31,14 +18,13 @@ namespace Impl {
 template <class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Abs_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
   XMV X_;
 
-  MV_Abs_Functor(const RMV& R, const XMV& X)
-      : numCols(X.extent(1)), R_(R), X_(X) {
+  MV_Abs_Functor(const RMV& R, const XMV& X) : numCols(X.extent(1)), R_(R), X_(X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Abs_Functor: RMV is not a Kokkos::View.");
@@ -68,7 +54,7 @@ struct MV_Abs_Functor {
 template <class RMV, class SizeType = typename RMV::size_type>
 struct MV_AbsSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -97,7 +83,7 @@ struct MV_AbsSelf_Functor {
 template <class RV, class XV, class SizeType = typename RV::size_type>
 struct V_Abs_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XV::non_const_value_type> ATS;
 
   RV R_;
   XV X_;
@@ -126,7 +112,7 @@ struct V_Abs_Functor {
 template <class RV, class SizeType = typename RV::size_type>
 struct V_AbsSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV R_;
 
@@ -163,8 +149,7 @@ void MV_Abs_Generic(const execution_space& space, const RMV& R, const XMV& X) {
   const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
-  if ((void*)(R.data()) ==
-      (void*)(X.data())) {  // if R and X are the same (alias one another)
+  if ((void*)(R.data()) == (void*)(X.data())) {  // if R and X are the same (alias one another)
     MV_AbsSelf_Functor<RMV, SizeType> op(R);
     Kokkos::parallel_for("KokkosBlas::Abs::S0", policy, op);
   } else {
@@ -192,8 +177,7 @@ void V_Abs_Generic(const execution_space& space, const RV& R, const XV& X) {
   const SizeType numRows = X.extent(0);
   Kokkos::RangePolicy<execution_space, SizeType> policy(space, 0, numRows);
 
-  if ((void*)(R.data()) ==
-      (void*)(X.data())) {  // if R and X are the same (alias one another)
+  if ((void*)(R.data()) == (void*)(X.data())) {  // if R and X are the same (alias one another)
     V_AbsSelf_Functor<RV, SizeType> op(R);
     Kokkos::parallel_for("KokkosBlas::Abs::S2", policy, op);
   } else {
@@ -204,4 +188,4 @@ void V_Abs_Generic(const execution_space& space, const RV& R, const XV& X) {
 
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif  // KOKKOS_BLAS1_MV_IMPL_ABS_HPP_
+#endif  // KOKKOSBLAS1_IMPL_ABS_HPP_

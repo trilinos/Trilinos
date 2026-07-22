@@ -36,7 +36,6 @@
 #define Stk_Mesh_Fixtures_FixtureNodeSharing_hpp
 
 #include <stddef.h>                     // for size_t
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
 #include <string>                       // for string
 #include <vector>                       // for vector
@@ -46,6 +45,7 @@
 
 namespace stk {
 namespace mesh {
+class BulkData;
 namespace fixtures {
 
 using NodeToProcsMMap = std::multimap<EntityId, int>;
@@ -53,14 +53,6 @@ using NodeToProcsMMap = std::multimap<EntityId, int>;
 void AddToNodeProcsMMap(NodeToProcsMMap &nodes_to_procs, EntityId node_id, int proc_rank);
 
 void DoAddNodeSharings(BulkData &bulk_data, NodeToProcsMMap &nodes_to_procs, EntityId node_id, Entity node);
-
-namespace simple_fields {
-
-void AddToNodeProcsMMap(NodeToProcsMMap &nodes_to_procs, EntityId node_id, int proc_rank);
-
-void DoAddNodeSharings(BulkData &bulk_data, NodeToProcsMMap &nodes_to_procs, EntityId node_id, Entity node);
-
-} // namespace simple_fields
 
 } // fixtures
 } // mesh

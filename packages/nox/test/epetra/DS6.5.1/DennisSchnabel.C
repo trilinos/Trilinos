@@ -91,7 +91,7 @@ DennisSchnabel::~DennisSchnabel()
 // Matrix and Residual Fills
 bool DennisSchnabel::evaluate(
              NOX::Epetra::Interface::Required::FillType fillType,
-             const Epetra_Vector* soln,
+             const Epetra_Vector* soln_,
              Epetra_Vector* tmp_rhs)
 {
   flag = MATRIX_ONLY;
@@ -106,7 +106,7 @@ bool DennisSchnabel::evaluate(
 
   // Export Solution to Overlap vector so we have all unknowns required
   // for function and Jacobian evaluations.
-  u.Import(*soln, *Importer, Insert);
+  u.Import(*soln_, *Importer, Insert);
 
   // Begin F fill
   if((flag == F_ONLY) || (flag == ALL)) {
@@ -186,7 +186,7 @@ Teuchos::RCP<Epetra_CrsMatrix> DennisSchnabel::getJacobian()
   return A;
 }
 
-Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA_)
 {
 
   int* index = new int[2];
@@ -194,23 +194,23 @@ Epetra_CrsGraph& DennisSchnabel::generateGraph(Epetra_CrsGraph& AA)
   if (MyPID==0) {
     index[0]=0;
     index[1]=1;
-    AA.InsertGlobalIndices(0, 2, index);
+    AA_.InsertGlobalIndices(0, 2, index);
 
     if (NumProc==1) {
       index[0]=0;
       index[1]=1;
-      AA.InsertGlobalIndices(1, 2, index);
+      AA_.InsertGlobalIndices(1, 2, index);
     }
   } else {
     index[0]=0;
     index[1]=1;
-    AA.InsertGlobalIndices(1, 2, index);
+    AA_.InsertGlobalIndices(1, 2, index);
   }
 
   delete [] index;
 
-  AA.FillComplete();
+  AA_.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }

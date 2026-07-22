@@ -1,23 +1,23 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "EJ_SystemInterface.h"
-#include "EJ_Version.h"  // for qainfo
-#include "EJ_vector3d.h" // for vector3d
-#include <SL_tokenize.h> // for tokenize
-#include <algorithm>     // for sort, find, transform
-#include <cctype>        // for tolower
+#include "EJ_Version.h"
+#include "EJ_vector3d.h"
+#include <SL_tokenize.h>
+#include <algorithm>
+#include <cctype>
 #include <copyright.h>
-#include <cstddef> // for size_t
-#include <cstdlib> // for exit, strtod, strtoul, abs, etc
-#include <cstring> // for strchr, strlen
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <fmt/format.h>
-#include <iosfwd>  // for ostream
-#include <utility> // for pair, make_pair
-#include <vector>  // for vector
+#include <iosfwd>
+#include <utility>
+#include <vector>
 
 namespace {
   bool str_equal(const std::string &s1, const std::string &s2)
@@ -28,20 +28,14 @@ namespace {
   }
 
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
-  void parse_offset(const char *tokens, vector3d *offset);
+  void parse_offset(const char *tokens, std::vector<vector3d> &offset, bool is_offset);
   void parse_integer_list(const char *tokens, std::vector<int> *list);
   void parse_part_list(const char *tokens, std::vector<int> *list);
   void parse_omissions(const char *tokens, Omissions *omissions, const std::string &basename,
                        bool require_ids);
 } // namespace
 
-SystemInterface::SystemInterface()
-{
-  offset_.x = 0.0;
-  offset_.y = 0.0;
-  offset_.z = 0.0;
-  enroll_options();
-}
+SystemInterface::SystemInterface() { enroll_options(); }
 
 void SystemInterface::enroll_options()
 {
@@ -112,6 +106,50 @@ void SystemInterface::enroll_options()
   options_.enroll("match_node_coordinates", GetLongOption::NoValue,
                   "Combine nodes if they are within tolerance distance of each other.", nullptr);
 
+  options_.enroll("match_nodeset_nodes", GetLongOption::MandatoryValue,
+                  "Combine nodes in the specified nodeset(s) if they are within\n"
+                  "\t\t`tolerance` distance of each other.\n"
+                  "\t\tSpecify nodesets in each part as p#:id1:id2,p#:id2,id4...",
+                  nullptr);
+
+  options_.enroll("tolerance", GetLongOption::MandatoryValue,
+                  "Maximum distance between two nodes to be considered colocated.", nullptr,
+                  nullptr, true);
+
+  options_.enroll(
+      "combine_nodesets", GetLongOption::NoValue,
+      "Input nodesets with the same name will be combined into a single nodeset on output.",
+      nullptr);
+  options_.enroll("combine_sidesets", GetLongOption::NoValue,
+                  "Input sidesets with the same name will be combined into a "
+                  "single sideset on output.",
+                  nullptr);
+  options_.enroll("combine_element_blocks", GetLongOption::NoValue,
+                  "Element blocks with the same name and topology will be "
+                  "combined into a\n"
+                  "\t\tsingle element block on output.",
+                  nullptr);
+
+  options_.enroll(
+      "nodeset_combines", GetLongOption::MandatoryValue,
+      "List of names of output nodesets and the input nodesets which will be combined into that "
+      "output.\n"
+      "\t\tSyntax: out1:in1,in2,..,inX;out2:inA,inB,...,inZ\n"
+      "\t\t        Nodeset 'out1' will contain input nodesets 'in1', 'in2', ..., 'inX'\n"
+      "\t\t       Out name separated by ':' from comma-separated list of input.  Multiple outs "
+      "separated by ';'",
+      nullptr);
+  options_.enroll("sideset_combines", GetLongOption::MandatoryValue,
+                  "List of names of output sidesets and the input sidesets which will be combined "
+                  "into that output.\n"
+                  "\t\t See `nodeset_combines` for syntax.",
+                  nullptr);
+  options_.enroll(
+      "element_block_combines", GetLongOption::MandatoryValue,
+      "List of names of output element blocks and the input element blocks which will be\n"
+      "\t\tcombined into that output. See `nodeset_combines` for syntax.",
+      nullptr, nullptr, true);
+
 #if 0
   options_.enroll("match_elem_ids", GetLongOption::NoValue,
                   "Combine elements if their global ids match and they are compatible.\n"
@@ -124,27 +162,41 @@ void SystemInterface::enroll_options()
                   nullptr);
 #endif
 
-  options_.enroll("tolerance", GetLongOption::MandatoryValue,
-                  "Maximum distance between two nodes to be considered colocated.", nullptr,
-                  nullptr, true);
-
   options_.enroll(
       "block_prefix", GetLongOption::MandatoryValue,
-      "Prefix used on the input block names of second and subsequent meshes to make them\n"
+      "Prefix used on the input block names of second and subsequent part meshes to make them\n"
       "\t\tunique.  Default is 'p'.  Example: block1, p2_block1, p3_block1.",
       "p");
 
   options_.enroll("offset", GetLongOption::MandatoryValue,
-                  "Comma-separated x,y,z offset for coordinates of second and subsequent meshes.\n"
-                  "\t\tThe offset will be multiplied by the part number-1 so:\n"
-                  "\t\tP1: no offset; P2: 1x, 1y, 1z; P3: 2x, 2y, 2z; P(n+1): nx, ny, nz",
+                  "Comma-separated x,y,z offset for coordinates of second and subsequent parts.\n"
+                  "\t\tIf there are only 3 values specified, then The offset will be multiplied by "
+                  "the part number-1 so:\n"
+                  "\t\tP1: no offset; P2: 1x, 1y, 1z; P3: 2x, 2y, 2z; P(n+1): nx, ny, nz\n"
+                  "\t\tYou can also specify the offset of specific parts using the syntax:\n"
+                  "\t\tpn:xn,yn,zn:pm:xm,ym,zm:pk:xk,yk,zk. (note ':', ',')  For example: `-offset "
+                  "p1:1.1,2.2,3.3:p3:2.2,1.0,3.0`\n"
+                  "\t\tThe final coordinates are `scale * orig + offset`",
+                  nullptr, nullptr, true);
+
+  options_.enroll("scale", GetLongOption::MandatoryValue,
+                  "Comma-separated x,y,z scale for coordinates of input parts.\n"
+                  "\t\tIf there are only 3 values specified, then The same scale will be used by "
+                  "all parts (including the first)\n"
+                  "\t\tYou can also specify the scale of specific parts using the syntax:\n"
+                  "\t\tpn:xn,yn,zn:pm:xm,ym,zm:pk:xk,yk,zk. (note ':', ',')  For example: `-scale "
+                  "p1:1.1,2.2,3.3:p3:2.2,1.0,3.0`\n"
+                  "\t\tThe final coordinates are `scale * orig + offset`",
                   nullptr, nullptr, true);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
                   "Specify subset of timesteps to transfer to output file.\n"
                   "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
-                  "\t\tTo only transfer last step, use '-steps LAST'",
-                  "1:");
+                  "\t\tIf the 'beg' or 'end' is < 0, then it is the \"-Nth\" step...\n"
+                  "\t\t-1 is \"first last\" or last, -3 is \"third last\"\n"
+                  "\t\tTo copy just the last 3 steps, do: `-steps -3:-1`\n"
+                  "\t\tEnter LAST for last step",
+                  "1:", nullptr, true);
 
   options_.enroll("gvar", GetLongOption::MandatoryValue,
                   "Comma-separated list of global variables to be joined or ALL or NONE.", nullptr);
@@ -193,18 +245,28 @@ void SystemInterface::enroll_options()
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
 
-  options_.enroll(
-      "zlib", GetLongOption::NoValue,
-      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
-      nullptr);
+  options_.enroll("zlib", GetLongOption::NoValue,
+                  "Use the Zlib / libz compression method if compression is enabled (default) "
+                  "[exodus only, enables netcdf-4].",
+                  nullptr);
 
   options_.enroll("szip", GetLongOption::NoValue,
                   "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
+  options_.enroll("zstd", GetLongOption::NoValue,
+                  "Use Zstd compression. [exodus only, enables netcdf-4, experimental]", nullptr);
+  options_.enroll("bzip2", GetLongOption::NoValue,
+                  "Use Bzip2 compression. [exodus only, enables netcdf-4, experimental]", nullptr);
 
-  options_.enroll(
-      "compress", GetLongOption::MandatoryValue,
-      "Specify the hdf5 (netcdf4) compression level [0..9] to be used on the output file.",
-      nullptr);
+  options_.enroll("compress", GetLongOption::MandatoryValue,
+                  "Specify the compression level to be used.  Values depend on algorithm:\n"
+                  "\t\tzlib/bzip2:  0..9\t\tszip:  even, 4..32\t\tzstd:  -131072..22",
+                  nullptr);
+
+  options_.enroll("quantize_nsd", GetLongOption::MandatoryValue,
+                  "Use the lossy quantize compression method.\n"
+                  "\t\tValue specifies number of digits to "
+                  "retain (1..15) [exodus only]",
+                  nullptr, nullptr, true);
 
   options_.enroll("disable_field_recognition", GetLongOption::NoValue,
                   "Do not try to combine scalar fields into higher-order fields such as\n"
@@ -227,7 +289,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         stderr,
         "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n"
         "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#ejoin\n"
-        "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n");
+        "\n\t->->-> Send email to sierra-help@sandia.gov for ejoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -258,9 +320,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
   size_t part_count = inputFiles_.size();
   blockOmissions_.resize(part_count);
   blockInclusions_.resize(part_count);
-  nsetOmissions_.resize(part_count);
-  ssetOmissions_.resize(part_count);
+  nodesetOmissions_.resize(part_count);
+  sidesetOmissions_.resize(part_count);
   assemblyOmissions_.resize(part_count);
+  nodesetMatch_.resize(part_count);
+  offset_.resize(part_count);
+  scale_.resize(part_count, {1.0, 1.0, 1.0});
 
   // Get options from environment variable also...
   char *options = getenv("EJOIN_OPTIONS");
@@ -279,7 +344,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("offset");
     if (temp != nullptr) {
-      parse_offset(temp, &offset_);
+      parse_offset(temp, offset_, true);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("scale");
+    if (temp != nullptr) {
+      parse_offset(temp, scale_, false);
     }
   }
 
@@ -330,14 +402,17 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("omit_part_assemblies") != nullptr) {
-    createAssemblies_ = false;
-  }
-
   {
     const char *temp = options_.retrieve("extract_blocks");
     if (temp != nullptr) {
       parse_omissions(temp, &blockInclusions_, "block", true);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("match_nodeset_nodes");
+    if (temp != nullptr) {
+      parse_omissions(temp, &nodesetMatch_, "nodelist", true);
     }
   }
 
@@ -348,7 +423,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         omitNodesets_ = true;
       }
       else {
-        parse_omissions(temp, &nsetOmissions_, "nodelist", false);
+        parse_omissions(temp, &nodesetOmissions_, "nodelist", false);
       }
     }
     else {
@@ -363,7 +438,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         omitSidesets_ = true;
       }
       else {
-        parse_omissions(temp, &ssetOmissions_, "surface", false);
+        parse_omissions(temp, &sidesetOmissions_, "surface", false);
       }
     }
     else {
@@ -395,36 +470,102 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("nsetvar");
     if (temp != nullptr) {
-      parse_variable_names(temp, &nsetVarNames_);
+      parse_variable_names(temp, &nodesetVarNames_);
     }
   }
 
   {
     const char *temp = options_.retrieve("ssetvar");
     if (temp != nullptr) {
-      parse_variable_names(temp, &ssetVarNames_);
+      parse_variable_names(temp, &sidesetVarNames_);
     }
   }
 
+  createAssemblies_        = options_.retrieve("omit_part_assemblies") != nullptr;
   disableFieldRecognition_ = options_.retrieve("disable_field_recognition") != nullptr;
   useNetcdf4_              = options_.retrieve("netcdf4") != nullptr;
   ignoreElementIds_        = options_.retrieve("ignore_element_ids") != nullptr;
+  combineNodesets_         = options_.retrieve("combine_nodesets") != nullptr;
+  combineSidesets_         = options_.retrieve("combine_sidesets") != nullptr;
+  combineElementBlocks_    = options_.retrieve("combine_element_blocks") != nullptr;
+  ints64bit_               = options_.retrieve("64-bit") != nullptr;
 
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints64bit_ = true;
+  {
+    const char *temp = options_.retrieve("nodeset_combines");
+    if (temp != nullptr) {
+      nodesetCombines_ = temp;
+    }
   }
 
-  if (options_.retrieve("szip") != nullptr) {
-    szip_ = true;
-    zlib_ = false;
+  {
+    const char *temp = options_.retrieve("sideset_combines");
+    if (temp != nullptr) {
+      sidesetCombines_ = temp;
+    }
   }
+
+  {
+    const char *temp = options_.retrieve("element_block_combines");
+    if (temp != nullptr) {
+      elementBlockCombines_ = temp;
+    }
+  }
+
   zlib_ = (options_.retrieve("zlib") != nullptr);
+  szip_ = (options_.retrieve("szip") != nullptr);
+  zstd_ = (options_.retrieve("zstd") != nullptr);
+  bz2_  = (options_.retrieve("bzip2") != nullptr);
 
-  if (szip_ && zlib_) {
-    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+  if (szip_ + zlib_ + zstd_ + bz2_ > 1) {
+    fmt::print(stderr,
+               "ERROR: Only one of 'szip' or 'zlib' or 'zstd' or 'bzip2' can be specified.\n");
   }
 
-  compressionLevel_ = options_.get_option_value("compress", compressionLevel_);
+  {
+    const char *temp = options_.retrieve("compress");
+    if (temp != nullptr) {
+      compressionLevel_ = std::strtol(temp, nullptr, 10);
+      if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
+        zlib_ = true;
+      }
+
+      if (zlib_ || bz2_) {
+        if (compressionLevel_ < 0 || compressionLevel_ > 9) {
+          fmt::print(stderr,
+                     "ERROR: Bad compression level {}, valid value is between 0 and 9 inclusive "
+                     "for gzip/zlib/bzip2 compression.\n",
+                     compressionLevel_);
+          return false;
+        }
+      }
+      else if (szip_) {
+        if (compressionLevel_ % 2 != 0) {
+          fmt::print(
+              stderr,
+              "ERROR: Bad compression level {}. Must be an even value for szip compression.\n",
+              compressionLevel_);
+          return false;
+        }
+        if (compressionLevel_ < 4 || compressionLevel_ > 32) {
+          fmt::print(stderr,
+                     "ERROR: Bad compression level {}, valid value is between 4 and 32 inclusive "
+                     "for szip compression.\n",
+                     compressionLevel_);
+          return false;
+        }
+      }
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("quantize_nsd");
+    if (temp != nullptr) {
+      quantizeNSD_ = std::strtol(temp, nullptr, 10);
+      if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
+        zlib_ = true;
+      }
+    }
+  }
 
   if (options_.retrieve("match_node_ids") != nullptr) {
     matchNodeIds_ = true;
@@ -478,15 +619,17 @@ void SystemInterface::parse_step_option(const char *tokens)
   //: The defined formats for the count attribute are:<br>
   //:  <ul>
   //:    <li><missing> -- default -- 1 <= count <= oo  (all steps)</li>
-  //:    <li>"X"                  -- X <= count <= X  (just step X). If X == LAST, last step
-  // only</li>
+  //:    <li>"X"                  -- X <= count <= X  (just step X) LAST for last step.</li>
   //:    <li>"X:Y"                -- X to Y by 1</li>
   //:    <li>"X:"                 -- X to oo by 1</li>
   //:    <li>":Y"                 -- 1 to Y by 1</li>
   //:    <li>"::Z"                -- 1 to oo by Z</li>
-  //:    <li>"LAST"               -- last step only</li>
   //:  </ul>
-  //: The count and step must always be >= 0
+  //: The step must always be > 0
+  //: If the 'from' or 'to' is < 0, then it is the "-Nth" step...
+  //: -1 is "first last" or last
+  //: -4 is "fourth last step"
+  //: To copy just the last 3 steps, do: `-steps -3:-1`
 
   // Break into tokens separated by ":"
 
@@ -502,24 +645,24 @@ void SystemInterface::parse_step_option(const char *tokens)
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        int  k = 0;
 
+        int k = 0;
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];
         }
 
         tmp_str[k] = '\0';
         if (strlen(tmp_str) > 0) {
-          val = strtoul(tmp_str, nullptr, 0);
+          val = strtol(tmp_str, nullptr, 0);
         }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
         }
       }
-      stepMin_      = abs(vals[0]);
-      stepMax_      = abs(vals[1]);
-      stepInterval_ = abs(vals[2]);
+      stepMin_      = vals[0];
+      stepMax_      = vals[1];
+      stepInterval_ = abs(vals[2]); // step is always positive...
     }
     else if (str_equal("LAST", tokens)) {
       stepMin_ = stepMax_ = -1;
@@ -535,7 +678,7 @@ void SystemInterface::show_version()
 {
   fmt::print("EJoin\n"
              "\t(A code for merging Exodus databases; with or without results data.)\n"
-             "\t(Version: {}) Modified: {}\n",
+             "\t(Version: {}) Modified: {}\n\n",
              qainfo[2], qainfo[1]);
 }
 
@@ -588,32 +731,82 @@ namespace {
     }
   }
 
-  void parse_offset(const char *tokens, vector3d *offset)
+  void parse_offset(const char *tokens, std::vector<vector3d> &offset, bool is_offset)
   {
+    // Sets the `offset` or `scale`
     // Break into tokens separated by ","
     if (tokens != nullptr) {
-      std::string  token_string(tokens);
-      StringVector var_list = SLIB::tokenize(token_string, ",");
+      std::string token_string(tokens);
+      if (token_string.find(':') == std::string::npos) {
+        // This is specifying just 3 values which are applied to all parts
+        StringVector var_list = SLIB::tokenize(token_string, ",");
 
-      // At this point, var_list should contain 1,2,or 3 strings
-      // corresponding to the x, y, and z coordinate offsets.
-      if (var_list.size() != 3) {
-        fmt::print(stderr,
-                   "ERROR: Incorrect number of offset components specified--3 required.\n\n");
-        offset->x = offset->y = offset->z = 0.0;
-        return;
+        // At this point, var_list should contain 3 strings
+        // corresponding to the x, y, and z coordinate offsets/scales.
+        if (var_list.size() != 3) {
+          fmt::print(stderr,
+                     "ERROR: Incorrect number of offset components specified--3 required.\n\n");
+          return;
+        }
+
+        std::string offx = var_list[0];
+        std::string offy = var_list[1];
+        std::string offz = var_list[2];
+        double      x    = std::stod(offx);
+        double      y    = std::stod(offy);
+        double      z    = std::stod(offz);
+
+        for (size_t i = 0; i < offset.size(); i++) {
+          double di = is_offset ? (double)i : 1.0;
+          offset[i] = {di * x, di * y, di * z};
+        }
       }
+      else {
+        // Tokens specify explicit offset/scale(s) for 1 or more parts...
+        // Form is:  `p1:x1,y1,z1:p3:x3,y3,z3:pN:xN,yN,zN`
+        // colon separates part from comma-separated. x,y,z
+        // colon also separates the part groups.
+        auto groups = SLIB::tokenize(token_string, ":");
+        if (groups.size() % 2 != 0) {
+          fmt::print(
+              stderr,
+              "ERROR: Invalid syntax for offset/scale.  Make sure parts are surrounded by ':'\n");
+          exit(EXIT_FAILURE);
+        }
+        for (size_t i = 0; i < groups.size(); i += 2) {
+          auto &part_string = groups[i];
+          auto &off_string  = groups[i + 1];
 
-      std::string offx = var_list[0];
-      std::string offy = var_list[1];
-      std::string offz = var_list[2];
-      double      x    = std::stod(offx);
-      double      y    = std::stod(offy);
-      double      z    = std::stod(offz);
+          int part_num = -1;
+          if (part_string[0] == 'p' || part_string[0] == 'P') {
+            part_num = std::stoi(part_string.substr(1));
+            if ((size_t)part_num > offset.size()) {
+              fmt::print(
+                  stderr,
+                  "ERROR: Part number too large in offset/scale command ({} must be less or equal "
+                  "to {})\n",
+                  part_num, offset.size());
+              exit(EXIT_FAILURE);
+            }
+          }
+          else {
+            fmt::print(stderr,
+                       "ERROR: Bad syntax ({}) specifying part number. Use 'p'+ part_number\n"
+                       "       For example -offset p1:0,1,2\n",
+                       part_string);
+            exit(EXIT_FAILURE);
+          }
 
-      offset->x = x;
-      offset->y = y;
-      offset->z = z;
+          auto        soff     = SLIB::tokenize(off_string, ",");
+          std::string offx     = soff[0];
+          std::string offy     = soff[1];
+          std::string offz     = soff[2];
+          double      x        = std::stod(offx);
+          double      y        = std::stod(offy);
+          double      z        = std::stod(offz);
+          offset[part_num - 1] = {x, y, z};
+        }
+      }
     }
   }
 

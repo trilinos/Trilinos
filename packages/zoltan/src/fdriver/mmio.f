@@ -1,3 +1,11 @@
+c @HEADER
+c *****************************************************************************
+c  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
+c
+c Copyright 2012 NTESS and the Zoltan contributors.
+c SPDX-License-Identifier: BSD-3-Clause
+c *****************************************************************************
+c @HEADER
       subroutine mmread(iunit,rep,field,symm,rows,cols,nnz,nnzmax,
      *                 indx,jndx,ival,rval,cval)
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      

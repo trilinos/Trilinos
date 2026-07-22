@@ -44,21 +44,11 @@ class MetaData;
 class BulkData;
 
 namespace fixtures {
-typedef mesh::Field<double,mesh::Cartesian> VectorFieldType ;
-
-void degenerate_mesh_meta_data(stk::mesh::MetaData & meta_data, VectorFieldType & node_coord);
-
-void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
-
-namespace simple_fields {
-
 typedef mesh::Field<double> VectorFieldType;
 
 void degenerate_mesh_meta_data(stk::mesh::MetaData & meta_data, VectorFieldType & node_coord);
 
 void degenerate_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
-
-}
 
 }
 

@@ -75,8 +75,10 @@ public:
   typedef Kokkos::DefaultHostExecutionSpace                     HostExecSpaceType;
   typedef typename HostExecSpaceType::memory_space              HostMemSpaceType;
 
-  typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType>  host_ordinal_type_view;
-  typedef Kokkos::View<mumps_type*, HostExecSpaceType>          host_value_type_view;
+  typedef Kokkos::View<local_ordinal_type*,  HostExecSpaceType>  host_ordinal_type_view;
+  typedef Kokkos::View<mumps_type*,  HostExecSpaceType>          host_value_type_view;
+  typedef typename Kokkos::View<mumps_type**, Kokkos::LayoutLeft,
+                                typename HostExecSpaceType::memory_space> host_mv_view;
 
   MUMPS(Teuchos::RCP<const Matrix> A,
           Teuchos::RCP<Vector>       X,
@@ -119,6 +121,12 @@ private:
   int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
                  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
 
   /**
    * \brief Determines whether the shape of the matrix is OK for this solver.
@@ -129,13 +137,20 @@ private:
    *Currently, the following MUMPS parameters/options are recognized and acted upon:
    *Please see MUMPS manual for details as parameters changed based on MUMPS version
    *<ul>
-   *   <li> \c "ICNTL(1)" </li>
-   *   <li> \c "ICNTL(2)" </li>
-   *   <li> \c "ICNTL(3)" </li>
-   *   <li> \c "ICNTL(4)" </li>
-   *   <li> \c "ICNTL(6)" </li>
-   *   <li> \c "ICNTL(9)" </li>
-   *   <li> \c "ICNTL(11)" </li>
+   *   <li> \c "ICNTL(1)": Output stream for error messages (default: -1, off).</li>
+   *   <li> \c "ICNTL(2)": Output stream for diagnostic printing and statistics local to each MPI process (default: off, -1).</li>
+   *   <li> \c "ICNTL(3)": Output stream for global information, collected on the host (default: -1, off).</li>
+   *   <li> \c "ICNTL(4)": Level of printing for error, warning, and diagnostic messages (default: 1).
+   *                       <=0 : No messages output.
+   *                         1 : Only error messages printed.
+   *                         2 : Errors, warnings, and main statistics printed.
+   *                         3 : Errors and warnings and terse diagnostics (only first ten entries of arrays) printed.
+   *                       >=4 : Errors, warnings and information on input, output paramete
+   *   </li>
+   *   <li> \c "ICNTL(6)": Permutes the matrix to a zero-free diagonal and/or scale the matrix (default: 7, automatic)</li>
+   *   <li> \c "ICNTL(9)": Computes the solution using transpose if not 1 (default: 1, non-transpose solve)</li>
+   *   <li> \c "ICNTL(11)": Computes statistics related to an error analysis of the linear system solved (default: 0, no analysis)</li>
+   *   <li> \c "ICNTL(14)": Controls the percentage increase in the estimated working space (default: 20)<\li>
    *</ul>
    *
    */
@@ -186,9 +201,11 @@ private:
   host_ordinal_type_view host_col_ptr_view_;
 
   /// Persisting 1D store for X
-  mutable Teuchos::Array<mumps_type> xvals_;  local_ordinal_type ldx_;
+  mutable host_mv_view xvals_;
+  local_ordinal_type ldx_;
   /// Persisting 1D store for B
-  mutable Teuchos::Array<mumps_type> bvals_;  local_ordinal_type ldb_;
+  mutable host_mv_view bvals_;
+  local_ordinal_type ldb_;
 
   mutable MUMPS_STRUC_C mumps_par;
 
@@ -331,6 +348,12 @@ struct solver_traits<MUMPS> {
 #else
   typedef Meta::make_list2<float, double> supported_scalars;
 #endif
+};
+
+template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+struct solver_supports_matrix<MUMPS,
+  KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, ExecutionSpace>> {
+  static const bool value = true;
 };
 
 } // end namespace Amesos2

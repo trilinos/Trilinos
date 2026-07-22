@@ -19,12 +19,6 @@
 // for making Tpetra's macros work.
 #include "TpetraCore_ETIHelperMacros.h"
 
-#ifdef HAVE_AMESOS2_EPETRA
-// Do explicit instantiation of Amesos2::Details::LinearSolverFactory,
-// for Epetra objects.
-template class Amesos2::Details::LinearSolverFactory<Epetra_MultiVector, Epetra_Operator, double>;
-#endif // HAVE_AMESOS2_EPETRA
-
 // Define typedefs that make the Tpetra macros work.
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

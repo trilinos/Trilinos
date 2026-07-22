@@ -17,16 +17,6 @@
 // errors result.  Fixing this requires the same run-time registration
 // solution that Bug 6392 is all about.
 
-#if defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
-namespace Belos {
-namespace Details {
-namespace Epetra {
-  extern void __attribute__((weak)) registerLinearSolverFactory ();
-} // namespace Epetra
-} // namespace Details
-} // namespace Belos
-#endif // defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
-
 #if defined(HAVE_BELOS_TPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
 namespace Belos {
 namespace Details {
@@ -53,13 +43,6 @@ registerLinearSolverFactory ()
     ::Belos::Details::Tpetra::registerLinearSolverFactory ();
   }
 #endif // defined(HAVE_BELOS_TPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
-
-#if defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
-  // It's a weak symbol, so it might be NULL.
-  if (::Belos::Details::Epetra::registerLinearSolverFactory != NULL) {
-    ::Belos::Details::Epetra::registerLinearSolverFactory ();
-  }
-#endif // defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
 }
 
 } // namespace Details

@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef _KOKKOSKERNELS_UPPERBOUND_HPP
-#define _KOKKOSKERNELS_UPPERBOUND_HPP
+#ifndef KOKKOSKERNELS_UPPERBOUND_HPP
+#define KOKKOSKERNELS_UPPERBOUND_HPP
 
 /*! \file KokkosKernels_UpperBound.hpp
    Define thread and team-collaborative upper-bound search
@@ -70,11 +57,9 @@ namespace KokkosKernels {
     \returns index of first element in view where pred(value,element) is true,
     or view.size if no such element exists
 */
-template <typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type> >
+template <typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type> >
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type upper_bound_thread(
-    const ViewLike &view, const typename ViewLike::non_const_value_type &value,
-    Pred pred = Pred()) {
+    const ViewLike &view, const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
   return lower_bound_thread(view, value, Neg(Refl(pred)));
 }
 
@@ -88,14 +73,13 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type upper_bound_thread(
     \returns index of first element in view where pred(value,element) is true,
     or view.size if no such element exists
 */
-template <typename TeamMember, typename ViewLike,
-          typename Pred = LT<typename ViewLike::non_const_value_type> >
+template <typename TeamMember, typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type> >
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type upper_bound_team(
-    const TeamMember &handle, const ViewLike &view,
-    const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
+    const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
+    Pred pred = Pred()) {
   return lower_bound_team(handle, view, value, Neg(Refl(pred)));
 }
 
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNELS_UPPERBOUND_HPP
+#endif  // KOKKOSKERNELS_UPPERBOUND_HPP

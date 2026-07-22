@@ -3,11 +3,12 @@
 #include <vector>
 #include <stk_util/stk_config.h>
 
-#include <stk_tools/block_extractor/ParseCsv.hpp>
+#include <stk_util/util/ParseCsv.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/util/string_utils.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include "ExtractBlocks.hpp"
 
 void print_ids_to_extract(const std::string & idType, const std::vector<int> & ids)
@@ -43,9 +44,9 @@ std::string get_long_example(std::string execPath)
   return example;
 }
 
-int main(int argc, const char**argv)
+int main(int argc, char** argv)
 {
-  MPI_Init(&argc, const_cast<char***>(&argv));
+  stk::initialize(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
 
   stk::CommandLineParserParallel commandLine(comm);
@@ -58,7 +59,7 @@ int main(int argc, const char**argv)
   std::string quickExample = get_short_example(argv[0]);
   std::string longExample = get_long_example(argv[0]);
 
-  stk::parse_command_line(argc, argv, quickExample, longExample, commandLine, comm);
+  stk::parse_command_line(argc, const_cast<const char**>(argv), quickExample, longExample, commandLine, comm);
 
   std::string inFile = commandLine.get_option_value<std::string>("infile");
   std::string outFile = commandLine.get_option_value<std::string>("outfile");
@@ -67,13 +68,13 @@ int main(int argc, const char**argv)
   if (commandLine.is_option_provided("extract-blocks")) {
     csvBlocks = commandLine.get_option_value<std::string>("extract-blocks");
   }
-  std::vector<int> block_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvBlocks));
+  std::vector<int> block_ids = stk::util::get_ids_from_strings(stk::split_csv_string(csvBlocks));
 
   std::string csvNodesets;
   if (commandLine.is_option_provided("extract-nodesets")) {
     csvNodesets = commandLine.get_option_value<std::string>("extract-nodesets");
   }
-  std::vector<int> nodeset_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvNodesets));
+  std::vector<int> nodeset_ids = stk::util::get_ids_from_strings(stk::split_csv_string(csvNodesets));
 
   print_ids_to_extract("blocks", block_ids);
 
@@ -83,7 +84,7 @@ int main(int argc, const char**argv)
 
   stk::tools::extract_blocks_and_ns_from_file(inFile, outFile, block_ids, nodeset_ids, comm);
 
-  MPI_Finalize();
+  stk::finalize();
   return 0;
 }
 

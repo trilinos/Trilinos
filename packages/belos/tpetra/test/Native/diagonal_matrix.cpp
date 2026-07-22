@@ -70,7 +70,7 @@ public:
     map_ (map)
   {
     using dev_view_type = Kokkos::View<mag_type*, device_type>;
-    using host_view_type = typename dev_view_type::HostMirror;
+    using host_view_type = typename dev_view_type::host_mirror_type;
     using SC = typename TpetraOperatorType::scalar_type;
     using LO = typename TpetraOperatorType::local_ordinal_type;
 
@@ -240,7 +240,7 @@ testSolver (Teuchos::FancyOStream& out,
 
   myOut << "Belos solver wrapper result: "
 	<< (belosResult == Belos::Converged ? "Converged" : "Unconverged")
-	<< endl
+        << endl
 	<< "Number of iterations: " << solver->getNumIters ()
 	<< endl;
 

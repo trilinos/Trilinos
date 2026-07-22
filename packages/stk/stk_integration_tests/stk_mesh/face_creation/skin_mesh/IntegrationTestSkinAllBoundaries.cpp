@@ -8,7 +8,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <init/Ionit_Initializer.h>     // for Initializer
+#include <Ionit_Initializer.h>     // for Initializer
 #include <stddef.h>                     // for size_t, nullptr
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <string>                       // for string
@@ -46,7 +46,7 @@ const SideTestUtil::TestCaseData allBoundarySidesTestCases =
   {"AP.e",        2,      11,     {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 4}, {2, 5}}},
 };
 
-void create_all_boundary_sides(stk::mesh::BulkData& bulkData, stk::mesh::Selector stuffToSkin, const stk::mesh::PartVector& partsToAdd)
+void create_all_boundary_sides(stk::mesh::BulkData& /*bulkData*/, stk::mesh::Selector /*stuffToSkin*/, const stk::mesh::PartVector& /*partsToAdd*/)
 {
 }
 

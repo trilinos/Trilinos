@@ -33,6 +33,7 @@
 // 
 
 #include "stk_util/parallel/Parallel.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 /*--------------------------------------------------------------------*/
 /* Parallel operations */
@@ -45,9 +46,7 @@ int parallel_machine_size( ParallelMachine parallel_machine )
 {
   int value = 1 ;
   if (parallel_machine != MPI_COMM_NULL) {
-    if ( MPI_SUCCESS != MPI_Comm_size( parallel_machine , &value ) ) {
-      value = 1 ;
-    }
+    STK_ThrowRequire( MPI_SUCCESS == MPI_Comm_size( parallel_machine , &value ));
   }
   return value ;
 }
@@ -56,9 +55,7 @@ int parallel_machine_rank( ParallelMachine parallel_machine )
 {
   int value = 0 ;
   if (parallel_machine != MPI_COMM_NULL) {
-    if ( MPI_SUCCESS != MPI_Comm_rank( parallel_machine , &value ) ) {
-      value = 0 ;
-    }
+    STK_ThrowRequire( MPI_SUCCESS == MPI_Comm_rank( parallel_machine , &value ));
   }
   return value ;
 }

@@ -14,8 +14,10 @@
 #include "NOX_Utils.H"
 #include "NOX_Solver_LineSearchBased.H"
 
-NOX::ObserverPrint::ObserverPrint(const Teuchos::RCP<NOX::Utils>& os) :
-  os_(os)
+NOX::ObserverPrint::ObserverPrint(const Teuchos::RCP<NOX::Utils>& os,
+                                  const size_t offset) :
+  os_(os),
+  offset_(offset)
 {}
 
 void NOX::ObserverPrint::runPreIterate(const NOX::Solver::Generic& solver)
@@ -23,6 +25,12 @@ void NOX::ObserverPrint::runPreIterate(const NOX::Solver::Generic& solver)
   if (solver.getNumIterations() == 0) {
     auto& os = os_->out();
     auto original_flags = os.flags();
+
+    if (offset_ > 0) {
+      for (size_t i=0; i < offset_; ++i) {
+        os << " ";
+      }
+    }
 
     os.setf(std::ios::left);
     os.width(5);
@@ -68,6 +76,12 @@ void NOX::ObserverPrint::printStep(const NOX::Solver::Generic& solver)
   auto& os = os_->out();
   auto original_flags = os.flags();
   const int precision = 6;
+
+  if (offset_ > 0) {
+    for (size_t i=0; i < offset_; ++i) {
+      os << " ";
+    }
+  }
 
   os.width(5);
   os.setf(std::ios::left);

@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_HERK_INTERNAL_HPP__
 #define __TACHO_HERK_INTERNAL_HPP__
@@ -45,7 +37,7 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
 
     if (n > 0 && k > 0)
       BlasTeam<value_type>::herk(member, ArgUplo::param, ArgTrans::param, n, k, value_type(alpha), A.data(),
-                                 A.stride_1(), value_type(beta), C.data(), C.stride_1());
+                                 A.stride(1), value_type(beta), C.data(), C.stride(1));
     return 0;
   }
 };

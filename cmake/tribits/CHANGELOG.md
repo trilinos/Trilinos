@@ -2,6 +2,61 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2025-03-22:
+
+* **Changed:** Set CMake policy
+  [CMP0144](https://cmake.org/cmake/help/latest/policy/CMP0144.html) to `NEW`
+  (for versions of CMake 3.27+) so that `find_package(<PackageName> ...)` will
+  use upper case env var `<PACKAGENAME>_ROOT`.  Now, systems that are setting
+  uppercase env var names for standard packages will get picked in CMake
+  configures.
+
+## 2025-02-17:
+
+* **Added:** Added support for header-only libraries with
+  `tribits_add_library()` with new keyword `HEADERONLY`.  See
+  updated documentation.
+
+## 2024-10-08:
+
+* **Changed:** The TriBITS framework find operation for
+  Python<sup>[&dagger;](#tribits_python_support)</sup> has been changed from
+  calling `find_package(PythonInterp)` (which uses the deprecated
+  `FindPythonInterp.cmake` module) to calling `find_package(Python3)` (which
+  uses [FindPython3.cmake]).  In the process, the internal CMake cache
+  variable set by this operation was changed from `PYTHON_EXECUTABLE` to
+  `Python3_EXECUTABLE`, and TriBITS projects need make that change as well
+  when upgrading TriBITS.  (This change can be made automatically in all of
+  the project's CMake files by running the script
+  `tribits/refactoring/to-python3.sh <dir>`.)  However, backward compatibility
+  is provided for users configuring TriBITS CMake projects which set `-D
+  PYTHON_EXECUTABLE=<path>`.  In this case, if user sets `-D
+  PYTHON_EXECUTABLE=<path>` in the cache, TriBITS will set that value `<path>`
+  to the variable `Python3_EXECUTABLE` and avoid the call to
+  `find_package(Python3)` (however, a deprecation warning we be issued by
+  default, see [tribits_deprecated()] and [adjusting CMake DEPRECATION
+  warnings]).  TriBITS project users should change to use `-D
+  Python3_EXECUTABLE=<path>` instead, or just remove setting
+  `PYTHON_EXECUTABLE` or `Python3_EXECUTABLE` altogether and just make sure
+  that the desired `python3` executable is in the path.  See issue
+  [TriBITSPub/TriBITS#610] for more details.
+
+<a name="tribits_python_support"/>&dagger; **TriBITS Python Support**: See "Find Python" at [Full Processing of TriBITS Project Files], [Python Support] and [Setting or disabling Python]
+
+[FindPython3.cmake]: https://cmake.org/cmake/help/latest/module/FindPython3.html
+
+[Full Processing of TriBITS Project Files]: https://tribitspub.github.io/TriBITS/users_guide/index.html#full-tribits-project-configuration
+
+[Python Support]: https://tribitspub.github.io/TriBITS/users_guide/index.html#python-support
+
+[Setting or disabling Python]: https://tribitspub.github.io/TriBITS/build_ref/index.html#setting-or-disabling-python
+
+[tribits_deprecated()]: https://tribitspub.github.io/TriBITS/users_guide/index.html#tribits-deprecated
+
+[Adjusting CMake DEPRECATION warnings]: https://tribitspub.github.io/TriBITS/build_ref/index.html#adjusting-cmake-deprecation-warnings
+
+[TriBITSPub/TriBITS#610]: https://github.com/TriBITSPub/TriBITS/issues/610
+
 ## 2023-06-22:
 
 * **Added:** Packages are now determined to be missing if their dependencies
@@ -252,7 +307,7 @@ ChangeLog for TriBITS
   `<tplName>_LIB_ALL_DEPENDENCIES`.  Now `<tplName>_LIB_ENABLED_DEPENDENCIES`
   is automatically set from `<tplName>_LIB_ALL_DEPENDENCIES` based on what
   TPLs are actually enabled.  This avoids the problem described below from
-  directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without reguard to
+  directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without regard to
   what TPLs are actually enabled.  This maintains backward compatibility for
   existing configure scripts where an upstream TPL may not be enabled in some
   strange configure scripts (see
@@ -307,7 +362,7 @@ ChangeLog for TriBITS
   (in order to simplify internal TriBITS logic).  However, a side-effect of
   this change is that CMake code that was ifed out with an `if
   (${PACKAGE_NAME}_ENABLE_<depPkg>)` statement (because that variable was not
-  defined and therefore defaults to `FLASE`) for a required upstream
+  defined and therefore defaults to `FALSE`) for a required upstream
   dependency `<depPkg>` will now be enabled.  (This mistake can happen when an
   optional dependency `<depPkg>` is changed to a required dependency but the
   `if()` statements based on `${PACKAGE_NAME}_ENABLE_<depPkg>` are not

@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_BLAS_EXTERNAL_HPP__
 #define __TACHO_BLAS_EXTERNAL_HPP__
@@ -70,6 +62,19 @@ template <typename T> struct Blas {
                   /* */ T *b, int ldb);
 #endif
 
+  static int trmv(const char uplo, const char transa, const char diag, int m, const T *a, int lda,
+                  /* */ T *b, int incb);
+#if defined(TACHO_ENABLE_CUBLAS)
+  static int trmv(cublasHandle_t handle, const cublasFillMode_t uplo, const cublasOperation_t transa,
+                  const cublasDiagType_t diag, int m, const T *a, int lda,
+                  /* */ T *b, int incb);
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+  static int trmv(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation transa,
+                  const rocblas_diagonal diag, int m, const T *a, int lda,
+                  /* */ T *b, int incb);
+#endif
+
   static int gemm(const char transa, const char transb, int m, int n, int k, const T alpha, const T *a, int lda,
                   const T *b, int ldb, const T beta,
                   /* */ T *c, int ldc);
@@ -82,6 +87,24 @@ template <typename T> struct Blas {
   static int gemm(rocblas_handle handle, const rocblas_operation transa, const rocblas_operation transb, int m, int n,
                   int k, const T alpha, const T *a, int lda, const T *b, int ldb, const T beta,
                   /* */ T *c, int ldc);
+#endif
+
+  static int trmm(const char side, const char uplo, const char transa, const char diag, int m, int n,
+                  const T alpha, const T *a, int lda,
+                                       T *b, int ldb);
+#if defined(TACHO_ENABLE_CUBLAS)
+  static int trmm(cublasHandle_t handle, const cublasSideMode_t side, const cublasFillMode_t uplo,
+                  const cublasOperation_t transa, const cublasDiagType_t diag, int m, int n,
+                  const T alpha, const T *a, int lda,
+                                 const T *b, int ldb,
+                                       T *c, int ldc);
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+  static int trmm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                  const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
+                  const T alpha, const T *a, int lda,
+                                 const T *b, int ldb,
+                                       T *c, int ldc);
 #endif
 
   static int herk(const char uplo, const char trans, int n, int k, const T alpha, const T *a, int lda, const T beta,

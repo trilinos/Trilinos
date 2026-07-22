@@ -15,7 +15,7 @@
 # To reference the documentation of another package with a doxygen tag
 # file, include something like the following:
 #
-# TAGFILES  = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
+# TAGFILES  = ../../common/tag_files/tpetra.tag=../../../tpetra/doc/html
 #
 # (Note that the first path must be the relative path from your Doxyfile
 # to the tag file in question and the second path must be the relative

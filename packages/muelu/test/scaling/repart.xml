@@ -1,0 +1,7 @@
+<ParameterList>
+  <Parameter name="algorithm" type="string" value="multijagged"/>
+  <Parameter name="partitioning_approach" type="string" value="partition"/>
+  <!-- should resemble target rows per proc -->
+  <Parameter name="mj_premigration_coordinate_count" type="int" value="10000"/>
+  <Parameter name="mj_premigration_option" type="int" value="1"/>
+</ParameterList>

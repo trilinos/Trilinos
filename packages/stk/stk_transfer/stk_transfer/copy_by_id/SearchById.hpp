@@ -50,6 +50,7 @@ public:
   using KeyToTargetProcessor = std::vector<std::pair<Mesh_ID, int>>;
   using MeshIDSet = std::set<Mesh_ID>;
 
+  virtual ~SearchById() = default;
   virtual void intialize(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb) =0;
   virtual void do_search(const TransferCopyByIdMeshAdapter & mesha,
                          const TransferCopyByIdMeshAdapter & meshb,

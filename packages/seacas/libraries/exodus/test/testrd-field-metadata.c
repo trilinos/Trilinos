@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,13 +54,13 @@ static char *my_strsep(char **stringp, const char *delim)
     }                                                                                              \
   } while (0)
 
-static char *get_type_name(char *type_name, size_t which)
+static char *get_type_name(const char *type_name, size_t which)
 {
   if (type_name != NULL && type_name[0] != '\0') {
     char *string = my_strdup(type_name);
     char *tofree = string;
     char *token  = my_strsep(&string, ",");
-    for (int i = 0; i < which; i++) {
+    for (size_t i = 0; i < which; i++) {
       token = my_strsep(&string, ",");
     }
     if (token != NULL) {
@@ -74,8 +74,8 @@ static char *get_type_name(char *type_name, size_t which)
   return NULL;
 }
 
-static void get_field_cardinality(ex_field *field, ex_basis *basis, int bas_cnt,
-                                  ex_quadrature *quad, int quad_cnt)
+static void get_field_cardinality(ex_field *field, const ex_basis *basis, int bas_cnt,
+                                  const ex_quadrature *quad, int quad_cnt)
 {
   for (int j = 0; j < field->nesting; j++) {
     if (field->cardinality[j] == 0) {
@@ -120,7 +120,7 @@ static void get_field_cardinality(ex_field *field, ex_basis *basis, int bas_cnt,
   }
 }
 
-static void print_basis_metadata(ex_basis *basis, size_t num_basis)
+static void print_basis_metadata(const ex_basis *basis, size_t num_basis)
 {
   for (size_t j = 0; j < num_basis; j++) {
     printf("\nBasis Metadata: Name: `%s`, Cardinality: %d\n", basis[j].name, basis[j].cardinality);
@@ -136,7 +136,7 @@ static void print_basis_metadata(ex_basis *basis, size_t num_basis)
   }
 }
 
-static void print_quad_metadata(ex_quadrature *quad, size_t num_quad)
+static void print_quad_metadata(const ex_quadrature *quad, size_t num_quad)
 {
   for (size_t j = 0; j < num_quad; j++) {
     printf("\nQuadrature Metadata: Name: `%s`, Cardinality: %d\n", quad[j].name,
@@ -152,7 +152,7 @@ static void print_quad_metadata(ex_quadrature *quad, size_t num_quad)
   }
 }
 
-static void print_field_metadata(ex_field *field)
+static void print_field_metadata(const ex_field *field)
 {
   printf("\n");
   printf("Field Metadata: Name: `%s`, Nesting: %d\n", field->name, field->nesting);
@@ -290,10 +290,22 @@ int main(int argc, char **argv)
   }
   {
     int fld_cnt = ex_get_field_metadata_count(exoid, EX_ELEM_BLOCK, 11);
-    assert(fld_cnt == 3);
-    ex_field fields[3] = {{.entity_id = 11, .entity_type = EX_ELEM_BLOCK},
-                          {.entity_id = 11, .entity_type = EX_ELEM_BLOCK},
+    assert(fld_cnt == 2);
+    ex_field fields[2] = {{.entity_id = 11, .entity_type = EX_ELEM_BLOCK},
                           {.entity_id = 11, .entity_type = EX_ELEM_BLOCK}};
+    EXCHECK(ex_get_field_metadata(exoid, fields));
+
+    for (int i = 0; i < fld_cnt; i++) {
+      get_field_cardinality(&fields[i], basis, bas_cnt, quad, quad_cnt);
+      print_field_metadata(&fields[i]);
+      print_full_field_names(&fields[i]);
+    }
+  }
+
+  {
+    int fld_cnt = ex_get_field_metadata_count(exoid, EX_ELEM_BLOCK, 12);
+    assert(fld_cnt == 1);
+    ex_field fields[1] = {{.entity_id = 12, .entity_type = EX_ELEM_BLOCK}};
     EXCHECK(ex_get_field_metadata(exoid, fields));
 
     for (int i = 0; i < fld_cnt; i++) {
@@ -308,9 +320,6 @@ int main(int argc, char **argv)
   EXCHECK(ex_initialize_quadrature_struct(quad, quad_cnt, -1));
   free(basis);
   free(quad);
-
-  int fld_cnt = ex_get_field_metadata_count(exoid, EX_ELEM_BLOCK, 12);
-  assert(fld_cnt == 0);
 
   int error = ex_close(exoid);
   printf("\nafter ex_close, error = %3d\n", error);

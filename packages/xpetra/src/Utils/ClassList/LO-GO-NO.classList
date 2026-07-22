@@ -9,8 +9,8 @@ Map
 MapFactory
 #MapUtils
 #MatrixView
-#StridedMap
-#StridedMapFactory
+StridedMap
+StridedMapFactory
 #StridedTpetraMap
 ##TpetraBlockMap
 TpetraCrsGraph

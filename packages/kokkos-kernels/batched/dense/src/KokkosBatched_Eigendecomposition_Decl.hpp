@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_EIGENDECOMPOSITION_DECL_HPP__
-#define __KOKKOSBATCHED_EIGENDECOMPOSITION_DECL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_EIGENDECOMPOSITION_DECL_HPP
+#define KOKKOSBATCHED_EIGENDECOMPOSITION_DECL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -49,21 +36,17 @@ namespace KokkosBatched {
 ///     dimension of matrix A.
 
 struct SerialEigendecomposition {
-  template <typename AViewType, typename EViewType, typename UViewType,
-            typename WViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const AViewType &A, const EViewType &er, const EViewType &ei,
-      const UViewType &UL, const UViewType &UR, const WViewType &W);
+  template <typename AViewType, typename EViewType, typename UViewType, typename WViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const EViewType &er, const EViewType &ei,
+                                           const UViewType &UL, const UViewType &UR, const WViewType &W);
 };
 
 template <typename MemberType>
 struct TeamVectorEigendecomposition {
-  template <typename AViewType, typename EViewType, typename UViewType,
-            typename WViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const MemberType &member, const AViewType &A, const EViewType &er,
-      const EViewType &ei, const UViewType &UL, const UViewType &UR,
-      const WViewType &W);
+  template <typename AViewType, typename EViewType, typename UViewType, typename WViewType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const EViewType &er,
+                                           const EViewType &ei, const UViewType &UL, const UViewType &UR,
+                                           const WViewType &W);
 };
 
 }  // namespace KokkosBatched

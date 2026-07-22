@@ -34,16 +34,10 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 #include <MueLu_Level.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_CreateEpetraPreconditioner.hpp>
-#include <EpetraExt_MMHelpers.h>
-#include <EpetraExt_RowMatrixOut.h>
-#endif
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -177,7 +171,7 @@ void TestTransferAndFillComplete(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdina
 // =========================================================================
 // =========================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib & /*lib*/, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::ArrayRCP;
   using Teuchos::ParameterList;
@@ -336,7 +330,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
           std::string filename = runList.get<std::string>("filename");
           if (numReruns > 1)
             filename += "_run" + MueLu::toString(rerunCount);
-          filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
+          filename += ".tpetra";
 
           savedOut  = dup(STDOUT_FILENO);
           openedOut = fopen(filename.c_str(), "w");

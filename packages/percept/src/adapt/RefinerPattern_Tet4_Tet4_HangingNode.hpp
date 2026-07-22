@@ -69,7 +69,7 @@
         if (m_transition_breaker) delete m_transition_breaker;
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         EXCEPTWATCH;
         bp.resize(3); //= std::vector<UniformRefinerPatternBase *>(3u, 0);
@@ -79,8 +79,8 @@
         bp[2] = m_edge_breaker;
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         if (!m_mark_centroid_always)
           {
@@ -98,23 +98,14 @@
           }
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 8; }
+      virtual unsigned getNumNewElemPerElem() override { return 8; }
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
-        unsigned num_edges_marked=0;
-        for (int iedge = 0; iedge < 6; iedge++)
-          {
-            unsigned num_nodes_on_edge = new_sub_entity_nodes[m_eMesh.edge_rank()][iedge].size();
-            if (num_nodes_on_edge)
-              {
-                ++num_edges_marked;
-              }
-          }
         m_transition_breaker->createNewElements(eMesh, nodeRegistry, element, new_sub_entity_nodes, element_pool, ft_element_pool, proc_rank_field);
       }
 

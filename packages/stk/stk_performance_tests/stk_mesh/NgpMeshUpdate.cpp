@@ -44,11 +44,11 @@
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/timer.hpp>
 
-class NgpMeshChangeElementPartMembership : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpMeshChangeElementPartMembership : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpMeshChangeElementPartMembership()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       newPartName("block2")
   { }
 
@@ -74,9 +74,14 @@ public:
 
   void batch_change_element_part_membership(int cycle)
   {
+    Kokkos::Profiling::pushRegion("BulkData::batch_change_entity_parts");
     get_bulk().batch_change_entity_parts(stk::mesh::EntityVector{get_element(cycle)},
                                          stk::mesh::PartVector{get_part()}, {});
+    Kokkos::Profiling::popRegion();
+
+    Kokkos::Profiling::pushRegion("get_updated_ngp_mesh");
     stk::mesh::get_updated_ngp_mesh(get_bulk());
+    Kokkos::Profiling::popRegion();
   }
 
 private:
@@ -97,11 +102,11 @@ private:
   unsigned numElements;
 };
 
-class NgpMeshCreateEntity : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpMeshCreateEntity : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpMeshCreateEntity()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       numElements(1000000)
   { }
 
@@ -127,11 +132,11 @@ private:
   int numElements;
 };
 
-class NgpMeshGhosting : public stk::unit_test_util::simple_fields::MeshFixture
+class NgpMeshGhosting : public stk::unit_test_util::MeshFixture
 {
 public:
   NgpMeshGhosting()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       ghostingName("testGhosting")
   { }
 
@@ -232,9 +237,14 @@ TEST_F( NgpMeshChangeElementPartMembership, TimingBatch )
     batchTimer.start_batch_timer();
     setup_host_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
+    Kokkos::Profiling::pushRegion("batch_change_element_part_membership");
+
     for (int i = 0; i < NUM_ITERS; i++) {
       batch_change_element_part_membership(i);
     }
+
+    Kokkos::Profiling::popRegion();
+
     batchTimer.stop_batch_timer();
     reset_mesh();
   }
@@ -272,7 +282,7 @@ TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
-  std::string perfCheck = stk::unit_test_util::simple_fields::get_option("-perf_check", "PERF_CHECK");
+  std::string perfCheck = stk::unit_test_util::get_option("-perf_check", "PERF_CHECK");
 #ifdef NDEBUG
   const int NUM_INNER_ITERS = (perfCheck=="NO_PERF_CHECK" ? 1 : 100);
 #else

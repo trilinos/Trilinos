@@ -1,0 +1,7 @@
+<ParameterList name="MueLu">
+  <Parameter name="aggregation: drop scheme"                      type="string" value="distance laplacian"/>
+  <Parameter name="aggregation: drop tol"                         type="double" value="0.05"/>
+  <Parameter name="aggregation: compute aggregate qualities"      type="bool"   value="true"/>
+  <Parameter name="aggregate qualities: check symmetry"           type="bool"   value="false"/>
+  <Parameter name="aggregate qualities: good aggregate threshold" type="double" value="100.0"/>
+</ParameterList>

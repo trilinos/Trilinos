@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef PANZER_SCATTER_DIRICHLET_RESIDUAL_TPETRA_IMPL_HPP
@@ -91,10 +59,12 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexe
   if (!scatterIC_) {
     side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
     local_side_id_ = p.get<int>("Local Side ID");
+    scratch_basisIds_.resize(names.size());
   }
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
+  scratch_offsets_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
     scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
@@ -123,20 +93,40 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexe
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT> 
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
+postRegistrationSetup(typename TRAITS::SetupData d, 
                       PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
+  const Workset & workset_0 = (*d.worksets_)[0];
+  std::string blockId = this->wda(workset_0).block_id;
 
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-  }
 
-  // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].extent(1);
+    if (!scatterIC_) {
+      const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+        = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldIds_[fd], side_subcell_dim_, local_side_id_);
+      const std::vector<int> & offsets = indicePair.first;
+      const std::vector<int> & basisIdMap = indicePair.second;
+
+      scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
+      Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
+ 
+      scratch_basisIds_[fd] = PHX::View<int*>("basisIds",basisIdMap.size()); 
+      Kokkos::deep_copy(scratch_basisIds_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(basisIdMap.data(), basisIdMap.size()));
+ 
+    } else {
+      const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+      scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
+      Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
+    }
+ }
+
+  scratch_lids_ = PHX::View<LO**>("lids",scatterFields_[0].extent(0),
+                                  globalIndexer_->getElementBlockGIDCount(blockId));
 }
 
 // **********************************************************************
@@ -165,6 +155,85 @@ preEvaluate(typename TRAITS::PreEvalData d)
 }
 
 // **********************************************************************
+namespace panzer {
+namespace {
+
+template <typename ScalarT,typename LO,typename GO,typename NodeT>
+class ScatterDirichletResidual_Residual_Functor {
+public:
+  typedef typename PHX::Device execution_space;
+  typedef PHX::MDField<const ScalarT,Cell,NODE> ScalarFieldType;
+  typedef PHX::MDField<const bool,Cell,NODE> BoolFieldType;
+
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> dirichlet_counter;
+
+  PHX::View<const LO**> lids;    // local indices for unknowns
+  PHX::View<const int*> offsets; // how to get a particular field
+  PHX::View<const int*> basisIds;
+  ScalarFieldType field;
+  BoolFieldType applyBC;
+
+  bool checkApplyBC;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+
+    // loop over the basis functions (currently they are nodes)
+    for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
+       int offset = offsets(basis);
+       LO lid    = lids(cell,offset);
+       if (lid<0) continue; // not on this processor
+
+       int basisId = basisIds(basis);
+       if (checkApplyBC)
+         if(!applyBC(cell,basisId)) continue;
+
+       r_data(lid,0) = field(cell,basisId);
+
+       // record that you set a dirichlet condition
+       dirichlet_counter(lid,0) = 1.0;
+
+   } // end basis
+  }
+};
+
+template <typename ScalarT,typename LO,typename GO,typename NodeT>
+class ScatterDirichletResidualIC_Residual_Functor {
+public:
+  typedef typename PHX::Device execution_space;
+  typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
+
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> dirichlet_counter;
+
+  PHX::View<const LO**> lids;    // local indices for unknowns
+  PHX::View<const int*> offsets; // how to get a particular field
+  FieldType field;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+
+    // loop over the basis functions (currently they are nodes)
+    for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
+       int offset = offsets(basis);
+       LO lid    = lids(cell,offset);
+       if (lid<0) continue; // not on this processor
+
+       r_data(lid,0) = field(cell,basis);
+
+       // record that you set a dirichlet condition
+       dirichlet_counter(lid,0) = 1.0;
+
+   } // end basis
+  }
+};
+}
+}
+
+// **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
@@ -174,83 +243,44 @@ evaluateFields(typename TRAITS::EvalData workset)
  
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
-     tpetraContainer_->get_f() :
-     tpetraContainer_->get_x(); 
+  globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
-   Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
-   Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
+  Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
+    tpetraContainer_->get_f() :
+    tpetraContainer_->get_x(); 
 
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
+  if (scatterIC_) {
+    ScatterDirichletResidualIC_Residual_Functor<ScalarT,LO,GO,NodeT> functor;
+    functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    functor.lids = scratch_lids_;
+    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
+      // for each field, do a parallel for loop
+    for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+      functor.offsets = scratch_offsets_[fieldIndex];
+      functor.field = scatterFields_[fieldIndex];
 
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+  } else {
+    ScatterDirichletResidual_Residual_Functor<ScalarT,LO,GO,NodeT> functor;
+    functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    functor.lids = scratch_lids_;
+    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-   // loop over each field to be scattered
-   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-     int fieldNum = fieldIds_[fieldIndex];
-     auto scatterFields_h = Kokkos::create_mirror_view(scatterFields_[fieldIndex].get_static_view());
-     Kokkos::deep_copy(scatterFields_h, scatterFields_[fieldIndex].get_static_view());
+      // for each field, do a parallel for loop
+    for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+      functor.offsets = scratch_offsets_[fieldIndex];
+      functor.field = scatterFields_[fieldIndex];
+      if (checkApplyBC_) functor.applyBC = applyBC_[fieldIndex];
+      functor.checkApplyBC = checkApplyBC_;
+      functor.basisIds = scratch_basisIds_[fieldIndex];
 
-     // scatter operation for each cell in workset
-     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-       std::size_t cellLocalId = localCellIds[worksetCellIndex];
-       
-       globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+  }
 
-       // caculate the local IDs for this element
-       LIDs.resize(GIDs.size());
-       for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
-
-       if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-           const std::vector<int> & elmtOffset = indicePair.first;
-           const std::vector<int> & basisIdMap = indicePair.second;
-           
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             LO lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
-
-             int basisId = basisIdMap[basis];
-
-             if (checkApplyBC_)
-               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-                 continue;
-
-             r_array[lid] = scatterFields_h(worksetCellIndex,basisId);
-
-             // record that you set a dirichlet condition
-             dc_array[lid] = 1.0;
-           }
-         } else {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-   
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             LO lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
-
-             r_array[lid] = scatterFields_h(worksetCellIndex,basis);
-
-             // record that you set a dirichlet condition
-             dc_array[lid] = 1.0;
-           }
-         }
-      }
-   }
 }
 
 // **********************************************************************
@@ -285,10 +315,12 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexe
   if (!scatterIC_) {
     side_subcell_dim_ = p.get<int>("Side Subcell Dimension");
     local_side_id_ = p.get<int>("Local Side ID");
+    scratch_basisIds_.resize(names.size());
   }
   
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
+  scratch_offsets_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
     scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
@@ -317,20 +349,41 @@ ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const GlobalIndexer> & indexe
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT> 
 void panzer::ScatterDirichletResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData /* d */, 
+postRegistrationSetup(typename TRAITS::SetupData d, 
                       PHX::FieldManager<TRAITS>& /* fm */)
 {
   fieldIds_.resize(scatterFields_.size());
+  const Workset & workset_0 = (*d.worksets_)[0];
+  std::string blockId = this->wda(workset_0).block_id;
 
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
-  }
 
-  // get the number of nodes (Should be renamed basis)
-  num_nodes = scatterFields_[0].extent(1);
+    if (!scatterIC_) {
+      const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+        = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldIds_[fd], side_subcell_dim_, local_side_id_);
+      const std::vector<int> & offsets = indicePair.first;
+      const std::vector<int> & basisIdMap = indicePair.second;
+
+      scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
+      Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
+ 
+      scratch_basisIds_[fd] = PHX::View<int*>("basisIds",basisIdMap.size()); 
+      Kokkos::deep_copy(scratch_basisIds_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(basisIdMap.data(), basisIdMap.size()));
+ 
+    } else {
+      const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldIds_[fd]);
+      scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
+      Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
+    }
+ }
+
+  scratch_lids_ = PHX::View<LO**>("lids",scatterFields_[0].extent(0),
+                                  globalIndexer_->getElementBlockGIDCount(blockId));
+
 }
 
 // **********************************************************************
@@ -364,15 +417,111 @@ preEvaluate(typename TRAITS::PreEvalData d)
   std::vector<std::string> activeParameters =
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc->getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
-  // ETP 02/03/16:  This code needs to be updated to properly handle scatterIC_
-  TEUCHOS_ASSERT(!scatterIC_);
-  dfdp_vectors_.clear();
+  dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size());
+
   for(std::size_t i=0;i<activeParameters.size();i++) {
     RCP<typename LOC::VectorType> vec =
       rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
-    Teuchos::ArrayRCP<double> vec_array = vec->get1dViewNonConst();
-    dfdp_vectors_.push_back(vec_array);
+    auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    dfdpFieldsVoV_.addView(dfdp_view,i);
   }
+
+  dfdpFieldsVoV_.syncHostToDevice();
+
+}
+
+// **********************************************************************
+namespace panzer {
+namespace {
+
+template <typename ScalarT,typename LO,typename GO,typename NodeT>
+class ScatterDirichletResidual_Tangent_Functor {
+public:
+  typedef typename PHX::Device execution_space;
+  typedef PHX::MDField<const ScalarT,Cell,NODE> ScalarFieldType;
+  typedef PHX::MDField<const bool,Cell,NODE> BoolFieldType;
+
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> dirichlet_counter;
+
+  Kokkos::View<Kokkos::View<double**,Kokkos::LayoutLeft,PHX::Device>*>  dfdp_fields; // tangent fields
+  double num_params;
+
+  PHX::View<const LO**> lids;    // local indices for unknowns
+  PHX::View<const int*> offsets; // how to get a particular field
+  PHX::View<const int*> basisIds;
+  ScalarFieldType field;
+  BoolFieldType applyBC;
+
+  bool checkApplyBC;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+
+    // loop over the basis functions (currently they are nodes)
+    for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
+       int offset = offsets(basis);
+       LO lid    = lids(cell,offset);
+       if (lid<0) continue; // not on this processor
+
+       int basisId = basisIds(basis);
+       if (checkApplyBC)
+         if(!applyBC(cell,basisId)) continue;
+
+       r_data(lid,0) = field(cell,basisId).val();
+
+       // loop over the tangents
+       for(int i_param=0; i_param<num_params; i_param++)
+         dfdp_fields(i_param)(lid,0) = field(cell,basisId).fastAccessDx(i_param);
+
+       // record that you set a dirichlet condition
+       dirichlet_counter(lid,0) = 1.0;
+
+   } // end basis
+  }
+};
+
+template <typename ScalarT,typename LO,typename GO,typename NodeT>
+class ScatterDirichletResidualIC_Tangent_Functor {
+public:
+  typedef typename PHX::Device execution_space;
+  typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
+
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
+  Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> dirichlet_counter;
+
+  Kokkos::View<Kokkos::View<double**,Kokkos::LayoutLeft,PHX::Device>*>  dfdp_fields; // tangent fields
+  double num_params;
+
+  PHX::View<const LO**> lids;    // local indices for unknowns
+  PHX::View<const int*> offsets; // how to get a particular field
+  FieldType field;
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const unsigned int cell) const
+  {
+
+    // loop over the basis functions (currently they are nodes)
+    for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
+       int offset = offsets(basis);
+       LO lid    = lids(cell,offset);
+       if (lid<0) continue; // not on this processor
+
+       r_data(lid,0) = field(cell,basis).val();
+
+       // loop over the tangents
+       for(int i_param=0; i_param<num_params; i_param++)
+          dfdp_fields(i_param)(lid,0) = field(cell,basis).fastAccessDx(i_param);
+
+       // record that you set a dirichlet condition
+       dirichlet_counter(lid,0) = 1.0;
+
+   } // end basis
+  }
+};
+}
 }
 
 // **********************************************************************
@@ -385,100 +534,48 @@ evaluateFields(typename TRAITS::EvalData workset)
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
-   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+     
+  globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
    Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ?
      tpetraContainer_->get_f() :
      tpetraContainer_->get_x();
 
-   Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
-   Teuchos::ArrayRCP<double> dc_array = dirichletCounter_->get1dViewNonConst();
+  if (scatterIC_) {
+    ScatterDirichletResidualIC_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
+    functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    functor.lids = scratch_lids_;
+    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
 
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
+      // for each field, do a parallel for loop
+    for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+      functor.offsets = scratch_offsets_[fieldIndex];
+      functor.field = scatterFields_[fieldIndex];
+      functor.num_params = Kokkos::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
 
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+  } else {
+    ScatterDirichletResidual_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
+    functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    functor.lids = scratch_lids_;
+    functor.dirichlet_counter = dirichletCounter_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    functor.dfdp_fields = dfdpFieldsVoV_.getViewDevice();
 
-   // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+      // for each field, do a parallel for loop
+    for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+      functor.offsets = scratch_offsets_[fieldIndex];
+      functor.field = scatterFields_[fieldIndex];
+      if (checkApplyBC_) functor.applyBC = applyBC_[fieldIndex];
+      functor.checkApplyBC = checkApplyBC_;
+      functor.basisIds = scratch_basisIds_[fieldIndex];
+      functor.num_params = Kokkos::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs);
+      Kokkos::parallel_for(workset.num_cells,functor);
+    }
+  }
 
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
-         LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
-
-      // loop over each field to be scattered
-      for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-
-         if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::pair<std::vector<int>,std::vector<int> > & indicePair
-             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-           const std::vector<int> & elmtOffset = indicePair.first;
-           const std::vector<int> & basisIdMap = indicePair.second;
-
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             LO lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
-
-             int basisId = basisIdMap[basis];
-
-             if (checkApplyBC_)
-               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-                 continue;
-
-             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
-             //r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
-
-             // then scatter the sensitivity vectors
-             if(value.size()==0)
-               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
-                 dfdp_vectors_[d][lid] = 0.0;
-             else
-               for(int d=0;d<value.size();d++) {
-                 dfdp_vectors_[d][lid] = value.fastAccessDx(d);
-               }
-
-             // record that you set a dirichlet condition
-             dc_array[lid] = 1.0;
-           }
-         } else {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             LO lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
-
-             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
-             //r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
-
-             // then scatter the sensitivity vectors
-             if(value.size()==0)
-               for(std::size_t d=0;d<dfdp_vectors_.size();d++)
-                 dfdp_vectors_[d][lid] = 0.0;
-             else
-               for(int d=0;d<value.size();d++) {
-                 dfdp_vectors_[d][lid] = value.fastAccessDx(d);
-               }
-
-             // record that you set a dirichlet condition
-             dc_array[lid] = 1.0;
-           }
-         }
-      }
-   }
 }
 
 // **********************************************************************

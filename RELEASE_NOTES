@@ -1,7 +1,490 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 17.1 Release Notes                            May 12, 2026 #
+#                                                                             #
+###############################################################################
+
+Compadre:
+
+  - Inclusion of version 1.7.0
+    https://github.com/trilinos/Trilinos/pull/15023
+
+
+Ifpack2:
+
+  - Added runtime debug control via the IFPACK2_DEBUG environment variable.
+    https://github.com/trilinos/Trilinos/pull/15166
+
+  - Fixed missing parILUT max-iteration setup.
+    https://github.com/trilinos/Trilinos/pull/15094
+
+  - Add optional row/column 1-norm equilibration of the inner subdomain matrix
+    in additive Schwarz
+    https://github.com/trilinos/Trilinos/pull/15241
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 5.1.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/15035
+    https://github.com/trilinos/Trilinos/pull/15198
+
+
+MueLu:
+
+  - Energy minimization multigrid has been completely refactored. The algorithm
+    now runs on device and uses Belos to solve the optimization problem.
+    https://github.com/trilinos/Trilinos/pull/14989
+
+  - An energy minimization preconditioner for Maxwell problems has been added.
+    https://github.com/trilinos/Trilinos/pull/15215
+    https://github.com/trilinos/Trilinos/pull/15216
+    https://github.com/trilinos/Trilinos/pull/15218
+
+  - Fixed several correctness issues in MultiPhys, Hierarchy setup, and TekoSmoother application.
+    https://github.com/trilinos/Trilinos/pull/15028
+    https://github.com/trilinos/Trilinos/pull/15082
+    https://github.com/trilinos/Trilinos/pull/15173
+    https://github.com/trilinos/Trilinos/pull/15178
+
+
+Rapid Optimization Library (ROL):
+
+  - Multi-objective optimization methods, including the sampling of
+    the Pareto frontier using convex combinations of objective
+    functions as well as the normal boundary intersection method.
+
+  - Interface for robust optimal experimental design (OED) which can
+    account for uncertainty in parameter estimates as well as randomly
+    failing experiments.
+
+  - Improved OED interface that enables OED for vector valued
+    estimation problems.
+
+  - Implementation of greedy OED that leverages fast numerical linear
+    algebra and that can be used for solution verification and
+    producing initial guesses for optimization.
+
+  - New methods for nonsmooth optimization represented as Type-P
+    "proximable" problems, where the objective function is a sum of a
+    smooth nonlinear nonconvex function and a nonsmooth convex
+    function.
+
+
+ShyLU:
+
+  - Performance improvements in Tacho
+    https://github.com/trilinos/Trilinos/pull/15120
+
+
+Tpetra:
+
+  - The computation of global constants in Map construction is now optional.
+    This allows skipping global reductions.
+    https://github.com/trilinos/Trilinos/pull/15093
+
+  - Ongoing effort to move more map and import/export computations to device.
+    https://github.com/trilinos/Trilinos/pull/14902
+    https://github.com/trilinos/Trilinos/pull/14908
+
+  - Added matrix-matrix product support for preserving explicit zeros in the
+    sparsity pattern when requested.
+    https://github.com/trilinos/Trilinos/pull/15019
+
 
 ###############################################################################
 #                                                                             #
-# Trilinos Release 16.0 Release Notes                              July, 2024 #
+# Trilinos Release 16.2.1 Release Notes                          May 12, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release with no new features.
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 4.7.4 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/15142
+
+
+Amesos2, Belos, Panzer, STK, Stokhos, Stratimikos, TrilinosCouplings, Tpetra, Gtest:
+
+  - Bug fixes. See
+    https://github.com/trilinos/Trilinos/issues/14866
+    for more details.
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 17.0 Release Notes                        February 5, 2026 #
+#                                                                             #
+###############################################################################
+
+The following previously deprecated packages have been removed:
+
+    Amesos
+    AztecOO
+    Epetra
+    EpetraExt
+    Ifpack
+    Intrepid
+    Isorropia
+    ML
+    NewPackage
+    Pliris
+    PyTrilinos
+    ShyLU_DDCore
+    ThyraEpetraAdapters
+    ThyraEpetraExtAdapters
+    Triutils
+
+The source code for the archived packages can be found in separate repositories
+under the Trilinos organization on Github:
+https://github.com/trilinos
+
+Non-deprecated packages that had Epetra capabilities (e.g. Amesos2 or MueLu)
+have started to remove Epetra support code.
+
+Trilinos now requires a C++20 compatible compiler.
+https://github.com/trilinos/Trilinos/pull/14390
+
+
+Trilinos now requires CMake 3.27 or newer.
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 5.0.2 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/14840
+    https://github.com/trilinos/Trilinos/pull/14916
+
+
+Tpetra, Ifpack2, MueLu, Stokhos:
+
+  - Previously deprecated code has beeen removed.
+    https://github.com/trilinos/Trilinos/pull/14587
+
+
+Gtest:
+
+  - The in-source Gtest package has been removed. Trilinos packages that rely
+    on Gtest instead use the gtest TPL.
+    https://github.com/trilinos/Trilinos/pull/14719
+    
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.2 Release Notes                       November 24, 2025 #
+#                                                                             #
+###############################################################################
+
+Belos:
+
+  - Added LSQR example
+    https://github.com/trilinos/Trilinos/pull/14486
+
+
+Compadre
+
+  - Update from version 1.5.9 to 1.6.4
+    https://github.com/sandialabs/compadre/wiki/Changelog
+
+
+Framework:
+
+  - Shadow warnings have been promoted to errors.
+
+  - Trilinos now uses pre-commit to run clang-format and cmake-format.
+    https://github.com/trilinos/Trilinos/pull/14478
+
+  - Built-in TPL detection improvements to help ensure simpler out-of-the-box
+    configurations on different Linux distributions.
+
+  - New compiler/MPI support via GitHub Actions CI:
+      gcc@14
+      gcc@10.4.0+openmpi@4.1.6
+      cuda@12.4.1+gcc@10.4.0+openmpi@4.1.6
+      oneapi@2024.2+gcc@11.4
+      clang@19.1+openmpi@4.1.6
+
+  - Removed support for some older compilers:
+      gcc@8.3.0
+      gcc@10.3.0
+      clang@11.0.1
+      oneapi@2024.1
+
+
+Galeri:
+
+  - The assembly of example problems was rewritten with Kokkos primitives.
+    https://github.com/trilinos/Trilinos/pull/14120
+  - Added recirculant example
+    https://github.com/trilinos/Trilinos/pull/14028
+
+
+Ifpack2:
+
+  - Improve Chebyshev performance on GPU
+    https://github.com/trilinos/Trilinos/pull/14124
+    
+  - Added heuristic to Chebyshev to select performant kernel based on architecture
+    https://github.com/trilinos/Trilinos/pull/14154
+    
+  - Add support for streams in RBILUK
+    https://github.com/trilinos/Trilinos/pull/14127
+    
+  - Use empirical models for choosing the number of sublines in block tridi (with Schur line splitting).
+    https://github.com/trilinos/Trilinos/pull/14246
+  
+
+MueLu
+
+  - New parameters for dropping algorithms were introduced that better
+    map to the growing number of available schemes. Old parameters
+    are still valid but will eventually be phased out.
+    https://github.com/trilinos/Trilinos/pull/14113
+    https://github.com/trilinos/Trilinos/pull/14093
+
+  - The MueLu tutorial has been modernized and is now available at
+    https://muelu.github.io/
+    https://github.com/trilinos/Trilinos/pull/14357
+
+  - A new distributed lumping scheme
+    https://github.com/trilinos/Trilinos/pull/14351
+
+  - New "combined" max levels option for problems with multiple hierarchies (due to subblocks)
+    https://github.com/trilinos/Trilinos/pull/14387
+
+  - New Stratimikos example for demonstrating how to assemble matrix 
+    https://github.com/trilinos/Trilinos/pull/14339
+
+  - New hands-on material for ATPESC 2025
+    https://github.com/trilinos/Trilinos/pull/14461
+
+  - Clean up of timer usage in MueLu, make timer fencing a configurable option
+    https://github.com/trilinos/Trilinos/pull/14253
+
+  - MueLu scaling driver can rebalance initial user matrix
+    github.com/trilinos/Trilinos/pull/14690
+    github.com/trilinos/Trilinos/pull/14698
+
+
+NOX
+
+  - Nox wrappers for Tpetra MultiVector
+    https://github.com/trilinos/Trilinos/pull/14252
+
+
+Panzer
+
+  - Caching of connectivity information
+    https://github.com/trilinos/Trilinos/pull/14042
+
+
+ROL
+
+  - ROL is now gets snapshotted from
+    https://github.com/sandialabs/rol
+    into Trilinos.
+    
+
+ShyLU:
+
+  - ShyLU-Basker: Threaded sparse-triangular solver
+    https://github.com/trilinos/Trilinos/pull/14065
+
+  - Tacho: No-pivoted LDLt factorization
+    https://github.com/trilinos/Trilinos/pull/14537
+    https://github.com/trilinos/Trilinos/pull/14640
+
+  - Tacho: Uniform symbolic factorization interfce to fall-back from Chol to LU or LDLt
+    https://github.com/trilinos/Trilinos/pull/14603
+
+
+SEACAS
+
+  - Update to v2025-10-14. See:
+    https://github.com/sandialabs/seacas/releases
+
+
+STK
+
+  - See:
+    https://github.com/trilinos/Trilinos/blob/master/packages/stk/CHANGELOG.md
+
+
+Teko:
+
+  - The conversion between Teko blocked operators and Tpetra matrices
+    has been significantly improved.
+    https://github.com/trilinos/Trilinos/pull/14476
+
+
+Teuchos
+
+  - MPI communication routines are wrapped in Kokkos Profiling regions.
+    https://github.com/trilinos/Trilinos/pull/14363
+
+  - The CommandLineProcessor can now be used to harvest information
+    about the runtime environment by passing --print-system-info
+    https://github.com/trilinos/Trilinos/pull/14494
+
+
+Tpetra
+
+  - The new "Ialltofewv" communication option obtains speedups for
+    many-to-few communication.  
+    https://github.com/trilinos/Trilinos/pull/14146
+
+  - Tpetra can now leverage communication routines from MPI Advance.
+    https://github.com/trilinos/Trilinos/pull/14169
+
+  - A reordering of steps during data transfer that should avoid
+    unexpected messages can be used by setting the environment
+    variable TPETRA_GRANULAR_TRANSFERS=ON.
+    https://github.com/trilinos/Trilinos/pull/13947
+
+  - The Tpetra assembly examples were updated to better showcase
+    current Kokkos practices.
+    https://github.com/trilinos/Trilinos/pull/14430
+
+  - Helper routines for the common use case of generating matrices by
+    applying a filter to the entries of another matrix.
+    https://github.com/trilinos/Trilinos/pull/14583
+
+  - Several Epetra matrix transforms have been transitioned to Tpetra
+    - SingletonFiltering: condenses out singleton rows and columns.
+    - SolverMap: checks for missing indices wrt the local rows.
+    - Reindex: reindex based on row map.
+    - Rebalance: rebalance the distribution of linear problem contents (matrix, lhs, and rhs) among MPI nodes.
+
+
+Thyra:
+
+  - Solver/preconditioner routines can now directly be used with
+    Tpetra objects without having to wrap them to Thyra.
+    https://github.com/trilinos/Trilinos/pull/14459
+
+
+Zoltan
+
+  - Additional Hilbert Space filling curves
+    https://github.com/trilinos/Trilinos/pull/13880
+
+
+Zoltan2
+
+  - Reverse Cuthill-McKee can now symmetrize the input matrix.
+    https://github.com/trilinos/Trilinos/pull/14584
+    
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.1 Release Notes                          March 20, 2025 #
+#                                                                             #
+###############################################################################
+
+A large number of packages have been marked as deprecated in this release.
+We are planning to remove them in the fall of 2025. The list of packages is
+
+  - Amesos
+  - AztecOO
+  - Epetra
+  - EpetraExt
+  - Ifpack
+  - Intrepid
+  - Isorropia
+  - ML
+  - NewPackage
+  - Pliris
+  - PyTrilinos
+  - ShyLU_DDCore
+  - ThyraEpetraAdapters
+  - ThyraEpetraExtAdapters
+  - Triutils
+
+If you are a user of one of these packages, please transition to the newer
+software stack. If you need guidance with finding an adequate replacement
+or are missing a particular feature, please open an issue or a discussion
+on Github.
+
+
+Belos
+
+  - Improve caching of state vectors between subsequent solves.
+    https://github.com/trilinos/Trilinos/pull/13751
+
+  - Use a pooling strategy for Tpetra MultiVectors.
+    https://github.com/trilinos/Trilinos/pull/13469
+
+
+Framework
+
+  - Added option `Trilinos_WARNINGS_MODE` that can control warnings useful
+    for development.  There is a list of warnings in
+    `cmake/WarningsErrorsPolicy.cmake` that can be applied as warnings or
+    errors by passing the `WARN` or `ERROR` value for that variable.  Turning
+    either of those settings on will also turn on a set of 'promoted' warnings
+    that will always be errors in any mode other than the default.  The Pull
+    Request testing will currently use the `WARN` setting for this mode,
+    meaning that any 'upcoming' warnings will show up as warnings, and any
+    'promoted' warnings will show up as errors.  You can also pass additional
+    'upcoming' warnings via the `Trilinos_ADDITIONAL_WARNINGS` option.  Lastly,
+    if either of these modes are enabled, all warnings are disabled for any
+    deprecated packages, in the interest of not spending effort cleaning them.
+    By default, no warnings or errors are added.
+    https://github.com/trilinos/Trilinos/pull/13427
+
+  - Set all currently-clean GCC 10 warnings as 'promoted'.
+
+  - MKL+SYCL support
+    https://github.com/trilinos/Trilinos/pull/13520
+
+
+Kokkos, Kokkos Kernels
+
+  - Inclusion of version 4.5.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/13679
+
+
+MueLu:
+
+  - Refactor CoalesceDropFactory into smaller composable functors,
+    making it easier to extend.
+    https://github.com/trilinos/Trilinos/pull/13361
+
+  - Add a material-aware distance Laplacian aggregation strategy.
+    https://github.com/trilinos/Trilinos/pull/13662
+
+
+Panzer:
+
+  - Add capability for transient optimization with ROL and Tempus
+    https://github.com/trilinos/Trilinos/pull/13581
+
+
+PyTrilinos2:
+
+  - Thyra and Stratimikos are now exposed. This allows to use solvers
+    from Amesos2, Belos, Ifpack2 and MueLu from Python.
+    https://github.com/trilinos/Trilinos/pull/13690
+
+
+ShyLU:
+
+  - New solver features in Tacho
+    https://github.com/trilinos/Trilinos/pull/13585
+
+
+Stokhos:
+
+  - Deprecate the PCE scalar type
+    https://github.com/trilinos/Trilinos/pull/13459
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.0 Release Notes                           July 22, 2024 #
 #                                                                             #
 ###############################################################################
 

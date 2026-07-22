@@ -119,17 +119,10 @@ public:
     return m_recv[p] ;
   }
 
-  //----------------------------------------
-  /** Construct for a to-be-sized communication.
-   *  Comm scenario:
-   *  1) constructor argument 'neighbor_procs' specifies the processors
-   *     which may be communicated with (neighbors==send-procs==recv-procs).
-   *  2) send-buffers are packed with data to be sent
-   *     All processors sent to, must be members of neighbor_procs.
-   *  3) communicate() performs the communication and stores recvd data
-   *     in recv_buffers.
-   *     All processors recvd from, are members of neighbor_procs.
-   */
+  //############################################################################
+  //  Do not use CommNeighbors in new code!  It will be deprecated and removed
+  //  soon.  Please use CommSparse as an equivalent capability.
+  //############################################################################
   CommNeighbors( stk::ParallelMachine comm, const std::vector<int>& neighbor_procs );
   CommNeighbors( stk::ParallelMachine comm, const std::vector<int>& send_procs, const std::vector<int>& recv_procs );
 

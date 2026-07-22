@@ -79,7 +79,6 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionMultiSubset)
     std::string input_filename = "9x9x9|shell:xyzXYZ|variables:element,1|times:1";
 
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(input_filename, "generated", stk::io::READ_MESH);
     stkIo.create_input_mesh();
 
@@ -128,14 +127,15 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionMultiSubset)
                             elements);
     EXPECT_TRUE(elements.size() >= 729);
 
+    auto pressureData = pressure.data();
     for(size_t i=0; i<729; i++) {
-      double *fieldDataForElement = stk::mesh::field_data(pressure, elements[i]);
-      EXPECT_DOUBLE_EQ(0.0, *fieldDataForElement);
+      auto fieldDataForElement = pressureData.entity_values(elements[i]);
+      EXPECT_DOUBLE_EQ(0.0, fieldDataForElement());
     }
 
     for(size_t i=729; i<elements.size(); i++) {
-      double *fieldDataForElement = stk::mesh::field_data(pressure, elements[i]);
-      EXPECT_DOUBLE_EQ(sqrt(i+1), *fieldDataForElement);
+      auto fieldDataForElement = pressureData.entity_values(elements[i]);
+      EXPECT_DOUBLE_EQ(sqrt(i+1), fieldDataForElement());
     }
   }
 }

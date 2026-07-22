@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _FROSCH_IPOUHARMONICCOARSEOPERATOR_DEF_HPP
 #define _FROSCH_IPOUHARMONICCOARSEOPERATOR_DEF_HPP
@@ -200,14 +168,7 @@ namespace FROSch {
 
         // Das könnte man noch ändern
         // Todo: Check the lengths of the vectors against NumberOfBlocks_
-        this->GammaDofs_.resize(this->GammaDofs_.size()+1);
-        this->IDofs_.resize(this->IDofs_.size()+1);
-        this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
-        this->DofsMaps_.resize(this->DofsMaps_.size()+1);
-        this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-        this->NumberOfBlocks_++;
-
-        return resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
+        return resetCoarseSpaceBlock(this->NumberOfBlocks_,dimension,dofsPerNode,nodesMap,dofsMaps,nullSpaceBasis,dirichletBoundaryDofs,nodeList);
     }
 
     template <class SC,class LO,class GO,class NO>
@@ -221,27 +182,21 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
 
-        this->NumberOfBlocks_ = repeatedNodesMapVec.size();
+        UN TotalNumberOfBlocks = repeatedNodesMapVec.size();
 
-        FROSCH_ASSERT(dofsPerNodeVec.size()==this->NumberOfBlocks_,"dofsPerNodeVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(repeatedDofMapsVec.size()==this->NumberOfBlocks_,"repeatedDofMapsVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(nullSpaceBasisVec.size()==this->NumberOfBlocks_,"nullSpaceBasisVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(dirichletBoundaryDofsVec.size()==this->NumberOfBlocks_,"dirichletBoundaryDofsVec.size()!=this->NumberOfBlocks_");
-        FROSCH_ASSERT(nodeListVec.size()==this->NumberOfBlocks_,"nodeListVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(dofsPerNodeVec.size()==TotalNumberOfBlocks,"dofsPerNodeVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(repeatedDofMapsVec.size()==TotalNumberOfBlocks,"repeatedDofMapsVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(nullSpaceBasisVec.size()==TotalNumberOfBlocks,"nullSpaceBasisVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(dirichletBoundaryDofsVec.size()==TotalNumberOfBlocks,"dirichletBoundaryDofsVec.size()!=TotalNumberOfBlocks");
+        FROSCH_ASSERT(nodeListVec.size()==TotalNumberOfBlocks,"nodeListVec.size()!=TotalNumberOfBlocks");
 
         // Todo: Move this to a function in HarmonicCoarseOperator at some point
-        for (UN i=0; i<this->NumberOfBlocks_; i++) {
+        for (UN i=0; i<TotalNumberOfBlocks; i++) {
             FROSCH_ASSERT(!repeatedNodesMapVec[i].is_null(),"repeatedNodesMapVec[i].is_null()");
             FROSCH_ASSERT(!repeatedDofMapsVec[i].is_null(),"repeatedDofMapsVec[i].is_null()");
             FROSCH_ASSERT(!nullSpaceBasisVec[i].is_null(),"nullSpaceBasisVec[i].is_null()");
 
-            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
-            this->IDofs_.resize(this->IDofs_.size()+1);
-            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
-            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
-            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-
-            resetCoarseSpaceBlock(i,
+            resetCoarseSpaceBlock(this->NumberOfBlocks_,
                                   dimension,
                                   dofsPerNodeVec[i],
                                   repeatedNodesMapVec[i],
@@ -266,7 +221,7 @@ namespace FROSch {
     {
         FROSCH_DETAILTIMER_START_LEVELID(resetCoarseSpaceBlockTime,"IPOUHarmonicCoarseOperator::resetCoarseSpaceBlock");
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
-        FROSCH_ASSERT(blockId<this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset.");
+        FROSCH_ASSERT(blockId<=this->NumberOfBlocks_,"Block does not exist yet and can therefore not be reset ("+to_string(blockId)+", "+to_string(this->NumberOfBlocks_)+").");
 
         // Process the parameter list
         stringstream blockIdStringstream;
@@ -286,6 +241,12 @@ namespace FROSch {
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);
 
         if (useForCoarseSpace) {
+            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
+            this->IDofs_.resize(this->IDofs_.size()+1);
+            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
+            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
+            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
+            this->NumberOfBlocks_++;
 
             if (this->Verbose_) {
                 cout

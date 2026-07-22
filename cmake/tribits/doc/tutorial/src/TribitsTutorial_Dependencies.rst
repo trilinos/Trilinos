@@ -88,7 +88,7 @@ For <options> you will see PT, ST, or EX.
   productivity and would adversly effect customers if broken.
 - *ST (Secondary Tested)* - This tpl is important to the project but
   may be difficult to install or the TPL is not available on all
-  deveopment platforms.
+  development platforms.
 - *EX (Experimental)* - TPL is experimental, unstable and/or difficult to
   maintain.
 

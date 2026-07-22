@@ -8,6 +8,7 @@
 
 #include <Akri_Facet.hpp>
 #include <Akri_BoundingBox.hpp>
+#include <Akri_IntersectionUtils.hpp>
 #include <Akri_Transformation.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 
@@ -115,7 +116,6 @@ stk::math::Vector3d FacetWithVelocity3d::velocity_at_closest_point( const stk::m
   stk::math::Vector3d closestPt;
   stk::math::Vector2d paramAtClosestPt;
   closest_point(queryPt, closestPt, paramAtClosestPt);
-  return myVelocity[0] * (1.-paramAtClosestPt[0]) + myVelocity[1] * paramAtClosestPt[0];
   return (1.0-paramAtClosestPt[0]-paramAtClosestPt[1]) * myVelocity[0] + paramAtClosestPt[0] * myVelocity[1] + paramAtClosestPt[1] * myVelocity[2];
 }
 
@@ -179,34 +179,6 @@ Facet2d::Facet2d( const stk::math::Vector3d & pt0,
 {
 }
 
-template <typename VecType, size_t N>
-bool are_all_components_lo(const VecType & bboxMin, const std::array<const double*,N> & points, const unsigned comp)
-{
-  for (size_t i=0; i<N; ++i)
-    if (points[i][comp] >= bboxMin[comp])
-      return false;
-  return true;
-}
-
-template <typename VecType, size_t N>
-bool are_all_components_hi(const VecType & bboxMax, const std::array<const double*,N> & points, const unsigned comp)
-{
-  for (size_t i=0; i<N; ++i)
-    if (points[i][comp] <= bboxMax[comp])
-      return false;
-  return true;
-}
-
-template <size_t N>
-bool does_bounding_box_intersect_facet(const BoundingBox & bbox, const std::array<const double*,N> & points, const unsigned ndim)
-{
-  for (unsigned comp=0; comp<ndim; ++comp)
-    if (are_all_components_lo(bbox.get_min(), points, comp) ||
-        are_all_components_hi(bbox.get_max(), points, comp))
-      return false;
-  return true;
-}
-
 void Facet3d::insert_into(BoundingBox & bbox) const
 {
   bbox.accommodate(myCoords[0]);
@@ -216,8 +188,7 @@ void Facet3d::insert_into(BoundingBox & bbox) const
 
 bool Facet3d::does_intersect(const BoundingBox & bbox) const
 {
-  const std::array<const double*,3> pointData{myCoords[0].data(), myCoords[1].data(), myCoords[2].data()};
-  return does_bounding_box_intersect_facet(bbox, pointData, 3);
+  return does_bounding_box_intersect_triangle_3d(bbox, myCoords);
 }
 
 void Facet2d::insert_into(BoundingBox & bbox) const
@@ -228,8 +199,7 @@ void Facet2d::insert_into(BoundingBox & bbox) const
 
 bool Facet2d::does_intersect(const BoundingBox & bbox) const
 {
-  const std::array<const double*,2> pointData{myCoords[0].data(), myCoords[1].data()};
-  return does_bounding_box_intersect_facet(bbox, pointData, 2);
+  return does_bounding_box_intersect_edge_2d(bbox, myCoords);
 }
 
 double Facet3d::mean_squared_edge_length() const

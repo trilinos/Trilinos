@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_GEMM_TRIANGULAR_INTERNAL_HPP__
 #define __TACHO_GEMM_TRIANGULAR_INTERNAL_HPP__
@@ -27,7 +19,8 @@ Sandia National Laboratories, Albuquerque, NM, USA
 
 namespace Tacho {
 
-template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::Internal> {
+template <>
+struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::Internal> {
   template <typename MemberType, typename ScalarType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ScalarType alpha, const ViewTypeA &A,
                                            const ViewTypeB &B, const ScalarType beta, const ViewTypeC &C) {
@@ -50,8 +43,8 @@ template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Up
     if (m > 0 && n > 0 && k > 0) {
       if (m == n) {
         BlasTeam<value_type>::gemm_upper(member, Trans::Transpose::param, Trans::NoTranspose::param, m, n, k,
-                                         value_type(alpha), A.data(), A.stride_1(), B.data(), B.stride_1(),
-                                         value_type(beta), C.data(), C.stride_1());
+                                         value_type(alpha), A.data(), A.stride(1), B.data(), B.stride(1),
+                                         value_type(beta), C.data(), C.stride(1));
       } else {
         TACHO_TEST_FOR_ABORT(true, "C is not a square matrix");
       }

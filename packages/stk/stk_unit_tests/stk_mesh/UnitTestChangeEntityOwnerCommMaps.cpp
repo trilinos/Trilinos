@@ -34,7 +34,6 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t, NULL
-#include <string.h>                     // for memcpy
 #include <unistd.h>                     // for unlink
 #include <iostream>                     // for operator<<, etc
 #include <map>                          // for map, etc
@@ -62,8 +61,8 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { namespace fixtures { namespace simple_fields { class BoxFixture; } } } }
-namespace stk { namespace mesh { namespace fixtures { namespace simple_fields { class RingFixture; } } } }
+namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
+namespace stk { namespace mesh { namespace fixtures { class RingFixture; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
 
 namespace stk
@@ -86,8 +85,8 @@ using stk::mesh::EntityId;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
-using stk::mesh::fixtures::simple_fields::RingFixture;
-using stk::mesh::fixtures::simple_fields::BoxFixture;
+using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::BoxFixture;
 
 namespace
 {
@@ -106,7 +105,6 @@ public:
       m_auraCommMapElementFieldName("ElementCommInfo"),
       m_auraCommMapElementField(NULL)
   {
-    m_stkMeshMetaData.use_simple_fields();
   }
 
   ~FieldMgr() {}
@@ -184,7 +182,6 @@ TEST(UnitTestChangeEntityOwner, changeEntityOwnerCase1)
     std::string exodusFileName = "generated:1x1x6";
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
 
     stk::io::StkMeshIoBroker exodusFileReader(comm);
@@ -649,16 +646,18 @@ void putCommInfoDataOnFields(stk::unit_test_util::BulkDataTester &bulkData, Fiel
   const int sharedToThisProcValue = 16;
   const int ghostedToThisProcValue = 20;
 
+  auto commFieldData = fieldMgr.getCommListNodeField()->data<stk::mesh::ReadWrite>();
+  auto shareFieldData = fieldMgr.getSharingCommMapNodeField()->data<stk::mesh::ReadWrite>();
+  auto auraFieldData = fieldMgr.getAuraCommMapNodeField()->data<stk::mesh::ReadWrite>();
   for(size_t i = 0; i < nodeBuckets.size(); i++)
   {
     const stk::mesh::Bucket &bucket = *nodeBuckets[i];
-    //(bucket.owned())
     {
       for(size_t j = 0; j < bucket.size(); j++)
       {
-        double *commListNode = stk::mesh::field_data(*fieldMgr.getCommListNodeField(), bucket[j]);
-        double *sharedCommMapNode = stk::mesh::field_data(*fieldMgr.getSharingCommMapNodeField(), bucket[j]);
-        double *auraCommMapNode = stk::mesh::field_data(*fieldMgr.getAuraCommMapNodeField(), bucket[j]);
+        auto commListNode = commFieldData.entity_values(bucket[j]);
+        auto sharedCommMapNode = shareFieldData.entity_values(bucket[j]);
+        auto auraCommMapNode = auraFieldData.entity_values(bucket[j]);
 
         // 0: not ghosted
         // 1: ghosted else where
@@ -668,16 +667,16 @@ void putCommInfoDataOnFields(stk::unit_test_util::BulkDataTester &bulkData, Fiel
         {
           if ( bucket.in_aura() )
           {
-            *auraCommMapNode = 2;
+            auraCommMapNode(0_comp) = 2;
           }
           else
           {
-            *auraCommMapNode = 1;
+            auraCommMapNode(0_comp) = 1;
           }
         }
         else
         {
-          *auraCommMapNode = 0;
+          auraCommMapNode(0_comp) = 0;
         }
 
         if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
@@ -686,41 +685,41 @@ void putCommInfoDataOnFields(stk::unit_test_util::BulkDataTester &bulkData, Fiel
           {
             if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
             {
-              *sharedCommMapNode = ownedAndSharedAndGhostedValue;
+              sharedCommMapNode(0_comp) = ownedAndSharedAndGhostedValue;
             }
             else
             {
-              *sharedCommMapNode = ownedAndSharedValue;
+              sharedCommMapNode(0_comp) = ownedAndSharedValue;
             }
           }
           else
           {
-            *sharedCommMapNode = sharedToThisProcValue;
+            sharedCommMapNode(0_comp) = sharedToThisProcValue;
           }
         }
         else if(bulkData.is_entity_in_ghosting_comm_map(bucket[j]))
         {
           if (bucket.in_aura() )
           {
-            *sharedCommMapNode = ghostedToThisProcValue;
+            sharedCommMapNode(0_comp) = ghostedToThisProcValue;
           }
           else
           {
-            *sharedCommMapNode = ownedAndGhostedValue;
+            sharedCommMapNode(0_comp) = ownedAndGhostedValue;
           }
         }
         else
         {
-          *sharedCommMapNode = ownedValue;
+          sharedCommMapNode(0_comp) = ownedValue;
         }
 
         if(CEOUtils::isEntityValidOnCommList(bulkData, bucket[j]))
         {
-          *commListNode = 1;
+          commListNode(0_comp) = 1;
         }
         else
         {
-          *commListNode = 0;
+          commListNode(0_comp) = 0;
         }
       }
     }
@@ -728,6 +727,7 @@ void putCommInfoDataOnFields(stk::unit_test_util::BulkDataTester &bulkData, Fiel
 
   const stk::mesh::BucketVector &elementBuckets = bulkData.buckets(stk::topology::ELEMENT_RANK);
 
+  auto auraElemFieldData = fieldMgr.getAuraCommMapElementField()->data<stk::mesh::ReadWrite>();
   for(size_t i = 0; i < elementBuckets.size(); i++)
   {
     const stk::mesh::Bucket &bucket = *elementBuckets[i];
@@ -735,7 +735,7 @@ void putCommInfoDataOnFields(stk::unit_test_util::BulkDataTester &bulkData, Fiel
     {
       for(size_t j = 0; j < bucket.size(); j++)
       {
-        double *auraCommMap = stk::mesh::field_data(*fieldMgr.getAuraCommMapElementField(), bucket[j]);
+        auto auraCommMap = auraElemFieldData.entity_values(bucket[j]);
 
         // 0: Not ghosted (owned)
         // 1: ghosted to other proc
@@ -745,21 +745,20 @@ void putCommInfoDataOnFields(stk::unit_test_util::BulkDataTester &bulkData, Fiel
         {
           if ( bucket.in_aura() )
           {
-            *auraCommMap = ghostedToThisProcValue;
+            auraCommMap(0_comp) = ghostedToThisProcValue;
           }
           else
           {
-            *auraCommMap = ownedAndGhostedValue;
+            auraCommMap(0_comp) = ownedAndGhostedValue;
           }
         }
         else
         {
-          *auraCommMap = ownedValue;
+          auraCommMap(0_comp) = ownedValue;
         }
       }
     }
   }
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -133,11 +133,11 @@ int ex_put_partial_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj
 
   /* inquire id's of previously defined dimensions  */
   if (exi_get_dimension(exoid, dnumobjent, "entries", &num_entries_this_obj, &temp, __func__) !=
-      NC_NOERR) {
+      EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (start_num + num_ent - 1 > num_entries_this_obj) {
+  if (start_num + num_ent - 1 > (int64_t)num_entries_this_obj) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: start index (%" PRId64 ") + count (%" PRId64
              ") is larger than total number of entities (%zu) in file id %d",
@@ -146,7 +146,7 @@ int ex_put_partial_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (exi_get_dimension(exoid, dnumobjatt, "attributes", &num_attr, &temp, __func__) != NC_NOERR) {
+  if (exi_get_dimension(exoid, dnumobjatt, "attributes", &num_attr, &temp, __func__) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -159,7 +159,7 @@ int ex_put_partial_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate attribute variable for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
@@ -189,7 +189,7 @@ int ex_put_partial_one_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj
     status = nc_put_vars_double(exoid, attrid, start, count, stride, attrib);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to put attribute %d for %s %" PRId64 " in file id %d", attrib_index,
              ex_name_of_object(obj_type), obj_id, exoid);

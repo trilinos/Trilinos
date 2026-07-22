@@ -19,176 +19,176 @@ constexpr Range oneRange{-0.99999999, 0.99999999};
 
 TEST_F(MathFunctionWithOneDoubleArg, ConstructingDoublesFromDouble_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return 3.0; },
-                     [](stk::simd::Double x) { return stk::simd::Double(3.0); },
+  test_simd_operator([](double /*xArg*/) { return 3.0; },
+                     [](stk::simd::Double /*xArg*/) { return stk::simd::Double(3.0); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Divide_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return 1.0/x; },
-                     [](stk::simd::Double x) { return 1.0/x; },
+  test_simd_operator([](double xArg) { return 1.0/xArg; },
+                     [](stk::simd::Double xArg) { return 1.0/xArg; },
                      Range{-mediumVal, mediumVal});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Sqrt_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::sqrt(x); },
-                     [](stk::simd::Double x) { return stk::math::sqrt(x); },
+  test_simd_operator([](double xArg) { return std::sqrt(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::sqrt(xArg); },
                      Range{0.0, largeVal});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Cbrt_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::cbrt(x); },
-                     [](stk::simd::Double x) { return stk::math::cbrt(x); },
+  test_simd_operator([](double xArg) { return std::cbrt(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::cbrt(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Exp_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::exp(x); },
-                     [](stk::simd::Double x) { return stk::math::exp(x); },
+  test_simd_operator([](double xArg) { return std::exp(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::exp(xArg); },
                      Range{-25, 25});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Log_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::log(x); },
-                     [](stk::simd::Double x) { return stk::math::log(x); },
+  test_simd_operator([](double xArg) { return std::log(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::log(xArg); },
                      Range{0, largeVal});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Log10_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::log10(x); },
-                     [](stk::simd::Double x) { return stk::math::log10(x); },
+  test_simd_operator([](double xArg) { return std::log10(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::log10(xArg); },
                      Range{0, mediumVal});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Sin_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::sin(x); },
-                     [](stk::simd::Double x) { return stk::math::sin(x); },
+  test_simd_operator([](double xArg) { return std::sin(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::sin(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Cos_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::cos(x); },
-                     [](stk::simd::Double x) { return stk::math::cos(x); },
+  test_simd_operator([](double xArg) { return std::cos(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::cos(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Tan_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::tan(x); },
-                     [](stk::simd::Double x) { return stk::math::tan(x); },
+  test_simd_operator([](double xArg) { return std::tan(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::tan(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Sinh_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::sinh(x); },
-                     [](stk::simd::Double x) { return stk::math::sinh(x); },
-                     fullRange);
+  test_simd_operator([](double xArg) { return std::sinh(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::sinh(xArg); },
+                     oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Cosh_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::cosh(x); },
-                     [](stk::simd::Double x) { return stk::math::cosh(x); },
-                     fullRange);
+  test_simd_operator([](double xArg) { return std::cosh(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::cosh(xArg); },
+                     oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Tanh_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::tanh(x); },
-                     [](stk::simd::Double x) { return stk::math::tanh(x); },
+  test_simd_operator([](double xArg) { return std::tanh(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::tanh(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Asin_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::asin(x); },
-                     [](stk::simd::Double x) { return stk::math::asin(x); },
+  test_simd_operator([](double xArg) { return std::asin(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::asin(xArg); },
                      oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Acos_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::acos(x); },
-                     [](stk::simd::Double x) { return stk::math::acos(x); },
+  test_simd_operator([](double xArg) { return std::acos(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::acos(xArg); },
                      oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Atan_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::atan(x); },
-                     [](stk::simd::Double x) { return stk::math::atan(x); },
+  test_simd_operator([](double xArg) { return std::atan(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::atan(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Asinh_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::asinh(x); },
-                     [](stk::simd::Double x) { return stk::math::asinh(x); },
+  test_simd_operator([](double xArg) { return std::asinh(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::asinh(xArg); },
                      oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Acosh_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::acosh(x); },
-                     [](stk::simd::Double x) { return stk::math::acosh(x); },
+  test_simd_operator([](double xArg) { return std::acosh(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::acosh(xArg); },
                      Range{1.0,100.0});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Atanh_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::atanh(x); },
-                     [](stk::simd::Double x) { return stk::math::atanh(x); },
+  test_simd_operator([](double xArg) { return std::atanh(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::atanh(xArg); },
                      oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Erf_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::erf(x); },
-                     [](stk::simd::Double x) { return stk::math::erf(x); },
+  test_simd_operator([](double xArg) { return std::erf(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::erf(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Abs_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::abs(x); },
-                     [](stk::simd::Double x) { return stk::math::abs(x); },
+  test_simd_operator([](double xArg) { return std::abs(xArg); },
+                     [](stk::simd::Double xArg) { return stk::math::abs(xArg); },
                      fullRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Pow2_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::pow(x, 2); },
-                     [](stk::simd::Double x) { return stk::math::pow(x, 2); },
+  test_simd_operator([](double xArg) { return std::pow(xArg, 2); },
+                     [](stk::simd::Double xArg) { return stk::math::pow(xArg, 2); },
                      Range{-5.0, 5.0});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Pow3_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::pow(x, 3); },
-                     [](stk::simd::Double x) { return stk::math::pow(x, 3); },
+  test_simd_operator([](double xArg) { return std::pow(xArg, 3); },
+                     [](stk::simd::Double xArg) { return stk::math::pow(xArg, 3); },
                      Range{-5.0, 5.0});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, PowMinus1_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::pow(x, -1); },
-                     [](stk::simd::Double x) { return stk::math::pow(x, -1); },
+  test_simd_operator([](double xArg) { return std::pow(xArg, -1); },
+                     [](stk::simd::Double xArg) { return stk::math::pow(xArg, -1); },
                      Range{-5.0, 5.0});
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, PowMinus2_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::pow(x, -2); },
-                     [](stk::simd::Double x) { return stk::math::pow(x, -2); },
+  test_simd_operator([](double xArg) { return std::pow(xArg, -2); },
+                     [](stk::simd::Double xArg) { return stk::math::pow(xArg, -2); },
                      Range{-5.0, 5.0});
 }
 
@@ -196,29 +196,29 @@ TEST_F(MathFunctionWithOneDoubleArg, Copysign0_ScalarAndSimdMatch)
 {
 
   
-  test_simd_operator([](double x) { return std::copysign(x, 0.0); },
-                     [](stk::simd::Double x) { return stk::math::copysign(x, 0.0); },
+  test_simd_operator([](double xArg) { return std::copysign(xArg, 0.0); },
+                     [](stk::simd::Double xArg) { return stk::math::copysign(xArg, 0.0); },
                      mediumRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Multiplysign0_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return x; },
-                     [](stk::simd::Double x) { return stk::math::multiplysign(x, 0.0); },
+  test_simd_operator([](double xArg) { return xArg; },
+                     [](stk::simd::Double xArg) { return stk::math::multiplysign(xArg, 0.0); },
                      mediumRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, CopysignMinus0_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return std::copysign(x, -0.0); },
-                     [](stk::simd::Double x) { return stk::math::copysign(x, -0.0); },
+  test_simd_operator([](double xArg) { return std::copysign(xArg, -0.0); },
+                     [](stk::simd::Double xArg) { return stk::math::copysign(xArg, -0.0); },
                      mediumRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, MultiplysignMinus0_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x) { return -x; },
-                     [](stk::simd::Double x) { return stk::math::multiplysign(x, -0.0); },
+  test_simd_operator([](double xArg) { return -xArg; },
+                     [](stk::simd::Double xArg) { return stk::math::multiplysign(xArg, -0.0); },
                      fullRange);
 }
 
@@ -227,10 +227,10 @@ TEST_F(MathFunctionWithOneDoubleArg, MultiplysignMinus0_ScalarAndSimdMatch)
 #ifdef STK_VOLATILE_SIMD
 TEST_F(MathFunctionWithTwoDoubleArg, VolatilePlusEquals_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x+y; },
-                     [](stk::simd::Double x, stk::simd::Double y) {
-                          volatile stk::simd::Double a = x;
-                          volatile stk::simd::Double b = y;
+  test_simd_operator([](double xArg, double yArg) { return xArg+yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) {
+                          volatile stk::simd::Double a = xArg;
+                          volatile stk::simd::Double b = yArg;
                           a += b;
                           return a;
                      },
@@ -240,78 +240,78 @@ TEST_F(MathFunctionWithTwoDoubleArg, VolatilePlusEquals_ScalarAndSimdMatch)
 
 TEST_F(MathFunctionWithTwoDoubleArg, Sum_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x+y; },
-                     [](stk::simd::Double x, stk::simd::Double y) { return x+y; },
+  test_simd_operator([](double xArg, double yArg) { return xArg+yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return xArg+yArg; },
                      fullRange, fullRange);
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Subtract_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x-y; },
-                     [](stk::simd::Double x, stk::simd::Double y) { return x-y; },
+  test_simd_operator([](double xArg, double yArg) { return xArg-yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return xArg-yArg; },
                      fullRange, fullRange);
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Multiply_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x*y; },
-                     [](stk::simd::Double x, stk::simd::Double y) { return x*y; },
+  test_simd_operator([](double xArg, double yArg) { return xArg*yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return xArg*yArg; },
                      mediumRange, mediumRange);
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, DivideByPositive_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x/y; },
-                     [](stk::simd::Double x, stk::simd::Double y) { return x/y; },
+  test_simd_operator([](double xArg, double yArg) { return xArg/yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return xArg/yArg; },
                      fullRange, Range{smallVal, largeVal});
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, DivideByNegative_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x/y; },
-                     [](stk::simd::Double x, stk::simd::Double y) { return x/y; },
+  test_simd_operator([](double xArg, double yArg) { return xArg/yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return xArg/yArg; },
                      fullRange, Range{-largeVal, -smallVal});
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Pow_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return std::pow(x, y); },
-                     [](stk::simd::Double x, stk::simd::Double y) { return stk::math::pow(x, y); },
+  test_simd_operator([](double xArg, double yArg) { return std::pow(xArg, yArg); },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return stk::math::pow(xArg, yArg); },
                      Range{0.0, 4.0}, Range{-2.5, 2.5});
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Atan2_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return std::atan2(x, y); },
-                     [](stk::simd::Double x, stk::simd::Double y) { return stk::math::atan2(x, y); },
+  test_simd_operator([](double xArg, double yArg) { return std::atan2(xArg, yArg); },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return stk::math::atan2(xArg, yArg); },
                      fullRange, fullRange);
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Max_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x>y ? x : y; },
-                     [](stk::simd::Double x, stk::simd::Double y) { return stk::math::max(x,y); },
+  test_simd_operator([](double xArg, double yArg) { return xArg>yArg ? xArg : yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return stk::math::max(xArg,yArg); },
                      fullRange, fullRange);
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Min_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x<y ? x : y; },
-                     [](stk::simd::Double x, stk::simd::Double y) { return stk::math::min(x,y); },
+  test_simd_operator([](double xArg, double yArg) { return xArg<yArg ? xArg : yArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return stk::math::min(xArg,yArg); },
                      fullRange, fullRange);
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Copysign_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return stk::math::copysign(x,y); },
-                     [](stk::simd::Double x, stk::simd::Double y) { return stk::math::copysign(x,y); },
+  test_simd_operator([](double xArg, double yArg) { return stk::math::copysign(xArg,yArg); },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return stk::math::copysign(xArg,yArg); },
                      fullRange, fullRange);
 }
 
 TEST_F(MathFunctionWithTwoDoubleArg, Multiplysign_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y) { return x * (y>=0.0 ? 1 : -1); },
-                     [](stk::simd::Double x, stk::simd::Double y) { return stk::math::multiplysign(x,y); },
+  test_simd_operator([](double xArg, double yArg) { return xArg * (yArg>=0.0 ? 1 : -1); },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg) { return stk::math::multiplysign(xArg,yArg); },
                      fullRange, fullRange);
 }
 
@@ -319,8 +319,8 @@ TEST_F(MathFunctionWithTwoDoubleArg, Multiplysign_ScalarAndSimdMatch)
 
 TEST_F(MathFunctionWithBoolAndDoubleArg, Ternary_ScalarAndSimdMatch)
 {
-  test_simd_operator([](bool x, double y) { return x ? y : 0.0; },
-                     [](stk::simd::Bool x, stk::simd::Double y) { return stk::math::if_then_else_zero(x,y); },
+  test_simd_operator([](bool xArg, double yArg) { return xArg ? yArg : 0.0; },
+                     [](stk::simd::Bool xArg, stk::simd::Double yArg) { return stk::math::if_then_else_zero(xArg,yArg); },
                      mediumRange);
 }
 
@@ -328,15 +328,15 @@ TEST_F(MathFunctionWithBoolAndDoubleArg, Ternary_ScalarAndSimdMatch)
 
 TEST_F(MathFunctionWithThreeDoubleArg, FusedMultipyAdd_ScalarAndSimdMatch)
 {
-  test_simd_operator([](double x, double y, double z) { return x*y+z; },
-                     [](stk::simd::Double x, stk::simd::Double y, stk::simd::Double z) { return stk::math::fmadd(x,y,z); },
+  test_simd_operator([](double xArg, double yArg, double zArg) { return xArg*yArg+zArg; },
+                     [](stk::simd::Double xArg, stk::simd::Double yArg, stk::simd::Double zArg) { return stk::math::fmadd(xArg,yArg,zArg); },
                      mediumRange, mediumRange, fullRange);
 }
 
 TEST_F(MathFunctionWithBoolAndTwoDoubleArg, Ternary_ScalarAndSimdMatch)
 {
-  test_simd_operator([](bool x, double y, double z) { return x ? y : z; },
-                     [](stk::simd::Bool x, stk::simd::Double y, stk::simd::Double z) { return stk::math::if_then_else(x,y,z); },
+  test_simd_operator([](bool xArg, double yArg, double zArg) { return xArg ? yArg : zArg; },
+                     [](stk::simd::Bool xArg, stk::simd::Double yArg, stk::simd::Double zArg) { return stk::math::if_then_else(xArg,yArg,zArg); },
                      mediumRange, mediumRange);
 }
 

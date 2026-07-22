@@ -78,6 +78,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tExodusIossProperties
+  SOURCES tExodusIossProperties.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tExodusRestartAndAppend
   SOURCES tExodusRestartAndAppend.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 2

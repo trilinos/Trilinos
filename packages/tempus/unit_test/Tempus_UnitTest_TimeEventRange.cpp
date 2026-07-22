@@ -154,12 +154,34 @@ TEUCHOS_UNIT_TEST(TimeEventRange, setTimeRange)
 {
   auto te = rcp(new Tempus::TimeEventRange<double>());
 
-  // Set with time range.
+  // Set with time range with stride.
   te->setTimeRange(0.0, PI, 1.0);
   TEST_FLOATING_EQUALITY(te->getTimeStart(), 0.0, 1.0e-14);
   TEST_FLOATING_EQUALITY(te->getTimeStop(), PI, 1.0e-14);
   TEST_FLOATING_EQUALITY(te->getTimeStride(), 1.0, 1.0e-14);
   TEST_COMPARE(te->getNumEvents(), ==, 4);
+
+  // Set with time range number of events.
+  te->setTimeRange(0.0, PI, 5);
+  TEST_FLOATING_EQUALITY(te->getTimeStart(), 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getTimeStop(), PI, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getTimeStride(), PI / 4.0, 1.0e-14);
+  TEST_COMPARE(te->getNumEvents(), ==, 5);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeEventRange, setNumEvents)
+{
+  auto te = rcp(new Tempus::TimeEventRange<double>());
+
+  // Set with time range with stride, then set number of events.
+  te->setTimeRange(0.0, PI, 1.0);
+  te->setNumEvents(5);
+  TEST_FLOATING_EQUALITY(te->getTimeStart(), 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getTimeStop(), PI, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getTimeStride(), PI / 4.0, 1.0e-14);
+  TEST_COMPARE(te->getNumEvents(), ==, 5);
 }
 
 // ************************************************************

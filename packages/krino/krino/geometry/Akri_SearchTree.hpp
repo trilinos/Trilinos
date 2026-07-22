@@ -69,6 +69,17 @@ public:
   void find_closest_entities( const stk::math::Vector3d& search_point, const std::function<double(const EntityType, const stk::math::Vector3d &)> & get_entity_distance_squared_fn, std::vector<EntityType>& return_vec, const Real max_search_radius = 0.0 );
   void find_closest_entities( const stk::math::Vector3d& search_point, std::vector<EntityType>& return_vec, const Real max_search_radius = 0.0 );
   
+  void recursively_get_entities_within_distance_bound( const stk::math::Vector3d& search_point,
+     const double maxSearchSqrDist,
+     std::vector<EntityType> & nearest)
+  {
+    // Algorithm requires tol > std::numeric_limits<double>::epsilon(), here just pick multiplier
+    const Real tol = 100.*std::numeric_limits<Real>::epsilon();
+    const Real maxDist2 = maxSearchSqrDist;
+    const VecType search_pt(search_point.data());
+    recursively_get_entities_within_distance_bound( search_pt, maxDist2, tol, nearest, 0 );
+  }
+
   void get_intersecting_entities( const BoundingBoxType& bbox, std::vector<EntityType>& return_vec)
   {
     return_vec.clear();
@@ -102,7 +113,7 @@ private:
      const Real maxDist2,
      const Real tol,
      std::vector<EntityType> & nearest,
-     const size_t index = 0 );
+     const size_t index);
   void recursively_get_intersecting_entities( const BoundingBoxType& bbox, std::vector<EntityType>& return_vec, const size_t index );
   void add_descendants( std::vector<EntityType>& return_vec, const size_t index );
 private:
@@ -201,9 +212,6 @@ SearchTree<ENTITY>::find_closest_entities( const stk::math::Vector3d & search_po
 {
   return_vec.clear();
 
-  // Algorithm requires tol > std::numeric_limits<double>::epsilon(), here just pick multiplier
-  const Real tol = 100.*std::numeric_limits<Real>::epsilon();
-
   // if there are no entities at all return empty list
   if ( empty() ) return;
 
@@ -225,7 +233,7 @@ SearchTree<ENTITY>::find_closest_entities( const stk::math::Vector3d & search_po
   }
 
   // with the upper bound known, find all entities within the tolerance
-  recursively_get_entities_within_distance_bound( search_pt, upperBnd2, tol, return_vec );
+  recursively_get_entities_within_distance_bound( search_point, upperBnd2, return_vec );
 
   return;
 }

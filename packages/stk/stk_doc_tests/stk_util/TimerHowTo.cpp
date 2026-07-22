@@ -76,7 +76,7 @@ totalTestRuntime                           1        SKIP  SKIP             00:00
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
     ";
-    using stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers;
+    using stk::unit_test_util::areStringsEqualWithToleranceForNumbers;
     EXPECT_TRUE(areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
   }
 
@@ -126,7 +126,7 @@ totalTestRuntime                             1        SKIP   SKIP        00:00:0
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
             ";
-  using stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers;
+  using stk::unit_test_util::areStringsEqualWithToleranceForNumbers;
   EXPECT_TRUE(areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
   stk::diag::deleteRootTimer(rootTimer);
@@ -173,7 +173,7 @@ totalTestRuntime                             1        SKIP   SKIP        00:00:0
                                                                                            \
 Took 0.0001 seconds to generate the table above.                                           \
             ";
-  using stk::unit_test_util::simple_fields::areStringsEqualWithToleranceForNumbers;
+  using stk::unit_test_util::areStringsEqualWithToleranceForNumbers;
   EXPECT_TRUE(areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
   stk::diag::deleteRootTimer(rootTimer);

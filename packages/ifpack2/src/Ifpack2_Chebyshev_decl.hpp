@@ -1,45 +1,11 @@
-/*
-@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 /// \file Ifpack2_Chebyshev_decl.hpp
 /// \brief Declaration of Chebyshev interface
@@ -195,18 +161,16 @@ namespace Ifpack2 {
 /// ML's ML_Cheby routine.  The original author was Ulrich Hetmaniuk,
 /// a Sandia employee in what was then (2006) Org 1416.  Ifpack2 has
 /// seen significant development since then.
-template<class MatrixType>
-class Chebyshev :
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType>
+class Chebyshev : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                         typename MatrixType::local_ordinal_type,
+                                                         typename MatrixType::global_ordinal_type,
+                                                         typename MatrixType::node_type>,
+                  virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                     typename MatrixType::local_ordinal_type,
+                                                                                     typename MatrixType::global_ordinal_type,
+                                                                                     typename MatrixType::node_type> > {
+ public:
   //! \name Typedefs
   //@{
 
@@ -236,11 +200,12 @@ public:
   /// MatrixType must be a Tpetra::RowMatrix specialization.  This
   /// typedef will always be a Tpetra::RowMatrix specialization.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> row_matrix_type;
+                            global_ordinal_type, node_type>
+      row_matrix_type;
 
-  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
-                 "Ifpack2::Chebyshev: MatrixType must be a Tpetra::RowMatrix "
-                 "specialization.  Don't use Tpetra::CrsMatrix here.");
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::Chebyshev: MatrixType must be a Tpetra::RowMatrix "
+                "specialization.  Don't use Tpetra::CrsMatrix here.");
 
   //! The Tpetra::Map specialization matching MatrixType.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
@@ -251,7 +216,8 @@ public:
   /// diagonal entries of the matrix, use a pointer to an object of
   /// this type.
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> vector_type;
+                         global_ordinal_type, node_type>
+      vector_type;
 
   //@}
   // \name Constructors and destructors
@@ -278,10 +244,10 @@ public:
   /// building Trilinos.  The checks require \f$O(1)\f$ global
   /// reductions over all processes in A's communicator, so we prefer
   /// to avoid them if we can.
-  explicit Chebyshev (const Teuchos::RCP<const row_matrix_type>& A);
+  explicit Chebyshev(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor.
-  virtual ~Chebyshev ();
+  virtual ~Chebyshev();
 
   //@}
   //! \name Preconditioner computation methods
@@ -423,11 +389,11 @@ public:
   /// from the matrix.  Otherwise, we have to make a fresh Export
   /// object, which is more expensive.  To avoid this cost, you should
   /// always provide a row Map or range Map vector for this parameter.
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   bool supportsZeroStartingSolution() { return true; }
 
-  void setZeroStartingSolution (bool zeroStartingSolution);
+  void setZeroStartingSolution(bool zeroStartingSolution);
 
   /// \brief Initialize the preconditioner.
   ///
@@ -475,7 +441,7 @@ public:
   /// This method will call initialize() if it has not already been
   /// called.  However, you may call initialize() before calling this
   /// method if you wish.
-  void compute ();
+  void compute();
 
   /// Whether compute() has been called at least once.
   ///
@@ -517,7 +483,7 @@ public:
   /// The new matrix A need not necessarily have the same Maps or even
   /// the same communicator as the original matrix.
   virtual void
-  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
   //! @name Implementation of Tpetra::Operator
@@ -552,11 +518,11 @@ public:
   ///   iteration.  The default is 1.
   /// \param[in] beta  Scaling factor for Y.  The default is 0.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
   Teuchos::RCP<const map_type> getDomainMap() const;
@@ -588,9 +554,9 @@ public:
   /// positive definite, setting <tt>mode</tt> should not affect the
   /// result.
   void
-  applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  applyMat(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+           Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
   //! \name Attribute accessor methods
@@ -634,7 +600,7 @@ public:
   double getApplyTime() const;
 
   //! Get a rough estimate of cost per iteration
-  size_t getNodeSmootherComplexity() const;  
+  size_t getNodeSmootherComplexity() const;
 
   //! The estimate of the maximum eigenvalue used in the apply().
   typename MatrixType::scalar_type getLambdaMaxForApply() const;
@@ -647,12 +613,11 @@ public:
   std::string description() const;
 
   //! Print the object with some verbosity level to a Teuchos::FancyOStream.
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
-private:
-
+ private:
   //! Abbreviation for the Teuchos::ScalarTraits specialization for scalar_type.
   typedef Teuchos::ScalarTraits<typename MatrixType::scalar_type> STS;
 
@@ -660,10 +625,10 @@ private:
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
 
   //! Copy constructor (use is syntactically forbidden)
-  Chebyshev (const Chebyshev<MatrixType>&);
+  Chebyshev(const Chebyshev<MatrixType>&);
 
   //! Assignment operator (use is syntactically forbidded)
-  Chebyshev<MatrixType>& operator= (const Chebyshev<MatrixType>&);
+  Chebyshev<MatrixType>& operator=(const Chebyshev<MatrixType>&);
 
   /// \brief Y := beta*Y + alpha*M*X.
   ///
@@ -673,11 +638,11 @@ private:
   /// <tt>Teuchos::TRANS</tt>, and \f$A^H\f$ if mode is
   /// <tt>Teuchos::CONJ_TRANS</tt>.
   void
-  applyImpl (const MV& X,
-             MV& Y,
-             Teuchos::ETransp mode,
-             scalar_type alpha,
-             scalar_type beta) const;
+  applyImpl(const MV& X,
+            MV& Y,
+            Teuchos::ETransp mode,
+            scalar_type alpha,
+            scalar_type beta) const;
 
   //! \name Internal state
   //@{
@@ -724,9 +689,8 @@ private:
   mutable double ApplyFlops_;
 
   //@}
-}; // class Chebyshev
+};  // class Chebyshev
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_CHEBYSHEV_DECL_HPP
-
+#endif  // IFPACK2_CHEBYSHEV_DECL_HPP

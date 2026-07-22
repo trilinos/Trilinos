@@ -1,20 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -48,27 +33,23 @@ struct TolMeta<float> {
   static constexpr float value = 1e-5;  // Lower tolerance for floats
 };
 
-template <typename Crs, typename AType,
-          typename std::enable_if<is_crs_matrix<AType>::value>::type* = nullptr>
+template <typename Crs, typename AType, typename std::enable_if<is_crs_matrix<AType>::value>::type* = nullptr>
 AType get_A(int n, int diagDominance, int) {
   using lno_t                           = typename Crs::ordinal_type;
   typename Crs::non_const_size_type nnz = 10 * n;
-  auto A =
-      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
-          n, n, nnz, 0, lno_t(0.01 * n), diagDominance);
+  auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(n, n, nnz, 0, lno_t(0.01 * n),
+                                                                                  diagDominance);
   KokkosSparse::sort_crs_matrix(A);
 
   return A;
 }
 
-template <typename Crs, typename AType,
-          typename std::enable_if<is_bsr_matrix<AType>::value>::type* = nullptr>
+template <typename Crs, typename AType, typename std::enable_if<is_bsr_matrix<AType>::value>::type* = nullptr>
 AType get_A(int n, int diagDominance, int block_size) {
   using lno_t                           = typename Crs::ordinal_type;
   typename Crs::non_const_size_type nnz = 10 * n;
-  auto A_unblocked =
-      KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
-          n, n, nnz, 0, lno_t(0.01 * n), diagDominance);
+  auto A_unblocked                      = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
+      n, n, nnz, 0, lno_t(0.01 * n), diagDominance);
   KokkosSparse::sort_crs_matrix(A_unblocked);
 
   // Convert to BSR
@@ -77,22 +58,21 @@ AType get_A(int n, int diagDominance, int block_size) {
   return A;
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 struct GmresTest {
   using RowMapType  = Kokkos::View<size_type*, device>;
   using EntriesType = Kokkos::View<lno_t*, device>;
   using ValuesType  = Kokkos::View<scalar_t*, device>;
-  using AT          = Kokkos::ArithTraits<scalar_t>;
+  using AT          = KokkosKernels::ArithTraits<scalar_t>;
   using exe_space   = typename device::execution_space;
   using mem_space   = typename device::memory_space;
 
   using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
   using Bsr = BsrMatrix<scalar_t, lno_t, device, void, size_type>;
 
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-  using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
+  using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   template <bool UseBlocks>
   static void run_test_gmres() {
@@ -109,16 +89,14 @@ struct GmresTest {
     auto A = get_A<Crs, sp_matrix_type>(n, diagDominance, block_size);
 
     if (verbose) {
-      std::cout << "Running GMRES test with block_size=" << block_size
-                << std::endl;
+      std::cout << "Running GMRES test with block_size=" << block_size << std::endl;
     }
 
     // Make kernel handles
     KernelHandle kh;
     kh.create_gmres_handle(m, tol);
-    auto gmres_handle = kh.get_gmres_handle();
-    using GMRESHandle =
-        typename std::remove_reference<decltype(*gmres_handle)>::type;
+    auto gmres_handle    = kh.get_gmres_handle();
+    using GMRESHandle    = typename std::remove_reference<decltype(*gmres_handle)>::type;
     using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
 
     // Set initial vectors:
@@ -199,18 +177,16 @@ struct GmresTest {
 
 }  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_gmres() {
   using TestStruct = Test::GmresTest<scalar_t, lno_t, size_type, device>;
   TestStruct::template run_test_gmres<false>();
   TestStruct::template run_test_gmres<true>();
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)       \
-  TEST_F(TestCategory,                                                    \
-         sparse##_##gmres##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_gmres<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                     \
+  TEST_F(TestCategory, sparse##_##gmres##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_gmres<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

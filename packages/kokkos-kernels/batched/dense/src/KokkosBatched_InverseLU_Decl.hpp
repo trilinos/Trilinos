@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_INVERSELU_DECL_HPP__
-#define __KOKKOSBATCHED_INVERSELU_DECL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_INVERSELU_DECL_HPP
+#define KOKKOSBATCHED_INVERSELU_DECL_HPP
 
 /// \author Vinh Dang (vqdang@sandia.gov)
 
@@ -30,12 +17,10 @@ namespace KokkosBatched {
 template <typename ArgAlgo>
 struct SerialInverseLU {
   template <typename AViewType, typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A,
-                                           const wViewType &w) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A, const wViewType &w) {
     typedef typename wViewType::value_type value_type;
     // workspace w is always 1D view; reinterpret it
-    Kokkos::View<value_type **, Kokkos::LayoutRight, Kokkos::AnonymousSpace> W(
-        w.data(), A.extent(0), A.extent(1));
+    Kokkos::View<value_type **, Kokkos::LayoutRight, Kokkos::AnonymousSpace> W(w.data(), A.extent(0), A.extent(1));
 
     int r_val[3] = {};
     r_val[0]     = SerialCopy<Trans::NoTranspose>::invoke(A, W);
@@ -48,19 +33,15 @@ struct SerialInverseLU {
 template <typename MemberType, typename ArgAlgo>
 struct TeamInverseLU {
   template <typename AViewType, typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const AViewType &A,
-                                           const wViewType &w) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const wViewType &w) {
     typedef typename wViewType::value_type value_type;
     // workspace w is always 1D view; reinterpret it
-    Kokkos::View<value_type **, Kokkos::LayoutRight, Kokkos::AnonymousSpace> W(
-        w.data(), A.extent(0), A.extent(1));
+    Kokkos::View<value_type **, Kokkos::LayoutRight, Kokkos::AnonymousSpace> W(w.data(), A.extent(0), A.extent(1));
 
     int r_val[3] = {};
-    r_val[0] = TeamCopy<MemberType, Trans::NoTranspose>::invoke(member, A, W);
-    r_val[1] = TeamSetIdentity<MemberType>::invoke(member, A);
-    r_val[2] = TeamSolveLU<MemberType, Trans::NoTranspose, ArgAlgo>::invoke(
-        member, W, A);
+    r_val[0]     = TeamCopy<MemberType, Trans::NoTranspose>::invoke(member, A, W);
+    r_val[1]     = TeamSetIdentity<MemberType>::invoke(member, A);
+    r_val[2]     = TeamSolveLU<MemberType, Trans::NoTranspose, ArgAlgo>::invoke(member, W, A);
     return r_val[0] + r_val[1] + r_val[2];
   }
 };

@@ -30,7 +30,7 @@
 namespace MueLu {
 
 /*!
-  @class RebalanceBlockRestrictionFactory class.
+  @class RebalanceBlockRestrictionFactory
   @brief Applies permutation to restriction operators.
   @ingroup MueLuTransferClasses
 */

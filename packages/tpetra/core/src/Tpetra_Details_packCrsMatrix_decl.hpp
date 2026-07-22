@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_DETAILS_PACKCRSMATRIX_DECL_HPP
@@ -72,11 +40,13 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
 // Forward declaration of Array
-template<class T> class Array;
+template <class T>
+class Array;
 // Forward declaration of ArrayView
-template<class T> class ArrayView;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+template <class T>
+class ArrayView;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -116,13 +86,12 @@ namespace Details {
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename ST, typename LO, typename GO, typename NT>
-void
-packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-               Teuchos::Array<char>& exports,
-               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-               const Teuchos::ArrayView<const LO>& exportLIDs,
-               size_t& constantNumPackets);
+template <typename ST, typename LO, typename GO, typename NT>
+void packCrsMatrix(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                   Teuchos::Array<char>& exports,
+                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                   const Teuchos::ArrayView<const LO>& exportLIDs,
+                   size_t& constantNumPackets);
 
 /// \brief Pack specified entries of the given local sparse matrix for
 ///   communication, for "new" DistObject interface.
@@ -141,8 +110,8 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 /// \param exports [in/out] Output pack buffer; resized if needed.
 ///
 /// \param numPacketsPerLID [out] On output,
-///   numPacketsPerLID.d_view[k] is the number of bytes packed for row
-///   exportLIDs.d_view[k] of the local matrix.
+///   numPacketsPerLID.view_device()[k] is the number of bytes packed for row
+///   exportLIDs.view_device()[k] of the local matrix.
 ///
 /// \param exportLIDs [in] Local indices of the rows to pack.
 ///
@@ -153,16 +122,15 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 /// This method implements CrsMatrix::packNew, and thus
 /// CrsMatrix::packAndPrepare, for the case where the matrix to
 /// pack has a valid KokkosSparse::CrsMatrix.
-template<typename ST, typename LO, typename GO, typename NT>
-void
-packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                  Kokkos::DualView<char*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
-                  const Kokkos::DualView<size_t*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                  const Kokkos::DualView<const LO*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
-                  size_t& constantNumPackets);
+template <typename ST, typename LO, typename GO, typename NT>
+void packCrsMatrixNew(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                      Kokkos::DualView<char*,
+                                       typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
+                      const Kokkos::DualView<size_t*,
+                                             typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+                      const Kokkos::DualView<const LO*,
+                                             typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
+                      size_t& constantNumPackets);
 
 /// \brief Pack specified entries of the given local sparse matrix for
 ///   communication.
@@ -179,12 +147,14 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 ///
 /// \param sourceMatrix [in] the CrsMatrix source
 ///
-/// \param exports [in/out] Output pack buffer; resized if needed.
+/// \param exports_dv [in/out] Output pack buffer; resized if needed.
 ///
 /// \param numPacketsPerLID [out] Entry k gives the number of bytes
 ///   packed for row exportLIDs[k] of the local matrix.
 ///
 /// \param exportLIDs [in] Local indices of the rows to pack.
+///
+/// \param sourcePIDs [in] Process IDs of the source entries.
 ///
 /// \param constantNumPackets [out] Setting this to zero tells the caller
 ///   to expect a possibly /// different ("nonconstant") number of packets per local index
@@ -195,16 +165,15 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename ST, typename LO, typename GO, typename NT>
-void
-packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                             Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports_dv,
-                             const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                             const Teuchos::ArrayView<const LO>& exportLIDs,
-                             const Teuchos::ArrayView<const int>& sourcePIDs,
-                             size_t& constantNumPackets);
+template <typename ST, typename LO, typename GO, typename NT>
+void packCrsMatrixWithOwningPIDs(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                                 Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports_dv,
+                                 const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                                 const Teuchos::ArrayView<const LO>& exportLIDs,
+                                 const Teuchos::ArrayView<const int>& sourcePIDs,
+                                 size_t& constantNumPackets);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_PACKCRSMATRIX_DECL_HPP
+#endif  // TPETRA_DETAILS_PACKCRSMATRIX_DECL_HPP

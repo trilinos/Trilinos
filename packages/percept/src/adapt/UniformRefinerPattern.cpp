@@ -119,7 +119,7 @@
     /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
     void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity parent_elem, stk::mesh::Entity newElement,
                                                                stk::mesh::Entity familyTreeNewElement,
-                                                               unsigned ordinal, unsigned *numChild)
+                                                               unsigned ordinal, unsigned */*numChild*/)
     {
       bool debug = false;
       VERIFY_OP(parent_elem, != , stk::mesh::Entity(), "set_parent_child_relations: parent_elem is null");
@@ -255,7 +255,7 @@
           else
             {
               //std::cout << "family_tree_id = " << family_tree_id << std::endl;
-              family_tree = eMesh.get_bulk_data()->declare_constraint(family_tree_id, add);
+              family_tree = eMesh.get_bulk_data()->declare_entity(stk::topology::CONSTRAINT_RANK, family_tree_id, add);
             }
 
           // make the parent be the first relation; children are at the end
@@ -642,7 +642,7 @@
         }
     }
 
-    void addDistributionFactorToNewPart(stk::mesh::MetaData & meta, stk::mesh::Part * old_part, stk::mesh::Part * new_part)
+    void addDistributionFactorToNewPart(stk::mesh::MetaData & /*meta*/, stk::mesh::Part * old_part, stk::mesh::Part * new_part)
     {
       stk::mesh::FieldBase *df_field = const_cast<stk::mesh::FieldBase*>(stk::io::get_distribution_factor_field(*old_part));
       if (df_field) {
@@ -653,7 +653,7 @@
       }
     }
 
-    void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool skipConvertedParts)
+    void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool /*skipConvertedParts*/)
     {
       EXCEPTWATCH;
 
@@ -715,7 +715,7 @@
             if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
                 << " with topo= " << getToTopoPartName() << std::endl;
             stk::mesh::set_topology(*block_to, stk::mesh::get_topology(shards::CellTopology(getToTopology()), eMesh.get_fem_meta_data()->spatial_dimension()));
-
+            eMesh.get_fem_meta_data()->set_part_id(*block_to, part->id());
             if (!stk::io::is_part_io_part(block_to)) {
               stk::io::put_io_part_attribute(*block_to);
             }
@@ -799,8 +799,8 @@
                       stk::mesh::Part& from_superset = *from_supersets[i_from_supersets];
                       if ( stk::mesh::is_auto_declared_part(from_superset) )
                         continue;
-                      bool auto_part = from_superset.attribute<AutoPart>() != 0;
-                      if (auto_part)
+                      bool is_auto_part = from_superset.attribute<AutoPart>() != 0;
+                      if (is_auto_part)
                         continue;
 
                       if (DEBUG_fixSubSets && eMesh.get_rank() == 0)
@@ -934,10 +934,10 @@
     genericEnrich_createNewElementsBase(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                                        const unsigned fromTopoKey_in, const unsigned toTopoKey_in,
+                                        const unsigned /*fromTopoKey_in*/, const unsigned toTopoKey_in,
                                         const int ToTopology_node_count,
                                         const int FromTopology_vertex_count,
-                                        Elem::CellTopology elem_celltopo_in,
+                                        Elem::CellTopology /*elem_celltopo_in*/,
                                         const CellTopologyData * const cell_topo_data_toTopo_in,
                                         vector< vector<stk::mesh::EntityId> >& elems,
                                         stk::mesh::FieldBase *proc_rank_field)
@@ -1382,7 +1382,7 @@
     /// helpers for interpolating fields, coordinates
     /// ------------------------------------------------------------------------------------------------------------------------
 
-    /// This version uses Intrepid for interpolation
+    /// This version uses Intrepid2 for interpolation
     void UniformRefinerPatternBase::
     prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field)
@@ -1423,9 +1423,9 @@
 
       FieldFunction field_func("tmp", field, eMesh, topoDim, fieldStride);
 
-      MDArray input_pts(1, topoDim);
-      MDArray input_param_coords(1, topoDim);
-      MDArray output_pts(1, fieldStride);
+      MDArray input_pts("input_pts",1, topoDim);
+      MDArray input_param_coords("input_param_coords",1, topoDim);
+      MDArray output_pts("input_param_coords",1, fieldStride);
 
       percept::MyPairIterRelation new_elem_nodes (eMesh, newElement, stk::topology::NODE_RANK);
       for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
@@ -1439,25 +1439,17 @@
             }
           double time_val=0.0;
 
-          /// unfortunately, Intrepid doesn't support a quadratic Line<3> element
-
-          if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8
+          if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 
+              || toTopoKey == topo_key_line3  || toTopoKey == topo_key_shellline3
               || toTopoKey == topo_key_hex20
               || toTopoKey == topo_key_pyramid13 || toTopoKey == topo_key_pyramid5
               || toTopoKey == topo_key_tet10)
             {
-              prolongateIntrepid(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
+              prolongateIntrepid2(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
             }
           else
             {
-              if ((cell_topo.getDimension() == 1 || cell_topo.getDimension() == 2) && cell_topo.getNodeCount() == 3)  // Line<3> || Beam<3> element
-                {
-                  prolongateLine3(eMesh, field, output_pts, element, input_param_coords, time_val);
-                }
-              else
-                {
-                  field_func(input_pts, output_pts, element, input_param_coords, time_val);
-                }
+              field_func(input_pts, output_pts, element, input_param_coords, time_val);
             }
 
           stk::mesh::Entity new_node = new_elem_nodes[i_new_node].entity();
@@ -1474,7 +1466,7 @@
     }
 
     /// do interpolation for all fields
-    /// This version uses Intrepid
+    /// This version uses Intrepid2
     void UniformRefinerPatternBase::
     prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x)
@@ -1494,47 +1486,17 @@
     }
 
     void UniformRefinerPatternBase::
-    prolongateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
-                          MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
-    {
-      int fieldStride = output_pts.dimension(1);
-      unsigned *null_u = 0;
-
-      percept::MyPairIterRelation elem_nodes ( eMesh, element,  stk::topology::NODE_RANK);
-      double xi = input_param_coords(0, 0);
-
-      // FIXME assumes {-1,0,1} element parametric coords
-      //double basis_val[3] = { (xi)*(xi - 1.0)/2.0,  (1.0-xi)*(1.0+xi) , (xi)*(1.0+xi)/2.0 };
-
-      double basis_val[3] = { (xi)*(xi - 1.0)/2.0,  (xi)*(1.0+xi)/2.0, (1.0-xi)*(1.0+xi) };
-
-      for (int i_stride=0; i_stride < fieldStride; i_stride++)
-        {
-          output_pts(0, i_stride) = 0.0;
-        }
-      for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
-        {
-          stk::mesh::Entity node = elem_nodes[i_node].entity();
-          double *f_data = eMesh.field_data(field, node, null_u);
-          for (int i_stride=0; i_stride < fieldStride; i_stride++)
-            {
-              output_pts(0, i_stride) += f_data[i_stride]*basis_val[i_node];
-            }
-        }
-    }
-
-    void UniformRefinerPatternBase::
-    prolongateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
-                        MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
+    prolongateIntrepid2(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
+                        MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double /*time_val*/)
     {
 #if STK_PERCEPT_LITE
       VERIFY_MSG("not available in PerceptMeshLite");
 #else
-      int fieldStride = output_pts.dimension(1);
+      int fieldStride = output_pts.extent_int(1);
       unsigned *null_u = 0;
 
       percept::MyPairIterRelation elem_nodes (eMesh, element, stk::topology::NODE_RANK);
-      MDArray basis_val(elem_nodes.size(), 1);
+      MDArray basis_val("basis_val",elem_nodes.size(), 1);
       //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
       /// special for pyramid
@@ -1560,8 +1522,8 @@
         }
       else
         {
-          BasisTable::BasisTypeRCP basis = BasisTable::getBasis(cell_topo);
-          basis->getValues(basis_val, input_param_coords, Intrepid::OPERATOR_VALUE);
+          BasisTable::BasisTypeRCP basis = BasisTable::getInstance()->getBasis(cell_topo);
+          basis->getValues(basis_val, input_param_coords, Intrepid2::OPERATOR_VALUE);
         }
       if (0)
         std::cout << "\n tmp input_param_coords= "
@@ -1589,7 +1551,7 @@
 
 
     stk::mesh::Entity UniformRefinerPatternBase::
-    createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid)
+    createOrGetNode(NodeRegistry& /*nodeRegistry*/, PerceptMesh& eMesh, stk::mesh::EntityId eid)
     {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
       stk::mesh::Entity node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulk_data(), stk::topology::NODE_RANK, eid);
@@ -1701,7 +1663,7 @@
      */
 
     int UniformRefinerPatternBase::
-    getPermutation(PerceptMesh& eMesh, int num_verts, stk::mesh::Entity element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
+    getPermutation(PerceptMesh& eMesh, int /*num_verts*/, stk::mesh::Entity element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
     {
       if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
@@ -1893,7 +1855,7 @@
 
     /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
     /// should be used to refine side sets (and edge sets)
-    void UniformRefinerPatternBase::setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+    void UniformRefinerPatternBase::setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ )
     {
       /// default is only this pattern
       bp.resize(1); // = std::vector<UniformRefinerPatternBase *>(1u, 0);
@@ -1913,7 +1875,7 @@
       return map;
     }
 
-    size_t UniformRefinerPatternBase::estimateNumberOfNewElements(percept::PerceptMesh& eMesh, stk::mesh::EntityRank rank, NodeRegistry& nodeRegistry, size_t num_elem_not_ghost)
+    size_t UniformRefinerPatternBase::estimateNumberOfNewElements(percept::PerceptMesh& eMesh, stk::mesh::EntityRank rank, NodeRegistry& nodeRegistry, size_t /*num_elem_not_ghost*/)
     {
       EXCEPTWATCH;
 

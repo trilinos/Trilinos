@@ -82,19 +82,19 @@ bool all_passed = true;
     // coordinates of source sites
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> source_coords_device("source coordinates", 
             number_source_coords, 3);
-    Kokkos::View<double**>::HostMirror source_coords = Kokkos::create_mirror_view(source_coords_device);
+    Kokkos::View<double**>::host_mirror_type source_coords = Kokkos::create_mirror_view(source_coords_device);
     
     // coordinates of target sites
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> target_coords_device ("target coordinates", number_target_coords, 3);
-    Kokkos::View<double**>::HostMirror target_coords = Kokkos::create_mirror_view(target_coords_device);
+    Kokkos::View<double**>::host_mirror_type target_coords = Kokkos::create_mirror_view(target_coords_device);
 
     // coordinates of additional evaluation sites
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> additional_target_coords_device ("additional target coordinates", 2*number_target_coords /* multiple evaluation sites for each target index */, 3);
-    Kokkos::View<double**>::HostMirror additional_target_coords = Kokkos::create_mirror_view(additional_target_coords_device);
+    Kokkos::View<double**>::host_mirror_type additional_target_coords = Kokkos::create_mirror_view(additional_target_coords_device);
 
     // additional target site indices
     Kokkos::View<int**, Kokkos::DefaultExecutionSpace> additional_target_indices_device ("additional target indices", number_target_coords, 4 /* # of extra evaluation sites plus index for each */);
-    Kokkos::View<int**>::HostMirror additional_target_indices = Kokkos::create_mirror_view(additional_target_indices_device);
+    Kokkos::View<int**>::host_mirror_type additional_target_indices = Kokkos::create_mirror_view(additional_target_indices_device);
     
     
     // fill source coordinates with a uniform grid
@@ -241,11 +241,11 @@ bool all_passed = true;
 
     Kokkos::View<int**, Kokkos::DefaultExecutionSpace> neighbor_lists_device("neighbor lists", 
             number_target_coords, estimated_upper_bound_number_neighbors); // first column is # of neighbors
-    Kokkos::View<int**>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+    Kokkos::View<int**>::host_mirror_type neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
     
     // each target site has a window size
     Kokkos::View<double*, Kokkos::DefaultExecutionSpace> epsilon_device("h supports", number_target_coords);
-    Kokkos::View<double*>::HostMirror epsilon = Kokkos::create_mirror_view(epsilon_device);
+    Kokkos::View<double*>::host_mirror_type epsilon = Kokkos::create_mirror_view(epsilon_device);
     
     // query the point cloud to generate the neighbor lists using a kdtree to produce the n nearest neighbor
     // to each target site, adding (epsilon_multiplier-1)*100% to whatever the distance away the further neighbor used is from

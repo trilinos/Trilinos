@@ -34,7 +34,9 @@
 #ifndef STK_MESH_ENTITY_FIELD_DATA_HPP
 #define STK_MESH_ENTITY_FIELD_DATA_HPP
 
-#include "Kokkos_Core.hpp"
+#include "Kokkos_Macros.hpp"
+#include "stk_util/stk_config.h"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace mesh {
@@ -42,19 +44,61 @@ namespace mesh {
 template<typename T>
 class EntityFieldData {
 public:
-  KOKKOS_FUNCTION EntityFieldData(T* dataPtr, unsigned length, unsigned componentStride=1)
-  : fieldDataPtr(dataPtr), fieldDataLength(length), fieldComponentStride(componentStride)
-  {}
+  KOKKOS_FUNCTION EntityFieldData(T* dataPtr, unsigned length, unsigned componentStride)
+    : m_dataPtr(dataPtr),
+      m_dataLength(length),
+      m_componentStride(componentStride)
+  {
+  }
+
   KOKKOS_DEFAULTED_FUNCTION ~EntityFieldData() = default;
 
-  KOKKOS_FUNCTION unsigned size() const { return fieldDataLength; }
-  KOKKOS_FUNCTION T& operator[](unsigned idx) { return fieldDataPtr[idx*fieldComponentStride]; }
-  KOKKOS_FUNCTION const T& operator[](unsigned idx) const { return fieldDataPtr[idx*fieldComponentStride]; }
+  KOKKOS_FUNCTION unsigned size() const { return m_dataLength; }
+
+  KOKKOS_FUNCTION T& operator*() {
+#ifdef STK_ENABLE_GPU
+    STK_NGP_ThrowAssertMsg(m_dataLength == 1u,
+                           "Invalid scalar access with EntityFieldData::operator*() for an Entity with multi-"
+                           "component Field data.");
+#else
+    STK_ThrowAssertMsg(m_dataLength == 1u,
+                       "Invalid scalar access with EntityFieldData::operator*() for an Entity with Field length "
+                       << m_dataLength);
+#endif
+
+    return *m_dataPtr;
+  }
+
+  KOKKOS_FUNCTION T& operator[](unsigned component) {
+#ifdef STK_ENABLE_GPU
+    STK_NGP_ThrowAssertMsg(component < m_dataLength,
+                           "Out-of-bounds access to EntityFieldData::operator[]");
+#else
+    STK_ThrowAssertMsg(component < m_dataLength,
+                       "Out-of-bounds access to EntityFieldData::operator[] with component " << component
+                       << " for an Entity with Field length " << m_dataLength);
+#endif
+
+    return m_dataPtr[component*m_componentStride];
+  }
+
+  KOKKOS_FUNCTION const std::remove_const_t<T>& operator[](unsigned component) const {
+#ifdef STK_ENABLE_GPU
+    STK_NGP_ThrowAssertMsg(component < m_dataLength,
+                           "Out-of-bounds access to EntityFieldData::operator[]");
+#else
+    STK_ThrowAssertMsg(component < m_dataLength,
+                       "Out-of-bounds access to EntityFieldData::operator[] with component " << component
+                       << " for an Entity with Field length " << m_dataLength);
+#endif
+
+    return m_dataPtr[component*m_componentStride];
+  }
 
 private:
-  T* fieldDataPtr;
-  unsigned fieldDataLength;
-  unsigned fieldComponentStride;
+  T* m_dataPtr;
+  unsigned m_dataLength;
+  unsigned m_componentStride;
 };
 
 }

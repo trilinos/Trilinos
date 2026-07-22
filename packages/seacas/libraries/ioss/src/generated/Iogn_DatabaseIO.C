@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,10 +11,8 @@
 #include "generated/Iogn_GeneratedMesh.h" // for GeneratedMesh
 #include <cassert>                        // for assert
 #include <cmath>                          // for sqrt
+#include <cstdlib>
 #include <fmt/format.h>
-#include <fmt/ostream.h>
-#include <iostream> // for ostringstream
-#include <stdlib.h>
 #include <string> // for string, operator==, etc
 
 #include "Ioss_CommSet.h"         // for CommSet
@@ -115,9 +113,7 @@ namespace Iogn {
       dbState = Ioss::STATE_UNKNOWN;
     }
     else {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "Generated mesh option is only valid for input mesh.");
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR("Generated mesh option is only valid for input mesh.");
     }
     if (props.exists("USE_CONSTANT_DF")) {
       m_useVariableDf = false;
@@ -130,10 +126,8 @@ namespace Iogn {
   {
     if (m_generatedMesh == nullptr) {
       if (get_filename() == "external") {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: (generated mesh) 'external' specified for mesh, but "
-                           "getGeneratedMesh was not called to set the external mesh.\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR("ERROR: (generated mesh) 'external' specified for mesh, but "
+                   "getGeneratedMesh was not called to set the external mesh.\n");
       }
       else {
         m_generatedMesh =
@@ -153,16 +147,14 @@ namespace Iogn {
     const int64_t two_billion = 2ll << 30;
     if ((glob_node_count > two_billion || glob_elem_count > two_billion) &&
         int_byte_size_api() == 4) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: The node count is {} and the element count is {}.\n"
-                 "       This exceeds the capacity of the 32-bit integers ({})\n"
-                 "       which are being requested by the client.\n"
-                 "       The mesh requires 64-bit integers which can be requested by setting the "
-                 "`INTEGER_SIZE_API=8` property.",
-                 fmt::group_digits(glob_node_count), fmt::group_digits(glob_elem_count),
-                 fmt::group_digits(two_billion));
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: The node count is {} and the element count is {}.\n"
+          "       This exceeds the capacity of the 32-bit integers ({})\n"
+          "       which are being requested by the client.\n"
+          "       The mesh requires 64-bit integers which can be requested by setting the "
+          "`INTEGER_SIZE_API=8` property.",
+          fmt::group_digits(glob_node_count), fmt::group_digits(glob_elem_count),
+          fmt::group_digits(two_billion)));
     }
 
     spatialDimension  = 3;
@@ -343,9 +335,7 @@ namespace Iogn {
     int64_t id           = sd_blk->get_property("id").get_int();
     size_t  entity_count = sd_blk->entity_count();
     if (num_to_get != entity_count) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "Partial field input not implemented for side blocks");
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR("Partial field input not implemented for side blocks");
     }
 
     Ioss::Field::RoleType role = field.get_role();
@@ -532,9 +522,7 @@ namespace Iogn {
         }
       }
       else {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "Invalid commset type {}", type);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("Invalid commset type {}", type));
       }
     }
     else if (field.get_name() == "ids") {
@@ -586,8 +574,23 @@ namespace Iogn {
   {
     auto time_step_count = m_generatedMesh->timestep_count();
     for (int i = 0; i < time_step_count; i++) {
-      get_region()->add_state(i);
+      double time = m_generatedMesh->timestep_initial() + i * m_generatedMesh->timestep_interval();
+      get_region()->add_state(time);
     }
+  }
+
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    std::vector<double> timesteps;
+
+    int time_step_count = m_generatedMesh->timestep_count();
+    timesteps.reserve(time_step_count);
+    for (int i = 0; i < time_step_count; i++) {
+      double time = m_generatedMesh->timestep_initial() + i * m_generatedMesh->timestep_interval();
+      timesteps.push_back(time);
+    }
+
+    return timesteps;
   }
 
   void DatabaseIO::get_elemblocks()

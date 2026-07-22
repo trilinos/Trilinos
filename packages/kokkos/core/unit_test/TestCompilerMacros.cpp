@@ -1,24 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
-#if 1 != ((defined(KOKKOS_COMPILER_INTEL) ? 1 : 0) +      \
-          (defined(KOKKOS_COMPILER_INTEL_LLVM) ? 1 : 0) + \
+#if 1 != ((defined(KOKKOS_COMPILER_INTEL_LLVM) ? 1 : 0) + \
           (defined(KOKKOS_COMPILER_CRAYC) ? 1 : 0) +      \
           (defined(KOKKOS_COMPILER_CRAY_LLVM) ? 1 : 0) +  \
           (defined(KOKKOS_COMPILER_APPLECC) ? 1 : 0) +    \
@@ -30,13 +21,11 @@
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_CUDA_LAMBDA)
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
-#error "Macro bug: KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA shouldn't be defined"
+#error "Macro bug: KOKKOS_ENABLE_CUDA_LAMBDA should be defined"
 #endif
-#else
+
 #if !defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
 #error "Macro bug: KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA should be defined"
-#endif
 #endif
 
 namespace TestCompilerMacros {

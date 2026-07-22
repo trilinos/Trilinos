@@ -109,4 +109,11 @@ PhaseTag::operator &= ( const PhaseTag & rhs )
   return *this;
 }
 
+std::ostream&
+operator<<(std::ostream & os, const NamedPhase & namedPhase)
+{
+  os << "Phase " << namedPhase.name() << " " << namedPhase.tag();
+  return os;
+}
+
 } // namespace krino

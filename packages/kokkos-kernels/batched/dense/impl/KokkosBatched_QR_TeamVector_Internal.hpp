@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_QR_TEAMVECTOR_INTERNAL_HPP__
-#define __KOKKOSBATCHED_QR_TEAMVECTOR_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_QR_TEAMVECTOR_INTERNAL_HPP
+#define KOKKOSBATCHED_QR_TEAMVECTOR_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -35,8 +22,7 @@ struct TeamVectorQR_Internal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
                                            const int m,  // m = NumRows(A)
                                            const int n,  // n = NumCols(A)
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *w) {
     typedef ValueType value_type;
@@ -67,14 +53,12 @@ struct TeamVectorQR_Internal {
       /// -----------------------------------------------------
 
       // perform householder transformation
-      TeamVectorLeftHouseholderInternal::invoke(member, m_A22, A_part3x3.A11,
-                                                A_part3x3.A21, as0, tau);
+      TeamVectorLeftHouseholderInternal::invoke(member, m_A22, A_part3x3.A11, A_part3x3.A21, as0, tau);
       member.team_barrier();
 
       // left apply householder to A22
-      TeamVectorApplyLeftHouseholderInternal::invoke(
-          member, m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
-          A_part3x3.A22, as0, as1, w);
+      TeamVectorApplyLeftHouseholderInternal::invoke(member, m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
+                                                     A_part3x3.A22, as0, as1, w);
       member.team_barrier();
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);

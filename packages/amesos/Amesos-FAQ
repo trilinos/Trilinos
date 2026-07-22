@@ -1,4 +1,0 @@
-Q:  How can I resolve the undefined external dusolve in the SuperLU serial library?
-
-A:  Add -DUSE_VENDOR_BLAS to CFLAGS in make.inc
-

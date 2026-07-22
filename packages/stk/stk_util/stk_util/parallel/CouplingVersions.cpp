@@ -15,7 +15,7 @@ namespace util {
 
 #ifdef STK_HAS_MPI
 
-void MPI_Op_MaxMinReduction(void* invec, void* inoutvec, int* len, MPI_Datatype* datatype)
+void MPI_Op_MaxMinReduction(void* invec, void* inoutvec, int* /*len*/, MPI_Datatype* /*datatype*/)
 {
   int* invec_int    = reinterpret_cast<int*>(invec);
   int* inoutvec_int = reinterpret_cast<int*>(inoutvec);
@@ -69,7 +69,7 @@ class StkCompatibleVersion
 
     void set_version(MPI_Comm comm)
     {
-      set_version_impl(comm, std::min(impl::SHORT_TERM_STK_MAX_COUPLING_VERSION, m_version) /*m_version*/);
+      set_version_impl(comm, m_version);
     }
 
     void set_error_on_reset(bool val)
@@ -79,7 +79,7 @@ class StkCompatibleVersion
 
     void reset_global_max_coupling_version()
     {
-      m_globalMaxVersion = impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION;
+      m_globalMaxVersion = STK_MAX_COUPLING_VERSION;
     }
 
   private:
@@ -103,8 +103,6 @@ class StkCompatibleVersion
 
     void abort_if_incompatible(MPI_Comm comm, int requestedVersion, int maxVersion, int oldVersion)
     {
-      print_unsupported_version_warning(1, __LINE__, __FILE__);
-
       if (m_isVersionSet && (m_errorOnResetVersion && requestedVersion != oldVersion)) {
         int myRank;
         MPI_Comm_rank(comm, &myRank);
@@ -136,11 +134,6 @@ class StkCompatibleVersion
 
     int is_output_proc(MPI_Comm comm, bool condition)
     {
-      print_unsupported_version_warning(1, __LINE__, __FILE__);
-      if (m_version < 2) {
-        throw std::runtime_error("This function cannot be used with STK versions prior to 2");
-      }
-
       int myRank;
       MPI_Comm_rank(comm, &myRank);
       std::array<int, 2> localData{condition, myRank}, globalData;
@@ -151,7 +144,7 @@ class StkCompatibleVersion
     }
 
     int m_version = STK_MAX_COUPLING_VERSION;
-    int m_globalMaxVersion = impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION;
+    int m_globalMaxVersion = STK_MAX_COUPLING_VERSION;
     bool m_isVersionSet = false;
     bool m_errorOnResetVersion = true;
 };
@@ -171,13 +164,13 @@ int get_common_coupling_version()
 #ifdef STK_HAS_MPI
   return get_stk_coupling_version().get_version();
 #else
-  return STK_impl::SHORT_TERM_MAX_COUPLING_VERSION; //STK_MAX_COUPLING_VERSION;
+  return STK_MAX_COUPLING_VERSION;
 #endif
 }
 
 int get_local_max_coupling_version()
 {
-  return impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; //STK_MAX_COUPLING_VERSION;
+  return STK_MAX_COUPLING_VERSION;
 }
 
 int get_local_min_coupling_version()
@@ -191,7 +184,7 @@ int get_global_max_coupling_version()
 #ifdef STK_HAS_MPI
   return get_stk_coupling_version().get_global_max_version();
 #else
-  return impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION
+  return STK_MAX_COUPLING_VERSION
 #endif
 }
 
@@ -212,7 +205,14 @@ std::string get_deprecation_date(int version)
                                                       std::make_pair(11, "4/19/2023"),
                                                       std::make_pair(12, "3/11/2024"),
                                                       std::make_pair(13, "3/28/2024"),
-                                                      std::make_pair(14, "")
+                                                      std::make_pair(14, "4/3/2025"),
+                                                      std::make_pair(15, "5/27/2025"),
+                                                      std::make_pair(16, "6/10/2025"),
+                                                      std::make_pair(17, "8/14/2025"),
+                                                      std::make_pair(18, "11/3/2025"),
+                                                      std::make_pair(19, "1/21/2026"),
+                                                      std::make_pair(20, "4/16/2026"),
+                                                      std::make_pair(21, "")
                                                     };
 
   return deprecationDates.at(version);

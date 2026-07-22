@@ -1,43 +1,12 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <utility>
 #include <cmath>
 #include <iostream>
@@ -194,7 +163,7 @@ test_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = KokkosKernels::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -312,7 +281,7 @@ test_product_tensor_diagonal_matrix(
   matrix_type matrix ;
 
   matrix.block  = Stokhos::SymmetricDiagonalSpec< Device >( stoch_length );
-  matrix.graph  = Kokkos::create_staticcrsgraph<graph_type>(
+  matrix.graph  = KokkosKernels::create_staticcrsgraph<graph_type>(
     std::string("test product tensor graph") , fem_graph );
   matrix.values = block_vector_type(
     Kokkos::ViewAllocateWithoutInitializing("matrix"), matrix.block.matrix_size() , fem_graph_length );
@@ -467,7 +436,7 @@ test_product_flat_commuted_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
+  matrix.graph = KokkosKernels::create_staticcrsgraph<matrix_graph_type>(
     std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.extent(0);
@@ -623,7 +592,7 @@ test_product_flat_original_matrix(
 
   matrix_type matrix ;
 
-  matrix.graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
+  matrix.graph = KokkosKernels::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , flat_graph );
 
   const size_t flat_graph_length = matrix.graph.entries.extent(0);
 
@@ -716,7 +685,7 @@ test_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = KokkosKernels::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -826,7 +795,7 @@ test_simple_tiled_product_tensor_matrix(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis, *Cijk,
                                                              params);
-  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = KokkosKernels::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
   const size_t inner_length_aligned = matrix.block.aligned_dimension();
@@ -935,7 +904,7 @@ test_lexo_block_tensor(
   matrix.block =
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk );
-  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = KokkosKernels::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length      = matrix.block.dimension();
 
@@ -1042,7 +1011,7 @@ test_linear_tensor(
     Stokhos::create_stochastic_product_tensor< TensorType >( *basis,
                                                              *Cijk,
                                                              params );
-  matrix.graph = Kokkos::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
+  matrix.graph = KokkosKernels::create_staticcrsgraph<graph_type>( std::string("test crs graph") , graph );
 
   const size_t inner_length         = matrix.block.tensor().dimension();
   const size_t inner_length_aligned = matrix.block.tensor().aligned_dimension();
@@ -1147,7 +1116,7 @@ test_original_matrix_free_vec(
   std::vector<vec_type> tmp( outer_length ) ;
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , fem_graph );
+    matrix[block].graph = KokkosKernels::create_staticcrsgraph<matrix_graph_type>( std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length );
 
@@ -1291,7 +1260,7 @@ test_original_matrix_free_view(
   Kokkos::deep_copy( x , ScalarType(1.0) );
 
   for (size_t block=0; block<outer_length; ++block) {
-    matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    matrix[block].graph = KokkosKernels::create_staticcrsgraph<matrix_graph_type>(
       std::string("testing") , fem_graph );
 
     matrix[block].values = matrix_values_type( "matrix" , graph_length );
@@ -1338,7 +1307,7 @@ test_original_matrix_free_view(
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-          vec_type tmp_y_view =
+          vec_type tmp_y_view2 =
             Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
@@ -1346,7 +1315,7 @@ test_original_matrix_free_view(
             int i = index(i_it);
             value_type c = value(i_it);
             vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-            Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
+            Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
             ++n_add;
           }
         }
@@ -1440,7 +1409,7 @@ test_original_matrix_free_kokkos(
 
   for (size_t block=0; block<outer_length; ++block) {
     matrix_graph_type matrix_graph =
-      Kokkos::create_staticcrsgraph<matrix_graph_type>(
+      KokkosKernels::create_staticcrsgraph<matrix_graph_type>(
         std::string("test crs graph") , fem_graph );
 
     matrix_values_type matrix_values = matrix_values_type(
@@ -1487,7 +1456,7 @@ test_original_matrix_free_kokkos(
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-          vec_type tmp_y_view =
+          vec_type tmp_y_view2 =
             Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
@@ -1495,8 +1464,8 @@ test_original_matrix_free_kokkos(
             int i = index(i_it);
             value_type c = value(i_it);
             vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-            //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
-            KokkosBlas::update(value_type(1.0) , y_view, c, tmp_y_view, value_type(0.0), y_view);
+            //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
+            KokkosBlas::update(value_type(1.0) , y_view, c, tmp_y_view2, value_type(0.0), y_view);
             ++n_add;
           }
         }

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_MATRIX_VIEW_DECL_HPP
 #define SHYLUBASKER_MATRIX_VIEW_DECL_HPP
 
@@ -11,13 +20,8 @@
 #include <iostream>
 #include <stdio.h>
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
 
-using namespace std;
 
 //--------------------This is all depracated at this time---------//
 

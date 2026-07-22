@@ -1,3 +1,0 @@
-@INCLUDE=epetraext/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/aztecooBrowser.tag=$(TRILINOS_HOME)/packages/aztecoo/browser/doc/html

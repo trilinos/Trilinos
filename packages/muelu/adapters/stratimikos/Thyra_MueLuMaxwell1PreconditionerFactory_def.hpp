@@ -50,10 +50,6 @@ bool MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
   if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isTpetra(fwdOp)) return true;
 
-#ifdef HAVE_MUELU_EPETRA
-  if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isEpetra(fwdOp)) return true;
-#endif
-
   return false;
 }
 
@@ -64,7 +60,7 @@ RCP<PreconditionerBase<Scalar>> MueLuMaxwell1PreconditionerFactory<Scalar, Local
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    initializePrec(const RCP<const LinearOpSourceBase<Scalar>>& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    initializePrec(const RCP<const LinearOpSourceBase<Scalar>>& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse /*supportSolveUse*/) const {
   // we are using typedefs here, since we are using objects from different packages (Xpetra, Thyra,...)
   typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpOp;
   typedef Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> XpThyUtils;
@@ -97,9 +93,8 @@ void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
   // Check whether it is Epetra/Tpetra
-  bool bIsEpetra = XpThyUtils::isEpetra(fwdOp);
   bool bIsTpetra = XpThyUtils::isTpetra(fwdOp);
-  TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == true && bIsTpetra == true));
+  TEUCHOS_TEST_FOR_EXCEPT((bIsTpetra == false));
 
   // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
   // MueLu needs a non-const object as input
@@ -123,7 +118,7 @@ void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   RCP<XpOp> xpPrecOp;
   if (startingOver == true) {
     // Convert to Xpetra
-    std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Kn", "D0"};
+    std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Kn", "D0", "CurlCurl"};
     for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
       Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(paramList, *it);
 
@@ -131,6 +126,14 @@ void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     for (auto itSublist = sublists.begin(); itSublist != sublists.end(); ++itSublist)
       if (paramList.isSublist(*itSublist)) {
         ParameterList& sublist = paramList.sublist(*itSublist);
+        if (sublist.isSublist("user data")) {
+          auto& userData = sublist.sublist("user data");
+          std::list<std::string> convertKeys;
+          for (auto it = userData.begin(); it != userData.end(); ++it)
+            convertKeys.push_back(userData.name(it));
+          for (auto it = convertKeys.begin(); it != convertKeys.end(); ++it)
+            Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(userData, *it);
+        }
         for (int lvlNo = 0; lvlNo < 10; ++lvlNo) {
           if (sublist.isSublist("level " + std::to_string(lvlNo) + " user data")) {
             ParameterList& lvlList = sublist.sublist("level " + std::to_string(lvlNo) + " user data");

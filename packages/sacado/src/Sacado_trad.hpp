@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 // TRAD package (Templated Reverse Automatic Differentiation) --
@@ -381,7 +361,9 @@ T1(atanh)
 T1(cos)
 T1(cosh)
 T1(exp)
+T1(expm1)
 T1(log)
+T1(log1p)
 T1(log10)
 T1(sin)
 T1(sinh)
@@ -515,7 +497,9 @@ F r f <>(D,Ai);
         T1(R,cos)
         T1(R,cosh)
         T1(R,exp)
+        T1(R,expm1)
         T1(R,log)
+        T1(R,log1p)
         T1(R,log10)
         T2(R,pow)
         T1(R,sin)
@@ -827,7 +811,9 @@ T1(atanh)
 T1(cos)
 T1(cosh)
 T1(exp)
+T1(expm1)
 T1(log)
+T1(log1p)
 T1(log10)
 T1(sin)
 T1(sinh)
@@ -2460,10 +2446,26 @@ exp(const Base< ADvari<Double> > &vv) {
 
  template<typename Double>
  ADvari<Double>&
+expm1(const Base< ADvari<Double> > &vv) {
+   const ADvari<Double>& v = vv.derived();
+   Double x = v.Val;
+   return *(new ADvar1s<Double>(std::expm1(x), std::exp(x), &v));
+ }
+
+ template<typename Double>
+ ADvari<Double>&
 log(const Base< ADvari<Double> > &vv) {
    const ADvari<Double>& v = vv.derived();
    Double x = v.Val;
    return *(new ADvar1s<Double>(std::log(x), 1. / x, &v));
+ }
+
+ template<typename Double>
+ ADvari<Double>&
+log1p(const Base< ADvari<Double> > &vv) {
+   const ADvari<Double>& v = vv.derived();
+   Double x = v.Val;
+   return *(new ADvar1s<Double>(std::log1p(x), 1. / (1.+x), &v));
  }
 
  template<typename Double>
@@ -2695,7 +2697,9 @@ T1(atanh)
 T1(cos)
 T1(cosh)
 T1(exp)
+T1(expm1)
 T1(log)
+T1(log1p)
 T1(log10)
 T1(sin)
 T1(sinh)

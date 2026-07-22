@@ -57,7 +57,6 @@ TEST(BulkDataMod, synchronized_count_basic_fill_mesh)
   if (stk::parallel_machine_size(comm) > 2) { GTEST_SKIP(); }
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
-  bulk->mesh_meta_data().use_simple_fields();
 
   const std::string generatedMeshSpec = "generated:1x1x2";
   stk::io::fill_mesh(generatedMeshSpec, *bulk);
@@ -71,7 +70,6 @@ TEST(BulkDataMod, synchronized_count_empty_mod_cycle)
   if (stk::parallel_machine_size(comm) > 2) { GTEST_SKIP(); }
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
-  bulk->mesh_meta_data().use_simple_fields();
 
   const std::string generatedMeshSpec = "generated:1x1x2";
   stk::io::fill_mesh(generatedMeshSpec, *bulk);
@@ -91,7 +89,6 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
   if (numProcs==2)
   {
     stk::mesh::MetaData meta(3);
-    meta.use_simple_fields();
     stk::unit_test_util::BulkDataTester mesh(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
 
     const std::string generatedMeshSpec = "generated:1x1x2";

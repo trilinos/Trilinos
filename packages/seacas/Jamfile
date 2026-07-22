@@ -1,5 +1,5 @@
 #---------------------------------------------------------------
-# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024, 2025 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -103,6 +103,7 @@ local installed-end-user-files =
   io_info
   io_modify
   shell_to_hex
+  skinner
   slice
   cth_pressure_map
   struc_to_unstruc
@@ -168,7 +169,7 @@ explicit install-user-include0 ;
 install install-user-include0
   : [ glob $(seacas-root)/libraries/ioss/src/*.h
            $(seacas-root)/libraries/ioss/src/init/*.h ]
-  : <location>$(install-root)/io_system/include
+  : <location>$(install-root)/Sierra/include/io_system
   ;
 
 explicit install-user-include1 ;
@@ -222,7 +223,7 @@ install install-user-include6
   : [ glob $(seacas-root)/libraries/ioss/src/visualization/utils/*.h
            $(seacas-root)/libraries/ioss/src/visualization/exodus/*.h
            $(seacas-root)/libraries/ioss/src/visualization/cgns/*.h ]
-  : <location>$(install-root)/io_system/include
+  : <location>$(install-root)/Sierra/include/io_system
   ;
 
 
@@ -519,14 +520,12 @@ lib Ioss
     /tpl/parmetis//parmetis
     /tpl/fmt//fmt
     /mpi//mpi
-  : <define>BUILT_IN_SIERRA
+  :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libIoss.a
     ]
-  :
-  : <define>BUILT_IN_SIERRA
   ;
 
 lib Iotr
@@ -614,7 +613,7 @@ lib exodus
         [ glob $(seacas-root)/libraries/exodus/src/deprecated/*.c ]
     ]
     /tpl/netcdf-c//netcdf
-  : <define>BUILT_IN_SIERRA
+  : <define>EXODUS_RELAXED_MULTIPLE_OPEN_CHECK
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -627,7 +626,7 @@ lib exodus
         <file>$(sierra-root)/seacas/lib/libexodus.a
     ]
   :
-  : <define>BUILT_IN_SIERRA
+  : <define>EXODUS_RELAXED_MULTIPLE_OPEN_CHECK
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
@@ -1513,7 +1512,7 @@ exe ejoin
   $(seacas-root)/applications/ejoin/EJ_SystemInterface.C
   $(seacas-root)/applications/ejoin/EJ_index_sort.C
   $(seacas-root)/applications/ejoin/EJ_mapping.C
-  $(seacas-root)/applications/ejoin/EJ_match_xyz.C
+  $(seacas-root)/applications/ejoin/EJ_match.C
   $(seacas-root)/applications/ejoin/EJ_vector3d.C
     suplib_cpp
     suplib_c
@@ -1760,6 +1759,16 @@ exe io_shell
   :
     $(seacas-root)/libraries/ioss/src/main/io_shell.C
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
+    Ionit
+    /mpi//mpi
+  :
+    <tag>@sierra-exec-tag
+  ;
+
+exe skinner
+  :
+    $(seacas-root)/libraries/ioss/src/main/skinner.C
+    $(seacas-root)/libraries/ioss/src/main/skinner_interface.C
     Ionit
     /mpi//mpi
   :

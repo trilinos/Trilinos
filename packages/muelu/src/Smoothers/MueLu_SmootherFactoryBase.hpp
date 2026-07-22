@@ -19,7 +19,7 @@ namespace MueLu {
 class Level;
 
 /*!
-  @class Smoother factory base class.
+  @class SmootherFactoryBase
   @ingroup MueLuSmootherClasses
   @brief Base class for smoother factories.
 

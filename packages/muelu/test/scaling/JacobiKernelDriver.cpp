@@ -56,7 +56,7 @@ inline void copy_view(const View1 x1, View2 x2) {
 
 // mkl_sparse_spmm
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B, Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &C, Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &D, Scalar omega) {
+void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B, Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &C, Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &D, typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -80,14 +80,14 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
   typedef typename vector_type::device_type device_type;
   typedef typename Kokkos::View<MKL_INT *, typename lno_nnz_view_t::array_layout, typename lno_nnz_view_t::device_type> mkl_int_type;
 
-  RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-  RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-  RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+  RCP<const crs_matrix_type> Au = toTpetra(rcp(&A, false));
+  RCP<const crs_matrix_type> Bu = toTpetra(rcp(&B, false));
+  RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
   RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
   RCP<const vector_type> Du     = Xpetra::toTpetra(D);
 
-  const KCRS &Amat = Au->getLocalMatrixDevice();
-  const KCRS &Bmat = Bu->getLocalMatrixDevice();
+  const KCRS Amat = Au->getLocalMatrixDevice();
+  const KCRS Bmat = Bu->getLocalMatrixDevice();
 
   if (A.getLocalNumRows() != C.getLocalNumRows()) throw std::runtime_error("C is not sized correctly");
 
@@ -216,7 +216,7 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
 #include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Jacobi_Wrapper(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B, Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &C, const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &D, Scalar omega, std::string jacobi_algorithm_name, std::string spgemm_algorithm_name, int team_work_size) {
+void Jacobi_Wrapper(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*B*/, Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*C*/, const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & /*D*/, typename Teuchos::ScalarTraits<Scalar>::magnitudeType /*omega*/, std::string jacobi_algorithm_name, std::string spgemm_algorithm_name, int /*team_work_size*/) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -245,9 +245,9 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, No
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
     LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     RCP<const import_type> Cimport;
-    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-    RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+    RCP<const crs_matrix_type> Au = toTpetra(rcp(&A, false));
+    RCP<const crs_matrix_type> Bu = toTpetra(rcp(&B, false));
+    RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
     RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
     RCP<const vector_type> Du = Xpetra::toTpetra(D);
@@ -461,7 +461,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
     A->getLocalDiagCopy(*Diagonal);
     RCP<Vector> D = Xpetra::VectorFactory<SC, LO, GO, Node>::Build(A->getRowMap(), true);
     D->reciprocal(*Diagonal);
-    SC omega = (4.0 / 3.0) * Teuchos::ScalarTraits<Scalar>::one();
+    typename Teuchos::ScalarTraits<SC>::magnitudeType omega = static_cast<typename Teuchos::ScalarTraits<SC>::magnitudeType>(4.0 / 3.0);
 
     globalTimeMonitor = Teuchos::null;
     comm->barrier();

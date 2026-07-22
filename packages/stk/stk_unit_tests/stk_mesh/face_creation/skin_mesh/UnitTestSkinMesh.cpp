@@ -133,7 +133,6 @@ void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAura
   std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  meta.use_simple_fields();
 
   stk::mesh::EntityRank side_rank = meta.side_rank();
 
@@ -225,7 +224,7 @@ void test_skin_mesh_with_tets(stk::mesh::BulkData::AutomaticAuraOption autoAuraO
   const size_t NZ = 2;
 
   // fixture generates six tets from NXxNYxNZ hex
-  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ, autoAuraOption);
+  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ, autoAuraOption);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -344,7 +343,6 @@ void test_skin_mesh_with_wedge(stk::mesh::BulkData::AutomaticAuraOption autoAura
   std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, pm, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  meta.use_simple_fields();
   const int p_rank = mesh.parallel_rank();
 
   stk::mesh::EntityRank side_rank = meta.side_rank();
@@ -529,7 +527,6 @@ void test_skin_mesh_with_pyramid(stk::mesh::BulkData::AutomaticAuraOption autoAu
   std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, pm, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  meta.use_simple_fields();
   const int p_rank = mesh.parallel_rank();
 
   stk::mesh::EntityRank side_rank = meta.side_rank();
@@ -691,7 +688,6 @@ void test_skin_hybrid_mesh(stk::mesh::BulkData::AutomaticAuraOption autoAuraOpti
   std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, pm, autoAuraOption);
   stk::mesh::BulkData& mesh = *meshPtr;
   stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  meta.use_simple_fields();
   const int p_rank = mesh.parallel_rank();
 
   stk::mesh::EntityRank side_rank = meta.side_rank();
@@ -862,7 +858,6 @@ void test_2_hex_2_block(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
     std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
     stk::mesh::BulkData& mesh = *meshPtr;
     stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::EntityRank side_rank = meta.side_rank();
 
@@ -919,7 +914,6 @@ void test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::AutomaticAuraO
     std::shared_ptr<stk::mesh::BulkData> meshPtr = build_mesh(spatialDim, MPI_COMM_WORLD, autoAuraOption);
     stk::mesh::BulkData& mesh = *meshPtr;
     stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::EntityRank side_rank = meta.side_rank();
 
@@ -971,7 +965,7 @@ TEST( SkinMesh, test_2_hex_2_block_with_second_selector_without_aura)
 void test_quad_2D_skin_with_aura_option (bool auraOn)
 {
   const unsigned X = 5, Y = 5;
-  stk::mesh::fixtures::simple_fields::QuadFixture fixture(MPI_COMM_WORLD, X, Y, auraOn);
+  stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, X, Y, auraOn);
 
   stk::mesh::EntityRank side_rank = fixture.m_meta.side_rank();
 
@@ -1043,7 +1037,7 @@ TEST( SkinMesh, SimpleQuad)
   test_quad_2D_skin_with_aura_option(false);
 }
 
-class TextSkinMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class TextSkinMesh : public stk::unit_test_util::MeshFixture
 {
  public:
   void setup_three_wedges_2p()
@@ -1060,8 +1054,8 @@ class TextSkinMesh : public stk::unit_test_util::simple_fields::MeshFixture
       0,0,1, 1,0,1, 2,0,1, 0,1,1, 1,1,1,
     };
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void setup_three_wedges_with_sideset_2p()
@@ -1078,8 +1072,8 @@ class TextSkinMesh : public stk::unit_test_util::simple_fields::MeshFixture
       0,0,1, 1,0,1, 2,0,1, 0,1,1, 1,1,1,
     };
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 };
 

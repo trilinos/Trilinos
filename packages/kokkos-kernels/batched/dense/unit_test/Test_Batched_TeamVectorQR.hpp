@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "gtest/gtest.h"
@@ -32,8 +19,8 @@ using namespace KokkosBatched;
 
 namespace Test {
 
-template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
-          typename WorkViewType, typename AlgoTagType>
+template <typename DeviceType, typename MatrixViewType, typename VectorViewType, typename WorkViewType,
+          typename AlgoTagType>
 struct Functor_TestBatchedTeamVectorQR {
   using execution_space = typename DeviceType::execution_space;
   MatrixViewType _a;
@@ -41,11 +28,8 @@ struct Functor_TestBatchedTeamVectorQR {
   WorkViewType _w;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamVectorQR(const MatrixViewType &a,
-                                  const VectorViewType &x,
-                                  const VectorViewType &b,
-                                  const VectorViewType &t,
-                                  const WorkViewType &w)
+  Functor_TestBatchedTeamVectorQR(const MatrixViewType &a, const VectorViewType &x, const VectorViewType &b,
+                                  const VectorViewType &t, const WorkViewType &w)
       : _a(a), _x(x), _b(b), _t(t), _w(w) {}
 
   template <typename MemberType>
@@ -61,17 +45,15 @@ struct Functor_TestBatchedTeamVectorQR {
     auto ww     = Kokkos::subview(_w, k, Kokkos::ALL());
 
     // make diagonal dominant
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, aa.extent(0)),
-                         [&](const int &i) { aa(i, i) += add_this; });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(member, aa.extent(0)), [&](const int &i) { aa(i, i) += add_this; });
 
     /// xx = 1
     KokkosBlas::TeamVectorSet<MemberType>::invoke(member, one, xx);
     member.team_barrier();
 
     /// bb = AA*xx
-    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose,
-                               Algo::Gemv::Unblocked>::invoke(member, one, aa,
-                                                              xx, zero, bb);
+    KokkosBlas::TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(member, one, aa, xx, zero,
+                                                                                              bb);
     member.team_barrier();
 
     /// AA = QR
@@ -79,17 +61,16 @@ struct Functor_TestBatchedTeamVectorQR {
     member.team_barrier();
 
     /// xx = bb;
-    TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, bb, xx);
+    TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, bb, xx);
     member.team_barrier();
 
     /// xx = Q^{T}xx;
-    TeamVectorApplyQ<MemberType, Side::Left, Trans::Transpose,
-                     Algo::ApplyQ::Unblocked>::invoke(member, aa, tt, xx, ww);
+    TeamVectorApplyQ<MemberType, Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(member, aa, tt, xx, ww);
     member.team_barrier();
 
     /// xx = R^{-1} xx
-    TeamVectorTrsv<MemberType, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit,
-                   Algo::Trsv::Unblocked>::invoke(member, one, aa, xx);
+    TeamVectorTrsv<MemberType, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Trsv::Unblocked>::invoke(
+        member, one, aa, xx);
   }
 
   inline void run() {
@@ -107,11 +88,11 @@ struct Functor_TestBatchedTeamVectorQR {
   }
 };
 
-template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
-          typename WorkViewType, typename AlgoTagType>
+template <typename DeviceType, typename MatrixViewType, typename VectorViewType, typename WorkViewType,
+          typename AlgoTagType>
 void impl_test_batched_qr(const int N, const int BlkSize) {
   typedef typename MatrixViewType::non_const_value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
   const value_type one(1);
   /// randomized input testing views
   MatrixViewType a("a", N, BlkSize, BlkSize);
@@ -122,20 +103,18 @@ void impl_test_batched_qr(const int N, const int BlkSize) {
 
   Kokkos::fence();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a, random, value_type(1.0));
 
   Kokkos::fence();
 
-  Functor_TestBatchedTeamVectorQR<DeviceType, MatrixViewType, VectorViewType,
-                                  WorkViewType, AlgoTagType>(a, x, b, t, w)
+  Functor_TestBatchedTeamVectorQR<DeviceType, MatrixViewType, VectorViewType, WorkViewType, AlgoTagType>(a, x, b, t, w)
       .run();
 
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename VectorViewType::HostMirror x_host = Kokkos::create_mirror_view(x);
+  typename VectorViewType::host_mirror_type x_host = Kokkos::create_mirror_view(x);
   Kokkos::deep_copy(x_host, x);
 
   /// check x = 1; this eps is about 1e-14
@@ -157,35 +136,25 @@ template <typename DeviceType, typename ValueType, typename AlgoTagType>
 int test_batched_qr() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        MatrixViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType>
-        VectorViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        WorkViewType;
-    Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType,
-                               WorkViewType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> MatrixViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> VectorViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> WorkViewType;
+    Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType, WorkViewType, AlgoTagType>(0, 10);
     for (int i = 1; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType,
-                                 WorkViewType, AlgoTagType>(1024, i);
+      Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType, WorkViewType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        MatrixViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        VectorViewType;
-    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType>
-        WorkViewType;
-    Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType,
-                               WorkViewType, AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> MatrixViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> VectorViewType;
+    typedef Kokkos::View<ValueType **, Kokkos::LayoutRight, DeviceType> WorkViewType;
+    Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType, WorkViewType, AlgoTagType>(0, 10);
     for (int i = 1; i < 10; ++i) {
       // printf("Testing: LayoutRight, Blksize %d\n", i);
-      Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType,
-                                 WorkViewType, AlgoTagType>(1024, i);
+      Test::impl_test_batched_qr<DeviceType, MatrixViewType, VectorViewType, WorkViewType, AlgoTagType>(1024, i);
     }
   }
 #endif

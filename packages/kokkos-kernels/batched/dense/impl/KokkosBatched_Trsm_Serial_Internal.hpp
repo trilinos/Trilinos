@@ -1,22 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_TRSM_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_TRSM_SERIAL_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_TRSM_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_TRSM_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+/// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 #include "KokkosBatched_Util.hpp"
 
@@ -26,6 +14,7 @@
 #include "KokkosBatched_InnerTrsm_Serial_Impl.hpp"
 
 namespace KokkosBatched {
+namespace Impl {
 
 ///
 /// Serial Internal Impl
@@ -34,20 +23,16 @@ namespace KokkosBatched {
 template <typename AlgoType>
 struct SerialTrsmInternalLeftLower {
   template <typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
-                                           const int m, const int n,
-                                           const ScalarType alpha,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1,
-                                           /**/ ValueType *KOKKOS_RESTRICT B,
-                                           const int bs0, const int bs1);
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const bool do_conj, const int m, const int n,
+                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1,
+                                           /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 template <>
 template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int
-SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-    const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
+KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
+    const bool use_unit_diag, const bool do_conj, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
@@ -55,22 +40,18 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
   if (alpha == zero)
     KokkosBlas::Impl::SerialSetInternal::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one)
-      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
-    if (m <= 0 || n <= 0) return 0;
+    if (alpha != one) KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
 
     for (int p = 0; p < m; ++p) {
       const int iend = m - p - 1, jend = n;
 
-      const ValueType *KOKKOS_RESTRICT a21 =
-          iend ? A + (p + 1) * as0 + p * as1 : NULL;
+      const ValueType *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : nullptr;
 
-      ValueType *KOKKOS_RESTRICT b1t = B + p * bs0,
-                                 *KOKKOS_RESTRICT B2 =
-                                     iend ? B + (p + 1) * bs0 : NULL;
+      ValueType *KOKKOS_RESTRICT b1t = B + p * bs0, *KOKKOS_RESTRICT B2 = iend ? B + (p + 1) * bs0 : nullptr;
 
       if (!use_unit_diag) {
-        const ValueType alpha11 = A[p * as0 + p * as1];
+        const ValueType alpha11 =
+            (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(A[p * as0 + p * as1]) : A[p * as0 + p * as1]);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -84,57 +65,56 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
 #pragma unroll
 #endif
         for (int j = 0; j < jend; ++j)
-          B2[i * bs0 + j * bs1] -= a21[i * as0] * b1t[j * bs1];
+          B2[i * bs0 + j * bs1] -= (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(a21[i * as0]) * b1t[j * bs1]
+                                            : a21[i * as0] * b1t[j * bs1]);
     }
   }
+
   return 0;
 }
 
 template <>
 template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int
-SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-    const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
+KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
+    const bool use_unit_diag, const bool /*do_conj*/, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
-
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
   if (alpha == zero)
     KokkosBlas::Impl::SerialSetInternal::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one)
-      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
-    if (m <= 0 || n <= 0) return 0;
+    if (alpha != one) KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
 
-    InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
-    InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
-
-    InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0, bs1);
-    auto trsm = [&](const int ib, const int jb,
-                    const ValueType *KOKKOS_RESTRICT AA,
+    auto trsm = [&](const int ib, const int jb, const ValueType *KOKKOS_RESTRICT AA,
                     /**/ ValueType *KOKKOS_RESTRICT BB) {
-      const int mb = mbAlgo;
-      for (int p = 0; p < ib; p += mb) {
-        const int pb = (p + mb) > ib ? (ib - p) : mb;
+      auto host_or_device = [&](auto tag) {
+        constexpr int mb = Algo::Trsm::Blocked::Impl::mb<decltype(tag)>();
+        InnerTrsmLeftLowerUnitDiag<mb> trsm_u(as0, as1, bs0, bs1);
+        InnerTrsmLeftLowerNonUnitDiag<mb> trsm_n(as0, as1, bs0, bs1);
+        InnerGemmFixA<mb, mb> gemm(as0, as1, bs0, bs1, bs0, bs1);
 
-        // trsm update
-        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
+        for (int p = 0; p < ib; p += mb) {
+          const int pb = (p + mb) > ib ? (ib - p) : mb;
 
-        if (use_unit_diag)
-          trsm_u.serial_invoke(Ap, pb, jb, Bp);
-        else
-          trsm_n.serial_invoke(Ap, pb, jb, Bp);
+          // trsm update
+          const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+          /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
 
-        // gemm update
-        for (int i = p + mb; i < ib; i += mb) {
-          const int mm = (i + mb) > ib ? (ib - i) : mb;
-          gemm.serial_invoke(minus_one, AA + i * as0 + p * as1, BB + p * bs0,
-                             mm, jb, pb, BB + i * bs0);
+          if (use_unit_diag)
+            trsm_u.serial_invoke(Ap, pb, jb, Bp);
+          else
+            trsm_n.serial_invoke(Ap, pb, jb, Bp);
+
+          // gemm update
+          for (int i = p + mb; i < ib; i += mb) {
+            const int mm = (i + mb) > ib ? (ib - i) : mb;
+            gemm.serial_invoke(minus_one, AA + i * as0 + p * as1, BB + p * bs0, mm, jb, pb, BB + i * bs0);
+          }
         }
-      }
+      };
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = true;  //(m*n <= 64*64);
@@ -151,20 +131,16 @@ SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
 template <typename AlgoType>
 struct SerialTrsmInternalLeftUpper {
   template <typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
-                                           const int m, const int n,
-                                           const ScalarType alpha,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1,
-                                           /**/ ValueType *KOKKOS_RESTRICT B,
-                                           const int bs0, const int bs1);
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const bool do_conj, const int m, const int n,
+                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1,
+                                           /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1);
 };
 
 template <>
 template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int
-SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-    const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
+KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
+    const bool use_unit_diag, const bool do_conj, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
@@ -172,9 +148,7 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
   if (alpha == zero)
     KokkosBlas::Impl::SerialSetInternal::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one)
-      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
-    if (m <= 0 || n <= 0) return 0;
+    if (alpha != one) KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
 
     ValueType *KOKKOS_RESTRICT B0 = B;
     for (int p = (m - 1); p >= 0; --p) {
@@ -184,7 +158,8 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
       ValueType *KOKKOS_RESTRICT b1t       = B + p * bs0;
 
       if (!use_unit_diag) {
-        const ValueType alpha11 = A[p * as0 + p * as1];
+        const ValueType alpha11 =
+            (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(A[p * as0 + p * as1]) : A[p * as0 + p * as1]);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -200,7 +175,8 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
 #pragma unroll
 #endif
           for (int j = 0; j < jend; ++j)
-            B0[i * bs0 + j * bs1] -= a01[i * as0] * b1t[j * bs1];
+            B0[i * bs0 + j * bs1] -= (do_conj ? KokkosKernels::ArithTraits<ValueType>::conj(a01[i * as0]) * b1t[j * bs1]
+                                              : a01[i * as0] * b1t[j * bs1]);
       }
     }
   }
@@ -209,50 +185,45 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
 
 template <>
 template <typename ScalarType, typename ValueType>
-KOKKOS_INLINE_FUNCTION int
-SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-    const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
+KOKKOS_INLINE_FUNCTION int SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
+    const bool use_unit_diag, const bool /*do_conj*/, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
-
   if (alpha == zero)
     KokkosBlas::Impl::SerialSetInternal::invoke(m, n, zero, B, bs0, bs1);
   else {
-    if (alpha != one)
-      KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
-    if (m <= 0 || n <= 0) return 0;
+    if (alpha != one) KokkosBlas::Impl::SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
 
-    InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
-    InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
-
-    InnerGemmFixA<mbAlgo, mbAlgo> gemm(as0, as1, bs0, bs1, bs0, bs1);
-
-    auto trsm = [&](const int ib, const int jb,
-                    const ValueType *KOKKOS_RESTRICT AA,
+    auto trsm = [&](const int ib, const int jb, const ValueType *KOKKOS_RESTRICT AA,
                     /**/ ValueType *KOKKOS_RESTRICT BB) {
-      const int mb = mbAlgo;
-      for (int pp = 0; pp < ib; pp += mb) {
-        const int ptmp = ib - pp - mb, p = ptmp < 0 ? 0 : ptmp,
-                  pb = mb + (ptmp < 0) * ptmp;
+      auto host_or_device = [&](auto tag) {
+        constexpr int mb = Algo::Trsm::Blocked::Impl::mb<decltype(tag)>();
+        InnerTrsmLeftUpperUnitDiag<mb> trsm_u(as0, as1, bs0, bs1);
+        InnerTrsmLeftUpperNonUnitDiag<mb> trsm_n(as0, as1, bs0, bs1);
+        InnerGemmFixA<mb, mb> gemm(as0, as1, bs0, bs1, bs0, bs1);
+        for (int pp = 0; pp < ib; pp += mb) {
+          const int ptmp = ib - pp - mb, p = ptmp < 0 ? 0 : ptmp, pb = mb + (ptmp < 0) * ptmp;
 
-        // trsm update
-        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *KOKKOS_RESTRICT Bp    = BB + p * bs0;
+          // trsm update
+          const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+          /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
 
-        if (use_unit_diag)
-          trsm_u.serial_invoke(Ap, pb, jb, Bp);
-        else
-          trsm_n.serial_invoke(Ap, pb, jb, Bp);
+          if (use_unit_diag)
+            trsm_u.serial_invoke(Ap, pb, jb, Bp);
+          else
+            trsm_n.serial_invoke(Ap, pb, jb, Bp);
 
-        // gemm update
-        for (int i = 0; i < p; i += mb) {
-          gemm.serial_invoke(minus_one, AA + i * as0 + p * as1, Bp,
-                             (i + mb) > p ? (p - i) : mb, jb, pb, BB + i * bs0);
+          // gemm update
+          for (int i = 0; i < p; i += mb) {
+            gemm.serial_invoke(minus_one, AA + i * as0 + p * as1, Bp, (i + mb) > p ? (p - i) : mb, jb, pb,
+                               BB + i * bs0);
+          }
         }
-      }
+      };
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = (m * n <= 64 * 64);
@@ -266,6 +237,7 @@ SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
   return 0;
 }
 
+}  // namespace Impl
 }  // namespace KokkosBatched
 
 #endif

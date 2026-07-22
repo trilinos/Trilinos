@@ -1,0 +1,189 @@
+/*! \page tempus_tutorial_transition_04_05 Transition from Example 4 to Example 5
+ *
+ *  \section tempus_tutorial_transition_04_05_goal Goal
+ *
+ *  The primary goal of \ref example-05 is to introduce
+ *  \ref Tempus::Stepper through \ref Tempus::StepperForwardEuler while
+ *  preserving the same \ref Thyra::ModelEvaluator-based van der Pol model,
+ *  the same \ref Tempus::SolutionHistory, the same simple tabular output, and
+ *  the same application-managed time loop used in \ref example-04.
+ *
+ *  \ref Tempus::Stepper performs a single time step by applying the
+ *  algorithm associated with a particular ODE formulation, such as an
+ *  explicit update formula or an implicit linear or nonlinear solve.
+ *  In doing so, it uses the governing equations provided by the
+ *  \ref Thyra::ModelEvaluator in their explicit and/or implicit forms.
+ *
+ *  Upon completion of the step, the \ref Tempus::Stepper updates the next
+ *  \ref Tempus::SolutionState (the working state), reports the solution
+ *  status (for example, passed or failed), and may propose a timestep size
+ *  for a future step. In this way, \ref Tempus::Stepper separates the
+ *  time-stepping algorithm from the details of the governing equations in
+ *  the \ref Thyra::ModelEvaluator, the linear and nonlinear solver
+ *  infrastructure, and the orchestration of multiple time steps.
+ *
+ *  New concepts introduced are:
+ *
+ *  - \ref Tempus::Stepper
+ *    - provides an abstraction for a time stepping algorithm
+ *  - \ref Tempus::StepperForwardEuler
+ *    - implements the Forward Euler method as a Tempus stepper
+ *  - `setModel(...)`
+ *    - attaches the application model to the stepper (i.e.,
+ *      \ref Thyra::ModelEvaluator)
+ *  - `initialize()`
+ *    - prepares the stepper for use
+ *  - `setInitialConditions(...)`
+ *    - ensures that the initial solution history is <b>consistent</b> with the
+ *      stepper and allocates any stepper-specific state as needed
+ *  - `takeStep(...)`
+ *    - advances the working solution state through the stepper
+ *
+ *  <b>Note:</b> A solution state is termed "<b>consistent</b>" when the solution and
+ *  its derivatives satisfy the governing equations at time \f$t\f$, i.e.,
+ *  satisfy the explicit and/or implicit forms of the model.
+ *
+ *  \f{eqnarray*}{
+ *    \mbox{Explicit:} & \dot{x} = \mathbf{f}(x,t),
+ *                     & \ddot{x} = \mathbf{f}(\dot{x},x,t) \\
+ *    \mbox{Implicit:} & \mathcal{F}(\dot{x},x,t) = 0,
+ *                     & \mathcal{F}(\ddot{x},\dot{x},x,t) = 0
+ *  \f}
+ *
+ *  This is the first step in separating the stepping algorithm from the
+ *  surrounding application logic. Rather than coding the Forward Euler
+ *  right-hand-side evaluation and update directly in the time loop, the
+ *  application now delegates that work to a Tempus stepper object.
+ *
+ *  \section tempus_tutorial_transition_04_05_same What stays the same
+ *
+ *  - The van der Pol model is still provided by a \ref Thyra::ModelEvaluator.
+ *  - The application still manages the overall time loop directly.
+ *  - The application still manages the \ref Tempus::SolutionHistory.
+ *  - The timestep size is still selected manually and assigned to the
+ *    working state by the application.
+ *  - The output table still reports the step index, time, \f$x_0\f$, and \f$x_1\f$.
+ *  - The regression check remains a separate final comparison.
+ *
+ *  \section tempus_tutorial_transition_04_05_snippets Selected code excerpts
+ *
+ *  The code excerpts below highlight the main changes needed to replace the
+ *  hand-written Forward Euler update with a \ref Tempus::StepperForwardEuler.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_04_05_snippet1 Construct and initialize the stepper
+ *
+ *  <b>Create and initialize a StepperForwardEuler.</b> The application now
+ *  constructs a \ref Tempus::StepperForwardEuler. A \ref Tempus::Stepper
+ *  needs access to the governing equations through a
+ *  \ref Thyra::ModelEvaluator, so the model is attached to the stepper.
+ *  Because the stepper is constructed in stages, `initialize()` is then called
+ *  to complete its setup before stepping begins. Finally,
+ *  `setInitialConditions(...)` ensures that the initial
+ *  \ref Tempus::SolutionHistory is consistent with both the
+ *  governing equations and the stepper.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  // No stepper object in Example 4.
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  auto stepper = Teuchos::rcp(new Tempus::StepperForwardEuler<double>());
+ *  stepper->setModel(model);
+ *  stepper->initialize();
+ *  stepper->setInitialConditions(solHistory);
+ *  @endcode
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_04_05_snippet2 Replace the hand-written update
+ *
+ *  <b>Delegate the step to the stepper.</b> The details of the Forward Euler
+ *  update, including interaction with the \ref Thyra::ModelEvaluator, are now
+ *  handled by \ref Tempus::StepperForwardEuler. In this way, the stepper
+ *  encapsulates everything needed to perform a single Forward Euler time step.
+ *  This also makes it easier to replace Forward Euler with another
+ *  \ref Tempus::Stepper while leaving the surrounding application-level
+ *  time-loop logic unchanged.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  auto inArgs  = model->createInArgs();
+ *  auto outArgs = model->createOutArgs();
+ *  inArgs.set_t(time);
+ *  inArgs.set_x(x_n);
+ *  inArgs.set_x_dot(Teuchos::null);
+ *  outArgs.set_f(xDot_n);
+ *
+ *  model->evalModel(inArgs, outArgs);
+ *
+ *  Thyra::V_VpStV(x_np1.ptr(), *x_n, dt, *xDot_n);
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  stepper->takeStep(solHistory);
+ *  @endcode
+ *
+ *  The stepper now performs the model evaluation and Forward Euler update.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_04_05_snippet3 Use the status assigned by the stepper
+ *
+ *  <b>Use the solution status set by the stepper.</b> The
+ *  \ref Tempus::Stepper sets the status of the working state as part of
+ *  `takeStep(...)`. As a result, the application no longer needs to set the
+ *  pass/fail status explicitly after the Forward Euler update. The remaining
+ *  task is to promote the working state through the solution history.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  if ( std::isnan(Thyra::norm(*x_np1)) ) {
+ *    workingState->setSolutionStatus(Tempus::Status::FAILED);
+ *  } else {
+ *    workingState->setSolutionStatus(Tempus::Status::PASSED);
+ *  }
+ *  solHistory->promoteWorkingState();
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  solHistory->promoteWorkingState();
+ *  @endcode
+ *
+ *  The time loop is still application-controlled; only the single-step
+ *  algorithm and step-status assignment have moved into the stepper.
+ *
+ *  As in the updated examples, final tutorial success is determined after the
+ *  loop by combining the final state status with the separate regression test.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \section tempus_tutorial_transition_04_05_compare How to compare the examples
+ *
+ *  A more detailed comparison can be made by diffing:
+ *  - `examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp`
+ *  - `examples/05_Intro_Stepper/05_Intro_Stepper.cpp`
+ *
+ *  From the `packages/tempus` directory, a focused comparison of the main
+ *  time-integration logic between these two examples can be generated locally
+ *  in `bash` or `zsh` with:
+ *
+ *  @code{.sh}
+ *  git diff --no-index \
+ *    <(sed -n '87,195p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp) \
+ *    <(sed -n '86,177p' examples/05_Intro_Stepper/05_Intro_Stepper.cpp)
+ *  @endcode
+ *
+ *  This ignores leading header lines (e.g., `#include` statements and
+ *  Doxygen comments) and trailing regression-testing lines.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-04.html">← Previous Example</a> |
+ *    <a href="example-05.html">Current Example</a> |
+ *    <a href="example-06.html">Next Example →</a>
+ *  </div>
+ *  \endhtmlonly
+ */

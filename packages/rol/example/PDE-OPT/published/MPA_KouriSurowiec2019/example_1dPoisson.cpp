@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 // Burgers includes
 #include "example_1dPoisson.hpp"
@@ -14,7 +22,7 @@
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
@@ -29,7 +37,7 @@ int main( int argc, char *argv[] ) {
   ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
+  ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   ROL::Ptr<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
 
   const int myRank = comm->getRank();
@@ -157,7 +165,7 @@ int main( int argc, char *argv[] ) {
       problem->finalize(false,true,*outStream);
       ROL::PrimalDualRisk<RealT> solver(problem, sampler, *parlist);
       if (parlist->sublist("Problem Data").get("Run Derivative Check",false)) {
-        problem->check(*outStream);
+        problem->check(true,*outStream);
         solver.check(*outStream);
       }
       solver.run(*outStream);

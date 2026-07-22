@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef OPENMP_SMART_STATIC_SPMV_HPP_
 #define OPENMP_SMART_STATIC_SPMV_HPP_
@@ -20,6 +7,8 @@
 #ifdef KOKKOS_ENABLE_OPENMP
 
 #include <omp.h>
+#include <sstream>
+#include <stdexcept>
 
 #define OMP_BENCH_RESTRICT __restrict__
 
@@ -33,9 +22,16 @@ void establishSmartSchedule(AType A) {
 
   // Generate a schedule
   Ordinal* rowSizes = NULL;
-  posix_memalign((void**)&rowSizes, 64, sizeof(int) * A.numRows());
-  posix_memalign((void**)&threadStarts, 128,
-                 sizeof(int) * (omp_get_max_threads() + 1));
+  if (posix_memalign((void**)&rowSizes, 64, sizeof(int) * A.numRows())) {
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " posix_memalign failed";
+    throw std::runtime_error(ss.str());
+  }
+  if (posix_memalign((void**)&threadStarts, 128, sizeof(int) * (omp_get_max_threads() + 1))) {
+    std::stringstream ss;
+    ss << __FILE__ << ":" << __LINE__ << " posix_memalign failed";
+    throw std::runtime_error(ss.str());
+  }
 
   for (int i = 0; i < omp_get_max_threads(); ++i) {
     threadStarts[i] = A.numRows();
@@ -45,14 +41,12 @@ void establishSmartSchedule(AType A) {
 
 #pragma omp parallel for reduction(+ : nnz)
   for (Ordinal row = 0; row < rowCount; ++row) {
-    const Ordinal rowElements =
-        matrixRowOffsets[row + 1] - matrixRowOffsets[row];
-    rowSizes[row] = rowElements;
+    const Ordinal rowElements = matrixRowOffsets[row + 1] - matrixRowOffsets[row];
+    rowSizes[row]             = rowElements;
     nnz += rowElements;
   }
 
-  Ordinal nzPerThreadTarget =
-      (int)(nnz / (unsigned long long int)omp_get_max_threads());
+  Ordinal nzPerThreadTarget = (int)(nnz / (unsigned long long int)omp_get_max_threads());
 
   if (nzPerThreadTarget > 128) {
     nzPerThreadTarget &= 0xFFFFFFFC;
@@ -87,8 +81,7 @@ void establishSmartSchedule(AType A) {
   free(rowSizes);
 }
 
-template <typename AType, typename XType, typename YType, typename Offset,
-          typename Ordinal, typename Scalar>
+template <typename AType, typename XType, typename YType, typename Offset, typename Ordinal, typename Scalar>
 void openmp_smart_static_matvec(AType A, XType x, YType y) {
   if (NULL == threadStarts) {
     // printf("Generating Schedule...\n");
@@ -108,8 +101,7 @@ void openmp_smart_static_matvec(AType A, XType x, YType y) {
 #ifdef KOKKOS_ENABLE_PROFILING
   uint64_t kpID = 0;
   if (Kokkos::Profiling::profileLibraryLoaded()) {
-    Kokkos::Profiling::beginParallelFor("KokkosSparse::Test_SPMV_raw_openmp", 0,
-                                        &kpID);
+    Kokkos::Profiling::beginParallelFor("KokkosSparse::Test_SPMV_raw_openmp", 0, &kpID);
   }
 #endif
 

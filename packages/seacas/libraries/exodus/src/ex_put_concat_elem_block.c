@@ -56,12 +56,12 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   /* first check if any element blocks are specified
    * OK if zero...
    */
-  if (nc_inq_dimid(exoid, DIM_NUM_EL_BLK, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_EL_BLK, &dimid) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* Get number of element blocks defined for this file */
-  if ((status = nc_inq_dimlen(exoid, dimid, &length)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &length)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of element blocks in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -80,18 +80,18 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   }
 
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
-    for (i = 0; i < num_elem_blk; i++) {
-      eb_array[i] = (((int64_t *)num_elem_this_blk)[i] == 0) ? 0 : 1;
+    for (int ib = 0; ib < num_elem_blk; ib++) {
+      eb_array[ib] = (((int64_t *)num_elem_this_blk)[ib] == 0) ? 0 : 1;
     }
   }
   else {
-    for (i = 0; i < num_elem_blk; i++) {
-      eb_array[i] = (((int *)num_elem_this_blk)[i] == 0) ? 0 : 1;
+    for (int ib = 0; ib < num_elem_blk; ib++) {
+      eb_array[ib] = (((int *)num_elem_this_blk)[ib] == 0) ? 0 : 1;
     }
   }
 
   /* Next, get variable id of status array */
-  if ((status = nc_inq_varid(exoid, VAR_STAT_EL_BLK, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_STAT_EL_BLK, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate element block status in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -101,7 +101,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
 
   status = nc_put_var_int(exoid, varid, eb_array);
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store element block status array to file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -111,7 +111,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
 
   /* Next, fill out ids array */
   /* first get id of ids array variable */
-  if ((status = nc_inq_varid(exoid, VAR_ID_EL_BLK, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_ID_EL_BLK, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate element block ids array in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -127,7 +127,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
     status = nc_put_var_int(exoid, varid, elem_blk_id);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store element block id array in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -136,7 +136,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   }
 
   /* inquire previously defined dimensions  */
-  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     free(eb_array);
@@ -144,7 +144,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     free(eb_array);
@@ -199,7 +199,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
 
     /* define some dimensions and variables*/
     if ((status = nc_def_dim(exoid, DIM_NUM_EL_IN_BLK(cur_num_elem_blk + 1), num_elem,
-                             &numelbdim)) != NC_NOERR) {
+                             &numelbdim)) != EX_NOERR) {
       if (status == NC_ENAMEINUSE) { /* duplicate entry */
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: element block %" PRId64 " already defined in file id %d", eb_id, exoid);
@@ -215,7 +215,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
     }
 
     if ((status = nc_def_dim(exoid, DIM_NUM_NOD_PER_EL(cur_num_elem_blk + 1), num_npe,
-                             &nelnoddim)) != NC_NOERR) {
+                             &nelnoddim)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to define number of nodes/element for block %" PRId64
                " in file id %d",
@@ -229,7 +229,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
     dims[1] = nelnoddim;
 
     if ((status = nc_def_var(exoid, VAR_CONN(cur_num_elem_blk + 1), conn_int_type, 2, dims,
-                             &connid)) != NC_NOERR) {
+                             &connid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to create connectivity array for block %" PRId64 " in file id %d",
                eb_id, exoid);
@@ -240,7 +240,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
 
     /* store element type as attribute of connectivity variable */
     if ((status = nc_put_att_text(exoid, connid, ATT_NAME_ELB, strlen(elem_type[iblk]) + 1,
-                                  (void *)elem_type[iblk])) != NC_NOERR) {
+                                  (void *)elem_type[iblk])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store element type name %s in file id %d",
                elem_type[iblk], exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -250,7 +250,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
     /* element attribute array */
     if (num_attr > 0) {
       if ((status = nc_def_dim(exoid, DIM_NUM_ATT_IN_BLK(cur_num_elem_blk + 1), num_attr,
-                               &numattrdim)) != NC_NOERR) {
+                               &numattrdim)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define number of attributes in block %" PRId64 " in file id %d",
                  eb_id, exoid);
@@ -263,7 +263,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
       dims[1] = strdim;
 
       if ((status = nc_def_var(exoid, VAR_NAME_ATTRIB(cur_num_elem_blk + 1), NC_CHAR, 2, dims,
-                               &temp)) != NC_NOERR) {
+                               &temp)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define element attribute name array "
                  "in file id %d",
@@ -281,7 +281,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
       dims[1] = numattrdim;
 
       if ((status = nc_def_var(exoid, VAR_ATTRIB(cur_num_elem_blk + 1), nc_flt_code(exoid), 2, dims,
-                               &temp)) != NC_NOERR) {
+                               &temp)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR:  failed to define attributes for element block %" PRId64 " in file id %d",
                  eb_id, exoid);
@@ -293,16 +293,16 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
 
   /* Define the element map here to avoid a later redefine call */
   if (define_maps != 0) {
-    if (nc_inq_varid(exoid, VAR_ELEM_NUM_MAP, &temp) != NC_NOERR) {
+    if (nc_inq_varid(exoid, VAR_ELEM_NUM_MAP, &temp) != EX_NOERR) {
       /* Map does not exist */
       /* Possible to have zero elements but >0 element blocks.
        * Only define map if there are nonzero elements
        */
-      if (nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim) == NC_NOERR) {
+      if (nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim) == EX_NOERR) {
         dims[0] = numelemdim;
 
         if ((status = nc_def_var(exoid, VAR_ELEM_NUM_MAP, map_int_type, 1, dims, &temp)) !=
-            NC_NOERR) {
+            EX_NOERR) {
           if (status == NC_ENAMEINUSE) {
             snprintf(errmsg, MAX_ERR_LENGTH,
                      "ERROR: element numbering map already exists in file id %d", exoid);
@@ -319,12 +319,12 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
     }
 
     /* Do the same for the node numbering map */
-    if (nc_inq_varid(exoid, VAR_NODE_NUM_MAP, &temp) != NC_NOERR) {
+    if (nc_inq_varid(exoid, VAR_NODE_NUM_MAP, &temp) != EX_NOERR) {
       /* Map does not exist */
-      if ((nc_inq_dimid(exoid, DIM_NUM_NODES, &numnodedim)) == NC_NOERR) {
+      if ((nc_inq_dimid(exoid, DIM_NUM_NODES, &numnodedim)) == EX_NOERR) {
         dims[0] = numnodedim;
         if ((status = nc_def_var(exoid, VAR_NODE_NUM_MAP, map_int_type, 1, dims, &temp)) !=
-            NC_NOERR) {
+            EX_NOERR) {
           if (status == NC_ENAMEINUSE) {
             snprintf(errmsg, MAX_ERR_LENGTH,
                      "ERROR: node numbering map already exists in file id %d", exoid);
@@ -344,7 +344,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
   }
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     free(eb_array);

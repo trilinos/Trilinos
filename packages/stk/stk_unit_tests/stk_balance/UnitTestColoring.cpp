@@ -19,7 +19,7 @@
 namespace {
 using stk::unit_test_util::build_mesh;
 
-class BasicColoring : public stk::unit_test_util::simple_fields::MeshFixture {};
+class BasicColoring : public stk::unit_test_util::MeshFixture {};
 
 void test_adjacent_elements_have_different_coloring(const stk::mesh::BulkData& bulk)
 {
@@ -143,15 +143,15 @@ TEST(ColorByTopology, colorHeterogeneousMesh)
 
   std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord = meta.declare_field<double>(stk::topology::NODE_RANK,
+  stk::mesh::fixtures::VectorFieldType & node_coord = meta.declare_field<double>(stk::topology::NODE_RANK,
                                                                                                 "coordinates");
   stk::mesh::put_field_on_mesh(node_coord, meta.universal_part(), 3, nullptr);
 
-  stk::mesh::fixtures::simple_fields::heterogeneous_mesh_meta_data( meta , node_coord );
+  stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta , node_coord );
   declare_color_fields(meta);
   meta.commit();
 
-  stk::mesh::fixtures::simple_fields::heterogeneous_mesh_bulk_data( *bulk , node_coord );
+  stk::mesh::fixtures::heterogeneous_mesh_bulk_data( *bulk , node_coord );
 
   stk::balance::BasicColoringByTopologySettings coloringSettings;
   //    ColorMeshWithColoringFieldsSettings coloringSettings;
@@ -188,7 +188,7 @@ void quad_tri_mesh_meta_data(stk::mesh::MetaData & meta_data,
   }
 }
 
-class Color2DMesh : public stk::unit_test_util::simple_fields::MeshFixture2D {};
+class Color2DMesh : public stk::unit_test_util::MeshFixture2D {};
 
 TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
 {
@@ -216,8 +216,8 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
   std::vector<double> coordinates = { 0,3, 1,3, 2,3, 3,3, 0,2, 1,2, 2,2, 3,2,
                                       0,1, 1,1, 2,1, 3,1, 0,0, 1,0, 2,0, 3,0 };
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(
-        get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+  stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   ColorMeshWithColoringFieldsSettings coloringSettings;
   bool meshIsColored = stk::balance::colorStkMesh(coloringSettings, get_bulk());

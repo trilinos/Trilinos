@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
@@ -11,7 +12,7 @@
 
 namespace {
 
-class SpiderElement : public stk::unit_test_util::simple_fields::MeshFixture
+class SpiderElement : public stk::unit_test_util::MeshFixture
 {
 protected:
   SpiderElement()
@@ -603,7 +604,7 @@ void compare_identical_volume_decompositions(stk::balance::BalanceMesh & meshNod
 
 TEST_F(SpiderElement, cubeMeshWithSpider_ParticleBodyInsensitivity)
 {
-  const unsigned meshSize = stk::unit_test_util::simple_fields::get_command_line_option<unsigned>("--size", 2);
+  const unsigned meshSize = stk::unit_test_util::get_command_line_option<unsigned>("--size", 2);
 
   bool addParticleBody = false;
   const std::string fileNameNode = "cube_spider_node.g";
@@ -631,6 +632,11 @@ TEST_F(SpiderElement, cubeMeshWithSpider_ParticleBodyInsensitivity)
   balancerParticle.balance(meshParticle);
 
   compare_identical_volume_decompositions(meshNode, meshParticle);
+
+  if (get_parallel_rank() == 0) {
+    unlink(fileNameNode.c_str());
+    unlink(fileNameParticle.c_str());
+  }
 }
 
 }

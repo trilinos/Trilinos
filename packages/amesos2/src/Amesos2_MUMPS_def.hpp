@@ -62,13 +62,16 @@ namespace Amesos2
     RCP<const Comm<int> > matComm = this->matrixA_->getComm();
     //Add Exception Checking
     TEUCHOS_TEST_FOR_EXCEPTION(
-                               matComm.is_null(), std::logic_error, "Amesos2::Comm");
+      matComm.is_null(), std::logic_error, "Amesos2::MUMPS:: matComm is null");
     RCP<const MpiComm<int> > matMpiComm = 
       rcp_dynamic_cast<const MpiComm<int> >(matComm);
     //Add Exception Checking
     TEUCHOS_TEST_FOR_EXCEPTION(
-                               matMpiComm->getRawMpiComm().is_null(), 
-                               std::logic_error, "Amesos2::MPI");
+      matMpiComm.is_null(), 
+      std::logic_error, "Amesos2::MUMPS:: matMPIComm is null");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      matMpiComm->getRawMpiComm().is_null(), 
+      std::logic_error, "Amesos2::MUMPS:: rawMPIComm is null");
     MPI_Comm rawMpiComm = (* (matMpiComm->getRawMpiComm()) )();
     mumps_par.comm_fortran = (int) MPI_Comm_c2f(rawMpiComm);
     #endif  
@@ -112,7 +115,6 @@ namespace Amesos2
     mumps_par.icntl[30] = 0; //
     mumps_par.icntl[31] = 0; 
     mumps_par.icntl[32] = 0; 
-    
   }
   
   template <class Matrix, class Vector>
@@ -151,14 +153,17 @@ namespace Amesos2
   int
   MUMPS<Matrix,Vector>::symbolicFactorization_impl()
   {
-    
+    #ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
+    #endif  
+
     typedef FunctionMap<MUMPS,scalar_type> function_map;
-    
-    mumps_par.par = 1;  
-    mumps_par.job = 1; // sym factor
-    function_map::mumps_c(&(mumps_par));
-    MUMPS_ERROR();
-    
+    if ( this->globalNumRows_ > 0 ) {
+      mumps_par.par = 1;
+      mumps_par.job = 1; // sym factor
+      function_map::mumps_c(&(mumps_par));
+      MUMPS_ERROR();
+    }
     return(0);
   }//end symblicFactortion_impl()
   
@@ -167,21 +172,16 @@ namespace Amesos2
   int
   MUMPS<Matrix,Vector>::numericFactorization_impl()
   {
-    using Teuchos::as;
+    #ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+    #endif
+
     typedef FunctionMap<MUMPS,scalar_type> function_map;
-    
-    if ( this->root_ )
-      {
-        { // Do factorization
-          #ifdef HAVE_AMESOS2_TIMERS
-          Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
-          #endif
-        }
-      }
-    mumps_par.job = 2;
-    function_map::mumps_c(&(mumps_par));
-    MUMPS_ERROR();
-    
+    if ( this->globalNumRows_ > 0 ) {
+      mumps_par.job = 2;
+      function_map::mumps_c(&(mumps_par));
+      MUMPS_ERROR();
+    }
     return(0);
   }//end numericFactorization_impl()
 
@@ -192,57 +192,64 @@ namespace Amesos2
                          const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
                          const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
-    
     typedef FunctionMap<MUMPS,scalar_type> function_map;
-    
-    using Teuchos::as;
-    
+
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     const size_t nrhs = X->getGlobalNumVectors();
-    
-    const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
-    
-    xvals_.resize(val_store_size);
-    bvals_.resize(val_store_size);
-    
-    #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
-    #endif
+    const size_t val_store_size = Teuchos::as<size_t>(ld_rhs * nrhs);
 
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-      mumps_type>::do_get(B, bvals_(),
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
- 
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
+    {
+      #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+      #endif
+
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_mv_view>::do_get(initialize_data, B, bvals_,
+          Teuchos::as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_mv_view>::do_get(do_not_initialize_data, X, xvals_,
+          Teuchos::as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+
+      // copy b to x to give x to MUMPS
+      Kokkos::deep_copy(xvals_, bvals_);
+    }
     int ierr = 0; // returned error code
-    mumps_par.nrhs = nrhs;
-    mumps_par.lrhs = mumps_par.n;
-    mumps_par.job = 3;
+    if ( this->globalNumRows_ > 0 ) {
+      #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+      #endif
 
-    if ( this->root_ ) 
-      {                           
-        mumps_par.rhs = bvals_.getRawPtr();
+      mumps_par.nrhs = nrhs;
+      mumps_par.lrhs = mumps_par.n;
+      mumps_par.job = 3;
+      if ( this->root_ ) 
+      {
+        // MUMPS is called with all MPI ranks
+        //  but only root rank has the actual data.
+        // (b has been copied into x)
+        mumps_par.rhs = xvals_.data();
       }
-    
-    #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-    #endif
-    
-    function_map::mumps_c(&(mumps_par));
-    MUMPS_ERROR();
-    
-    
-    #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
-    #endif
 
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(),
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+      function_map::mumps_c(&(mumps_par));
+      MUMPS_ERROR();
+    }
+    {
+      #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
+      #endif
 
+      Util::put_1d_data_helper_kokkos_view<MultiVecAdapter<Vector>,
+        host_mv_view>::do_put(X, xvals_,
+          Teuchos::as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+    }
     // ch: see function loadA_impl()
     MUMPS_MATRIX_LOAD_PREORDERING = false;
     return(ierr);
@@ -312,14 +319,14 @@ namespace Amesos2
     if( is_null(valid_params) ){
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     
-       pl->set("ICNTL(1)", -1, "See Manual" );
-       pl->set("ICNTL(2)", -1, "See Manual" );
-       pl->set("ICNTL(3)", -1, "See Manual" );
-       pl->set("ICNTL(4)", 1, "See Manual" );
-       pl->set("ICNTL(6)", 0, "See Manual" );
-       pl->set("ICNTL(9)", 1, "See Manual" );
-       pl->set("ICNTL(11)", 0, "See Manual" );
-       pl->set("ICNTL(14)", 20, "See Manual" );
+       pl->set("ICNTL(1)", -1, "Output stream for error messages." );
+       pl->set("ICNTL(2)", -1, "Output stream for diagnostic." );
+       pl->set("ICNTL(3)", -1, "Output stream for global information." );
+       pl->set("ICNTL(4)",  1, "Level of printing." );
+       pl->set("ICNTL(6)",  0, "Permutes the matrix to a zero-free diagonal" );
+       pl->set("ICNTL(9)",  1, "Transpose solve, if not 1" );
+       pl->set("ICNTL(11)", 0, "Computes statistics for error analysis" );
+       pl->set("ICNTL(14)", 20, "Percentage increase in the estimated working space" );
        pl->set("IsContiguous", true, "Whether GIDs contiguous");
       
        valid_params = pl;
@@ -333,12 +340,10 @@ namespace Amesos2
   bool
   MUMPS<Matrix,Vector>::loadA_impl(EPhase current_phase)
   {
-    using Teuchos::as;    
-      
     #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
-    #endif      
-    if(MUMPS_MATRIX_LOAD == false || (current_phase==NUMFACT && !MUMPS_MATRIX_LOAD_PREORDERING))
+    #endif
+    if(MUMPS_MATRIX_LOAD == false || current_phase==NUMFACT)
       {
         // Only the root image needs storage allocated
         if( !MUMPS_MATRIX_LOAD && this->root_ ){
@@ -352,7 +357,7 @@ namespace Amesos2
         #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
         #endif
-    
+
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
           ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
@@ -361,7 +366,7 @@ namespace Amesos2
             this->rowIndexBase_);
   
         if( this->root_ ){
-                  TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
+                  TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != Teuchos::as<local_ordinal_type>(this->globalNumNonZeros_),
                                 std::runtime_error,
                         "Did not get the expected number of non-zero vals");
         }
@@ -385,6 +390,25 @@ namespace Amesos2
     MUMPS_MATRIX_LOAD = true;
     return (true);
   }//end loadA_impl()
+
+  template <class Matrix, class Vector>
+  void
+  MUMPS<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                      const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    out << " MUMPS current parameters:" << std::endl;
+    out << "  > ICNTL(1)  = " << mumps_par.icntl[0]  << std::endl;
+    out << "  > ICNTL(2)  = " << mumps_par.icntl[1]  << std::endl;
+    out << "  > ICNTL(3)  = " << mumps_par.icntl[2]  << std::endl;
+    out << "  > ICNTL(4)  = " << mumps_par.icntl[3]  << std::endl;
+    out << "  > ICNTL(6)  = " << mumps_par.icntl[5]  << std::endl;
+    out << "  > ICNTL(7)  = " << mumps_par.icntl[6]  << std::endl;
+    out << "  > ICNTL(9)  = " << mumps_par.icntl[8]  << std::endl;
+    out << "  > ICNTL(11) = " << mumps_par.icntl[10] << std::endl;
+    out << "  > ICNTL(14) = " << mumps_par.icntl[13] << std::endl;
+    out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+    out << std::endl;
+  }
   
   template <class Matrix, class Vector>
   int
@@ -448,14 +472,25 @@ namespace Amesos2
     bool Wrong = ((mumps_par.info[0] != 0) || (mumps_par.infog[0] != 0)) && (this->rank_ < this->nprocs_);
     if(Wrong){
       if (this->rank_==0) {
-        std::cerr << "Amesos_Mumps : ERROR" << std::endl;
-        std::cerr << "Amesos_Mumps : INFOG(1) = " << mumps_par.infog[0] << std::endl;
-        std::cerr << "Amesos_Mumps : INFOG(2) = " << mumps_par.infog[1] << std::endl;
+        std::cerr << "Amesos2_Mumps : ERROR" << std::endl;
+        if ( this->status_.getNumSolve() > 0) {
+            std::cerr << " Last Phase : SOLVE" << std::endl;
+        } else if( this->status_.numericFactorizationDone() ){
+          std::cerr << " Last Phase : NUMFACT" << std::endl;
+        } else if( this->status_.symbolicFactorizationDone() ){
+          std::cerr << " Last Phase : SYMBFACT" << std::endl;
+        } else if( this->status_.preOrderingDone() ){
+          std::cerr << " Last Phase : PREORDERING" << std::endl;
+        } else {
+          std::cerr << " Last Phase : CLEAN" << std::endl;
+        }
+        std::cerr << "Amesos2_Mumps : INFOG(1) = " << mumps_par.infog[0] << std::endl;
+        std::cerr << "Amesos2_Mumps : INFOG(2) = " << mumps_par.infog[1] << std::endl;
       }
       if (mumps_par.info[0] != 0  && Wrong) {
-        std::cerr << "Amesos_Mumps : On process " << this->matrixA_->getComm()->getRank()
+        std::cerr << "Amesos2_Mumps : On process " << this->matrixA_->getComm()->getRank()
         << ", INFO(1) = " << mumps_par.info[0] << std::endl;
-        std::cerr << "Amesos_Mumps : On process " << this->matrixA_->getComm()->getRank()
+        std::cerr << "Amesos2_Mumps : On process " << this->matrixA_->getComm()->getRank()
         << ", INFO(2) = " << mumps_par.info[1] << std::endl;
       }
       

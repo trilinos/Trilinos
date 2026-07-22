@@ -38,14 +38,14 @@ SET(SOURCES "")
 SET(HEADERS_IMPL "")
 SET(SOURCES_IMPL "")
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
-FILE(GLOB HEADERS_IMPL ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/*.hpp)
-FILE(GLOB SOURCES_IMPL ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/*.cpp)
+FILE(GLOB HEADERS_IMPL CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/*.hpp)
+FILE(GLOB SOURCES_IMPL CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/*.cpp)
 
-FILE(GLOB HEADERS_ELEMGRAPH ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/elementGraph/*.hpp)
-FILE(GLOB SOURCES_ELEMGRAPH ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/elementGraph/*.cpp)
+FILE(GLOB HEADERS_ELEMGRAPH CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/elementGraph/*.hpp)
+FILE(GLOB SOURCES_ELEMGRAPH CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/elementGraph/*.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(stk_mesh_base
@@ -56,19 +56,18 @@ else()
   find_package(Shards REQUIRED)
   add_library(stk_mesh_base ${SOURCES} ${SOURCES_IMPL} ${SOURCES_ELEMGRAPH})
   target_link_libraries(stk_mesh_base ${Shards_LIBRARIES})
-  target_link_libraries(stk_mesh_base sierra_blas_lapack)
   target_link_libraries(stk_mesh_base stk_topology)
   target_link_libraries(stk_mesh_base stk_util_diag)
   target_link_libraries(stk_mesh_base stk_util_env)
   target_link_libraries(stk_mesh_base stk_util_parallel)
 
-  if(USE_SIERRA_BLAS_LAPACK)
-    target_link_libraries(stk_mesh_base sierra_blas_lapack)
+  find_package(BLAS REQUIRED)
+  if(TARGET BLAS::BLAS)
+    target_link_libraries(stk_util_util PUBLIC BLAS::BLAS)
   else()
-    find_package(BLAS REQUIRED)
-    target_link_libraries(stk_mesh_base BLAS::BLAS)
+    target_link_libraries(stk_util_util PUBLIC ${BLAS_LIBRARIES})
   endif()
-    
+
 endif()
 
 target_include_directories(stk_mesh_base PUBLIC
@@ -86,5 +85,5 @@ INSTALL(FILES ${HEADERS_ELEMGRAPH} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_mesh/baseImpl/elementGraph)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_mesh_base DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_mesh_base EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

@@ -165,27 +165,22 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           if (input.extent(0)) {
-            switch (opType) {
-            case OPERATOR_VALUE : {
+            if constexpr (opType == OPERATOR_VALUE) {
               auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
               Serial<opType>::getValues( output, input, _order, _alpha, _beta );
-              break;
             }
-            case OPERATOR_GRAD : {
+            else if constexpr (opType == OPERATOR_GRAD) {
               auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
               Serial<opType>::getValues( output, input, _order, _alpha, _beta );
-              break;
             }
-            case OPERATOR_Dn: {
+            else if constexpr (opType == OPERATOR_Dn) {
               auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
               Serial<opType>::getValues( output, input, _order, _alpha, _beta, _opDn );
-              break;
             }
-            default: {
+            else {
               INTREPID2_TEST_FOR_ABORT( true, 
                                         ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Functor) operator is not supported");
               
-            }
             }
           }
         }

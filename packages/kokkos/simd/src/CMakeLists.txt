@@ -1,29 +1,66 @@
 #I have to leave these here for tribits
-KOKKOS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+kokkos_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkos_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 #-----------------------------------------------------------------------------
 
-FILE(GLOB SIMD_HEADERS *.hpp)
-FILE(GLOB SIMD_SOURCES *.cpp)
+file(GLOB SIMD_HEADERS *.hpp)
+file(GLOB SIMD_SOURCES *.cpp)
 
-INSTALL (
+install(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
   DESTINATION ${KOKKOS_HEADER_DIR}
-  FILES_MATCHING PATTERN "*.hpp"
+  FILES_MATCHING
+  PATTERN "*.hpp"
 )
+
+set(SIMD_MODULES Kokkos_SIMD.cppm Kokkos_SIMD_Impl.cppm)
 
 #-----------------------------------------------------------------------------
 
 # We have to pass the sources in here for Tribits
 # These will get ignored for standalone CMake and a true interface library made
-KOKKOS_ADD_LIBRARY(
+kokkos_add_library(
   kokkossimd
-  SOURCES ${SIMD_SOURCES}
-  HEADERS ${SIMD_HEADERS}
+  STATIC # MSVC can't deal with empty shared libraries
+  SOURCES
+  ${SIMD_SOURCES}
+  HEADERS
+  ${SIMD_HEADERS}
+  MODULE_INTERFACE
+  ${SIMD_MODULES}
 )
-KOKKOS_LIB_INCLUDE_DIRECTORIES(kokkossimd
-  ${KOKKOS_TOP_BUILD_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}
+
+if(KOKKOS_CXX_COMPILER_ID STREQUAL IntelLLVM)
+  find_library(INTEL_SVML NAMES svml)
+  if(INTEL_SVML)
+    message(STATUS "Found INTEL_SVML")
+    target_link_libraries(kokkossimd PUBLIC ${INTEL_SVML})
+    target_compile_definitions(kokkossimd PUBLIC KOKKOS_HAVE_INTEL_SVML)
+  endif()
+endif()
+
+kokkos_lib_include_directories(
+  kokkossimd ${KOKKOS_TOP_BUILD_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+kokkos_link_internal_library(kokkossimd kokkoscore)
+
+# If ARM-SVE, check and warn for available arm_neon_sve_bridge.h
+if(KOKKOS_ARCH_ARM_SVE)
+  include(CheckIncludeFileCXX)
+  check_include_file_cxx(arm_neon_sve_bridge.h KOKKOS_COMPILER_SUPPORTS_ARM_NEON_SVE_BRIDGE)
+  if(NOT KOKKOS_COMPILER_SUPPORTS_ARM_NEON_SVE_BRIDGE)
+    message(
+      WARNING "You are using a compiler without NEON-SVE bridge header "
+              "(arm_neon_sve_bridge.h). Kokkos will use its own "
+              "implementation of these functions, which could be slower "
+              "than native ones from a more recent SVE compiler. It is "
+              "recommended to upgrade your compiler.\n"
+              "NOTE: It was also observed that, in some LLVM versions "
+              "(14, 15), despite the macro __ARM_NEON_SVE_BRIDGE was "
+              "defined, the header arm_neon_sve_bridge.h is still not "
+              "available (see https://godbolt.org/z/7jqWvzvWY )."
+    )
+  endif()
+endif()

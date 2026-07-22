@@ -43,6 +43,7 @@
 #include <array>
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, EntityLess, etc
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, hash_value
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Selector.hpp>   // for operator&, Selector, etc
@@ -173,13 +174,13 @@ struct create_face_impl
                           mesh.declare_relation(face,node,n);
                       }
 
-                      Permutation permut = mesh.find_permutation(elemTopology, elem_nodes,
+                      Permutation permut = stk::mesh::find_permutation(mesh, elemTopology, elem_nodes,
                                                                                        faceTopology, &permuted_face_nodes[0], side_ordinal);
                       mesh.declare_relation(m_bucket[ielem], face, side_ordinal, permut);
                   }
                   else {
                       face = iface->second;
-                      Permutation permut = mesh.find_permutation(elemTopology, elem_nodes,
+                      Permutation permut = stk::mesh::find_permutation(mesh, elemTopology, elem_nodes,
                                                                  faceTopology, &permuted_face_nodes[0], side_ordinal);
                       STK_ThrowRequireMsg(permut != INVALID_PERMUTATION, "CreateFaces:  could not find valid permutation to connect face to element");
                       mesh.declare_relation(m_bucket[ielem], face, side_ordinal, permut);
@@ -210,35 +211,6 @@ struct create_face_impl
 };
 
 } //namespace
-
-namespace experimental {
-void create_faces( BulkData & mesh )
-{
-    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), false);
-}
-
-void create_faces( BulkData & mesh, const Selector & element_selector )
-{
-    stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), false);
-}
-
-void create_faces( BulkData & mesh, const Selector & element_selector, Part *part_to_insert_new_faces)
-{
-    stk::mesh::PartVector parts = {part_to_insert_new_faces};
-    stk::mesh::create_all_sides(mesh, element_selector, parts, false);
-}
-
-void create_faces( BulkData & mesh, bool connect_faces_to_edges)
-{
-    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), connect_faces_to_edges);
-}
-
-void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges)
-{
-    stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), connect_faces_to_edges);
-}
-}
-
 
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
 

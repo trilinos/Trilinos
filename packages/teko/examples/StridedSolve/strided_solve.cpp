@@ -1,201 +1,169 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_PreconditionerFactoryHelpers.hpp"
-#include "Thyra_DefaultMultipliedLinearOp.hpp"
-#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
-#include "Thyra_DefaultPreconditioner.hpp"
-#include "Thyra_DefaultProductVector.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 
-// include basic Epetra information
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#include "mpi.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Map.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Export.h"
+// Tpetra includes
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
-// EpetraExt
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_VectorIn.h"
-#include "EpetraExt_VectorOut.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include "EpetraExt_RowMatrixOut.h"
-
-// Thyra-Epetra adapter includes
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
-
-// Teko-Package includes
+// Teko includes
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_SIMPLEPreconditionerFactory.hpp"
 #include "Teko_LSCPreconditionerFactory.hpp"
-#include "Teko_StridedEpetraOperator.hpp"
-#include "Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_StridedTpetraOperator.hpp"
+#include "Teko_TpetraBlockPreconditioner.hpp"
+#include "Teko_ConfigDefs.hpp"
 
-// Aztec includes
-#include "AztecOO.h"
-#include "AztecOO_Operator.h"
-
-// #include <EcUtils++/directory.h>
+// Belos includes
+#include "BelosConfigDefs.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosTpetraAdapter.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <string>
+#include <vector>
 
-using Teuchos::null;
+using Teuchos::FancyOStream;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 using Teuchos::rcp;
-using Teuchos::rcp_dynamic_cast;
 
-int main(int argc, char* argv[]) {
-  // calls MPI_Init and MPI_Finalize
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  // Handles some I/O to the output screen
+void run_driver(std::string solveName) {
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-// build global (or serial communicator
-#ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
+  using ST = double;
+  using LO = Teko::LO;
+  using GO = Teko::GO;
+  using NT = Teko::NT;
 
-  std::string solveName = "Amesos";
-  if (argc > 1) solveName = argv[1];
+  using map_t = Tpetra::Map<LO, GO, NT>;
+  using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
+  using vec_t = Tpetra::Vector<ST, LO, GO, NT>;
+  using mv_t  = Tpetra::MultiVector<ST, LO, GO, NT>;
+  using op_t  = Tpetra::Operator<ST, LO, GO, NT>;
 
-  std::cout << "Using \"" << solveName << "\" for approximate solve" << std::endl;
+  auto comm = Tpetra::getDefaultComm();
 
-  // get process information
-  int numProc = Comm.NumProc();
-  int myPID   = Comm.MyPID();
+  RCP<FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  fos->setOutputToRootOnly(0);
+
+  *fos << "Using \"" << solveName << "\" for approximate solve" << std::endl;
+
+  const int numProc = comm->getSize();
+  const int myPID   = comm->getRank();
 
   std::cout << "MPI_PID = " << myPID << ", UNIX_PID = " << getpid() << std::endl;
 
-  // output garbage
   *out << "Approaching Barrier: proc = " << numProc << ", pid = " << myPID << std::endl;
-  Comm.Barrier();
+  Teuchos::barrier(*comm);
 
   RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile("solverparams.xml");
 
-  Epetra_Map map(15444, 0, Comm);
-  Epetra_CrsMatrix* ptrA = 0;
-  Epetra_Vector* ptrf    = 0;
-  Epetra_Vector* ptrx    = 0;
+  *fos << "Reading matrix market file" << std::endl;
 
-  std::cout << "Reading matrix market file" << std::endl;
-  EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac.mm", map, map, map, ptrA);
-  EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm", map, ptrf);
-  EpetraExt::MatrixMarketFileToVector("../data/nslhs_test.mm", map, ptrx);
+  RCP<crs_t> A = Tpetra::MatrixMarket::Reader<crs_t>::readSparseFile("../data/nsjac.mm", comm);
 
-  RCP<Epetra_CrsMatrix> A = rcp(ptrA);
-  RCP<Epetra_Vector> b    = rcp(ptrf);
-  RCP<Epetra_Vector> x    = rcp(ptrx);
+  RCP<const map_t> rangeMap  = A->getRangeMap();
+  RCP<const map_t> domainMap = A->getDomainMap();
 
-  std::cout << "Building strided operator" << std::endl;
-  std::vector<int> vec(2);
-  vec[0] = 2;
-  vec[1] = 1;
-  Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA =
-      Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec, A));
+  RCP<vec_t> b = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("../data/nsrhs_test.mm", comm,
+                                                                     rangeMap, false, false);
+
+  RCP<vec_t> x = Tpetra::MatrixMarket::Reader<crs_t>::readVectorFile("../data/nslhs_test.mm", comm,
+                                                                     domainMap, false, false);
+
+  *fos << "Building strided operator" << std::endl;
+
+  std::vector<int> vars(2);
+  vars[0] = 2;
+  vars[1] = 1;
+
+  Teuchos::RCP<Teko::TpetraHelpers::StridedTpetraOperator> sA =
+      Teuchos::rcp(new Teko::TpetraHelpers::StridedTpetraOperator(vars, A));
 
   double alpha                      = 0.9;
   RCP<Teko::InverseFactory> inverse = Teko::invFactoryFromParamList(*paramList, solveName);
-#if 1
+
   RCP<Teko::BlockPreconditionerFactory> precFact =
       rcp(new Teko::NS::SIMPLEPreconditionerFactory(inverse, alpha));
-#else
-  RCP<Teko::NS::LSCStrategy> precStrat = rcp(new Teko::NS::InvLSCStrategy(inverse));
-  RCP<Teko::BlockPreconditionerFactory> precFact =
-      rcp(new Teko::NS::LSCPreconditionerFactory(precStrat));
-#endif
 
-  std::cout << "Preconditioner factory built" << std::endl;
-  Teko::Epetra::EpetraBlockPreconditioner prec(precFact);
+  *fos << "Preconditioner factory built" << std::endl;
+
+  Teko::TpetraHelpers::TpetraBlockPreconditioner prec(precFact);
   prec.buildPreconditioner(sA);
 
-  std::cout << "Preconditioner built" << std::endl;
+  *fos << "Preconditioner built" << std::endl;
 
-  Epetra_LinearProblem problem(&*A, &*x, &*b);
+  RCP<mv_t> X = x;
+  RCP<mv_t> B = b;
 
-  // build solver
-  std::cout << "Setting solver parameters" << std::endl;
-  AztecOO solver(problem);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_precond, AZ_none);
-  solver.SetAztecOption(AZ_kspace, 50);
-  solver.SetAztecOption(AZ_output, 10);
-  solver.SetPrecOperator(&prec);
+  using problem_t        = Belos::LinearProblem<ST, mv_t, op_t>;
+  RCP<problem_t> problem = rcp(new problem_t(A, X, B));
 
-  std::cout << "Solving" << std::endl;
-  solver.Iterate(1000, 1e-5);
+  RCP<op_t> precOp = Teuchos::rcp(&prec, false);
+  problem->setRightPrec(precOp);
 
+  const bool set = problem->setProblem();
+  TEUCHOS_TEST_FOR_EXCEPTION(!set, std::runtime_error,
+                             "Belos::LinearProblem::setProblem() failed.");
+
+  *fos << "Setting solver parameters" << std::endl;
+
+  Teuchos::ParameterList belosList;
+  belosList.set("Maximum Iterations", 1000);
+  belosList.set("Convergence Tolerance", 1e-5);
+  belosList.set("Num Blocks", 50);
+  belosList.set("Verbosity",
+                Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::FinalSummary);
+  belosList.set("Output Frequency", 10);
+
+  using solver_t = Belos::BlockGmresSolMgr<ST, mv_t, op_t>;
+  solver_t solver(problem, rcpFromRef(belosList));
+
+  *fos << "Solving" << std::endl;
+
+  Belos::ReturnType result = solver.solve();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(result != Belos::Converged, std::runtime_error,
+                             "Belos solver failed to converge.");
+
+  *fos << "Solve converged" << std::endl;
+}
+
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
+  {
+    std::string solveName = "Amesos2";
+    if (argc > 1) solveName = argv[1];
+
+    run_driver(solveName);
+  }
   return 0;
 }

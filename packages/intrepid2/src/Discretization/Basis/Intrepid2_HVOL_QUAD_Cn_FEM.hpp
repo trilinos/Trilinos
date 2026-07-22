@@ -95,25 +95,20 @@ namespace Intrepid2 {
 
           typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
-          auto vcprop = Kokkos::common_view_alloc_prop(_work);
-          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
+          workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
             Serial<opType>::getValues( output, input, work, _vinv );
-            break;
           }
-          case OPERATOR_Dn : {
+          else if constexpr (opType == OPERATOR_Dn) {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinv, _opDn );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( true,
                                       ">>> ERROR: (Intrepid2::Basis_HVOL_QUAD_Cn_FEM::Functor) operator is not supported");
             
-          }
           }
         }
       };
@@ -132,20 +127,22 @@ namespace Intrepid2 {
   class Basis_HVOL_QUAD_Cn_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+    using typename BasisBase::OrdinalTypeArray3DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType ;
+    using typename BasisBase::ScalarViewType;
 
     /** \brief  Constructor.
      */
     Basis_HVOL_QUAD_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
-
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
@@ -166,6 +163,23 @@ namespace Intrepid2 {
                                                 this->vinv_,
                                                 operatorType );
     }
+
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
+                        const PointViewType inputPoints,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
+
 
     virtual
     void

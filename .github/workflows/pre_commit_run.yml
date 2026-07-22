@@ -1,0 +1,64 @@
+name: pre-commit-run
+
+on: [pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+
+    - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+      continue-on-error: true
+
+    - run: git diff HEAD > format_patch.txt
+
+    - run: if [ "$(cat format_patch.txt)" == "" ] ; then rm format_patch.txt ; else cat format_patch.txt; fi
+
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      id: upload-artf
+      if: ${{ hashFiles('format_patch.txt') != '' }}
+      with:
+        name: format patch
+        path: format_patch.txt
+
+    - if: ${{ hashFiles('format_patch.txt') != '' }}
+      run: |
+        echo "Your PR updated files that did not respect package formatting settings." >> format_patch_message.txt
+        echo "Please apply the patch given below. Alternatively you can download a patch file [here](${{ steps.upload-artf.outputs.artifact-url }})." >> format_patch_message.txt
+        echo "<details>" >> format_patch_message.txt
+        echo "<summary>Patch</summary>" >> format_patch_message.txt
+        echo "" >> format_patch_message.txt
+        echo "\`\`\`diff" >> format_patch_message.txt
+        cat format_patch.txt >> format_patch_message.txt
+        echo "\`\`\`" >> format_patch_message.txt
+        echo "</details>" >> format_patch_message.txt
+        echo "" >> format_patch_message.txt
+        echo "More details about our use of clang-format and other tools can be found in the [wiki](https://github.com/trilinos/Trilinos/wiki/Clang\%E2\%80\%90format)." >> format_patch_message.txt
+
+    - name: Save PR number
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+      run: |
+        echo $PR_NUMBER > pr_number
+
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      id: upload-artf-msg
+      if: ${{ hashFiles('format_patch_message.txt') != '' }}
+      with:
+        name: format_patch_message
+        path: |
+          format_patch_message.txt
+          pr_number
+
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      if: ${{ hashFiles('format_patch.txt') != '' }}
+      with:
+        script: |
+          core.setFailed('Your PR updated files that did not respect package formatting settings. Please download and apply the formatting patch! It is located at the bottom of the summary tab for this workflow and at this link: ${{ steps.upload-artf.outputs.artifact-url }}')

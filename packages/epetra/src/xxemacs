@@ -1,2 +1,0 @@
-#!/bin/bash
-xemacs Epetra_$1.h Epetra_$1.cpp

@@ -35,7 +35,6 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 #include <MueLu_Level.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MatrixLoad.hpp>
@@ -83,6 +82,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   clp.setOption("solver", &solveType, "solve type: (none | belos)");
   std::string belosType = "cg";
   clp.setOption("belosType", &belosType, "belos solver type: (Pseudoblock CG | Block CG | Pseudoblock GMRES | Block GMRES | ...) see BelosSolverFactory.hpp for exhaustive list of solvers");
+  bool computeCondEst = false;
+  clp.setOption("condEst", "noCondEst", &computeCondEst, "compute condition number estimate (currently only available for Pseudoblock CG)");
+  bool enforceBoundaryConditionsOnInitialGuess = true;
+  clp.setOption("enforceBCs", "noEnforceBCs", &enforceBoundaryConditionsOnInitialGuess, "enforce Dirichlet boundary condition on initial guess");
   double tol = 1e-12;
   clp.setOption("tol", &tol, "solver convergence tolerance");
   bool binaryFormat = false;
@@ -105,8 +108,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   clp.setOption("coordsmap", &coordMapFile, "coordinates map data file");
   std::string nullFile;
   clp.setOption("nullspace", &nullFile, "nullspace data file");
+  std::string blockNumberFile;
+  clp.setOption("blocknumber", &blockNumberFile, "block number data file");
   std::string materialFile;
   clp.setOption("material", &materialFile, "material data file");
+  std::string massFile;
+  clp.setOption("mass", &massFile, "mass matrix data file");
   int maxIts = 200;
   clp.setOption("its", &maxIts, "maximum number of solver iterations");
   int numVectors = 1;
@@ -117,6 +124,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   clp.setOption("solve-preconditioned", "no-solve-preconditioned", &solvePreconditioned, "use MueLu preconditioner in solve");
   int cacheSize = 0;
   clp.setOption("cachesize", &cacheSize, "cache size (in KB)");
+  bool performSacrifice = Node::is_gpu;
+  clp.setOption("sacrificial-solve", "no-sacrificial-solve", &performSacrifice, "Warm up the solver using a sacrificial solve");
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -168,10 +177,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<RealValuedMultiVector> coordinates;
   RCP<MultiVector> nullspace;
   RCP<MultiVector> material;
+  RCP<LOVector> blocknumber;
+  RCP<Matrix> mass;
   RCP<MultiVector> X, B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, massFile, map, A, coordinates, nullspace, material, blocknumber, mass, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
   comm->barrier();
   tm = Teuchos::null;
   out << galeriStream.str();
@@ -179,7 +190,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // =========================================================================
   // Preconditioner construction
   // =========================================================================
-  bool useML = paramList.isParameter("use external multigrid package") && (paramList.get<std::string>("use external multigrid package") == "ml");
   out << "*********** MueLu ParameterList ***********" << std::endl;
   out << paramList;
   out << "*******************************************" << std::endl;
@@ -189,7 +199,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-    PreconditionerSetup(A, coordinates, nullspace, material, paramList, false, false, useML, false, 0, H, Prec);
+    PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mass, paramList, false, false, false, 0, H, Prec, out);
     comm->barrier();
     tm = Teuchos::null;
   }
@@ -199,7 +209,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // =========================================================================
   {
     comm->barrier();
-    SystemSolve(A, X, B, H, Prec, out, solveType, belosType, false, false, useML, cacheSize, 0, scaleResidualHist, solvePreconditioned, maxIts, tol);
+    SystemSolve(A, X, B, H, Prec, out, solveType, belosType, false, false, cacheSize, 0, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrifice);
     comm->barrier();
   }
 

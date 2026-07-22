@@ -67,7 +67,6 @@ namespace {
       //+ The value of the field at each node is 0.0 at time 0.0,
       //+ 1.0 at time 1.0, and 2.0 at time 2.0
       stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.use_simple_fields();
 
       const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
       size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -107,7 +106,6 @@ namespace {
       //+ requested for input from the database field "disp" which
       //+ does not exist.
       stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.use_simple_fields();
       size_t index = stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
       stkIo.set_active_mesh(index);
       stkIo.create_input_mesh();
@@ -146,11 +144,13 @@ namespace {
       EXPECT_EQ("disp", missing_fields[1].db_name());
       EXPECT_EQ("displacement_STKFS_N", missing_fields[1].field()->name());
 
+      auto temperatureData = temperature.data();
+
       // The value of the "temperature" field at all nodes should be 2.0
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
-        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-          double *fieldDataForNode = stk::mesh::field_data(temperature, node);
-          EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
+        [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+          auto fieldDataForNode = temperatureData.entity_values(node);
+          EXPECT_DOUBLE_EQ(2.0, fieldDataForNode());
         });
       //-END      
     }

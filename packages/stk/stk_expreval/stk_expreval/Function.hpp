@@ -55,6 +55,7 @@
 #include <cmath>
 #include <ctime>
 #include <iostream>
+#include <limits>
 
 namespace stk {
 namespace expreval {
@@ -100,9 +101,11 @@ enum class FunctionType {
   UNIT_STEP,
   CYCLOIDAL_RAMP,
   COS_RAMP,
+  LINEAR_RAMP,
   HAVERSINE_PULSE,
   POINT2D,
   POINT3D,
+  RELATIVE_ERROR,
 
   EXPONENTIAL_PDF,
   LOG_UNIFORM_PDF,
@@ -110,15 +113,12 @@ enum class FunctionType {
   WEIBULL_PDF,
   GAMMA_PDF,
 
-  RAND,
-  SRAND,
-  RANDOM,
   TS_RANDOM,
   TS_NORMAL,
-  TIME,
 
   UNDEFINED
 };
+
 
 KOKKOS_INLINE_FUNCTION
 double cycloidal_ramp(double t, double t1, double t2)
@@ -168,7 +168,7 @@ double real_rand()
 /// Sets x as the random number seed. Interface to the srand function provided by the
 /// ANSI C math library.
 KOKKOS_INLINE_FUNCTION
-double real_srand(double x)
+double real_srand([[maybe_unused]]double x)
 {
   KOKKOS_IF_ON_HOST((
     std::srand(static_cast<int>(x));
@@ -202,7 +202,7 @@ extern int sRandomRangeLowValue;
 
 /// Sets x as the "seed" for the pseudo-random number generator.
 KOKKOS_INLINE_FUNCTION
-void random_seed(double x)
+void random_seed([[maybe_unused]]double x)
 {
   KOKKOS_IF_ON_HOST((
     int y = std::hash<double>{}(x);
@@ -243,7 +243,7 @@ double random0()
 
 /// Non-platform specific (pseudo) random number generator.
 KOKKOS_INLINE_FUNCTION
-double random1(double seed)
+double random1([[maybe_unused]]double seed)
 {
   KOKKOS_IF_ON_HOST((
     random_seed(seed);
@@ -271,6 +271,8 @@ double time_space_random(double t, double x, double y, double z)
   return seeded_pseudo_random(seed, low, high);
 }
 
+inline constexpr double minDouble = std::numeric_limits<double>::min();
+
 KOKKOS_INLINE_FUNCTION
 double time_space_normal(double t, double x, double y, double z, double mu, double sigma, double minR, double maxR)
 {
@@ -283,12 +285,10 @@ double time_space_normal(double t, double x, double y, double z, double mu, doub
   int low = 0;
   int high = 0;
 
-  static const double epsilon = DBL_MIN;
-
   // Box-Muller transformation from two uniform random numbers
   // to a gaussian distribution
-  double u1 = std::fmax(epsilon, seeded_pseudo_random(seed, low, high));
-  double u2 = std::fmax(epsilon, seeded_pseudo_random(seed, low, high));
+  double u1 = std::fmax(minDouble, seeded_pseudo_random(seed, low, high));
+  double u2 = std::fmax(minDouble, seeded_pseudo_random(seed, low, high));
 
   double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
 
@@ -373,6 +373,20 @@ double cosine_ramp3(double t, double t1, double t2)
 }
 
 KOKKOS_INLINE_FUNCTION
+double linear_ramp3(double t, double t1, double t2)
+{
+  if (t < t1) {
+    return 0.0;
+  }
+  else if (t < t2) {
+    return (t - t1)/(t2 - t1);
+  }
+  else {
+    return 1.0;
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
 double haversine_pulse(double t, double t1, double t2)
 {
   if (t < t1) {
@@ -398,6 +412,23 @@ double point_3(double x, double y, double z, double r, double w)
 {
   const double ri = std::sqrt(x*x + y*y + z*z);
   return 1.0 - cosine_ramp3(ri, r-0.5*w, r+0.5*w);
+}
+
+KOKKOS_INLINE_FUNCTION
+double relative_error3(double a, double b, double floor)
+{
+  double denom = std::fmax(std::fabs(a), std::fabs(b));
+  if (denom < floor) {
+    return 0.0;
+  } else {
+    return (b - a) / denom;
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+double relative_error2(double a, double b)
+{
+  return relative_error3(a, b, 1.0e-16);
 }
 
 KOKKOS_INLINE_FUNCTION

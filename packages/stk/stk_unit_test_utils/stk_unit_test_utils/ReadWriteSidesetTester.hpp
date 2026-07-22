@@ -40,8 +40,6 @@
 #include <stk_io/InputFile.hpp>                      // for InputFile
 #include <stk_io/StkMeshIoBroker.hpp>                // for StkMeshIoBroker, etc
 #include <stk_mesh/base/BulkData.hpp>                // for BulkData
-#include <stk_mesh/base/MetaData.hpp>                // for BulkData
-#include <stk_mesh/base/Part.hpp>                // for BulkData
 #include <stk_mesh/base/SideSetEntry.hpp>            // for SideSet, etc
 #include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
 #include <string>                                    // for string
@@ -51,7 +49,6 @@
 #include "Ioss_SideBlock.h"                          // for SideBlock
 #include "Ioss_SideSet.h"                            // for SideSet
 #include "mpi.h"
-#include "stk_io/IossBridge.hpp"                     // for include_entity
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_unit_test_utils/FaceTestingUtils.hpp"
@@ -95,62 +92,12 @@ struct ElemIdSideLess {
       else
           return false;
   }
+  inline ElemIdSideLess() = default;
+  inline ElemIdSideLess(const ElemIdSideLess&) = default;
   inline ElemIdSideLess& operator=(const ElemIdSideLess& rhs);
 };
 
 enum ReadMode { READ_SERIAL_AND_DECOMPOSE, READ_ALREADY_DECOMPOSED };
-
-class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
-{
-public:
-    StkMeshIoBrokerTester() {}
-
-    virtual void write_output_mesh(size_t output_file_index)
-    {
-      m_outputFiles[output_file_index]->write_output_mesh(bulk_data(), attributeFieldOrderingByPartOrdinal);
-    }
-};
-
-class BulkDataTester : public stk::mesh::BulkData
-{
-public:
-    BulkDataTester(std::shared_ptr<stk::mesh::MetaData> mesh_meta_data, stk::ParallelMachine parallel)
-      : stk::mesh::BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::AUTO_AURA)
-    { }
-};
-
-stk::mesh::SideSet* get_stk_side_set(stk::mesh::BulkData &bulk, const ElemIdSideVector &ss);
-SideSetData get_stk_side_set_data(stk::mesh::BulkData &bulk, const SideSetIdAndElemIdSidesVector &ssData);
-
-void write_exo_file(BulkDataTester &bulkData, const std::string &filename);
-void read_exo_file( stk::mesh::BulkData &bulkData, std::string filename, ReadMode read_mode);
-
-void load_mesh_and_fill_sideset_data(StkMeshIoBrokerTester &stkIo);
-void setup_io_broker_for_read(stk::io::StkMeshIoBroker &stkIo, stk::mesh::BulkData &bulkData, std::string filename, ReadMode readMode);
-
-void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& inputFileName, const std::string& outputFileName);
-
-namespace simple_fields {
-
-void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& inputFileName, const std::string& outputFileName);
-
-} // namespace simple_fields
-
-void compare_sidesets(const std::string& inputFileName,
-                      BulkDataTester &bulk1,
-                      BulkDataTester &bulk2);
-
-void compare_sidesets(const std::string& inputFileName,
-                      stk::mesh::BulkData &bulk,
-                      const SideSetIdAndElemIdSidesVector &expected);
-
-void compare_sidesets(const std::string& input_file_name,
-                      stk::mesh::BulkData &bulk,
-                      const SideSetIdAndElemIdSidesVector &sideset,
-                      const SideSetIdAndElemIdSidesVector &expected);
-
-
-namespace simple_fields {
 
 class StkMeshIoBrokerTester : public stk::io::StkMeshIoBroker
 {
@@ -167,7 +114,7 @@ class BulkDataTester : public stk::mesh::BulkData
 {
 public:
   BulkDataTester(stk::mesh::MetaData & mesh_meta_data, stk::ParallelMachine parallel)
-    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), parallel, stk::mesh::BulkData::AUTO_AURA)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}), parallel, stk::mesh::BulkData::AUTO_AURA)
   {
   }
 };
@@ -183,7 +130,19 @@ void setup_io_broker_for_read(stk::io::StkMeshIoBroker &stkIo, stk::mesh::BulkDa
 
 void test_reading_writing_sideset_from_file(stk::ParallelMachine comm, const std::string& inputFileName, const std::string& outputFileName);
 
-} // namespace simple_fields
+void compare_sidesets(const std::string& inputFileName,
+                      BulkDataTester &bulk1,
+                      BulkDataTester &bulk2);
+
+void compare_sidesets(const std::string& inputFileName,
+                      stk::mesh::BulkData &bulk,
+                      const SideSetIdAndElemIdSidesVector &expected);
+
+void compare_sidesets(const std::string& input_file_name,
+                      stk::mesh::BulkData &bulk,
+                      const SideSetIdAndElemIdSidesVector &sideset,
+                      const SideSetIdAndElemIdSidesVector &expected);
+
 
 }
 }

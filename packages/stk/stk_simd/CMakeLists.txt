@@ -1,10 +1,8 @@
-
 STK_SUBPACKAGE(Simd)
 
-ADD_SUBDIRECTORY(stk_math)
+message("STKSimd")
 
 ADD_SUBDIRECTORY(stk_simd)
-
 ADD_SUBDIRECTORY(stk_simd_view)
 
 STK_SUBPACKAGE_POSTPROCESS()

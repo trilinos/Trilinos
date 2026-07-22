@@ -4,7 +4,7 @@
 
 # To be safe, define your minimum CMake version.  This may be newer than the
 # min required by TriBITS.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.23.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.27.0 FATAL_ERROR)
 
 # Must set the project name as a variable at very beginning before including anything else
 # We set the project name in a separate file so CTest scripts can use it.
@@ -56,31 +56,6 @@ IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
 
-set(deprecated_packages Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris PyTrilinos ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
-set(enabled_deprecated_packages "")
-FOREACH(package ${deprecated_packages})
-  IF(Trilinos_ENABLE_${package})
-    set(enabled_deprecated_packages ${package} ${enabled_deprecated_packages})
-  ENDIF()
-ENDFOREACH()
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/CollectGitInfo.cmake)
 
-IF(enabled_deprecated_packages)
-  message("********************************************************************")
-  message("********  WARNING WARNING WARNING WARNING WARNING WARNING  *********")
-  message("********************************************************************")
-  message("* Several Trilinos packages are scheduled for deprecation in 2025.")
-  message("* The following deprecated packages are enabled (either explicitly")
-  message("* or implicitly due to a dependency)")
-  message("*")
-  string(REPLACE ";" "\n*    " p "${enabled_deprecated_packages}")
-  message("*    ${p}")
-  message("*")
-  message("********************************************************************")
-  message("")
-  message(WARNING "Deprecated packages that are enabled: ${enabled_deprecated_packages}")
-  IF(Trilinos_HIDE_DEPRECATED_CODE)
-    message(FATAL_ERROR "Trilinos cannot be built with deprecated code hidden if any deprecated packages are enabled!")
-  ENDIF()
-ENDIF()
-
-message(STATUS "If publishing results using Trilinos, please cite us: https://trilinos.github.io/cite.html")
+message(STATUS "If publishing results using Trilinos, please cite us: https://trilinos.github.io/about.html#citing-trilinos")

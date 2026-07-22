@@ -46,7 +46,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/Field.hpp>
 
 namespace stk {
@@ -76,28 +75,20 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
   BucketVector const& buckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, local);
 
   std::vector<double> elem_node_coords;
+  auto coordsData = coord_field->data();
 
-  for(size_t ib=0; ib<buckets.size(); ++ib) {
-    const Bucket& b = *buckets[ib];
-    const size_t num_nodes = b.topology().num_nodes();
+  for (stk::mesh::Bucket* elemBucket : buckets) {
+    const size_t num_nodes = elemBucket->topology().num_nodes();
     const size_t len = num_nodes*spatial_dim;
     if (elem_node_coords.size() != len) elem_node_coords.resize(len);
 
-    for(size_t i=0; i<b.size(); ++i) {
-
-      //here's the gather:
-
-      Entity const *node_rel_itr  = b.begin_nodes(i);
-      Entity const *node_rels_end = b.end_nodes(i);
-
+    for (unsigned elemOffset = 0; elemOffset < elemBucket->size(); ++elemOffset) {
       unsigned offset = 0;
-      for(; node_rel_itr != node_rels_end; ++node_rel_itr)
-      {
-        Entity node = *node_rel_itr;
-        double* node_coords = stk::mesh::field_data(*coord_field, node);
-        elem_node_coords[offset++] = node_coords[0];
-        elem_node_coords[offset++] = node_coords[1];
-        elem_node_coords[offset++] = node_coords[2];
+      for (stk::mesh::Entity node : elemBucket->get_nodes(elemOffset)) {
+        auto coordsValues = coordsData.entity_values(node);
+        elem_node_coords[offset++] = coordsValues(0_comp);
+        elem_node_coords[offset++] = coordsValues(1_comp);
+        elem_node_coords[offset++] = coordsValues(2_comp);
       }
 
       stk::performance_tests::calculate_centroid_3d(num_nodes, &elem_node_coords[0], &elem_centroid[0]);

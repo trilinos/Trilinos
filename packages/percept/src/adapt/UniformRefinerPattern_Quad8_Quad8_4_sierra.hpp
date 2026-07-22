@@ -53,7 +53,7 @@
         if (m_edge_breaker) delete m_edge_breaker;
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
       {
         EXCEPTWATCH;
 #if EDGE_BREAKER_Q8_Q8
@@ -75,8 +75,8 @@
           }
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(2);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
@@ -84,13 +84,13 @@
         needed_entities[1] = NeededEntityType( (m_eMesh.get_spatial_dim() == 2 ? stk::topology::ELEMENT_RANK : m_eMesh.face_rank()), 9u);
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 4; }
+      virtual unsigned getNumNewElemPerElem() override { return 4; }
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         genericRefine_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool, ft_element_pool, 

@@ -65,7 +65,7 @@
 
     <ParameterList name="Assembly">
         <Parameter name="Field Order" type="string" value="blocked: T0_TEMPERATURE - T1_TEMPERATURE T2_TEMPERATURE - T3_TEMPERATURE - T4_TEMPERATURE"/>
-        <Parameter name="Workset Size" type="int" value="1"/>
+        <Parameter name="Workset Size" type="int" value="75"/>
         <Parameter name="Use Tpetra" type="bool" value="true"/>
     </ParameterList>
 
@@ -389,18 +389,6 @@
           <ParameterList name="Stratimikos">
             <Parameter name="Linear Solver Type" type="string" value="Belos"/>
             <ParameterList name="Linear Solver Types">
-              <ParameterList name="AztecOO">
-                <ParameterList name="Forward Solve">
-                  <ParameterList name="AztecOO Settings">
-                    <Parameter name="Aztec Solver" type="string" value="GMRES"/>
-                    <Parameter name="Convergence Test" type="string" value="r0"/>
-                    <Parameter name="Size of Krylov Subspace" type="int" value="200"/>
-                    <Parameter name="Output Frequency" type="int" value="10"/>
-                  </ParameterList>
-                  <Parameter name="Max Iterations" type="int" value="200"/>
-                  <Parameter name="Tolerance" type="double" value="1e-5"/>
-                </ParameterList>
-              </ParameterList>
               <ParameterList name="Belos">
                 <Parameter name="Solver Type" type="string" value="Block GMRES"/>
                 <ParameterList name="Solver Types">
@@ -421,12 +409,22 @@
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-            <Parameter name="Preconditioner Type" type="string" value="None"/>
+            <Parameter name="Preconditioner Type" type="string" value="Teko"/>
             <ParameterList name="Preconditioner Types">
-              <ParameterList name="Ifpack">
+              <ParameterList name="Teko">
+                <Parameter name="Inverse Type" type="string" value="My Block Diagonal Prec"/>
+                <Parameter name="Write Block Operator" type="bool" value="false"/>
+                <ParameterList name="Inverse Factory Library">
+                  <ParameterList name="My Block Diagonal Prec">
+                    <Parameter name="Type" type="string" value="Block Jacobi"/>
+                    <Parameter name="Inverse Type" type="string" value="Ifpack2"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="Ifpack2">
                 <Parameter name="Overlap" type="int" value="1"/>
-                <Parameter name="Prec Type" type="string" value="ILU"/>
-                <ParameterList name="Ifpack Settings">
+                <Parameter name="Prec Type" type="string" value="ILUT"/>
+                <ParameterList name="Ifpack2 Settings">
                   <Parameter name="fact: drop tolerance" type="double" value="0"/>
                   <Parameter name="fact: ilut level-of-fill" type="double" value="1"/>
                   <Parameter name="fact: level-of-fill" type="int" value="1"/>

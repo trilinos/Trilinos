@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #pragma once
@@ -60,22 +26,22 @@
 
            Will allocate new memory of a clone of x *if needed* and return 
            a pointer to the clone. A new clone is considered to be needed 
-           only if these is not a previously allocated compatible vector 
+           only if these is not a previously allocated compatible std::vector 
            stored in the VectorWorkspace. 
 
            Compatibility is determined by derived type (typeid::hash_code)
-           and vector dimension. Together these form a VectorKey. 
-           When cloning a vector inside a member function, VectorWorkspace 
+           and std::vector dimension. Together these form a VectorKey. 
+           When cloning a std::vector inside a member function, VectorWorkspace 
            will identify it's VectorKey type. If such a type exists in the
            database, with will then refer to the associated VectorStack that
            is specific to the VectorKey type. 
 
            The VectorStack will be searched for the first available dynamically
-           allocated vector which has no external references to it and return
-           a pointer to it. If no such vector exists, a new one will be 
+           allocated std::vector which has no external references to it and return
+           a pointer to it. If no such std::vector exists, a new one will be 
            cloned and added to the stack. When the local pointers to the
            VectorStack elements go out of scope at the end of the member
-           function, the reference counts are decremented and the vectors 
+           function, the reference counts are decremented and the std::vectors 
            become available for use again. 
 
            NOTE: Stored clones will have a reference count of 2 when there
@@ -94,14 +60,11 @@ namespace ROL {
 
 namespace details {
 
-using namespace std;
-
-
 template<typename Real>
 class VectorWorkspace {
 
   using V = ROL::Vector<Real>;
-  using size_type = typename vector<Real>::size_type;
+  using size_type = typename std::vector<Real>::size_type;
 
 private:
 
@@ -117,10 +80,10 @@ private:
     VectorKey( const Ptr<V>& x ) : 
       VectorKey( *x ) {}
 
-    static string to_string( const VectorKey& key ) {
-      stringstream ss;
-      ss << "VectorKey(" << hex << key.hash_code << ","
-                         << dec << key.dimension << ")";
+    static std::string to_string( const VectorKey& key ) {
+      std::stringstream ss;
+      ss << "VectorKey(" << std::hex << key.hash_code << ","
+                         << std::dec << key.dimension << ")";
       return ss.str();
     }
 
@@ -141,7 +104,7 @@ private:
   struct VectorStack {
   
     friend class VectorWorkspace<Real>;
-    vector<Ptr<V>> vectors_;
+    std::vector<Ptr<V>> vectors_;
     VectorKey key_;
 
     VectorStack( const V& x ) : vectors_( 1, x.clone() ),
@@ -163,37 +126,37 @@ private:
     Ptr<V> clone( const V& x ) {
       VectorKey x_key(x);
       
-      ROL_TEST_FOR_EXCEPTION( key_.hash_code != x_key.hash_code, logic_error,
-        "VectorWorkspace::VectorStack tried to clone a vector of type "     <<
-        hex << key_.hash_code << ", but it can only clone vectors of type " <<
-        hex << x_key.hash_code );
+      ROL_TEST_FOR_EXCEPTION( key_.hash_code != x_key.hash_code, std::logic_error,
+        "VectorWorkspace::VectorStack tried to clone a std::vector of type "     <<
+        std::hex << key_.hash_code << ", but it can only clone std::vectors of type " <<
+        std::hex << x_key.hash_code );
 
-      ROL_TEST_FOR_EXCEPTION( key_.dimension != x_key.dimension, logic_error, 
-        "VectorWorkspace::VectorStack tried to clone a vector of dimension "     <<
-        hex << key_.dimension << ", but it can only clone vectors of dimension " <<
-        hex << x_key.dimension );
+      ROL_TEST_FOR_EXCEPTION( key_.dimension != x_key.dimension, std::logic_error, 
+        "VectorWorkspace::VectorStack tried to clone a std::vector of dimension "     <<
+        std::hex << key_.dimension << ", but it can only clone std::vectors of dimension " <<
+        std::hex << x_key.dimension );
 
-      for( auto e : vectors_ ) { // Return first unreferenced vector
-        if( getCount(e) <= 2 ) { // Storing pointers in vector increments count  
+      for( auto e : vectors_ ) { // Return first unreferenced std::vector
+        if( getCount(e) <= 2 ) { // Storing pointers in std::vector increments count  
           return e;
         }
       }   
-      // If no unreferenced vectors exist, add a new one
+      // If no unreferenced std::vectors exist, add a new one
       auto v = x.clone();
       vectors_.push_back( v );
       return v;
     }
 
     // For testing purposes
-    vector<size_type> getRefCounts( void ) const {
-      vector<size_type> counts;
+    std::vector<size_type> getRefCounts( void ) const {
+      std::vector<size_type> counts;
       for( auto e: vectors_ ) counts.push_back( getCount(e) );
       return counts;
     }
 
   }; // VectorStack
 
-  map<VectorKey,Ptr<VectorStack>> workspace_;
+  std::map<VectorKey,Ptr<VectorStack>> workspace_;
     
 public:
 
@@ -207,7 +170,7 @@ public:
 
     if( key_count == 0 ) { // New key
       vstack = makePtr<VectorStack>(x);
-      workspace_.insert( make_pair(key,vstack) );
+      workspace_.insert( std::make_pair(key,vstack) );
     }
     else vstack = workspace_[key];
 
@@ -225,18 +188,18 @@ public:
 
   Ptr<V> copy( const Ptr<const V>& x ) { return copy(*x); }
   
-  void status( ostream& os ) const {
-    os << "\n\n" << string(80,'-') << std::endl;
+  void status( std::ostream& os ) const {
+    os << "\n\n" << std::string(80,'-') << std::endl;
     os << "VectorWorkspace contains the following VectorStack(hash_code,dim) entries:\n\n";
     for( auto entry : workspace_ ) {
-      os << "  VectorStack(" << hex << entry.first.hash_code << ","
-                               << dec << entry.first.dimension << ")";
+      os << "  VectorStack("   << std::hex << entry.first.hash_code << ","
+                               << std::dec << entry.first.dimension << ")";
       os << "\n  Reference Counts per element" << std::endl;
       for( auto e : entry.second->vectors_ ) {
         os << "        " << getCount( e ) << std::endl;
       }
     }
-    os << string(80,'-') << std::endl;
+    os << std::string(80,'-') << std::endl;
   }
 
 

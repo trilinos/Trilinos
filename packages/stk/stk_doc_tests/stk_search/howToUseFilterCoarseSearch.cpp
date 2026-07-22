@@ -32,14 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include <gtest/gtest.h>
-#include "searchMockMesh.hpp"
+#include "stk_unit_test_utils/MockSearchMesh.hpp"
 
 namespace doc_test {
 
 //BEGINfilter_coarse_search
 TEST(StkSearchHowTo, useFilterCoarseSearch)
 {
-  using Relation = std::pair<SinglePointMesh::EntityProc, Hex8SourceMesh::EntityProc>;
+  using Relation = std::pair<stk::unit_test_util::SinglePointMesh::EntityProc, stk::unit_test_util::Hex8SendMesh::EntityProc>;
   using RelationVec = std::vector<Relation>;
 
   MPI_Comm communicator = MPI_COMM_WORLD;
@@ -53,7 +53,6 @@ TEST(StkSearchHowTo, useFilterCoarseSearch)
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> mesh = builder.create();
   stk::mesh::MetaData& meta = mesh->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::fill_mesh(meshSpec, *mesh);
 
   // Point in element 1
@@ -63,19 +62,19 @@ TEST(StkSearchHowTo, useFilterCoarseSearch)
   stk::mesh::EntityKey expectedSendKey(stk::topology::ELEM_RANK, 1u);
 
   // Create recv mesh
-  auto recvMesh = std::make_shared<SinglePointMesh>(communicator, x, y, z, parametricTolerance, geometricTolerance);
+  auto recvMesh = std::make_shared<stk::unit_test_util::SinglePointMesh>(communicator, x, y, z, parametricTolerance, geometricTolerance);
 
   // Create send mesh
   stk::mesh::Part* part = meta.get_part("block_1");
   STK_ThrowRequireMsg(nullptr != part, "Error: block_1 does not exist");
   stk::mesh::PartVector parts{part};
-  auto sendMesh = std::make_shared<Hex8SourceMesh>(*mesh, parts, mesh->parallel(), parametricTolerance);
+  auto sendMesh = std::make_shared<stk::unit_test_util::Hex8SendMesh>(*mesh, parts, mesh->parallel(), parametricTolerance);
 
   RelationVec relationVec;
 
   // Get single recv point
-  SinglePointMesh::EntityKey expectedRecvKey(1);
-  SinglePointMesh::EntityProc rangeEntry(expectedRecvKey, 0);
+  stk::unit_test_util::SinglePointMesh::EntityKey expectedRecvKey(1);
+  stk::unit_test_util::SinglePointMesh::EntityProc rangeEntry(expectedRecvKey, 0);
 
   // Load all elements as coarse search candidates
   stk::mesh::BucketVector const& buckets = mesh->get_buckets(stk::topology::ELEM_RANK, meta.universal_part());
@@ -84,7 +83,7 @@ TEST(StkSearchHowTo, useFilterCoarseSearch)
 
     for(auto elem : b) {
       stk::mesh::EntityKey domainKey = mesh->entity_key(elem);
-      Hex8SourceMesh::EntityProc domainEntry(domainKey, 0);
+      stk::unit_test_util::Hex8SendMesh::EntityProc domainEntry(domainKey, 0);
 
       relationVec.emplace_back(rangeEntry, domainEntry);
     }
@@ -100,14 +99,14 @@ TEST(StkSearchHowTo, useFilterCoarseSearch)
   stk::search::FilterCoarseSearchOptions options(std::cout, extrapolateOption,
                                                  useNearestNodeForClosestBoundingBox,
                                                  useCentroidForGeometricProximity, verbose);
-  stk::search::FilterCoarseSearchResultVector<SinglePointMesh> searchResults;
+  stk::search::FilterCoarseSearchResultVector<stk::unit_test_util::SinglePointMesh> searchResults;
   stk::search::filter_coarse_search("filter", relationVec, *sendMesh, *recvMesh, options, searchResults);
 
   EXPECT_EQ(1u, relationVec.size());
 
   auto relation = relationVec[0];
-  const SinglePointMesh::EntityKey recvEntityKey = relation.first.id();
-  const Hex8SourceMesh::EntityKey sendEntityKey = relation.second.id();
+  const stk::unit_test_util::SinglePointMesh::EntityKey recvEntityKey = relation.first.id();
+  const stk::unit_test_util::Hex8SendMesh::EntityKey sendEntityKey = relation.second.id();
 
   EXPECT_EQ(expectedRecvKey, recvEntityKey);
   EXPECT_EQ(expectedSendKey, sendEntityKey);

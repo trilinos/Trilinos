@@ -21,7 +21,6 @@ TEST(ModificationSummary, testString)
   if (numprocs == 1 )
   {
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     const std::string generatedMeshSpecification = "generated:1x1x3";
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();

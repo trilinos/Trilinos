@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _ZOLTAN2_COORD_PARTITIONMAPPING_HPP_
 #define _ZOLTAN2_COORD_PARTITIONMAPPING_HPP_
@@ -402,11 +410,11 @@ void getCoarsenedPartGraph(
         return *this;
       }
 
-      bool operator>(const part_info & src) {
+      bool operator>(const part_info & src) const {
         return (destination_part > src.destination_part);
       }
 
-      bool operator==(const part_info & src) {
+      bool operator==(const part_info & src) const {
         return (destination_part == src.destination_part);
       }
 
@@ -1508,7 +1516,7 @@ public:
 
     Kokkos::View<part_t*, device_t> initial_selected_coords_output_permutation_pcoords(
       "initial_selected_coords_output_permutation_pcoords", this->no_procs);
-    typename Kokkos::View<part_t*, device_t>::HostMirror
+    typename Kokkos::View<part_t*, device_t>::host_mirror_type
       host_initial_selected_coords_output_permutation_pcoords =
         Kokkos::create_mirror_view(initial_selected_coords_output_permutation_pcoords);
     for(int n = 0; n < this->no_procs; ++n) {
@@ -1589,7 +1597,7 @@ public:
 
     Kokkos::View<part_t*, device_t> initial_selected_coords_output_permutation_tcoords(
       "initial_selected_coords_output_permutation_tcoords", this->no_tasks);
-    typename Kokkos::View<part_t*, device_t>::HostMirror
+    typename Kokkos::View<part_t*, device_t>::host_mirror_type
       host_initial_selected_coords_output_permutation_tcoords =
         Kokkos::create_mirror_view(initial_selected_coords_output_permutation_tcoords);
     for(int n = 0; n < this->no_tasks; ++n) {

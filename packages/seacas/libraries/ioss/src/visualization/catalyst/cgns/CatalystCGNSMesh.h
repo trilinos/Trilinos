@@ -7,12 +7,12 @@
 #ifndef __CATALYST_CGNS_MESH_H
 #define __CATALYST_CGNS_MESH_H
 
+#include "vtkNew.h"
+#include "vtkPartitionedDataSetCollection.h"
 #include <map>
 #include <vector>
 #include <visualization/catalyst/manager/CatalystManager.h>
 #include <visualization/cgns/CatalystCGNSMeshBase.h>
-#include "vtkPartitionedDataSetCollection.h"
-#include "vtkNew.h"
 
 class vtkStructuredGrid;
 
@@ -28,7 +28,7 @@ namespace Iovs_cgns {
 
     ~CatalystCGNSMesh();
 
-    void PerformCoProcessing(std::vector<int> &        error_and_warning_codes,
+    void PerformCoProcessing(std::vector<int>         &error_and_warning_codes,
                              std::vector<std::string> &error_and_warning_messages);
 
     void SetTimeData(double currentTime, int timeStep);
@@ -39,30 +39,29 @@ namespace Iovs_cgns {
 
     void Delete();
 
-    void AddStructuredZoneData(const ZoneData& zoneData);
+    void AddStructuredZoneData(const ZoneData &zoneData);
 
     vtkPartitionedDataSetCollection *getPartitionedDataSetCollection();
 
   private:
-
     CatalystCGNSMesh();
-    CatalystCGNSMesh(const CatalystCGNSMesh &) = delete;
+    CatalystCGNSMesh(const CatalystCGNSMesh &)            = delete;
     CatalystCGNSMesh &operator=(const CatalystCGNSMesh &) = delete;
 
     std::map<int, int> zone_id_to_zone_location_map;
 
     vtkNew<vtkPartitionedDataSetCollection> vpdc;
-    Iovs::CatalystManager *catManager = nullptr;
-    bool                   writeCatalystMesh;
-    std::string            catalystMeshFilePrefix;
-    CatalystPipelineInfo   catalystPipelineInfo;
-    const std::string ASSEMBLY_LABEL = "label";
-    const std::string ASSEMBLY_ROOT_NAME = "IOSS";
-    const std::string ASSEMBLY_STRUCTURED_BLOCKS = "structured_blocks";
-    const int PDS_STRUCTURED_GRID_INDEX = 0;
-    int getStructuredBlocksAssemblyNode();
-    void createPartitionedDataSet(const ZoneData& zoneData, vtkStructuredGrid* sg);
-    vtkStructuredGrid* getStucturedGrid(const ZoneData& zoneData);
+    Iovs::CatalystManager                  *catManager = nullptr;
+    bool                                    writeCatalystMesh;
+    std::string                             catalystMeshFilePrefix;
+    CatalystPipelineInfo                    catalystPipelineInfo;
+    const std::string                       ASSEMBLY_LABEL             = "label";
+    const std::string                       ASSEMBLY_ROOT_NAME         = "IOSS";
+    const std::string                       ASSEMBLY_STRUCTURED_BLOCKS = "structured_blocks";
+    const int                               PDS_STRUCTURED_GRID_INDEX  = 0;
+    int                                     getStructuredBlocksAssemblyNode();
+    void               createPartitionedDataSet(const ZoneData &zoneData, vtkStructuredGrid *sg);
+    vtkStructuredGrid *getStucturedGrid(const ZoneData &zoneData);
   };
 
 } // namespace Iovs_cgns

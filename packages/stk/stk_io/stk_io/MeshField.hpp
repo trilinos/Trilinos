@@ -41,6 +41,7 @@
 #include <string>                   // for string
 #include <vector>                   // for vector
 #include "stk_mesh/base/Types.hpp"  // for EntityRank
+#include "stk_mesh/base/Entity.hpp"
 namespace Ioss { class GroupingEntity; }
 namespace Ioss { class Region; }
 namespace stk { namespace io { class DBStepTimeInterval; } }
@@ -50,6 +51,7 @@ namespace stk { namespace mesh { class Part; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 namespace stk { namespace io { class InputFile; } }
+namespace stk { namespace io { class InputQuery; } }
 
 namespace stk {
 namespace io {
@@ -90,6 +92,7 @@ class MeshField
 public:
 
   friend class InputFile;
+  friend class InputQuery;
 
   // Options:
   // * Frequency:
@@ -163,6 +166,8 @@ public:
 
   bool field_restored() const {return m_fieldRestored;}
   double time_restored() const {return m_timeRestored;}
+
+  void clear_field_parts();
 
 private:
   MeshField();

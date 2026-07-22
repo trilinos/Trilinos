@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_TREE_HPP
 #define SHYLUBASKER_TREE_HPP
 
@@ -13,7 +22,8 @@
 #include <iostream>
 #include <math.h>
 
-using namespace std;
+
+//#define BASKER_TIMER_FINE
 
 namespace BaskerNS
 {
@@ -109,7 +119,7 @@ namespace BaskerNS
     for(Int i =0; i < tree.nblks+1; i++)
     {
       BASKER_ASSERT(num_threads > 0, "tree num_threads");
-      MALLOC_INT_1DARRAY(S[i], num_threads);
+      MALLOC_INT_1DARRAY(S(i), num_threads);
     }
 
     //this will want to be across all threads 
@@ -179,12 +189,12 @@ namespace BaskerNS
 
     if(newnblks < nblks)
     {
-      cout << "Reducing nblks to: " << newnblks << 
-        " in order to fit threads" <<endl;
+      std::cout << "Reducing nblks to: " << newnblks << 
+        " in order to fit threads" << std::endl;
     }
     else if(newnblks > nblks)
     {
-      cout << "Error: need more blocks to fit threads" << endl;
+      std::cout << "Error: need more blocks to fit threads" << std::endl;
       return -1;
     }
 
@@ -326,7 +336,7 @@ namespace BaskerNS
             l, t, lvl_counter ,lvl_idx, tree.nblks);
         #endif
 
-        S[l][t] = tree.lvlset[lvl_idx];
+        S(l)(t) = tree.lvlset[lvl_idx];
         if(lvl_counter >= (pow(tree.nparts,l)-1))
         {
           lvl_idx++;
@@ -347,7 +357,7 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        cout << S[l][t] << " , " ; 
+        cout << S(l)(t) << " , " ; 
       }//end over nhreads
       cout << endl;
     }//end over nlvls
@@ -359,11 +369,11 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        Int s_element = S[l][t];
+        Int s_element = S(l)(t);
         Int row_size = (tree.row_tabs[s_element+1] - 
             tree.row_tabs[s_element]);
-        thread_array[t].iws_size += row_size;
-        thread_array[t].ews_size += row_size;
+        thread_array(t).iws_size += row_size;
+        thread_array(t).ews_size += row_size;
       }//end over threads
     }//end over lvls
     
@@ -437,12 +447,12 @@ namespace BaskerNS
 
     if(newnblks < nblks)
     {
-      cout << "Reducing nblks to: " << newnblks << 
-        " in order to fit threads" <<endl;
+      std::cout << "Reducing nblks to: " << newnblks << 
+        " in order to fit threads" << std::endl;
     }
     else if(newnblks > nblks)
     {
-      cout << "Error: need more blocks to fit threads" << endl;
+      std::cout << "Error: need more blocks to fit threads" << std::endl;
       return -1;
     }
 
@@ -583,7 +593,7 @@ namespace BaskerNS
             l, t, lvl_counter ,lvl_idx, tree.nblks);
         #endif
 
-        S[l][t] = tree.lvlset[lvl_idx];
+        S(l)(t) = tree.lvlset[lvl_idx];
         if(lvl_counter >= (pow(tree.nparts,l)-1))
         {
           lvl_idx++;
@@ -602,7 +612,7 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        cout << S[l][t] << " , " ; 
+        cout << S(l)(t) << " , " ; 
       }//end over nhreads
       cout << endl;
     }//end over nlvls
@@ -615,10 +625,10 @@ namespace BaskerNS
     {
       for(Int t=0; t < num_threads; t++)
       {
-        Int s_element = S[l][t];
+        Int s_element = S(l)(t);
         Int row_size = (tree.row_tabs[s_element+1] - tree.row_tabs[s_element]);
-        thread_array[t].iws_size += row_size;
-        thread_array[t].ews_size += row_size;
+        thread_array(t).iws_size += row_size;
+        thread_array(t).ews_size += row_size;
       }//end over threads
     }//end over lvls
     
@@ -846,11 +856,11 @@ namespace BaskerNS
       #endif
       for(Int j=i; j != -flat.ncol; j=tree.treetab[j])
       {
-        MATRIX_1DARRAY &UMtemp = AVM[j];
-        MATRIX_1DARRAY &LMtemp = ALM[i];
+        MATRIX_1DARRAY &UMtemp = AVM(j);
+        MATRIX_1DARRAY &LMtemp = ALM(i);
 
-        MATRIX_1DARRAY &LUtemp = LU[j];
-        MATRIX_1DARRAY &LLtemp = LL[i];
+        MATRIX_1DARRAY &LUtemp = LU(j);
+        MATRIX_1DARRAY &LLtemp = LL(i);
 
         #ifdef MY_DEBUG
         printf( " AVM(%d)(%d).set_shape(%dx%d)\n",j,U_view_count[j], tree.col_tabs[i+1]-tree.col_tabs[i],tree.col_tabs[j+1]-tree.col_tabs[j] );
@@ -1137,7 +1147,7 @@ namespace BaskerNS
           }
         }
         start_col = BASKER_FALSE;
-      }//over each row        
+      }//over each row
     }//over each colunm
 
   }//end find_2d_convert()
@@ -1165,119 +1175,10 @@ namespace BaskerNS
   }//end clean_2d
 
 
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sfactor_copy()
-  {
-    //Reorder A;
-    //Match order
-    if(match_flag == BASKER_TRUE)
-    {
-      permute_row(A,order_match_array);
-    }
-    sort_matrix(A);
-
-    //BTF order
-    if(btf_flag == BASKER_TRUE)
-    {
-      permute_col(A,order_btf_array);
-      permute_row(A,order_btf_array);
-      break_into_parts(A, btf_nblks, btf_tabs);
-    }
-
-    //ND order
-    if(nd_flag == BASKER_TRUE)
-    {
-      if(btf_tabs_offset != 0)
-      {
-        sort_matrix(BTF_A);
-
-        //Permute the A
-        permute_row(BTF_A, part_tree.permtab);
-        permute_col(BTF_A, part_tree.permtab);
-
-        //Permute the B
-        if(btf_nblks > 1)
-        {
-          permute_row(BTF_B, part_tree.permtab);
-        }
-
-        sort_matrix(BTF_A);
-        if(btf_nblks > 1)
-        {
-          sort_matrix(BTF_B);
-          sort_matrix(BTF_C);
-        }
-      }
-    }
-
-    //AMD
-    if(amd_flag == BASKER_TRUE)
-    {
-      if(btf_tabs_offset != 0)
-      {
-        //Permute A
-        permute_col(BTF_A, order_csym_array);
-        sort_matrix(BTF_A);
-        permute_row(BTF_A, order_csym_array);
-        sort_matrix(BTF_A);
-
-        //Permute B
-        if(btf_nblks > 1)
-        {
-          permute_row(BTF_B, order_csym_array);
-          sort_matrix(BTF_B);
-        }
-      }
-    }
-
-    if(btf_tabs_offset != 0)
-    {
-      //=====Move into 2D ND-Structure====/
-      //Find submatices view shapes
-      clean_2d();
-
-      //matrix_to_views_2D(BTF_A);
-      //Find starting point
-      find_2D_convert(BTF_A);
-
-      //Fill 2D structure
-      #ifdef BASKER_KOKKOS
-      BASKER_BOOL keep_zeros = BASKER_FALSE;
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE, keep_zeros);
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-      Kokkos::fence();
-      #else
-      //Comeback
-      #endif
-    }
-
-    // Initialize C & B blocks
-    {
-      sort_matrix(BTF_C);
-      permute_col(BTF_C, order_c_csym_array);
-      sort_matrix(BTF_C);
-      permute_row(BTF_C, order_c_csym_array);
-      sort_matrix(BTF_C);
-
-      if(btf_tabs_offset != 0)
-      {
-        permute_col(BTF_B, order_c_csym_array);        
-        sort_matrix(BTF_B);
-      }
-    }
-
-    //test
-    //printMTX("A_BTF.mtx", BTF_A);
-
-    return 0;
-  }//sfactor_copy()
-
-
   // NDE: sfactor_copy2 is now only responsible for mapping blocks to 2D blocks
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sfactor_copy2(bool alloc_BTFA, bool copy_BTFA)
+  int Basker<Int,Entry,Exe_Space>::sfactor_copy2(bool doSymbolic, bool alloc_BTFA, bool copy_BTFA)
   {
     //Timers
     #ifdef BASKER_TIMER_FINE
@@ -1301,26 +1202,66 @@ namespace BaskerNS
       #ifdef BASKER_TIMER_FINE 
       double twod_time = 0.0;
       Kokkos::Timer timer_twod;
+      Kokkos::Timer tic_twod;
+      #endif
+      if (doSymbolic) {
+        // clear vals from ALM, AVM - views of views that store the local 2D block CCS reordered matrix info
+        clean_2d();
+
+        //matrix_to_views_2D(BTF_A);
+        //Find starting point
+        find_2D_convert(BTF_A); //prepare CCS 'sizes' of each ALM(i)(j), AVM(i)(j) (nnz, col_idx, )
+
+        // save ptrs
+        for(Int b = 0 ; b < tree.nblks; ++b) {
+          for(Int sb = 0; sb < LL_size(b); ++sb) {
+            for (int j = 0; j <= ALM(b)(sb).ncol; j++) {
+              ALM(b)(sb).dig_ptr(j) = ALM(b)(sb).col_ptr(j);
+            }
+          }
+          for(Int sb = 0; sb < LU_size(b); ++sb) {
+            for (int j = 0; j <= AVM(b)(sb).ncol; j++) {
+              AVM(b)(sb).dig_ptr(j) = AVM(b)(sb).col_ptr(j);
+            }
+          }
+        }
+      } else {
+        // load ptrs
+        for(Int b = 0 ; b < tree.nblks; ++b) {
+          for(Int sb = 0; sb < LL_size(b); ++sb) {
+            for (int j = 0; j <= ALM(b)(sb).ncol; j++) {
+              ALM(b)(sb).col_ptr(j) = ALM(b)(sb).dig_ptr(j);
+            }
+          }
+          for(Int sb = 0; sb < LU_size(b); ++sb) {
+            for (int j = 0; j <= AVM(b)(sb).ncol; j++) {
+              AVM(b)(sb).col_ptr(j) = AVM(b)(sb).dig_ptr(j);
+            }
+          }
+        }
+      }
+      #ifdef BASKER_TIMER_FINE
+      double tic_time = tic_twod.seconds();
+      std::cout << "    > Basker 2D convert time: " << tic_time << std::endl;
+      tic_twod.reset();
       #endif
 
-      clean_2d(); // clear vals from ALM, AVM - views of views that store the local 2D block CCS reordered matrix info
-
-      //matrix_to_views_2D(BTF_A);
-      //Find starting point
-      find_2D_convert(BTF_A); //prepare CCS 'sizes' of each ALM(i)(j), AVM(i)(j) (nnz, col_idx, )
-
       //Fill 2D structure
-      #ifdef BASKER_KOKKOS
       BASKER_BOOL keep_zeros = BASKER_FALSE;
       BASKER_BOOL alloc      = alloc_BTFA; //BASKER_FALSE;
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, alloc, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-      Kokkos::fence();
+      #if 1//def BASKER_PARALLEL_INIT_2D
+       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, alloc, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
+       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
+       Kokkos::fence();
       #else
-      //Comeback
+       for (Int p = 0; p < num_threads; p++) {
+         this->t_init_2DA(p, alloc, keep_zeros);
+       }
       #endif
 
       #ifdef BASKER_TIMER_FINE
+      tic_time = tic_twod.seconds();
+      std::cout << "    > Basker init 2D time: " << tic_time << std::endl;
       tmp_time = timer_twod.seconds();
       twod_time += tmp_time;
       std::cout << "    Basker move into 2D ND reorder time: " << tmp_time << std::endl;
@@ -1337,7 +1278,7 @@ namespace BaskerNS
     double gperm_time = 0.0;
     Kokkos::Timer timer_gperm;
     #endif
-    if((Options.same_pattern == BASKER_TRUE))
+    if(Options.same_pattern == BASKER_TRUE)
     {
       if(same_pattern_flag == BASKER_FALSE)
       {
@@ -1367,7 +1308,6 @@ namespace BaskerNS
     // reset all the time (factor may have failed, and some variables may not be cleared)
     //if(factor_flag == BASKER_TRUE)
     {
-      typedef Kokkos::TeamPolicy<Exe_Space> TeamPolicy;
       kokkos_reset_factor<Int,Entry,Exe_Space> reset_factors(this); //t_reset_ND_factor, BTF; reset LL and LU for factorization factor_notoken step
       Kokkos::parallel_for(TeamPolicy(num_threads,1), reset_factors);
       Kokkos::fence();
@@ -1385,4 +1325,5 @@ namespace BaskerNS
 
 }//end namespace basker
 
+#undef BASKER_TIMER_FINE
 #endif //end ifndefbasker_tree_hpp

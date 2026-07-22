@@ -28,7 +28,6 @@ TEST(ElementGraph, skin_exposed_boundary)
     stk::mesh::MeshBuilder builder(comm);
     builder.set_spatial_dimension(spatialDim);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-    bulkPtr->mesh_meta_data().use_simple_fields();
     stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
     make_2_hex_mesh_with_element1_inactive(*bulkPtr);
     stk::mesh::PartVector skin_parts = get_skin_parts(meta);

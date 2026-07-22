@@ -22,12 +22,12 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_PYR_C1_FEM::Serial<opType>::
+    Basis_HGRAD_PYR_C1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
       const auto eps = epsilon();
@@ -45,93 +45,87 @@ namespace Intrepid2 {
       //be sure that the basis functions are defined when z is very close to 1.
       const value_type z = ( (value_type(1.0) - ztmp) < value_type(eps) ? value_type(1.0 - eps) : ztmp );
 
-      switch (opType) {
-
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const value_type factor = 0.25/(1.0 - z);
 
         // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        output.access(0) = (1.0 - x - z) * (1.0 - y - z) * factor;
-        output.access(1) = (1.0 + x - z) * (1.0 - y - z) * factor;
-        output.access(2) = (1.0 + x - z) * (1.0 + y - z) * factor;
-        output.access(3) = (1.0 - x - z) * (1.0 + y - z) * factor;
-        output.access(4) = z;
-        break;
+        output(0) = (1.0 - x - z) * (1.0 - y - z) * factor;
+        output(1) = (1.0 + x - z) * (1.0 - y - z) * factor;
+        output(2) = (1.0 + x - z) * (1.0 + y - z) * factor;
+        output(3) = (1.0 - x - z) * (1.0 + y - z) * factor;
+        output(4) = z;
       }
-      case OPERATOR_GRAD: {
+      else if constexpr (OpType == OPERATOR_GRAD) {
         const value_type factor  = 0.25/(1.0 - z);
         const value_type factor2 = 4.0 * factor * factor;
 
-        // output.accessValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = (y + z - 1.0) * factor;
-        output.access(0, 1) = (x + z - 1.0) * factor;
-        output.access(0, 2) = x * y * factor2 - 0.25;
+        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+        output(0, 0) = (y + z - 1.0) * factor;
+        output(0, 1) = (x + z - 1.0) * factor;
+        output(0, 2) = x * y * factor2 - 0.25;
 
-        output.access(1, 0) =  (1.0 - y - z) * factor;
-        output.access(1, 1) =  (z - x - 1.0) * factor;
-        output.access(1, 2) =  - x*y * factor2 - 0.25;
+        output(1, 0) =  (1.0 - y - z) * factor;
+        output(1, 1) =  (z - x - 1.0) * factor;
+        output(1, 2) =  - x*y * factor2 - 0.25;
 
-        output.access(2, 0) =  (1.0 + y - z) * factor;
-        output.access(2, 1) =  (1.0 + x - z) * factor;
-        output.access(2, 2) =  x * y * factor2 - 0.25;
+        output(2, 0) =  (1.0 + y - z) * factor;
+        output(2, 1) =  (1.0 + x - z) * factor;
+        output(2, 2) =  x * y * factor2 - 0.25;
 
-        output.access(3, 0) =  (z - y - 1.0) * factor;
-        output.access(3, 1) =  (1.0 - x - z) * factor;
-        output.access(3, 2) =  - x*y * factor2 - 0.25;
+        output(3, 0) =  (z - y - 1.0) * factor;
+        output(3, 1) =  (1.0 - x - z) * factor;
+        output(3, 2) =  - x*y * factor2 - 0.25;
 
-        output.access(4, 0) =  0.0;
-        output.access(4, 1) =  0.0;
-        output.access(4, 2) =  1;
-        break;
+        output(4, 0) =  0.0;
+        output(4, 1) =  0.0;
+        output(4, 2) =  1;
       }
-      case OPERATOR_D2: {
+      else if constexpr (OpType == OPERATOR_D2) {
         const value_type factor  = 0.25/(1.0 - z);
         const value_type factor2 = 4.0 * factor * factor;
         const value_type factor3 = 8.0 * factor * factor2;
 
-        // output.accessValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6)
-        output.access(0, 0) =  0.0;                    // {2, 0, 0}
-        output.access(0, 1) =  factor;          	      // {1, 1, 0}
-        output.access(0, 2) =  y*factor2;              // {1, 0, 1}
-        output.access(0, 3) =  0.0;                    // {0, 2, 0}
-        output.access(0, 4) =  x*factor2;              // {0, 1, 1}
-        output.access(0, 5) =  x*y*factor3;            // {0, 0, 2}
+        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6)
+        output(0, 0) =  0.0;                    // {2, 0, 0}
+        output(0, 1) =  factor;          	      // {1, 1, 0}
+        output(0, 2) =  y*factor2;              // {1, 0, 1}
+        output(0, 3) =  0.0;                    // {0, 2, 0}
+        output(0, 4) =  x*factor2;              // {0, 1, 1}
+        output(0, 5) =  x*y*factor3;            // {0, 0, 2}
 
-        output.access(1, 0) =  0.0;                    // {2, 0, 0}
-        output.access(1, 1) =  -factor;	              // {1, 1, 0}
-        output.access(1, 2) =  -y*factor2; 	      // {1, 0, 1}
-        output.access(1, 3) =  0.0;                    // {0, 2, 0}
-        output.access(1, 4) =  -x*factor2;             // {0, 1, 1}
-        output.access(1, 5) =  -x*y*factor3;           // {0, 0, 2}
+        output(1, 0) =  0.0;                    // {2, 0, 0}
+        output(1, 1) =  -factor;	              // {1, 1, 0}
+        output(1, 2) =  -y*factor2; 	      // {1, 0, 1}
+        output(1, 3) =  0.0;                    // {0, 2, 0}
+        output(1, 4) =  -x*factor2;             // {0, 1, 1}
+        output(1, 5) =  -x*y*factor3;           // {0, 0, 2}
 
-        output.access(2, 0) =  0.0;                    // {2, 0, 0}
-        output.access(2, 1) =  factor;          	      // {1, 1, 0}
-        output.access(2, 2) =  y*factor2;              // {1, 0, 1}
-        output.access(2, 3) =  0.0;                    // {0, 2, 0}
-        output.access(2, 4) =  x*factor2;       	      // {0, 1, 1}
-        output.access(2, 5) =  x*y*factor3;            // {0, 0, 2}
+        output(2, 0) =  0.0;                    // {2, 0, 0}
+        output(2, 1) =  factor;          	      // {1, 1, 0}
+        output(2, 2) =  y*factor2;              // {1, 0, 1}
+        output(2, 3) =  0.0;                    // {0, 2, 0}
+        output(2, 4) =  x*factor2;       	      // {0, 1, 1}
+        output(2, 5) =  x*y*factor3;            // {0, 0, 2}
 
-        output.access(3, 0) =  0.0;                    // {2, 0, 0}
-        output.access(3, 1) =  -factor;	              // {1, 1, 0}
-        output.access(3, 2) =  -y*factor2;             // {1, 0, 1}
-        output.access(3, 3) =  0.0;                    // {0, 2, 0}
-        output.access(3, 4) =  -x*factor2;	      // {0, 1, 1}
-        output.access(3, 5) =  -x*y*factor3;           // {0, 0, 2}
+        output(3, 0) =  0.0;                    // {2, 0, 0}
+        output(3, 1) =  -factor;	              // {1, 1, 0}
+        output(3, 2) =  -y*factor2;             // {1, 0, 1}
+        output(3, 3) =  0.0;                    // {0, 2, 0}
+        output(3, 4) =  -x*factor2;	      // {0, 1, 1}
+        output(3, 5) =  -x*y*factor3;           // {0, 0, 2}
 
-        output.access(4, 0) =  0.0;                    // {2, 0, 0}
-        output.access(4, 1) =  0.0;          	      // {1, 1, 0}
-        output.access(4, 2) =  0.0;          	      // {1, 0, 1}
-        output.access(4, 3) =  0.0;                    // {0, 2, 0}
-        output.access(4, 4) =  0.0;                    // {0, 1, 1}
-        output.access(4, 5) =  0.0;                    // {0, 0, 2}
-        break;
+        output(4, 0) =  0.0;                    // {2, 0, 0}
+        output(4, 1) =  0.0;          	      // {1, 1, 0}
+        output(4, 2) =  0.0;          	      // {1, 0, 1}
+        output(4, 3) =  0.0;                    // {0, 2, 0}
+        output(4, 4) =  0.0;                    // {0, 1, 1}
+        output(4, 5) =  0.0;                    // {0, 0, 2}
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D2,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_D2,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 
@@ -204,12 +198,13 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   Basis_HGRAD_PYR_C1_FEM<DT,OT,PT>::
   Basis_HGRAD_PYR_C1_FEM() {
-    this->basisCardinality_  = 5;
-    this->basisDegree_       = 1;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<5> >() );
-    this->basisType_         = BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+    const ordinal_type spaceDim = 3;
+    this->basisCardinality_     = 5;
+    this->basisDegree_          = 1;
+    this->basisCellTopologyKey_ = shards::Pyramid<5>::key;
+    this->basisType_            = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
     // initialize tags
     {
@@ -243,7 +238,7 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_,spaceDim);
 
     dofCoords(0,0) = -1.0;  dofCoords(0,1) = -1.0;  dofCoords(0,2) =  0.0;
     dofCoords(1,0) =  1.0;  dofCoords(1,1) = -1.0;  dofCoords(1,2) =  0.0;
@@ -255,6 +250,52 @@ namespace Intrepid2 {
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
 
-}
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_PYR_C1_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perThreadSpaceSize = 0;
+  }
 
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_PYR_C1_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const int threadScratchLevel,
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim <= 0) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      (void) threadScratchLevel; //avoid unused variable warning
+
+      const int numPoints = inputPoints.extent(0);
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HGRAD_PYR_C1_FEM::Serial<OPERATOR_VALUE>::getValues( output, input);
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HGRAD_PYR_C1_FEM::Serial<OPERATOR_GRAD>::getValues( output, input);
+          });
+          break;
+        default: {}
+    }
+  }
+  
+}// namespace Intrepid2
 #endif

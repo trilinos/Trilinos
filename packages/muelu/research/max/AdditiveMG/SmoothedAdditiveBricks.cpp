@@ -154,10 +154,6 @@ int main(int argc, char* argv[]) {
   ADR::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, problem_type, keep_boundary, stretchx, stretchy, stretchz);  // manage parameters of the test case
   Xpetra::Parameters xpetraParameters(clp);                                                                                  // manage parameters of xpetra
 
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-    throw std::invalid_argument("This example only supports Tpetra.");
-  }
-
   //
   // Construct the problem
   //
@@ -201,8 +197,8 @@ int main(int argc, char* argv[]) {
   RCP<ADRXpetraProblem> Pr = ADR::Xpetra::BuildProblem<scalar_type, local_ordinal_type, global_ordinal_type, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), xpetraMap, matrixParameters.GetParameterList());
   RCP<Matrix> xpetraA      = Pr->BuildMatrix();
 
-  RCP<crs_matrix_type> A         = MueLuUtilities::Op2NonConstTpetraCrs(xpetraA);
-  RCP<const driver_map_type> map = MueLuUtilities::Map2TpetraMap(*xpetraMap);
+  RCP<crs_matrix_type> A         = toTpetra(xpetraA);
+  RCP<const driver_map_type> map = toTpetra(xpetraMap);
 
   // ===================================================
   // 	Domain Decomposition Preconditioner
@@ -256,8 +252,8 @@ int main(int argc, char* argv[]) {
   if (L->IsAvailable("R"))
     restr = L->template Get<RCP<Xpetra::Matrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>>("R");
 
-  RCP<crs_matrix_type> tpetra_prolong = MueLuUtilities::Op2NonConstTpetraCrs(prolong);
-  RCP<crs_matrix_type> tpetra_restr   = MueLuUtilities::Op2NonConstTpetraCrs(restr);
+  RCP<crs_matrix_type> tpetra_prolong = toTpetra(prolong);
+  RCP<crs_matrix_type> tpetra_restr   = toTpetra(restr);
 
 #include <Teuchos_TimeMonitor.hpp>
   RCP<Teuchos::Time> PbarSetUp = Teuchos::TimeMonitor::getNewCounter("Pbar: SetUp");
@@ -357,7 +353,7 @@ int main(int argc, char* argv[]) {
 
     //=============================================================================================================
     RCP<crs_matrix_type> Pbar = Tpetra::MatrixMatrix::add(1.0, false, *tpetra_prolong, -1.0, false, *BAP);
-    mueluPbar                 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>(Pbar);
+    mueluPbar                 = Xpetra::toXpetra(Pbar);
   }
   PbarSetUp->stop();
 

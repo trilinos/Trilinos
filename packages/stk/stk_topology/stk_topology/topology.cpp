@@ -33,7 +33,7 @@
 // 
 
 #include "stk_topology/topology.hpp"
-#include "stk_util/stk_kokkos_macros.h"  // for STK_FUNCTION
+#include "stk_util/stk_kokkos_macros.h"  // for KOKKOS_FUNCTION
 #include <iomanip>                       // for operator<<, setw
 #include <sstream>                       // for operator<<, ostream, basic_ostream, endl, basic_...
 #include <string>                        // for operator<<, string
@@ -62,59 +62,65 @@ std::string topology::name() const
   return oss.str();
 }
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 const char * topology::char_name() const
 {
   switch (m_value)
   {
-  case INVALID_TOPOLOGY:      return "INVALID_TOPOLOGY";
-  case NODE:                  return "NODE";
-  case LINE_2:                return "LINE_2";
-  case LINE_3:                return "LINE_3";
-  case SHELL_LINE_2:          return "SHELL_LINE_2";
-  case SHELL_LINE_3:          return "SHELL_LINE_3";
-  case TRI_3:                 return "TRIANGLE_3";
-  case TRI_4:                 return "TRIANGLE_4";
-  case TRI_6:                 return "TRIANGLE_6";
-  case QUAD_4:                return "QUADRILATERAL_4";
-  case QUAD_6:                return "QUADRILATERAL_6";
-  case QUAD_8:                return "QUADRILATERAL_8";
-  case QUAD_9:                return "QUADRILATERAL_9";
-  case SHELL_SIDE_BEAM_2:     return "SHELL_SIDE_BEAM_2";
-  case SHELL_SIDE_BEAM_3:     return "SHELL_SIDE_BEAM_3";
-  case PARTICLE:              return "PARTICLE";
-  case LINE_2_1D:             return "LINE_2_1D";
-  case LINE_3_1D:             return "LINE_3_1D";
-  case BEAM_2:                return "BEAM_2";
-  case BEAM_3:                return "BEAM_3";
-  case SPRING_2:              return "SPRING_2";
-  case SPRING_3:              return "SPRING_3";
-  case TRI_3_2D:              return "TRIANGLE_3_2D";
-  case TRI_4_2D:              return "TRIANGLE_4_2D";
-  case TRI_6_2D:              return "TRIANGLE_6_2D";
-  case QUAD_4_2D:             return "QUADRILATERAL_4_2D";
-  case QUAD_8_2D:             return "QUADRILATERAL_8_2D";
-  case QUAD_9_2D:             return "QUADRILATERAL_9_2D";
-  case SHELL_TRI_3:           return "SHELL_TRIANGLE_3";
-  case SHELL_TRI_4:           return "SHELL_TRIANGLE_4";
-  case SHELL_TRI_6:           return "SHELL_TRIANGLE_6";
-  case SHELL_QUAD_4:          return "SHELL_QUADRILATERAL_4";
-  case SHELL_QUAD_8:          return "SHELL_QUADRILATERAL_8";
-  case SHELL_QUAD_9:          return "SHELL_QUADRILATERAL_9";
-  case TET_4:                 return "TETRAHEDRON_4";
-  case TET_8:                 return "TETRAHEDRON_8";
-  case TET_10:                return "TETRAHEDRON_10";
-  case TET_11:                return "TETRAHEDRON_11";
-  case PYRAMID_5:             return "PYRAMID_5";
-  case PYRAMID_13:            return "PYRAMID_13";
-  case PYRAMID_14:            return "PYRAMID_14";
-  case WEDGE_6:               return "WEDGE_6";
-  case WEDGE_12:              return "WEDGE_12";
-  case WEDGE_15:              return "WEDGE_15";
-  case WEDGE_18:              return "WEDGE_18";
-  case HEX_8:                 return "HEXAHEDRON_8";
-  case HEX_20:                return "HEXAHEDRON_20";
-  case HEX_27:                return "HEXAHEDRON_27";
+  case INVALID_TOPOLOGY:             return "INVALID_TOPOLOGY";
+  case NODE:                         return "NODE";
+  case LINE_2:                       return "LINE_2";
+  case LINE_3:                       return "LINE_3";
+  case SHELL_LINE_2:                 return "SHELL_LINE_2";
+  case SHELL_LINE_3:                 return "SHELL_LINE_3";
+  case TRI_3:                        return "TRIANGLE_3";
+  case TRI_4:                        return "TRIANGLE_4";
+  case TRI_6:                        return "TRIANGLE_6";
+  case QUAD_4:                       return "QUADRILATERAL_4";
+  case QUAD_6:                       return "QUADRILATERAL_6";
+  case QUAD_8:                       return "QUADRILATERAL_8";
+  case QUAD_9:                       return "QUADRILATERAL_9";
+  case SHELL_SIDE_BEAM_2:            return "SHELL_SIDE_BEAM_2";
+  case SHELL_SIDE_BEAM_3:            return "SHELL_SIDE_BEAM_3";
+  case PARTICLE:                     return "PARTICLE";
+  case LINE_2_1D:                    return "LINE_2_1D";
+  case LINE_3_1D:                    return "LINE_3_1D";
+  case BEAM_2:                       return "BEAM_2";
+  case BEAM_3:                       return "BEAM_3";
+  case SPRING_2:                     return "SPRING_2";
+  case SPRING_3:                     return "SPRING_3";
+  case TRI_3_2D:                     return "TRIANGLE_3_2D";
+  case TRI_4_2D:                     return "TRIANGLE_4_2D";
+  case TRI_6_2D:                     return "TRIANGLE_6_2D";
+  case QUAD_4_2D:                    return "QUADRILATERAL_4_2D";
+  case QUAD_8_2D:                    return "QUADRILATERAL_8_2D";
+  case QUAD_9_2D:                    return "QUADRILATERAL_9_2D";
+  case SHELL_TRI_3:                  return "SHELL_TRIANGLE_3";
+  case SHELL_TRI_4:                  return "SHELL_TRIANGLE_4";
+  case SHELL_TRI_6:                  return "SHELL_TRIANGLE_6";
+  case SHELL_TRI_3_ALL_FACE_SIDES:   return "SHELL_TRIANGLE_3_ALL_FACE_SIDES";
+  case SHELL_TRI_4_ALL_FACE_SIDES:   return "SHELL_TRIANGLE_4_ALL_FACE_SIDES";
+  case SHELL_TRI_6_ALL_FACE_SIDES:   return "SHELL_TRIANGLE_6_ALL_FACE_SIDES";
+  case SHELL_QUAD_4:                 return "SHELL_QUADRILATERAL_4";
+  case SHELL_QUAD_8:                 return "SHELL_QUADRILATERAL_8";
+  case SHELL_QUAD_9:                 return "SHELL_QUADRILATERAL_9";
+  case SHELL_QUAD_4_ALL_FACE_SIDES:  return "SHELL_QUADRILATERAL_4_ALL_FACE_SIDES";
+  case SHELL_QUAD_8_ALL_FACE_SIDES:  return "SHELL_QUADRILATERAL_8_ALL_FACE_SIDES";
+  case SHELL_QUAD_9_ALL_FACE_SIDES:  return "SHELL_QUADRILATERAL_9_ALL_FACE_SIDES";
+  case TET_4:                        return "TETRAHEDRON_4";
+  case TET_8:                        return "TETRAHEDRON_8";
+  case TET_10:                       return "TETRAHEDRON_10";
+  case TET_11:                       return "TETRAHEDRON_11";
+  case PYRAMID_5:                    return "PYRAMID_5";
+  case PYRAMID_13:                   return "PYRAMID_13";
+  case PYRAMID_14:                   return "PYRAMID_14";
+  case WEDGE_6:                      return "WEDGE_6";
+  case WEDGE_12:                     return "WEDGE_12";
+  case WEDGE_15:                     return "WEDGE_15";
+  case WEDGE_18:                     return "WEDGE_18";
+  case HEX_8:                        return "HEXAHEDRON_8";
+  case HEX_20:                       return "HEXAHEDRON_20";
+  case HEX_27:                       return "HEXAHEDRON_27";
   default: break;
   }
 
@@ -131,7 +137,6 @@ const char * topology::char_name() const
   return "UNKNOWN_TOPOLOGY";
 }
 
-// jvo: Overloading << operator?
 std::ostream & operator<<(std::ostream &out, topology::rank_t r)
 {
   switch (r)
@@ -139,7 +144,7 @@ std::ostream & operator<<(std::ostream &out, topology::rank_t r)
   case topology::NODE_RANK:    out << "NODE_RANK"; break;
   case topology::EDGE_RANK:    out << "EDGE_RANK"; break;
   case topology::FACE_RANK:    out << "FACE_RANK"; break;
-  case topology::ELEMENT_RANK: out << "ELEMENT_RANK"; break;
+  case topology::ELEMENT_RANK: out << "ELEM_RANK"; break;
   case topology::INVALID_RANK: out << "INVALID_RANK"; break;
   default:                     out << "RANK_" << static_cast<unsigned>(r); break;
   }

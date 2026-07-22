@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -239,7 +239,8 @@ C   --Open database file
         CALL PRTERR ('FATAL', 'Filename not specified.')
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
-     *    ' [-nomap node|element|all] filename"')
+     *    ' [-change_set cs_#] [-nomap node|element|all]'//
+     $    ' [-show_filename] filename"')
         CALL PRTERR ('CMDSPEC',
      *       'Documentation: https://sandialabs.github.io' //
      $       '/seacas-docs/sphinx/html/index.html#blot')
@@ -254,7 +255,8 @@ C   --Open database file
         CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
-     *    ' [-nomap node|element|all] [-show_filename] filename"')
+     *    ' [-change_set cs_#] [-nomap node|element|all]'//
+     $    ' [-show_filename] filename"')
         CALL PRTERR ('CMDSPEC',
      *       'Documentation: https://sandialabs.github.io' //
      $       '/seacas-docs/sphinx/html/index.html#blot')
@@ -322,6 +324,29 @@ C ... By default, map both nodes and elements
             if (value(1:1) .eq. 'a' .or. value(1:1) .eq. 'A') then
               mapnd = .false.
               mapel = .false.
+            end if
+          else if (option(:lo) .eq. '-change_set' .or.
+     *      option(:lo) .eq. '--change_set') then
+C ... Convert `value` to an integer.
+            CALL get_argument(i,value,  lv)
+            i = i + 1
+            read (value(:lv), '(i10)') nchange
+C ... Check that file contains at least that many change sets...
+            ndbr = iand(ndb, EX_FILE_ID_MASK)
+            call exinq(ndbr, EX_INQ_NUM_CHILD_GROUPS,
+     $           idum, rdum, cdum, ierr)
+            if (nchange .gt. idum) then
+               write (SCRATCH,*) 'Selected change set', nchange,
+     $              'but there are only ', idum, ' change sets in file.'
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDERR', SCRATCH(:LSCRATCH))
+               goto 170
+            else
+               write (scratch,99) nchange
+ 99            format(1x,'NOTE: Selecting change set ', i3)
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDSPEC', scratch(:lscratch))
+               ndb = ndbr + nchange
             end if
           end if
           if (i .gt. narg) exit
@@ -904,7 +929,7 @@ C     Initialize line thicknesses for mesh plots
      *    '"LIST NODEMAP" (node map)',/,
      *    10x,'      To disable the maps and use local ids, restart',
      *    ' blot with "-nomap node|element|all"',//,
-     *    10x,'      Notify gdsjaar@sandia.gov if bugs found')
+     *    10x,'      Notify sierra-help@sandia.gov if bugs found')
 
         if (mapel .and. mapnd) then
           WRITE (*, 10010) 'Nodes and Elements using Global Ids'

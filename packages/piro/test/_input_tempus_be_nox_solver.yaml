@@ -1,0 +1,90 @@
+Piro:
+  Solver Type: Tempus
+  Tempus:
+    Integrator Name: Demo Integrator
+    Demo Integrator:
+      Integrator Type: Integrator Basic
+      Screen Output Index List: '1'
+      Screen Output Index Interval: 100
+      Stepper Name: Demo Stepper
+      Solution History:
+        Storage Type: Unlimited
+        Storage Limit: 20
+      Time Step Control:
+        Initial Time: 0.0
+        Initial Time Index: 0
+        Initial Time Step: 5.0e-03
+        Final Time: 8.0e-1
+        Final Time Index: 10000
+        Maximum Absolute Error: 1.0e-08
+        Maximum Relative Error: 1.0e-08
+        Output Time List: ''
+        Output Index List: ''
+        Output Index Interval: 1000
+        Maximum Number of Stepper Failures: 10
+        Maximum Number of Consecutive Stepper Failures: 5
+    Demo Stepper:
+      Stepper Type: Backward Euler
+      Solver Name: Demo Solver
+      Demo Solver:
+        NOX:
+          Direction:
+            Method: Newton
+            Newton:
+              Forcing Term Method: Constant
+              Rescue Bad Newton Solve: true
+          Line Search:
+            Full Step:
+              Full Step: 1.0e+00
+            Method: Backtrack
+          Nonlinear Solver: Line Search Based
+          Printing:
+            Output Precision: 3
+            Output Processor: 0
+            Output Information:
+              Error: true
+              Warning: true
+              Outer Iteration: false
+              Parameters: true
+              Details: false
+              Linear Solver Details: true
+              Stepper Iteration: true
+              Stepper Details: true
+              Stepper Parameters: true
+          Solver Options:
+            Status Test Check Type: Minimal
+          Status Tests:
+            Test Type: Combo
+            Combo Type: OR
+            Number of Tests: 2
+            Test 0:
+              Test Type: NormF
+              Tolerance: 1.0e-08
+            Test 1:
+              Test Type: MaxIters
+              Maximum Iterations: 20
+    Stratimikos:
+      Linear Solver Type: Belos
+      Linear Solver Types:
+        Belos:
+          Solver Type: Block GMRES
+          Solver Types:
+            Block GMRES:
+              Convergence Tolerance: 1.0e-05
+              Output Frequency: 10
+              Output Style: 1
+              Verbosity: 33
+              Maximum Iterations: 200
+              Block Size: 1
+              Num Blocks: 4
+              Flexible Gmres: false
+      Preconditioner Type: Ifpack2
+      Preconditioner Types:
+        Ifpack2:
+          Prec Type: RILUK
+          Overlap: 1
+          Ifpack2 Settings:
+            'fact: drop tolerance': 0.0
+            'fact: iluk level-of-fill': 0
+            'fact: level-of-fill': 1
+...

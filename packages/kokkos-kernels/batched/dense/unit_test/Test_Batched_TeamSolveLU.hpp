@@ -1,32 +1,19 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Vinh Dang (vqdang@sandia.gov)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
+// #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Team_Impl.hpp"
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Team_Impl.hpp"
 #include "KokkosBatched_SolveLU_Decl.hpp"
-//#include "KokkosBatched_SolveLU_Team_Impl.hpp"
+// #include "KokkosBatched_SolveLU_Team_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -41,8 +28,7 @@ struct ParamTag {
   typedef TB transB;
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedTeamGemm {
   using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b, _c;
@@ -50,14 +36,12 @@ struct Functor_BatchedTeamGemm {
   ScalarType _alpha, _beta;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedTeamGemm(const ScalarType alpha, const ViewType &a,
-                          const ViewType &b, const ScalarType beta,
+  Functor_BatchedTeamGemm(const ScalarType alpha, const ViewType &a, const ViewType &b, const ScalarType beta,
                           const ViewType &c)
       : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &,
-                                         const MemberType &member) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const ParamTagType &, const MemberType &member) const {
     const int k = member.league_rank();
 
     auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
@@ -69,10 +53,8 @@ struct Functor_BatchedTeamGemm {
     }
     member.team_barrier();
 
-    KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA,
-                            typename ParamTagType::transB,
-                            AlgoTagType>::invoke(member, _alpha, aa, bb, _beta,
-                                                 cc);
+    KokkosBatched::TeamGemm<MemberType, typename ParamTagType::transA, typename ParamTagType::transB,
+                            AlgoTagType>::invoke(member, _alpha, aa, bb, _beta, cc);
   }
 
   inline void run() {
@@ -82,8 +64,7 @@ struct Functor_BatchedTeamGemm {
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
     const int league_size = _c.extent(0);
-    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size,
-                                                             Kokkos::AUTO);
+    Kokkos::TeamPolicy<execution_space, ParamTagType> policy(league_size, Kokkos::AUTO);
     Kokkos::parallel_for((name + "::GemmFunctor").c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -120,16 +101,14 @@ struct Functor_BatchedTeamLU {
     Kokkos::Profiling::popRegion();
   }
 };
-template <typename DeviceType, typename ViewType, typename TransType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename TransType, typename AlgoTagType>
 struct Functor_TestBatchedTeamSolveLU {
   using execution_space = typename DeviceType::execution_space;
   ViewType _a;
   ViewType _b;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedTeamSolveLU(const ViewType &a, const ViewType &b)
-      : _a(a), _b(b) {}
+  Functor_TestBatchedTeamSolveLU(const ViewType &a, const ViewType &b) : _a(a), _b(b) {}
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
@@ -137,8 +116,7 @@ struct Functor_TestBatchedTeamSolveLU {
     auto aa     = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
     auto bb     = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::TeamSolveLU<MemberType, TransType, AlgoTagType>::invoke(
-        member, aa, bb);
+    KokkosBatched::TeamSolveLU<MemberType, TransType, AlgoTagType>::invoke(member, aa, bb);
   }
 
   inline void run() {
@@ -158,7 +136,7 @@ struct Functor_TestBatchedTeamSolveLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_solvelu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize);
@@ -168,8 +146,7 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   // ViewType a0_T("a0_T", N, BlkSize, BlkSize);
   // ViewType b_T ("b_T",  N, BlkSize, 5 );
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a0, random, value_type(1.0));
   Kokkos::fill_random(x0, random, value_type(1.0));
 
@@ -181,15 +158,11 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   value_type alpha = 1.0, beta = 0.0;
   typedef ParamTag<Trans::NoTranspose, Trans::NoTranspose> param_tag_type;
 
-  Functor_BatchedTeamGemm<DeviceType, ViewType, value_type, param_tag_type,
-                          AlgoTagType>(alpha, a0, x0, beta, b)
-      .run();
+  Functor_BatchedTeamGemm<DeviceType, ViewType, value_type, param_tag_type, AlgoTagType>(alpha, a0, x0, beta, b).run();
 
   Functor_BatchedTeamLU<DeviceType, ViewType, AlgoTagType>(a1).run();
 
-  Functor_TestBatchedTeamSolveLU<DeviceType, ViewType, Trans::NoTranspose,
-                                 AlgoTagType>(a1, b)
-      .run();
+  Functor_TestBatchedTeamSolveLU<DeviceType, ViewType, Trans::NoTranspose, AlgoTagType>(a1, b).run();
 
   Kokkos::fence();
 
@@ -204,9 +177,9 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   // Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror x0_host = Kokkos::create_mirror_view(x0);
-  typename ViewType::HostMirror b_host  = Kokkos::create_mirror_view(b);
-  // typename ViewType::HostMirror b_T_host = Kokkos::create_mirror_view(b_T);
+  typename ViewType::host_mirror_type x0_host = Kokkos::create_mirror_view(x0);
+  typename ViewType::host_mirror_type b_host  = Kokkos::create_mirror_view(b);
+  // typename ViewType::host_mirror_type b_T_host = Kokkos::create_mirror_view(b_T);
 
   Kokkos::deep_copy(x0_host, x0);
   Kokkos::deep_copy(b_host, b);
@@ -246,25 +219,19 @@ template <typename DeviceType, typename ValueType, typename AlgoTagType>
 int test_batched_team_solvelu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
-    Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                 AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> ViewType;
+    Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
-      Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                   AlgoTagType>(1024, i);
+      Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                 AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> ViewType;
+    Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
-      Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                   AlgoTagType>(1024, i);
+      Test::TeamSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(1024, i);
     }
   }
 #endif

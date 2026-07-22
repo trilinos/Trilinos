@@ -498,7 +498,7 @@ class SideAdjacencyGraph
 
   bool has_any_shell_connection_on_side(size_t thisIndex, int thisSide)
   {
-    Criterion criterion = [&](const Topology &topo1,
+    Criterion criterion = [&](const Topology & /*topo1*/,
                               const Topology &topo2) { return topo2.is_shell(); };
 
     return has_connection_type_on_side(thisIndex, thisSide, criterion);
@@ -628,7 +628,7 @@ class SideAdjacencyGraph
       int numSides = topo.num_sides();
       for (int side = 1; side <= numSides; ++side) {
 
-        if (topo.topology.is_shell_side_ordinal(static_cast<unsigned>(side))) { continue; }
+        if (topo.topology.has_mixed_rank_sides() && side-1 >= static_cast<int>(topo.topology.num_faces())) { continue; }
 
         if (m_indexGraph[elementIndex].sideReference[side - 1] == 0) {
           CurrentAdjacency adjacency(elementIndex, side);

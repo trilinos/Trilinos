@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef KOKKOS_SPARSE_ORDINALTRAITS_HPP_
-#define KOKKOS_SPARSE_ORDINALTRAITS_HPP_
+#ifndef KOKKOSSPARSE_ORDINALTRAITS_HPP_
+#define KOKKOSSPARSE_ORDINALTRAITS_HPP_
 
 /// \file KokkosSparse_OrdinalTraits.hpp
 /// \brief Declaration and definition of KokkosSparse::OrdinalTraits,
@@ -60,9 +47,7 @@ struct OrdinalTraits<short int> {
 
 template <>
 struct OrdinalTraits<unsigned short int> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned short int invalid() {
-    return USHRT_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned short int invalid() { return USHRT_MAX; }
 };
 
 template <>
@@ -72,9 +57,7 @@ struct OrdinalTraits<int> {
 
 template <>
 struct OrdinalTraits<unsigned int> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned int invalid() {
-    return UINT_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned int invalid() { return UINT_MAX; }
 };
 
 template <>
@@ -84,9 +67,7 @@ struct OrdinalTraits<long> {
 
 template <>
 struct OrdinalTraits<unsigned long> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned long invalid() {
-    return ULONG_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned long invalid() { return ULONG_MAX; }
 };
 
 template <>
@@ -96,11 +77,9 @@ struct OrdinalTraits<long long> {
 
 template <>
 struct OrdinalTraits<unsigned long long> {
-  static constexpr KOKKOS_INLINE_FUNCTION unsigned long long invalid() {
-    return ULLONG_MAX;
-  }
+  static constexpr KOKKOS_INLINE_FUNCTION unsigned long long invalid() { return ULLONG_MAX; }
 };
 
 }  // namespace KokkosSparse
 
-#endif  // KOKKOS_SPARSE_ORDINALTRAITS_HPP_
+#endif  // KOKKOSSPARSE_ORDINALTRAITS_HPP_

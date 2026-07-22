@@ -55,7 +55,7 @@ using stk::mesh::Selector;
 using stk::mesh::Entity;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityProc;
-using stk::mesh::fixtures::simple_fields::RingFixture;
+using stk::mesh::fixtures::RingFixture;
 
 namespace {
 

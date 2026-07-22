@@ -6,7 +6,7 @@ after exopen, error =   0
 
 after exgini, error =   0
 database parameters:
-title =  This is a test                                                                  
+title =  This is a test
 num_dim =   3
 num_nodes =  26
 num_elem =   5
@@ -15,7 +15,7 @@ num_node_sets =   2
 num_side_sets =   5
 
 after exgcor, error =   0
-x coords = 
+x coords =
   0.0
   1.0
   1.0
@@ -42,7 +42,7 @@ x coords =
   3.0
   6.0
   0.0
-y coords = 
+y coords =
   0.0
   0.0
   1.0
@@ -69,7 +69,7 @@ y coords =
   2.0
   2.0
   2.0
-z coords = 
+z coords =
   0.0
   0.0
   0.0
@@ -98,8 +98,8 @@ z coords =
   0.0
 
 after exgcon, error =   0
-x coord name = xcoor    
-y coord name = ycoor    
+x coord name = xcoor
+y coord name = ycoor
 
 after exgmap, error =   0
 elem_map(1) = 1
@@ -112,40 +112,40 @@ after exgebi, error =   0
 
 after exgelb, error =   0
 element block id = 10
-element type = quad     
-block name = block_a                         
+element type = quad
+block name = block_a
 num_elem_in_block =  1
 num_nodes_per_elem =  4
 num_attr =  1
 
 after exgelb, error =   0
 element block id = 11
-element type = quad     
-block name = block_b                         
+element type = quad
+block name = block_b
 num_elem_in_block =  1
 num_nodes_per_elem =  4
 num_attr =  1
 
 after exgelb, error =   0
 element block id = 12
-element type = hex      
-block name = block_c                         
+element type = hex
+block name = block_c
 num_elem_in_block =  1
 num_nodes_per_elem =  8
 num_attr =  1
 
 after exgelb, error =   0
 element block id = 13
-element type = tetra    
-block name = block_d                         
+element type = tetra
+block name = block_d
 num_elem_in_block =  1
 num_nodes_per_elem =  4
 num_attr =  1
 
 after exgelb, error =   0
 element block id = 14
-element type = wedge    
-block name = block_e                         
+element type = wedge
+block name = block_e
 num_elem_in_block =  1
 num_nodes_per_elem =  6
 num_attr =  1
@@ -210,11 +210,11 @@ connect array for elem block 14
  26
 
 after exgnams, error =   0
-element block  1 name: block_a                         
-element block  2 name: block_b                         
-element block  3 name: block_c                         
-element block  4 name: block_d                         
-element block  5 name: block_e                         
+element block  1 name: block_a
+element block  2 name: block_b
+element block  3 name: block_c
+element block  4 name: block_d
+element block  5 name: block_e
 
 after exgeat, error =   0
 
@@ -250,7 +250,7 @@ after exgnsi, error =   0
 
 after exgnp, error =   0
 
-node set 20 parameters: 
+node set 20 parameters:
 num_nodes =  5
 
 after exgns, error =   0
@@ -272,7 +272,7 @@ dist factors for node set 20
 
 after exgnp, error =   0
 
-node set 21 parameters: 
+node set 21 parameters:
 num_nodes =  3
 
 after exgns, error =   0
@@ -289,8 +289,8 @@ dist factors for node set 21
  3.10
 
 after exgnams, error =   0
-node set  1 name: nodeset_a1                      
-node set  2 name: nodeset_b2                      
+node set  1 name: nodeset_a1
+node set  2 name: nodeset_b2
 
 There are  3 properties for each node set
 after exgpn, error =   0
@@ -308,16 +308,16 @@ after EXNSDF =  8 exinq, error =   0
 after exgcns, error =   0
 
 concatenated node set info
-ids = 
+ids =
  20
  21
-num_nodes_per_set = 
+num_nodes_per_set =
   5
   3
-node_ind = 
+node_ind =
   1
   6
-node_list = 
+node_list =
 100
 101
 102
@@ -326,7 +326,7 @@ node_list =
 200
 201
 202
-dist_fact = 
+dist_fact =
 1.000
 2.000
 3.000
@@ -527,11 +527,11 @@ node list for side set 34
 no dist factors for side set 34
 
 after exgnams, error =   0
-side set  1 name: surf_first                      
-side set  2 name: surf_second                     
-side set  3 name: surf_third                      
-side set  4 name: surf_fourth                     
-side set  5 name: surf_fifth                      
+side set  1 name: surf_first
+side set  2 name: surf_second
+side set  3 name: surf_third
+side set  4 name: surf_fourth
+side set  5 name: surf_fifth
 
 There are  2 properties for each side set
 after exgpn, error =   0
@@ -556,37 +556,37 @@ after exinq: EXSSDF =  8, error =   0
 
 after exgcss, error =   0
 concatenated side set info
-ids = 
+ids =
  30
  31
  32
  33
  34
-num_elem_per_set = 
+num_elem_per_set =
   2
   2
   7
   4
   5
-num_df_per_set = 
+num_df_per_set =
   4
   4
   0
   0
   0
-elem_ind = 
+elem_ind =
   1
   3
   5
  12
  16
-df_ind = 
+df_ind =
   1
   5
   9
   9
   9
-elem_list = 
+elem_list =
   2
   2
   1
@@ -607,7 +607,7 @@ elem_list =
   5
   5
   5
-side_list = 
+side_list =
   4
   2
   2
@@ -628,7 +628,7 @@ side_list =
   3
   4
   5
-dist_fact = 
+dist_fact =
 30.000
 30.100
 30.200
@@ -639,41 +639,41 @@ dist_fact =
 31.300
 
 after exgqa, error =   0
-QA records = 
-testwt                          
-07/07/93                        
-15:41:33                        
-FASTQ                           
-fastq                           
-07/07/93                        
-16:41:33                        
+QA records =
+testwt
+07/07/93
+15:41:33
+FASTQ
+fastq
+07/07/93
+16:41:33
 
 after exginf, error =   0
-info records = 
- This is the first information record.                                           
- This is the second information record.                                          
- This is the third information record.                                           
+info records =
+ This is the first information record.
+ This is the second information record.
+ This is the third information record.
 
 after exgvp, error =   0
 
 after exgvan, error =   0
 There are  1 global variables; their names are :
-glo_vars 
+glo_vars
 
 after exgvp, error =   0
 
 after exgvan, error =   0
 There are  2 nodal variables; their names are :
-nod_var0 
-nod_var1 
+nod_var0
+nod_var1
 
 after exgvp, error =   0
 
 after exgvan, error =   0
 There are  3 element variables; their names are :
-ele_var0 
-ele_var1 
-ele_var2 
+ele_var0
+ele_var1
+ele_var2
 
 after exgvtt, error =   0
 This is the element variable truth table:

@@ -29,9 +29,10 @@ public:
   virtual std::vector<InterfaceID> get_sorted_cutting_interfaces() const = 0;
   virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const = 0;
+  virtual void fill_tetrahedron_face_interior_intersections(const std::array<int,3> & faceNodeOrdinals,
+    const ElementIntersectionPointFilter & intersectionPointFilter,
+    std::vector<ElementIntersection> & faceIntersections) const = 0;
   virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
-    const InterfaceID & interface1,
-    const InterfaceID & interface2,
     const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & intersections) const = 0;
   virtual bool might_have_interior_or_face_intersections() const = 0;
@@ -90,7 +91,9 @@ public:
 
   virtual PhaseTag get_starting_phase(const ElementCutter * cutter) const = 0;
 
-  virtual void set_do_update_geometry_when_mesh_changes(const bool flag) const {}
+  virtual void set_do_update_geometry_when_mesh_changes(const bool /*flag*/) const {}
+
+  virtual double estimate_element_distance_error(const stk::mesh::BulkData & mesh, stk::mesh::Entity element) const { return 0.; }
 };
 
 inline bool InterfaceGeometry::element_with_nodal_distance_intersects_distance_interval(const std::vector<double> & elemNodeDist, const std::array<double,2> & loAndHi)

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -54,21 +41,18 @@ struct TolMeta<float> {
 
 }  // namespace ParIlut
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_par_ilut() {
-  using RowMapType   = Kokkos::View<size_type*, device>;
-  using EntriesType  = Kokkos::View<lno_t*, device>;
-  using ValuesType   = Kokkos::View<scalar_t*, device>;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>;
+  using RowMapType  = Kokkos::View<size_type*, device>;
+  using EntriesType = Kokkos::View<lno_t*, device>;
+  using ValuesType  = Kokkos::View<scalar_t*, device>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                       typename device::memory_space, typename device::memory_space>;
 
   // Simple test fixture A
-  std::vector<std::vector<scalar_t>> A = {{1., 6., 4., 7.},
-                                          {2., -5., 0., 8.},
-                                          {0.5, -3., 6., 0.},
-                                          {0.2, -0.5, -9., 0.}};
+  std::vector<std::vector<scalar_t>> A = {
+      {1., 6., 4., 7.}, {2., -5., 0., 8.}, {0.5, -3., 6., 0.}, {0.2, -0.5, -9., 0.}};
 
   // Allocate device CRS views for A
   RowMapType row_map("row_map", 0);
@@ -97,16 +81,15 @@ void run_test_par_ilut() {
   const size_type nnzL = par_ilut_handle->get_nnzL();
   const size_type nnzU = par_ilut_handle->get_nnzU();
 
-  ASSERT_EQ(nnzL, 10);
-  ASSERT_EQ(nnzU, 8);
+  ASSERT_EQ(nnzL, size_type(10));
+  ASSERT_EQ(nnzU, size_type(8));
 
   EntriesType L_entries("L_entries", nnzL);
   ValuesType L_values("L_values", nnzL);
   EntriesType U_entries("U_entries", nnzU);
   ValuesType U_values("U_values", nnzU);
 
-  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values);
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values);
 
   // Use this to check LU
   // std::vector<std::vector<scalar_t> > expected_LU = {
@@ -162,13 +145,9 @@ void run_test_par_ilut() {
 
   // Use these fixtures to test full numeric
   std::vector<std::vector<scalar_t>> expected_L_candidates = {
-      {1., 0., 0., 0.},
-      {2., 1., 0., 0.},
-      {0.50, 0.35, 1., 0.},
-      {0., 0., -1.32, 1.}};
+      {1., 0., 0., 0.}, {2., 1., 0., 0.}, {0.50, 0.35, 1., 0.}, {0., 0., -1.32, 1.}};
 
-  check_matrix("L numeric", L_row_map, L_entries, L_values,
-               expected_L_candidates);
+  check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
 
   std::vector<std::vector<scalar_t>> expected_U_candidates = {
       {1., 6., 4., 7.},
@@ -177,27 +156,24 @@ void run_test_par_ilut() {
       {0., 0., 0., 0.}  // [3] = 0 for full alg, -2.62 for post-threshold only
   };
 
-  check_matrix("U numeric", U_row_map, U_entries, U_values,
-               expected_U_candidates);
+  check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
 
   kh.destroy_par_ilut_handle();
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_par_ilut_precond() {
   // Test using par_ilut as a preconditioner
   // Does (LU)^inv Ax = (LU)^inv b converge faster than solving Ax=b?
-  using exe_space   = typename device::execution_space;
-  using mem_space   = typename device::memory_space;
-  using RowMapType  = Kokkos::View<size_type*, device>;
-  using EntriesType = Kokkos::View<lno_t*, device>;
-  using ValuesType  = Kokkos::View<scalar_t*, device>;
-  using sp_matrix_type =
-      KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-  using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using exe_space      = typename device::execution_space;
+  using mem_space      = typename device::memory_space;
+  using RowMapType     = Kokkos::View<size_type*, device>;
+  using EntriesType    = Kokkos::View<lno_t*, device>;
+  using ValuesType     = Kokkos::View<scalar_t*, device>;
+  using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
+  using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   // Create a diagonally dominant sparse matrix to test:
   //  par_ilut settings max_iters, res_delta_stop, fill_in_limit, and
@@ -211,9 +187,8 @@ void run_test_par_ilut_precond() {
   constexpr bool verbose       = false;
 
   size_type nnz = 10 * numRows;
-  auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<
-      sp_matrix_type>(numRows, numCols, nnz, 0, lno_t(0.01 * numRows),
-                      diagDominance);
+  auto A        = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<sp_matrix_type>(
+      numRows, numCols, nnz, 0, lno_t(0.01 * numRows), diagDominance);
 
   KokkosSparse::sort_crs_matrix(A);
 
@@ -222,8 +197,7 @@ void run_test_par_ilut_precond() {
   kh.create_gmres_handle(m, tol);
   auto gmres_handle = kh.get_gmres_handle();
   gmres_handle->set_verbose(verbose);
-  using GMRESHandle =
-      typename std::remove_reference<decltype(*gmres_handle)>::type;
+  using GMRESHandle    = typename std::remove_reference<decltype(*gmres_handle)>::type;
   using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
 
   kh.create_par_ilut_handle();
@@ -250,14 +224,11 @@ void run_test_par_ilut_precond() {
   EntriesType U_entries("U_entries", nnzU);
   ValuesType U_values("U_values", nnzU);
 
-  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values);
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values);
 
   // Create CRSs
-  sp_matrix_type L("L", numRows, numCols, L_values.extent(0), L_values,
-                   L_row_map, L_entries),
-      U("U", numRows, numCols, U_values.extent(0), U_values, U_row_map,
-        U_entries);
+  sp_matrix_type L("L", numRows, numCols, L_values.extent(0), L_values, L_row_map, L_entries),
+      U("U", numRows, numCols, U_values.extent(0), U_values, U_row_map, U_entries);
 
   // Set initial vectors:
   ViewVectorType X("X", n);    // Solution and initial guess
@@ -293,8 +264,7 @@ void run_test_par_ilut_precond() {
     gmres_handle->set_verbose(verbose);
 
     // Make precond
-    KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle> myPrec(L,
-                                                                            U);
+    KokkosSparse::Experimental::LUPrec<sp_matrix_type, KernelHandle> myPrec(L, U);
 
     // reset X for next gmres call
     Kokkos::deep_copy(X, 0.0);
@@ -316,15 +286,14 @@ void run_test_par_ilut_precond() {
   }
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_par_ilut_zerorow_A() {
-  using RowMapType   = Kokkos::View<size_type*, device>;
-  using EntriesType  = Kokkos::View<lno_t*, device>;
-  using ValuesType   = Kokkos::View<scalar_t*, device>;
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
-      size_type, lno_t, scalar_t, typename device::execution_space,
-      typename device::memory_space, typename device::memory_space>;
+  using RowMapType  = Kokkos::View<size_type*, device>;
+  using EntriesType = Kokkos::View<lno_t*, device>;
+  using ValuesType  = Kokkos::View<scalar_t*, device>;
+  using KernelHandle =
+      KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, typename device::execution_space,
+                                                       typename device::memory_space, typename device::memory_space>;
 
   const size_type nrows = 0;
 
@@ -355,16 +324,15 @@ void run_test_par_ilut_zerorow_A() {
   const size_type nnzL = par_ilut_handle->get_nnzL();
   const size_type nnzU = par_ilut_handle->get_nnzU();
 
-  ASSERT_EQ(nnzL, 0);
-  ASSERT_EQ(nnzU, 0);
+  ASSERT_EQ(nnzL, size_type(0));
+  ASSERT_EQ(nnzU, size_type(0));
 
   EntriesType L_entries("L_entries", nnzL);
   ValuesType L_values("L_values", nnzL);
   EntriesType U_entries("U_entries", nnzU);
   ValuesType U_values("U_values", nnzU);
 
-  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries,
-                   L_values, U_row_map, U_entries, U_values);
+  par_ilut_numeric(&kh, row_map, entries, values, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values);
 
   const auto itrs        = par_ilut_handle->get_num_iters();
   const auto end_rel_res = par_ilut_handle->get_end_rel_res();
@@ -377,38 +345,30 @@ void run_test_par_ilut_zerorow_A() {
 
 }  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_par_ilut() {
   Test::run_test_par_ilut<scalar_t, lno_t, size_type, device>();
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_par_ilut_precond() {
   Test::run_test_par_ilut_precond<scalar_t, lno_t, size_type, device>();
 }
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_par_ilut_zerorow_A() {
   Test::run_test_par_ilut_zerorow_A<scalar_t, lno_t, size_type, device>();
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                 \
-  TEST_F(TestCategory,                                                              \
-         sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {        \
-    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                               \
-  }                                                                                 \
-  TEST_F(                                                                           \
-      TestCategory,                                                                 \
-      sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
-  }                                                                                 \
-  TEST_F(                                                                           \
-      TestCategory,                                                                 \
-      sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
-    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                       \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                  \
+  TEST_F(TestCategory, sparse##_##par_ilut##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {           \
+    test_par_ilut<SCALAR, ORDINAL, OFFSET, DEVICE>();                                                \
+  }                                                                                                  \
+  TEST_F(TestCategory, sparse##_##par_ilut_zerorow_A##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_par_ilut_zerorow_A<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
+  }                                                                                                  \
+  TEST_F(TestCategory, sparse##_##par_ilut_precond##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {   \
+    test_par_ilut_precond<SCALAR, ORDINAL, OFFSET, DEVICE>();                                        \
   }
 
 #define NO_TEST_COMPLEX

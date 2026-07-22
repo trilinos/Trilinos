@@ -104,7 +104,7 @@ TEST(PrototypeGhostingSearch, OptimizeTile3D) {
 }
 
 
-void testGhostingSearchLinearAdjacentCase(stk::search::SearchMethod searchMethod,
+void testGhostingSearchLinearAdjacentCase(stk::search::SearchMethod /*searchMethod*/,
                                                              int numLoops = 1)
 {
     const stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -453,7 +453,7 @@ void setupProblemForTwoPlateGhostingSearchScalingTest(int xDim, int yDim,
 }
 
 void testGhostingSearchFindRangeStrongScalable(GhostingSearchScalableTestType testType,
-                                      stk::search::SearchMethod searchMethod,
+                                      stk::search::SearchMethod /*searchMethod*/,
                                       int xDim, int yDim,
                                       int numLoops = 1)
 {
@@ -528,7 +528,7 @@ TEST(InstrumentedGhostingSearch, TwoPlateFindRangeStrongScalable_KDTREE)
 }
 
 void testPrototypeGhostingSearchFindRangeStrongScalable(GhostingSearchScalableTestType testType,
-                                               stk::search::SearchMethod searchMethod,
+                                               stk::search::SearchMethod /*searchMethod*/,
                                                int xDim, int yDim,
                                                stk::search::experimental::FindNeighborsAlgorithmChoice findNeighborsAlg,
                                                int numLoops = 1)
@@ -629,7 +629,7 @@ TEST(PrototypeGhostingSearch, TwoPlateFindFangeStrongScalableUseDDRobust_KDTREE)
 
 
 void testPrototypeGhostingSearchFindRangeDecompRobust(GhostingSearchScalableTestType testType,
-                                                          stk::search::SearchMethod searchMethod,
+                                                          stk::search::SearchMethod /*searchMethod*/,
                                                           int xDim, int yDim,
                                                           stk::search::experimental::FindNeighborsAlgorithmChoice findNeighborsAlg,
                                                           int numLoops = 1)

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 void split_comm_world(ROL::Ptr<Teuchos::Comm<int> > & Comm_linalg,
                       ROL::Ptr<Teuchos::Comm<int> > & Comm_sample,
                       int M) {

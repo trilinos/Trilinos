@@ -14,14 +14,19 @@ namespace
 void set_criteria_on_mesh(std::vector<const stk::mesh::Field<double>*> critFields, const stk::mesh::BulkData& bulkData)
 {
   const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::ELEM_RANK);
+
+  auto critField = critFields[bulkData.parallel_rank()];
+  auto critFieldData = critField->data<stk::mesh::ReadWrite>();
+
   for(size_t i=0;i<buckets.size();++i)
   {
     const stk::mesh::Bucket& bucket = *buckets[i];
-    double* data = stk::mesh::field_data(*(critFields[bulkData.parallel_rank()]), bucket);
-    for(size_t j=0;j<bucket.size();++j)
-    {
-      data[j] = 1.0 + bulkData.parallel_rank();
-    }
+
+    auto data = critFieldData.bucket_values(bucket);
+    for(stk::mesh::EntityIdx j : bucket.entities())
+     {
+      data(j) = 1.0 + bulkData.parallel_rank();
+     }
   }
 }
 
@@ -37,18 +42,19 @@ void write_mesh_and_results(stk::mesh::BulkData& bulkData, const std::string& fi
   broker.end_output_step(fh);
 }
 
-class MultipleCriteria : public stk::unit_test_util::simple_fields::MeshFixture
+class MultipleCriteria : public stk::unit_test_util::MeshFixture
 {
 public:
 
   void put_decomposition_on_mesh(stk::mesh::Field<double>& procId)
   {
+    auto procIdData = procId.data<stk::mesh::ReadWrite>();
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
     for(stk::mesh::Entity element : elements)
     {
-      double* data = stk::mesh::field_data(procId, element);
-      *data = get_bulk().parallel_rank();
+      auto data = procIdData.entity_values(element);
+      data() = get_bulk().parallel_rank();
     }
   }
 
@@ -81,11 +87,13 @@ public:
       size_t weight1 = 0;
       size_t weight2 = 0;
 
+      auto criteria1Data = criteria1.data();
+      auto criteria2Data = criteria2.data();
       for(stk::mesh::Entity element : elements)
       {
         os << "Before - Proc " << get_bulk().parallel_rank() << " has element " << get_bulk().identifier(element) << std::endl;
-        weight1 += *stk::mesh::field_data(criteria1, element);
-        weight2 += *stk::mesh::field_data(criteria2, element);
+        weight1 += criteria1Data.entity_values(element)();
+        weight2 += criteria2Data.entity_values(element)();
       }
 
       os << "Before - Proc " << get_bulk().parallel_rank() << " Sum weight1: " << weight1 << " and weight2: " << weight2 << std::endl;
@@ -99,11 +107,13 @@ public:
 
       weight1 = 0;
       weight2 = 0;
+      criteria1Data = criteria1.data();
+      criteria2Data = criteria2.data();
       for(stk::mesh::Entity element : elements)
       {
         os << "After - Proc " << get_bulk().parallel_rank() << " has element " << get_bulk().identifier(element) << std::endl;
-        weight1 += *stk::mesh::field_data(criteria1, element);
-        weight2 += *stk::mesh::field_data(criteria2, element);
+        weight1 += criteria1Data.entity_values(element)();
+        weight2 += criteria2Data.entity_values(element)();
       }
 
       os << "After - Proc " << get_bulk().parallel_rank() << " Sum weight1: " << weight1 << " and weight2: " << weight2 << std::endl;

@@ -1,21 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include "policy_perf_test.hpp"
+
+#include <iostream>
 
 int main(int argc, char* argv[]) {
   Kokkos::initialize(argc, argv);
@@ -120,11 +114,12 @@ int main(int argc, char* argv[]) {
   // view appropriately for test and should obey first-touch etc Second call to
   // test is the one we actually care about and time
   view_type_1d v_1(Kokkos::view_alloc(Kokkos::WithoutInitializing, "v_1"),
-                   team_range * team_size);
+                   static_cast<size_t>(team_range) * team_size);
   view_type_2d v_2(Kokkos::view_alloc(Kokkos::WithoutInitializing, "v_2"),
-                   team_range * team_size, thread_range);
+                   static_cast<size_t>(team_range) * team_size, thread_range);
   view_type_3d v_3(Kokkos::view_alloc(Kokkos::WithoutInitializing, "v_3"),
-                   team_range * team_size, thread_range, vector_range);
+                   static_cast<size_t>(team_range) * team_size, thread_range,
+                   vector_range);
 
   double result_computed = 0.0;
   double result_expect   = 0.0;

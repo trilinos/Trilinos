@@ -2,13 +2,7 @@
     ShyLU FROSch configuration.
 */
 
-#cmakedefine HAVE_SHYLU_DDFROSCH_AMESOS
-
 #cmakedefine HAVE_SHYLU_DDFROSCH_BELOS
-
-#cmakedefine HAVE_SHYLU_DDFROSCH_EPETRA
-
-#cmakedefine HAVE_SHYLU_DDFROSCH_EPETRAEXT
 
 #cmakedefine HAVE_SHYLU_DDFROSCH_IFPACK2
 

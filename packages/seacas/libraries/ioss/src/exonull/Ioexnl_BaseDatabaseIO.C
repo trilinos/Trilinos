@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,12 +12,11 @@
 #include <cassert>
 #include <ctime>
 #include <exodusII.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <map>
 #include <sstream>
 #include <string>
-#include <tokenize.h>
 #include <vector>
 
 #include "Ioexnl_Utils.h"
@@ -34,7 +33,6 @@
 #include "Ioss_FaceBlock.h"
 #include "Ioss_FaceSet.h"
 #include "Ioss_Field.h"
-#include "Ioss_FileInfo.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_Map.h"
 #include "Ioss_MeshType.h"
@@ -48,10 +46,9 @@
 #include "Ioss_SmartAssert.h"
 #include "Ioss_State.h"
 
-// Transitioning from treating global variables as Ioss::Field::TRANSIENT
-// to Ioss::Field::REDUCTION.  To get the old behavior, define the value
-// below to '1'.
-#define GLOBALS_ARE_TRANSIENT 0
+#ifdef SEACAS_HAVE_MPI
+#include "Ioss_FileInfo.h"
+#endif
 
 // ========================================================================
 // Static internal helper functions
@@ -70,7 +67,7 @@ namespace {
   template <typename T>
   void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T *> &entities);
 
-  char **get_name_array(size_t count, int size)
+  char **get_name_array(size_t count, size_t size)
   {
     auto *names = new char *[count];
     for (size_t i = 0; i < count; i++) {
@@ -80,9 +77,9 @@ namespace {
     return names;
   }
 
-  void delete_name_array(char **names, int count)
+  void delete_name_array(char **names, size_t count)
   {
-    for (int i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) {
       delete[] names[i];
     }
     delete[] names;
@@ -291,14 +288,12 @@ namespace Ioexnl {
     int step = get_region()->get_current_state();
 
     if (step <= 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: No currently active state.  The calling code must call "
-                 "Ioss::Region::begin_state(int step)\n"
-                 "       to set the database timestep from which to read the transient data.\n"
-                 "       [{}]\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(
+          fmt::format("ERROR: No currently active state.  The calling code must call "
+                      "Ioss::Region::begin_state(int step)\n"
+                      "       to set the database timestep from which to read the transient data.\n"
+                      "       [{}]\n",
+                      get_filename()));
     }
     return step;
   }
@@ -455,14 +450,11 @@ namespace Ioexnl {
         ;
       }
       else {
-        std::ostringstream errmsg;
-        fmt::print(
-            errmsg,
+        IOSS_ERROR(fmt::format(
             "ERROR: The variable named '{}' is of the wrong type. A region variable must be of type"
             " TRANSIENT or REDUCTION.\n"
-            "This is probably an internal error; please notify gdsjaar@sandia.gov",
-            field.get_name());
-        IOSS_ERROR(errmsg);
+            "This is probably an internal error; please notify sierra-help@sandia.gov",
+            field.get_name()));
       }
       return num_to_get;
     }
@@ -558,22 +550,9 @@ namespace Ioexnl {
       for (int i = 0; i < comp_count; i++) {
         std::string var_name = get_component_name(field, Ioss::Field::InOut::OUTPUT, i + 1);
 
-#if GLOBALS_ARE_TRANSIENT
-        if (type == EX_GLOBAL) {
-          SMART_ASSERT(m_variables[type].find(var_name) != m_variables[type].end())(type)(var_name);
-          var_index = m_variables[type].find(var_name)->second;
-        }
-        else {
-          SMART_ASSERT(m_reductionVariables[type].find(var_name) !=
-                       m_reductionVariables[type].end())
-          (type)(var_name);
-          var_index = m_reductionVariables[type].find(var_name)->second;
-        }
-#else
         SMART_ASSERT(m_reductionVariables[type].find(var_name) != m_reductionVariables[type].end())
         (type)(var_name);
         var_index = m_reductionVariables[type].find(var_name)->second;
-#endif
 
         SMART_ASSERT(static_cast<int>(m_reductionValues[type][id].size()) >= var_index)
         (id)(m_reductionValues[type][id].size())(var_index);
@@ -615,23 +594,11 @@ namespace Ioexnl {
       int         var_index = 0;
       std::string var_name  = get_component_name(field, Ioss::Field::InOut::INPUT, i + 1);
 
-#if GLOBALS_ARE_TRANSIENT
-      if (type == EX_GLOBAL) {
-        assert(m_variables[type].find(var_name) != m_variables[type].end());
-        var_index = m_variables[type].find(var_name)->second;
-      }
-      else {
-        assert(m_reductionVariables[type].find(var_name) != m_reductionVariables[type].end());
-        var_index = m_reductionVariables[type].find(var_name)->second;
-      }
-
-      assert(static_cast<int>(m_reductionValues[type][id].size()) >= var_index);
-#else
       SMART_ASSERT(m_reductionVariables[type].find(var_name) != m_reductionVariables[type].end())
       (type)(var_name);
       var_index = m_reductionVariables[type].find(var_name)->second;
       SMART_ASSERT(static_cast<int>(m_reductionValues[type][id].size()) >= var_index);
-#endif
+
       // Transfer to 'variables' array.
       if (ioss_type == Ioss::Field::REAL) {
         rvar[i] = m_reductionValues[type][id][var_index - 1];
@@ -722,11 +689,7 @@ namespace Ioexnl {
   {
     if (gather_data) {
       int glob_index = 0;
-#if GLOBALS_ARE_TRANSIENT
-      glob_index = gather_names(m_variables[EX_GLOBAL], get_region(), glob_index, true);
-#else
       glob_index = gather_names(m_reductionVariables[EX_GLOBAL], get_region(), glob_index, true);
-#endif
       m_reductionValues[EX_GLOBAL][0].resize(glob_index);
 
       const Ioss::NodeBlockContainer &node_blocks = get_region()->get_node_blocks();
@@ -776,11 +739,7 @@ namespace Ioexnl {
 
     if (behavior != Ioss::DB_APPEND && behavior != Ioss::DB_MODIFY) {
       ex_var_params exo_params{};
-#if GLOBALS_ARE_TRANSIENT
-      exo_params.num_glob = m_variables[EX_GLOBAL].size();
-#else
-      exo_params.num_glob = m_reductionVariables[EX_GLOBAL].size();
-#endif
+      exo_params.num_glob  = m_reductionVariables[EX_GLOBAL].size();
       exo_params.num_node  = m_variables[EX_NODE_BLOCK].size();
       exo_params.num_edge  = m_variables[EX_EDGE_BLOCK].size();
       exo_params.num_face  = m_variables[EX_FACE_BLOCK].size();
@@ -828,12 +787,7 @@ namespace Ioexnl {
       index     = gather_names(m_variables[type], entity, index, false);
     }
 
-#if GLOBALS_ARE_TRANSIENT
-    size_t value_size =
-        type == EX_GLOBAL ? m_variables[type].size() : m_reductionVariables[type].size();
-#else
     size_t value_size = m_reductionVariables[type].size();
-#endif
     for (const auto &entity : entities) {
       auto id = entity->get_optional_property("id", 0);
       m_reductionValues[type][id].resize(value_size);
@@ -1009,12 +963,9 @@ namespace Ioexnl {
 
     // Verify that exodus supports the mesh_type...
     if (region->mesh_type() != Ioss::MeshType::UNSTRUCTURED) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: The mesh type is '{}' which Exodus does not support.\n"
-                 "       Only 'Unstructured' is supported at this time.\n",
-                 region->mesh_type_string());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: The mesh type is '{}' which Exodus does not support.\n"
+                             "       Only 'Unstructured' is supported at this time.\n",
+                             region->mesh_type_string()));
     }
 
     const Ioss::NodeBlockContainer &node_blocks = region->get_node_blocks();
@@ -1457,40 +1408,31 @@ namespace {
       }
 
       if (field_offset + comp_count - 1 > attribute_count) {
-        std::ostringstream errmsg;
-        fmt::print(
-            errmsg,
+        IOSS_ERROR(fmt::format(
             "INTERNAL ERROR: For block '{}', attribute '{}', the indexing is incorrect.\n"
             "Something is wrong in the Ioexnl::BaseDatabaseIO class, function {}. Please report.\n",
-            block->name(), field_name, __func__);
-        IOSS_ERROR(errmsg);
+            block->name(), field_name, __func__));
       }
 
       for (int i = field_offset; i < field_offset + comp_count; i++) {
         if (attributes[i] != 0) {
-          std::ostringstream errmsg;
-          fmt::print(
-              errmsg,
+          IOSS_ERROR(fmt::format(
               "INTERNAL ERROR: For block '{}', attribute '{}', indexes into the same location as a "
               "previous attribute.\n"
               "Something is wrong in the Ioexnl::BaseDatabaseIO class, function {}. Please "
               "report.\n",
-              block->name(), field_name, __func__);
-          IOSS_ERROR(errmsg);
+              block->name(), field_name, __func__));
         }
         attributes[i] = 1;
       }
     }
 
     if (component_sum > attribute_count) {
-      std::ostringstream errmsg;
-      fmt::print(
-          errmsg,
+      IOSS_ERROR(fmt::format(
           "INTERNAL ERROR: Block '{}' is supposed to have {} attributes, but {} attributes "
           "were counted.\n"
           "Something is wrong in the Ioexnl::BaseDatabaseIO class, function {}. Please report.\n",
-          block->name(), attribute_count, component_sum, __func__);
-      IOSS_ERROR(errmsg);
+          block->name(), attribute_count, component_sum, __func__));
     }
 
     // Take care of the easy cases first...
@@ -1499,13 +1441,11 @@ namespace {
       // caught above in the duplicate index check.
       for (int i = 1; i <= attribute_count; i++) {
         if (attributes[i] == 0) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg,
-                     "INTERNAL ERROR: Block '{}' has an incomplete set of attributes.\n"
-                     "Something is wrong in the Ioexnl::BaseDatabaseIO class, function {}. Please "
-                     "report.\n",
-                     block->name(), __func__);
-          IOSS_ERROR(errmsg);
+          IOSS_ERROR(fmt::format(
+              "INTERNAL ERROR: Block '{}' has an incomplete set of attributes.\n"
+              "Something is wrong in the Ioexnl::BaseDatabaseIO class, function {}. Please "
+              "report.\n",
+              block->name(), __func__));
         }
       }
       return;
@@ -1591,10 +1531,6 @@ namespace {
                                   IOSS_MAYBE_UNUSED const std::string &filename,
                                   IOSS_MAYBE_UNUSED const Ioss::ParallelUtils &util)
   {
-    IOSS_PAR_UNUSED(exo_params);
-    IOSS_PAR_UNUSED(my_processor);
-    IOSS_PAR_UNUSED(filename);
-    IOSS_PAR_UNUSED(util);
 #ifdef SEACAS_HAVE_MPI
     const int        num_types = 10;
     std::vector<int> var_counts(num_types);
@@ -1660,6 +1596,7 @@ namespace {
     any_diff = idiff == 1;
 
     if (any_diff) {
+
       std::runtime_error x(errmsg.str());
       throw x;
     }

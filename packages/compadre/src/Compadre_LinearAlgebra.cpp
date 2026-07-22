@@ -8,10 +8,6 @@
 // @HEADER
 #include "Compadre_LinearAlgebra_Definitions.hpp"
 
-#include "KokkosBatched_Copy_Decl.hpp"
-#include "KokkosBatched_ApplyPivot_Decl.hpp"
-#include "KokkosBatched_Gemv_Decl.hpp"
-#include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_UTV_Decl.hpp"
 #include "KokkosBatched_SolveUTV_Decl_Compadre.hpp"
 
@@ -55,17 +51,17 @@ namespace GMLS_LinearAlgebra {
       scratch_vector_type ww_fast(member.team_scratch(_pm_getTeamScratchLevel_0), 3*_M);
       scratch_vector_type ww_slow(member.team_scratch(_pm_getTeamScratchLevel_1), _N*_NRHS);
 
-      scratch_matrix_right_type aa(_a.data() + TO_GLOBAL(k)*TO_GLOBAL(_a.extent(1))*TO_GLOBAL(_a.extent(2)), 
+      device_unmanaged_matrix_right_type aa(_a.data() + TO_GLOBAL(k)*TO_GLOBAL(_a.extent(1))*TO_GLOBAL(_a.extent(2)), 
               _a.extent(1), _a.extent(2));
-      scratch_matrix_right_type bb(_b.data() + TO_GLOBAL(k)*TO_GLOBAL(_b.extent(1))*TO_GLOBAL(_b.extent(2)), 
+      device_unmanaged_matrix_right_type bb(_b.data() + TO_GLOBAL(k)*TO_GLOBAL(_b.extent(1))*TO_GLOBAL(_b.extent(2)), 
               _b.extent(1), _b.extent(2));
-      scratch_matrix_right_type xx(_b.data() + TO_GLOBAL(k)*TO_GLOBAL(_b.extent(1))*TO_GLOBAL(_b.extent(2)), 
+      device_unmanaged_matrix_right_type xx(_b.data() + TO_GLOBAL(k)*TO_GLOBAL(_b.extent(1))*TO_GLOBAL(_b.extent(2)), 
               _b.extent(1), _b.extent(2));
 
       // if sizes don't match extents, then copy to a view with extents matching sizes
       if ((size_t)_M!=_a.extent(1) || (size_t)_N!=_a.extent(2)) {
         scratch_matrix_right_type tmp(ww_slow.data(), _M, _N);
-        auto aaa = scratch_matrix_right_type(_a.data() + TO_GLOBAL(k)*TO_GLOBAL(_a.extent(1))*TO_GLOBAL(_a.extent(2)), _M, _N);
+        auto aaa = device_unmanaged_matrix_right_type(_a.data() + TO_GLOBAL(k)*TO_GLOBAL(_a.extent(1))*TO_GLOBAL(_a.extent(2)), _M, _N);
         // copy A to W, then back to A
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,_M),[&](const int &i) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,0,_N),[&](const int &j) {
@@ -87,7 +83,7 @@ namespace GMLS_LinearAlgebra {
         // coming from LU
         // then copy B to W, then back to B
         auto bb_left = 
-            scratch_matrix_left_type(_b.data() + TO_GLOBAL(k)*TO_GLOBAL(_b.extent(1))*TO_GLOBAL(_b.extent(2)), 
+            device_unmanaged_matrix_left_type(_b.data() + TO_GLOBAL(k)*TO_GLOBAL(_b.extent(1))*TO_GLOBAL(_b.extent(2)), 
                     _b.extent(1), _b.extent(2));
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,_N),[&](const int &i) {
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,0,_NRHS),[&](const int &j) {
@@ -109,9 +105,7 @@ namespace GMLS_LinearAlgebra {
       bool do_print = false;
       if (do_print) {
         Kokkos::single(Kokkos::PerTeam(member), [&] () {
-#if KOKKOS_VERSION >= 40200
           using Kokkos::printf;
-#endif
           //print a
           printf("a=zeros(%lu,%lu);\n", aa.extent(0), aa.extent(1));
               for (size_t i=0; i<aa.extent(0); ++i) {
@@ -143,9 +137,7 @@ namespace GMLS_LinearAlgebra {
 
       if (do_print) {
         Kokkos::single(Kokkos::PerTeam(member), [&] () {
-#if KOKKOS_VERSION >= 40200
         using Kokkos::printf;
-#endif
         printf("matrix_rank: %d\n", matrix_rank);
         //print u
         printf("u=zeros(%lu,%lu);\n", uu.extent(0), uu.extent(1));
@@ -187,7 +179,8 @@ namespace GMLS_LinearAlgebra {
       pm.setTeamScratchSize(0, l0_scratch_size);
       pm.setTeamScratchSize(1, scratch_size);
 
-      pm.CallFunctorWithTeamThreadsAndVectors(*this, _a.extent(0));
+      auto tp = pm.TeamPolicyThreadsAndVectors(_a.extent(0));
+      Kokkos::parallel_for("BatchedTeamVectorSolveUTV", tp, *this);
       Kokkos::fence();
 
       Kokkos::Profiling::popRegion();

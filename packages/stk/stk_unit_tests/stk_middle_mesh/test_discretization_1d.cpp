@@ -57,7 +57,7 @@ TEST(Discretization1D, IntegrateConstant)
   {
     int quadDegree = 3;
     auto disc      = disc1d::impl::make_disc1_d(spec, basisDegree, quadDegree);
-    auto f         = [](double x) { return 1; };
+    auto f         = [](double /*x*/) { return 1; };
     auto func      = disc1d::impl::make_grid_function(disc, f);
     auto val       = disc1d::impl::integrate_function(disc, func);
 

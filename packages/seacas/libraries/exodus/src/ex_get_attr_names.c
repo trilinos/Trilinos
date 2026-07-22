@@ -112,7 +112,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
   }
   /* inquire id's of previously defined dimensions  */
 
-  if ((status = nc_inq_dimid(exoid, dnumobjatt, &numattrdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumobjatt, &numattrdim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Warning: no attributes found for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
@@ -121,7 +121,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
   }
 
   size_t num_attr = 0;
-  if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
@@ -136,10 +136,10 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
 
   /* read in the attributes */
 
-  if (status == NC_NOERR) {
+  if (status == EX_NOERR) {
     /* read the names */
     status = exi_get_names(exoid, varid, num_attr, names, obj_type, __func__);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }

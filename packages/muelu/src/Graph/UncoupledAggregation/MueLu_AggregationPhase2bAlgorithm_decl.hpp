@@ -21,7 +21,7 @@
 
 namespace MueLu {
 /*!
-  @class AggregationPhase2bAlgorithm class.
+  @class AggregationPhase2bAlgorithm
   @brief Add leftovers to existing aggregates
   @ingroup Aggregation
 
@@ -73,17 +73,13 @@ class AggregationPhase2bAlgorithm : public MueLu::AggregationAlgorithmBase<Local
                        typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
                        LO& numNonAggregatedNodes) const;
 
-  void BuildAggregatesRandom(const ParameterList& params,
-                             const LWGraph_kokkos& graph,
-                             Aggregates& aggregates,
-                             typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
-                             LO& numNonAggregatedNodes) const;
+  template <bool deterministic>
+  void BuildAggregates(const ParameterList& params,
+                       const LWGraph_kokkos graph,
+                       Aggregates& aggregates,
+                       typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType aggStat,
+                       LO& numNonAggregatedNodes) const;
 
-  void BuildAggregatesDeterministic(const ParameterList& params,
-                                    const LWGraph_kokkos& graph,
-                                    Aggregates& aggregates,
-                                    typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
-                                    LO& numNonAggregatedNodes) const;
   //@}
 
   std::string description() const { return "Phase 2b (expansion)"; }

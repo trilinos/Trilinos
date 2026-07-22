@@ -111,7 +111,7 @@ struct InnerProduct<0,i> {
   enum { N = 0 };
   InnerProduct() {}
   template<typename T>
-  inline InnerProduct( T & value , const T * const x , const T * const y ) {}
+  inline InnerProduct( T & /*value*/ , const T * const /*x*/ , const T * const /*y*/ ) {}
 };
 
 template<int i>

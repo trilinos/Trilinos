@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef _TEST_VECTOR_FIXTURES_HPP
 #define _TEST_VECTOR_FIXTURES_HPP
@@ -33,10 +20,8 @@ scalar_t KEEP_ZERO() {
 }
 
 template <bool CSC = false, typename MapT, typename EntriesT, typename ValuesT>
-void compress_matrix(
-    MapT& map, EntriesT& entries, ValuesT& values,
-    const std::vector<std::vector<typename ValuesT::non_const_value_type>>&
-        fixture) {
+void compress_matrix(MapT& map, EntriesT& entries, ValuesT& values,
+                     const std::vector<std::vector<typename ValuesT::non_const_value_type>>& fixture) {
   using size_type = typename MapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
@@ -90,11 +75,10 @@ void compress_matrix(
   Kokkos::deep_copy(values, hvalues);
 }
 
-template <bool CSC = false, typename RowMapT, typename EntriesT,
-          typename ValuesT>
-std::vector<std::vector<typename ValuesT::non_const_value_type>>
-decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
-                  const ValuesT& values) {
+template <bool CSC = false, typename RowMapT, typename EntriesT, typename ValuesT>
+std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matrix(const RowMapT& row_map,
+                                                                                   const EntriesT& entries,
+                                                                                   const ValuesT& values) {
   using size_type = typename RowMapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
@@ -132,10 +116,9 @@ decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
 }
 
 template <typename RowMapT, typename EntriesT, typename ValuesT>
-std::vector<std::vector<typename ValuesT::non_const_value_type>>
-decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
-                  const ValuesT& values,
-                  typename RowMapT::const_value_type block_size) {
+std::vector<std::vector<typename ValuesT::non_const_value_type>> decompress_matrix(
+    const RowMapT& row_map, const EntriesT& entries, const ValuesT& values,
+    typename RowMapT::const_value_type block_size) {
   using size_type = typename RowMapT::non_const_value_type;
   using scalar_t  = typename ValuesT::non_const_value_type;
 
@@ -165,9 +148,8 @@ decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
       for (size_type i = 0; i < block_size; ++i) {
         const size_type unc_row_idx = row_idx * block_size + i;
         for (size_type j = 0; j < block_size; ++j) {
-          const size_type unc_col_idx = col_idx * block_size + j;
-          result[unc_row_idx][unc_col_idx] =
-              hvalues(row_nnz * block_items + i * block_size + j);
+          const size_type unc_col_idx      = col_idx * block_size + j;
+          result[unc_row_idx][unc_col_idx] = hvalues(row_nnz * block_items + i * block_size + j);
         }
       }
     }
@@ -177,11 +159,8 @@ decompress_matrix(const RowMapT& row_map, const EntriesT& entries,
 }
 
 template <typename RowMapT, typename EntriesT, typename ValuesT>
-void check_matrix(
-    const std::string& name, const RowMapT& row_map, const EntriesT& entries,
-    const ValuesT& values,
-    const std::vector<std::vector<typename ValuesT::non_const_value_type>>&
-        expected) {
+void check_matrix(const std::string& name, const RowMapT& row_map, const EntriesT& entries, const ValuesT& values,
+                  const std::vector<std::vector<typename ValuesT::non_const_value_type>>& expected) {
   using size_type = typename RowMapT::non_const_value_type;
 
   const auto decompressed_mtx = decompress_matrix(row_map, entries, values);
@@ -189,10 +168,8 @@ void check_matrix(
   const size_type nrows = row_map.size() - 1;
   for (size_type row_idx = 0; row_idx < nrows; ++row_idx) {
     for (size_type col_idx = 0; col_idx < nrows; ++col_idx) {
-      EXPECT_NEAR(expected[row_idx][col_idx],
-                  decompressed_mtx[row_idx][col_idx], 0.01)
-          << "Failed check is: " << name << "[" << row_idx << "][" << col_idx
-          << "]";
+      EXPECT_NEAR(expected[row_idx][col_idx], decompressed_mtx[row_idx][col_idx], 0.01)
+          << "Failed check is: " << name << "[" << row_idx << "][" << col_idx << "]";
     }
   }
 }

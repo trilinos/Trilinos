@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,6 +8,7 @@
 
 #include "copy_string_cpp.h"
 #include "exodusII.h" // for MAX_LINE_LENGTH, ex_close, etc
+#include "fmt/format.h"
 #include "fmt/ostream.h"
 #include "globals.h"
 #include "nem_spread.h"
@@ -70,6 +71,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_mesh_param()
     fmt::print(stderr, "{}: ERROR opening up the mesh exoII file, {}\n", __func__, exofile);
     exit(-1);
   }
+  exoid += selected_change_set;
 
   /* Read the initialization parameters */
   ex_init_params info{};

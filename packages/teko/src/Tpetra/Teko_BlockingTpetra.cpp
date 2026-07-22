@@ -1,54 +1,22 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teko_BlockingTpetra.hpp"
 #include "Teko_Utilities.hpp"
+#include "Tpetra_Details_makeColMap_decl.hpp"
 
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Map.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
+#include "Kokkos_Sort.hpp"
+#include "Kokkos_NestedSort.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -71,11 +39,11 @@ namespace Blocking {
  * \returns A pair of maps: (Global Map, Contiguous Map)
  */
 const MapPair buildSubMap(const std::vector<GO>& gid, const Teuchos::Comm<int>& comm) {
-  using GST                                     = Tpetra::global_size_t;
-  const GST invalid                             = Teuchos::OrdinalTraits<GST>::invalid();
-  Teuchos::RCP<Tpetra::Map<LO, GO, NT> > gidMap = rcp(
+  using GST                                    = Tpetra::global_size_t;
+  const GST invalid                            = Teuchos::OrdinalTraits<GST>::invalid();
+  Teuchos::RCP<Tpetra::Map<LO, GO, NT>> gidMap = rcp(
       new Tpetra::Map<LO, GO, NT>(invalid, Teuchos::ArrayView<const GO>(gid), 0, rcpFromRef(comm)));
-  Teuchos::RCP<Tpetra::Map<LO, GO, NT> > contigMap =
+  Teuchos::RCP<Tpetra::Map<LO, GO, NT>> contigMap =
       rcp(new Tpetra::Map<LO, GO, NT>(invalid, gid.size(), 0, rcpFromRef(comm)));
 
   return std::make_pair(gidMap, contigMap);
@@ -103,13 +71,13 @@ const ImExPair buildExportImport(const Tpetra::Map<LO, GO, NT>& baseMap, const M
  * \param[in] count Number of multivectors to build.
  */
 void buildSubVectors(const std::vector<MapPair>& maps,
-                     std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >& vectors, int count) {
+                     std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT>>>& vectors, int count) {
   std::vector<MapPair>::const_iterator mapItr;
 
   // loop over all maps
   for (mapItr = maps.begin(); mapItr != maps.end(); mapItr++) {
     // add new elements to vectors
-    RCP<Tpetra::MultiVector<ST, LO, GO, NT> > mv =
+    RCP<Tpetra::MultiVector<ST, LO, GO, NT>> mv =
         rcp(new Tpetra::MultiVector<ST, LO, GO, NT>((*mapItr).second, count));
     vectors.push_back(mv);
   }
@@ -122,18 +90,17 @@ void buildSubVectors(const std::vector<MapPair>& maps,
  * <code>buildSubVectors</code>. \param[in] one The source vector. \param[in] subImport A list of
  * import objects to use in copying.
  */
-void one2many(std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >& many,
+void one2many(std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT>>>& many,
               const Tpetra::MultiVector<ST, LO, GO, NT>& single,
-              const std::vector<RCP<Tpetra::Import<LO, GO, NT> > >& subImport) {
-  // std::vector<RCP<Epetra_Vector> >::const_iterator vecItr;
-  std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >::const_iterator vecItr;
-  std::vector<RCP<Tpetra::Import<LO, GO, NT> > >::const_iterator impItr;
+              const std::vector<RCP<Tpetra::Import<LO, GO, NT>>>& subImport) {
+  std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT>>>::const_iterator vecItr;
+  std::vector<RCP<Tpetra::Import<LO, GO, NT>>>::const_iterator impItr;
 
   // using Importers fill the sub vectors from the mama vector
   for (vecItr = many.begin(), impItr = subImport.begin(); vecItr != many.end();
        ++vecItr, ++impItr) {
     // for ease of access to the destination
-    RCP<Tpetra::MultiVector<ST, LO, GO, NT> > destVec = *vecItr;
+    RCP<Tpetra::MultiVector<ST, LO, GO, NT>> destVec = *vecItr;
 
     // extract the map with global indicies from the current vector
     const Tpetra::Map<LO, GO, NT>& globalMap = *(*impItr)->getTargetMap();
@@ -167,17 +134,16 @@ void one2many(std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >& many,
  * <code>one</code>. \param[in] subExport A list of export objects to use in copying.
  */
 void many2one(Tpetra::MultiVector<ST, LO, GO, NT>& one,
-              const std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > >& many,
-              const std::vector<RCP<Tpetra::Export<LO, GO, NT> > >& subExport) {
-  // std::vector<RCP<const Epetra_Vector> >::const_iterator vecItr;
-  std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > >::const_iterator vecItr;
-  std::vector<RCP<Tpetra::Export<LO, GO, NT> > >::const_iterator expItr;
+              const std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT>>>& many,
+              const std::vector<RCP<Tpetra::Export<LO, GO, NT>>>& subExport) {
+  std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT>>>::const_iterator vecItr;
+  std::vector<RCP<Tpetra::Export<LO, GO, NT>>>::const_iterator expItr;
 
   // using Exporters fill the empty vector from the sub-vectors
   for (vecItr = many.begin(), expItr = subExport.begin(); vecItr != many.end();
        ++vecItr, ++expItr) {
     // for ease of access to the source
-    RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > srcVec = *vecItr;
+    RCP<const Tpetra::MultiVector<ST, LO, GO, NT>> srcVec = *vecItr;
 
     // extract the map with global indicies from the current vector
     const Tpetra::Map<LO, GO, NT>& globalMap = *(*expItr)->getSourceMap();
@@ -201,204 +167,215 @@ void many2one(Tpetra::MultiVector<ST, LO, GO, NT>& one,
  * sub-block row map. The other columns will be filled with the contiguous row map
  * values.
  */
-RCP<Tpetra::Vector<GO, LO, GO, NT> > getSubBlockColumnGIDs(
+RCP<Tpetra::Vector<GO, LO, GO, NT>> getSubBlockColumnGIDs(
     const Tpetra::CrsMatrix<ST, LO, GO, NT>& A, const MapPair& mapPair) {
-  RCP<const Tpetra::Map<LO, GO, NT> > blkGIDMap    = mapPair.first;
-  RCP<const Tpetra::Map<LO, GO, NT> > blkContigMap = mapPair.second;
+  RCP<const Tpetra::Map<LO, GO, NT>> blkGIDMap    = mapPair.first;
+  RCP<const Tpetra::Map<LO, GO, NT>> blkContigMap = mapPair.second;
 
   // fill index vector for rows
   Tpetra::Vector<GO, LO, GO, NT> rIndex(A.getRowMap(), true);
+  const auto invalidLO = Teuchos::OrdinalTraits<LO>::invalid();
   for (size_t i = 0; i < A.getLocalNumRows(); i++) {
     // LID is need to get to contiguous map
     LO lid = blkGIDMap->getLocalElement(
         A.getRowMap()->getGlobalElement(i));  // this LID makes me nervous
-    if (lid > -1)
+    if (lid != invalidLO)
       rIndex.replaceLocalValue(i, blkContigMap->getGlobalElement(lid));
     else
-      rIndex.replaceLocalValue(i, -1);
+      rIndex.replaceLocalValue(i, invalidLO);
   }
 
   // get relavant column indices
 
   Tpetra::Import<LO, GO, NT> import(A.getRowMap(), A.getColMap());
-  RCP<Tpetra::Vector<GO, LO, GO, NT> > cIndex =
+  RCP<Tpetra::Vector<GO, LO, GO, NT>> cIndex =
       rcp(new Tpetra::Vector<GO, LO, GO, NT>(A.getColMap(), true));
   cIndex->doImport(rIndex, import, Tpetra::INSERT);
 
   return cIndex;
 }
 
-// build a single subblock Epetra_CrsMatrix
-RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
-    int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
-    const std::vector<MapPair>& subMaps) {
+RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
+    int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& A,
+    const std::vector<MapPair>& subMaps,
+    Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT>> plocal2ContigGIDs) {
   // get the number of variables families
   int numVarFamily = subMaps.size();
 
   TEUCHOS_ASSERT(i >= 0 && i < numVarFamily);
   TEUCHOS_ASSERT(j >= 0 && j < numVarFamily);
-  const RCP<const Tpetra::Map<LO, GO, NT> > gRowMap = subMaps[i].first;   // new GIDs
-  const RCP<const Tpetra::Map<LO, GO, NT> > rowMap  = subMaps[i].second;  // contiguous GIDs
-  const RCP<const Tpetra::Map<LO, GO, NT> > colMap  = subMaps[j].second;
+  const RCP<const Tpetra::Map<LO, GO, NT>> gRowMap   = subMaps[i].first;   // new GIDs
+  const RCP<const Tpetra::Map<LO, GO, NT>> rangeMap  = subMaps[i].second;  // contiguous GIDs
+  const RCP<const Tpetra::Map<LO, GO, NT>> domainMap = subMaps[j].second;
+  const RCP<const Tpetra::Map<LO, GO, NT>> rowMap    = rangeMap;
 
-  const RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs =
-      getSubBlockColumnGIDs(*A, subMaps[j]);
+  if (!plocal2ContigGIDs) {
+    plocal2ContigGIDs = Blocking::getSubBlockColumnGIDs(*A, subMaps[j]);
+  }
   Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
 
   // get entry information
-  LO numMyRows     = rowMap->getLocalNumElements();
-  LO maxNumEntries = A->getLocalMaxNumRowEntries();
+  LO numMyRows         = rangeMap->getLocalNumElements();
+  const auto invalidLO = Teuchos::OrdinalTraits<LO>::invalid();
 
-  // for extraction
-  auto indices = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_local_inds_host_view_type(
-      Kokkos::ViewAllocateWithoutInitializing("rowIndices"), maxNumEntries);
-  auto values = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_values_host_view_type(
-      Kokkos::ViewAllocateWithoutInitializing("rowIndices"), maxNumEntries);
+  auto nEntriesPerRow =
+      Kokkos::View<LO*>(Kokkos::ViewAllocateWithoutInitializing("nEntriesPerRow"), numMyRows);
+  Kokkos::deep_copy(nEntriesPerRow, invalidLO);
 
-  // for insertion
-  std::vector<GO> colIndices(maxNumEntries);
-  std::vector<ST> colValues(maxNumEntries);
+  using local_matrix_type     = Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type;
+  using row_map_type          = local_matrix_type::row_map_type::non_const_type;
+  using values_type           = local_matrix_type::values_type::non_const_type;
+  using index_type            = local_matrix_type::index_type::non_const_type;
+  auto prefixSumEntriesPerRow = row_map_type(
+      Kokkos::ViewAllocateWithoutInitializing("prefixSumEntriesPerRow"), numMyRows + 1);
 
-  // for counting
-  std::vector<size_t> nEntriesPerRow(numMyRows);
+  const auto invalid = Teuchos::OrdinalTraits<GO>::invalid();
 
-  const size_t invalid = Teuchos::OrdinalTraits<size_t>::invalid();
+  auto A_dev        = A->getLocalMatrixDevice();
+  auto gRowMap_dev  = gRowMap->getLocalMap();
+  auto A_rowmap_dev = A->getRowMap()->getLocalMap();
+  auto data         = local2ContigGIDs.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-  // insert each row into subblock
-  // Count the number of entries per row in the new matrix
-  for (LO localRow = 0; localRow < numMyRows; localRow++) {
-    size_t numEntries = invalid;
-    GO globalRow      = gRowMap->getGlobalElement(localRow);
-    LO lid            = A->getRowMap()->getLocalElement(globalRow);
-    TEUCHOS_ASSERT(lid > -1);
+  using matrix_execution_space =
+      typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type::execution_space;
 
-    A->getLocalRowCopy(lid, indices, values, numEntries);
+  LO totalNumOwnedCols = 0;
+  Kokkos::parallel_scan(
+      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(0, numMyRows),
+      KOKKOS_LAMBDA(const LO localRow, LO& sumNumEntries, bool finalPass) {
+        auto numOwnedCols = nEntriesPerRow(localRow);
 
-    LO numOwnedCols = 0;
-    for (size_t localCol = 0; localCol < numEntries; localCol++) {
-      TEUCHOS_ASSERT(indices(localCol) > -1);
+        if (numOwnedCols == invalidLO) {
+          GO globalRow             = gRowMap_dev.getGlobalElement(localRow);
+          LO lid                   = A_rowmap_dev.getLocalElement(globalRow);
+          const auto sparseRowView = A_dev.row(lid);
 
-      // if global id is not owned by this column
+          numOwnedCols = 0;
+          for (auto localCol = 0; localCol < sparseRowView.length; localCol++) {
+            GO gid = data(sparseRowView.colidx(localCol), 0);
+            if (gid == invalid) continue;
+            numOwnedCols++;
+          }
+          nEntriesPerRow(localRow) = numOwnedCols;
+        }
 
-      GO gid = local2ContigGIDs.getData()[indices[localCol]];
-      if (gid == -1) continue;  // in contiguous row
-      numOwnedCols++;
-    }
-    nEntriesPerRow[localRow] = numOwnedCols;
-  }
+        if (finalPass) {
+          prefixSumEntriesPerRow(localRow) = sumNumEntries;
+          if (localRow == (numMyRows - 1)) {
+            prefixSumEntriesPerRow(numMyRows) = prefixSumEntriesPerRow(localRow) + numOwnedCols;
+          }
+        }
+        sumNumEntries += numOwnedCols;
+      },
+      totalNumOwnedCols);
 
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > mat = rcp(
-      new Tpetra::CrsMatrix<ST, LO, GO, NT>(rowMap, Teuchos::ArrayView<size_t>(nEntriesPerRow)));
+  using device_type  = typename NT::device_type;
+  auto columnIndices = Kokkos::View<GO*, device_type>(
+      Kokkos::ViewAllocateWithoutInitializing("columnIndices"), totalNumOwnedCols);
+  auto values = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), totalNumOwnedCols);
 
-  // insert each row into subblock
-  // let FillComplete handle column distribution
-  for (LO localRow = 0; localRow < numMyRows; localRow++) {
-    size_t numEntries = invalid;
-    GO globalRow      = gRowMap->getGlobalElement(localRow);
-    LO lid            = A->getRowMap()->getLocalElement(globalRow);
-    GO contigRow      = rowMap->getGlobalElement(localRow);
-    TEUCHOS_ASSERT(lid > -1);
+  LO maxNumEntriesSubblock = 0;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(0, numMyRows),
+      KOKKOS_LAMBDA(const LO localRow, LO& maxNumEntries) {
+        GO globalRow             = gRowMap_dev.getGlobalElement(localRow);
+        LO lid                   = A_rowmap_dev.getLocalElement(globalRow);
+        const auto sparseRowView = A_dev.row(lid);
 
-    A->getLocalRowCopy(lid, indices, values, numEntries);
+        LO colId      = 0;
+        LO colIdStart = prefixSumEntriesPerRow[localRow];
+        for (auto localCol = 0; localCol < sparseRowView.length; localCol++) {
+          GO gid = data(sparseRowView.colidx(localCol), 0);
+          if (gid == invalid) continue;
+          auto value                        = sparseRowView.value(localCol);
+          columnIndices(colId + colIdStart) = gid;
+          values(colId + colIdStart)        = value;
+          colId++;
+        }
+        const auto numOwnedCols = nEntriesPerRow(localRow);
+        maxNumEntries           = Kokkos::max(maxNumEntries, numOwnedCols);
+      },
+      Kokkos::Max<LO>(maxNumEntriesSubblock));
 
-    LO numOwnedCols = 0;
-    for (size_t localCol = 0; localCol < numEntries; localCol++) {
-      TEUCHOS_ASSERT(indices(localCol) > -1);
+  Teuchos::RCP<const Tpetra::Map<LO, GO, NT>> colMap;
+  Tpetra::Details::makeColMap<LO, GO, NT>(colMap, domainMap, columnIndices);
+  TEUCHOS_ASSERT(colMap);
 
-      // if global id is not owned by this column
+  auto colMap_dev = colMap->getLocalMap();
+  auto localColumnIndices =
+      index_type(Kokkos::ViewAllocateWithoutInitializing("localColumnIndices"), totalNumOwnedCols);
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(
+          0, totalNumOwnedCols),
+      KOKKOS_LAMBDA(const LO index) {
+        localColumnIndices(index) = colMap_dev.getLocalElement(columnIndices(index));
+      });
 
-      GO gid = local2ContigGIDs.getData()[indices(localCol)];
-      if (gid == -1) continue;  // in contiguous row
+  KokkosSparse::sort_crs_matrix<matrix_execution_space, row_map_type, index_type, values_type>(
+      prefixSumEntriesPerRow, localColumnIndices, values);
 
-      colIndices[numOwnedCols] = gid;
-      colValues[numOwnedCols]  = values(localCol);
-      numOwnedCols++;
-    }
+  auto lcl_mat = Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type(
+      "localMat", numMyRows, maxNumEntriesSubblock, totalNumOwnedCols, values,
+      prefixSumEntriesPerRow, localColumnIndices);
 
-    // insert it into the new matrix
-    colIndices.resize(numOwnedCols);
-    colValues.resize(numOwnedCols);
-    mat->insertGlobalValues(contigRow, Teuchos::ArrayView<GO>(colIndices),
-                            Teuchos::ArrayView<ST>(colValues));
-    colIndices.resize(maxNumEntries);
-    colValues.resize(maxNumEntries);
-  }
-
-  // fill it and automagically optimize the storage
-  mat->fillComplete(colMap, rowMap);
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> mat =
+      rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(lcl_mat, rowMap, colMap, domainMap, rangeMap));
 
   return mat;
 }
 
-// build a single subblock Epetra_CrsMatrix
-void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
-                     const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat) {
+void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& A,
+                     const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
+                     Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT>> plocal2ContigGIDs) {
   // get the number of variables families
   int numVarFamily = subMaps.size();
 
   TEUCHOS_ASSERT(i >= 0 && i < numVarFamily);
   TEUCHOS_ASSERT(j >= 0 && j < numVarFamily);
 
-  const Tpetra::Map<LO, GO, NT>& gRowMap = *subMaps[i].first;   // new GIDs
-  const Tpetra::Map<LO, GO, NT>& rowMap  = *subMaps[i].second;  // contiguous GIDs
-  const Tpetra::Map<LO, GO, NT>& colMap  = *subMaps[j].second;
+  const Tpetra::Map<LO, GO, NT>& gRowMap   = *subMaps[i].first;   // new GIDs
+  const Tpetra::Map<LO, GO, NT>& rangeMap  = *subMaps[i].second;  // contiguous GIDs
+  const Tpetra::Map<LO, GO, NT>& domainMap = *subMaps[j].second;
+  const Tpetra::Map<LO, GO, NT>& rowMap    = *subMaps[i].second;
+  const auto& colMap                       = mat.getColMap();
 
-  const RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs =
-      getSubBlockColumnGIDs(*A, subMaps[j]);
+  if (!plocal2ContigGIDs) {
+    plocal2ContigGIDs = Blocking::getSubBlockColumnGIDs(*A, subMaps[j]);
+  }
   Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
 
   mat.resumeFill();
   mat.setAllToScalar(0.0);
 
-  // get entry information
-  LO numMyRows     = rowMap.getLocalNumElements();
-  LO maxNumEntries = A->getLocalMaxNumRowEntries();
+  LO numMyRows = rowMap.getLocalNumElements();
+  using matrix_execution_space =
+      typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type::execution_space;
+  auto A_dev         = A->getLocalMatrixDevice();
+  auto mat_dev       = mat.getLocalMatrixDevice();
+  auto gRowMap_dev   = gRowMap.getLocalMap();
+  auto A_rowmap_dev  = A->getRowMap()->getLocalMap();
+  auto colMap_dev    = colMap->getLocalMap();
+  auto data          = local2ContigGIDs.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  const auto invalid = Teuchos::OrdinalTraits<GO>::invalid();
 
-  // for extraction
-  auto indices = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_local_inds_host_view_type(
-      Kokkos::ViewAllocateWithoutInitializing("rowIndices"), maxNumEntries);
-  auto values = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_values_host_view_type(
-      Kokkos::ViewAllocateWithoutInitializing("rowIndices"), maxNumEntries);
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(0, numMyRows),
+      KOKKOS_LAMBDA(const LO localRow) {
+        GO globalRow             = gRowMap_dev.getGlobalElement(localRow);
+        LO lid                   = A_rowmap_dev.getLocalElement(globalRow);
+        const auto sparseRowView = A_dev.row(lid);
 
-  // for insertion
-  std::vector<GO> colIndices(maxNumEntries);
-  std::vector<ST> colValues(maxNumEntries);
+        for (auto localCol = 0; localCol < sparseRowView.length; localCol++) {
+          GO gid = data(sparseRowView.colidx(localCol), 0);
+          if (gid == invalid) continue;
 
-  const size_t invalid = Teuchos::OrdinalTraits<size_t>::invalid();
+          auto lidCol = colMap_dev.getLocalElement(gid);
+          auto value  = sparseRowView.value(localCol);
+          mat_dev.sumIntoValues(localRow, &lidCol, 1, &value, true, false);
+        }
+      });
 
-  // insert each row into subblock
-  // let FillComplete handle column distribution
-  for (LO localRow = 0; localRow < numMyRows; localRow++) {
-    size_t numEntries = invalid;
-    GO globalRow      = gRowMap.getGlobalElement(localRow);
-    LO lid            = A->getRowMap()->getLocalElement(globalRow);
-    GO contigRow      = rowMap.getGlobalElement(localRow);
-    TEUCHOS_ASSERT(lid > -1);
-
-    A->getLocalRowCopy(lid, indices, values, numEntries);
-
-    LO numOwnedCols = 0;
-    for (size_t localCol = 0; localCol < numEntries; localCol++) {
-      TEUCHOS_ASSERT(indices(localCol) > -1);
-
-      // if global id is not owned by this column
-      GO gid = local2ContigGIDs.getData()[indices(localCol)];
-      if (gid == -1) continue;  // in contiguous row
-
-      colIndices[numOwnedCols] = gid;
-      colValues[numOwnedCols]  = values(localCol);
-      numOwnedCols++;
-    }
-
-    // insert it into the new matrix
-    colIndices.resize(numOwnedCols);
-    colValues.resize(numOwnedCols);
-    mat.sumIntoGlobalValues(contigRow, Teuchos::ArrayView<GO>(colIndices),
-                            Teuchos::ArrayView<ST>(colValues));
-    colIndices.resize(maxNumEntries);
-    colValues.resize(maxNumEntries);
-  }
-  mat.fillComplete(rcpFromRef(colMap), rcpFromRef(rowMap));
+  mat.fillComplete(rcpFromRef(domainMap), rcpFromRef(rangeMap));
 }
 
 }  // namespace Blocking

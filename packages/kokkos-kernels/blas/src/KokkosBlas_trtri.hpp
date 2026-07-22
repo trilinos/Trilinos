@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS_TRTRI_HPP_
 #define KOKKOSBLAS_TRTRI_HPP_
 
@@ -43,8 +30,7 @@ namespace KokkosBlas {
 //                    and the inversion could not be completed.
 // source: https://software.intel.com/en-us/mkl-developer-reference-c-trtri
 template <class AViewType>
-[[deprecated]] int trtri(const char uplo[], const char diag[],
-                         const AViewType& A) {
+[[deprecated]] int trtri(const char uplo[], const char diag[], const AViewType& A) {
   return KokkosLapack::trtri(uplo, diag, A);
 }
 

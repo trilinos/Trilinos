@@ -24,6 +24,7 @@
 
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_LWGraph.hpp"
+#include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -54,30 +55,23 @@ RCP<const ParameterList> NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrd
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("aggregation: pairwise: size");
   SET_VALID_ENTRY("aggregation: pairwise: tie threshold");
-  SET_VALID_ENTRY("aggregation: compute aggregate qualities");
   SET_VALID_ENTRY("aggregation: Dirichlet threshold");
   SET_VALID_ENTRY("aggregation: ordering");
 #undef SET_VALID_ENTRY
 
   // general variables needed in AggregationFactory
-  validParamList->set<RCP<const FactoryBase> >("A", null, "Generating factory of the matrix");
-  validParamList->set<RCP<const FactoryBase> >("Graph", null, "Generating factory of the graph");
-  validParamList->set<RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-  validParamList->set<RCP<const FactoryBase> >("AggregateQualities", null, "Generating factory for variable \'AggregateQualities\'");
+  validParamList->set<RCP<const FactoryBase>>("A", null, "Generating factory of the matrix");
+  validParamList->set<RCP<const FactoryBase>>("Graph", null, "Generating factory of the graph");
+  validParamList->set<RCP<const FactoryBase>>("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
 
   return validParamList;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
-  const ParameterList& pL = GetParameterList();
-
   Input(currentLevel, "A");
   Input(currentLevel, "Graph");
   Input(currentLevel, "DofsPerNode");
-  if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-    Input(currentLevel, "AggregateQualities");
-  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -113,8 +107,14 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
                              "NotayAggregationFactory::Build(): \"aggregation: pairwise: size\""
                              " must be a strictly positive integer");
 
-  RCP<const LWGraph> graph = Get<RCP<LWGraph> >(currentLevel, "Graph");
-  RCP<const Matrix> A      = Get<RCP<Matrix> >(currentLevel, "A");
+  RCP<const LWGraph> graph;
+  if (IsType<RCP<LWGraph>>(currentLevel, "Graph"))
+    graph = Get<RCP<LWGraph>>(currentLevel, "Graph");
+  else {
+    auto graph_k = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
+    graph        = graph_k->copyToHost();
+  }
+  RCP<const Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
 
   // Setup aggregates & aggStat objects
   RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
@@ -161,8 +161,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
   if (ordering == O_RANDOM)
     MueLu::NotayUtils::RandomReorder(orderingVector);
   else if (ordering == O_CUTHILL_MCKEE) {
-    RCP<Xpetra::Vector<LO, LO, GO, NO> > rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
-    auto localVector                               = rcmVector->getData(0);
+    RCP<Xpetra::Vector<LO, LO, GO, NO>> rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
+    auto localVector                              = rcmVector->getData(0);
     for (LO i = 0; i < numRows; i++)
       orderingVector[i] = localVector[i];
   }
@@ -198,7 +198,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
     // Directly compute rowsum from A, rather than coarseA
     row_sum_type rowSum("rowSum", numLocalAggregates);
     {
-      std::vector<std::vector<LO> > agg2vertex(numLocalAggregates);
+      std::vector<std::vector<LO>> agg2vertex(numLocalAggregates);
       auto vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
       for (LO i = 0; i < (LO)numRows; i++) {
         if (aggStat[i] != AGGREGATED)
@@ -207,7 +207,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
         agg2vertex[agg].push_back(i);
       }
 
-      typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
+      typename row_sum_type::host_mirror_type rowSum_h = Kokkos::create_mirror_view(rowSum);
       for (LO i = 0; i < numRows; i++) {
         // If not aggregated already, skip this guy
         if (aggStat[i] != AGGREGATED)
@@ -248,8 +248,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
     if (ordering == O_RANDOM)
       MueLu::NotayUtils::RandomReorder(localOrderingVector);
     else if (ordering == O_CUTHILL_MCKEE) {
-      RCP<Xpetra::Vector<LO, LO, GO, NO> > rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
-      auto localVector                               = rcmVector->getData(0);
+      RCP<Xpetra::Vector<LO, LO, GO, NO>> rcmVector = MueLu::Utilities<SC, LO, GO, NO>::CuthillMcKee(*A);
+      auto localVector                              = rcmVector->getData(0);
       for (LO i = 0; i < numRows; i++)
         localOrderingVector[i] = localVector[i];
     }
@@ -476,13 +476,13 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildFurtherAggregates(const Teuchos::ParameterList& params,
-                           const RCP<const Matrix>& A,
+                           const RCP<const Matrix>& /*A*/,
                            const Teuchos::ArrayView<const LO>& orderingVector,
-                           const typename Matrix::local_matrix_type& coarseA,
+                           const typename Matrix::local_matrix_device_type& coarseA,
                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType kappa,
-                           const Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type*,
+                           const Kokkos::View<typename KokkosKernels::ArithTraits<Scalar>::val_type*,
                                               Kokkos::LayoutLeft,
-                                              typename Matrix::local_matrix_type::device_type>& rowSum,
+                                              typename Matrix::local_matrix_device_type::device_type>& rowSum,
                            std::vector<LocalOrdinal>& localAggStat,
                            Teuchos::Array<LocalOrdinal>& localVertex2AggID,
                            LO& numLocalAggregates,
@@ -499,7 +499,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   using value_type             = typename local_matrix_type::value_type;
-  const value_type KAT_zero    = Kokkos::ArithTraits<value_type>::zero();
+  const value_type KAT_zero    = KokkosKernels::ArithTraits<value_type>::zero();
   const magnitude_type MT_zero = Teuchos::ScalarTraits<magnitude_type>::zero();
   const magnitude_type MT_one  = Teuchos::ScalarTraits<magnitude_type>::one();
   const magnitude_type MT_two  = MT_one + MT_one;
@@ -511,19 +511,19 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   double tie_less      = 1.0 - tie_criterion;
   double tie_more      = 1.0 + tie_criterion;
 
-  typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
+  typename row_sum_type::host_mirror_type rowSum_h = Kokkos::create_mirror_view(rowSum);
   Kokkos::deep_copy(rowSum_h, rowSum);
 
   // Extracting the diagonal of a KokkosSparse::CrsMatrix
   // is not currently provided in kokkos-kernels so here
   // is an ugly way to get that done...
   const LO numRows = static_cast<LO>(coarseA.numRows());
-  typename local_matrix_type::values_type::HostMirror diagA_h("diagA host", numRows);
-  typename local_matrix_type::row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(coarseA.graph.row_map);
+  typename local_matrix_type::values_type::host_mirror_type diagA_h("diagA host", numRows);
+  typename local_matrix_type::row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(coarseA.graph.row_map);
   Kokkos::deep_copy(row_map_h, coarseA.graph.row_map);
-  typename local_matrix_type::index_type::HostMirror entries_h = Kokkos::create_mirror_view(coarseA.graph.entries);
+  typename local_matrix_type::index_type::host_mirror_type entries_h = Kokkos::create_mirror_view(coarseA.graph.entries);
   Kokkos::deep_copy(entries_h, coarseA.graph.entries);
-  typename local_matrix_type::values_type::HostMirror values_h = Kokkos::create_mirror_view(coarseA.values);
+  typename local_matrix_type::values_type::host_mirror_type values_h = Kokkos::create_mirror_view(coarseA.values);
   Kokkos::deep_copy(values_h, coarseA.values);
   for (LO rowIdx = 0; rowIdx < numRows; ++rowIdx) {
     for (LO entryIdx = static_cast<LO>(row_map_h(rowIdx));
@@ -613,8 +613,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    BuildOnRankLocalMatrix(const typename Matrix::local_matrix_type& localA,
-                           typename Matrix::local_matrix_type& onrankA) const {
+    BuildOnRankLocalMatrix(const typename Matrix::local_matrix_device_type& localA,
+                           typename Matrix::local_matrix_device_type& onrankA) const {
   Monitor m(*this, "BuildOnRankLocalMatrix");
 
   // Set debug outputs based on environment variable
@@ -640,10 +640,10 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   const int numRows = static_cast<int>(localA.numRows());
   row_pointer_type rowPtr("onrankA row pointer", numRows + 1);
-  typename row_pointer_type::HostMirror rowPtr_h                   = Kokkos::create_mirror_view(rowPtr);
-  typename local_graph_type::row_map_type::HostMirror origRowPtr_h = Kokkos::create_mirror_view(localA.graph.row_map);
-  typename local_graph_type::entries_type::HostMirror origColind_h = Kokkos::create_mirror_view(localA.graph.entries);
-  typename values_type::HostMirror origValues_h                    = Kokkos::create_mirror_view(localA.values);
+  typename row_pointer_type::host_mirror_type rowPtr_h                   = Kokkos::create_mirror_view(rowPtr);
+  typename local_graph_type::row_map_type::host_mirror_type origRowPtr_h = Kokkos::create_mirror_view(localA.graph.row_map);
+  typename local_graph_type::entries_type::host_mirror_type origColind_h = Kokkos::create_mirror_view(localA.graph.entries);
+  typename values_type::host_mirror_type origValues_h                    = Kokkos::create_mirror_view(localA.values);
   Kokkos::deep_copy(origRowPtr_h, localA.graph.row_map);
   Kokkos::deep_copy(origColind_h, localA.graph.entries);
   Kokkos::deep_copy(origValues_h, localA.values);
@@ -665,8 +665,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Now use nnz per row to allocate matrix views and store column indices and values
   col_indices_type colInd("onrankA column indices", rowPtr_h(numRows));
   values_type values("onrankA values", rowPtr_h(numRows));
-  typename col_indices_type::HostMirror colInd_h = Kokkos::create_mirror_view(colInd);
-  typename values_type::HostMirror values_h      = Kokkos::create_mirror_view(values);
+  typename col_indices_type::host_mirror_type colInd_h = Kokkos::create_mirror_view(colInd);
+  typename values_type::host_mirror_type values_h      = Kokkos::create_mirror_view(values);
   int entriesInRow;
   for (int rowIdx = 0; rowIdx < numRows; ++rowIdx) {
     entriesInRow = 0;
@@ -691,7 +691,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                  const LocalOrdinal numDirichletNodes,
                                  const LocalOrdinal numLocalAggregates,
                                  const Teuchos::ArrayView<const LocalOrdinal>& localVertex2AggID,
-                                 typename Matrix::local_matrix_type& intermediateP) const {
+                                 typename Matrix::local_matrix_device_type& intermediateP) const {
   Monitor m(*this, "BuildIntermediateProlongator");
 
   // Set debug outputs based on environment variable
@@ -718,8 +718,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   row_pointer_type rowPtr("intermediateP row pointer", numRows + 1);
   col_indices_type colInd("intermediateP column indices", intermediatePnnz);
   values_type values("intermediateP values", intermediatePnnz);
-  typename row_pointer_type::HostMirror rowPtr_h = Kokkos::create_mirror_view(rowPtr);
-  typename col_indices_type::HostMirror colInd_h = Kokkos::create_mirror_view(colInd);
+  typename row_pointer_type::host_mirror_type rowPtr_h = Kokkos::create_mirror_view(rowPtr);
+  typename col_indices_type::host_mirror_type colInd_h = Kokkos::create_mirror_view(colInd);
 
   rowPtr_h(0) = 0;
   for (int rowIdx = 0; rowIdx < numRows; ++rowIdx) {
@@ -734,7 +734,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   Kokkos::deep_copy(rowPtr, rowPtr_h);
   Kokkos::deep_copy(colInd, colInd_h);
-  Kokkos::deep_copy(values, Kokkos::ArithTraits<typename values_type::value_type>::one());
+  Kokkos::deep_copy(values, KokkosKernels::ArithTraits<typename values_type::value_type>::one());
 
   intermediateP = local_matrix_type("intermediateP",
                                     numRows, numLocalAggregates, intermediatePnnz,
@@ -743,8 +743,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    BuildCoarseLocalMatrix(const typename Matrix::local_matrix_type& intermediateP,
-                           typename Matrix::local_matrix_type& coarseA) const {
+    BuildCoarseLocalMatrix(const typename Matrix::local_matrix_device_type& intermediateP,
+                           typename Matrix::local_matrix_device_type& coarseA) const {
   Monitor m(*this, "BuildCoarseLocalMatrix");
 
   using local_graph_type = typename local_matrix_type::staticcrsgraph_type;
@@ -777,8 +777,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   values_type valuesPt(Kokkos::ViewAllocateWithoutInitializing("Pt values"),
                        intermediateP.nnz());
 
-  typename row_pointer_type::HostMirror rowPtrPt_h = Kokkos::create_mirror_view(rowPtrPt);
-  typename col_indices_type::HostMirror entries_h  = Kokkos::create_mirror_view(intermediateP.graph.entries);
+  typename row_pointer_type::host_mirror_type rowPtrPt_h = Kokkos::create_mirror_view(rowPtrPt);
+  typename col_indices_type::host_mirror_type entries_h  = Kokkos::create_mirror_view(intermediateP.graph.entries);
   Kokkos::deep_copy(entries_h, intermediateP.graph.entries);
   Kokkos::deep_copy(rowPtrPt_h, 0);
   for (size_type entryIdx = 0; entryIdx < intermediateP.nnz(); ++entryIdx) {
@@ -789,15 +789,15 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
   Kokkos::deep_copy(rowPtrPt, rowPtrPt_h);
 
-  typename row_pointer_type::HostMirror rowPtrP_h = Kokkos::create_mirror_view(intermediateP.graph.row_map);
+  typename row_pointer_type::host_mirror_type rowPtrP_h = Kokkos::create_mirror_view(intermediateP.graph.row_map);
   Kokkos::deep_copy(rowPtrP_h, intermediateP.graph.row_map);
-  typename col_indices_type::HostMirror colIndP_h = Kokkos::create_mirror_view(intermediateP.graph.entries);
+  typename col_indices_type::host_mirror_type colIndP_h = Kokkos::create_mirror_view(intermediateP.graph.entries);
   Kokkos::deep_copy(colIndP_h, intermediateP.graph.entries);
-  typename values_type::HostMirror valuesP_h = Kokkos::create_mirror_view(intermediateP.values);
+  typename values_type::host_mirror_type valuesP_h = Kokkos::create_mirror_view(intermediateP.values);
   Kokkos::deep_copy(valuesP_h, intermediateP.values);
-  typename col_indices_type::HostMirror colIndPt_h = Kokkos::create_mirror_view(colIndPt);
-  typename values_type::HostMirror valuesPt_h      = Kokkos::create_mirror_view(valuesPt);
-  const col_index_type invalidColumnIndex          = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
+  typename col_indices_type::host_mirror_type colIndPt_h = Kokkos::create_mirror_view(colIndPt);
+  typename values_type::host_mirror_type valuesPt_h      = Kokkos::create_mirror_view(valuesPt);
+  const col_index_type invalidColumnIndex                = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
   Kokkos::deep_copy(colIndPt_h, invalidColumnIndex);
 
   col_index_type colIdx = 0;
@@ -829,10 +829,10 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    localSpGEMM(const typename Matrix::local_matrix_type& A,
-                const typename Matrix::local_matrix_type& B,
+    localSpGEMM(const typename Matrix::local_matrix_device_type& A,
+                const typename Matrix::local_matrix_device_type& B,
                 const std::string matrixLabel,
-                typename Matrix::local_matrix_type& C) const {
+                typename Matrix::local_matrix_device_type& C) const {
   using local_graph_type = typename local_matrix_type::staticcrsgraph_type;
   using values_type      = typename local_matrix_type::values_type;
   using size_type        = typename local_graph_type::size_type;
@@ -864,11 +864,11 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   values_type valuesC;
 
   // Symbolic multiplication
-  KokkosSparse::Experimental::spgemm_symbolic(&kh, A.numRows(),
-                                              B.numRows(), B.numCols(),
-                                              A.graph.row_map, A.graph.entries, false,
-                                              B.graph.row_map, B.graph.entries, false,
-                                              rowPtrC);
+  KokkosSparse::spgemm_symbolic(&kh, A.numRows(),
+                                B.numRows(), B.numCols(),
+                                A.graph.row_map, A.graph.entries, false,
+                                B.graph.row_map, B.graph.entries, false,
+                                rowPtrC);
 
   // allocate column indices and values of AP
   size_t nnzC = kh.get_spgemm_handle()->get_c_nnz();
@@ -878,11 +878,11 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   // Numeric multiplication
-  KokkosSparse::Experimental::spgemm_numeric(&kh, A.numRows(),
-                                             B.numRows(), B.numCols(),
-                                             A.graph.row_map, A.graph.entries, A.values, false,
-                                             B.graph.row_map, B.graph.entries, B.values, false,
-                                             rowPtrC, colIndC, valuesC);
+  KokkosSparse::spgemm_numeric(&kh, A.numRows(),
+                               B.numRows(), B.numCols(),
+                               A.graph.row_map, A.graph.entries, A.values, false,
+                               B.graph.row_map, B.graph.entries, B.values, false,
+                               rowPtrC, colIndC, valuesC);
   kh.destroy_spgemm_handle();
 
   C = local_matrix_type(matrixLabel, A.numRows(), B.numCols(), nnzC, valuesC, rowPtrC, colIndC);

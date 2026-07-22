@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // Test for github issue #3101 -- test Tpetra::FEMultiVector::doOwnedToOwnedPlusShared
 
 #include "Tpetra_Core.hpp"
@@ -16,8 +25,7 @@
 // Tpetra::FEMultiVector updates copies from their owning processors.
 
 class FEMultiVectorTest {
-public:
-
+ public:
   typedef Tpetra::Map<> map_t;
   typedef map_t::local_ordinal_type lno_t;
   typedef map_t::global_ordinal_type gno_t;
@@ -28,9 +36,9 @@ public:
 
   int intTest();
 
-  void printFEMV(const char *msg) ;
+  void printFEMV(const char *msg);
 
-private:
+ private:
   int me;           // my processor rank
   int np;           // number of processors
   int nLocalOwned;  // number of vertices owned by this processor
@@ -52,27 +60,25 @@ private:
 //           map with owned+ghosted (copied) vertices
 // -  then builds a Tpetra::FEMultiVector with two vectors using the maps
 FEMultiVectorTest::FEMultiVectorTest(
-  Teuchos::RCP<const Teuchos::Comm<int> > &comm_
-) :
-  me(comm_->getRank()),
-  np(comm_->getSize()),
-  nLocalOwned(10),
-  nLocalCopy( np > 1 ? 5 : 0),
-  nVec(2),
-  comm(comm_)
-{
+    Teuchos::RCP<const Teuchos::Comm<int> > &comm_)
+  : me(comm_->getRank())
+  , np(comm_->getSize())
+  , nLocalOwned(10)
+  , nLocalCopy(np > 1 ? 5 : 0)
+  , nVec(2)
+  , comm(comm_) {
   // Each rank has 15 IDs, the last five of which overlap with the next rank.
   // (IDs and owning processors wrap-around from processor np-1 to 0.)
   const Tpetra::global_size_t nGlobal = np * nLocalOwned;
-  lno_t offset = me * nLocalOwned;
+  lno_t offset                        = me * nLocalOwned;
 
   Teuchos::Array<gno_t> gids(nLocalOwned + nLocalCopy);
-  for (lno_t i = 0 ; i < nLocalOwned + nLocalCopy; i++)
-    gids[i] = static_cast<gno_t> ((offset + i) % nGlobal);
+  for (lno_t i = 0; i < nLocalOwned + nLocalCopy; i++)
+    gids[i] = static_cast<gno_t>((offset + i) % nGlobal);
 
   // Create Map of owned + copies (a.k.a. overlap map); analagous to ColumnMap
   Tpetra::global_size_t dummy =
-          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
   mapWithCopies = rcp(new map_t(dummy, gids(), 0, comm));
 
   // Create Map of owned only (a.k.a. one-to-one map); analagous to RowMap
@@ -80,14 +86,14 @@ FEMultiVectorTest::FEMultiVectorTest(
 
   // Print the entries of each map
   std::cout << me << " MAP WITH COPIES ("
-                  << mapWithCopies->getGlobalNumElements() << "):  ";
+            << mapWithCopies->getGlobalNumElements() << "):  ";
   lno_t nlocal = lno_t(mapWithCopies->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << mapWithCopies->getGlobalElement(i) << " ";
   std::cout << std::endl;
 
   std::cout << me << " ONE TO ONE MAP  ("
-                  << mapOwned->getGlobalNumElements() << "):  ";
+            << mapOwned->getGlobalNumElements() << "):  ";
   nlocal = lno_t(mapOwned->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << mapOwned->getGlobalElement(i) << " ";
@@ -97,7 +103,7 @@ FEMultiVectorTest::FEMultiVectorTest(
   typedef Tpetra::Import<lno_t, gno_t> import_t;
   Teuchos::RCP<import_t> importer = rcp(new import_t(mapOwned,
                                                      mapWithCopies));
-  femv = rcp(new femv_t(mapOwned, importer, nVec, true));
+  femv                            = rcp(new femv_t(mapOwned, importer, nVec, true));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -106,10 +112,8 @@ FEMultiVectorTest::FEMultiVectorTest(
 // Fill second vector with processor rank (me)
 // Perform communication to add copies' contributions to their owned vertices
 // Perform communication to send owned vertices' values back to copies.
-int FEMultiVectorTest::intTest()
-{
+int FEMultiVectorTest::intTest() {
   int ierr = 0;
-
 
   // Add contributions to owned vertices and copies of off-processor vertices
   try {
@@ -120,8 +124,7 @@ int FEMultiVectorTest::intTest()
       femv->replaceGlobalValue(gid, 1, me);
     }
     femv->endAssembly();
-  }
-  catch (std::exception &e) {
+  } catch (std::exception &e) {
     std::cout << "FAIL:  Exception thrown in Fill:  " << e.what() << std::endl;
     throw e;
   }
@@ -131,8 +134,7 @@ int FEMultiVectorTest::intTest()
   // Update copied vertices from their owners
   try {
     femv->doOwnedToOwnedPlusShared(Tpetra::REPLACE);
-  }
-  catch (std::exception &e) {
+  } catch (std::exception &e) {
     std::cout << "FAIL:  Exception thrown in doOwnedToOwnedPlusShared:  "
               << e.what() << std::endl;
     throw e;
@@ -148,12 +150,12 @@ int FEMultiVectorTest::intTest()
 
   // Check vector 0:  SOURCE
   auto value = femv->getData(0);
-  for (lno_t i = 0; i < nLocalCopy; i++){
+  for (lno_t i = 0; i < nLocalCopy; i++) {
     gno_t gid = femv->getMap()->getGlobalElement(i);
-    if (value[i] != 2*gid) {
+    if (value[i] != 2 * gid) {
       std::cout << me << " Error in SOURCE vec 0 overlap: gid=" << gid
-                      << " value= " << value[i] << " should be " << 2*gid
-                      << std::endl;
+                << " value= " << value[i] << " should be " << 2 * gid
+                << std::endl;
       ierr++;
     }
   }
@@ -161,8 +163,8 @@ int FEMultiVectorTest::intTest()
     gno_t gid = femv->getMap()->getGlobalElement(i);
     if (value[i] != gid) {
       std::cout << me << " Error in SOURCE vec 0:  gid=" << gid
-                      << " value= " << value[i] << " should be " << gid
-                      << std::endl;
+                << " value= " << value[i] << " should be " << gid
+                << std::endl;
       ierr++;
     }
   }
@@ -170,12 +172,12 @@ int FEMultiVectorTest::intTest()
   // Check vector 0:  TARGET
   femv->switchActiveMultiVector();  // needed to allow testing copies
   value = femv->getData(0);
-  for (lno_t i = 0; i < nLocalCopy; i++){
+  for (lno_t i = 0; i < nLocalCopy; i++) {
     gno_t gid = femv->getMap()->getGlobalElement(i);
-    if (value[i] != 2*gid) {
+    if (value[i] != 2 * gid) {
       std::cout << me << " Error in TARGET vec 0 overlap: gid=" << gid
-                      << " value= " << value[i] << " should be " << 2*gid
-                      << std::endl;
+                << " value= " << value[i] << " should be " << 2 * gid
+                << std::endl;
       ierr++;
     }
   }
@@ -183,31 +185,31 @@ int FEMultiVectorTest::intTest()
     gno_t gid = femv->getMap()->getGlobalElement(i);
     if (value[i] != gid) {
       std::cout << me << " Error in TARGET vec 0:  gid=" << gid
-                      << " value= " << value[i] << " should be " << gid
-                      << std::endl;
+                << " value= " << value[i] << " should be " << gid
+                << std::endl;
       ierr++;
     }
   }
   for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
     gno_t gid = femv->getMap()->getGlobalElement(i);
-    if (value[i] != 2*gid) {
+    if (value[i] != 2 * gid) {
       std::cout << me << " Error in TARGET vec 0 copies:  gid=" << gid
-                      << " value= " << value[i] << " should be " << gid
-                      << std::endl;
+                << " value= " << value[i] << " should be " << gid
+                << std::endl;
       ierr++;
     }
   }
   femv->switchActiveMultiVector();  // restore state
 
   // Check vector 1:  SOURCE
-  value = femv->getData(1);
+  value   = femv->getData(1);
   int tmp = me + (np + me - 1) % np;
   for (lno_t i = 0; i < nLocalCopy; i++) {
     gno_t gid = mapWithCopies->getGlobalElement(i);
     if (value[i] != tmp) {
       std::cout << me << " Error in SOURCE vec 1 overlap:  gid=" << gid
-                      << " value= " << value[i] << " should be " << tmp
-                      << std::endl;
+                << " value= " << value[i] << " should be " << tmp
+                << std::endl;
       ierr++;
     }
   }
@@ -215,8 +217,8 @@ int FEMultiVectorTest::intTest()
     gno_t gid = mapWithCopies->getGlobalElement(i);
     if (value[i] != me) {
       std::cout << me << " Error in SOURCE vec 1:  gid=" << gid
-                      << " value= " << value[i] << " should be " << me
-                      << std::endl;
+                << " value= " << value[i] << " should be " << me
+                << std::endl;
       ierr++;
     }
   }
@@ -228,8 +230,8 @@ int FEMultiVectorTest::intTest()
     gno_t gid = mapWithCopies->getGlobalElement(i);
     if (value[i] != tmp) {
       std::cout << me << " Error in TARGET vec 1 overlap:  gid=" << gid
-                      << " value= " << value[i] << " should be " << tmp
-                      << std::endl;
+                << " value= " << value[i] << " should be " << tmp
+                << std::endl;
       ierr++;
     }
   }
@@ -237,18 +239,18 @@ int FEMultiVectorTest::intTest()
     gno_t gid = mapWithCopies->getGlobalElement(i);
     if (value[i] != me) {
       std::cout << me << " Error in TARGET vec 1:  gid=" << gid
-                      << " value= " << value[i] << " should be " << me
-                      << std::endl;
+                << " value= " << value[i] << " should be " << me
+                << std::endl;
       ierr++;
     }
   }
   tmp = me + (me + 1) % np;
   for (lno_t i = nLocalOwned; i < nLocalCopy + nLocalOwned; i++) {
     gno_t gid = mapWithCopies->getGlobalElement(i);
-    if (value[i] != tmp)  {
+    if (value[i] != tmp) {
       std::cout << me << " Error in TARGET vec 1 copies:  gid=" << gid
-                      << " value= " << value[i] << " should be " << tmp
-                      << std::endl;
+                << " value= " << value[i] << " should be " << tmp
+                << std::endl;
       ierr++;
     }
   }
@@ -259,8 +261,7 @@ int FEMultiVectorTest::intTest()
 
 //////////////////////////////////////////////////////////////////////////////
 // Print the SOURCE and TARGET multivector entries
-void FEMultiVectorTest::printFEMV(const char *msg)
-{
+void FEMultiVectorTest::printFEMV(const char *msg) {
   // print Source MV (Owned only)
   for (int v = 0; v < nVec; v++) {
     std::cout << me << " SOURCE " << msg << " FEMV[" << v << "] Owned: ";
@@ -276,7 +277,7 @@ void FEMultiVectorTest::printFEMV(const char *msg)
     auto value = femv->getData(v);
     for (lno_t i = 0; i < nLocalOwned; i++) std::cout << value[i] << " ";
     std::cout << " Copies: ";
-    for (lno_t i = nLocalOwned; i < nLocalOwned+nLocalCopy; i++)
+    for (lno_t i = nLocalOwned; i < nLocalOwned + nLocalCopy; i++)
       std::cout << value[i] << " ";
     std::cout << std::endl;
   }
@@ -285,19 +286,17 @@ void FEMultiVectorTest::printFEMV(const char *msg)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int main(int narg, char **arg)
-{
+int main(int narg, char **arg) {
   Tpetra::ScopeGuard scope(&narg, &arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int me = comm->getRank();
-  int ierr = 0;
+  int me                                       = comm->getRank();
+  int ierr                                     = 0;
 
   FEMultiVectorTest femvTest(comm);
 
   try {
     ierr = femvTest.intTest();
-  }
-  catch (std::exception &e) {
+  } catch (std::exception &e) {
     std::cout << "FAIL: Exception thrown in intTest " << e.what() << std::endl;
     return 0;
   }
@@ -306,8 +305,10 @@ int main(int narg, char **arg)
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
 
   if (me == 0) {
-    if (gerr == 0) std::cout << "PASS" << std::endl;
-    else std::cout << "FAIL:  " << gerr << " failures" << std::endl;
+    if (gerr == 0)
+      std::cout << "PASS" << std::endl;
+    else
+      std::cout << "FAIL:  " << gerr << " failures" << std::endl;
   }
 
   return 0;

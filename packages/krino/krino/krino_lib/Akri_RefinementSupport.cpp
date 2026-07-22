@@ -106,9 +106,8 @@ RefinementSupport::setup_refinement_node_marker()
 }
 
 void
-RefinementSupport::activate_nonconformal_adapt_target_count(const uint64_t target_count)
+RefinementSupport::setup_refinement_error_indicator()
 {
-  my_nonconformal_adapt_target_element_count = target_count;
   my_nonconformal_adapt_indicator_name = "CDFEM_ADAPTIVITY_ERROR_INDICATOR";
 
   AuxMetaData::get(myMeta).register_field(my_nonconformal_adapt_indicator_name,
@@ -117,6 +116,13 @@ RefinementSupport::activate_nonconformal_adapt_target_count(const uint64_t targe
       1,
       1,
       myMeta.universal_part());
+}
+
+void
+RefinementSupport::activate_nonconformal_adapt_target_count(const uint64_t target_count)
+{
+  my_nonconformal_adapt_target_element_count = target_count;
+  setup_refinement_error_indicator();
 }
 
 

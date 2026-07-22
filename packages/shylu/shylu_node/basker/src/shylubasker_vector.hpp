@@ -1,13 +1,17 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_VECTOR_HPP
 #define SHYLUBASKER_VECTOR_HPP
 
 #include "shylubasker_types.hpp"
-
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
 
 namespace BaskerNS
 {

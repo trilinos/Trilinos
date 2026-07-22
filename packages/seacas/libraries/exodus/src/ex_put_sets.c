@@ -59,7 +59,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
   */
   for (i = 0; i < set_count; i++) {
     /* first check if any sets are specified */
-    if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(sets[i].type), &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(sets[i].type), &dimid)) != EX_NOERR) {
       if (status == NC_EBADDIM) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss defined for file id %d",
                  ex_name_of_object(sets[i].type), exoid);
@@ -96,7 +96,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
 
   if (needs_define > 0) {
     /* put netcdf file into define mode  */
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       free(sets_to_define);
@@ -164,7 +164,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
       }
 
       /* define dimensions and variables */
-      if ((status = nc_def_dim(exoid, numentryptr, sets[i].num_entry, &dimid)) != NC_NOERR) {
+      if ((status = nc_def_dim(exoid, numentryptr, sets[i].num_entry, &dimid)) != EX_NOERR) {
         if (status == NC_ENAMEINUSE) {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: %s %" PRId64 " -- size already defined in file id %d",
@@ -187,7 +187,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
 
       /* create variable array in which to store the entry lists */
       dims[0] = dimid;
-      if ((status = nc_def_var(exoid, entryptr, int_type, 1, dims, &varid)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, entryptr, int_type, 1, dims, &varid)) != EX_NOERR) {
         if (status == NC_ENAMEINUSE) {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: entry list already exists for %s %" PRId64 " in file id %d",
@@ -205,7 +205,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
       exi_compress_variable(exoid, varid, 1);
 
       if (extraptr) {
-        if ((status = nc_def_var(exoid, extraptr, int_type, 1, dims, &varid)) != NC_NOERR) {
+        if ((status = nc_def_var(exoid, extraptr, int_type, 1, dims, &varid)) != EX_NOERR) {
           if (status == NC_ENAMEINUSE) {
             snprintf(errmsg, MAX_ERR_LENGTH,
                      "ERROR: extra list already exists for %s %" PRId64 " in file id %d",
@@ -239,7 +239,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
         else {
           /* reuse dimid from entry lists */
           if ((status = nc_def_dim(exoid, numdfptr, sets[i].num_distribution_factor, &dimid)) !=
-              NC_NOERR) {
+              EX_NOERR) {
             snprintf(errmsg, MAX_ERR_LENGTH,
                      "ERROR: failed to define number of dist factors in %s %" PRId64
                      " in file id %d",
@@ -253,7 +253,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
          */
         dims[0] = dimid;
         if ((status = nc_def_var(exoid, factptr, nc_flt_code(exoid), 1, dims, &varid)) !=
-            NC_NOERR) {
+            EX_NOERR) {
           if (status == NC_ENAMEINUSE) {
             snprintf(errmsg, MAX_ERR_LENGTH,
                      "ERROR: dist factors list already exists for %s %" PRId64 " in file id %d",
@@ -273,7 +273,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
     }
 
     /* leave define mode  */
-    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
       ex_err_fn(exoid, __func__, errmsg, status);
       free(sets_to_define);
@@ -305,7 +305,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
       }
 
       /* first: get id of set id variable */
-      if ((status = nc_inq_varid(exoid, idsptr, &varid)) != NC_NOERR) {
+      if ((status = nc_inq_varid(exoid, idsptr, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " in file id %d",
                  ex_name_of_object(sets[i].type), sets[i].id, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -321,7 +321,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
       }
       status = nc_put_var1_longlong(exoid, varid, start, &id);
 
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s id %" PRId64 " in file id %d",
                  ex_name_of_object(sets[i].type), sets[i].id, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -331,7 +331,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
 
       set_stat = (sets[i].num_entry == 0) ? 0 : 1;
 
-      if ((status = nc_inq_varid(exoid, statptr, &varid)) != NC_NOERR) {
+      if ((status = nc_inq_varid(exoid, statptr, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s status in file id %d",
                  ex_name_of_object(sets[i].type), exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -339,7 +339,7 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
-      if ((status = nc_put_var1_int(exoid, varid, start, &set_stat)) != NC_NOERR) {
+      if ((status = nc_put_var1_int(exoid, varid, start, &set_stat)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to store %s %" PRId64 " status to file id %d",
                  ex_name_of_object(sets[i].type), sets[i].id, exoid);

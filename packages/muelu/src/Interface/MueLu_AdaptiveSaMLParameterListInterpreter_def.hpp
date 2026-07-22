@@ -20,9 +20,6 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
-#include <ml_ValidateParameters.h>
-#endif
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>

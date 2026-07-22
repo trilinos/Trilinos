@@ -45,10 +45,10 @@
 namespace
 {
 
-class ChangePartsTest : public stk::unit_test_util::simple_fields::MeshFixture
+class ChangePartsTest : public stk::unit_test_util::MeshFixture
 {
 public:
-  ChangePartsTest() : stk::unit_test_util::simple_fields::MeshFixture(),
+  ChangePartsTest() : stk::unit_test_util::MeshFixture(),
     batchTimer(get_comm()),
     elementsOnBlock1(true)
   {
@@ -165,8 +165,8 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingEntityVectorSimplePerfTest)
   if(get_parallel_size() > 1) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);
-  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
+  const unsigned NUM_ITERS = stk::unit_test_util::get_command_line_option("-r", 50);
+  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
   numBlocks = 1;
 
   batchTimer.initialize_batch_timer();
@@ -194,8 +194,8 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingSelectorSimplePerfTest)
   if(get_parallel_size() > 1) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 200);
-  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
+  const unsigned NUM_ITERS = stk::unit_test_util::get_command_line_option("-r", 200);
+  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
   numBlocks = 1;
 
   batchTimer.initialize_batch_timer();
@@ -222,9 +222,9 @@ TEST_F(ChangePartsTest, cacheRemovalImpactChangeEntityPartsWithEntityVector)
   if(get_parallel_size() > 1) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 500000);
-  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 80);
-  numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 125);
+  const unsigned NUM_ITERS = stk::unit_test_util::get_command_line_option("-r", 500000);
+  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 80);
+  numBlocks = stk::unit_test_util::get_command_line_option("-b", 125);
 
   batchTimer.initialize_batch_timer();
 
@@ -250,9 +250,9 @@ TEST_F(ChangePartsTest, cacheRemovalImpactChangeEntityPartsWithSelector)
   if(get_parallel_size() > 1) { GTEST_SKIP(); }
 
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 500000);
-  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 80);
-  numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 125);
+  const unsigned NUM_ITERS = stk::unit_test_util::get_command_line_option("-r", 500000);
+  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 80);
+  numBlocks = stk::unit_test_util::get_command_line_option("-b", 125);
 
   batchTimer.initialize_batch_timer();
 

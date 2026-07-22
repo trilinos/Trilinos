@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #include <Kokkos_Macros.hpp>
@@ -52,6 +39,8 @@ VariableValue make_variable_value(size_t, int64_t);
 VariableValue make_variable_value(size_t, double);
 SetOrRange make_candidate_range(double lower, double upper, double step,
                                 bool openLower, bool openUpper);
+SetOrRange make_candidate_range(int64_t lower, int64_t upper, int64_t step,
+                                bool openLower, bool openUpper);
 size_t get_new_context_id();
 void begin_context(size_t context_id);
 void end_context(size_t context_id);
@@ -69,9 +58,7 @@ template <typename ValueType, typename ContainedType>
 struct ValueHierarchyNode {
   std::vector<ValueType> root_values;
   std::vector<ContainedType> sub_values;
-  void add_root_value(const ValueType& in) noexcept {
-    root_values.push_back(in);
-  }
+  void add_root_value(const ValueType& in) { root_values.push_back(in); }
   void add_sub_container(const ContainedType& in) { sub_values.push_back(in); }
   const ValueType& get_root_value(const size_t index) const {
     return root_values[index];
@@ -86,9 +73,7 @@ struct ValueHierarchyNode<ValueType, void> {
   std::vector<ValueType> root_values;
   explicit ValueHierarchyNode(std::vector<ValueType> rv)
       : root_values(std::move(rv)) {}
-  void add_root_value(const ValueType& in) noexcept {
-    root_values.push_back(in);
-  }
+  void add_root_value(const ValueType& in) { root_values.push_back(in); }
   const ValueType& get_root_value(const size_t index) const {
     return root_values[index];
   }
@@ -336,7 +321,7 @@ class MultidimensionalSparseTuningProblem {
   MultidimensionalSparseTuningProblem(StoredProblemSpace space,
                                       const std::vector<std::string>& names)
       : m_space(std::move(space)), m_variable_names(names) {
-    assert(names.size() == space_dimensionality);
+    KOKKOS_ASSERT(names.size() == space_dimensionality);
     for (unsigned long x = 0; x < names.size(); ++x) {
       VariableInfo info;
       info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_double;
@@ -393,6 +378,10 @@ struct ExtendableTunerMixin {
     const auto& sub_tuner = static_cast<const Tuner*>(this)->get_tuner();
     return sub_tuner.get_point(coordinates...);
   }
+
+ private:
+  ExtendableTunerMixin() = default;
+  friend Tuner;
 };
 
 template <size_t MaxDimensionSize = 100, template <class...> class Container,
@@ -412,18 +401,16 @@ class TeamSizeTuner : public ExtendableTunerMixin<TeamSizeTuner> {
   TunerType tuner;
 
  public:
-  TeamSizeTuner()        = default;
-  TeamSizeTuner& operator=(const TeamSizeTuner& other) = default;
-  TeamSizeTuner(const TeamSizeTuner& other)            = default;
-  TeamSizeTuner& operator=(TeamSizeTuner&& other) = default;
-  TeamSizeTuner(TeamSizeTuner&& other)            = default;
+  TeamSizeTuner() = default;
+
   template <typename ViableConfigurationCalculator, typename Functor,
             typename TagType, typename... Properties>
   TeamSizeTuner(const std::string& name,
-                Kokkos::TeamPolicy<Properties...>& policy,
+                const Kokkos::TeamPolicy<Properties...>& policy_in,
                 const Functor& functor, const TagType& tag,
                 ViableConfigurationCalculator calc) {
-    using PolicyType           = Kokkos::TeamPolicy<Properties...>;
+    using PolicyType = Kokkos::TeamPolicy<Properties...>;
+    PolicyType policy(policy_in);
     auto initial_vector_length = policy.impl_vector_length();
     if (initial_vector_length < 1) {
       policy.impl_set_vector_length(1);
@@ -505,7 +492,8 @@ class TeamSizeTuner : public ExtendableTunerMixin<TeamSizeTuner> {
   }
 
   template <typename... Properties>
-  void tune(Kokkos::TeamPolicy<Properties...>& policy) {
+  auto tune(const Kokkos::TeamPolicy<Properties...>& policy_in) {
+    Kokkos::TeamPolicy<Properties...> policy(policy_in);
     if (Kokkos::Tools::Experimental::have_tuning_tool()) {
       auto configuration = tuner.begin();
       auto team_size     = std::get<1>(configuration);
@@ -515,6 +503,111 @@ class TeamSizeTuner : public ExtendableTunerMixin<TeamSizeTuner> {
         policy.impl_set_vector_length(vector_length);
       }
     }
+    return policy;
+  }
+  void end() {
+    if (Kokkos::Tools::Experimental::have_tuning_tool()) {
+      tuner.end();
+    }
+  }
+
+  TunerType get_tuner() const { return tuner; }
+};
+namespace Impl {
+template <class T>
+struct tuning_type_for;
+
+template <>
+struct tuning_type_for<double> {
+  static constexpr Kokkos::Tools::Experimental::ValueType value =
+      Kokkos::Tools::Experimental::ValueType::kokkos_value_double;
+  static double get(
+      const Kokkos::Tools::Experimental::VariableValue& value_struct) {
+    return value_struct.value.double_value;
+  }
+};
+template <>
+struct tuning_type_for<int64_t> {
+  static constexpr Kokkos::Tools::Experimental::ValueType value =
+      Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
+  static int64_t get(
+      const Kokkos::Tools::Experimental::VariableValue& value_struct) {
+    return value_struct.value.int_value;
+  }
+};
+}  // namespace Impl
+template <class Bound>
+class SingleDimensionalRangeTuner {
+  size_t id;
+  size_t context;
+  using tuning_util = Impl::tuning_type_for<Bound>;
+
+  Bound default_value;
+
+ public:
+  SingleDimensionalRangeTuner() = default;
+  SingleDimensionalRangeTuner(
+      const std::string& name,
+      Kokkos::Tools::Experimental::StatisticalCategory category,
+      Bound default_val, Bound lower, Bound upper, Bound step = (Bound)0) {
+    default_value = default_val;
+    Kokkos::Tools::Experimental::VariableInfo info;
+    info.category   = category;
+    info.candidates = make_candidate_range(
+        static_cast<Bound>(lower), static_cast<Bound>(upper),
+        static_cast<Bound>(step), false, false);
+    info.valueQuantity =
+        Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_range;
+    info.type = tuning_util::value;
+    id        = Kokkos::Tools::Experimental::declare_output_type(name, info);
+  }
+
+  Bound begin() {
+    context = Kokkos::Tools::Experimental::get_new_context_id();
+    Kokkos::Tools::Experimental::begin_context(context);
+    auto tuned_value =
+        Kokkos::Tools::Experimental::make_variable_value(id, default_value);
+    Kokkos::Tools::Experimental::request_output_values(context, 1,
+                                                       &tuned_value);
+    return tuning_util::get(tuned_value);
+  }
+
+  void end() { Kokkos::Tools::Experimental::end_context(context); }
+
+  template <typename Functor>
+  void with_tuned_value(Functor& func) {
+    func(begin());
+    end();
+  }
+};
+
+class RangePolicyOccupancyTuner {
+ private:
+  using TunerType = SingleDimensionalRangeTuner<int64_t>;
+  TunerType tuner;
+
+ public:
+  RangePolicyOccupancyTuner() = default;
+  template <typename ViableConfigurationCalculator, typename Functor,
+            typename TagType, typename... Properties>
+  RangePolicyOccupancyTuner(const std::string& name,
+                            const Kokkos::RangePolicy<Properties...>&,
+                            const Functor&, const TagType&,
+                            ViableConfigurationCalculator)
+      : tuner(TunerType(name,
+                        Kokkos::Tools::Experimental::StatisticalCategory::
+                            kokkos_value_ratio,
+                        100, 5, 100, 5)) {}
+
+  template <typename... Properties>
+  auto tune(const Kokkos::RangePolicy<Properties...>& policy_in) {
+    Kokkos::RangePolicy<Properties...> policy(policy_in);
+    if (Kokkos::Tools::Experimental::have_tuning_tool()) {
+      auto occupancy = tuner.begin();
+      policy.impl_set_desired_occupancy(
+          Kokkos::Experimental::DesiredOccupancy{static_cast<int>(occupancy)});
+    }
+    return policy;
   }
   void end() {
     if (Kokkos::Tools::Experimental::have_tuning_tool()) {
@@ -527,18 +620,86 @@ class TeamSizeTuner : public ExtendableTunerMixin<TeamSizeTuner> {
 
 namespace Impl {
 
-template <typename T>
-void fill_tile(std::vector<T>& cont, int tile_size) {
-  for (int x = 1; x < tile_size; x *= 2) {
+inline void fill_tile(std::vector<int>& cont, int tile_size) {
+  for (int x = 1; x <= tile_size; x *= 2) {
     cont.push_back(x);
   }
 }
-template <typename T, typename Mapped>
-void fill_tile(std::map<T, Mapped>& cont, int tile_size) {
-  for (int x = 1; x < tile_size; x *= 2) {
+template <typename Mapped>
+void fill_tile(std::map<int, Mapped>& cont, int tile_size) {
+  for (int x = 1; x <= tile_size; x *= 2) {
     fill_tile(cont[x], tile_size / x);
   }
 }
+
+// Map MDRangePolicy tile dimensions to hardware tile dimensions
+constexpr std::array<int, 3> map_to_hw_tile(const std::array<int, 6> tile,
+                                            int policy_rank) {
+  std::array<int, 3> hw_tile{1, 1, 1};
+  for (int i = 0; i < 6 && i < policy_rank; ++i) {
+    hw_tile[(i * 3) / policy_rank] *= tile[i];
+  }
+  return hw_tile;
+}
+
+constexpr bool is_valid_tile(const std::array<int, 3> hw_tile_limits,
+                             const std::array<int, 6> current_tile,
+                             int policy_rank) {
+  auto hw_tile = map_to_hw_tile(current_tile, policy_rank);
+
+  return (0 < hw_tile[0] && hw_tile[0] <= hw_tile_limits[0] && 0 < hw_tile[1] &&
+          hw_tile[1] <= hw_tile_limits[1] && 0 < hw_tile[2] &&
+          hw_tile[2] <= hw_tile_limits[2]);
+}
+
+// Filter the last dimension of the research space (vector) to remove invalid
+// tiles that exceed hardware limits
+inline void constrain_tile_sizes(std::vector<int>& cont,
+                                 const std::array<int, 3>& hw_tile_limits,
+                                 std::array<int, 6> current_tile,
+                                 int current_rank, const int policy_rank) {
+  auto it = cont.end();
+  while (it != cont.begin()) {
+    --it;
+    current_tile[current_rank] = *it;
+    if (!is_valid_tile(hw_tile_limits, current_tile, policy_rank)) {
+      it = cont.erase(it);
+    } else {
+      break;
+    }
+  }
+}
+
+// Validate the current tile size, then recursively apply constraints to the
+// nested map structure.
+template <typename Mapped>
+void constrain_tile_sizes(std::map<int, Mapped>& cont,
+                          const std::array<int, 3>& hw_tile_limits,
+                          std::array<int, 6> current_tile, int current_rank,
+                          const int policy_rank) {
+  for (auto it = cont.begin(); it != cont.end();) {
+    int dimension_size         = it->first;
+    current_tile[current_rank] = dimension_size;
+    if (!is_valid_tile(hw_tile_limits, current_tile, policy_rank)) {
+      it = cont.erase(it);
+    } else {
+      constrain_tile_sizes(it->second, hw_tile_limits, current_tile,
+                           current_rank + 1, policy_rank);
+      ++it;
+    }
+  }
+}
+
+// Entry point for applying tile constraints. Filters out invalid tiles that
+// exceed hardware limits based on the rank of the policy.
+template <typename Mapped>
+void apply_tiles_constraints(std::map<int, Mapped>& cont,
+                             const std::array<int, 3>& hw_tile_limits,
+                             int policy_rank) {
+  std::array<int, 6> current_tile{1, 1, 1, 1, 1, 1};
+  constrain_tile_sizes(cont, hw_tile_limits, current_tile, 0, policy_rank);
+}
+
 }  // namespace Impl
 
 template <int MDRangeRank>
@@ -564,7 +725,9 @@ struct MDRangeTuner : public ExtendableTunerMixin<MDRangeTuner<MDRangeRank>> {
     SpaceDescription desc;
     int max_tile_size =
         calc.get_mdrange_max_tile_size_product(policy, functor, tag);
+
     Impl::fill_tile(desc, max_tile_size);
+    Impl::apply_tiles_constraints(desc, policy.m_max_threads_dimensions, rank);
     std::vector<std::string> feature_names;
     for (int x = 0; x < rank; ++x) {
       feature_names.push_back(name + "_tile_size_" + std::to_string(x));
@@ -578,11 +741,13 @@ struct MDRangeTuner : public ExtendableTunerMixin<MDRangeTuner<MDRangeRank>> {
     policy.impl_change_tile_size({std::get<Indices>(tuple)...});
   }
   template <typename... Properties>
-  void tune(Kokkos::MDRangePolicy<Properties...>& policy) {
+  auto tune(const Kokkos::MDRangePolicy<Properties...>& policy_in) {
+    Kokkos::MDRangePolicy<Properties...> policy(policy_in);
     if (Kokkos::Tools::Experimental::have_tuning_tool()) {
       auto configuration = tuner.begin();
       set_policy_tile(policy, configuration, std::make_index_sequence<rank>{});
     }
+    return policy;
   }
   void end() {
     if (Kokkos::Tools::Experimental::have_tuning_tool()) {

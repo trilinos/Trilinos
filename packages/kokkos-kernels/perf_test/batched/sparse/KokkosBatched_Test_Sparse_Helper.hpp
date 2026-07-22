@@ -1,25 +1,21 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <sstream>
+#include <string>
+#include <vector>
 
 template <class XType>
 void writeArrayToMM(std::string name, const XType x) {
   std::ofstream myfile;
   myfile.open(name);
 
-  typename XType::HostMirror x_h = Kokkos::create_mirror_view(x);
+  typename XType::host_mirror_type x_h = Kokkos::create_mirror_view(x);
 
   Kokkos::deep_copy(x_h, x);
 
@@ -36,21 +32,32 @@ void writeArrayToMM(std::string name, const XType x) {
   myfile.close();
 }
 
-void readSizesFromMM(std::string name, int &nrows, int &ncols, int &nnz,
-                     int &N) {
+void readSizesFromMM(std::string name, int &nrows, int &ncols, int &nnz, int &N) {
   std::ifstream input(name);
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  if (!input.is_open()) {
+    std::cerr << "readSizesFromMM: could not open \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
+
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
   std::string line_sizes;
-
-  getline(input, line_sizes);
+  if (!std::getline(input, line_sizes)) {
+    std::cerr << "readSizesFromMM: could not read dimensions line from \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
 
   std::stringstream iss(line_sizes);
 
   int number;
   std::vector<int> sizes;
   while (iss >> number) sizes.push_back(number);
+
+  if (sizes.size() < 2u) {
+    std::cerr << "readSizesFromMM: expected at least 2 integers on the first data line of \"" << name
+              << "\" (after Matrix Market comments), found " << sizes.size() << "\n";
+    std::exit(EXIT_FAILURE);
+  }
 
   nrows = sizes[0];
   ncols = sizes[1];
@@ -66,15 +73,28 @@ void readSizesFromMM(std::string name, int &nrows, int &ncols, int &nnz,
 template <class XType>
 void readArrayFromMM(std::string name, const XType &x) {
   std::ifstream input(name);
+  if (!input.is_open()) {
+    std::cerr << "readArrayFromMM: could not open \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
 
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  if (input.fail()) {
+    std::cerr << "readArrayFromMM: failed skipping header in \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
 
-  typename XType::HostMirror x_h = Kokkos::create_mirror_view(x);
+  typename XType::host_mirror_type x_h = Kokkos::create_mirror_view(x);
 
-  for (size_t i = 0; i < x_h.extent(0); ++i)
-    for (size_t j = 0; j < x_h.extent(1); ++j) input >> x_h(i, j);
+  for (size_t i = 0; i < x_h.extent(0); ++i) {
+    for (size_t j = 0; j < x_h.extent(1); ++j) {
+      if (!(input >> x_h(i, j))) {
+        std::cerr << "readArrayFromMM: failed reading entry (" << i << "," << j << ") from \"" << name << "\"\n";
+        std::exit(EXIT_FAILURE);
+      }
+    }
+  }
 
   input.close();
 
@@ -84,12 +104,19 @@ void readArrayFromMM(std::string name, const XType &x) {
 template <class AType>
 void readDenseFromMM(std::string name, const AType &A) {
   std::ifstream input(name);
+  if (!input.is_open()) {
+    std::cerr << "readDenseFromMM: could not open \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
 
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  if (input.fail()) {
+    std::cerr << "readDenseFromMM: failed skipping header in \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
 
-  typename AType::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AType::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   Kokkos::deep_copy(A_h, 0.);
 
@@ -100,11 +127,20 @@ void readDenseFromMM(std::string name, const AType &A) {
   readSizesFromMM(name, Blk, nrows, nnz, N);
 
   for (int i = 0; i < nnz; ++i) {
-    input >> read_row >> read_col;
+    if (!(input >> read_row >> read_col)) {
+      std::cerr << "readDenseFromMM: failed reading row/column indices for entry " << i << " from \"" << name << "\"\n";
+      std::exit(EXIT_FAILURE);
+    }
     --read_row;
     --read_col;
 
-    for (int j = 0; j < N; ++j) input >> A_h(j, read_row, read_col);
+    for (int j = 0; j < N; ++j) {
+      if (!(input >> A_h(j, read_row, read_col))) {
+        std::cerr << "readDenseFromMM: failed reading values for entry " << i << ", batch index " << j << " from \""
+                  << name << "\"\n";
+        std::exit(EXIT_FAILURE);
+      }
+    }
   }
 
   input.close();
@@ -113,17 +149,23 @@ void readDenseFromMM(std::string name, const AType &A) {
 }
 
 template <class VType, class IntType>
-void readCRSFromMM(std::string name, const VType &V, const IntType &r,
-                   const IntType &c) {
+void readCRSFromMM(std::string name, const VType &V, const IntType &r, const IntType &c) {
   std::ifstream input(name);
+  if (!input.is_open()) {
+    std::cerr << "readCRSFromMM: could not open \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
 
-  while (input.peek() == '%')
-    input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  while (input.peek() == '%') input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  if (input.fail()) {
+    std::cerr << "readCRSFromMM: failed skipping header in \"" << name << "\"\n";
+    std::exit(EXIT_FAILURE);
+  }
 
-  typename VType::HostMirror V_h   = Kokkos::create_mirror_view(V);
-  typename IntType::HostMirror r_h = Kokkos::create_mirror_view(r);
-  typename IntType::HostMirror c_h = Kokkos::create_mirror_view(c);
+  typename VType::host_mirror_type V_h   = Kokkos::create_mirror_view(V);
+  typename IntType::host_mirror_type r_h = Kokkos::create_mirror_view(r);
+  typename IntType::host_mirror_type c_h = Kokkos::create_mirror_view(c);
 
   int current_row = 0;
   int read_row;
@@ -134,17 +176,26 @@ void readCRSFromMM(std::string name, const VType &V, const IntType &r,
   r_h(0) = 0;
 
   for (size_t i = 0; i < nnz; ++i) {
-    input >> read_row >> c_h(i);
+    if (!(input >> read_row >> c_h(i))) {
+      std::cerr << "readCRSFromMM: failed reading row/column for NZ " << i << " from \"" << name << "\"\n";
+      std::exit(EXIT_FAILURE);
+    }
     --read_row;
     --c_h(i);
-    for (int tmp_row = current_row + 1; tmp_row <= read_row; ++tmp_row)
-      r_h(tmp_row) = i;
+    for (int tmp_row = current_row + 1; tmp_row <= read_row; ++tmp_row) r_h(tmp_row) = i;
     current_row = read_row;
 
     // if (VType::rank == 1)
     //  input >> V_h(i);
-    if (VType::rank == 2)
-      for (size_t j = 0; j < V_h.extent(0); ++j) input >> V_h(j, i);
+    if (VType::rank == 2) {
+      for (size_t j = 0; j < V_h.extent(0); ++j) {
+        if (!(input >> V_h(j, i))) {
+          std::cerr << "readCRSFromMM: failed reading value (batch " << j << ", NZ " << i << ") from \"" << name
+                    << "\"\n";
+          std::exit(EXIT_FAILURE);
+        }
+      }
+    }
   }
 
   r_h(nrows) = nnz;
@@ -157,8 +208,7 @@ void readCRSFromMM(std::string name, const VType &V, const IntType &r,
 }
 
 template <class VType, class IntType>
-void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
-                       const VType &diag) {
+void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c, const VType &diag) {
   auto diag_values_host = Kokkos::create_mirror_view(diag);
   auto values_host      = Kokkos::create_mirror_view(V);
   auto row_ptr_host     = Kokkos::create_mirror_view(r);
@@ -173,12 +223,10 @@ void getInvDiagFromCRS(const VType &V, const IntType &r, const IntType &c,
   int BlkSize = diag.extent(1);
 
   for (int i = 0; i < BlkSize; ++i) {
-    for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1);
-         ++current_index) {
+    for (current_index = row_ptr_host(i); current_index < row_ptr_host(i + 1); ++current_index) {
       if (colIndices_host(current_index) == i) break;
     }
-    for (int j = 0; j < N; ++j)
-      diag_values_host(j, i) = 1. / values_host(j, current_index);
+    for (int j = 0; j < N; ++j) diag_values_host(j, i) = 1. / values_host(j, current_index);
   }
 
   Kokkos::deep_copy(diag, diag_values_host);

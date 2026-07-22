@@ -18,7 +18,7 @@
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <Akri_Phase_Support.hpp>
-#include <Akri_RefinementInterface.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -26,11 +26,13 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <Akri_RefinementSupport.hpp>
+#include <Akri_Sign.hpp>
+#include <Akri_Surface.hpp>
 
 namespace krino {
 
 namespace {
-  void set_refine_if_not_reached_max_refine(const RefinementInterface & refinement,
+  void set_refine_if_not_reached_max_refine(const RefinementManager & refinement,
     stk::mesh::Entity elem,
     const int interface_max_refine_level,
     FieldRef elem_marker)
@@ -61,7 +63,7 @@ static bool node_is_snapped_to_interface(stk::mesh::Entity node,
 
 void
 refine_edges_with_multiple_unsnapped_crossings(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     const std::vector<IntersectionPoint> & edgeIntersections,
     const int interface_max_refine_level,
     FieldRef elem_marker_field,
@@ -83,7 +85,7 @@ refine_edges_with_multiple_unsnapped_crossings(const stk::mesh::BulkData& mesh,
       if (alreadyInSet)
       {
         std::vector<stk::mesh::Entity> edge_elems;
-        stk::mesh::get_entities_through_relations(mesh, {edge.nodes[0], edge.nodes[1]},
+        stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edge.nodes[0], edge.nodes[1]},
             stk::topology::ELEMENT_RANK, edge_elems);
         for (auto && elem : edge_elems)
         {
@@ -96,7 +98,7 @@ refine_edges_with_multiple_unsnapped_crossings(const stk::mesh::BulkData& mesh,
 
 void
 refine_edges_with_nodes_with_multiple_snapped_interfaces(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     const std::vector<IntersectionPoint> & edgeIntersections,
     const int interface_max_refine_level,
     FieldRef elem_marker_field,
@@ -115,7 +117,7 @@ refine_edges_with_nodes_with_multiple_snapped_interfaces(const stk::mesh::BulkDa
     if (num_node1_interfaces > 1 || num_node2_interfaces > 1)
     {
       std::vector<stk::mesh::Entity> edge_elems;
-      stk::mesh::get_entities_through_relations(mesh, {edge.nodes[0], edge.nodes[1]},
+      stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edge.nodes[0], edge.nodes[1]},
           stk::topology::ELEMENT_RANK, edge_elems);
       for (auto && elem : edge_elems)
       {
@@ -127,7 +129,7 @@ refine_edges_with_nodes_with_multiple_snapped_interfaces(const stk::mesh::BulkDa
 
 void
 determine_which_interfaces_snap_to_each_node_and_unsnappable_nodes(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & /*refinement*/,
     const std::vector<IntersectionPoint> & edgeIntersections,
     const std::vector<InterfaceID> & active_interface_ids,
     const CDFEM_Snapper & snapper,
@@ -182,8 +184,8 @@ determine_which_interfaces_snap_to_each_node_and_unsnappable_nodes(const stk::me
 
 void
 resolve_fine_features(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
-    const std::vector<Surface_Identifier> & surfaceIdentifiers,
+    const RefinementManager & refinement,
+    const std::vector<Surface_Identifier> & /*surfaceIdentifiers*/,
     const std::vector<IntersectionPoint> & edgeIntersections,
     const int interface_max_refine_level,
     FieldRef elem_marker_field,
@@ -230,33 +232,67 @@ mark_nearest_node_on_cut_edges(const stk::mesh::BulkData& mesh,
   stk::mesh::parallel_max(mesh, {&node_marker_field.field()});
 }
 
-static void initialize_marker(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
+static void initialize_marker(const stk::mesh::BulkData& /*mesh*/,
+      const RefinementManager & refinement,
       const bool isDefaultCoarsen)
 {
-  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const FieldRef elementMarkerField = refinement.get_marker_field_and_sync_to_host();
   const int initialVal = isDefaultCoarsen ? static_cast<int>(Refinement_Marker::COARSEN) : static_cast<int>(Refinement_Marker::NOTHING);
   stk::mesh::field_fill(initialVal, elementMarkerField);
 }
 
-int determine_refinement_marker(const bool isElementIndicated, const int interfaceMinRefineLevel, const int elementRefineLevel, const bool isDefaultCoarsen)
+Refinement_Marker determine_interface_refinement_marker(const bool isElementOnInterface, const int interfaceMinRefineLevel, const int elementRefineLevel, const bool isDefaultCoarsen)
 {
   auto marker = isDefaultCoarsen ? Refinement_Marker::COARSEN : Refinement_Marker::NOTHING;
-  const int targetRefineLevel = isElementIndicated ? interfaceMinRefineLevel : 0;
-  if (elementRefineLevel < targetRefineLevel)
-    marker = Refinement_Marker::REFINE;
-  else if (elementRefineLevel == targetRefineLevel)
-    marker = Refinement_Marker::NOTHING;
-  return static_cast<int>(marker);
+  if (isElementOnInterface)
+  {
+    if (elementRefineLevel < interfaceMinRefineLevel)
+      marker = Refinement_Marker::REFINE;
+    else
+      marker = Refinement_Marker::NOTHING;
+  }
+
+  return marker;
 }
 
-static void mark_given_elements(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
+Refinement_Marker determine_interface_refinement_marker_with_error_estimate(const bool isElementOnInterface,
+  const int interfaceMinRefineLevel,
+  const int interfaceMaxRefineLevel,
+  const int elementRefineLevel,
+  const bool isDefaultCoarsen,
+  const std::function<double()> & estimate_error,
+  const double refineErrTol,
+  const double unrefineErrTol)
+
+{
+  Refinement_Marker marker = determine_interface_refinement_marker(isElementOnInterface, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
+
+  if (interfaceMaxRefineLevel > interfaceMinRefineLevel && isElementOnInterface)
+  {
+    // Error estimate can be expensive so only evaluate it if the marker depends on it
+    const bool doRefineIfErrorLargerThanTol = marker != Refinement_Marker::REFINE && elementRefineLevel < interfaceMaxRefineLevel;
+    const bool doUnrefineIfErrorSmallerThanTol = marker != Refinement_Marker::COARSEN && elementRefineLevel > interfaceMinRefineLevel && isDefaultCoarsen;
+    const bool markerDependsOnErrorEst = doRefineIfErrorLargerThanTol || doUnrefineIfErrorSmallerThanTol;
+    if (markerDependsOnErrorEst)
+    {
+      const double elemErrEst = estimate_error();
+
+      if (doRefineIfErrorLargerThanTol && elemErrEst > refineErrTol)
+        marker = Refinement_Marker::REFINE;
+      else if (doUnrefineIfErrorSmallerThanTol && elemErrEst < unrefineErrTol)
+        marker = Refinement_Marker::COARSEN;
+    }
+  }
+  return marker;
+}
+
+static void mark_given_elements(const stk::mesh::BulkData& /*mesh*/,
+      const RefinementManager & refinement,
       const std::vector<stk::mesh::Entity> elementsToMark,
       const int minRefineLevel,
       const bool isDefaultCoarsen)
 {
-  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const FieldRef elementMarkerField = refinement.get_marker_field_and_sync_to_host();
   constexpr bool doMarkElement = true;
 
   for( auto&& elem : elementsToMark )
@@ -264,7 +300,7 @@ static void mark_given_elements(const stk::mesh::BulkData& mesh,
     int & marker = *field_data<int>(elementMarkerField, elem);
     const int elementRefineLevel = refinement.fully_refined_level(elem);
 
-    marker = determine_refinement_marker(doMarkElement, minRefineLevel, elementRefineLevel, isDefaultCoarsen);
+    marker = static_cast<int>(determine_interface_refinement_marker(doMarkElement, minRefineLevel, elementRefineLevel, isDefaultCoarsen));
   }
 }
 
@@ -278,7 +314,7 @@ static bool should_continue_to_coarsen(const int refinementIterCount, const int 
 
 void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
+      const RefinementManager & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const RefinementSupport & refinementSupport,
       const int refinementIterCount)
@@ -292,7 +328,7 @@ mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
 
 void
 mark_elements_that_intersect_interval(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
+      const RefinementManager & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const std::array<double,2> refinementInterval,
       const int numRefineLevels,
@@ -323,7 +359,7 @@ double compute_edge_length(const FieldRef coordsField, const stk::topology elemT
 }
 
 void write_refinement_level_sizes(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     const FieldRef coordsField,
     const std::vector<stk::mesh::Entity> & elements,
     const int interfaceMaxRefineLevel)
@@ -377,7 +413,7 @@ bool element_has_marked_node(const stk::mesh::BulkData& mesh, stk::mesh::Entity 
 
 void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     const InterfaceGeometry & interfaceGeometry,
     const RefinementSupport & refinementSupport,
     const FieldRef coordsField,
@@ -386,9 +422,9 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
   // This refinement strategy cuts elements by the user-specified number of adapt levels
   // before the conformal decomposition.
 
-  const FieldRef elementMarkerField = refinement.get_marker_field();
+  const FieldRef elementMarkerField = refinement.get_marker_field_and_sync_to_host();
 
-  const stk::mesh::Selector locally_owned_selector(mesh.mesh_meta_data().locally_owned_part());
+  const stk::mesh::Selector locallyOwnedNotParent = mesh.mesh_meta_data().locally_owned_part() & !refinement.parent_part();
   const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
   const int interfaceMaxRefineLevel = refinementSupport.get_interface_maximum_refinement_level();
   std::vector<stk::mesh::Entity> entities;
@@ -401,20 +437,35 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
   FieldRef nodeMarkerField = refinementSupport.get_nonconforming_refinement_node_marker_field();
   mark_nearest_node_on_cut_edges(mesh, edgeIntersections, nodeMarkerField);
 
-  stk::mesh::get_selected_entities( locally_owned_selector, mesh.buckets( stk::topology::ELEMENT_RANK ), entities );
+  const double refineErrTol = refinementSupport.get_interface_refinement_curvature_tolerance();
+  const double unrefineErrTol = refineErrTol/4;
+
+  stk::mesh::get_selected_entities( locallyOwnedNotParent, mesh.buckets( stk::topology::ELEMENT_RANK ), entities );
   for( auto&& elem : entities )
   {
-    bool hasCrossing = element_has_marked_node(mesh, elem, nodeMarkerField);
+    bool hasNearbyCrossing = element_has_marked_node(mesh, elem, nodeMarkerField);
 
     const int elementRefineLevel = refinement.fully_refined_level(elem);
 
+    Refinement_Marker refMarker;
+
+    if (interfaceMaxRefineLevel > interfaceMinRefineLevel)
+    {
+      const auto estimate_error = [&]() { return interfaceGeometry.estimate_element_distance_error(mesh, elem); };
+      refMarker = determine_interface_refinement_marker_with_error_estimate(hasNearbyCrossing, interfaceMinRefineLevel, interfaceMaxRefineLevel, elementRefineLevel, isDefaultCoarsen, estimate_error, refineErrTol, unrefineErrTol);
+    }
+    else
+    {
+      refMarker = determine_interface_refinement_marker(hasNearbyCrossing, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
+    }
+
     int & marker = *field_data<int>(elementMarkerField, elem);
-    marker = determine_refinement_marker(hasCrossing, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
+    marker = static_cast<int>(refMarker);
   }
 
   write_refinement_level_sizes(mesh, refinement, coordsField, entities, interfaceMaxRefineLevel);
 
-  if (interfaceMinRefineLevel > interfaceMaxRefineLevel)
+  if (false && interfaceMinRefineLevel > interfaceMaxRefineLevel)
   {
     resolve_fine_features(mesh, refinement, interfaceGeometry.get_surface_identifiers(), edgeIntersections, interfaceMaxRefineLevel, elementMarkerField, nodeMarkerField);
   }
@@ -422,7 +473,7 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
 
 void
 refine_edges_with_unsnappable_nodes(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     const std::vector<IntersectionPoint> & edgeIntersections,
     const CDFEM_Snapper & snapper,
     const int interface_max_refine_level,
@@ -438,7 +489,7 @@ refine_edges_with_unsnappable_nodes(const stk::mesh::BulkData& mesh,
     {
       krinolog << "Refining unsnappable edge  " << mesh.identifier(edge.nodes[0]) << " " << mesh.identifier(edge.nodes[1]) << " " << debug_output(mesh, edgeIntersection) << stk::diag::dendl;
       std::vector<stk::mesh::Entity> edge_elems;
-      stk::mesh::get_entities_through_relations(mesh, {edge.nodes[0], edge.nodes[1]},
+      stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edge.nodes[0], edge.nodes[1]},
           stk::topology::ELEMENT_RANK, edge_elems);
       for (auto && elem : edge_elems)
       {
@@ -453,17 +504,16 @@ static unsigned determine_parent_element_part_ordinal_based_on_child_element_par
   STK_ThrowRequire(!childElemPartOrdinals.empty());
   const stk::mesh::Part & firstChildElementPart = mesh.mesh_meta_data().get_part(*childElemPartOrdinals.begin());
 
-  if (childElemPartOrdinals.size() > 1 || phaseSupport.is_nonconformal(&firstChildElementPart))
+  if (childElemPartOrdinals.size() > 1 || phaseSupport.is_nonconformal(firstChildElementPart))
   {
-    const stk::mesh::Part * parentElementPart = phaseSupport.find_nonconformal_part(firstChildElementPart);
-    STK_ThrowAssert(nullptr != parentElementPart);
-    return parentElementPart->mesh_meta_data_ordinal();
+    stk::mesh::Part & parentElementPart = phaseSupport.find_nonconformal_part(firstChildElementPart);
+    return parentElementPart.mesh_meta_data_ordinal();
   }
   return firstChildElementPart.mesh_meta_data_ordinal();
 }
 
 static void fill_sorted_owned_leaf_children_and_their_element_part_and_their_unique_parents(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     std::vector<std::pair<stk::mesh::EntityId,unsigned>> & sortedChildIdsAndElementPart,
     std::vector<stk::mesh::Entity> & nextIterationOfParentsToProcess)
 {
@@ -474,11 +524,8 @@ static void fill_sorted_owned_leaf_children_and_their_element_part_and_their_uni
   {
     for (auto && elem : *bucket)
     {
-      if (refinement.is_child(elem))  //FIXME: shouldnt be needed, but it is in percept right now
-      {
-        sortedChildIdsAndElementPart.emplace_back(mesh.identifier(elem), find_element_part(mesh, elem).mesh_meta_data_ordinal());
-        nextIterationOfParentsToProcess.push_back(refinement.get_parent(elem));
-      }
+      sortedChildIdsAndElementPart.emplace_back(mesh.identifier(elem), find_element_part(mesh, elem).mesh_meta_data_ordinal());
+      nextIterationOfParentsToProcess.push_back(refinement.get_parent(elem));
     }
   }
   std::sort(sortedChildIdsAndElementPart.begin(), sortedChildIdsAndElementPart.end());
@@ -520,7 +567,7 @@ struct RelocatedChildElemWithElemPart {
 };
 
 static
-void pack_child_element_data_for_parent_element_processor(const stk::mesh::BulkData & mesh,
+void pack_child_element_data_for_parent_element_processor(const stk::mesh::BulkData & /*mesh*/,
     const std::vector<RelocatedChildElemWithElemPart> & childElemDataToCommunicate,
     stk::CommSparse &commSparse)
 {
@@ -571,7 +618,7 @@ static void communicate_elements_to_parent_element_processor(const stk::mesh::Bu
 }
 
 static void update_children_and_their_element_part_and_their_unique_parents(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     const std::vector<std::pair<stk::mesh::Entity,unsigned>> & iterationChildrenAndElementPart,
     std::vector<std::pair<stk::mesh::EntityId,unsigned>> & sortedChildIdsAndElementPart,
     std::vector<stk::mesh::Entity> & parentsToProcess)
@@ -602,7 +649,7 @@ static void update_children_and_their_element_part_and_their_unique_parents(cons
   stk::util::sort_and_unique(parentsToProcess);
 }
 
-std::vector<std::pair<stk::mesh::Entity,unsigned>> get_owned_adaptivity_parents_and_their_element_part(const stk::mesh::BulkData& mesh, const RefinementInterface & refinement, const Phase_Support & phaseSupport)
+std::vector<std::pair<stk::mesh::Entity,unsigned>> get_owned_adaptivity_parents_and_their_element_part(const stk::mesh::BulkData& mesh, const RefinementManager & refinement, const Phase_Support & phaseSupport)
 {
   // This used to be pretty simple.  We just recursed down to the leaves of the tree and checked the block
   // parts of the conforming elements.  But now the tree may be spread across processors, so we need

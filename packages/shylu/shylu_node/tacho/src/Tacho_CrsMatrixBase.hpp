@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_CRS_MATRIX_BASE_HPP__
 #define __TACHO_CRS_MATRIX_BASE_HPP__
@@ -379,7 +371,8 @@ inline static void applyPermutationToCrsMatrixLower(/* */ CrsMatrixType &A, cons
 template <typename ValueType, typename DeviceType>
 inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType> &A,
                                       const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &x,
-                                      const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &b) {
+                                      const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &b,
+                                      const double shift = 0.0, const bool verbose = false) {
   const bool test = (size_t(A.NumRows()) != size_t(A.NumCols()) || size_t(A.NumRows()) != size_t(b.extent(0)) ||
                      size_t(x.extent(0)) != size_t(b.extent(0)) || size_t(x.extent(1)) != size_t(b.extent(1)));
   if (test)
@@ -401,18 +394,32 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
   typedef ArithTraits<value_type> arith_traits;
   const ordinal_type m = h_A.NumRows(), k = h_b.extent(1);
   double diff = 0, norm = 0;
-  for (ordinal_type i = 0; i < m; ++i) {
-    for (ordinal_type p = 0; p < k; ++p) {
-      value_type s = 0;
+  for (ordinal_type p = 0; p < k; ++p) {
+    double diff_p = 0, norm_p = 0;
+    for (ordinal_type i = 0; i < m; ++i) {
+      value_type s = value_type(shift) * h_x(i, p);;
       const ordinal_type jbeg = h_A.RowPtrBegin(i), jend = h_A.RowPtrEnd(i);
       for (ordinal_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = h_A.Col(j);
         s += h_A.Value(j) * h_x(col, p);
       }
+      norm_p += arith_traits::real(h_b(i, p) * arith_traits::conj(h_b(i, p)));
+      diff_p += arith_traits::real((h_b(i, p) - s) * arith_traits::conj(h_b(i, p) - s));
+
       norm += arith_traits::real(h_b(i, p) * arith_traits::conj(h_b(i, p)));
       diff += arith_traits::real((h_b(i, p) - s) * arith_traits::conj(h_b(i, p) - s));
     }
+    if (verbose) {
+      std::cout << " * Relative residual norm(" << p << ") = "
+                << sqrt(diff_p) << " / " << sqrt(norm_p) << " = " << sqrt(diff_p/norm_p);
+      if (shift != 0.0) {
+        std::cout << " (with shift = " << shift << ")";
+      }
+      std::cout << std::endl;
+    }
   }
+  if (verbose)
+    std::cout << " Relative residual norm = " << sqrt(diff) << " / " << sqrt(norm) << " = " << sqrt(diff/norm) << std::endl;
   return sqrt(diff / norm);
 }
 

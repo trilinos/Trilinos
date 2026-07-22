@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,9 +9,8 @@
 #include "Ioss_Utils.h"
 #include <assert.h>
 #include <fmt/ostream.h>
-#include <ostream> // for basic_ostream, etc
-#include <string>  // for string, char_traits, etc
-#include <vector>  // for vector
+#include <string> // for string, char_traits, etc
+#include <vector> // for vector
 
 namespace Ioss {
   void EPRegistry::insert(const Ioss::EPM_VP &value, bool delete_me)

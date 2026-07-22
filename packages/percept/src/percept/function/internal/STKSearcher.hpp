@@ -17,7 +17,7 @@
 
 
 
-#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid2_FunctionSpaceTools.hpp>
 
 #include <Shards_CellTopology.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -50,9 +50,9 @@
 
       virtual ~STKSearcher();
 
-      void setupSearch();
+      void setupSearch() override;
 
-      void tearDownSearch();
+      void tearDownSearch() override;
 
       /**
        *  Dimensions of input_phy_points = ([P]=1, [D]) 
@@ -60,7 +60,7 @@
        */
 
       virtual const stk::mesh::Entity findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
-                                                   unsigned& found_it, const stk::mesh::Entity hint_element );
+                                                   unsigned& found_it, const stk::mesh::Entity hint_element ) override;
 
     private:
 

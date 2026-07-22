@@ -1,253 +1,153 @@
-name: AT2-EXPERIMENTAL
+name: AT2
 
 on:
   pull_request:
     types:
       - opened
       - synchronize
-  pull_request_review:
-    types: 
-      - submitted
-    branches:
-    - master
-    - develop
   workflow_dispatch:
 
+# Cancels any in progress 'workflows' associated with this PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
 permissions:
   contents: read
 
 jobs:
-  gcc10-openmpi416-EXPERIMENTAL:
-    runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
-    steps:
-      - name: env
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: |
-          env
-      - name: module list
-        shell: bash
-        run: |
-          bash -l -c "module list"
-          printenv PATH
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
-        with:
-          access_token: ${{ github.token }}
-      - name: make dirs
-        working-directory: /
-        run: |
-          mkdir -p /home/Trilinos/src/Trilinos
-          mkdir -p /home/Trilinos/build
-      - name: Clone trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          fetch-depth: 0
-      - name: Repo status
-        run: |
-          git fetch --all
-          pwd
-          ls -lhat
-          git status
-          git branch -vv
-          git branch -a
-      - name: get dependencies
-        working-directory: ./packages/framework
-        run: |
-          bash -l -c "./get_dependencies.sh --container"
-      - name: PullRequestLinuxDriverTest.py
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          # Set up python-is-python3 hackery
-          mkdir bin
-          pushd bin
-          ln -s $(type -p python3) python
-          export PATH=$(pwd):${PATH}
-          popd
+  # Jobs depend on the output of pre-checks to run.
+  # Cancels new workflows if prior runs were successful (same tree hash)
+  pre-checks:
+        runs-on: ubuntu-latest
+        # actions: write needed by skip-duplicate-actions
+        permissions:
+          actions: write
+        outputs:
+            should_skip: ${{ steps.skip_check.outputs.should_skip }}
+        steps:
+        - id: skip_check
+          uses: fkirc/skip-duplicate-actions@b974a9395958c231af965b70070979a577efa578 # v5.3.2
+          with:
+            skip_after_successful_duplicate: 'true'
 
-          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+  gcc12-openmpi4:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
+      genconfig-string: "rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_debug_shared
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
-          printf "\n\n\n"
+  clang19-openmpi4:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
+      genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+  cuda12:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507', 'gpu:A100']"
+      genconfig-string: "rhel_cuda-12-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static
+      max-cores-allowed: 56
+      num-concurrent-tests: 112
+      slots-per-gpu: 8
 
-          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
-            --source-repo-url ${GITHUB_WORKSPACE} \
-            --target-repo-url ${GITHUB_WORKSPACE} \
-            --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
-            --genconfig-build-name rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
-            --pullrequest-number ${{ github.event.pull_request.number }} \
-            --jenkins-job-number 0 \
-            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
-            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
-            --workspace-dir /home/runner/_work/Trilinos \
-            --source-dir ${GITHUB_WORKSPACE} \
-            --build-dir /home/Trilinos/build \
-            --dashboard-build-name `cat /etc/hostname` \
-            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
-            --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake
+  gcc14:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'gcc-14', '20260507']"
+      genconfig-string: "rhel_gcc_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi10-gcc-14:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
 
-  gcc830-serial-EXPERIMENTAL:
-    runs-on: [self-hosted, gcc-8.3.0_serial]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
-    steps:
-      - name: env
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: |
-          env
-      - name: module list
-        shell: bash
-        run: |
-          bash -l -c "module list"
-          printenv PATH
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
-        with:
-          access_token: ${{ github.token }}
-      - name: make dirs
-        working-directory: /
-        run: |
-          mkdir -p /home/Trilinos/src/Trilinos
-          mkdir -p /home/Trilinos/build
-      - name: Clone trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          fetch-depth: 0
-      - name: Repo status
-        run: |
-          git fetch --all
-          pwd
-          ls -lhat
-          git status
-          git branch -vv
-          git branch -a
-      - name: get dependencies
-        working-directory: ./packages/framework
-        run: |
-          bash -l -c "./get_dependencies.sh --container"
-      - name: PullRequestLinuxDriverTest.py
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          # Set up python-is-python3 hackery
-          mkdir bin
-          pushd bin
-          ln -s $(type -p python3) python
-          export PATH=$(pwd):${PATH}
-          popd
+  cuda12-uvm:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507']"
+      genconfig-string: "rhel_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_uvm
+      max-cores-allowed: 56
+      skip-run-tests: true
 
-          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
+  oneapi2024:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'oneapi-2024.2', '20260507']"
+      genconfig-string: "rhel_oneapi-intelmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-oneapi-2024.2:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
 
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
-          printf "\n\n\n"
+  openmp:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
+      genconfig-string: "rhel8_gcc-openmpi-openmp_release-debug_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_static_openmp
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
 
-          echo "image: ${AT2_IMAGE:-unknown}"
+  framework-tests:
+    needs: pre-checks
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'python-3.9', '20260507']"
+      genconfig-string: "rhel8_python_debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_pr-framework"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-python-3.9:20260507
+      cdash-track: "Pull Request"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_framework-tests
+      skip-create-packageenables: true
 
-          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
-            --source-repo-url ${GITHUB_WORKSPACE} \
-            --target-repo-url ${GITHUB_WORKSPACE} \
-            --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
-            --genconfig-build-name rhel8_gcc-serial_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
-            --pullrequest-number ${{ github.event.pull_request.number }} \
-            --jenkins-job-number 0 \
-            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
-            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
-            --workspace-dir /home/runner/_work/Trilinos \
-            --source-dir ${GITHUB_WORKSPACE} \
-            --build-dir /home/Trilinos/build \
-            --dashboard-build-name `cat /etc/hostname` \
-            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
-            --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake
+  ramses-openmp:
+    needs: [pre-checks, gcc12-openmpi4, openmp]
+    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
+      genconfig-string: "rhel8_gcc-openmpi-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_ramses"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-12.3.0-openmpi-4.1.6:20260507
+      cdash-track: "Pull Request (Non-blocking)"
+      dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_RAMSES
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
+      skip-create-packageenables: true
+      extra-pr-driver-args: --extra-configure-args=-C;${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake
 
-  cuda11-uvm-EXPERIMENTAL:
-    runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED' }}
-    steps:
-      - name: env
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: |
-          env
-      - name: module list
-        shell: bash
-        run: |
-          bash -l -c "module list"
-          printenv PATH
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
-        with:
-          access_token: ${{ github.token }}
-      - name: make dirs
-        working-directory: /
-        run: |
-          mkdir -p /home/Trilinos/src/Trilinos
-          mkdir -p /home/Trilinos/build
-      - name: Clone trilinos
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          fetch-depth: 0
-      - name: Repo status
-        run: |
-          git fetch --all
-          pwd
-          ls -lhat
-          git status
-          git branch -vv
-          git branch -a
-      - name: get dependencies
-        working-directory: ./packages/framework
-        run: |
-          bash -l -c "./get_dependencies.sh --container"
-      - name: PullRequestLinuxDriverTest.py
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          mkdir bin
-          pushd bin
-          ln -s $(type -p python3) python
-          export PATH=$(pwd):${PATH}
-          popd
-
-          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/GenConfig
-          export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/packages/framework/pr_tools
-
-          sed -i "/\[rhel8\]/a `cat /etc/hostname`" /home/runner/_work/Trilinos/Trilinos/packages/framework/ini-files/supported-systems.ini
-          printf "\n\n\n"
-
-          echo "image: ${AT2_IMAGE:-unknown}"
-          type python
-          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
-            --source-repo-url ${GITHUB_WORKSPACE} \
-            --target-repo-url ${GITHUB_WORKSPACE} \
-            --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --pullrequest-build-name PR-${{ github.event.pull_request.number }} \
-            --genconfig-build-name rhel8_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables \
-            --pullrequest-number ${{ github.event.pull_request.number }} \
-            --jenkins-job-number 0 \
-            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
-            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
-            --workspace-dir /home/runner/_work/Trilinos \
-            --source-dir ${GITHUB_WORKSPACE} \
-            --build-dir /home/Trilinos/build \
-            --dashboard-build-name `cat /etc/hostname` \
-            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
-            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
-            --filename-subprojects ./package_subproject_list.cmake \
-            --filename-packageenables ./packageEnables.cmake \
-            --max-cores-allowed=96 \
-            --num-concurrent-tests=96

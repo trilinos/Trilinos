@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_TEST_VECTOR_HPP
 #define KOKKOS_TEST_VECTOR_HPP
@@ -21,6 +8,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
+#include <Kokkos_Macros.hpp>
+KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH()
 #include <Kokkos_Vector.hpp>
 
 namespace Test {
@@ -231,7 +220,7 @@ void test_vector_allocate(unsigned int size) {
 TEST(TEST_CATEGORY, vector_combination) {
   test_vector_allocate<int, TEST_EXECSPACE>(10);
   test_vector_combinations<int, TEST_EXECSPACE>(10);
-  test_vector_combinations<int, TEST_EXECSPACE>(3057);
+  test_vector_combinations<long long int, TEST_EXECSPACE>(3057);
 }
 
 TEST(TEST_CATEGORY, vector_insert) {

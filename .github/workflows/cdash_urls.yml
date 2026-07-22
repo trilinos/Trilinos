@@ -1,0 +1,38 @@
+name: CDash
+
+on:
+  pull_request_target:
+    types:
+      - opened
+
+permissions:
+  contents: read
+
+jobs:
+  pre-checks:
+        runs-on: ubuntu-latest
+        permissions:
+          pull-requests: write
+        steps:
+        - name: Post CDash URLs
+          uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0.8.3.12.0
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            message-id: cdash
+            message: |
+              [CDash for AT2 results](https://my.cdash.org/index.php?project=Trilinos&display=project&filtercount=2&showfilters=1&filtercombine=and&field1=buildname&compare1=65&value1=PR-${{ github.event.number }}&field2=buildstarttime&compare2=84&value2=now)
+
+              <details>
+
+              <summary>Reproducing CI builds locally</summary>
+
+              CI builds can be reproduced locally in a container.
+
+              Requirements: Python 3.9+, [Podman](https://podman.io/docs/installation), CMake
+
+              Steps:
+              - Check out the branch of the PR locally.
+              - Run `commonTools/pr_reproducer/reproducer.sh`.
+
+              </details>

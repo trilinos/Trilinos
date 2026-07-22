@@ -33,14 +33,12 @@
 // 
 
 #include <string>                       // for to_string
-#include <Ioss_Utils.h>                 // for Utils
 #include <stddef.h>                     // for size_t
-#include <iosfwd>                       // for ostream
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>
-#include <string>                       // for allocator, operator+, etc
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/Types.hpp"      // for PartVector
@@ -49,14 +47,15 @@ enum { SpaceDim = 3 };
 
 TEST(UnitTestGmeshFixture, testUnit)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 4) { GTEST_SKIP(); }
   const size_t num_x = 1;
   const size_t num_y = 2;
-  const size_t num_z = 3;
+  const size_t num_z = 4;
   const size_t num_surf = 6;
   std::string config_mesh = std::to_string(num_x) + "x" +
                             std::to_string(num_y) + "x" +
                             std::to_string(num_z) + "|sideset:xXyYzZ";
-  stk::io::util::simple_fields::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
+  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
 
   fixture.commit();
 

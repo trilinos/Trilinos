@@ -20,11 +20,39 @@
 #include "MueLu_FactoryManager.hpp"
 
 // TODO/FIXME: DeclareInput(, **this**) cannot be used here
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "Kokkos_DynRankView.hpp"
 #endif
 
 namespace MueLu {
+
+// Copy object from one level to another
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyBetweenLevels(Level& fromLevel, Level& toLevel, const std::string fromLabel, const std::string toLabel, const std::string dataType) {
+  TEUCHOS_TEST_FOR_EXCEPTION(dataType != "RCP<Matrix>" && dataType != "RCP<const Import>", Exceptions::InvalidArgument,
+                             std::string("MueLu::Utils::CopyBetweenLevels: unknown data type(") + dataType + ")");
+
+  if (!fromLevel.IsAvailable(fromLabel)) return;
+
+  if (dataType == "RCP<Matrix>") {
+    // Normally, we should only do
+    //      toLevel->Set(toLabel,fromLevel->Get<RCP<Matrix> >(fromLabel));
+    // The logic below is meant to handle a special case when we
+    // repartition a processor away, leaving behind a RCP<Operator> on
+    // on the level instead of an RCP<Matrix>
+
+    auto tempOp     = fromLevel.Get<RCP<Operator>>(fromLabel);
+    auto tempMatrix = rcp_dynamic_cast<Matrix>(tempOp);
+    if (!tempMatrix.is_null())
+      toLevel.Set(toLabel, tempMatrix);
+    else
+      toLevel.Set(toLabel, tempOp);
+  }
+
+  if (dataType == "RCP<const Import>") {
+    toLevel.Set(toLabel, fromLevel.Get<RCP<const Import>>(fromLabel));
+  }
+}
 
 // Copy object from one hierarchy to another calling AddNewLevel as appropriate.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -37,27 +65,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyBetweenHiera
     RCP<Level> fromLevel = fromHierarchy.GetLevel(i);
     RCP<Level> toLevel   = toHierarchy.GetLevel(i);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(dataType != "RCP<Matrix>" && dataType != "RCP<const Import>", Exceptions::InvalidArgument,
-                               std::string("MueLu::Utils::CopyBetweenHierarchies: unknown data type(") + dataType + ")");
-    if (fromLevel->IsAvailable(fromLabel)) {
-      if (dataType == "RCP<Matrix>") {
-        // Normally, we should only do
-        //      toLevel->Set(toLabel,fromLevel->Get<RCP<Matrix> >(fromLabel));
-        // The logic below is meant to handle a special case when we
-        // repartition a processor away, leaving behind a RCP<Operator> on
-        // on the level instead of an RCP<Matrix>
-
-        auto tempOp     = fromLevel->Get<RCP<Operator>>(fromLabel);
-        auto tempMatrix = rcp_dynamic_cast<Matrix>(tempOp);
-        if (!tempMatrix.is_null())
-          toLevel->Set(toLabel, tempMatrix);
-        else
-          toLevel->Set(toLabel, tempOp);
-      }
-      if (dataType == "RCP<const Import>") {
-        toLevel->Set(toLabel, fromLevel->Get<RCP<const Import>>(fromLabel));
-      }
-    }
+    CopyBetweenLevels(*fromLevel, *toLevel, fromLabel, toLabel, dataType);
   }
 }
 
@@ -88,8 +96,8 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
       const ParameterList& levelList = nonSerialList.sublist(levelName);
       for (ParameterList::ConstIterator levelListEntry = levelList.begin(); levelListEntry != levelList.end(); levelListEntry++) {
         const std::string& name = levelListEntry->first;
-        TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" &&
-                                       name != "D0" && name != "Dk_1" && name != "Dk_2" &&
+        TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" && name != "Minv" &&
+                                       name != "MinvA" && name != "D0" && name != "Dk_1" && name != "Dk_2" &&
                                        name != "Mk_one" && name != "Mk_1_one" && name != "M1_beta" && name != "M1_alpha" &&
                                        name != "invMk_1_invBeta" && name != "invMk_2_invAlpha" &&
                                        name != "M1" && name != "Ms" && name != "M0inv" &&
@@ -132,7 +140,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
           M->SetFactory(name, NoFactory::getRCP());  // TAW: not sure about this: be aware that this affects all levels
                                                      //      However, A is accessible through NoFactory anyway, so it should
                                                      //      be fine here.
-        } else if (name == "P" || name == "R" || name == "K" || name == "M") {
+        } else if (name == "P" || name == "R" || name == "K" || name == "M" || name == "Minv" || name == "MinvA") {
           if (levelListEntry->second.isType<RCP<Operator>>()) {
             RCP<Operator> mat;
             mat = Teuchos::getValue<RCP<Operator>>(levelListEntry->second);
@@ -162,7 +170,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                    name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" ||
                    name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" ||
                    name == "M1" || name == "Ms" || name == "M0inv" ||
-                   name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix") {
+                   name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix" || name == "CurlCurl") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           if (levelListEntry->second.isType<RCP<Operator>>())
             level->Set(name, Teuchos::getValue<RCP<Operator>>(levelListEntry->second), NoFactory::get());
@@ -185,6 +193,12 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
           level->Set(name, vec, NoFactory::get());
           // M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           //  One should do this only in very special cases
+        } else if (name == "Material") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<MultiVector>>(levelListEntry->second), NoFactory::get());
+        } else if (name == "BlockNumber") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<LocalOrdinalVector>>(levelListEntry->second), NoFactory::get());
         } else if (name == "Coordinates")  // Scalar of Coordinates MV is always double
         {
           RCP<realvaluedmultivector_type> vec;
@@ -232,7 +246,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(levelListEntry->second), NoFactory::get());
         }
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
         else if (name == "pcoarsen: element to node map") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<Kokkos::DynRankView<LocalOrdinal, typename Node::device_type>>>(levelListEntry->second), NoFactory::get());
@@ -284,35 +298,46 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
       const ParameterList& userList = nonSerialList.sublist(levelName);
       for (ParameterList::ConstIterator userListEntry = userList.begin(); userListEntry != userList.end(); userListEntry++) {
         const std::string& name = userListEntry->first;
-        TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" &&
-                                       name != "D0" && name != "Dk_1" && name != "Dk_2" &&
+        // Check if the name starts with "Nullspace", has length > 9, and the last character is a digit
+        bool isNumberedNullspace = (name.rfind("Nullspace", 0) == 0 && name.length() > 9 && std::isdigit(name.back(), std::locale::classic()));
+
+        TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R" && name != "K" && name != "M" && name != "Mdiag" && name != "Minv" &&
+                                       name != "MinvA" && name != "D0" && name != "Dk_1" && name != "Dk_2" &&
                                        name != "Mk_one" && name != "Mk_1_one" && name != "M1_beta" && name != "M1_alpha" &&
                                        name != "invMk_1_invBeta" && name != "invMk_2_invAlpha" &&
                                        name != "M1" && name != "Ms" && name != "M0inv" &&
-                                       name != "NodeMatrix" &&
-                                       name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
+                                       name != "NodeMatrix" && name != "CurlCurl" &&
+                                       name != "Nullspace" && name != "Coordinates" && name != "Material" &&
+                                       name != "BlockNumber" && name != "pcoarsen: element to node map" &&
                                        name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                        name != "dropMap1" && name != "dropMap2" &&
                                        name != "output stream" &&
+                                       !isNumberedNullspace &&
                                        !IsParamValidVariable(name),
                                    Exceptions::InvalidArgument,
                                    std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
-        if (name == "P" || name == "R" || name == "K" || name == "M" ||
+        if (name == "P" || name == "R" || name == "K" || name == "M" || name == "Minv" || name == "MinvA" ||
             name == "D0" || name == "Dk_1" || name == "Dk_2" ||
             name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" ||
             name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" ||
             name == "M1" || name == "Ms" || name == "M0inv" ||
-            name == "NodeMatrix") {
+            name == "NodeMatrix" || name == "CurlCurl") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<Matrix>>(userListEntry->second), NoFactory::get());
         } else if (name == "Mdiag") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<Vector>>(userListEntry->second), NoFactory::get());
-        } else if (name == "Nullspace") {
+        } else if (name == "Nullspace" || isNumberedNullspace) {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<MultiVector>>(userListEntry->second), NoFactory::get());
           // M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           //  One should do this only in very special cases
+        } else if (name == "Material") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<MultiVector>>(userListEntry->second), NoFactory::get());
+        } else if (name == "BlockNumber") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<LocalOrdinalVector>>(userListEntry->second), NoFactory::get());
         } else if (name == "Coordinates") {  // Scalar of Coordinates MV is always double
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<realvaluedmultivector_type>>(userListEntry->second), NoFactory::get());
@@ -332,7 +357,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<const Map>>(userListEntry->second), NoFactory::get());
         }
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
         else if (name == "pcoarsen: element to node map") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<Kokkos::DynRankView<LocalOrdinal, typename Node::device_type>>>(userListEntry->second), NoFactory::get());

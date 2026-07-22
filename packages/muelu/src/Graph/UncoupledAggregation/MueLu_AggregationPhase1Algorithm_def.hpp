@@ -256,8 +256,8 @@ void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
   const int myRank = graph.GetComm()->getRank();
 
   // Extract data from aggregates
-  auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto procWinner   = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto vertex2AggId = aggregates.GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto procWinner   = aggregates.GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadWrite);
   auto colors       = aggregates.GetGraphColors();
 
   auto lclLWGraph = graph;
@@ -330,7 +330,7 @@ void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
                 break;
               } else {
                 // Decrement back the value of aggSizesView(agg)
-                Kokkos::atomic_decrement(&aggSizesView(agg));
+                Kokkos::atomic_dec(&aggSizesView(agg));
               }
             }
           }
@@ -363,8 +363,8 @@ void AggregationPhase1Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
   const LO numRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();
 
-  auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto procWinner   = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto vertex2AggId = aggregates.GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto procWinner   = aggregates.GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadWrite);
   auto colors       = aggregates.GetGraphColors();
 
   auto lclLWGraph = graph;

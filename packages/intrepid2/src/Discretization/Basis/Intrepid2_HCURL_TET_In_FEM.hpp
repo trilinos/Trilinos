@@ -88,13 +88,10 @@ public:
     static ordinal_type
     getWorkSizePerPoint(ordinal_type order) {
       auto cardinality = CardinalityHCurlTet(order);
-      switch (opType) {
-      case OPERATOR_DIV:
-      case OPERATOR_D1:
+      if constexpr ((opType == OPERATOR_DIV) || (opType ==  OPERATOR_D1))
         return 7*cardinality;
-      default:
+      else
         return getDkCardinality<opType,3>()*cardinality;
-      }
     }
   };
 
@@ -143,25 +140,20 @@ public:
 
       typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
-      auto vcprop = Kokkos::common_view_alloc_prop(_work);
-      workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
+      workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
-      switch (opType) {
-      case OPERATOR_VALUE : {
+      if constexpr (opType == OPERATOR_VALUE) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (opType == OPERATOR_CURL) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange,  Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR: (Intrepid2::Basis_HCURL_TET_In_FEM::Functor) operator is not supported");
 
-      }
       }
     }
   };
@@ -217,9 +209,25 @@ class Basis_HCURL_TET_In_FEM
                                         operatorType);
   }
 
-  virtual
-  void
-  getDofCoords( ScalarViewType dofCoords ) const override {
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
+                        const PointViewType inputPointsconst,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
+
+    virtual
+    void
+    getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
     INTREPID2_TEST_FOR_EXCEPTION( rank(dofCoords) != 2, std::invalid_argument,

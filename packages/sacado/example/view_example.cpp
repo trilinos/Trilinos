@@ -1,45 +1,14 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Sacado.hpp"
+#include <iostream>
 
 //
 // A simple example showing how to use Sacado with Kokkos
@@ -178,9 +147,15 @@ int main(int argc, char* argv[]) {
     // into a standard view of one higher rank, with the extra dimension equal
     // to p+1
     Kokkos::View<FadType*> c2("c",m,p+1);
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
     Kokkos::View<double***> A_flat = A;
     Kokkos::View<double**>  b_flat = b;
     Kokkos::View<double**>  c_flat = c2;
+#else
+    Kokkos::View<double***> A_flat(A.data(), A.extent(0), A.extent(1), A.accessor().fad_size() + 1);
+    Kokkos::View<double**> b_flat(b.data(), b.extent(0), b.accessor().fad_size() + 1);
+    Kokkos::View<double**> c_flat(c2.data(), c2.extent(0), c2.accessor().fad_size() + 1);
+#endif
     run_mat_vec_deriv(A_flat, b_flat, c_flat);
 
     // Print result

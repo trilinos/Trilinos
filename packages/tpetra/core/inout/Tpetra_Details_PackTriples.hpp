@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_DETAILS_PACKTRIPLES_HPP
@@ -45,9 +13,9 @@
 #include "TpetraCore_config.h"
 #include "Teuchos_Comm.hpp"
 #ifdef HAVE_TPETRACORE_MPI
-#  include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
-#  include "Tpetra_Details_MpiTypeTraits.hpp"
-#endif // HAVE_TPETRACORE_MPI
+#include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
+#include "Tpetra_Details_MpiTypeTraits.hpp"
+#endif  // HAVE_TPETRACORE_MPI
 #include <ostream>
 
 namespace Tpetra {
@@ -65,42 +33,39 @@ namespace Details {
 // need to define these with MPI.  For a non-MPI build, we just need
 // some outer stub interface that throws an exception.
 
-int
-countPackTriplesCountMpi (MPI_Comm comm,
-                          int& size,
-                          std::ostream* errStrm = NULL);
+int countPackTriplesCountMpi(MPI_Comm comm,
+                             int& size,
+                             std::ostream* errStrm = NULL);
 
-int
-packTriplesCountMpi (const int numEnt,
-                     char outBuf[],
-                     const int outBufSize,
-                     int& outBufCurPos,
-                     MPI_Comm comm,
-                     std::ostream* errStrm = NULL);
+int packTriplesCountMpi(const int numEnt,
+                        char outBuf[],
+                        const int outBufSize,
+                        int& outBufCurPos,
+                        MPI_Comm comm,
+                        std::ostream* errStrm = NULL);
 
-template<class ScalarType, class OrdinalType>
-int
-countPackTriplesMpi (MPI_Datatype ordinalDt,
-                     MPI_Datatype scalarDt,
-                     const int numEnt,
-                     MPI_Comm comm,
-                     int& size,
-                     std::ostream* errStrm = NULL)
-{
+template <class ScalarType, class OrdinalType>
+int countPackTriplesMpi(MPI_Datatype ordinalDt,
+                        MPI_Datatype scalarDt,
+                        const int numEnt,
+                        MPI_Comm comm,
+                        int& size,
+                        std::ostream* errStrm = NULL) {
   using std::endl;
   int errCode = MPI_SUCCESS;
 
-  int totalSize = 0; // return value
+  int totalSize = 0;  // return value
 
   // Count the global row and column indices.
   {
     int curSize = 0;
     // We're packing two ordinals, the row resp. column index.
-    errCode = MPI_Pack_size (2, ordinalDt, comm, &curSize);
+    errCode = MPI_Pack_size(2, ordinalDt, comm, &curSize);
     if (errCode != MPI_SUCCESS) {
       if (errStrm != NULL) {
         *errStrm << "countPackTripleMpi: MPI_Pack_size failed on "
-          "ordinalDt call" << endl;
+                    "ordinalDt call"
+                 << endl;
       }
       return errCode;
     }
@@ -109,42 +74,41 @@ countPackTriplesMpi (MPI_Datatype ordinalDt,
   // Count the matrix value.
   {
     int curSize = 0;
-    errCode = MPI_Pack_size (1, scalarDt, comm, &curSize);
+    errCode     = MPI_Pack_size(1, scalarDt, comm, &curSize);
     if (errCode != MPI_SUCCESS) {
       if (errStrm != NULL) {
         *errStrm << "countPackTripleMpi: MPI_Pack_size failed on "
-          "scalarDt call" << endl;
+                    "scalarDt call"
+                 << endl;
       }
       return errCode;
     }
-    totalSize += curSize; // one Scalar
+    totalSize += curSize;  // one Scalar
   }
-  totalSize *= numEnt; // all the entries we want to pack
+  totalSize *= numEnt;  // all the entries we want to pack
 
-  size = totalSize; // "commit" the result
+  size = totalSize;  // "commit" the result
   return errCode;
 }
 
-template<class ScalarType, class OrdinalType>
-int
-packTripleMpi (const OrdinalType gblRowInd,
-               const OrdinalType gblColInd,
-               MPI_Datatype ordinalDt,
-               const ScalarType& val,
-               MPI_Datatype scalarDt,
-               char outBuf[],
-               const int outBufSize,
-               int& outBufCurPos,
-               MPI_Comm comm,
-               std::ostream* errStrm = NULL)
-{
+template <class ScalarType, class OrdinalType>
+int packTripleMpi(const OrdinalType gblRowInd,
+                  const OrdinalType gblColInd,
+                  MPI_Datatype ordinalDt,
+                  const ScalarType& val,
+                  MPI_Datatype scalarDt,
+                  char outBuf[],
+                  const int outBufSize,
+                  int& outBufCurPos,
+                  MPI_Comm comm,
+                  std::ostream* errStrm = NULL) {
   using std::endl;
   int errCode = MPI_SUCCESS;
 
   // Combine the two indices into a single MPI_Pack call.
   OrdinalType inds[2] = {gblRowInd, gblColInd};
-  errCode = MPI_Pack (inds, 2, ordinalDt,
-                      outBuf, outBufSize, &outBufCurPos, comm);
+  errCode             = MPI_Pack(inds, 2, ordinalDt,
+                                 outBuf, outBufSize, &outBufCurPos, comm);
   if (errCode != MPI_SUCCESS) {
     if (errStrm != NULL) {
       *errStrm << "packTripleMpi: MPI_Pack failed for indices i=" << gblRowInd
@@ -156,8 +120,8 @@ packTripleMpi (const OrdinalType gblRowInd,
   // mfh 17,20 Jan 2017: Some (generally older) MPI implementations
   // want the first argument to be a pointer to nonconst, even though
   // MPI_Pack does not modify that argument.
-  errCode = MPI_Pack (const_cast<ScalarType*> (&val), 1, scalarDt,
-                      outBuf, outBufSize, &outBufCurPos, comm);
+  errCode = MPI_Pack(const_cast<ScalarType*>(&val), 1, scalarDt,
+                     outBuf, outBufSize, &outBufCurPos, comm);
   if (errCode != MPI_SUCCESS) {
     if (errStrm != NULL) {
       *errStrm << "packTripleMpi: MPI_Pack failed on val = " << val
@@ -168,27 +132,25 @@ packTripleMpi (const OrdinalType gblRowInd,
   return errCode;
 }
 
-template<class ScalarType, class OrdinalType>
-int
-packTriplesMpi (const OrdinalType gblRowInds[],
-                const OrdinalType gblColInds[],
-                MPI_Datatype ordinalDt,
-                const ScalarType vals[],
-                MPI_Datatype scalarDt,
-                const int numEnt,
-                char outBuf[],
-                const int outBufSize,
-                int& outBufCurPos,
-                MPI_Comm comm,
-                std::ostream* errStrm = NULL)
-{
+template <class ScalarType, class OrdinalType>
+int packTriplesMpi(const OrdinalType gblRowInds[],
+                   const OrdinalType gblColInds[],
+                   MPI_Datatype ordinalDt,
+                   const ScalarType vals[],
+                   MPI_Datatype scalarDt,
+                   const int numEnt,
+                   char outBuf[],
+                   const int outBufSize,
+                   int& outBufCurPos,
+                   MPI_Comm comm,
+                   std::ostream* errStrm = NULL) {
   using std::endl;
   int errCode = MPI_SUCCESS;
 
   for (int k = 0; k < numEnt; ++k) {
-    errCode = packTripleMpi (gblRowInds[k], gblColInds[k], ordinalDt,
-                             vals[k], scalarDt, outBuf, outBufSize,
-                             outBufCurPos, comm, errStrm);
+    errCode = packTripleMpi(gblRowInds[k], gblColInds[k], ordinalDt,
+                            vals[k], scalarDt, outBuf, outBufSize,
+                            outBufCurPos, comm, errStrm);
     if (errCode != MPI_SUCCESS) {
       if (errStrm != NULL) {
         *errStrm << "packTriplesMpi: packTripleMpi failed at entry k=" << k
@@ -200,19 +162,17 @@ packTriplesMpi (const OrdinalType gblRowInds[],
   return errCode;
 }
 
-template<class ScalarType, class OrdinalType>
-int
-unpackTripleMpi (const char inBuf[],
-                 const int inBufSize,
-                 int& inBufCurPos,
-                 OrdinalType& gblRowInd,
-                 OrdinalType& gblColInd,
-                 MPI_Datatype ordinalDt,
-                 ScalarType& val,
-                 MPI_Datatype scalarDt,
-                 MPI_Comm comm,
-                 std::ostream* errStrm = NULL)
-{
+template <class ScalarType, class OrdinalType>
+int unpackTripleMpi(const char inBuf[],
+                    const int inBufSize,
+                    int& inBufCurPos,
+                    OrdinalType& gblRowInd,
+                    OrdinalType& gblColInd,
+                    MPI_Datatype ordinalDt,
+                    ScalarType& val,
+                    MPI_Datatype scalarDt,
+                    MPI_Comm comm,
+                    std::ostream* errStrm = NULL) {
   using std::endl;
   int errCode = MPI_SUCCESS;
 
@@ -221,14 +181,15 @@ unpackTripleMpi (const char inBuf[],
   // though MPI_Unpack does not modify that argument.
 
   // Combine the two indices into a single MPI_Pack call.
-  OrdinalType inds[2] = {static_cast<OrdinalType> (0),
-                         static_cast<OrdinalType> (0)};
-  errCode = MPI_Unpack (const_cast<char*> (inBuf), inBufSize, &inBufCurPos,
-                        inds, 2, ordinalDt, comm);
+  OrdinalType inds[2] = {static_cast<OrdinalType>(0),
+                         static_cast<OrdinalType>(0)};
+  errCode             = MPI_Unpack(const_cast<char*>(inBuf), inBufSize, &inBufCurPos,
+                                   inds, 2, ordinalDt, comm);
   if (errCode != MPI_SUCCESS) {
     if (errStrm != NULL) {
       *errStrm << "unpackTripleMpi: MPI_Unpack failed when unpacking indices: "
-        "inBufSize=" << inBufSize << ", inBufCurPos=" << inBufCurPos << endl;
+                  "inBufSize="
+               << inBufSize << ", inBufCurPos=" << inBufCurPos << endl;
     }
     return errCode;
   }
@@ -238,47 +199,45 @@ unpackTripleMpi (const char inBuf[],
   // mfh 17 Jan 2017: Some (generally older) MPI implementations want
   // the input buffer argument to be a pointer to nonconst, even
   // though MPI_Unpack does not modify that argument.
-  errCode = MPI_Unpack (const_cast<char*> (inBuf), inBufSize, &inBufCurPos,
-                        &val, 1, scalarDt, comm);
+  errCode = MPI_Unpack(const_cast<char*>(inBuf), inBufSize, &inBufCurPos,
+                       &val, 1, scalarDt, comm);
   if (errCode != MPI_SUCCESS) {
     if (errStrm != NULL) {
       *errStrm << "unpackTripleMpi: MPI_Unpack failed when unpacking value: "
-        "inBufSize=" << inBufSize << ", inBufCurPos=" << inBufCurPos << endl;
+                  "inBufSize="
+               << inBufSize << ", inBufCurPos=" << inBufCurPos << endl;
     }
     return errCode;
   }
   return errCode;
 }
 
-int
-unpackTriplesCountMpi (const char inBuf[],
-                       const int inBufSize,
-                       int& inBufCurPos,
-                       int& numEnt,
-                       MPI_Comm comm,
-                       std::ostream* errStrm = NULL);
+int unpackTriplesCountMpi(const char inBuf[],
+                          const int inBufSize,
+                          int& inBufCurPos,
+                          int& numEnt,
+                          MPI_Comm comm,
+                          std::ostream* errStrm = NULL);
 
-template<class ScalarType, class OrdinalType>
-int
-unpackTriplesMpi (const char inBuf[],
-                  const int inBufSize,
-                  int& inBufCurPos,
-                  OrdinalType gblRowInds[],
-                  OrdinalType gblColInds[],
-                  MPI_Datatype ordinalDt,
-                  ScalarType vals[],
-                  MPI_Datatype scalarDt,
-                  const int numEnt, // input arg, from unpackTriplesCountMpi
-                  MPI_Comm comm,
-                  std::ostream* errStrm = NULL)
-{
+template <class ScalarType, class OrdinalType>
+int unpackTriplesMpi(const char inBuf[],
+                     const int inBufSize,
+                     int& inBufCurPos,
+                     OrdinalType gblRowInds[],
+                     OrdinalType gblColInds[],
+                     MPI_Datatype ordinalDt,
+                     ScalarType vals[],
+                     MPI_Datatype scalarDt,
+                     const int numEnt,  // input arg, from unpackTriplesCountMpi
+                     MPI_Comm comm,
+                     std::ostream* errStrm = NULL) {
   using std::endl;
   int errCode = MPI_SUCCESS;
 
   for (int k = 0; k < numEnt; ++k) {
-    errCode = unpackTripleMpi (inBuf, inBufSize, inBufCurPos,
-                               gblRowInds[k], gblColInds[k], ordinalDt,
-                               vals[k], scalarDt, comm, errStrm);
+    errCode = unpackTripleMpi(inBuf, inBufSize, inBufCurPos,
+                              gblRowInds[k], gblColInds[k], ordinalDt,
+                              vals[k], scalarDt, comm, errStrm);
     if (errCode != MPI_SUCCESS) {
       if (errStrm != NULL) {
         *errStrm << "unpackTriplesMpi: packTripleMpi failed at entry k=" << k
@@ -292,7 +251,7 @@ unpackTriplesMpi (const char inBuf[],
   return errCode;
 }
 
-#endif // HAVE_TPETRACORE_MPI
+#endif  // HAVE_TPETRACORE_MPI
 
 //
 // SKIP DOWN TO HERE FOR "PUBLIC" INTERFACE
@@ -318,10 +277,9 @@ unpackTriplesMpi (const char inBuf[],
 /// \warning It only makes sense to call this function if using MPI.
 ///   If <i>not</i> building with MPI, this function is a stub that
 ///   returns nonzero.
-int
-countPackTriplesCount (const ::Teuchos::Comm<int>& comm,
-                       int& size,
-                       std::ostream* errStrm = NULL);
+int countPackTriplesCount(const ::Teuchos::Comm<int>& comm,
+                          int& size,
+                          std::ostream* errStrm = NULL);
 
 /// \brief Compute the buffer size required by packTriples for packing
 ///   \c numEnt number of (i,j,A(i,j)) matrix entries ("triples").
@@ -348,45 +306,46 @@ countPackTriplesCount (const ::Teuchos::Comm<int>& comm,
 /// \warning It only makes sense to call this function if using MPI.
 ///   If <i>not</i> building with MPI, this function is a stub that
 ///   returns nonzero.
-template<class ScalarType, class OrdinalType>
-int
-countPackTriples (const int numEnt,
-                  const ::Teuchos::Comm<int>& comm,
-                  int& size, // output argument
-                  std::ostream* errStrm = NULL)
-{
+template <class ScalarType, class OrdinalType>
+int countPackTriples(const int numEnt,
+                     const ::Teuchos::Comm<int>& comm,
+                     int& size,  // output argument
+                     std::ostream* errStrm = NULL) {
 #ifdef HAVE_TPETRACORE_MPI
   using ::Tpetra::Details::extractMpiCommFromTeuchos;
   using ::Tpetra::Details::MpiTypeTraits;
 
-  static_assert (MpiTypeTraits<ScalarType>::isSpecialized, "countPackTriples: "
-                 "ScalarType lacks an MpiTypeTraits specialization.");
-  static_assert (MpiTypeTraits<OrdinalType>::isSpecialized, "countPackTriples: "
-                 "OrdinalType lacks an MpiTypeTraits specialization.");
+  static_assert(MpiTypeTraits<ScalarType>::isSpecialized,
+                "countPackTriples: "
+                "ScalarType lacks an MpiTypeTraits specialization.");
+  static_assert(MpiTypeTraits<OrdinalType>::isSpecialized,
+                "countPackTriples: "
+                "OrdinalType lacks an MpiTypeTraits specialization.");
 
-  MPI_Comm mpiComm = extractMpiCommFromTeuchos (comm);
-  MPI_Datatype ordinalDt = MpiTypeTraits<OrdinalType>::getType ();
-  MPI_Datatype scalarDt = MpiTypeTraits<ScalarType>::getType ();
+  MPI_Comm mpiComm       = extractMpiCommFromTeuchos(comm);
+  MPI_Datatype ordinalDt = MpiTypeTraits<OrdinalType>::getType();
+  MPI_Datatype scalarDt  = MpiTypeTraits<ScalarType>::getType();
 
   const int errCode =
-    countPackTriplesMpi<ScalarType, OrdinalType> (ordinalDt, scalarDt,
-                                                  numEnt, mpiComm,
-                                                  size, errStrm);
+      countPackTriplesMpi<ScalarType, OrdinalType>(ordinalDt, scalarDt,
+                                                   numEnt, mpiComm,
+                                                   size, errStrm);
   if (MpiTypeTraits<ScalarType>::needsFree) {
-    (void) MPI_Type_free (&scalarDt);
+    (void)MPI_Type_free(&scalarDt);
   }
   if (MpiTypeTraits<OrdinalType>::needsFree) {
-    (void) MPI_Type_free (&ordinalDt);
+    (void)MPI_Type_free(&ordinalDt);
   }
   return errCode;
 
-#else // NOT HAVE_TPETRACORE_MPI
+#else   // NOT HAVE_TPETRACORE_MPI
   if (errStrm != NULL) {
     *errStrm << "countPackTriples: Not implemented (no need; there's no need "
-      "to pack or unpack anything if there's only one process)." << std::endl;
+                "to pack or unpack anything if there's only one process)."
+             << std::endl;
   }
   return -1;
-#endif // HAVE_TPETRACORE_MPI
+#endif  // HAVE_TPETRACORE_MPI
 }
 
 /// \brief Pack the count (number) of matrix triples.
@@ -414,13 +373,12 @@ countPackTriples (const int numEnt,
 /// \warning It only makes sense to call this function if using MPI.
 ///   If <i>not</i> building with MPI, this function is a stub that
 ///   returns nonzero.
-int
-packTriplesCount (const int numEnt,
-                  char outBuf[],
-                  const int outBufSize,
-                  int& outBufCurPos,
-                  const ::Teuchos::Comm<int>& comm,
-                  std::ostream* errStrm = NULL);
+int packTriplesCount(const int numEnt,
+                     char outBuf[],
+                     const int outBufSize,
+                     int& outBufCurPos,
+                     const ::Teuchos::Comm<int>& comm,
+                     std::ostream* errStrm = NULL);
 
 /// \brief Pack matrix entries ("triples" (i, j, A(i,j))) into the
 ///   given output buffer.
@@ -447,61 +405,64 @@ packTriplesCount (const int numEnt,
 /// \warning It only makes sense to call this function if using MPI.
 ///   If <i>not</i> building with MPI, this function is a stub that
 ///   returns nonzero.
-template<class ScalarType, class OrdinalType>
+template <class ScalarType, class OrdinalType>
 int
 #ifdef HAVE_TPETRACORE_MPI
-packTriples (const OrdinalType gblRowInds[],
-             const OrdinalType gblColInds[],
-             const ScalarType vals[],
-             const int numEnt,
-             char outBuf[],
-             const int outBufSize,
-             int& outBufCurPos,
-             const ::Teuchos::Comm<int>& comm,
-             std::ostream* errStrm = NULL)
-#else // NOT HAVE_TPETRACORE_MPI
-packTriples (const OrdinalType /* gblRowInds */ [],
-             const OrdinalType /* gblColInds */ [],
-             const ScalarType /* vals */ [],
-             const int /* numEnt */,
-             char /* outBuf */ [],
-             const int /* outBufSize */,
-             int& /* outBufCurPos */,
-             const ::Teuchos::Comm<int>& /* comm */,
-             std::ostream* errStrm = NULL)
-#endif // HAVE_TPETRACORE_MPI
+packTriples(const OrdinalType gblRowInds[],
+            const OrdinalType gblColInds[],
+            const ScalarType vals[],
+            const int numEnt,
+            char outBuf[],
+            const int outBufSize,
+            int& outBufCurPos,
+            const ::Teuchos::Comm<int>& comm,
+            std::ostream* errStrm = NULL)
+#else   // NOT HAVE_TPETRACORE_MPI
+packTriples(const OrdinalType /* gblRowInds */[],
+            const OrdinalType /* gblColInds */[],
+            const ScalarType /* vals */[],
+            const int /* numEnt */,
+            char /* outBuf */[],
+            const int /* outBufSize */,
+            int& /* outBufCurPos */,
+            const ::Teuchos::Comm<int>& /* comm */,
+            std::ostream* errStrm = NULL)
+#endif  // HAVE_TPETRACORE_MPI
 {
 #ifdef HAVE_TPETRACORE_MPI
   using ::Tpetra::Details::extractMpiCommFromTeuchos;
   using ::Tpetra::Details::MpiTypeTraits;
 
-  static_assert (MpiTypeTraits<ScalarType>::isSpecialized, "packTriples: "
-                 "ScalarType lacks an MpiTypeTraits specialization.");
-  static_assert (MpiTypeTraits<OrdinalType>::isSpecialized, "packTriples: "
-                 "OrdinalType lacks an MpiTypeTraits specialization.");
+  static_assert(MpiTypeTraits<ScalarType>::isSpecialized,
+                "packTriples: "
+                "ScalarType lacks an MpiTypeTraits specialization.");
+  static_assert(MpiTypeTraits<OrdinalType>::isSpecialized,
+                "packTriples: "
+                "OrdinalType lacks an MpiTypeTraits specialization.");
 
-  MPI_Comm mpiComm = extractMpiCommFromTeuchos (comm);
-  MPI_Datatype ordinalDt = MpiTypeTraits<OrdinalType>::getType ();
-  MPI_Datatype scalarDt = MpiTypeTraits<ScalarType>::getType ();
+  MPI_Comm mpiComm       = extractMpiCommFromTeuchos(comm);
+  MPI_Datatype ordinalDt = MpiTypeTraits<OrdinalType>::getType();
+  MPI_Datatype scalarDt  = MpiTypeTraits<ScalarType>::getType();
 
   const int errCode =
-    packTriplesMpi (gblRowInds, gblColInds, ordinalDt, vals, scalarDt,
-                    numEnt, outBuf, outBufSize, outBufCurPos, mpiComm, errStrm);
+      packTriplesMpi(gblRowInds, gblColInds, ordinalDt, vals, scalarDt,
+                     numEnt, outBuf, outBufSize, outBufCurPos, mpiComm, errStrm);
   if (MpiTypeTraits<ScalarType>::needsFree) {
-    (void) MPI_Type_free (&scalarDt);
+    (void)MPI_Type_free(&scalarDt);
   }
   if (MpiTypeTraits<OrdinalType>::needsFree) {
-    (void) MPI_Type_free (&ordinalDt);
+    (void)MPI_Type_free(&ordinalDt);
   }
   return errCode;
 
-#else // NOT HAVE_TPETRACORE_MPI
+#else   // NOT HAVE_TPETRACORE_MPI
   if (errStrm != NULL) {
     *errStrm << "packTriples: Not implemented (no need; there's no need to "
-      "pack or unpack anything if there's only one process)." << std::endl;
+                "pack or unpack anything if there's only one process)."
+             << std::endl;
   }
   return -1;
-#endif // HAVE_TPETRACORE_MPI
+#endif  // HAVE_TPETRACORE_MPI
 }
 
 /// \brief Unpack just the count of triples from the given input
@@ -527,13 +488,12 @@ packTriples (const OrdinalType /* gblRowInds */ [],
 /// \warning It only makes sense to call this function if using MPI.
 ///   If <i>not</i> building with MPI, this function is a stub that
 ///   returns nonzero.
-int
-unpackTriplesCount (const char inBuf[],
-                    const int inBufSize,
-                    int& inBufCurPos,
-                    int& numEnt, // output argument!
-                    const ::Teuchos::Comm<int>& comm,
-                    std::ostream* errStrm = NULL);
+int unpackTriplesCount(const char inBuf[],
+                       const int inBufSize,
+                       int& inBufCurPos,
+                       int& numEnt,  // output argument!
+                       const ::Teuchos::Comm<int>& comm,
+                       std::ostream* errStrm = NULL);
 
 /// \brief Unpack matrix entries ("triples" (i, j, A(i,j))) from the
 ///   given input buffer.
@@ -563,65 +523,68 @@ unpackTriplesCount (const char inBuf[],
 /// \warning It only makes sense to call this function if using MPI.
 ///   If <i>not</i> building with MPI, this function is a stub that
 ///   returns nonzero.
-template<class ScalarType, class OrdinalType>
+template <class ScalarType, class OrdinalType>
 int
 #ifdef HAVE_TPETRACORE_MPI
-unpackTriples (const char inBuf[],
-               const int inBufSize,
-               int& inBufCurPos,
-               OrdinalType gblRowInds[],
-               OrdinalType gblColInds[],
-               ScalarType vals[],
-               const int numEnt,
-               const ::Teuchos::Comm<int>& comm,
-               std::ostream* errStrm = NULL)
-#else // NOT HAVE_TPETRACORE_MPI
-unpackTriples (const char /* inBuf */ [],
-               const int /* inBufSize */,
-               int& /* inBufCurPos */,
-               OrdinalType /* gblRowInds */ [],
-               OrdinalType /* gblColInds */ [],
-               ScalarType /* vals */ [],
-               const int /* numEnt */,
-               const ::Teuchos::Comm<int>& /* comm */,
-               std::ostream* errStrm = NULL)
-#endif // HAVE_TPETRACORE_MPI
+unpackTriples(const char inBuf[],
+              const int inBufSize,
+              int& inBufCurPos,
+              OrdinalType gblRowInds[],
+              OrdinalType gblColInds[],
+              ScalarType vals[],
+              const int numEnt,
+              const ::Teuchos::Comm<int>& comm,
+              std::ostream* errStrm = NULL)
+#else   // NOT HAVE_TPETRACORE_MPI
+unpackTriples(const char /* inBuf */[],
+              const int /* inBufSize */,
+              int& /* inBufCurPos */,
+              OrdinalType /* gblRowInds */[],
+              OrdinalType /* gblColInds */[],
+              ScalarType /* vals */[],
+              const int /* numEnt */,
+              const ::Teuchos::Comm<int>& /* comm */,
+              std::ostream* errStrm = NULL)
+#endif  // HAVE_TPETRACORE_MPI
 {
 #ifdef HAVE_TPETRACORE_MPI
   using ::Tpetra::Details::extractMpiCommFromTeuchos;
   using ::Tpetra::Details::MpiTypeTraits;
 
-  static_assert (MpiTypeTraits<ScalarType>::isSpecialized, "unpackTriples: "
-                 "ScalarType lacks an MpiTypeTraits specialization.");
-  static_assert (MpiTypeTraits<OrdinalType>::isSpecialized, "unpackTriples: "
-                 "OrdinalType lacks an MpiTypeTraits specialization.");
+  static_assert(MpiTypeTraits<ScalarType>::isSpecialized,
+                "unpackTriples: "
+                "ScalarType lacks an MpiTypeTraits specialization.");
+  static_assert(MpiTypeTraits<OrdinalType>::isSpecialized,
+                "unpackTriples: "
+                "OrdinalType lacks an MpiTypeTraits specialization.");
 
-  MPI_Comm mpiComm = extractMpiCommFromTeuchos (comm);
-  MPI_Datatype ordinalDt = MpiTypeTraits<OrdinalType>::getType ();
-  MPI_Datatype scalarDt = MpiTypeTraits<ScalarType>::getType ();
+  MPI_Comm mpiComm       = extractMpiCommFromTeuchos(comm);
+  MPI_Datatype ordinalDt = MpiTypeTraits<OrdinalType>::getType();
+  MPI_Datatype scalarDt  = MpiTypeTraits<ScalarType>::getType();
 
   const int errCode =
-    unpackTriplesMpi (inBuf, inBufSize, inBufCurPos,
-                      gblRowInds, gblColInds, ordinalDt,
-                      vals, scalarDt, numEnt, mpiComm, errStrm);
+      unpackTriplesMpi(inBuf, inBufSize, inBufCurPos,
+                       gblRowInds, gblColInds, ordinalDt,
+                       vals, scalarDt, numEnt, mpiComm, errStrm);
   if (MpiTypeTraits<ScalarType>::needsFree) {
-    (void) MPI_Type_free (&scalarDt);
+    (void)MPI_Type_free(&scalarDt);
   }
   if (MpiTypeTraits<OrdinalType>::needsFree) {
-    (void) MPI_Type_free (&ordinalDt);
+    (void)MPI_Type_free(&ordinalDt);
   }
   return errCode;
 
-#else // NOT HAVE_TPETRACORE_MPI
+#else   // NOT HAVE_TPETRACORE_MPI
   if (errStrm != NULL) {
     *errStrm << "unpackTriples: Not implemented (no need; there's no need to "
-      "pack or unpack anything if there's only one process)." << std::endl;
+                "pack or unpack anything if there's only one process)."
+             << std::endl;
   }
   return -1;
-#endif // HAVE_TPETRACORE_MPI
+#endif  // HAVE_TPETRACORE_MPI
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_PACKTRIPLES_HPP
+#endif  // TPETRA_DETAILS_PACKTRIPLES_HPP

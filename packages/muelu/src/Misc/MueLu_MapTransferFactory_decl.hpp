@@ -16,7 +16,7 @@
 namespace MueLu {
 
 /*!
-  @class MapTransferFactory class.
+  @class MapTransferFactory
   @brief Factory to transfer a map from a fine to a coarse level
 
   Factory that transfers a map (given by a variable name and a generating factory) for building

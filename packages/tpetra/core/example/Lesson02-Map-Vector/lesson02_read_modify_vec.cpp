@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*!
@@ -52,10 +20,8 @@
 #include <Tpetra_Version.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-void
-exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                std::ostream& out)
-{
+void exampleRoutine(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                    std::ostream& out) {
   using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -66,11 +32,12 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
 
-  const int myRank = comm->getRank ();
+  const int myRank = comm->getRank();
 
   // Print out the Tpetra software version information.
   if (myRank == 0) {
-    out << Tpetra::version () << endl << endl;
+    out << Tpetra::version() << endl
+        << endl;
   }
 
   // Type of the Tpetra::Map specialization to use.
@@ -85,7 +52,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // The "LocalOrdinal" (LO) type is the type of "local" indices.
   // The typedef is commented out to avoid "unused typedef" warnings.
   //
-  //using local_ordinal_type = Tpetra::Vector<>::local_ordinal_type;
+  // using local_ordinal_type = Tpetra::Vector<>::local_ordinal_type;
 
   // The "GlobalOrdinal" (GO) type is the type of "global" indices.
   using global_ordinal_type = Tpetra::Vector<>::global_ordinal_type;
@@ -101,7 +68,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // Map with the number of MPI processes.  That way, you can run this
   // example with any number of MPI processes and every process will
   // still have a positive number of entries.
-  const Tpetra::global_size_t numGlobalEntries = comm->getSize () * 5;
+  const Tpetra::global_size_t numGlobalEntries = comm->getSize() * 5;
 
   // Index base of the Map.  We choose zero-based (C-style) indexing.
   const global_ordinal_type indexBase = 0;
@@ -109,7 +76,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // Construct a Map that puts the same number of equations on each
   // MPI process.
   RCP<const map_type> contigMap =
-    rcp (new map_type (numGlobalEntries, indexBase, comm,
+      rcp(new map_type(numGlobalEntries, indexBase, comm,
                        Tpetra::GloballyDistributed));
 
   //////////////////////////////////////////////////////////////////////
@@ -118,28 +85,28 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 
   // Create a Vector with the Map we created above.
   // This version of the constructor will fill in the vector with zeros.
-  vector_type x (contigMap);
+  vector_type x(contigMap);
 
   //////////////////////////////////////////////////////////////////////
   // Fill the Vector with a single number, or with random numbers
   //////////////////////////////////////////////////////////////////////
 
   // Set all entries of x to 42.0.
-  x.putScalar (42.0);
+  x.putScalar(42.0);
 
   // norm2() is a collective, so we need to call it on all processes
   // in the Vector's communicator.
-  auto x_norm2 = x.norm2 ();
+  auto x_norm2 = x.norm2();
   if (myRank == 0) {
     out << "Norm of x (all entries are 42.0): " << x_norm2 << endl;
   }
 
   // Set the entries of x to (pseudo)random numbers.  Please don't
   // consider this a good parallel pseudorandom number generator.
-  x.randomize ();
+  x.randomize();
 
   // Print the norm of x.
-  x_norm2 = x.norm2 ();
+  x_norm2 = x.norm2();
   if (myRank == 0) {
     out << "Norm of x (random numbers): " << x_norm2 << endl;
   }
@@ -164,12 +131,12 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // extra pair of {}) so that the ArrayRCP will fall out of scope
     // (and therefore be deallocated) before the next example, which
     // modifies the entries of the Vector.
-    ArrayRCP<const scalar_type> x_data = x.get1dView ();
+    ArrayRCP<const scalar_type> x_data = x.get1dView();
 
     // x_data.size () may be longer than the number of local rows in
     // the Vector, so be sure to ask the Vector for its dimensions,
     // rather than the ArrayRCP.
-    const size_t localLength = x.getLocalLength ();
+    const size_t localLength = x.getLocalLength();
 
     // Count the local number of entries less than 0.5.
     // Use local indices to access the entries of x_data.
@@ -184,8 +151,8 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // "outArg" is like taking the address using &, but makes it more
     // clear that its argument is an output argument of a function.
     size_t globalCount = 0;
-    reduceAll<int, size_t> (*comm, REDUCE_SUM, localCount,
-                            outArg (globalCount));
+    reduceAll<int, size_t>(*comm, REDUCE_SUM, localCount,
+                           outArg(globalCount));
 
     // Find the total number of entries less than 0.5, over all
     // processes in the Vector's communicator.  Note the trick for
@@ -209,20 +176,20 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // If you create two nonconst persisting views of the same Vector,
     // and modify the entries of one view during the lifetime of the other view,
     // the entries of the other view are undefined.
-    ArrayRCP<scalar_type> x_data = x.get1dViewNonConst ();
+    ArrayRCP<scalar_type> x_data = x.get1dViewNonConst();
 
     // Use local indices to access the entries of x_data.
     // x_data.size () may be longer than the number of local rows in the Vector,
     // so be sure to ask the Vector for its dimensions, rather than the ArrayRCP.
-    const size_t localLength = x.getLocalLength ();
+    const size_t localLength = x.getLocalLength();
     for (size_t k = 0; k < localLength; ++k) {
       // Add k (the local index) to every entry of x.  Treat
       // scalar_type as a function to convert k to scalar_type.
-      x_data[k] += scalar_type (k);
+      x_data[k] += scalar_type(k);
     }
 
     // Print the norm of x.
-    x_norm2 = x.norm2 ();
+    x_norm2 = x.norm2();
     if (myRank == 0) {
       out << "Norm of x (modified random numbers): " << x_norm2 << endl;
     }
@@ -232,15 +199,13 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
 //
 // The same main() driver routine as in the first Tpetra lesson.
 //
-int
-main (int argc, char *argv[])
-{
-  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
-    auto comm = Tpetra::getDefaultComm ();
-    exampleRoutine (comm, std::cout);
+    auto comm = Tpetra::getDefaultComm();
+    exampleRoutine(comm, std::cout);
     // This tells the Trilinos test framework that the test passed.
-    if (comm->getRank () == 0) {
+    if (comm->getRank() == 0) {
       std::cout << "End Result: TEST PASSED" << std::endl;
     }
   }

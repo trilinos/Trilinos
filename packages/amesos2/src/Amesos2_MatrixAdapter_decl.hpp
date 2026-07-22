@@ -52,6 +52,7 @@ namespace Amesos2 {
     typedef Matrix                                                  matrix_t;
     typedef MatrixAdapter<Matrix>                                       type;
     typedef ConcreteMatrixAdapter<Matrix>                          adapter_t;
+    typedef Tpetra::Map<local_ordinal_t, global_ordinal_t, node_t> map_t;
 
     typedef typename MatrixTraits<Matrix>::global_host_idx_type  global_host_idx_t;
     typedef typename MatrixTraits<Matrix>::global_host_val_type  global_host_val_t;
@@ -100,7 +101,7 @@ namespace Amesos2 {
                             KV_GO & colind,
                             KV_GS & rowptr,
                             global_size_t& nnz,
-                            const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+                            const Teuchos::Ptr<const map_t> rowmap,
                             EStorage_Ordering ordering=ARBITRARY,
                             EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
 
@@ -151,7 +152,7 @@ namespace Amesos2 {
                             KV_GO & rowind,
                             KV_GS & colptr,
                             global_size_t& nnz,
-                            const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+                            const Teuchos::Ptr<const map_t> colmap,
                             EStorage_Ordering ordering=ARBITRARY,
                             EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
 
@@ -199,22 +200,35 @@ namespace Amesos2 {
     /// Get the local number of non-zeros on this processor
     size_t getLocalNNZ() const;
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
+    Teuchos::RCP<const map_t>
     getMap() const {
       return static_cast<const adapter_t*>(this)->getMap_impl();
     }
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
+    Teuchos::RCP<const map_t>
     getRowMap() const {
       return row_map_;
     }
 
-    Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> >
+    Teuchos::RCP<const map_t>
     getColMap() const {
       return col_map_;
     }
 
-    Teuchos::RCP<const type> get(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
+    Teuchos::RCP<const type> get(const Teuchos::Ptr<const map_t> map, EDistribution distribution = ROOTED) const;
+
+    /// Reindex the GIDs such that they are contiguous without gaps (0, .., n-1)
+    ///  This is called in loadA for the matrix with (DISTRIBUTED_NO_OVERLAP && !is_contiguous_)
+    Teuchos::RCP<const type> reindex(Teuchos::RCP<const map_t> &contigRowMap, Teuchos::RCP<const map_t> &contigColMap, const EPhase current_phase) const;
+
+    /// Gather matrix to MPI-0
+    template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
+    local_ordinal_t gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                           host_ordinal_type_array &perm_g2l,
+                           host_ordinal_type_array &recvCountRows, host_ordinal_type_array &recvDisplRows,
+                           host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                           host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                           bool column_major, EPhase current_phase) const;
 
     /// Returns a short description of this Solver
     std::string description() const;

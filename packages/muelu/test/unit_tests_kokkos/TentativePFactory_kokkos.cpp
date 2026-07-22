@@ -29,10 +29,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, Constructor, Scalar,
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<TentativePFactory_kokkos> tentPFact = rcp(new TentativePFactory_kokkos);
@@ -131,11 +127,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentative, Scala
   using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
-
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   out << "version: " << MueLu::Version() << std::endl;
@@ -231,11 +222,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeVectorB
   using STS            = Teuchos::ScalarTraits<Scalar>;
   using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using TMT            = Teuchos::ScalarTraits<magnitude_type>;
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   out << "version: " << MueLu::Version() << std::endl;
   out << "Test QR when nullspace isn't supplied by user" << std::endl;
@@ -334,11 +320,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeUsingDe
   using STS            = Teuchos::ScalarTraits<Scalar>;
   using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using TMT            = Teuchos::ScalarTraits<magnitude_type>;
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   out << "version: " << MueLu::Version() << std::endl;
   out << "Test QR when nullspace isn't supplied by user" << std::endl;
@@ -587,145 +568,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeUsingDe
 
   }
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
-  TEUCHOS_UNIT_TEST(TentativePFactory, EpetraVsTpetra)
-  {
-    out << "version: " << MueLu::Version() << std::endl;
-    out << "Test QR when nullspace isn't supplied by user" << std::endl;
-
-    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-    using TST            = Teuchos::ScalarTraits<SC>;
-    using magnitude_type = typename TST::magnitudeType;
-    using TMT            = Teuchos::ScalarTraits<magnitudeType>;
-
-    Teuchos::Array<magnitude_type> results(2);
-
-    // run test only on 1 proc
-    if(comm->getSize() == 1)
-    {
-      Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-
-      // run Epetra and Tpetra test
-      for (int run = 0; run < 2; run++)
-      {
-        if (run == 0) lib = Xpetra::UseEpetra;
-        else lib = Xpetra::UseTpetra;
-
-        // generate problem
-        LO maxLevels = 3;
-        LO its=10;
-        LO nEle = 63;
-        const RCP<const Map> map = MapFactory::Build(lib, nEle, 0, comm);
-        Teuchos::ParameterList matrixParameters;
-        matrixParameters.set("nx", Teuchos::as<GO>(nEle));
-        RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap,MultiVector>("Laplace1D", map, matrixParameters);
-        RCP<Matrix> Op = Pr->BuildMatrix();
-
-        // build nullspace
-        RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
-        nullSpace->putScalar( (SC) 1.0);
-        Teuchos::Array<magnitude_type> norms(1);
-        nullSpace->norm1(norms);
-        if (comm->getRank() == 0)
-          out << "||NS|| = " << norms[0] << std::endl;
-
-        // fill hierarchy
-        RCP<Hierarchy> H = rcp( new Hierarchy() );
-        H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-        RCP<Level> Finest = H->GetLevel(); // first associate level with hierarchy (for defaultFactoryHandler!)
-
-        Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-        Finest->Set("A",Op);                      // set fine level matrix
-        Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
-
-        // define transfer operators
-        RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
-        UncoupledAggFact->SetMinNodesPerAggregate(3);
-        UncoupledAggFact->SetMaxNeighAlreadySelected(0);
-        UncoupledAggFact->SetOrdering("natural");
-
-        RCP<TentativePFactory> Pfact = rcp(new TentativePFactory());
-        RCP<Factory>          Rfact = rcp( new TransPFactory() );
-        RCP<RAPFactory>        Acfact = rcp( new RAPFactory() );
-        H->SetMaxCoarseSize(1);
-
-        // setup smoothers
-        Teuchos::ParameterList smootherParamList;
-        smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
-        smootherParamList.set("relaxation: sweeps", (LO) 1);
-        smootherParamList.set("relaxation: damping factor", (SC) 1.0);
-        RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
-        RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
-        Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-
-        RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
-
-        FactoryManager M;
-        M.SetFactory("P", Pfact);
-        M.SetFactory("R", Rfact);
-        M.SetFactory("A", Acfact);
-        M.SetFactory("Ptent", Pfact);
-        M.SetFactory("Aggregates", UncoupledAggFact);
-        M.SetFactory("Smoother", SmooFact);
-        M.SetFactory("CoarseSolver", coarseSolveFact);
-
-        H->Setup(M, 0, maxLevels);
-
-        // test some basic multgrid data
-        RCP<Level> coarseLevel = H->GetLevel(1);
-        RCP<Matrix> P1 = coarseLevel->Get< RCP<Matrix> >("P");
-        RCP<Matrix> R1 = coarseLevel->Get< RCP<Matrix> >("R");
-        TEST_EQUALITY(P1->getGlobalNumRows(), 63);
-        TEST_EQUALITY(P1->getGlobalNumCols(), 21);
-        TEST_EQUALITY(R1->getGlobalNumRows(), 21);
-        TEST_EQUALITY(R1->getGlobalNumCols(), 63);
-        RCP<Level> coarseLevel2 = H->GetLevel(2);
-        RCP<Matrix> P2 = coarseLevel2->Get< RCP<Matrix> >("P");
-        RCP<Matrix> R2 = coarseLevel2->Get< RCP<Matrix> >("R");
-        TEST_EQUALITY(P2->getGlobalNumRows(), 21);
-        TEST_EQUALITY(P2->getGlobalNumCols(), 7);
-        TEST_EQUALITY(R2->getGlobalNumRows(), 7);
-        TEST_EQUALITY(R2->getGlobalNumCols(), 21);
-
-        Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::Multiply(*P1,true,*P1,false,out);
-        Teuchos::RCP<Xpetra::Vector<Scalar,LO,GO,Node> > diagVec = Xpetra::VectorFactory<Scalar,LO,GO,Node>::Build(PtentTPtent->getRowMap());
-        PtentTPtent->getLocalDiagCopy(*diagVec);
-        TEST_FLOATING_EQUALITY(diagVec->norm1(), TST::magnitude(diagVec->getGlobalLength()), 100*TMT:eps());
-        TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(), 100*TMT:eps());
-        TEST_FLOATING_EQUALITY(diagVec->meanValue(), TMT::one(), 100*TMT:eps());
-        TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
-
-        // Define RHS
-        RCP<MultiVector> X = MultiVectorFactory::Build(map,1);
-        RCP<MultiVector> RHS = MultiVectorFactory::Build(map,1);
-
-        X->putScalar(1.0);
-        X->norm2(norms);
-        if (comm->getRank() == 0)
-          out << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-
-        Op->apply(*X,*RHS,Teuchos::NO_TRANS,(SC)1.0,(SC)0.0);
-
-        // Use AMG directly as an iterative method
-        {
-          X->putScalar( (SC) 0.0);
-
-          H->Iterate(*RHS,*X,its);
-
-          X->norm2(norms);
-          if (comm->getRank() == 0)
-            out << "||X_" << std::setprecision(2) << its << "|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
-          results[run] = norms[0];
-        }
-      }
-
-      TEST_FLOATING_EQUALITY(results[0], results[1], 100*TMT::eps()); // check results of EPETRA vs TPETRA
-    } // comm->getSize == 1
-
-  } // TentativePFactory_EpetraVsTpetra
-#endif
 #endif
 
 #define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                              \

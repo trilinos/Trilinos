@@ -77,13 +77,13 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
   }
 
   /* Make sure the file contains entries */
-  if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dnumentries, &dimid) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* put netcdf file into define mode  */
-  if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, vmap, &mapid) != EX_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -98,7 +98,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
       map_int_type = NC_INT64;
     }
 
-    if ((status = nc_def_var(exoid, vmap, map_int_type, 1, dims, &mapid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, vmap, map_int_type, 1, dims, &mapid)) != EX_NOERR) {
       if (status == NC_ENAMEINUSE) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s numbering map already exists in file id %d",
                  tname, exoid);
@@ -114,7 +114,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
     exi_compress_variable(exoid, mapid, 1);
 
     /* leave define mode  */
-    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -129,7 +129,7 @@ int ex_put_id_map(int exoid, ex_entity_type map_type, const void_int *map)
     status = nc_put_var_int(exoid, mapid, map);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s numbering map in file id %d", tname,
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

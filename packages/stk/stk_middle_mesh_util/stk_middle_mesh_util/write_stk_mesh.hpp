@@ -27,7 +27,7 @@ class StkMeshWriter
     using VertIdType = StkMeshCreator::VertIdType;
     using FieldType       = StkMeshCreator::FieldType;
 
-    StkMeshWriter(stk::mesh::MetaData& metaDataIn, stk::mesh::BulkData& bulkDataIn, stk::mesh::MetaData& metaDataOut,
+    StkMeshWriter(stk::mesh::MetaData& /*metaDataIn*/, stk::mesh::BulkData& bulkDataIn, stk::mesh::MetaData& metaDataOut,
                   stk::mesh::BulkData& bulkDataOut, FieldType* gidField)
       : // m_meta_data_in(meta_data_in),
       m_bulkDataIn(bulkDataIn)

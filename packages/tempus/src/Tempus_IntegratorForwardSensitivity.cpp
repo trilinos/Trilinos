@@ -22,6 +22,14 @@ template Teuchos::RCP<IntegratorForwardSensitivity<double>>
 createIntegratorForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList> pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double>> &model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double>> &sens_residual_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double>> &sens_solve_model);
+
+// Nonmember ctor
+template Teuchos::RCP<IntegratorForwardSensitivity<double>>
+createIntegratorForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double>> &model,
     const Teuchos::RCP<Thyra::ModelEvaluator<double>> &sens_residual_model);
 
 // Nonmember ctor

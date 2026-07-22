@@ -22,12 +22,12 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_PYR_I2_FEM::Serial<opType>::
+    Basis_HGRAD_PYR_I2_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
       const auto eps = epsilon();
@@ -45,191 +45,181 @@ namespace Intrepid2 {
       //be sure that the basis functions are defined when z is very close to 1.
       const value_type z = ( (value_type(1.0) - ztmp) < value_type(eps) ? value_type(1.0 - eps) : ztmp );
 
-      switch (opType) {
-
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const value_type w = 1.0/(1.0 - z);
 
-        output.access(0) = 0.25 * (-x - y - 1.0)*((1.0-x)*(1.0-y) - z + x*y*z*w);
-        output.access(1) = 0.25 * ( x - y - 1.0)*((1.0+x)*(1.0-y) - z - x*y*z*w);
-        output.access(2) = 0.25 * ( x + y - 1.0)*((1.0+x)*(1.0+y) - z + x*y*z*w);
-        output.access(3) = 0.25 * (-x + y - 1.0)*((1.0-x)*(1.0+y) - z - x*y*z*w);
+        output(0) = 0.25 * (-x - y - 1.0)*((1.0-x)*(1.0-y) - z + x*y*z*w);
+        output(1) = 0.25 * ( x - y - 1.0)*((1.0+x)*(1.0-y) - z - x*y*z*w);
+        output(2) = 0.25 * ( x + y - 1.0)*((1.0+x)*(1.0+y) - z + x*y*z*w);
+        output(3) = 0.25 * (-x + y - 1.0)*((1.0-x)*(1.0+y) - z - x*y*z*w);
 
-        output.access(4) =  z * (2.0*z - 1.0);
+        output(4) =  z * (2.0*z - 1.0);
 
-        output.access(5) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 - y - z)*w;
-        output.access(6) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 + x - z)*w;
-        output.access(7) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 + y - z)*w;
-        output.access(8) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 - x - z)*w;
+        output(5) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 - y - z)*w;
+        output(6) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 + x - z)*w;
+        output(7) = 0.5 * (1.0 + x - z)*(1.0 - x - z)*(1.0 + y - z)*w;
+        output(8) = 0.5 * (1.0 + y - z)*(1.0 - y - z)*(1.0 - x - z)*w;
 
-        output.access(9) = z*(1.0 - x - z)*(1.0 - y - z)*w;
-        output.access(10) = z*(1.0 + x - z)*(1.0 - y - z)*w;
-        output.access(11) = z*(1.0 + x - z)*(1.0 + y - z)*w;
-        output.access(12) = z*(1.0 - x - z)*(1.0 + y - z)*w;
-
-        break;
+        output(9) = z*(1.0 - x - z)*(1.0 - y - z)*w;
+        output(10) = z*(1.0 + x - z)*(1.0 - y - z)*w;
+        output(11) = z*(1.0 + x - z)*(1.0 + y - z)*w;
+        output(12) = z*(1.0 - x - z)*(1.0 + y - z)*w;
       }
-      case OPERATOR_GRAD:
-      case OPERATOR_D1: {
+      else if constexpr ((OpType == OPERATOR_GRAD) || (OpType == OPERATOR_D1)) {
         const value_type w  = 1.0/(1.0 - z);
 
-        output.access(0, 0) =  0.25*(-1.0-x-y)*(-1.0+y + y*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
-        output.access(0, 1) =  0.25*(-1.0-x-y)*(-1.0+x + x*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
-        output.access(0, 2) =  0.25*(-1.0-x-y)*(-1.0 + x*y*w + x*y*z*w*w);
+        output(0, 0) =  0.25*(-1.0-x-y)*(-1.0+y + y*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
+        output(0, 1) =  0.25*(-1.0-x-y)*(-1.0+x + x*z*w) - 0.25*((1.0-x)*(1.0-y)-z + x*y*z*w);
+        output(0, 2) =  0.25*(-1.0-x-y)*(-1.0 + x*y*w + x*y*z*w*w);
         
-        output.access(1, 0) =  0.25*(-1.0+x-y)*( 1.0-y - y*z*w) + 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
-        output.access(1, 1) =  0.25*(-1.0+x-y)*(-1.0-x - x*z*w) - 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
-        output.access(1, 2) =  0.25*(-1.0+x-y)*(-1.0 - x*y*w - x*y*z*w*w);
+        output(1, 0) =  0.25*(-1.0+x-y)*( 1.0-y - y*z*w) + 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
+        output(1, 1) =  0.25*(-1.0+x-y)*(-1.0-x - x*z*w) - 0.25*((1.0+x)*(1.0-y)-z - x*y*z*w);
+        output(1, 2) =  0.25*(-1.0+x-y)*(-1.0 - x*y*w - x*y*z*w*w);
         
-        output.access(2, 0) =  0.25*(-1.0+x+y)*(1.0+y + y*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
-        output.access(2, 1) =  0.25*(-1.0+x+y)*(1.0+x + x*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
-        output.access(2, 2) =  0.25*(-1.0+x+y)*(-1.0 + x*y*w + x*y*z*w*w);
+        output(2, 0) =  0.25*(-1.0+x+y)*(1.0+y + y*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
+        output(2, 1) =  0.25*(-1.0+x+y)*(1.0+x + x*z*w) + 0.25*((1.0+x)*(1.0+y)-z + x*y*z*w);
+        output(2, 2) =  0.25*(-1.0+x+y)*(-1.0 + x*y*w + x*y*z*w*w);
         
-        output.access(3, 0) =  0.25*(-1.0-x+y)*(-1.0-y - y*z*w) - 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
-        output.access(3, 1) =  0.25*(-1.0-x+y)*( 1.0-x - x*z*w) + 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
-        output.access(3, 2) =  0.25*(-1.0-x+y)*(-1.0 - x*y*w - x*y*z*w*w);
+        output(3, 0) =  0.25*(-1.0-x+y)*(-1.0-y - y*z*w) - 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
+        output(3, 1) =  0.25*(-1.0-x+y)*( 1.0-x - x*z*w) + 0.25*((1.0-x)*(1.0+y)-z - x*y*z*w);
+        output(3, 2) =  0.25*(-1.0-x+y)*(-1.0 - x*y*w - x*y*z*w*w);
         
-        output.access(4, 0) =  0.0;
-        output.access(4, 1) =  0.0;
-        output.access(4, 2) =  -1.0 + 4.0*z;
+        output(4, 0) =  0.0;
+        output(4, 1) =  0.0;
+        output(4, 2) =  -1.0 + 4.0*z;
         
-        output.access(5, 0) = -x*w*(1.0-y-z);
-        output.access(5, 1) = -0.5*(1.0-x-z)*(1.0+x-z)*w;
-        output.access(5, 2) =  0.5*y*x*x*w*w + 0.5*y - 1.0+z;
+        output(5, 0) = -x*w*(1.0-y-z);
+        output(5, 1) = -0.5*(1.0-x-z)*(1.0+x-z)*w;
+        output(5, 2) =  0.5*y*x*x*w*w + 0.5*y - 1.0+z;
         
-        output.access(6, 0) =  0.5*(1.0-y-z)*(1.0+y-z)*w;
-        output.access(6, 1) = -y*w*(1.0+x-z);
-        output.access(6, 2) = -0.5*x*y*y*w*w - 0.5*x - 1.0+z; 
+        output(6, 0) =  0.5*(1.0-y-z)*(1.0+y-z)*w;
+        output(6, 1) = -y*w*(1.0+x-z);
+        output(6, 2) = -0.5*x*y*y*w*w - 0.5*x - 1.0+z; 
         
-        output.access(7, 0) = -x*w*(1.0+y-z);
-        output.access(7, 1) =  0.5*(1.0-x-z)*(1.0+x-z)*w;
-        output.access(7, 2) = -0.5*y*x*x*w*w - 0.5*y - 1.0+z;
+        output(7, 0) = -x*w*(1.0+y-z);
+        output(7, 1) =  0.5*(1.0-x-z)*(1.0+x-z)*w;
+        output(7, 2) = -0.5*y*x*x*w*w - 0.5*y - 1.0+z;
         
-        output.access(8, 0) = -0.5*(1.0-y-z)*(1.0+y-z)*w;
-        output.access(8, 1) = -y*w*(1.0-x-z);
-        output.access(8, 2) =  0.5*x*y*y*w*w + 0.5*x - 1.0+z;
+        output(8, 0) = -0.5*(1.0-y-z)*(1.0+y-z)*w;
+        output(8, 1) = -y*w*(1.0-x-z);
+        output(8, 2) =  0.5*x*y*y*w*w + 0.5*x - 1.0+z;
         
-        output.access(9, 0) = -(1.0-y-z)*z*w;
-        output.access(9, 1) = -(1.0-x-z)*z*w;
-        output.access(9, 2) =  x*y*w*w + 1.0 - x - y - 2.0*z;
+        output(9, 0) = -(1.0-y-z)*z*w;
+        output(9, 1) = -(1.0-x-z)*z*w;
+        output(9, 2) =  x*y*w*w + 1.0 - x - y - 2.0*z;
         
-        output.access(10,0) =  (1.0-y-z)*z*w;
-        output.access(10,1) = -(1.0+x-z)*z*w;
-        output.access(10,2) = -x*y*w*w + 1.0 + x - y - 2.0*z;
+        output(10,0) =  (1.0-y-z)*z*w;
+        output(10,1) = -(1.0+x-z)*z*w;
+        output(10,2) = -x*y*w*w + 1.0 + x - y - 2.0*z;
         
-        output.access(11,0) =  (1.0+y-z)*z*w;
-        output.access(11,1) =  (1.0+x-z)*z*w;
-        output.access(11,2) =  x*y*w*w + 1.0 + x + y - 2.0*z;
+        output(11,0) =  (1.0+y-z)*z*w;
+        output(11,1) =  (1.0+x-z)*z*w;
+        output(11,2) =  x*y*w*w + 1.0 + x + y - 2.0*z;
         
-        output.access(12,0) = -(1.0+y-z)*z*w;
-        output.access(12,1) =  (1.0-x-z)*z*w;
-        output.access(12,2) = -x*y*w*w + 1.0 - x + y - 2.0*z;
-
-        break;
+        output(12,0) = -(1.0+y-z)*z*w;
+        output(12,1) =  (1.0-x-z)*z*w;
+        output(12,2) = -x*y*w*w + 1.0 - x + y - 2.0*z;
       }
-      case OPERATOR_D2: {
+      else if constexpr (OpType == OPERATOR_D2) {
         const value_type w  = 1.0/(1.0 - z);
         
-        output.access(0, 0) = -0.5*(-1.0+y+y*z*w);
-        output.access(0, 1) = -(-0.25 + 0.5*x + 0.5*y + 0.5*z)*w;
-        output.access(0, 2) =  0.25 + (-0.25*y-0.5*x*y-0.25*y*y)*w*w; 
-        output.access(0, 3) = -0.5*(-1.0+x+x*z*w);
-        output.access(0, 4) =  0.25 + (-0.25*x*x-0.25*x-0.5*x*y)*w*w; 
-        output.access(0, 5) =  0.5*x*y*(-1.0-x-y)*w*w*w;
+        output(0, 0) = -0.5*(-1.0+y+y*z*w);
+        output(0, 1) = -(-0.25 + 0.5*x + 0.5*y + 0.5*z)*w;
+        output(0, 2) =  0.25 + (-0.25*y-0.5*x*y-0.25*y*y)*w*w; 
+        output(0, 3) = -0.5*(-1.0+x+x*z*w);
+        output(0, 4) =  0.25 + (-0.25*x*x-0.25*x-0.5*x*y)*w*w; 
+        output(0, 5) =  0.5*x*y*(-1.0-x-y)*w*w*w;
         
-        output.access(1, 0) =  0.5*(1.0-y-y*z*w); 
-        output.access(1, 1) =-(0.25 + 0.5*x - 0.5*y - 0.5*z)*w;
-        output.access(1, 2) = -0.25 + (0.25*y-0.5*x*y+0.25*y*y)*w*w;
-        output.access(1, 3) = -0.5*(-1.0-x-x*z*w); 
-        output.access(1, 4) =  0.25 + (-0.25*x*x + 0.25*x + 0.5*x*y)*w*w; 
-        output.access(1, 5) = -0.5*x*y*(-1.0+x-y)*w*w*w; 
+        output(1, 0) =  0.5*(1.0-y-y*z*w); 
+        output(1, 1) =-(0.25 + 0.5*x - 0.5*y - 0.5*z)*w;
+        output(1, 2) = -0.25 + (0.25*y-0.5*x*y+0.25*y*y)*w*w;
+        output(1, 3) = -0.5*(-1.0-x-x*z*w); 
+        output(1, 4) =  0.25 + (-0.25*x*x + 0.25*x + 0.5*x*y)*w*w; 
+        output(1, 5) = -0.5*x*y*(-1.0+x-y)*w*w*w; 
         
-        output.access(2, 0) =  0.5*(1.0+y+y*z*w);
-        output.access(2, 1) =-(-0.25 - 0.5*x - 0.5*y + 0.5*z)*w; 
-        output.access(2, 2) = -0.25 + (-0.25*y+0.5*x*y+0.25*y*y)*w*w;
-        output.access(2, 3) =  0.5*(1.0+x+x*z*w); 
-        output.access(2, 4) = -0.25 + (0.25*x*x -0.25*x + 0.5*x*y)*w*w;  
-        output.access(2, 5) =  0.5*x*y*(-1.0+x+y)*w*w*w;
+        output(2, 0) =  0.5*(1.0+y+y*z*w);
+        output(2, 1) =-(-0.25 - 0.5*x - 0.5*y + 0.5*z)*w; 
+        output(2, 2) = -0.25 + (-0.25*y+0.5*x*y+0.25*y*y)*w*w;
+        output(2, 3) =  0.5*(1.0+x+x*z*w); 
+        output(2, 4) = -0.25 + (0.25*x*x -0.25*x + 0.5*x*y)*w*w;  
+        output(2, 5) =  0.5*x*y*(-1.0+x+y)*w*w*w;
         
-        output.access(3, 0) = -0.5*(-1.0-y-y*z*w);
-        output.access(3, 1) =-(0.25 - 0.5*x + 0.5*y - 0.5*z)*w; 
-        output.access(3, 2) =  0.25 + (0.25*y+0.5*x*y-0.25*y*y)*w*w; 
-        output.access(3, 3) =  0.5*(1.0-x-x*z*w);
-        output.access(3, 4) = -0.25 + (0.25*x + 0.25*x*x - 0.5*x*y)*w*w;
-        output.access(3, 5) = -0.5*x*y*(-1.0-x+y)*w*w*w;
+        output(3, 0) = -0.5*(-1.0-y-y*z*w);
+        output(3, 1) =-(0.25 - 0.5*x + 0.5*y - 0.5*z)*w; 
+        output(3, 2) =  0.25 + (0.25*y+0.5*x*y-0.25*y*y)*w*w; 
+        output(3, 3) =  0.5*(1.0-x-x*z*w);
+        output(3, 4) = -0.25 + (0.25*x + 0.25*x*x - 0.5*x*y)*w*w;
+        output(3, 5) = -0.5*x*y*(-1.0-x+y)*w*w*w;
         
-        output.access(4, 0) =  0.0;
-        output.access(4, 1) =  0.0;
-        output.access(4, 2) =  0.0;
-        output.access(4, 3) =  0.0; 
-        output.access(4, 4) =  0.0;
-        output.access(4, 5) =  4.0; 
+        output(4, 0) =  0.0;
+        output(4, 1) =  0.0;
+        output(4, 2) =  0.0;
+        output(4, 3) =  0.0; 
+        output(4, 4) =  0.0;
+        output(4, 5) =  4.0; 
         
-        output.access(5, 0) = -(1.0-y-z)*w;
-        output.access(5, 1) =  x*w; 
-        output.access(5, 2) =  x*y*w*w;
-        output.access(5, 3) =  0.0; 
-        output.access(5, 4) =  0.5*x*x*w*w + 0.5; 
-        output.access(5, 5) =  x*x*y*w*w*w + 1.0;
+        output(5, 0) = -(1.0-y-z)*w;
+        output(5, 1) =  x*w; 
+        output(5, 2) =  x*y*w*w;
+        output(5, 3) =  0.0; 
+        output(5, 4) =  0.5*x*x*w*w + 0.5; 
+        output(5, 5) =  x*x*y*w*w*w + 1.0;
         
-        output.access(6, 0) =  0.0;
-        output.access(6, 1) = -y*w;
-        output.access(6, 2) = -0.5*y*y*w*w - 0.5;
-        output.access(6, 3) =-(1.0+x-z)*w; 
-        output.access(6, 4) = -x*y*w*w; 
-        output.access(6, 5) = -x*y*y*w*w*w + 1.0; 
+        output(6, 0) =  0.0;
+        output(6, 1) = -y*w;
+        output(6, 2) = -0.5*y*y*w*w - 0.5;
+        output(6, 3) =-(1.0+x-z)*w; 
+        output(6, 4) = -x*y*w*w; 
+        output(6, 5) = -x*y*y*w*w*w + 1.0; 
         
-        output.access(7, 0) = -(1.0+y-z)*w;
-        output.access(7, 1) = -x*w;
-        output.access(7, 2) = -x*y*w*w; 
-        output.access(7, 3) =  0.0; 
-        output.access(7, 4) = -0.5*x*x*w*w - 0.5;
-        output.access(7, 5) = -x*x*y*w*w*w + 1.0; 
+        output(7, 0) = -(1.0+y-z)*w;
+        output(7, 1) = -x*w;
+        output(7, 2) = -x*y*w*w; 
+        output(7, 3) =  0.0; 
+        output(7, 4) = -0.5*x*x*w*w - 0.5;
+        output(7, 5) = -x*x*y*w*w*w + 1.0; 
         
-        output.access(8, 0) =  0.0;
-        output.access(8, 1) =  y*w;
-        output.access(8, 2) =  0.5*y*y*w*w + 0.5; 
-        output.access(8, 3) = -(1.0-x-z)*w; 
-        output.access(8, 4) =  x*y*w*w;
-        output.access(8, 5) =  x*y*y*w*w*w + 1.0;
+        output(8, 0) =  0.0;
+        output(8, 1) =  y*w;
+        output(8, 2) =  0.5*y*y*w*w + 0.5; 
+        output(8, 3) = -(1.0-x-z)*w; 
+        output(8, 4) =  x*y*w*w;
+        output(8, 5) =  x*y*y*w*w*w + 1.0;
 
-        output.access(9, 0) =  0.0;
-        output.access(9, 1) =  z*w; 
-        output.access(9, 2) =  y*w*w - 1.0;
-        output.access(9, 3) =  0.0; 
-        output.access(9, 4) =  x*w*w - 1.0; 
-        output.access(9, 5) =  2.0*x*y*w*w*w - 2.0; 
+        output(9, 0) =  0.0;
+        output(9, 1) =  z*w; 
+        output(9, 2) =  y*w*w - 1.0;
+        output(9, 3) =  0.0; 
+        output(9, 4) =  x*w*w - 1.0; 
+        output(9, 5) =  2.0*x*y*w*w*w - 2.0; 
          
-        output.access(10,0) =  0.0;
-        output.access(10,1) = -z*w;
-        output.access(10,2) = -y*w*w + 1.0;
-        output.access(10,3) =  0.0;
-        output.access(10,4) = -x*w*w - 1.0;
-        output.access(10,5) = -2.0*x*y*w*w*w - 2.0;
+        output(10,0) =  0.0;
+        output(10,1) = -z*w;
+        output(10,2) = -y*w*w + 1.0;
+        output(10,3) =  0.0;
+        output(10,4) = -x*w*w - 1.0;
+        output(10,5) = -2.0*x*y*w*w*w - 2.0;
         
-        output.access(11,0) =  0.0;
-        output.access(11,1) =  z*w; 
-        output.access(11,2) =  y*w*w + 1.0;
-        output.access(11,3) =  0.0;
-        output.access(11,4) =  x*w*w + 1.0; 
-        output.access(11,5) =  2.0*x*y*w*w*w - 2.0;      
+        output(11,0) =  0.0;
+        output(11,1) =  z*w; 
+        output(11,2) =  y*w*w + 1.0;
+        output(11,3) =  0.0;
+        output(11,4) =  x*w*w + 1.0; 
+        output(11,5) =  2.0*x*y*w*w*w - 2.0;      
         
-        output.access(12,0) =  0.0;
-        output.access(12,1) = -z*w; 
-        output.access(12,2) = -y*w*w - 1.0; 
-        output.access(12,3) =  0.0;
-        output.access(12,4) = -x*w*w + 1.0;    
-        output.access(12,5) = -2.0*x*y*w*w*w - 2.0;
-
-        break;
+        output(12,0) =  0.0;
+        output(12,1) = -z*w; 
+        output(12,2) = -y*w*w - 1.0; 
+        output(12,3) =  0.0;
+        output(12,4) = -x*w*w + 1.0;    
+        output(12,5) = -2.0*x*y*w*w*w - 2.0;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_GRAD &&
-                                  opType != OPERATOR_D1 &&
-                                  opType != OPERATOR_D2,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_GRAD &&
+                                  OpType != OPERATOR_D1 &&
+                                  OpType != OPERATOR_D2,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_I2_FEM::Serial::getValues) operator is not supported");
-      }
       }
     }
 
@@ -302,12 +292,13 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   Basis_HGRAD_PYR_I2_FEM<DT,OT,PT>::
   Basis_HGRAD_PYR_I2_FEM() {
-    this->basisCardinality_  = 13;
-    this->basisDegree_       = 2;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<5> >() );
-    this->basisType_         = BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+    const ordinal_type spaceDim = 3;
+    this->basisCardinality_     = 13;
+    this->basisDegree_          = 2;
+    this->basisCellTopologyKey_ = shards::Pyramid<5>::key;
+    this->basisType_            = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
     // initialize tags
     {
@@ -349,7 +340,7 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_,spaceDim);
 
     dofCoords(0,0) = -1.0;  dofCoords(0,1) = -1.0;  dofCoords(0,2) =  0.0;
     dofCoords(1,0) =  1.0;  dofCoords(1,1) = -1.0;  dofCoords(1,2) =  0.0;
@@ -370,6 +361,52 @@ namespace Intrepid2 {
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
 
-}
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HGRAD_PYR_I2_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perThreadSpaceSize = 0;
+  }
 
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HGRAD_PYR_I2_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim <= 0) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_I2_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      (void) threadScratchLevel; //avoid unused variable warning
+
+      const int numPoints = inputPoints.extent(0);
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HGRAD_PYR_I2_FEM::Serial<OPERATOR_VALUE>::getValues( output, input);
+          });
+          break;
+        case OPERATOR_GRAD:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HGRAD_PYR_I2_FEM::Serial<OPERATOR_GRAD>::getValues( output, input);
+          });
+          break;
+        default: {}
+    }
+  }
+  
+}// namespace Intrepid2
 #endif

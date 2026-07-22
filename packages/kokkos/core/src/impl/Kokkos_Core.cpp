@@ -1,30 +1,23 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #define KOKKOS_IMPL_PUBLIC_INCLUDE
 #endif
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <impl/Kokkos_Error.hpp>
 #include <impl/Kokkos_Command_Line_Parsing.hpp>
 #include <impl/Kokkos_ParseCommandLineArgumentsAndEnvironmentVariables.hpp>
 #include <impl/Kokkos_DeviceManagement.hpp>
 #include <impl/Kokkos_ExecSpaceManager.hpp>
 #include <impl/Kokkos_CPUDiscovery.hpp>
+#include <impl/Kokkos_Profiling.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -34,7 +27,6 @@
 #include <cstdlib>
 #include <stack>
 #include <functional>
-#include <list>
 #include <cerrno>
 #include <random>
 #include <regex>
@@ -46,21 +38,14 @@
 
 //----------------------------------------------------------------------------
 namespace {
-bool g_is_initialized = false;
-bool g_is_finalized   = false;
-bool g_show_warnings  = true;
-bool g_tune_internals = false;
-// When compiling with clang/LLVM and using the GNU (GCC) C++ Standard Library
-// (any recent version between GCC 7.3 and GCC 9.2), std::deque SEGV's during
-// the unwinding of the atexit(3C) handlers at program termination.  However,
-// this bug is not observable when building with GCC.
-// As an added bonus, std::list<T> provides constant insertion and
-// deletion time complexity, which translates to better run-time performance. As
-// opposed to std::deque<T> which does not provide the same constant time
-// complexity for inserts/removals, since std::deque<T> is implemented as a
-// segmented array.
+bool g_print_help_and_exit = false;  // whether to exit early at initialize
+bool g_is_initialized      = false;
+bool g_is_finalized        = false;
+bool g_show_warnings       = true;
+bool g_tune_internals      = false;
+
 using hook_function_type = std::function<void()>;
-std::stack<hook_function_type, std::list<hook_function_type>> finalize_hooks;
+std::stack<hook_function_type> finalize_hooks;
 
 /**
  * The category is only used in printing, tools
@@ -91,6 +76,7 @@ void combine(Kokkos::InitializationSettings& out,
   KOKKOS_IMPL_COMBINE_SETTING(map_device_id_by);
   KOKKOS_IMPL_COMBINE_SETTING(device_id);
   KOKKOS_IMPL_COMBINE_SETTING(disable_warnings);
+  KOKKOS_IMPL_COMBINE_SETTING(print_configuration);
   KOKKOS_IMPL_COMBINE_SETTING(tune_internals);
   KOKKOS_IMPL_COMBINE_SETTING(tools_help);
   KOKKOS_IMPL_COMBINE_SETTING(tools_libs);
@@ -137,12 +123,10 @@ int get_device_count() {
   KOKKOS_IMPL_HIP_SAFE_CALL(hipGetDeviceCount(&count));
   return count;
 #elif defined(KOKKOS_ENABLE_SYCL)
-  return Kokkos::Experimental::Impl::get_sycl_devices().size();
+  return Kokkos::Impl::get_sycl_devices().size();
 #elif defined(KOKKOS_ENABLE_OPENACC)
   return acc_get_num_devices(
       Kokkos::Experimental::Impl::OpenACC_Traits::dev_type);
-#elif defined(KOKKOS_ENABLE_OPENMPTARGET)
-  return omp_get_num_devices();
 #else
   Kokkos::abort("implementation bug");
   return -1;
@@ -172,6 +156,7 @@ std::vector<int> const& Kokkos::Impl::get_visible_devices() {
   return devices;
 }
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 [[nodiscard]] int Kokkos::device_id() noexcept {
 #if defined(KOKKOS_ENABLE_CUDA)
   int device = Cuda().cuda_device();
@@ -179,10 +164,8 @@ std::vector<int> const& Kokkos::Impl::get_visible_devices() {
   int device = HIP().hip_device();
 #elif defined(KOKKOS_ENABLE_OPENACC)
   int device = Experimental::OpenACC().acc_device_number();
-#elif defined(KOKKOS_ENABLE_OPENMPTARGET)
-  int device = omp_get_default_device();  // FIXME_OPENMPTARGET
 #elif defined(KOKKOS_ENABLE_SYCL)
-  int device = Experimental::Impl::SYCLInternal::m_syclDev;
+  int device = Impl::SYCLInternal::m_syclDev;
 #else
   int device = -1;
   return device;
@@ -264,13 +247,13 @@ int Kokkos::Impl::get_ctest_gpu(int local_rank) {
 
   // Make sure rank is within bounds of resource groups specified by CTest
   auto resource_group_count = std::stoi(ctest_resource_group_count_str);
-  assert(local_rank >= 0);
+  KOKKOS_ASSERT(local_rank >= 0);
   if (local_rank >= resource_group_count) {
     std::ostringstream ss;
     ss << "Error: local rank " << local_rank
        << " is outside the bounds of resource groups provided by CTest. Raised"
        << " by Kokkos::Impl::get_ctest_gpu().";
-    throw_runtime_exception(ss.str());
+    abort(ss.str().c_str());
   }
 
   // Get the resource types allocated to this resource group
@@ -283,7 +266,7 @@ int Kokkos::Impl::get_ctest_gpu(int local_rank) {
     std::ostringstream ss;
     ss << "Error: " << ctest_resource_group_name << " is not specified. Raised"
        << " by Kokkos::Impl::get_ctest_gpu().";
-    throw_runtime_exception(ss.str());
+    abort(ss.str().c_str());
   }
 
   // Look for the device type specified in CTEST_KOKKOS_DEVICE_TYPE
@@ -307,7 +290,7 @@ int Kokkos::Impl::get_ctest_gpu(int local_rank) {
     ss << "Error: device type '" << ctest_kokkos_device_type
        << "' not included in " << ctest_resource_group_name
        << ". Raised by Kokkos::Impl::get_ctest_gpu().";
-    throw_runtime_exception(ss.str());
+    abort(ss.str().c_str());
   }
 
   // Get the device ID
@@ -323,15 +306,15 @@ int Kokkos::Impl::get_ctest_gpu(int local_rank) {
     std::ostringstream ss;
     ss << "Error: " << ctest_resource_group_id_name
        << " is not specified. Raised by Kokkos::Impl::get_ctest_gpu().";
-    throw_runtime_exception(ss.str());
+    abort(ss.str().c_str());
   }
 
   auto const* comma = std::strchr(resource_str, ',');
-  if (!comma || strncmp(resource_str, "id:", 3)) {
+  if (!comma || strncmp(resource_str, "id:", 3) != 0) {
     std::ostringstream ss;
     ss << "Error: invalid value of " << ctest_resource_group_id_name << ": '"
        << resource_str << "'. Raised by Kokkos::Impl::get_ctest_gpu().";
-    throw_runtime_exception(ss.str());
+    abort(ss.str().c_str());
   }
 
   std::string id(resource_str + 3, comma - resource_str - 3);
@@ -453,7 +436,8 @@ void initialize_backends(const Kokkos::InitializationSettings& settings) {
 }
 
 void initialize_profiling(const Kokkos::Tools::InitArguments& args) {
-  auto initialization_status =
+  // Making this variable static prevents a leak if std::exit is called
+  static auto initialization_status =
       Kokkos::Tools::Impl::initialize_tools_subsystem(args);
   if (initialization_status.result ==
       Kokkos::Tools::Impl::InitializationStatus::InitializationResult::
@@ -486,97 +470,83 @@ std::string version_string_from_int(int version_number) {
 }
 
 void pre_initialize_internal(const Kokkos::InitializationSettings& settings) {
+  if (g_print_help_and_exit) {
+    std::exit(EXIT_SUCCESS);
+  }
   if (settings.has_disable_warnings() && settings.get_disable_warnings())
     g_show_warnings = false;
   if (settings.has_tune_internals() && settings.get_tune_internals())
     g_tune_internals = true;
-  declare_configuration_metadata("version_info", "Kokkos Version",
-                                 version_string_from_int(KOKKOS_VERSION));
+
+  // clang-format off
+  declare_configuration_metadata("version_info", "Kokkos Version", version_string_from_int(KOKKOS_VERSION));
 #ifdef KOKKOS_COMPILER_APPLECC
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_APPLECC",
-                                 std::to_string(KOKKOS_COMPILER_APPLECC));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_APPLECC", std::to_string(KOKKOS_COMPILER_APPLECC));
   declare_configuration_metadata("tools_only", "compiler_family", "apple");
 #endif
 #ifdef KOKKOS_COMPILER_CLANG
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_CLANG",
-                                 std::to_string(KOKKOS_COMPILER_CLANG));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_CLANG", std::to_string(KOKKOS_COMPILER_CLANG));
   declare_configuration_metadata("tools_only", "compiler_family", "clang");
 #endif
 #ifdef KOKKOS_COMPILER_CRAYC
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_CRAYC",
-                                 std::to_string(KOKKOS_COMPILER_CRAYC));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_CRAYC", std::to_string(KOKKOS_COMPILER_CRAYC));
   declare_configuration_metadata("tools_only", "compiler_family", "cray");
 #endif
 #ifdef KOKKOS_COMPILER_GNU
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_GNU",
-                                 std::to_string(KOKKOS_COMPILER_GNU));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_GNU", std::to_string(KOKKOS_COMPILER_GNU));
   declare_configuration_metadata("tools_only", "compiler_family", "gnu");
 #endif
-#ifdef KOKKOS_COMPILER_INTEL
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_INTEL",
-                                 std::to_string(KOKKOS_COMPILER_INTEL));
-  declare_configuration_metadata("tools_only", "compiler_family", "intel");
-#endif
 #ifdef KOKKOS_COMPILER_INTEL_LLVM
-  declare_configuration_metadata("compiler_version",
-                                 "KOKKOS_COMPILER_INTEL_LLVM",
-                                 std::to_string(KOKKOS_COMPILER_INTEL_LLVM));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_INTEL_LLVM", std::to_string(KOKKOS_COMPILER_INTEL_LLVM));
   declare_configuration_metadata("tools_only", "compiler_family", "intel_llvm");
 #endif
 #ifdef KOKKOS_COMPILER_NVCC
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_NVCC",
-                                 std::to_string(KOKKOS_COMPILER_NVCC));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_NVCC", std::to_string(KOKKOS_COMPILER_NVCC));
   declare_configuration_metadata("tools_only", "compiler_family", "nvcc");
 #endif
 #ifdef KOKKOS_COMPILER_NVHPC
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_NVHPC",
-                                 std::to_string(KOKKOS_COMPILER_NVHPC));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_NVHPC", std::to_string(KOKKOS_COMPILER_NVHPC));
   declare_configuration_metadata("tools_only", "compiler_family", "pgi");
 #endif
 #ifdef KOKKOS_COMPILER_MSVC
-  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_MSVC",
-                                 std::to_string(KOKKOS_COMPILER_MSVC));
+  declare_configuration_metadata("compiler_version", "KOKKOS_COMPILER_MSVC", std::to_string(KOKKOS_COMPILER_MSVC));
   declare_configuration_metadata("tools_only", "compiler_family", "msvc");
 #endif
 
-#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
-  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_IVDEP",
-                                 "yes");
+  declare_configuration_metadata("atomics", "desul atomics version", KOKKOS_IMPL_DESUL_VERSION);
+
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  declare_configuration_metadata("view", "mdspan", "disabled");
 #else
-  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_IVDEP",
-                                 "no");
+  declare_configuration_metadata("view", "mdspan", "enabled");
+#endif
+  declare_configuration_metadata("view", "mdspan version", KOKKOS_IMPL_MDSPAN_VERSION);
+
+#ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_IVDEP", "yes");
+#else
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_IVDEP", "no");
 #endif
 #ifdef KOKKOS_ENABLE_PRAGMA_LOOPCOUNT
-  declare_configuration_metadata("vectorization",
-                                 "KOKKOS_ENABLE_PRAGMA_LOOPCOUNT", "yes");
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_LOOPCOUNT", "yes");
 #else
-  declare_configuration_metadata("vectorization",
-                                 "KOKKOS_ENABLE_PRAGMA_LOOPCOUNT", "no");
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_LOOPCOUNT", "no");
 #endif
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
-  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_UNROLL",
-                                 "yes");
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_UNROLL", "yes");
 #else
-  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_UNROLL",
-                                 "no");
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_UNROLL", "no");
 #endif
 #ifdef KOKKOS_ENABLE_PRAGMA_VECTOR
-  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_VECTOR",
-                                 "yes");
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_VECTOR", "yes");
 #else
-  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_VECTOR",
-                                 "no");
+  declare_configuration_metadata("vectorization", "KOKKOS_ENABLE_PRAGMA_VECTOR", "no");
 #endif
 
 #ifdef KOKKOS_ENABLE_ASM
   declare_configuration_metadata("options", "KOKKOS_ENABLE_ASM", "yes");
 #else
   declare_configuration_metadata("options", "KOKKOS_ENABLE_ASM", "no");
-#endif
-#ifdef KOKKOS_ENABLE_CXX17
-  declare_configuration_metadata("options", "KOKKOS_ENABLE_CXX17", "yes");
-#else
-  declare_configuration_metadata("options", "KOKKOS_ENABLE_CXX17", "no");
 #endif
 #ifdef KOKKOS_ENABLE_CXX20
   declare_configuration_metadata("options", "KOKKOS_ENABLE_CXX20", "yes");
@@ -594,11 +564,9 @@ void pre_initialize_internal(const Kokkos::InitializationSettings& settings) {
   declare_configuration_metadata("options", "KOKKOS_ENABLE_CXX26", "no");
 #endif
 #ifdef KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK
-  declare_configuration_metadata("options", "KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK",
-                                 "yes");
+  declare_configuration_metadata("options", "KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK", "yes");
 #else
-  declare_configuration_metadata("options", "KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK",
-                                 "no");
+  declare_configuration_metadata("options", "KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK", "no");
 #endif
 #ifdef KOKKOS_ENABLE_HWLOC
   declare_configuration_metadata("options", "KOKKOS_ENABLE_HWLOC", "yes");
@@ -610,8 +578,8 @@ void pre_initialize_internal(const Kokkos::InitializationSettings& settings) {
 #else
   declare_configuration_metadata("options", "KOKKOS_ENABLE_LIBDL", "no");
 #endif
-  declare_configuration_metadata("architecture", "Default Device",
-                                 typeid(Kokkos::DefaultExecutionSpace).name());
+
+  declare_configuration_metadata("architecture", "Default Device", Kokkos::DefaultExecutionSpace::name());
 
 #if defined(KOKKOS_ARCH_A64FX)
   declare_configuration_metadata("architecture", "CPU architecture", "A64FX");
@@ -621,12 +589,16 @@ void pre_initialize_internal(const Kokkos::InitializationSettings& settings) {
   declare_configuration_metadata("architecture", "CPU architecture", "ARMV80");
 #elif defined(KOKKOS_ARCH_ARMV81)
   declare_configuration_metadata("architecture", "CPU architecture", "ARMV81");
+#elif defined(KOKKOS_ARCH_ARMV84)
+  declare_configuration_metadata("architecture", "CPU architecture", "ARMV84");
+#elif defined(KOKKOS_ARCH_ARMV84_SVE)
+  declare_configuration_metadata("architecture", "CPU architecture", "ARMV84_SVE");
 #elif defined(KOKKOS_ARCH_ARMV8_THUNDERX)
-  declare_configuration_metadata("architecture", "CPU architecture",
-                                 "ARMV8_THUNDERX");
+  declare_configuration_metadata("architecture", "CPU architecture", "ARMV8_THUNDERX");
 #elif defined(KOKKOS_ARCH_ARMV8_THUNDERX2)
-  declare_configuration_metadata("architecture", "CPU architecture",
-                                 "ARMV8_THUNDERX2");
+  declare_configuration_metadata("architecture", "CPU architecture", "ARMV8_THUNDERX2");
+#elif defined(KOKKOS_ARCH_ARMV9_GRACE)
+  declare_configuration_metadata("architecture", "CPU architecture", "ARMV9_GRACE");
 #elif defined(KOKKOS_ARCH_BDW)
   declare_configuration_metadata("architecture", "CPU architecture", "BDW");
 #elif defined(KOKKOS_ARCH_HSW)
@@ -656,101 +628,88 @@ void pre_initialize_internal(const Kokkos::InitializationSettings& settings) {
 #elif defined(KOKKOS_ARCH_AMD_ZEN)
   declare_configuration_metadata("architecture", "CPU architecture", "AMD_ZEN");
 #elif defined(KOKKOS_ARCH_AMD_ZEN2)
-  declare_configuration_metadata("architecture", "CPU architecture",
-                                 "AMD_ZEN2");
+  declare_configuration_metadata("architecture", "CPU architecture", "AMD_ZEN2");
 #elif defined(KOKKOS_ARCH_AMD_ZEN3)
-  declare_configuration_metadata("architecture", "CPU architecture",
-                                 "AMD_ZEN3");
+  declare_configuration_metadata("architecture", "CPU architecture", "AMD_ZEN3");
+#elif defined(KOKKOS_ARCH_AMD_ZEN4)
+  declare_configuration_metadata("architecture", "CPU architecture", "AMD_ZEN4");
+#elif defined(KOKKOS_ARCH_AMD_ZEN5)
+  declare_configuration_metadata("architecture", "CPU architecture", "AMD_ZEN5");
 #elif defined(KOKKOS_ARCH_RISCV_SG2042)
-  declare_configuration_metadata("architecture", "CPU architecture",
-                                 "SG2042 (RISC-V)")
+  declare_configuration_metadata("architecture", "CPU architecture", "SG2042 (RISC-V)");
+#elif defined(KOKKOS_ARCH_RISCV_RVA22V)
+  declare_configuration_metadata("architecture", "CPU architecture", "RVA22V (RISC-V)");
+#elif defined(KOKKOS_ARCH_RISCV_U74MC)
+  declare_configuration_metadata("architecture", "CPU architecture", "U74MC (RISC-V)");
 #else
   declare_configuration_metadata("architecture", "CPU architecture", "none");
 #endif
 
 #if defined(KOKKOS_ARCH_INTEL_GEN)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "INTEL_GEN");
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_GEN");
 #elif defined(KOKKOS_ARCH_INTEL_DG1)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "INTEL_DG1");
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_DG1");
+#elif defined(KOKKOS_ARCH_INTEL_DG2)
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_DG2");
 #elif defined(KOKKOS_ARCH_INTEL_GEN9)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "INTEL_GEN9");
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_GEN9");
 #elif defined(KOKKOS_ARCH_INTEL_GEN11)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "INTEL_GEN11");
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_GEN11");
 #elif defined(KOKKOS_ARCH_INTEL_GEN12LP)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "INTEL_GEN12LP");
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_GEN12LP");
 #elif defined(KOKKOS_ARCH_INTEL_XEHP)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "INTEL_XEHP");
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_XEHP");
 #elif defined(KOKKOS_ARCH_INTEL_PVC)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "INTEL_PVC");
+  declare_configuration_metadata("architecture", "GPU architecture", "INTEL_PVC");
 
-#elif defined(KOKKOS_ARCH_KEPLER30)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "KEPLER30");
-#elif defined(KOKKOS_ARCH_KEPLER32)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "KEPLER32");
-#elif defined(KOKKOS_ARCH_KEPLER35)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "KEPLER35");
-#elif defined(KOKKOS_ARCH_KEPLER37)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "KELPER37");
 #elif defined(KOKKOS_ARCH_MAXWELL50)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "MAXWELL50");
+  declare_configuration_metadata("architecture", "GPU architecture", "MAXWELL50");
 #elif defined(KOKKOS_ARCH_MAXWELL52)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "MAXWELL52");
+  declare_configuration_metadata("architecture", "GPU architecture", "MAXWELL52");
 #elif defined(KOKKOS_ARCH_MAXWELL53)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "MAXWELL53");
+  declare_configuration_metadata("architecture", "GPU architecture", "MAXWELL53");
 #elif defined(KOKKOS_ARCH_PASCAL60)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "PASCAL60");
+  declare_configuration_metadata("architecture", "GPU architecture", "PASCAL60");
 #elif defined(KOKKOS_ARCH_PASCAL61)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "PASCAL61");
+  declare_configuration_metadata("architecture", "GPU architecture", "PASCAL61");
 #elif defined(KOKKOS_ARCH_VOLTA70)
   declare_configuration_metadata("architecture", "GPU architecture", "VOLTA70");
 #elif defined(KOKKOS_ARCH_VOLTA72)
   declare_configuration_metadata("architecture", "GPU architecture", "VOLTA72");
 #elif defined(KOKKOS_ARCH_TURING75)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "TURING75");
+  declare_configuration_metadata("architecture", "GPU architecture", "TURING75");
 #elif defined(KOKKOS_ARCH_AMPERE80)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "AMPERE80");
+  declare_configuration_metadata("architecture", "GPU architecture", "AMPERE80");
 #elif defined(KOKKOS_ARCH_AMPERE86)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "AMPERE86");
+  declare_configuration_metadata("architecture", "GPU architecture", "AMPERE86");
+#elif defined(KOKKOS_ARCH_AMPERE87)
+  declare_configuration_metadata("architecture", "GPU architecture", "AMPERE87");
 #elif defined(KOKKOS_ARCH_ADA89)
   declare_configuration_metadata("architecture", "GPU architecture", "ADA89");
 #elif defined(KOKKOS_ARCH_HOPPER90)
-      declare_configuration_metadata("architecture", "GPU architecture",
-                                     "HOPPER90");
+  declare_configuration_metadata("architecture", "GPU architecture", "HOPPER90");
+#elif defined(KOKKOS_ARCH_BLACKWELL100)
+  declare_configuration_metadata("architecture", "GPU architecture", "BLACKWELL100");
+#elif defined(KOKKOS_ARCH_BLACKWELL103)
+  declare_configuration_metadata("architecture", "GPU architecture", "BLACKWELL103");
+#elif defined(KOKKOS_ARCH_BLACKWELL120)
+  declare_configuration_metadata("architecture", "GPU architecture", "BLACKWELL120");
+#elif defined(KOKKOS_ARCH_BLACKWELL121)
+  declare_configuration_metadata("architecture", "GPU architecture", "BLACKWELL121");
 #elif defined(KOKKOS_ARCH_AMD_GFX906)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "AMD_GFX906");
+  declare_configuration_metadata("architecture", "GPU architecture", "AMD_GFX906");
 #elif defined(KOKKOS_ARCH_AMD_GFX908)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "AMD_GFX908");
+  declare_configuration_metadata("architecture", "GPU architecture", "AMD_GFX908");
 #elif defined(KOKKOS_ARCH_AMD_GFX90A)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "AMD_GFX90A");
+  declare_configuration_metadata("architecture", "GPU architecture", "AMD_GFX90A");
 #elif defined(KOKKOS_ARCH_AMD_GFX1030)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "AMD_GFX1030");
+  declare_configuration_metadata("architecture", "GPU architecture", "AMD_GFX1030");
 #elif defined(KOKKOS_ARCH_AMD_GFX1100)
-  declare_configuration_metadata("architecture", "GPU architecture",
-                                 "AMD_GFX1100");
-
+  declare_configuration_metadata("architecture", "GPU architecture", "AMD_GFX1100");
+#elif defined(KOKKOS_ARCH_AMD_GFX1103)
+  declare_configuration_metadata("architecture", "GPU architecture", "AMD_GFX1103");
+#elif defined(KOKKOS_ARCH_AMD_GFX1201)
+  declare_configuration_metadata("architecture", "GPU architecture", "AMD_GFX1201");
 #else
   declare_configuration_metadata("architecture", "GPU architecture", "none");
 #endif
@@ -760,10 +719,12 @@ void pre_initialize_internal(const Kokkos::InitializationSettings& settings) {
 #else
   declare_configuration_metadata("architecture", "platform", "64bit");
 #endif
+  // clang-format on
 }
 
 void post_initialize_internal(const Kokkos::InitializationSettings& settings) {
-  Kokkos::Tools::InitArguments tools_init_arguments;
+  // Making this variable static prevents a leak if std::exit is called
+  static Kokkos::Tools::InitArguments tools_init_arguments;
   combine(tools_init_arguments, settings);
   initialize_profiling(tools_init_arguments);
   g_is_initialized = true;
@@ -785,34 +746,19 @@ void initialize_internal(const Kokkos::InitializationSettings& settings) {
   post_initialize_internal(settings);
 }
 
-void pre_finalize_internal() {
-  typename decltype(finalize_hooks)::size_type numSuccessfulCalls = 0;
+// declared noexcept such that std::terminate is called if any of the registered
+// function throws
+// NOLINTNEXTLINE(bugprone-exception-escape)
+void call_registered_finalize_hook_functions() noexcept {
   while (!finalize_hooks.empty()) {
-    auto f = finalize_hooks.top();
-    try {
-      f();
-    } catch (...) {
-      std::cerr << "Kokkos::finalize: A finalize hook (set via "
-                   "Kokkos::push_finalize_hook) threw an exception that it did "
-                   "not catch."
-                   "  Per std::atexit rules, this results in std::terminate.  "
-                   "This is "
-                   "finalize hook number "
-                << numSuccessfulCalls
-                << " (1-based indexing) "
-                   "out of "
-                << finalize_hooks.size()
-                << " to call.  Remember that "
-                   "Kokkos::finalize calls finalize hooks in reverse order "
-                   "from how they "
-                   "were pushed."
-                << std::endl;
-      std::terminate();
-    }
+    auto const& func = finalize_hooks.top();
+    func();
     finalize_hooks.pop();
-    ++numSuccessfulCalls;
   }
+}
 
+void pre_finalize_internal() {
+  call_registered_finalize_hook_functions();
   Kokkos::Profiling::finalize();
 }
 
@@ -874,8 +820,14 @@ instead of hyphens). For example, to disable warning messages, you can either
 specify --kokkos-disable-warnings or set the KOKKOS_DISABLE_WARNINGS
 environment variable to yes.
 
-Join us on Slack, visit https://kokkosteam.slack.com
-Report bugs to https://github.com/kokkos/kokkos/issues
+--------------------------------------------------------------------------------
+For support, documentation, and more information about Kokkos,
+visit the official website: https://kokkos.org
+
+Please cite the recommended publications listed at https://kokkos.org/citing-kokkos
+when using Kokkos in your scientific work.
+
+Kokkos is a Linux Foundation Project.
 --------------------------------------------------------------------------------
 )";
   std::cout << help_message << std::endl;
@@ -937,8 +889,11 @@ void Kokkos::Impl::parse_command_line_arguments(
       remove_flag = true;
     } else if (check_arg(argv[iarg], "--kokkos-help") ||
                check_arg(argv[iarg], "--help")) {
-      help_flag   = true;
-      remove_flag = std::string(argv[iarg]).find("--kokkos-") == 0;
+      help_flag = true;
+      bool const has_kokkos_prefix =
+          std::string(argv[iarg]).find("--kokkos-") == 0;
+      remove_flag           = has_kokkos_prefix;
+      g_print_help_and_exit = has_kokkos_prefix;
     } else if (check_arg_str(argv[iarg], "--kokkos-map-device-id-by",
                              map_device_id_by)) {
       if (!is_valid_map_device_id_by(map_device_id_by)) {
@@ -987,7 +942,7 @@ void Kokkos::Impl::parse_environment_variables(
       Tools::Impl::parse_environment_variables(tools_init_arguments);
   if (init_result.result ==
       Tools::Impl::InitializationStatus::environment_argument_mismatch) {
-    Impl::throw_runtime_exception(init_result.error_message);
+    Kokkos::abort(init_result.error_message.c_str());
   }
   combine(settings, tools_init_arguments);
 
@@ -1059,7 +1014,8 @@ void Kokkos::initialize(int& argc, char* argv[]) {
         "Error: Kokkos::initialize() has already been called."
         " Kokkos can be initialized at most once.\n");
   }
-  InitializationSettings settings;
+  // Making this variable static prevents a leak if std::exit is called
+  static InitializationSettings settings;
   Impl::parse_environment_variables(settings);
   Impl::parse_command_line_arguments(argc, argv, settings);
   initialize_internal(settings);
@@ -1071,7 +1027,8 @@ void Kokkos::initialize(InitializationSettings const& settings) {
         "Error: Kokkos::initialize() has already been called."
         " Kokkos can be initialized at most once.\n");
   }
-  InitializationSettings tmp;
+  // Making this variable static prevents a leak if std::exit is called
+  static InitializationSettings tmp;
   Impl::parse_environment_variables(tmp);
   combine(tmp, settings);
   initialize_internal(tmp);
@@ -1107,9 +1064,6 @@ void Kokkos::finalize() {
   post_finalize_internal();
 }
 
-#ifdef KOKKOS_COMPILER_INTEL
-void Kokkos::fence() { fence("Kokkos::fence: Unnamed Global Fence"); }
-#endif
 void Kokkos::fence(const std::string& name) { fence_internal(name); }
 
 namespace {
@@ -1132,6 +1086,9 @@ void Kokkos::print_configuration(std::ostream& os, bool verbose) {
 
   os << "Atomics:\n";
   print_helper(os, metadata_map["atomics"]);
+
+  os << "View:\n";
+  print_helper(os, metadata_map["view"]);
 
   os << "Vectorization:\n";
   print_helper(os, metadata_map["vectorization"]);

@@ -85,7 +85,7 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   }
 
   /* Make sure the file contains entries */
-  if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dnumentries, &dimid) != EX_NOERR) {
     /* Possible Error -- if we made it this far, num_entities is > 0,
      * or this is a parallel run but the dimension 'dnumentries' is
      * not defined which indicates that either the entity count is
@@ -105,8 +105,8 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
   }
 
   /* define the map if it doesn't already exist... */
-  if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, vmap, &mapid) != EX_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -122,7 +122,7 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
       map_int_type = NC_INT64;
     }
 
-    if ((status = nc_def_var(exoid, vmap, map_int_type, 1, dims, &mapid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, vmap, map_int_type, 1, dims, &mapid)) != EX_NOERR) {
       if (status == NC_ENAMEINUSE) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s numbering map already exists in file id %d",
                  tname, exoid);
@@ -138,7 +138,7 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     exi_compress_variable(exoid, mapid, 1);
 
     /* leave define mode  */
-    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -160,7 +160,7 @@ int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_enti
     status = nc_put_vara_int(exoid, mapid, start, count, map);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s numbering map in file id %d", tname,
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
     Kokkos::deep_copy(x, 3.0);
     Kokkos::deep_copy(y, 1.3);
 
-    const double alpha = Kokkos::ArithTraits<double>::one();
+    const double alpha = KokkosKernels::ArithTraits<double>::one();
 
     KokkosBlas::ger("T", alpha, x, y, A);
   }

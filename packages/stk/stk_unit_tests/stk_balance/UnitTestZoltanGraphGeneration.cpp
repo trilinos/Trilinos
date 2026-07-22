@@ -36,7 +36,7 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/Zoltan2ParallelGraph.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <vector>
 #include <string>
 
@@ -45,7 +45,7 @@ struct ElementAndPart {
   std::string partName;
 };
 
-class ZoltanGraphGeneration : public stk::unit_test_util::simple_fields::MeshFixture
+class ZoltanGraphGeneration : public stk::unit_test_util::MeshFixture
 {
 protected:
   ZoltanGraphGeneration()
@@ -62,9 +62,9 @@ protected:
 
   void fill_zoltan_graph(const stk::mesh::Selector & selector, const stk::balance::BalanceSettings & balanceSettings)
   {
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::internal::createZoltanParallelGraph(get_bulk(), selector, get_comm(), balanceSettings, m_graph);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
   }
 
   void fill_zoltan_graph_for_decomp(const stk::mesh::Selector & selector)
@@ -156,7 +156,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Coloring_OneElem)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}});
   fill_zoltan_graph_for_decomp(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {
@@ -176,7 +176,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Coloring_TwoElems)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
   fill_zoltan_graph_for_coloring(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {
@@ -196,7 +196,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Coloring_TwoElemsEachProc)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
   fill_zoltan_graph_for_coloring(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {
@@ -235,7 +235,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Decomp_OneElem)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}});
   fill_zoltan_graph_for_decomp(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {
@@ -255,7 +255,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Decomp_TwoElems)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}});
   fill_zoltan_graph_for_decomp(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {
@@ -275,7 +275,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Decomp_TwoElemsEachProc)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {2, "partA"}, {4, "partA"}, {5, "partA"}});
   fill_zoltan_graph_for_decomp(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {
@@ -295,7 +295,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Decomp_TwoElemsAcrossProcBoundary)
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{3, "partA"}, {4, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{3, "partA"}, {4, "partA"}});
   fill_zoltan_graph_for_decomp(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {
@@ -315,7 +315,7 @@ TEST_F(ZoltanGraphGeneration, 6Elem2ProcMesh_Decomp_TwoElemsEachProcWithOneAdjac
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
   setup_initial_mesh("generated:1x1x6");
-  stk::unit_test_util::simple_fields::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}, {4, "partA"}, {6, "partA"}});
+  stk::unit_test_util::put_elements_into_part(get_bulk(), {{1, "partA"}, {3, "partA"}, {4, "partA"}, {6, "partA"}});
   fill_zoltan_graph_for_decomp(*get_meta().get_part("partA"));
 
   if (get_parallel_rank() == 0) {

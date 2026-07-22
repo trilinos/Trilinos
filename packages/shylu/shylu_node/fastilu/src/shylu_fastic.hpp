@@ -1,44 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
-
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 // The struct that iterates over all non-zeros for the FastIC
 //  Contact for bugs and complaints - Siva Rajamanickam (srajama@sandia.gov)
@@ -87,8 +54,8 @@ class FastICPrec
 
         typedef Kokkos::RangePolicy<ExecSpace> RangePolicy;
 
-        using STS = Kokkos::ArithTraits<Scalar>;
-        using RTS = Kokkos::ArithTraits<Real>;
+        using STS = KokkosKernels::ArithTraits<Scalar>;
+        using RTS = KokkosKernels::ArithTraits<Real>;
 
     private:
         double computeTime;
@@ -857,16 +824,16 @@ class FastICPrec
                 // setup L solve
                 khL.create_sptrsv_handle(algo, nRows, true);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
+                KokkosSparse::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx);
+                KokkosSparse::sptrsv_symbolic(&khL, lRowMap, lColIdx);
                 #endif
                 // setup Lt solve
                 khLt.create_sptrsv_handle(algo, nRows, false);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx, ltVal);
+                KokkosSparse::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx, ltVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx);
+                KokkosSparse::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx);
                 #endif
             }
         }
@@ -882,9 +849,9 @@ class FastICPrec
             applyD(x, xTemp);
             if (standard_sptrsv) {
                 // solve with L
-                KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
+                KokkosSparse::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
                 // solve with Lt
-                KokkosSparse::Experimental::sptrsv_solve(&khLt, ltRowMap, ltColIdx, ltVal, y, xTemp);
+                KokkosSparse::sptrsv_solve(&khLt, ltRowMap, ltColIdx, ltVal, y, xTemp);
             } else {
                 applyLIC(xTemp, y);
                 //applyDD(y, xTemp);

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,6 +7,7 @@
 #include "ED_SystemInterface.h"
 
 #include <algorithm>
+#include <fmt/ostream.h>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -19,7 +20,6 @@
 #include "ED_Version.h"
 #include "copy_string_cpp.h"
 #include "copyright.h"
-#include "fmt/ostream.h"
 #include "stringx.h"
 #include <SL_tokenize.h>
 
@@ -31,8 +31,7 @@ namespace {
   }
 
   std::string Parse_Variables(std::string xline, std::ifstream &cmd_file, bool &all_flag,
-                              Tolerance &def_tol, std::vector<std::string> &names,
-                              std::vector<Tolerance> &toler);
+                              Tolerance &def_tol, NameList &names, std::vector<Tolerance> &toler);
 
   bool str_equal(const std::string &s1, const std::string &s2)
   {
@@ -137,7 +136,7 @@ namespace {
     }
   }
 
-  void Check_Parsed_Names(const std::vector<std::string> &names, bool &all_flag)
+  void Check_Parsed_Names(const NameList &names, bool &all_flag)
   {
     int num_include = 0;
     int num_exclude = 0;
@@ -276,6 +275,14 @@ void SystemInterface::enroll_options()
                   "Produce a summary in exodiff input format.\n"
                   "\t\tThis will create output with max/min statistics on the data in the format\n"
                   "\t\tof an exodiff input file.",
+                  nullptr);
+  options_.enroll("change_sets", GetLongOption::MandatoryValue,
+                  "Specify the change_set(s) to be compared in the two files.\n"
+                  "\t\tSeparate change set names/indices with a comma ',';\n"
+                  "\t\tSeparate file1 cs from file2 cs with colon ':' if they are different.\n"
+                  "\t\tCan use 1-based index or names.  Use index 0 or name 'root' if file doesn't "
+                  "have change sets.\n"
+                  "\t\tIf not specified, diff all change sets (if any) in files.",
                   nullptr, nullptr, true);
 
   // Tolerance options...
@@ -326,13 +333,6 @@ void SystemInterface::enroll_options()
 
   options_.enroll("ignore_steps", GetLongOption::NoValue,
                   "Don't compare any transient data; compare mesh only.", nullptr);
-  options_.enroll(
-      "x", GetLongOption::MandatoryValue,
-      "Exclude time steps.  Does not consider the time steps given in the list of integers.\n"
-      "\t\tThe format is comma-separated and ranged integers (with no spaces), such as "
-      "\"1,5-9,28\".\n"
-      "\t\tThe first time step is the number '1'.",
-      nullptr);
   options_.enroll(
       "exclude", GetLongOption::MandatoryValue,
       "Exclude time steps.  Does not consider the time steps given in the list of integers.\n"
@@ -389,6 +389,10 @@ void SystemInterface::enroll_options()
                   nullptr);
   options_.enroll("show_unmatched", GetLongOption::NoValue,
                   "If the -partial switch used, print the elements that did not match.", nullptr);
+  options_.enroll("allow_permuted_connectivity", GetLongOption::NoValue,
+                  "The element connectivities are the same if they match\n"
+                  "\t\texactly *OR* are a permutation of each other.",
+                  nullptr);
   options_.enroll("ignore_dups", GetLongOption::NoValue,
                   "If two elements/nodes are in the same location in map or partial\n"
                   "                  map case, just return first match instead of aborting.",
@@ -496,6 +500,8 @@ void SystemInterface::enroll_options()
                   nullptr);
   options_.enroll("T", GetLongOption::MandatoryValue,
                   "Backward-compatible option for -TimeStepOffset", nullptr);
+  options_.enroll("x", GetLongOption::MandatoryValue, "Backward-compatible option for -exclude",
+                  nullptr);
 }
 
 bool SystemInterface::parse_options(int argc, char **argv)
@@ -520,7 +526,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
       fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
       fmt::print("\n\t\tDocumentation: "
                  "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
-      fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
+      fmt::print("\t\t->->-> Send email to sierra-help@sandia.gov for exodiff support.<-<-<-\n");
       exit(EXIT_SUCCESS);
     }
   }
@@ -530,7 +536,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
     fmt::print("\n\t\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
-    fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
+    fmt::print("\t\t->->-> Send email to sierra-help@sandia.gov for exodiff support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -651,6 +657,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   {
+    const char *temp = options_.retrieve("change_sets");
+    if (temp != nullptr) {
+      change_sets = temp;
+    }
+  }
+
+  {
     const char *temp = options_.retrieve("steps");
     if (temp != nullptr) {
       Parse_Steps_Option(temp, time_step_start, time_step_stop, time_step_increment);
@@ -662,7 +675,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     if (temp != nullptr) {
       // temp should be of the form <ts1>:<ts2>  where ts# is either a timestep number
       // (1-based) or 'last'
-      std::vector<std::string> tokens = SLIB::tokenize(temp, ":");
+      NameList tokens = SLIB::tokenize(temp, ":");
       if (tokens.size() == 2) {
         if (str_equal(tokens[0], "last")) {
           explicit_steps.first = -1;
@@ -771,6 +784,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("ignore_dups") != nullptr) {
     ignore_dups = true;
   }
+  allowPermutation = (options_.retrieve("allow_permuted_connectivity") != nullptr);
+
   if (options_.retrieve("ignore_steps") != nullptr) {
     ignore_steps = true;
   }
@@ -1380,8 +1395,7 @@ void SystemInterface::Parse_Command_File()
 
 namespace {
   std::string Parse_Variables(std::string xline, std::ifstream &cmd_file, bool &all_flag,
-                              Tolerance &def_tol, std::vector<std::string> &names,
-                              std::vector<Tolerance> &toler)
+                              Tolerance &def_tol, NameList &names, std::vector<Tolerance> &toler)
   {
     toler.clear();
     names.clear();

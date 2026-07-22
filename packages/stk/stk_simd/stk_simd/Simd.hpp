@@ -35,10 +35,14 @@
 #ifndef STK_SIMD_SIMD_HPP
 #define STK_SIMD_SIMD_HPP
 
+#ifndef STK_INCLUDE_ONLY_STK_SIMD_HEADER
+#define STK_INCLUDE_ONLY_STK_SIMD_HEADER
+#endif
+
 #include <stk_util/stk_config.h>
 
+#include <cstdint>
 #include <iostream>
-
 #include <stk_math/StkMath.hpp>
 
 #define STK_HAVE_SIMD
@@ -57,30 +61,37 @@
 
 namespace stk {
 namespace simd {
-constexpr int ndoubles = SIMD_NAMESPACE::native_simd<double>::size();
-constexpr int nfloats = SIMD_NAMESPACE::native_simd<float>::size();
+inline constexpr int ndoubles = SIMD_NAMESPACE::native_simd<double>::size();
+inline constexpr int nfloats = SIMD_NAMESPACE::native_simd<float>::size();
 }
 }
 
-#include "SimdDouble.hpp"
-#include "SimdFloat.hpp"
-#include "SimdBool.hpp"
-#include "SimdBoolF.hpp"
+#include "SimdDouble.hpp"            // IWYU pragma: export
+#include "SimdFloat.hpp"             // IWYU pragma: export
+#include "SimdBool.hpp"              // IWYU pragma: export
+#include "SimdBoolF.hpp"             // IWYU pragma: export
 //
-#include "SimdDoubleOperators.hpp"
-#include "SimdDoubleLoadStore.hpp"
-#include "SimdDoubleMath.hpp"
+// has to be included after Double, Bool, Float, Boolf are defined
+#include "Traits.hpp"  // IWYU pragma: export
 //
-#include "SimdFloatOperators.hpp"
-#include "SimdFloatLoadStore.hpp"
-#include "SimdFloatMath.hpp"
-
-#include "stk_util/util/AlignedAllocator.hpp"
-#include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
+#include "SimdAVX512Specializations.hpp"  // IWYU pragma: export
+//
+#include "SimdDoubleOperators.hpp"   // IWYU pragma: export
+#include "SimdDoubleLoadStore.hpp"   // IWYU pragma: export
+#include "SimdDoubleMath.hpp"        // IWYU pragma: export
+//
+#include "SimdFloatOperators.hpp"    // IWYU pragma: export
+#include "SimdFloatLoadStore.hpp"    // IWYU pragma: export
+#include "SimdFloatMath.hpp"         // IWYU pragma: export
+//
+#include "SimdLoadStoreImpl.hpp"  // IWYU pragma: export
+//
+#include <sys/resource.h>
+#include <sys/time.h>
 
 #include <Kokkos_Macros.hpp>
-#include <sys/time.h>
-#include <sys/resource.h>
+
+#include "stk_util/util/AlignedAllocator.hpp"
 
 namespace stk {
 
@@ -94,11 +105,15 @@ inline double get_time_in_seconds() {
 namespace simd {
 
 STK_MATH_FORCE_INLINE double reduce_sum(const Double& x) {
+#ifdef STK_USE_AVX512_SPECIALIZATION
+  return _mm512_reduce_add_pd(x._data.get());
+#else
   double sum = x[0];
   for (int i=1; i<ndoubles; ++i) {
     sum += x[i];
   }
   return sum;
+#endif
 }
 
 STK_MATH_FORCE_INLINE float reduce_sum(const Float& x) {
@@ -110,32 +125,44 @@ STK_MATH_FORCE_INLINE float reduce_sum(const Float& x) {
 }
 
 STK_MATH_FORCE_INLINE double reduce_max(const Double& x) {
-  double max = x[0];
-  for (int i=1; i<ndoubles; ++i){
-    max = max > x[i] ? max : x[i];
+#ifdef STK_USE_AVX512_SPECIALIZATION
+  return _mm512_reduce_max_pd(x._data.get());
+#else
+  double max_val = x[0];
+  for (int i = 1; i < ndoubles; ++i) {
+    if (x[i] > max_val) {
+      max_val = x[i];
+    }
   }
-  return max;
+  return max_val;
+#endif
 }
 
 STK_MATH_FORCE_INLINE float reduce_max(const Float& x) {
   float max = x[0];
-  for (int i=1; i<nfloats; ++i){
+  for (int i=1; i<nfloats; ++i) {
     max = max > x[i] ? max : x[i];
   }
   return max;
 }
 
 STK_MATH_FORCE_INLINE double reduce_min(const Double& x) {
-  double max = x[0];
-  for (int i=1; i<ndoubles; ++i){
-    max = max < x[i] ? max : x[i];
+#ifdef STK_USE_AVX512_SPECIALIZATION
+  return _mm512_reduce_min_pd(x._data.get());
+#else
+  double min_val = x[0];
+  for (int i = 1; i < ndoubles; ++i) {
+    if (x[i] < min_val) {
+      min_val = x[i];
+    }
   }
-  return max;
+  return min_val;
+#endif
 }
 
 STK_MATH_FORCE_INLINE float reduce_min(const Float& x) {
   float max = x[0];
-  for (int i=1; i<nfloats; ++i){
+  for (int i=1; i<nfloats; ++i) {
     max = max < x[i] ? max : x[i];
   }
   return max;
@@ -151,27 +178,19 @@ STK_MATH_FORCE_INLINE float reduce_min(const Float& x) {
 // double versions
 
 STK_MATH_FORCE_INLINE void store_part(double* x, const Double& z, const int numValid) {
-  assert(numValid <= ndoubles);
-  for(int n=0; n<numValid; ++n) x[n] = z[n];
+  impl::specialized::store_part(x, z, numValid);
 }
 
 STK_MATH_FORCE_INLINE void store_part(double* x, const Double& z, const int offset, const int numValid) {
-  assert(numValid <= ndoubles);
-  for(int n=0; n<numValid; ++n) x[n*offset] = z[n];
+  impl::specialized::store_part(x, z, offset, numValid);
 }
 
 STK_MATH_FORCE_INLINE Double load_part(const double* x, const int numValid) {
-  assert(numValid <= ndoubles);
-  Double temp(0.0);
-  for(int n=0; n<numValid; ++n) temp[n] = x[n];
-  return temp;
+  return impl::specialized::load_part(x, numValid);
 }
 
 STK_MATH_FORCE_INLINE Double load_part(const double* x, const int offset, const int numValid) {
-  assert(numValid <= ndoubles);
-  Double temp(0.0);
-  for(int n=0; n<numValid; ++n) temp[n] = x[n*offset];
-  return temp;
+  return impl::specialized::load_part(x, offset, numValid);
 }
 
 STK_MATH_FORCE_INLINE const double& get_data(const Double& z, int index) {
@@ -211,7 +230,7 @@ STK_MATH_FORCE_INLINE double reduce_sum(const Double& x, const int sumNum) {
 
 STK_MATH_FORCE_INLINE double reduce_max(const Double& x, const int sumNum) {
   double max = x[0];
-  for (int i=1; i<sumNum; ++i){
+  for (int i=1; i<sumNum; ++i) {
     max = max > x[i] ? max : x[i];
   }
   return max;
@@ -219,7 +238,7 @@ STK_MATH_FORCE_INLINE double reduce_max(const Double& x, const int sumNum) {
 
 STK_MATH_FORCE_INLINE double reduce_min(const Double& x, const int sumNum) {
   double min = x[0];
-  for (int i=1; i<sumNum; ++i){
+  for (int i=1; i<sumNum; ++i) {
     min = min < x[i] ? min : x[i];
   }
   return min;
@@ -234,10 +253,10 @@ STK_MATH_FORCE_INLINE double reduce_min(const Double& x, const int sumNum) {
 
 STK_MATH_FORCE_INLINE void plus_equal_part(Double& value, const Double& increment, const int numValid) {
   assert(numValid <= ndoubles);
-  for(int n=0; n<numValid; ++n) value[n] += increment[n];
+  for (int n=0; n<numValid; ++n) value[n] += increment[n];
 }
 
-STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum=ndoubles) {
+STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum) {
   assert(sumNum <= ndoubles);
   const Double oneornone = stk::math::if_then_else_zero(a, Double(1.0));
   bool all_true = true;
@@ -247,7 +266,19 @@ STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum=ndoubles) {
   return all_true;
 }
 
-STK_MATH_FORCE_INLINE bool are_any(const Bool& a, const int sumNum=ndoubles) {
+STK_MATH_FORCE_INLINE bool are_all(const Bool& a) {
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(__HIPCC__) && !defined(USE_STK_SIMD_NONE)
+  // Fast path: work directly with the __mmaskX bits.
+  const unsigned k = (unsigned)a._data.get();
+  const unsigned needed = ((1u << ndoubles) - 1u);
+  return (k & needed) == needed;
+#else
+  // All lanes must be true.
+  return SIMD_NAMESPACE::all_of(a._data);
+#endif
+}
+
+STK_MATH_FORCE_INLINE bool are_any(const Bool& a, const int sumNum) {
   assert(sumNum <= ndoubles);
   Double oneornone = stk::math::if_then_else_zero(a, Double(1.0));
   bool any_true = false;
@@ -257,30 +288,32 @@ STK_MATH_FORCE_INLINE bool are_any(const Bool& a, const int sumNum=ndoubles) {
   return any_true;
 }
 
+STK_MATH_FORCE_INLINE bool are_any(const Bool& a) {
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(__HIPCC__) && !defined(USE_STK_SIMD_NONE)
+  const unsigned k = (unsigned)a._data.get();
+  const unsigned needed = ((1u << ndoubles) - 1u);
+  return (k & needed) != 0u;
+#else
+  return SIMD_NAMESPACE::any_of(a._data);
+#endif
+}
+
 // floats
 
 STK_MATH_FORCE_INLINE void store_part(float* x, const Float& z,const int numValid) {
-  assert(numValid <= nfloats);
-  for(int n=0; n<numValid; ++n) x[n] = z[n];
+  impl::specialized::store_part(x, z, numValid);
 }
 
 STK_MATH_FORCE_INLINE void store_part(float* x, const Float& z, const int offset, const int numValid) {
-  assert(numValid <= nfloats);
-  for(int n=0; n<numValid; ++n) x[n*offset] = z[n];
+  impl::specialized::store_part(x, z, offset, numValid);
 }
 
 STK_MATH_FORCE_INLINE Float load_part(const float* x, const int numValid) {
-  assert(numValid <= nfloats);
-  Float temp;
-  for(int n=0; n<numValid; ++n) temp[n] = x[n];
-  return temp;
+  return impl::specialized::load_part(x, numValid);
 }
 
 STK_MATH_FORCE_INLINE Float load_part(const float* x, const int offset, const int numValid) {
-  assert(numValid <= nfloats);
-  Float temp;
-  for(int n=0; n<numValid; ++n) temp[n] = x[n*offset];
-  return temp;
+  return impl::specialized::load_part(x, offset, numValid);
 }
 
 STK_MATH_FORCE_INLINE const float& get_data(const Float& z, int index) {
@@ -320,7 +353,7 @@ STK_MATH_FORCE_INLINE float reduce_sum(const Float& x, const int sumNum ) {
 
 STK_MATH_FORCE_INLINE float reduce_max(const Float& x, const int sumNum ) {
   float max = x[0];
-  for (int i=1; i<sumNum; ++i){
+  for (int i=1; i<sumNum; ++i) {
     max = max > x[i] ? max : x[i];
   }
   return max;
@@ -328,7 +361,7 @@ STK_MATH_FORCE_INLINE float reduce_max(const Float& x, const int sumNum ) {
 
 STK_MATH_FORCE_INLINE float reduce_min(const Float& x, const int sumNum ) {
   float min = x[0];
-  for (int i=1; i<sumNum; ++i){
+  for (int i=1; i<sumNum; ++i) {
     min = min < x[i] ? min : x[i];
   }
   return min;
@@ -366,32 +399,32 @@ STK_MATH_FORCE_INLINE int count_true(const Boolf& a, const int sumNum=nfloats) {
   return static_cast<int>(reduce_sum(oneornone, sumNum));
 }
 
-STK_MATH_FORCE_INLINE const double& get_data(const double& z, int index) {
+STK_MATH_FORCE_INLINE const double& get_data(const double& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE double& get_data(double& z, int index) {
+STK_MATH_FORCE_INLINE double& get_data(double& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE void set_data(double& z, int index, const double val) {
+STK_MATH_FORCE_INLINE void set_data(double& z, [[maybe_unused]] int index, const double val) {
   assert(index==0);
   z = val;
 }
 
-STK_MATH_FORCE_INLINE const float& get_data(const float& z, int index) {
+STK_MATH_FORCE_INLINE const float& get_data(const float& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE float& get_data(float& z, int index) {
+STK_MATH_FORCE_INLINE float& get_data(float& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE void set_data(float& z, int index, const float val) {
+STK_MATH_FORCE_INLINE void set_data(float& z, [[maybe_unused]] int index, const float val) {
   assert(index==0);
   z = val;
 }
@@ -407,7 +440,7 @@ STK_MATH_FORCE_INLINE double reduce_sum(const double& x, const int) {
 }
 
 
-STK_MATH_FORCE_INLINE void plus_equal_part(double& value, const double& increment, const int numValid) {
+STK_MATH_FORCE_INLINE void plus_equal_part(double& value, const double& increment, const int /*numValid*/) {
   value += increment;
 }
 
@@ -419,16 +452,16 @@ STK_MATH_FORCE_INLINE float reduce_sum(const float& x, const int) {
   return x;
 }
 
-STK_MATH_FORCE_INLINE int count_true(const bool& x, const int sumNum=1) {
+STK_MATH_FORCE_INLINE int count_true(const bool& x, [[maybe_unused]] const int sumNum=1) {
   return x ? 1 : 0;
 }
 
-STK_MATH_FORCE_INLINE bool are_all(bool a, const int sumNum=1) {
+STK_MATH_FORCE_INLINE bool are_all(bool a, [[maybe_unused]] const int sumNum=1) {
   assert(sumNum==1);
   return a;
 }
 
-STK_MATH_FORCE_INLINE bool are_any(bool a, const int sumNum=1) {
+STK_MATH_FORCE_INLINE bool are_any(bool a, [[maybe_unused]] const int sumNum=1) {
   assert(sumNum==1);
   return a;
 }
@@ -460,37 +493,28 @@ const typename Traits<PRIMITIVE>::simd_type& simd_ref_cast(const PRIMITIVE& x) {
 }
 
 // double versions
-
 template <int size>
 STK_MATH_FORCE_INLINE
 void load_array(Double* const to, const double* const from) {
-  for (int i=0; i < size; ++i) {
-    to[i] = load(from+i,size);
-  }
+  impl::specialized::load_array<size>(to, from);
 }
 
 template <int size>
 STK_MATH_FORCE_INLINE
 void store_array(double* const to, const Double* const from) {
-  for (int i=0; i < size; ++i) {
-    store(to+i,from[i],size);
-  }
+  impl::specialized::store_array<size>(to, from);
 }
 
 template <int size>
 STK_MATH_FORCE_INLINE
 void load_array(Double* const to, const double* const from, const int numValid) {
-  for (int i=0; i < size; ++i) {
-    to[i] = load_part(from+i,size,numValid);
-  }
+  impl::specialized::load_array<size>(to, from, numValid);
 }
 
 template <int size>
 STK_MATH_FORCE_INLINE
 void store_array(double* const to, const Double* const from, const int numValid) {
-  for (int i=0; i < size; ++i) {
-    store_part(to+i,from[i],size,numValid);
-  }
+  impl::specialized::store_array<size>(to, from, numValid);
 }
 
 // float versions
@@ -498,44 +522,37 @@ void store_array(double* const to, const Double* const from, const int numValid)
 template <int size>
 STK_MATH_FORCE_INLINE
 void load_array(Float* const to, const float* const from) {
-  for (int i=0; i < size; ++i) {
-    to[i] = load(from+i,size);
-  }
+  impl::specialized::load_array<size>(to, from);
 }
 
 template<typename T, int size>
 STK_MATH_FORCE_INLINE
 void store_array(float* const to, T(&from)[size]) {
-  for (int i=0; i < size; ++i) {
-    store(to+i,from[i],size);
-  }
+  impl::specialized::store_array<size>(to, from);
 }
 
 template <int size>
 STK_MATH_FORCE_INLINE
 void store_array(float* const to, const Float* const from) {
-  for (int i=0; i < size; ++i) {
-    store(to+i,from[i],size);
-  }
+  impl::specialized::store_array<size>(to, from);
 }
 
 template <int size>
 STK_MATH_FORCE_INLINE
 void load_array(Float* const to, const float* const from, const int numValid) {
-  for (int i=0; i < size; ++i) {
-    to[i] = load_part(from+i,size,numValid);
-  }
+  impl::specialized::load_array<size>(to, from, numValid);
 }
 
 template <int size>
 STK_MATH_FORCE_INLINE
 void store_array(float* const to, const Float* const from, const int numValid) {
-  for (int i=0; i < size; ++i) {
-    store_part(to+i,from[i],size,numValid);
-  }
+  impl::specialized::store_array<size>(to, from, numValid);
 }
 
 } // namespace simd
 } // namespace stk
+
+#undef STK_INCLUDE_ONLY_STK_SIMD_HEADER
+#undef STK_USE_AVX512_SPECIALIZATION
 
 #endif // #ifndef STK_SIMD_SIMD_HPP

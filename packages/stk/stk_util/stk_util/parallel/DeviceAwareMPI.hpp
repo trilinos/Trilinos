@@ -41,6 +41,8 @@ namespace stk {
 
 bool have_device_aware_mpi();
 
+bool use_device_aware_mpi();
+
 }
 
 #endif

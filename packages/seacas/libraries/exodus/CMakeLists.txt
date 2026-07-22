@@ -7,7 +7,6 @@ endif()
 TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
-
 FILE(GLOB SOURCES src/ex_*.c)
 
 if (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
@@ -50,12 +49,13 @@ if (SEACASExodus_ENABLE_SHARED)
       # This keeps the library out of the `all_libs` targets...
       set_target_properties(exodus_shared PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
       set_target_properties(exodus_shared PROPERTIES OUTPUT_NAME exodus)
-      INSTALL(TARGETS exodus_shared DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+      INSTALL(TARGETS exodus_shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
    endif()
 endif()
 
 # Many users of the SEACAS installations still want a static exodus library...
-if (SEACASExodus_ENABLE_STATIC)
+# But if only building a static library, it will be added in the `TRIBITS_ADD_LIBRARY` call.
+if (SEACASExodus_ENABLE_STATIC AND SEACASExodus_ENABLE_SHARED)
    # NOTE: If use `TRIBITS_ADD_LIBRARY` here, then both exodus and exodus_static linked to all executables.
    ADD_LIBRARY(
            exodus_static
@@ -68,7 +68,7 @@ if (SEACASExodus_ENABLE_STATIC)
    # This keeps the library out of the `all_libs` targets...
    set_target_properties(exodus_static PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
    set_target_properties(exodus_static PROPERTIES OUTPUT_NAME exodus)
-   INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+   INSTALL(TARGETS exodus_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
    # For backwards compatibility, the C exodus library was called libexoIIv2c.a
    # Create a symbolic link from libexodus.a to libexoIIv2c.a -- do only for static lib

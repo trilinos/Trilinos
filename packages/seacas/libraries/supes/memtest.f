@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -19,6 +19,7 @@ C     THIS PROGRAM TESTS THE SUPES MEMORY MANAGER.
 
       CALL GSUPEV(VERSN)
       WRITE (*,'(A, A)') ' SUPES Version ', VERSN
+      WRITE (*,*) 'Enter EXIT to end execution '
 
 c      CALL EXNAME (6, CV(1), LEN)
 c      OPEN (6, STATUS='unknown',FILE=CV(1)(1:LEN))

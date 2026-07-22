@@ -635,9 +635,13 @@ NOX::Thyra::Group::applyJacobianTransposeMultiVector(
                  NOX::Abstract::MultiVector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-               "NOX Error - Jacobian is not valid.  " <<
-               "Call computeJacobian before calling applyJacobian!");
+    // Should throw if algorithm hasn't updated the Jacobian (force
+    // devs to think about efficiency of reevaluating J within an
+    // algorithm) but a certain application needs this temporarily.
+    const_cast<NOX::Thyra::Group*>(this)->computeJacobian();
+    // TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+    //            "NOX Error - Jacobian is not valid.  " <<
+    //            "Call computeJacobian before calling applyJacobian!");
   }
 
   NOX_ASSERT(nonnull(lop_));

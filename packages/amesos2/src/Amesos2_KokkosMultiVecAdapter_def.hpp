@@ -89,14 +89,45 @@ namespace Amesos2 {
       "Not implemented.");
   }
 
+  template <typename Scalar, typename ExecutionSpace>
+  template<typename KV, typename host_ordinal_type_array>
+  int
+  MultiVecAdapter<
+    Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::gather (
+      KV& kokkos_new_view,
+      host_ordinal_type_array &perm_g2l,
+      host_ordinal_type_array &recvCountRows,
+      host_ordinal_type_array &recvDisplRows,
+      EDistribution distribution ) const
+  {
+    return -1;
+  }
+
+  template <typename Scalar, typename ExecutionSpace>
+  template<typename KV, typename host_ordinal_type_array>
+  int
+  MultiVecAdapter<
+    Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::scatter (
+      KV& kokkos_new_view,
+      host_ordinal_type_array &perm_g2l,
+      host_ordinal_type_array &recvCountRows,
+      host_ordinal_type_array &recvDisplRows,
+      EDistribution distribution ) const
+  {
+    return -1;
+  }
+
   template <typename Scalar, typename ExecutionSpace >
   std::string
   MultiVecAdapter<
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::description() const
   {
     std::ostringstream oss;
+    size_t m = mv_->extent(0);
+    size_t n = mv_->extent(1);
     oss << "Amesos2 adapter wrapping: ";
-    oss << mv_->description();
+    oss << " Kokkos::View(" << std::to_string(m) << " x " << std::to_string(n) << ")";
+    oss << " of type " << std::string(typeid(Scalar).name());
     return oss.str();
   }
 
@@ -107,7 +138,22 @@ namespace Amesos2 {
     Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::describe (Teuchos::FancyOStream& os,
                                    const Teuchos::EVerbosityLevel verbLevel) const
   {
-    mv_->describe (os, verbLevel);
+    size_t m = mv_->extent(0);
+    size_t n = mv_->extent(1);
+    os << "Amesos2 adapter wrapping: ";
+    os << " Kokkos::View(" << std::to_string(m) << " x " << std::to_string(n) << ")";
+    os << " of type " << std::string(typeid(Scalar).name()) << std::endl;
+    if (verbLevel == Teuchos::VERB_EXTREME) {
+      auto mv_h = Kokkos::create_mirror_view(*mv_);
+      Kokkos::deep_copy(mv_h, *mv_);
+      os << "[" << std::endl;
+      for (size_t i = 0; i < mv_h.extent(0); i++) {
+        os << i << " ";
+        for (size_t j = 0; j < mv_h.extent(1); j++) os << mv_h(i,j) << " ";
+        os << std::endl;
+      }
+      os << "];" << std::endl;
+    }
   }
 
 } // end namespace Amesos2

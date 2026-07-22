@@ -53,11 +53,11 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include "UnitTestReadWriteUtils.hpp"
 
-class StkFaceIoTest : public stk::unit_test_util::simple_fields::MeshFixture
+class StkFaceIoTest : public stk::unit_test_util::MeshFixture
 {
 public:
   StkFaceIoTest()
-    : stk::unit_test_util::simple_fields::MeshFixture(),
+    : stk::unit_test_util::MeshFixture(),
       stkIoInput(),
       stkIoOutput()
   {

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,14 +10,15 @@
 #include "Ioss_ElementTopology.h"
 #include "Ioss_Initializer.h"
 #include "Ioss_NullEntity.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 
 #include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <fmt/core.h>
+#include <cstdlib>
+#include <fmt/ostream.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -63,7 +64,7 @@ TEST_CASE("invalid element")
 {
   // Check that asking for invalid element returns nullptr pointer.
   Ioss::ElementTopology *invalid = Ioss::ElementTopology::factory("Greg", true);
-  REQUIRE(invalid == nullptr);
+  CHECK(invalid == nullptr);
 }
 
 TEST_CASE("test_all_elements")
@@ -102,13 +103,7 @@ namespace {
     fmt::print(stderr, "\n{:<25}({})\t[{}]", type, name, shape);
 
     // Check that master element name is an alias...
-    if (element->name() == "edge2d2" || element->name() == "edge2d3" ||
-        element->name() == "edge2d4") { // kluge
-      CHECK_NOFAIL(element->is_alias(element->master_element_name()));
-    }
-    else {
-      CHECK(element->is_alias(element->master_element_name()));
-    }
+    CHECK(element->is_alias(element->master_element_name()));
 
     if (type == "unknown" || type == "invalid_topology") {
       return;
@@ -133,15 +128,12 @@ namespace {
     auto *perm = element->permutation();
     REQUIRE(perm != nullptr);
 
-    CHECKED_IF(element->name() != "node")
-    {
+    if (element->name() != "node") {
       REQUIRE(static_cast<int>(perm->num_permutation_nodes()) == element->number_corner_nodes());
       // Element shape matches permutation type
-      REQUIRE(Ioss::Utils::lowercase(Ioss::Utils::shape_to_string(element->shape())) ==
-              perm->type());
+      CHECK(Ioss::Utils::lowercase(Ioss::Utils::shape_to_string(element->shape())) == perm->type());
 
-      CHECKED_IF(perm->num_permutations() > 0)
-      {
+      if (perm->num_permutations() > 0) {
         const auto &permutation = perm->permutation_indices(0);
         const auto  connect     = element->element_connectivity();
         for (size_t i = 0; i < permutation.size(); i++) {
@@ -194,8 +186,7 @@ namespace {
       for (int i = 1; i <= nf; i++) {
         Ioss::ElementTopology *face = element->face_type(i);
         CHECK(face != nullptr);
-        CHECKED_IF(face != nullptr)
-        {
+        if (face != nullptr) {
           unsigned int nnfi = element->number_nodes_face(i);
           CHECK(nnfi == static_cast<unsigned int>(face->number_nodes()));
           std::vector<int> conn = element->face_connectivity(i);
@@ -203,6 +194,7 @@ namespace {
         }
       }
     }
+
     // Edges...
     if (ne > 0) {
       Ioss::ElementTopology *edge0 = element->edge_type(0);
@@ -216,8 +208,7 @@ namespace {
       for (int i = 1; i <= ne; i++) {
         Ioss::ElementTopology *edge = element->edge_type(i);
         CHECK(edge != nullptr);
-        CHECKED_IF(edge != nullptr)
-        {
+        if (edge != nullptr) {
           unsigned int nnei = element->number_nodes_edge(i);
           CHECK(nnei == static_cast<unsigned int>(edge->number_nodes()));
           std::vector<int> conn = element->edge_connectivity(i);
@@ -225,16 +216,12 @@ namespace {
         }
       }
     }
-
     // Variable types...
     const Ioss::VariableType *vt = Ioss::VariableType::factory(element->name());
     REQUIRE(vt != nullptr);
-    CHECKED_IF(vt != nullptr)
-    {
-      // See if component counts match...
-      int vt_comp = vt->component_count();
-      CHECK(nn == vt_comp);
-    }
+    // See if component counts match...
+    int vt_comp = vt->component_count();
+    CHECK(nn == vt_comp);
 
     // For elements with parametric dimension == 3
     // Get face-edge-order
@@ -267,37 +254,35 @@ namespace {
         // Edges defining face...
         std::vector<int> face_edge_conn = element->face_edge_connectivity(i);
         REQUIRE(num_edges_face == face_edge_conn.size());
-        CHECKED_IF(num_edges_face == face_edge_conn.size())
-        {
-          for (unsigned int j = 0; j < num_edges_face; j++) {
-            // Not implemented in all elements yet...
-            std::vector<int> edge_conn = element->edge_connectivity(face_edge_conn[j] + 1);
-            // Check that first two nodes in 'edge_conn' match
-            // corresponding nodes in 'face_conn'
-            bool ok = (edge_conn[0] == face_conn[j] || edge_conn[1] == face_conn[j]) &&
-                      (edge_conn[0] == face_conn[(j + 1) % fncn] ||
-                       edge_conn[1] == face_conn[(j + 1) % fncn]);
-            CHECK(ok);
+        for (unsigned int j = 0; j < num_edges_face; j++) {
+          // Not implemented in all elements yet...
+          std::vector<int> edge_conn = element->edge_connectivity(face_edge_conn[j] + 1);
+          // Check that first two nodes in 'edge_conn' match
+          // corresponding nodes in 'face_conn'
+          bool ok = (edge_conn[0] == face_conn[j] || edge_conn[1] == face_conn[j]) &&
+                    (edge_conn[0] == face_conn[(j + 1) % fncn] ||
+                     edge_conn[1] == face_conn[(j + 1) % fncn]);
+          CHECK(ok);
 
-            if (element->name() == "wedge12" || element->name() == "hex16") {
-              continue;
-            }
+          if (element->name() == "wedge12" || element->name() == "hex16") {
+            continue;
+          }
 
-            CHECK(edge_conn.size() == size_t(order) + 1);
+          CHECK(edge_conn.size() == size_t(order) + 1);
 
-            CHECK(order >= 1);
-            CHECK(face_conn.size() >= fncn + (order - 1) * num_edges_face);
-            CHECKED_IF(order == 2) { CHECK(edge_conn[2] == face_conn[fncn + j]); }
-            CHECKED_IF(order == 3)
-            {
-              auto en2 = edge_conn[2];
-              auto en3 = edge_conn[3];
+          CHECK(order >= 1);
+          CHECK(face_conn.size() >= fncn + (order - 1) * num_edges_face);
+          if (order == 2) {
+            CHECK(edge_conn[2] == face_conn[fncn + j]);
+          }
+          if (order == 3) {
+            auto en2 = edge_conn[2];
+            auto en3 = edge_conn[3];
 
-              auto fn2 = face_conn[fncn + 2 * j];
-              auto fn3 = face_conn[fncn + 2 * j + 1];
-              // Mid-Side Node Edge Connectivity must match face connectivity
-              CHECK((en2 == fn2 || en3 == fn2 || en2 == fn3 || en3 == fn3));
-            }
+            auto fn2 = face_conn[fncn + 2 * j];
+            auto fn3 = face_conn[fncn + 2 * j + 1];
+            // Mid-Side Node Edge Connectivity must match face connectivity
+            CHECK((en2 == fn2 || en3 == fn2 || en2 == fn3 || en3 == fn3));
           }
         }
       }

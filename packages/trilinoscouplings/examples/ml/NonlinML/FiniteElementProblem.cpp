@@ -1,31 +1,11 @@
-//@HEADER
-// ************************************************************************
-// 
-//            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2002) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//                                                                                 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA                                                                                
-// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-// (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
-// ************************************************************************
-//@HEADER
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
                                                                                 
 // ml objects
 #include "ml_common.h"
@@ -252,7 +232,7 @@ Epetra_Vector& FiniteElementProblem::getSolution()
   return *initialSolution;
 }
   
-Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA_)
 {
   
   // Declare required variables
@@ -284,15 +264,15 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
         // If this row is owned by current processor, add the index
         if (StandardMap->MyGID(row)) {
           column=OverlapMap->GID(ne+j);
-          AA.InsertGlobalIndices(row, 1, &column);
+          AA_.InsertGlobalIndices(row, 1, &column);
         }
       }         
     }
   }
-  AA.FillComplete();
-  AA.OptimizeStorage();
+  AA_.FillComplete();
+  AA_.OptimizeStorage();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)

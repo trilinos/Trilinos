@@ -59,7 +59,7 @@ class DataExchangeUnknownPatternBlocking
       m_exchanger.start_nonblocking(sendLists, recvLists, numRecvsExpected);
       m_exchanger.post_nonblocking_receives(recvLists);
 
-      auto f = [](int rank, const std::vector<T>& recvBuf) {};
+      auto f = [](int , const std::vector<T>& ) {};
       m_exchanger.complete_receives(recvLists, f);
       m_exchanger.complete_sends();
     }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -457,48 +457,48 @@ std::string Ioss::TestOnly::label(int which, const char /*suffix_sep*/) const
 }
 
 // Define all factories here:
-void Ioss::Invalid_Storage::factory() { static Ioss::Invalid_Storage registerThis; }
+void Ioss::Invalid_Storage::factory() { static Ioss::Invalid_Storage const registerThis; }
 
-void Ioss::Scalar::factory() { static Ioss::Scalar registerThis; }
+void Ioss::Scalar::factory() { static Ioss::Scalar const registerThis; }
 
-void Ioss::Vector_2D::factory() { static Ioss::Vector_2D registerThis; }
+void Ioss::Vector_2D::factory() { static Ioss::Vector_2D const registerThis; }
 
-void Ioss::Vector_3D::factory() { static Ioss::Vector_3D registerThis; }
+void Ioss::Vector_3D::factory() { static Ioss::Vector_3D const registerThis; }
 
-void Ioss::Quaternion_2D::factory() { static Ioss::Quaternion_2D registerThis; }
+void Ioss::Quaternion_2D::factory() { static Ioss::Quaternion_2D const registerThis; }
 
-void Ioss::Quaternion_3D::factory() { static Ioss::Quaternion_3D registerThis; }
+void Ioss::Quaternion_3D::factory() { static Ioss::Quaternion_3D const registerThis; }
 
-void Ioss::Full_Tensor_36::factory() { static Ioss::Full_Tensor_36 registerThis; }
+void Ioss::Full_Tensor_36::factory() { static Ioss::Full_Tensor_36 const registerThis; }
 
-void Ioss::Full_Tensor_32::factory() { static Ioss::Full_Tensor_32 registerThis; }
+void Ioss::Full_Tensor_32::factory() { static Ioss::Full_Tensor_32 const registerThis; }
 
-void Ioss::Full_Tensor_22::factory() { static Ioss::Full_Tensor_22 registerThis; }
+void Ioss::Full_Tensor_22::factory() { static Ioss::Full_Tensor_22 const registerThis; }
 
-void Ioss::Full_Tensor_16::factory() { static Ioss::Full_Tensor_16 registerThis; }
+void Ioss::Full_Tensor_16::factory() { static Ioss::Full_Tensor_16 const registerThis; }
 
-void Ioss::Full_Tensor_12::factory() { static Ioss::Full_Tensor_12 registerThis; }
+void Ioss::Full_Tensor_12::factory() { static Ioss::Full_Tensor_12 const registerThis; }
 
-void Ioss::Sym_Tensor_33::factory() { static Ioss::Sym_Tensor_33 registerThis; }
+void Ioss::Sym_Tensor_33::factory() { static Ioss::Sym_Tensor_33 const registerThis; }
 
-void Ioss::Sym_Tensor_31::factory() { static Ioss::Sym_Tensor_31 registerThis; }
+void Ioss::Sym_Tensor_31::factory() { static Ioss::Sym_Tensor_31 const registerThis; }
 
-void Ioss::Sym_Tensor_21::factory() { static Ioss::Sym_Tensor_21 registerThis; }
+void Ioss::Sym_Tensor_21::factory() { static Ioss::Sym_Tensor_21 const registerThis; }
 
-void Ioss::Sym_Tensor_13::factory() { static Ioss::Sym_Tensor_13 registerThis; }
+void Ioss::Sym_Tensor_13::factory() { static Ioss::Sym_Tensor_13 const registerThis; }
 
-void Ioss::Sym_Tensor_11::factory() { static Ioss::Sym_Tensor_11 registerThis; }
+void Ioss::Sym_Tensor_11::factory() { static Ioss::Sym_Tensor_11 const registerThis; }
 
-void Ioss::Sym_Tensor_10::factory() { static Ioss::Sym_Tensor_10 registerThis; }
+void Ioss::Sym_Tensor_10::factory() { static Ioss::Sym_Tensor_10 const registerThis; }
 
-void Ioss::Asym_Tensor_03::factory() { static Ioss::Asym_Tensor_03 registerThis; }
+void Ioss::Asym_Tensor_03::factory() { static Ioss::Asym_Tensor_03 const registerThis; }
 
-void Ioss::Asym_Tensor_02::factory() { static Ioss::Asym_Tensor_02 registerThis; }
+void Ioss::Asym_Tensor_02::factory() { static Ioss::Asym_Tensor_02 const registerThis; }
 
-void Ioss::Asym_Tensor_01::factory() { static Ioss::Asym_Tensor_01 registerThis; }
+void Ioss::Asym_Tensor_01::factory() { static Ioss::Asym_Tensor_01 const registerThis; }
 
-void Ioss::Matrix_22::factory() { static Ioss::Matrix_22 registerThis; }
+void Ioss::Matrix_22::factory() { static Ioss::Matrix_22 const registerThis; }
 
-void Ioss::Matrix_33::factory() { static Ioss::Matrix_33 registerThis; }
+void Ioss::Matrix_33::factory() { static Ioss::Matrix_33 const registerThis; }
 
-void Ioss::TestOnly::factory() { static Ioss::TestOnly registerThis; }
+void Ioss::TestOnly::factory() { static Ioss::TestOnly const registerThis; }

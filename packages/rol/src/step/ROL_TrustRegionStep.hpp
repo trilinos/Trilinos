@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_TRUSTREGIONSTEP_H
@@ -190,16 +156,21 @@ private:
     // Inexactness Information
     ROL::ParameterList &glist = parlist.sublist("General");
     useInexact_.clear();
-    useInexact_.push_back(glist.get("Inexact Objective Function",     false));
-    useInexact_.push_back(glist.get("Inexact Gradient",               false));
-    useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
+    bool inexactObj     = glist.get("Inexact Objective Function",     false);
+    bool inexactGrad    = glist.get("Inexact Gradient",               false);
+    bool inexactHessVec = glist.get("Inexact Hessian-Times-A-Vector", false);
+    useInexact_.push_back(inexactObj    );
+    useInexact_.push_back(inexactGrad   );
+    useInexact_.push_back(inexactHessVec);
     // Trust-Region Inexactness Parameters
     ROL::ParameterList &ilist = list.sublist("Inexact").sublist("Gradient");
     scale0_ = ilist.get("Tolerance Scaling",  static_cast<Real>(0.1));
     scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
     // Initialize Trust Region Subproblem Solver Object
-    etr_              = StringToETrustRegion(list.get("Subproblem Solver", "Dogleg"));  
-    TRmodel_          = StringToETrustRegionModel(list.get("Subproblem Model", "Kelley-Sachs"));
+    std::string solverName = list.get("Subproblem Solver", "Dogleg");
+    etr_              = StringToETrustRegion(solverName);  
+    std::string modelName = list.get("Subproblem Model", "Kelley-Sachs");
+    TRmodel_          = StringToETrustRegionModel(modelName);
     useProjectedGrad_ = glist.get("Projected Gradient Criticality Measure", false);
     trustRegion_      = TrustRegionFactory<Real>(parlist);
     // Scale for epsilon active sets
@@ -328,7 +299,8 @@ public:
     parseParameterList(parlist);
     // Create secant object
     ROL::ParameterList &glist = parlist.sublist("General");
-    esec_             = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    std::string secantName = glist.sublist("Secant").get("Type","Limited-Memory BFGS");
+    esec_             = StringToESecant(secantName);
     useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
     secant_           = SecantFactory<Real>(parlist);

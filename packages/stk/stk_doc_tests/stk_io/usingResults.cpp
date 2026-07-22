@@ -77,7 +77,6 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
     //+ INITIALIZATION
     const std::string exodusFileName = "generated:1x1x8";
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
     stkIo.create_input_mesh();
@@ -100,6 +99,9 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
     stk::mesh::FieldBase *statedFieldNp1 = field.field_state(stk::mesh::StateNP1);
     stk::mesh::FieldBase *statedFieldN   = field.field_state(stk::mesh::StateN);
     stk::mesh::FieldBase *statedFieldNm1 = field.field_state(stk::mesh::StateNM1);
+    auto fieldNp1Data = statedFieldNp1->data<double, stk::mesh::ReadWrite>();
+    auto fieldNData = statedFieldN->data<double, stk::mesh::ReadWrite>();
+    auto fieldNm1Data = statedFieldNm1->data<double, stk::mesh::ReadWrite>();
 
     std::vector<stk::mesh::Entity> nodes;
     stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
@@ -118,15 +120,12 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
       //-END
       double value = 10.0 * time;
       for(size_t i=0; i<nodes.size(); i++) {
-        double *np1_data =
-            static_cast<double*>(stk::mesh::field_data(*statedFieldNp1, nodes[i]));
-        *np1_data = value;
-        double *n_data   =
-            static_cast<double*>(stk::mesh::field_data(*statedFieldN,   nodes[i]));
-        *n_data   = value + 0.1;
-        double *nm1_data =
-            static_cast<double*>(stk::mesh::field_data(*statedFieldNm1, nodes[i]));
-        *nm1_data = value + 0.2;
+        auto np1_data = fieldNp1Data.entity_values(nodes[i]);
+        np1_data() = value;
+        auto n_data   = fieldNData.entity_values(nodes[i]);
+        n_data()   = value + 0.1;
+        auto nm1_data = fieldNm1Data.entity_values(nodes[i]);
+        nm1_data() = value + 0.2;
       }
       //-BEGIN
       //+ Results output...

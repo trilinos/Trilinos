@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,9 +15,9 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <map>
 #include <sstream>
 #include <string>
@@ -61,15 +61,15 @@ namespace Ioss {
 
   void VariableType::print() const
   {
-    fmt::print("\tVariableType '{}' of type '{}' with {} components.\n\n", name(), type_string(),
+    fmt::print("\tVariableType '{}' named '{}' with {} components.\n", type_string(), name(),
                component_count());
   }
 
   void BasisVariableType::print() const
   {
-    fmt::print("\tVariableType '{}' of type '{}' with {} components\n\t\tordinal  subc: _dim, "
+    fmt::print("\tVariableType '{}' named '{}' with {} components\n\t\tordinal  subc: _dim, "
                "_ordinal, _dof_ordinal, _num_dof\t    xi     eta    zeta\n",
-               name(), type_string(), component_count());
+               type_string(), name(), component_count());
     for (int i = 0; i < component_count(); i++) {
       auto basis = get_basis_component(i + 1);
       fmt::print("\t\t {:6}\t\t{:6}\t{:6}\t{:6}\t{:6}\t\t{:6.3}\t{:6.3}\t{:6.3}\n", i + 1,
@@ -81,9 +81,9 @@ namespace Ioss {
 
   void QuadratureVariableType::print() const
   {
-    fmt::print("\tVariableType '{}' of type '{}' with {} components\n\t\t\t    xi     eta    zeta  "
+    fmt::print("\tVariableType '{}' named '{}' with {} components\n\t\t\t    xi     eta    zeta  "
                "weight\n",
-               name(), type_string(), component_count());
+               type_string(), name(), component_count());
     for (int i = 0; i < component_count(); i++) {
       auto quad = get_quadrature_component(i + 1);
       fmt::print("\t\t{}\t{:6.3}\t{:6.3}\t{:6.3}\t{:6.3}\n", i + 1, quad.xi, quad.eta, quad.zeta,
@@ -94,8 +94,8 @@ namespace Ioss {
 
   void NamedSuffixVariableType::print() const
   {
-    fmt::print("\tVariableType '{}' of type '{}' with {} components\n\t\tSuffices: {}\n\n", name(),
-               type_string(), component_count(), fmt::join(suffixList, ", "));
+    fmt::print("\tVariableType '{}' named '{}' with {} components\n\t\tSuffices: {}\n",
+               type_string(), name(), component_count(), fmt::join(suffixList, ", "));
   }
 
   void VariableType::alias(const std::string &base, const std::string &syn)
@@ -157,15 +157,10 @@ namespace Ioss {
   bool VariableType::add_field_type_mapping(const std::string &raw_field,
                                             const std::string &raw_type)
   {
-    // See if storage type 'type' exists...
+    // Add storage type 'type' if it does not already exist...
     std::string field = Utils::lowercase(raw_field);
     std::string type  = Utils::lowercase(raw_type);
-    if (registry().find(type) == registry().end()) {
-      return false;
-    }
-
-    // Add mapping.
-    return registry().customFieldTypes.insert(std::make_pair(field, type)).second;
+    return registry().customFieldTypes.try_emplace(field, type).second;
   }
 
   bool VariableType::create_named_suffix_type(const std::string    &type_name,

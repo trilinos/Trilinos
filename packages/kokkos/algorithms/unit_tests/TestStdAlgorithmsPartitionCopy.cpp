@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 #include <utility>
@@ -95,7 +82,7 @@ void fill_view(ViewType dest_view, const std::string& name) {
   }
 
   else {
-    throw std::runtime_error("invalid choice");
+    FAIL() << "invalid choice";
   }
 
   Kokkos::deep_copy(aux_view, v_h);
@@ -110,9 +97,9 @@ void verify_data(const std::string& name, ResultType my_result,
                  ViewTypeDestFalse view_dest_false, PredType pred) {
   using value_type = typename ViewTypeFrom::value_type;
   static_assert(
-      std::is_same<value_type, typename ViewTypeDestTrue::value_type>::value);
+      std::is_same_v<value_type, typename ViewTypeDestTrue::value_type>);
   static_assert(
-      std::is_same<value_type, typename ViewTypeDestFalse::value_type>::value);
+      std::is_same_v<value_type, typename ViewTypeDestFalse::value_type>);
 
   const std::size_t ext = view_from.extent(0);
 

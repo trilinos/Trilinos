@@ -50,7 +50,8 @@ template <typename DomainIdentifier, typename RangeIdentifier, typename DomainOb
 inline void local_coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
                                  std::vector< std::pair<RangeObjType,  RangeIdentifier > > const & local_range,
                                  std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
-                                 bool enforceSearchResultSymmetry=true)
+                                 [[maybe_unused]] bool enforceSearchResultSymmetry = true,
+                                 bool sortSearchResults = false)
 {
 
 #ifdef _OPENMP
@@ -116,6 +117,10 @@ inline void local_coarse_search_kdtree(std::vector< std::pair<DomainObjType, Dom
 #ifdef _OPENMP
   stk::search::concatenate_thread_lists(threadLocalSearchResults, searchResults);
 #endif
+
+  if (sortSearchResults) {
+    std::sort(searchResults.begin(), searchResults.end());
+  }
 }
 
 
@@ -127,7 +132,8 @@ template <typename DomainIdentifier, typename RangeIdentifier, typename DomainOb
 inline void local_coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
                                  std::vector< std::pair<stk::search::Box<RBoxNumType>,  RangeIdentifier > > const & local_range,
                                  std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
-                                 bool enforceSearchResultSymmetry=true)
+                                 [[maybe_unused]] bool enforceSearchResultSymmetry = true,
+                                 bool sortSearchResults = false)
 {
   searchResults.clear();
 
@@ -186,27 +192,36 @@ inline void local_coarse_search_kdtree(std::vector< std::pair<DomainObjType, Dom
 #ifdef _OPENMP
   stk::search::concatenate_thread_lists(threadLocalSearchResults, searchResults);
 #endif
+ 
+  if (sortSearchResults) { 
+    std::sort(searchResults.begin(), searchResults.end());
+  }
 }
 
 
 template <typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeObjType>
 inline void local_coarse_search_kdtree_driver(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
                                         std::vector< std::pair<RangeObjType,  RangeIdentifier > > const & local_range,
-                                        std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults)
+                                        std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
+                                        bool sortSearchResults = false)
 {
   const bool domain_has_more_boxes = local_domain.size() > local_range.size();
   if(domain_has_more_boxes)
   {
-    local_coarse_search_kdtree(local_domain, local_range, searchResults);
+    local_coarse_search_kdtree(local_domain, local_range, searchResults, sortSearchResults);
   }
   else
   {
     std::vector<std::pair<RangeIdentifier, DomainIdentifier> > tempSearchResults;
-    local_coarse_search_kdtree(local_range, local_domain, tempSearchResults);
+    local_coarse_search_kdtree(local_range, local_domain, tempSearchResults, sortSearchResults);
     searchResults.reserve(tempSearchResults.size());
     for (auto& [range_id, domain_id] : tempSearchResults)
     {
       searchResults.emplace_back(domain_id, range_id);
+    }
+
+    if (sortSearchResults) {
+      std::sort(searchResults.begin(), searchResults.end());
     }
   }
 }

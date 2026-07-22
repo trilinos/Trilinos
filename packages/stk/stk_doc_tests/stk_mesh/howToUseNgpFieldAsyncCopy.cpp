@@ -47,8 +47,9 @@
 
 namespace {
 
-void check_field_data_on_device(stk::mesh::BulkData& bulk, stk::mesh::NgpField<double>& ngpDoubleField, 
-                                stk::mesh::NgpField<int>& ngpIntField, double expectedDoubleValue, int expectedIntValue)
+template <typename DoubleDataType, typename IntDataType>
+void check_field_data_on_device(stk::mesh::BulkData& bulk, DoubleDataType& doubleFieldData, 
+                                IntDataType& intFieldData, double expectedDoubleValue, int expectedIntValue)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   stk::mesh::Selector selector = bulk.mesh_meta_data().universal_part();
@@ -56,11 +57,11 @@ void check_field_data_on_device(stk::mesh::BulkData& bulk, stk::mesh::NgpField<d
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem)
                                 {
-                                  double doubleFieldValue = ngpDoubleField(elem, 0);
-                                  NGP_EXPECT_EQ(expectedDoubleValue, doubleFieldValue);
+                                  auto doubleFieldValues = doubleFieldData.entity_values(elem);
+                                  NGP_EXPECT_EQ(expectedDoubleValue, doubleFieldValues());
 
-                                  int intFieldValue = ngpIntField(elem, 0);
-                                  NGP_EXPECT_EQ(expectedIntValue, intFieldValue);
+                                  auto intFieldValues = intFieldData.entity_values(elem);
+                                  NGP_EXPECT_EQ(expectedIntValue, intFieldValues());
                                 });
 }
 
@@ -76,7 +77,6 @@ TEST(stkMeshHowTo, ngpFieldAsyncCopy)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk = *bulkPtr;
 
@@ -93,26 +93,24 @@ TEST(stkMeshHowTo, ngpFieldAsyncCopy)
   stk::mesh::put_field_on_entire_mesh_with_initial_value(intField, &initialIntFieldValue);
   stk::io::fill_mesh("generated:1x1x1", bulk);
 
-  stk::mesh::NgpField<double>& ngpDoubleField = stk::mesh::get_updated_ngp_field<double>(doubleField);
-  stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(intField);
-
   stk::mesh::ExecSpaceWrapper<> execSpaceWithStream1 = stk::mesh::get_execution_space_with_stream();
   stk::mesh::ExecSpaceWrapper<> execSpaceWithStream2 = stk::mesh::get_execution_space_with_stream();
 
-  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1u);
-  double* doubleData = reinterpret_cast<double*>(stk::mesh::field_data(doubleField, elem));
-  *doubleData = initialDoubleFieldValue*2;
-  int* intData = reinterpret_cast<int*>(stk::mesh::field_data(intField, elem));
-  *intData = initialIntFieldValue*2;
+  {
+    stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1u);
+    auto doubleFieldData = doubleField.data<stk::mesh::ReadWrite>(execSpaceWithStream1.get_execution_space());
+    auto doubleData = doubleFieldData.entity_values(elem);
+    doubleData() = initialDoubleFieldValue*2;
 
-  ngpDoubleField.modify_on_host();
-  ngpDoubleField.sync_to_device(execSpaceWithStream1);
-  ngpIntField.modify_on_host();
-  ngpIntField.sync_to_device(execSpaceWithStream2.get_execution_space());
+    auto intFieldData = intField.data<stk::mesh::ReadWrite>(execSpaceWithStream2.get_execution_space());
+    auto intData = intFieldData.entity_values(elem);
+    intData() = initialIntFieldValue*2;
+  }
 
-  stk::mesh::ngp_field_fence(meta);
+  auto doubleFieldData = doubleField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(execSpaceWithStream1.get_execution_space());
+  auto intFieldData = intField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(execSpaceWithStream2.get_execution_space());
 
-  check_field_data_on_device(bulk, ngpDoubleField, ngpIntField, modifiedDoubleFieldValue, modifiedIntFieldValue);
+  check_field_data_on_device(bulk, doubleFieldData, intFieldData, modifiedDoubleFieldValue, modifiedIntFieldValue);
 }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,7 +50,7 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to inquire ASSEMBLY count in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, num_assembly);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
@@ -136,7 +136,7 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
   }
   }
 
-  if (status == NC_NOERR) {
+  if (status == EX_NOERR) {
     if ((status = exi_get_names(exoid, varid, num_entity, names, obj_type, "ex_get_names")) !=
         EX_NOERR) {
       EX_FUNC_LEAVE(status);

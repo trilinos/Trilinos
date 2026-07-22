@@ -237,12 +237,12 @@ namespace Intrepid2
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
 
-      this->basisCardinality_  = polyOrder+1;
-      this->basisDegree_       = polyOrder;
-      this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
-      this->basisType_         = BASIS_FEM_HIERARCHICAL;
-      this->basisCoordinates_  = COORDINATES_CARTESIAN;
-      this->functionSpace_     = FUNCTION_SPACE_HGRAD;
+      this->basisCardinality_     = polyOrder+1;
+      this->basisDegree_          = polyOrder;
+      this->basisCellTopologyKey_ = shards::Line<2>::key;
+      this->basisType_            = BASIS_FEM_HIERARCHICAL;
+      this->basisCoordinates_     = COORDINATES_CARTESIAN;
+      this->functionSpace_        = FUNCTION_SPACE_HGRAD;
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) line polynomial degree lookup", this->basisCardinality_, degreeLength);

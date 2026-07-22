@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //                 Belos: Block Linear Solvers Package
-//                  Copyright 2004 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2004-2016 NTESS and the Belos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef BELOS_LSQR_SOLMGR_HPP
 #define BELOS_LSQR_SOLMGR_HPP
@@ -852,6 +820,8 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  ReturnType retType = Undetermined;
+
   // Set the current parameters if they were not set before.  NOTE:
   // This may occur if the user generated the solver manager with the
   // default constructor, but did not set any parameters using
@@ -947,15 +917,18 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
     if (convTest_->getStatus () == Belos::Passed) {
       isConverged = true;
     } else if (maxIterTest_->getStatus () == Belos::Passed) {
+      retType = MaxItersReached;
       isConverged = false;
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::logic_error, "Belos::LSQRSolMgr::solve: "
+      retType = InconsistentState;
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+         std::logic_error, "Belos::LSQRSolMgr::solve: "
          "LSQRIteration::iterate returned without either the convergence test "
          "or the maximum iteration count test passing.  "
          "Please report this bug to the Belos developers.");
     }
   } catch (const std::exception& e) {
+    retType = NonspecificException;
     printer_->stream(Belos::Errors)
       << "Error! Caught std::exception in LSQRIter::iterate at iteration "
       << lsqr_iter->getNumIters () << std::endl << e.what () << std::endl;
@@ -984,8 +957,8 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   resNorm_ = convTest_->getResidNorm();
   matResNorm_ = convTest_->getLSResidNorm();
 
-  if (! isConverged) {
-    return Belos::Unconverged;
+  if (!isConverged) {
+    return retType;
   } else {
     return Belos::Converged;
   }

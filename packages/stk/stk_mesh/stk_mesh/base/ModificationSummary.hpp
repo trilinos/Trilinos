@@ -49,98 +49,106 @@ namespace stk
 class EmptyModificationSummary
 {
 public:
-    EmptyModificationSummary(stk::mesh::BulkData& bulkData)
-    {
-    }
+    EmptyModificationSummary(stk::mesh::BulkData&) {}
 
     ~EmptyModificationSummary(){}
 
-    // void track_create_ghosting();
-    void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& add_parts, const stk::mesh::OrdinalVector& emptyParts)
+    void track_induced_parts(stk::mesh::Entity, stk::mesh::Entity, const stk::mesh::OrdinalVector&, const stk::mesh::OrdinalVector&)
+    {
+    }
+
+    void track_change_ghosting(const stk::mesh::Ghosting &, const std::vector<stk::mesh::EntityProc> &, const std::vector<stk::mesh::Entity> &)
+    {
+    }
+
+    void track_change_ghosting(const stk::mesh::Ghosting &, const std::vector<stk::mesh::EntityProc> &, const std::vector<stk::mesh::EntityProc> &)
+    {
+    }
+
+    void track_add_to_ghosting(const stk::mesh::Ghosting &, const std::vector<stk::mesh::EntityProc> &)
+    {
+    }
+
+    void track_destroy_relation(stk::mesh::Entity, stk::mesh::Entity, stk::mesh::RelationIdentifier)
+    {
+    }
+
+    void track_declare_relation(stk::mesh::Entity, stk::mesh::Entity, stk::mesh::RelationIdentifier, stk::mesh::Permutation)
+    {
+    }
+
+    void track_declare_entity(stk::mesh::EntityRank, stk::mesh::EntityId, const stk::mesh::PartVector&)
+    {
+    }
+
+    void track_change_entity_owner(const std::vector<stk::mesh::EntityProc> &)
+    {
+    }
+
+    void track_set_global_id(stk::mesh::Entity, int64_t)
+    {
+    }
+
+    void track_change_entity_id(stk::mesh::EntityId, stk::mesh::Entity)
+    {
+    }
+
+    void track_destroy_entity(stk::mesh::Entity)
+    {
+    }
+
+    void track_change_entity_parts(stk::mesh::Entity, const stk::mesh::OrdinalVector&, const stk::mesh::OrdinalVector&)
+    {
+    }
+
+    void track_comm_map_insert(stk::mesh::Entity, const stk::mesh::EntityCommInfo &)
     {
 
     }
 
-    void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::Entity> & remove_receive )
-    {
-    }
-
-    void track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send )
-    {
-    }
-
-    void track_destroy_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel)
-    {
-    }
-
-    void track_declare_relation(stk::mesh::Entity e_from, stk::mesh::Entity e_to, stk::mesh::RelationIdentifier rel, stk::mesh::Permutation permut)
-    {
-    }
-
-    void track_declare_entity(stk::mesh::EntityRank rank, stk::mesh::EntityId newId, const stk::mesh::PartVector& addParts)
-    {
-    }
-
-    void track_change_entity_owner(const std::vector<stk::mesh::EntityProc> &changes)
-    {
-    }
-
-    void track_set_global_id(stk::mesh::Entity entity, int64_t newId)
-    {
-    }
-
-    void track_change_entity_id(stk::mesh::EntityId newId, stk::mesh::Entity entity)
-    {
-    }
-
-    void track_destroy_entity(stk::mesh::Entity entity)
-    {
-    }
-
-    void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::OrdinalVector& addParts, const stk::mesh::OrdinalVector& rmParts)
-    {
-    }
-
-    void track_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo & val)
+    void track_comm_map_erase(stk::mesh::EntityKey, const stk::mesh::EntityCommInfo &)
     {
 
     }
 
-    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::EntityCommInfo & val)
+    void track_comm_map_erase(stk::mesh::EntityKey, const stk::mesh::Ghosting &)
     {
 
     }
 
-    void track_comm_map_erase(stk::mesh::EntityKey key, const stk::mesh::Ghosting & val)
+    void track_comm_map_clear_ghosting(stk::mesh::EntityKey)
     {
 
     }
 
-    void track_comm_map_clear_ghosting(stk::mesh::EntityKey key)
+    void track_comm_map_clear(stk::mesh::EntityKey)
     {
 
     }
 
-    void track_comm_map_clear(stk::mesh::EntityKey key)
+    void track_comm_list_remove(stk::mesh::EntityKey)
+    {
+    }
+
+    void track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity, int, int)
     {
 
     }
 
-    void track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int old_owner, int new_owner)
+    void track_change_owner_in_comm_data(stk::mesh::EntityKey, int, int)
     {
 
     }
 
-    void track_change_owner_in_comm_data(stk::mesh::EntityKey key, int old_owner, int new_owner)
-    {
-
-    }
-
-    void write_summary(int mod_cycle_count, bool sortByEntity = false)
+    void write_summary(int, [[maybe_unused]] bool sortByEntity = false)
     {
     }
 
-    void set_proc_id(int proc_id)
+    void set_proc_id(int)
+    {
+    }
+
+    void set_sync_count(int)
     {
     }
 };
@@ -156,6 +164,7 @@ public:
     void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& add_parts, const stk::mesh::OrdinalVector& emptyParts);
 
     void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::Entity> & remove_receive );
+    void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::EntityProc> & remove_receive );
 
     void track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send );
 
@@ -185,6 +194,8 @@ public:
 
     void track_comm_map_clear(stk::mesh::EntityKey key);
 
+    void track_comm_list_remove(stk::mesh::EntityKey key);
+
     void track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int old_owner, int new_owner);
 
     void track_change_owner_in_comm_data(stk::mesh::EntityKey key, int old_owner, int new_owner);
@@ -192,6 +203,8 @@ public:
     void write_summary(int mod_cycle_count, bool sortByEntity = false);
 
     void set_proc_id(int proc_id) { m_procId = proc_id; }
+
+    void set_sync_count(int syncCount);
 
 private:
 
@@ -212,6 +225,7 @@ private:
     stk::mesh::BulkData &m_bulkData;
     std::vector<std::pair<stk::mesh::EntityKey, std::string> > m_stringTracker;
     int m_lastModCycle;
+    int m_setModCycleCounter;
     int m_modCounter;
     int m_modificationSummaryNumber;
     int m_procId = -1;

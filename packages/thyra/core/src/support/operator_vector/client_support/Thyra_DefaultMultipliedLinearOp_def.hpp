@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
-// ***********************************************************************
+// Copyright 2004 NTESS and the Thyra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef THYRA_DEFAULT_MULTIPLIED_LINEAR_OP_DEF_HPP
@@ -268,6 +236,23 @@ bool DefaultMultipliedLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
   // ToDo: Cache these?
 }
 
+template<class Scalar>
+void DefaultMultipliedLinearOp<Scalar>::allocateVecs(const Ordinal dim) const {
+  const int nOps = Ops_.size();
+  if ((T_k_.size() != Teuchos::as<size_t>(nOps+1)) || ((nOps > 0) && (T_k_[0]->domain()->dim() != dim))) {
+    // op[0]->range
+    // op[0]->domain == op[1]->range
+    // ...
+    // op[nOps-2]->domain == op[nOps-1]->range
+    // op[nOps-1]->domain
+    T_k_.resize(0);
+    for( int k = 0; k < nOps; ++k ) {
+      T_k_.push_back(createMembers(getOp(k)->range(), dim));
+    }
+    T_k_.push_back(createMembers(getOp(nOps-1)->domain(), dim));
+  }
+}
+
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::applyImpl(
@@ -287,6 +272,7 @@ void DefaultMultipliedLinearOp<Scalar>::applyImpl(
 #endif // TEUCHOS_DEBUG  
   const int nOps = Ops_.size();
   const Ordinal m = X.domain()->dim();
+  allocateVecs(m);
   if( real_trans(M_trans)==NOTRANS ) {
     //
     // Y = alpha * M * X + beta*Y
@@ -297,7 +283,7 @@ void DefaultMultipliedLinearOp<Scalar>::applyImpl(
     for( int k = nOps-1; k >= 0; --k ) {
       RCP<MultiVectorBase<Scalar> > Y_k;
       RCP<const MultiVectorBase<Scalar> > X_k;
-      if(k==0) Y_k = rcpFromPtr(Y);  else Y_k = T_k = createMembers(getOp(k)->range(), m);
+      if(k==0) Y_k = rcpFromPtr(Y);  else Y_k = T_k = T_k_[k];
       if(k==nOps-1) X_k = rcpFromRef(X); else X_k = T_kp1;
       if( k > 0 )
         Thyra::apply(*getOp(k), M_trans, *X_k, Y_k.ptr());
@@ -316,7 +302,7 @@ void DefaultMultipliedLinearOp<Scalar>::applyImpl(
     for( int k = 0; k <= nOps-1; ++k ) {
       RCP<MultiVectorBase<Scalar> >         Y_k;
       RCP<const MultiVectorBase<Scalar> >   X_k;
-      if(k==nOps-1) Y_k = rcpFromPtr(Y);  else Y_k = T_k = createMembers(getOp(k)->domain(), m);
+      if(k==nOps-1) Y_k = rcpFromPtr(Y);  else Y_k = T_k = T_k_[k+1];
       if(k==0) X_k = rcpFromRef(X); else X_k = T_km1;
       if( k < nOps-1 )
         Thyra::apply(*getOp(k), M_trans, *X_k, Y_k.ptr());

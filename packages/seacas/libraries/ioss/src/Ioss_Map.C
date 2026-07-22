@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -126,13 +126,10 @@ void Ioss::Map::build_reverse_map_nl(int64_t num_to_get, int64_t offset)
         new_ids.emplace_back(m_map[local_id], local_id);
 
         if (m_map[local_id] <= 0) {
-          std::ostringstream errmsg;
-          fmt::print(
-              errmsg,
+          IOSS_ERROR(fmt::format(
               "\nERROR: {0} map detected non-positive global id {1} for {0} with local id {2} "
               "on processor {3}.\n",
-              m_entityType, m_map[local_id], local_id, m_myProcessor);
-          IOSS_ERROR(errmsg);
+              m_entityType, m_map[local_id], local_id, m_myProcessor));
         }
       }
     }
@@ -177,13 +174,10 @@ void Ioss::Map::build_reverse_map_nl(int64_t num_to_get, int64_t offset)
         if (m_map[i] != 0) {
           bool ok = m_reverse.insert({m_map[i], i}).second;
           if (!ok) {
-            std::ostringstream errmsg;
-            fmt::print(
-                errmsg,
+            IOSS_ERROR(fmt::format(
                 "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
                 "       Global id {3} assigned to local {0}s {4} and {5}.\n",
-                m_entityType, m_myProcessor, m_filename, m_map[i], i, m_reverse[m_map[i]]);
-            IOSS_ERROR(errmsg);
+                m_entityType, m_myProcessor, m_filename, m_map[i], i, m_reverse[m_map[i]]));
           }
         }
       }
@@ -194,25 +188,19 @@ void Ioss::Map::build_reverse_map_nl(int64_t num_to_get, int64_t offset)
         bool    ok       = m_reverse.insert({m_map[local_id], local_id}).second;
         if (!ok) {
           if (local_id != m_reverse[m_map[local_id]]) {
-            std::ostringstream errmsg;
-            fmt::print(
-                errmsg,
+            IOSS_ERROR(fmt::format(
                 "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
                 "       Global id {3} assigned to local {0}s {4} and {5}.\n",
                 m_entityType, m_myProcessor, m_filename, m_map[local_id], local_id,
-                m_reverse[m_map[local_id]]);
-            IOSS_ERROR(errmsg);
+                m_reverse[m_map[local_id]]));
           }
         }
 
         if (m_map[local_id] <= 0) {
-          std::ostringstream errmsg;
-          fmt::print(
-              errmsg,
+          IOSS_ERROR(fmt::format(
               "\nERROR: {0} map detected non-positive global id {1} for {0} with local id {2} "
               "on processor {3}.\n",
-              m_entityType, m_map[local_id], local_id, m_myProcessor);
-          IOSS_ERROR(errmsg);
+              m_entityType, m_map[local_id], local_id, m_myProcessor));
         }
       }
     }
@@ -238,14 +226,11 @@ void Ioss::Map::verify_no_duplicate_ids(std::vector<Ioss::IdPair> &reverse_map)
       reverse_map.begin(), reverse_map.end(),
       [](const Ioss::IdPair &lhs, const Ioss::IdPair &rhs) { return lhs.first == rhs.first; });
   if (dup != reverse_map.end()) {
-    auto               other = dup + 1;
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
-               "       Global id {3} assigned to local {0}s {4} and {5}.\n",
-               m_entityType, m_myProcessor, m_filename, (*dup).first, (*dup).second,
-               (*other).second);
-    IOSS_ERROR(errmsg);
+    auto other = dup + 1;
+    IOSS_ERROR(fmt::format(
+        "\nERROR: Duplicate {0} global id detected on processor {1}, filename '{2}'.\n"
+        "       Global id {3} assigned to local {0}s {4} and {5}.\n",
+        m_entityType, m_myProcessor, m_filename, (*dup).first, (*dup).second, (*other).second));
   }
 }
 #endif
@@ -321,12 +306,9 @@ bool Ioss::Map::set_map(INT *ids, size_t count, size_t offset, bool in_define_mo
     SMART_ASSERT((size_t)local_id < m_map.size())(local_id)(m_map.size());
 
     if (ids[i] <= 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "\nERROR: {} mapping routines detected non-positive global id {}"
-                 " for local id {} on processor {}, filename '{}'.\n",
-                 m_entityType, ids[i], local_id, m_myProcessor, m_filename);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("\nERROR: {} mapping routines detected non-positive global id {}"
+                             " for local id {} on processor {}, filename '{}'.\n",
+                             m_entityType, ids[i], local_id, m_myProcessor, m_filename));
     }
 
     m_map[local_id] = ids[i];
@@ -588,15 +570,19 @@ void Ioss::Map::build_reorder_map_nl(int64_t start, int64_t count)
 // Sierra wants entities in a global system. These routines
 // take care of the mapping from local <-> global
 
-int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist) const
+int64_t Ioss::Map::global_to_local(int64_t global, bool must_exist, bool output_error) const
 {
   IOSS_FUNC_ENTER(m_);
-  return global_to_local_nl(global, must_exist);
+  return global_to_local_nl(global, must_exist, output_error);
 }
 
-int64_t Ioss::Map::global_to_local_nl(int64_t global, bool must_exist) const
+int64_t Ioss::Map::global_to_local_nl(int64_t global, bool must_exist, bool output_error) const
 {
   int64_t local = global;
+
+  // The case where `must_exist==false && output_error == true` is for improving parallel error
+  // reporting, so for all intents, it is `must_exist == true` in the logic below...
+  bool should_exist = must_exist || output_error;
 #if defined USE_LAZY_REVERSE
   if (!is_sequential() && m_reverse.empty() && m_reorder.empty()) {
     auto *new_this = const_cast<Ioss::Map *>(this);
@@ -629,31 +615,35 @@ int64_t Ioss::Map::global_to_local_nl(int64_t global, bool must_exist) const
     }
 #endif
   }
-  else if (!must_exist && global > static_cast<int64_t>(m_map.size()) - 1) {
+  else if (!should_exist && global > static_cast<int64_t>(m_map.size()) - 1) {
     local = 0;
   }
   else {
     local = global - m_offset;
   }
   if (local > static_cast<int64_t>(m_map.size()) - 1) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "ERROR: Ioss Mapping routines detected {0} with global id equal to {1} returns a "
-               "local id of {2} which is\n"
-               "larger than the local {0} count {5} on processor {3}, filename '{4}'.\n"
-               "This should not happen, please report.\n",
-               m_entityType, global, local, m_myProcessor, m_filename, m_map.size() - 1);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format(
+        "ERROR: Ioss Mapping routines detected {0} with global id equal to {1} returns a "
+        "local id of {2} which is\n"
+        "larger than the local {0} count {5} on processor {3}, filename '{4}'.\n"
+        "This should not happen, please report.\n",
+        m_entityType, global, local, m_myProcessor, m_filename, m_map.size() - 1));
   }
   else if (local <= 0 && must_exist) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
+    IOSS_ERROR(fmt::format(
+        "ERROR: Ioss Mapping routines could not find a {0} with global id equal to {1} in "
+        "the {0} map\n"
+        "on processor {2}, filename '{3}'.\n"
+        "This should not happen, please report.\n",
+        m_entityType, global, m_myProcessor, m_filename));
+  }
+  else if (local <= 0 && should_exist) {
+    fmt::print(stderr,
                "ERROR: Ioss Mapping routines could not find a {0} with global id equal to {1} in "
                "the {0} map\n"
                "on processor {2}, filename '{3}'.\n"
                "This should not happen, please report.\n",
                m_entityType, global, m_myProcessor, m_filename);
-    IOSS_ERROR(errmsg);
   }
   return local;
 }

@@ -1,43 +1,12 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
-// clang-format off
 #ifndef TPETRA_BLOCKMULTIVECTOR_DECL_HPP
 #define TPETRA_BLOCKMULTIVECTOR_DECL_HPP
 
@@ -85,7 +54,7 @@ namespace Tpetra {
 /// constants or pointers (e.g., they do not reallocate memory).
 ///
 /// BlockMultiVector stores entries in a column corresponding to
-/// degrees of freedom for the same mesh point contiguously. 
+/// degrees of freedom for the same mesh point contiguously.
 ///
 /// Here is how you are supposed to use this class:
 ///
@@ -133,19 +102,17 @@ namespace Tpetra {
 /// It doesn't make sense for BlockMultiVector to implement
 /// MultiVector, because the desired fill interfaces of the two
 /// classes are different.
-template<class Scalar,
-         class LO,
-         class GO,
-         class Node>
-class BlockMultiVector :
-    public Tpetra::DistObject<Scalar, LO, GO, Node>
-{
-private:
+template <class Scalar,
+          class LO,
+          class GO,
+          class Node>
+class BlockMultiVector : public Tpetra::DistObject<Scalar, LO, GO, Node> {
+ private:
   using dist_object_type = Tpetra::DistObject<Scalar, LO, GO, Node>;
-  using STS = Teuchos::ScalarTraits<Scalar>;
-  using packet_type = typename dist_object_type::packet_type;
+  using STS              = Teuchos::ScalarTraits<Scalar>;
+  using packet_type      = typename dist_object_type::packet_type;
 
-public:
+ public:
   //! \name Typedefs to facilitate template metaprogramming.
   //@{
 
@@ -190,21 +157,21 @@ public:
   /// little_vec_type or const_little_vec_type.  This was our porting
   /// strategy circa 2014 to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  typedef Kokkos::View<impl_scalar_type *, device_type> little_vec_type;
-  typedef typename little_vec_type::HostMirror little_host_vec_type;
+  typedef Kokkos::View<impl_scalar_type*, device_type> little_vec_type;
+  typedef typename little_vec_type::host_mirror_type little_host_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point,
   ///   for a single column of the MultiVector.
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef Kokkos::View<const impl_scalar_type *, device_type>
-          const_little_vec_type;
+  typedef Kokkos::View<const impl_scalar_type*, device_type>
+      const_little_vec_type;
 
   typedef typename mv_type::dual_view_type::t_host::device_type
-          host_device_type;
+      host_device_type;
   typedef Kokkos::View<const impl_scalar_type*, host_device_type>
-          const_little_host_vec_type;
+      const_little_host_vec_type;
 
   //@}
   //! \name Constructors
@@ -214,25 +181,25 @@ public:
   ///
   /// Creates an empty BlockMultiVector.  An empty BlockMultiVector
   /// has zero rows, and block size zero.
-  BlockMultiVector ();
+  BlockMultiVector();
 
   //! Copy constructor (shallow copy).
-  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>&) = default;
+  BlockMultiVector(const BlockMultiVector<Scalar, LO, GO, Node>&) = default;
 
   //! Move constructor (shallow move).
-  BlockMultiVector (BlockMultiVector<Scalar, LO, GO, Node>&&) = default;
+  BlockMultiVector(BlockMultiVector<Scalar, LO, GO, Node>&&) = default;
 
   //! Copy assigment (shallow copy).
   BlockMultiVector<Scalar, LO, GO, Node>&
-  operator= (const BlockMultiVector<Scalar, LO, GO, Node>&) = default;
+  operator=(const BlockMultiVector<Scalar, LO, GO, Node>&) = default;
 
   //! Move assigment (shallow move).
   BlockMultiVector<Scalar, LO, GO, Node>&
-  operator= (BlockMultiVector<Scalar, LO, GO, Node>&&) = default;
+  operator=(BlockMultiVector<Scalar, LO, GO, Node>&&) = default;
 
   //! "Copy constructor" with option to deep copy.
-  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& in,
-                    const Teuchos::DataAccess copyOrView);
+  BlockMultiVector(const BlockMultiVector<Scalar, LO, GO, Node>& in,
+                   const Teuchos::DataAccess copyOrView);
 
   /// \brief Constructor that takes a mesh Map, a block size, and a
   ///   number of vectors (columns).
@@ -264,18 +231,18 @@ public:
   /// a standard Tpetra::MultiVector.  This lets users solve linear
   /// systems with Trilinos' solvers and preconditioners, that expect
   /// vectors as Tpetra::MultiVector instances.
-  BlockMultiVector (const map_type& meshMap,
-                    const LO blockSize,
-                    const LO numVecs);
+  BlockMultiVector(const map_type& meshMap,
+                   const LO blockSize,
+                   const LO numVecs);
 
   /// \brief Constructor that takes a mesh Map, a point Map, a block
   ///   size, and a number of vectors (columns).
   ///
   /// See the documentation of the three-argument constructor above.
-  BlockMultiVector (const map_type& meshMap,
-                    const map_type& pointMap,
-                    const LO blockSize,
-                    const LO numVecs);
+  BlockMultiVector(const map_type& meshMap,
+                   const map_type& pointMap,
+                   const LO blockSize,
+                   const LO numVecs);
 
   /// \brief View an existing MultiVector.
   ///
@@ -289,26 +256,26 @@ public:
   ///
   /// \param blockSize [in] The number of degrees of freedom per mesh
   ///   point.  We assume that this is the same for all mesh points.
-  BlockMultiVector (const mv_type& X_mv,
-                    const map_type& meshMap,
-                    const LO blockSize);
+  BlockMultiVector(const mv_type& X_mv,
+                   const map_type& meshMap,
+                   const LO blockSize);
 
   /// \brief View an existing BlockMultiVector using a different mesh
   ///   Map, supplying the corresponding point Map.
   ///
   /// This method corresponds to MultiVector's "offset view" constructor.
-  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
-                    const map_type& newMeshMap,
-                    const map_type& newPointMap,
-                    const size_t offset = 0);
+  BlockMultiVector(const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                   const map_type& newMeshMap,
+                   const map_type& newPointMap,
+                   const size_t offset = 0);
 
   /// \brief View an existing BlockMultiVector using a different mesh
   ///   Map; compute the new point Map.
   ///
   /// This method corresponds to MultiVector's "offset view" constructor.
-  BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
-                    const map_type& newMeshMap,
-                    const size_t offset = 0);
+  BlockMultiVector(const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                   const map_type& newMeshMap,
+                   const size_t offset = 0);
 
   //@}
   //! \name Access to Maps, the block size, and a MultiVector view.
@@ -322,7 +289,7 @@ public:
   /// using the more efficient four-argument constructor.
   ///
   static map_type
-  makePointMap (const map_type& meshMap, const LO blockSize);
+  makePointMap(const map_type& meshMap, const LO blockSize);
 
   /// \brief Create and return an owning RCP to the point Map corresponding to the
   ///   given mesh Map and block size.
@@ -331,24 +298,24 @@ public:
   /// a point Map for creating different BlockMultiVector instances,
   /// using the more efficient four-argument constructor.
   static Teuchos::RCP<const map_type>
-  makePointMapRCP (const map_type& meshMap, const LO blockSize);
+  makePointMapRCP(const map_type& meshMap, const LO blockSize);
 
   /// \brief Get this BlockMultiVector's (previously computed) point Map.
   ///
   /// It is always valid to call this method.  A BlockMultiVector
   /// always has a point Map.  We do not compute the point Map lazily.
-  const map_type getPointMap () const {
+  const map_type getPointMap() const {
     return *pointMap_;
   }
 
   //! Get the number of degrees of freedom per mesh point.
-  LO getBlockSize () const {
+  LO getBlockSize() const {
     return blockSize_;
   }
 
   //! Get the number of columns (vectors) in the BlockMultiVector.
-  LO getNumVectors () const {
-    return static_cast<LO> (mv_.getNumVectors ());
+  LO getNumVectors() const {
+    return static_cast<LO>(mv_.getNumVectors());
   }
 
   /// \brief Get a Tpetra::MultiVector that views this
@@ -356,17 +323,18 @@ public:
   ///
   /// This is how you can give a BlockMultiVector to Trilinos' solvers
   /// and preconditioners.
-  mv_type getMultiVectorView () const;
+  const mv_type& getMultiVectorView() const;
+  mv_type& getMultiVectorView();
 
   //@}
   //! \name Coarse-grained operations
   //@{
 
   //! Fill all entries with the given value \c val.
-  void putScalar (const Scalar& val);
+  void putScalar(const Scalar& val);
 
   //! Multiply all entries in place by the given value \c val.
-  void scale (const Scalar& val);
+  void scale(const Scalar& val);
 
   /// \brief Update: <tt>this = beta*this + alpha*X</tt>.
   ///
@@ -375,9 +343,9 @@ public:
   /// NaN entries.  It is legal for the input X to alias this
   /// MultiVector.
   void
-  update (const Scalar& alpha,
-          const BlockMultiVector<Scalar, LO, GO, Node>& X,
-          const Scalar& beta);
+  update(const Scalar& alpha,
+         const BlockMultiVector<Scalar, LO, GO, Node>& X,
+         const Scalar& beta);
 
   /// \brief <tt>*this := alpha * D * X</tt>, where D is a block
   ///   diagonal matrix.
@@ -394,23 +362,22 @@ public:
   ///   leftmost index indicates which block, the middle index the row
   ///   within a block, and the rightmost index the column within a
   ///   block.
-  /// \param pivots [in] Pivots (from LU factorization of the blocks)
   /// \param X [in] Input Block(Multi)Vector; may alias \c *this.
   ///
   /// D is really the inverse of some BlockCrsMatrix's block diagonal.
   /// You may compute the inverse of each block however you like.  One
   /// way is to use GETRF, then GETRI.
   void
-  blockWiseMultiply (const Scalar& alpha,
-                     const Kokkos::View<const impl_scalar_type***,
-                       device_type, Kokkos::MemoryUnmanaged>& D,
-                     const BlockMultiVector<Scalar, LO, GO, Node>& X);
+  blockWiseMultiply(const Scalar& alpha,
+                    const Kokkos::View<const impl_scalar_type***,
+                                       device_type, Kokkos::MemoryUnmanaged>& D,
+                    const BlockMultiVector<Scalar, LO, GO, Node>& X);
 
   /// \brief Block Jacobi update \f$Y = \beta * Y + \alpha D (X - Z)\f$.
   ///
   /// This method computes the block Jacobi update
   /// \f$Y = \beta * Y + \alpha D (X - Z)\f$, where Y is
-  /// <tt>*this<\tt>, D the (explicitly stored) inverse block
+  /// <tt>*this</tt>, D the (explicitly stored) inverse block
   /// diagonal of a BlockCrsMatrix A, and \f$Z = A*Y\f$.
   /// The method may use Z as scratch space.
   ///
@@ -437,18 +404,17 @@ public:
   ///   special case, following the BLAS rules.  That is, if beta = 0,
   ///   the initial contents of Y are ignored.
   void
-  blockJacobiUpdate (const Scalar& alpha,
-                     const Kokkos::View<const impl_scalar_type***,
-                       device_type, Kokkos::MemoryUnmanaged>& D,
-                     const BlockMultiVector<Scalar, LO, GO, Node>& X,
-                     BlockMultiVector<Scalar, LO, GO, Node>& Z,
-                     const Scalar& beta);
-
+  blockJacobiUpdate(const Scalar& alpha,
+                    const Kokkos::View<const impl_scalar_type***,
+                                       device_type, Kokkos::MemoryUnmanaged>& D,
+                    const BlockMultiVector<Scalar, LO, GO, Node>& X,
+                    BlockMultiVector<Scalar, LO, GO, Node>& Z,
+                    const Scalar& beta);
 
   //! Whether this object needs synchronization to the given memory space.
-  template<class TargetMemorySpace>
-  bool need_sync () const {
-    return mv_.template need_sync<typename TargetMemorySpace::memory_space> ();
+  template <class TargetMemorySpace>
+  bool need_sync() const {
+    return mv_.template need_sync<typename TargetMemorySpace::memory_space>();
   }
 
   //! Whether this object needs synchronization to the host
@@ -482,7 +448,7 @@ public:
   ///   do not change pointers.  They do, of course, change the values
   ///   in the BlockMultiVector, but that does not require marking the
   ///   methods as nonconst.
-  bool replaceLocalValues (const LO localRowIndex, const LO colIndex, const Scalar vals[]);
+  bool replaceLocalValues(const LO localRowIndex, const LO colIndex, const Scalar vals[]);
 
   /// \brief Replace all values at the given mesh point, using a global index.
   ///
@@ -494,7 +460,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point
   ///   is invalid on the calling process.
-  bool replaceGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
+  bool replaceGlobalValues(const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
 
   /// \brief Sum into all values at the given mesh point, using a local index.
   ///
@@ -506,7 +472,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given local index of the mesh point
   ///   is invalid on the calling process.
-  bool sumIntoLocalValues (const LO localRowIndex, const LO colIndex, const Scalar vals[]);
+  bool sumIntoLocalValues(const LO localRowIndex, const LO colIndex, const Scalar vals[]);
 
   /// \brief Sum into all values at the given mesh point, using a global index.
   ///
@@ -518,29 +484,28 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point
   ///   is invalid on the calling process.
-  bool sumIntoGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
-
+  bool sumIntoGlobalValues(const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
 
   const_little_host_vec_type getLocalBlockHost(
-    const LO localRowIndex, 
-    const LO colIndex, 
-    const Access::ReadOnlyStruct) const;
+      const LO localRowIndex,
+      const LO colIndex,
+      const Access::ReadOnlyStruct) const;
 
   little_host_vec_type getLocalBlockHost(
-    const LO localRowIndex, 
-    const LO colIndex, 
-    const Access::ReadWriteStruct);
+      const LO localRowIndex,
+      const LO colIndex,
+      const Access::ReadWriteStruct);
 
   /// \brief Get a local block on host, with the intent to overwrite all blocks in the BlockMultiVector
-  ///   before accessing the data on device. If you intend to modify only some blocks on host, use 
+  ///   before accessing the data on device. If you intend to modify only some blocks on host, use
   ///   Access::ReadWrite instead (otherwise, previous changes on device may be lost)
   little_host_vec_type getLocalBlockHost(
-    const LO localRowIndex, 
-    const LO colIndex, 
-    const Access::OverwriteAllStruct);
+      const LO localRowIndex,
+      const LO colIndex,
+      const Access::OverwriteAllStruct);
   //@}
 
-protected:
+ protected:
   /// \brief \name Implementation of Tpetra::DistObject.
   ///
   /// The methods here implement Tpetra::DistObject.  They let
@@ -548,76 +513,70 @@ protected:
   /// Users don't have to worry about these methods.
   //@{
 
-  // clang-format on
-  virtual bool checkSizes(const Tpetra::SrcDistObject &source) override;
+  virtual bool checkSizes(const Tpetra::SrcDistObject& source) override;
 
   using dist_object_type::
-      copyAndPermute; ///< DistObject copyAndPermute has multiple overloads --
-                      ///< use copyAndPermutes for anything we don't override
-                      // clang-format off
+      copyAndPermute;  ///< DistObject copyAndPermute has multiple overloads --
+                       ///< use copyAndPermutes for anything we don't override
 
   virtual void
-  copyAndPermute
-  (const SrcDistObject& source,
-   const size_t numSameIDs,
-   const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteToLIDs,
-   const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& permuteFromLIDs,
-   const CombineMode CM) override;
+  copyAndPermute(const SrcDistObject& source,
+                 const size_t numSameIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                                        buffer_device_type>& permuteToLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                                        buffer_device_type>& permuteFromLIDs,
+                 const CombineMode CM) override;
 
-  using dist_object_type::packAndPrepare; ///< DistObject overloads
-                                          ///< packAndPrepare. Explicitly use
-                                          ///< DistObject's packAndPrepare for
-                                          ///< anything we don't override
-                                          // clang-format off
+  using dist_object_type::packAndPrepare;  ///< DistObject overloads
+                                           ///< packAndPrepare. Explicitly use
+                                           ///< DistObject's packAndPrepare for
+                                           ///< anything we don't override
 
   virtual void
-  packAndPrepare
-  (const SrcDistObject& source,
-   const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& exportLIDs,
-   Kokkos::DualView<packet_type*,
-     buffer_device_type>& exports,
-   Kokkos::DualView<size_t*,
-     buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets) override;
+  packAndPrepare(const SrcDistObject& source,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                                        buffer_device_type>& exportLIDs,
+                 Kokkos::DualView<packet_type*,
+                                  buffer_device_type>& exports,
+                 Kokkos::DualView<size_t*,
+                                  buffer_device_type>
+                     numPacketsPerLID,
+                 size_t& constantNumPackets) override;
 
-  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
-                                            ///< unpackAndCombine, use the
-                                            ///< DistObject's implementation for
-                                            ///< anything we don't override.
-                                            // clang-format off
+  using dist_object_type::unpackAndCombine;  ///< DistObject has overloaded
+                                             ///< unpackAndCombine, use the
+                                             ///< DistObject's implementation for
+                                             ///< anything we don't override.
 
   virtual void
-  unpackAndCombine
-  (const Kokkos::DualView<const local_ordinal_type*,
-     buffer_device_type>& importLIDs,
-   Kokkos::DualView<packet_type*,
-     buffer_device_type> imports,
-   Kokkos::DualView<size_t*,
-     buffer_device_type> numPacketsPerLID,
-   const size_t constantNumPackets,
-   const CombineMode combineMode) override;
-   // clang-format off
+  unpackAndCombine(const Kokkos::DualView<const local_ordinal_type*,
+                                          buffer_device_type>& importLIDs,
+                   Kokkos::DualView<packet_type*,
+                                    buffer_device_type>
+                       imports,
+                   Kokkos::DualView<size_t*,
+                                    buffer_device_type>
+                       numPacketsPerLID,
+                   const size_t constantNumPackets,
+                   const CombineMode combineMode) override;
 
   //@}
 
-protected:
-
+ protected:
   //! Stride between consecutive local entries in the same column.
-  size_t getStrideX () const {
-    return static_cast<size_t> (1);
+  size_t getStrideX() const {
+    return static_cast<size_t>(1);
   }
 
   //! Stride between consecutive local entries in the same row.
-  size_t getStrideY () const {
-    return mv_.getStride ();
+  size_t getStrideY() const {
+    return mv_.getStride();
   }
 
   /// \brief True if and only if \c meshLocalIndex is a valid local
   ///   index in the mesh Map.
-  bool isValidLocalMeshIndex (const LO meshLocalIndex) const;
+  bool isValidLocalMeshIndex(const LO meshLocalIndex) const;
 
   /// \brief Mesh Map given to constructor.
   ///
@@ -626,37 +585,36 @@ protected:
   /// thread-safe.
   map_type meshMap_;
 
-private:
+ private:
   //! The point Map (describing the distribution of degrees of freedom).
   Teuchos::RCP<const map_type> pointMap_;
 
-protected:
+ protected:
   //! The Tpetra::MultiVector used to represent the data.
   mv_type mv_;
 
-private:
-
+ private:
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
 
   //! Implementation of replaceLocalValues; does not check localRowIndex.
   void
-  replaceLocalValuesImpl (const LO localRowIndex,
-                          const LO colIndex,
-                          const Scalar vals[]);
+  replaceLocalValuesImpl(const LO localRowIndex,
+                         const LO colIndex,
+                         const Scalar vals[]);
   //! Implementation of sumIntoLocalValues; does not check localRowIndex.
   void
-  sumIntoLocalValuesImpl (const LO localRowIndex,
-                          const LO colIndex,
-                          const Scalar vals[]);
+  sumIntoLocalValuesImpl(const LO localRowIndex,
+                         const LO colIndex,
+                         const Scalar vals[]);
 
   static Teuchos::RCP<const mv_type>
-  getMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject&);
+  getMultiVectorFromSrcDistObject(const Tpetra::SrcDistObject&);
 
   static Teuchos::RCP<const BlockMultiVector<Scalar, LO, GO, Node> >
-  getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src);
+  getBlockMultiVectorFromSrcDistObject(const Tpetra::SrcDistObject& src);
 };
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_BLOCKMULTIVECTOR_DECL_HPP
+#endif  // TPETRA_BLOCKMULTIVECTOR_DECL_HPP

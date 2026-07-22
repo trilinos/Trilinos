@@ -29,17 +29,15 @@ C   --   LSTR - OUT - the maximum length of the number strings
       INTEGER LSTR
 
       CHARACTER*20 SCISTR
-      CHARACTER*5 FFMT
+      CHARACTER*8 FFMT
 
       IF ((NNUM .EQ. 1) .AND. (LNGSTR .LE. 0)) THEN
 
 C      --Handle special case of single number, smallest length
 
-         WRITE (FFMT, 10000, IOSTAT=IDUM) LEN (ISTR(1))
-
+         WRITE (FFMT, 10000, IOSTAT=IDUM) LEN(ISTR(1))
          WRITE (ISTR(1), FFMT, IOSTAT=IDUM) INUM(1)
          CALL SQZSTR (ISTR(1), LSTR)
-
       ELSE
 
 C      --Determine smallest length of largest number string
@@ -66,7 +64,7 @@ C      --Determine smallest length of largest number string
 C      --Convert all integers to string of given length
 
          WRITE (FFMT, 10000, IOSTAT=IDUM) LSTR
-10000     FORMAT ('(I', I2.2, ')')
+10000     FORMAT ('(I', I3.3, ')')
 
          DO 110 I = 1, NNUM
             WRITE (ISTR(I), FFMT, IOSTAT=IDUM) INUM(I)

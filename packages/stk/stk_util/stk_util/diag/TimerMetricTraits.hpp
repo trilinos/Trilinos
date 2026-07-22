@@ -35,6 +35,7 @@
 #ifndef stk_util_diag_TimerMetricTraits_hpp
 #define stk_util_diag_TimerMetricTraits_hpp
 
+#include <stk_util/stk_config.h>
 #include <string>  // for string
 
 namespace stk { namespace diag { template <class T> struct MetricTraits; } }
@@ -76,7 +77,6 @@ struct CPUTime {};                              ///< CPU runtime metric tag
 struct WallTime {};                             ///< Wall clock metric tag
 struct MPICount {};                             ///< MPI call count metric tag
 struct MPIByteCount {};                         ///< MPI byte count metric tag
-struct HeapAlloc {};                            ///< Heap allocation metric tag
 
 
 template<>
@@ -124,17 +124,6 @@ struct MetricTraits<MPIByteCount>
 {
   typedef double Type;
   enum {METRIC = METRICS_MPI_BYTE_COUNT};
-  static Type value_now();
-  static std::string table_header();
-  static std::string format(Type count);
-};
-
-
-template<>
-struct MetricTraits<HeapAlloc>
-{
-  typedef double Type;
-  enum {METRIC = METRICS_HEAP_ALLOC};
   static Type value_now();
   static std::string table_header();
   static std::string format(Type count);

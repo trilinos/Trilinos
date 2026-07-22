@@ -1,26 +1,23 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.dual_view;
+import kokkos.dyn_rank_view;
+import kokkos.dynamic_view;
+import kokkos.offset_view;
+import kokkos.scatter_view;
+#else
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #include <Kokkos_DynamicView.hpp>
 #include <Kokkos_DynRankView.hpp>
 #include <Kokkos_OffsetView.hpp>
 #include <Kokkos_ScatterView.hpp>
+#endif
 
 #include <../../core/unit_test/tools/include/ToolTestingUtilities.hpp>
 
@@ -37,11 +34,27 @@
 #endif
 ///@}
 
+/// Some tests are skipped for unified memory space
+#if defined(KOKKOS_ENABLE_IMPL_CUDA_UNIFIED_MEMORY)
+#define GTEST_SKIP_IF_UNIFIED_MEMORY_SPACE                               \
+  if constexpr (std::is_same_v<typename TEST_EXECSPACE::memory_space,    \
+                               Kokkos::CudaSpace>)                       \
+    GTEST_SKIP() << "skipping since unified memory requires additional " \
+                    "fences";
+#elif defined(KOKKOS_IMPL_HIP_UNIFIED_MEMORY)
+#define GTEST_SKIP_IF_UNIFIED_MEMORY_SPACE                               \
+  if constexpr (std::is_same_v<typename TEST_EXECSPACE::memory_space,    \
+                               Kokkos::HIPSpace>)                        \
+    GTEST_SKIP() << "skipping since unified memory requires additional " \
+                    "fences";
+#else
+#define GTEST_SKIP_IF_UNIFIED_MEMORY_SPACE
+#endif
+
 TEST(TEST_CATEGORY, resize_realloc_no_init_dualview) {
   using namespace Kokkos::Test::Tools;
   listen_tool_events(Config::DisableAll(), Config::EnableKernels());
-  Kokkos::DualView<int*** * [1][2][3][4], TEST_EXECSPACE> bla("bla", 5, 6, 7,
-                                                              8);
+  Kokkos::DualView<int**** [1][2][3][4], TEST_EXECSPACE> bla("bla", 5, 6, 7, 8);
 
   auto success = validate_absence(
       [&]() {
@@ -71,8 +84,7 @@ TEST(TEST_CATEGORY, resize_realloc_no_alloc_dualview) {
   using namespace Kokkos::Test::Tools;
   listen_tool_events(Config::DisableAll(), Config::EnableKernels(),
                      Config::EnableAllocs());
-  Kokkos::DualView<int*** * [1][2][3][4], TEST_EXECSPACE> bla("bla", 8, 7, 6,
-                                                              5);
+  Kokkos::DualView<int**** [1][2][3][4], TEST_EXECSPACE> bla("bla", 8, 7, 6, 5);
 
   auto success = validate_absence(
       [&]() {
@@ -101,8 +113,7 @@ TEST(TEST_CATEGORY, resize_exec_space_dualview) {
   using namespace Kokkos::Test::Tools;
   listen_tool_events(Config::DisableAll(), Config::EnableFences(),
                      Config::EnableKernels());
-  Kokkos::DualView<int*** * [1][2][3][4], TEST_EXECSPACE> bla("bla", 8, 7, 6,
-                                                              5);
+  Kokkos::DualView<int**** [1][2][3][4], TEST_EXECSPACE> bla("bla", 8, 7, 6, 5);
 
   auto success = validate_absence(
       [&]() {
@@ -234,7 +245,7 @@ TEST(TEST_CATEGORY, realloc_exec_space_dynrankview) {
 
 // FIXME_THREADS The Threads backend fences every parallel_for
 #ifdef KOKKOS_ENABLE_THREADS
-  if (std::is_same<TEST_EXECSPACE, Kokkos::Threads>::value)
+  if (std::is_same_v<TEST_EXECSPACE, Kokkos::Threads>)
     GTEST_SKIP() << "skipping since the Threads backend isn't asynchronous";
 #endif
 
@@ -269,7 +280,7 @@ TEST(TEST_CATEGORY, resize_realloc_no_init_scatterview) {
   using namespace Kokkos::Test::Tools;
   listen_tool_events(Config::DisableAll(), Config::EnableKernels());
   Kokkos::Experimental::ScatterView<
-      int*** * [1][2][3], typename TEST_EXECSPACE::array_layout, TEST_EXECSPACE>
+      int**** [1][2][3], typename TEST_EXECSPACE::array_layout, TEST_EXECSPACE>
       bla("bla", 4, 5, 6, 7);
 
   auto success = validate_absence(
@@ -301,7 +312,7 @@ TEST(TEST_CATEGORY, resize_realloc_no_alloc_scatterview) {
   listen_tool_events(Config::DisableAll(), Config::EnableKernels(),
                      Config::EnableAllocs());
   Kokkos::Experimental::ScatterView<
-      int*** * [1][2][3], typename TEST_EXECSPACE::array_layout, TEST_EXECSPACE>
+      int**** [1][2][3], typename TEST_EXECSPACE::array_layout, TEST_EXECSPACE>
       bla("bla", 7, 6, 5, 4);
 
   auto success = validate_absence(
@@ -332,7 +343,7 @@ TEST(TEST_CATEGORY, resize_exec_space_scatterview) {
   listen_tool_events(Config::DisableAll(), Config::EnableFences(),
                      Config::EnableKernels());
   Kokkos::Experimental::ScatterView<
-      int*** * [1][2][3], typename TEST_EXECSPACE::array_layout, TEST_EXECSPACE>
+      int**** [1][2][3], typename TEST_EXECSPACE::array_layout, TEST_EXECSPACE>
       bla("bla", 7, 6, 5, 4);
 
   auto success = validate_absence(
@@ -373,13 +384,12 @@ TEST(TEST_CATEGORY, realloc_exec_space_scatterview) {
 
 // FIXME_THREADS The Threads backend fences every parallel_for
 #ifdef KOKKOS_ENABLE_THREADS
-  if (std::is_same<typename TEST_EXECSPACE, Kokkos::Threads>::value)
+  if (std::is_same_v<typename TEST_EXECSPACE, Kokkos::Threads>)
     GTEST_SKIP() << "skipping since the Threads backend isn't asynchronous";
 #endif
 #if defined(KOKKOS_ENABLE_HPX) && \
     !defined(KOKKOS_ENABLE_IMPL_HPX_ASYNC_DISPATCH)
-  if (std::is_same<Kokkos::DefaultExecutionSpace,
-                   Kokkos::Experimental::HPX>::value)
+  if (std::is_same_v<Kokkos::DefaultExecutionSpace, Kokkos::Experimental::HPX>)
     GTEST_SKIP() << "skipping since the HPX backend always fences with async "
                     "dispatch disabled";
 #endif
@@ -619,8 +629,6 @@ TEST(TEST_CATEGORY, create_mirror_view_and_copy_offsetview) {
   ASSERT_TRUE(success);
 }
 
-// FIXME OPENMPTARGET
-#ifndef KOKKOS_ENABLE_OPENMPTARGET
 TEST(TEST_CATEGORY, create_mirror_no_init_dynamicview) {
   using namespace Kokkos::Test::Tools;
   listen_tool_events(Config::DisableAll(), Config::EnableKernels());
@@ -657,6 +665,7 @@ TEST(TEST_CATEGORY, create_mirror_no_init_dynamicview) {
 
 TEST(TEST_CATEGORY, create_mirror_view_and_copy_dynamicview) {
   GTEST_SKIP_IF_CUDAUVM_MEMORY_SPACE
+  GTEST_SKIP_IF_UNIFIED_MEMORY_SPACE
 
   using namespace Kokkos::Test::Tools;
   listen_tool_events(Config::DisableAll(), Config::EnableKernels(),
@@ -696,10 +705,7 @@ TEST(TEST_CATEGORY, create_mirror_view_and_copy_dynamicview) {
       });
   ASSERT_TRUE(success);
 }
-#endif
 
-// FIXME OPENMPTARGET
-#ifndef KOKKOS_ENABLE_OPENMPTARGET
 TEST(TEST_CATEGORY, create_mirror_no_init_dynamicview_view_ctor) {
   using namespace Kokkos::Test::Tools;
   listen_tool_events(Config::DisableAll(), Config::EnableKernels());
@@ -745,4 +751,3 @@ TEST(TEST_CATEGORY, create_mirror_no_init_dynamicview_view_ctor) {
       });
   ASSERT_TRUE(success);
 }
-#endif

@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_DETAILS_IDOT_HPP
@@ -72,161 +40,145 @@ namespace Details {
 // Temporary helper to get read-only view from multivector in requested space.
 // TODO: when https://github.com/kokkos/kokkos/issues/3850 is resolved,
 // remove this and just use templated getLocalView<Device>(ReadOnly).
-template<typename MV>
-struct GetReadOnly
-{
-  using DevView = typename MV::dual_view_type::t_dev::const_type;
+template <typename MV>
+struct GetReadOnly {
+  using DevView  = typename MV::dual_view_type::t_dev::const_type;
   using HostView = typename MV::dual_view_type::t_host::const_type;
 
-  template<typename exec_space>
-  static DevView get(const MV& x, typename std::enable_if<std::is_same<exec_space, typename MV::execution_space>::value>::type* = nullptr)
-  {
+  template <typename exec_space>
+  static DevView get(const MV& x, typename std::enable_if<std::is_same<exec_space, typename MV::execution_space>::value>::type* = nullptr) {
     return x.getLocalViewDevice(Tpetra::Access::ReadOnly);
   }
 
-  template<typename exec_space>
-  static HostView get(const MV& x, typename std::enable_if<!std::is_same<exec_space, typename MV::execution_space>::value>::type* = nullptr)
-  {
+  template <typename exec_space>
+  static HostView get(const MV& x, typename std::enable_if<!std::is_same<exec_space, typename MV::execution_space>::value>::type* = nullptr) {
     return x.getLocalViewHost(Tpetra::Access::ReadOnly);
   }
 };
 
 /// \brief Compute dot product locally. Where the kernel runs controlled by runOnDevice.
 
-template<class MV, class ResultView, bool runOnDevice>
+template <class MV, class ResultView, bool runOnDevice>
 void idotLocal(const ResultView& localResult,
                const MV& X,
-               const MV& Y)
-{
-  using pair_type = Kokkos::pair<size_t, size_t>;
+               const MV& Y) {
+  using pair_type  = Kokkos::pair<size_t, size_t>;
   using exec_space = typename std::conditional<runOnDevice, typename MV::execution_space, Kokkos::DefaultHostExecutionSpace>::type;
-  //if the execution space can access localResult, use it directly. Otherwise need to make a copy.
+  // if the execution space can access localResult, use it directly. Otherwise need to make a copy.
   static_assert(Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible,
-      "idotLocal: Execution space must be able to access localResult");
-  //If Dot executes on Serial, it requires the result to be HostSpace. If localResult is CudaUVMSpace,
-  //we can just treat it like HostSpace.
+                "idotLocal: Execution space must be able to access localResult");
+  // If Dot executes on Serial, it requires the result to be HostSpace. If localResult is CudaUVMSpace,
+  // we can just treat it like HostSpace.
   Kokkos::View<typename ResultView::data_type, typename exec_space::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-    localResultUnmanaged(localResult.data(), localResult.extent(0));
-  const size_t numRows = X.getLocalLength ();
-  const pair_type rowRange (0, numRows);
-  const size_t X_numVecs = X.getNumVectors ();
-  const size_t Y_numVecs = Y.getNumVectors ();
-  const size_t numVecs = X_numVecs > Y_numVecs ? X_numVecs : Y_numVecs;
+      localResultUnmanaged(localResult.data(), localResult.extent(0));
+  const size_t numRows = X.getLocalLength();
+  const pair_type rowRange(0, numRows);
+  const size_t X_numVecs = X.getNumVectors();
+  const size_t Y_numVecs = Y.getNumVectors();
+  const size_t numVecs   = X_numVecs > Y_numVecs ? X_numVecs : Y_numVecs;
   // Check compatibility of number of columns; allow special cases of
   // a multivector dot a single vector, or vice versa.
   if (X_numVecs != Y_numVecs &&
-      X_numVecs != size_t (1) &&
-      Y_numVecs != size_t (1)) {
+      X_numVecs != size_t(1) &&
+      Y_numVecs != size_t(1)) {
     std::ostringstream os;
     os << "Tpetra::idot: X.getNumVectors() = " << X_numVecs
        << " != Y.getNumVectors() = " << Y_numVecs
        << ", but neither is 1.";
-    throw std::invalid_argument (os.str ());
+    throw std::invalid_argument(os.str());
   }
   auto X_lcl = GetReadOnly<MV>::template get<exec_space>(X);
   auto Y_lcl = GetReadOnly<MV>::template get<exec_space>(Y);
-  //Can the multivector dot kernel be used?
+  // Can the multivector dot kernel be used?
   bool useMVDot = X.isConstantStride() && Y.isConstantStride() && X_numVecs == Y_numVecs;
-  if(useMVDot)
-  {
-    if (numVecs == size_t (1)) {
-      auto X_lcl_1d = Kokkos::subview (X_lcl, rowRange, 0);
-      auto Y_lcl_1d = Kokkos::subview (Y_lcl, rowRange, 0);
-      auto result_0d = Kokkos::subview (localResultUnmanaged, 0);
-      KokkosBlas::dot (result_0d, X_lcl_1d, Y_lcl_1d);
+  if (useMVDot) {
+    if (numVecs == size_t(1)) {
+      auto X_lcl_1d  = Kokkos::subview(X_lcl, rowRange, 0);
+      auto Y_lcl_1d  = Kokkos::subview(Y_lcl, rowRange, 0);
+      auto result_0d = Kokkos::subview(localResultUnmanaged, 0);
+      KokkosBlas::dot(result_0d, X_lcl_1d, Y_lcl_1d);
+    } else {
+      auto X_lcl_2d = Kokkos::subview(X_lcl, rowRange, pair_type(0, X_numVecs));
+      auto Y_lcl_2d = Kokkos::subview(Y_lcl, rowRange, pair_type(0, Y_numVecs));
+      KokkosBlas::dot(localResultUnmanaged, X_lcl_2d, Y_lcl_2d);
     }
-    else {
-      auto X_lcl_2d = Kokkos::subview (X_lcl, rowRange, pair_type (0, X_numVecs));
-      auto Y_lcl_2d = Kokkos::subview (Y_lcl, rowRange, pair_type (0, Y_numVecs));
-      KokkosBlas::dot (localResultUnmanaged, X_lcl_2d, Y_lcl_2d);
-    }
-  }
-  else
-  {
+  } else {
     auto XWhichVectors = Tpetra::getMultiVectorWhichVectors(X);
     auto YWhichVectors = Tpetra::getMultiVectorWhichVectors(Y);
-    //Need to compute each dot individually, using 1D subviews of X_lcl and Y_lcl
-    for(size_t vec = 0; vec < numVecs; vec++) {
-      //Get the Vectors for each column of X and Y that will be dotted together.
-      //Note: "which vectors" is not populated for constant stride MVs (but it's the identity mapping)
+    // Need to compute each dot individually, using 1D subviews of X_lcl and Y_lcl
+    for (size_t vec = 0; vec < numVecs; vec++) {
+      // Get the Vectors for each column of X and Y that will be dotted together.
+      // Note: "which vectors" is not populated for constant stride MVs (but it's the identity mapping)
       size_t Xj = (numVecs == X_numVecs) ? vec : 0;
-      Xj = X.isConstantStride() ? Xj : XWhichVectors[Xj];
+      Xj        = X.isConstantStride() ? Xj : XWhichVectors[Xj];
       size_t Yj = (numVecs == Y_numVecs) ? vec : 0;
-      Yj = Y.isConstantStride() ? Yj : YWhichVectors[Yj];
+      Yj        = Y.isConstantStride() ? Yj : YWhichVectors[Yj];
       auto Xcol = Kokkos::subview(X_lcl, rowRange, Xj);
       auto Ycol = Kokkos::subview(Y_lcl, rowRange, Yj);
 
-      //Compute the rank-1 dot product, and place the result in an element of localResult
+      // Compute the rank-1 dot product, and place the result in an element of localResult
       KokkosBlas::dot(Kokkos::subview(localResultUnmanaged, vec), Xcol, Ycol);
     }
   }
 }
 
-//Helper to avoid extra instantiations of KokkosBlas::dot and iallreduce.
-template<typename MV, typename ResultView>
-struct IdotHelper
-{
+// Helper to avoid extra instantiations of KokkosBlas::dot and iallreduce.
+template <typename MV, typename ResultView>
+struct IdotHelper {
   using dot_type = typename MV::dot_type;
 
-  //First version: use result directly
-  template<typename exec_space>
-  static std::shared_ptr< ::Tpetra::Details::CommRequest> run(
+  // First version: use result directly
+  template <typename exec_space>
+  static std::shared_ptr<::Tpetra::Details::CommRequest> run(
       const ResultView& globalResult, const MV& X, const MV& Y,
       typename std::enable_if<Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible>::type* = nullptr)
 
   {
     constexpr bool runOnDevice = std::is_same<exec_space, typename MV::execution_space>::value;
     idotLocal<MV, ResultView, runOnDevice>(globalResult, X, Y);
-    //Fence because we're giving result of device kernel to MPI
-    if(runOnDevice)
+    // Fence because we're giving result of device kernel to MPI
+    if (runOnDevice)
       exec_space().fence();
     auto comm = X.getMap()->getComm();
     return iallreduce(globalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
   }
 
-  //Second version: use a temporary local result, because exec_space can't write to globalResult
-  template<typename exec_space>
-  static std::shared_ptr< ::Tpetra::Details::CommRequest> run(
+  // Second version: use a temporary local result, because exec_space can't write to globalResult
+  template <typename exec_space>
+  static std::shared_ptr<::Tpetra::Details::CommRequest> run(
       const ResultView& globalResult, const MV& X, const MV& Y,
-      typename std::enable_if<!Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible>::type* = nullptr)
-  {
+      typename std::enable_if<!Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible>::type* = nullptr) {
     constexpr bool runOnDevice = std::is_same<exec_space, typename MV::execution_space>::value;
     Kokkos::View<dot_type*, typename exec_space::memory_space> localResult(Kokkos::ViewAllocateWithoutInitializing("idot:localResult"), X.getNumVectors());
     idotLocal<MV, decltype(localResult), runOnDevice>(localResult, X, Y);
-    //Fence because we're giving result of device kernel to MPI
-    if(runOnDevice)
+    // Fence because we're giving result of device kernel to MPI
+    if (runOnDevice)
       exec_space().fence();
     auto comm = X.getMap()->getComm();
     return iallreduce(localResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
   }
-
 };
-
 
 /// \brief Internal (common) version of idot, a global dot product
 /// that uses a non-blocking MPI reduction.
-template<class MV, class ResultView>
-std::shared_ptr< ::Tpetra::Details::CommRequest>
+template <class MV, class ResultView>
+std::shared_ptr<::Tpetra::Details::CommRequest>
 idotImpl(const ResultView& globalResult,
          const MV& X,
-         const MV& Y)
-{
+         const MV& Y) {
   static_assert(std::is_same<typename ResultView::non_const_value_type, typename MV::dot_type>::value,
-      "Tpetra::idot: result view's element type must match MV::dot_type");
+                "Tpetra::idot: result view's element type must match MV::dot_type");
 
   // Execution space to use for dot kernel(s) is whichever has access to up-to-date X.
-  if(X.need_sync_device())
-  {
-    //run on host.
+  if (X.need_sync_device()) {
+    // run on host.
     return IdotHelper<MV, ResultView>::template run<Kokkos::DefaultHostExecutionSpace>(globalResult, X, Y);
-  }
-  else
-  {
-    //run on device.
+  } else {
+    // run on device.
     return IdotHelper<MV, ResultView>::template run<typename MV::execution_space>(globalResult, X, Y);
   }
 }
-} // namespace Details
+}  // namespace Details
 
 //
 // SKIP DOWN TO HERE
@@ -284,18 +236,17 @@ idotImpl(const ResultView& globalResult,
 /// or Stokhos packages, \c dot_type may be a different type.  Most
 /// users should not have to worry about this, but Tpetra developers
 /// may need to worry about this.
-template<class SC, class LO, class GO, class NT>
-std::shared_ptr< ::Tpetra::Details::CommRequest>
-idot (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* resultRaw,
-      const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
-      const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
-{
-  using dot_type = typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type;
-  const size_t X_numVecs = X.getNumVectors ();
-  const size_t Y_numVecs = Y.getNumVectors ();
-  const size_t numVecs = (X_numVecs > Y_numVecs) ? X_numVecs : Y_numVecs;
+template <class SC, class LO, class GO, class NT>
+std::shared_ptr<::Tpetra::Details::CommRequest>
+idot(typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* resultRaw,
+     const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
+     const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y) {
+  using dot_type         = typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type;
+  const size_t X_numVecs = X.getNumVectors();
+  const size_t Y_numVecs = Y.getNumVectors();
+  const size_t numVecs   = (X_numVecs > Y_numVecs) ? X_numVecs : Y_numVecs;
   Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-    resultView(resultRaw, numVecs);
+      resultView(resultRaw, numVecs);
   return Details::idotImpl(resultView, X, Y);
 }
 
@@ -361,13 +312,12 @@ idot (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* resultRaw,
 /// found in the Sacado or Stokhos packages, \c dot_type may be a
 /// different type.  Most users should not have to worry about this,
 /// but Tpetra developers may need to worry about this.
-template<class SC, class LO, class GO, class NT>
-std::shared_ptr< ::Tpetra::Details::CommRequest>
-idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type*,
-        typename ::Tpetra::MultiVector<SC, LO, GO, NT>::device_type>& result,
-      const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
-      const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
-{
+template <class SC, class LO, class GO, class NT>
+std::shared_ptr<::Tpetra::Details::CommRequest>
+idot(const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type*,
+                        typename ::Tpetra::MultiVector<SC, LO, GO, NT>::device_type>& result,
+     const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
+     const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y) {
   return Details::idotImpl(result, X, Y);
 }
 
@@ -412,19 +362,18 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
 /// found in the Sacado or Stokhos packages, \c dot_type may be a
 /// different type.  Most users should not have to worry about this,
 /// but Tpetra developers may need to worry about this.
-template<class SC, class LO, class GO, class NT>
-std::shared_ptr< ::Tpetra::Details::CommRequest>
-idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
-        typename ::Tpetra::Vector<SC, LO, GO, NT>::device_type>& result,
-      const ::Tpetra::Vector<SC, LO, GO, NT>& X,
-      const ::Tpetra::Vector<SC, LO, GO, NT>& Y)
-{
-  using dot_type = typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type;
+template <class SC, class LO, class GO, class NT>
+std::shared_ptr<::Tpetra::Details::CommRequest>
+idot(const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
+                        typename ::Tpetra::Vector<SC, LO, GO, NT>::device_type>& result,
+     const ::Tpetra::Vector<SC, LO, GO, NT>& X,
+     const ::Tpetra::Vector<SC, LO, GO, NT>& Y) {
+  using dot_type        = typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type;
   using result_device_t = typename ::Tpetra::Vector<SC, LO, GO, NT>::device_type;
   Kokkos::View<dot_type*, result_device_t, Kokkos::MemoryTraits<Kokkos::Unmanaged>> result1D(result.data(), 1);
   return Details::idotImpl(result1D, X, Y);
 }
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_IDOT_HPP
+#endif  // TPETRA_DETAILS_IDOT_HPP

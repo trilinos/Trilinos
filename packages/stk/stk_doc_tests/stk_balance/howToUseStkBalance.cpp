@@ -17,14 +17,14 @@ public:
     RcbSettings() {}
     virtual ~RcbSettings() {}
 
-    virtual bool isIncrementalRebalance() const { return false; }
-    virtual std::string getDecompMethod() const { return std::string("rcb"); }
-    virtual std::string getCoordinateFieldName() const { return std::string("coordinates"); }
-    virtual bool shouldPrintMetrics() const { return true; }
+    virtual bool isIncrementalRebalance() const override { return false; }
+    virtual std::string getDecompMethod() const override { return std::string("rcb"); }
+    virtual std::string getCoordinateFieldName() const override { return std::string("coordinates"); }
+    virtual bool shouldPrintMetrics() const override { return true; }
 };
 //ENDRcbSettings
 
-class StkBalanceHowTo : public stk::unit_test_util::simple_fields::MeshFixture
+class StkBalanceHowTo : public stk::unit_test_util::MeshFixture
 {};
 
 bool is_mesh_balanced(const stk::mesh::BulkData& bulk)
@@ -39,6 +39,8 @@ bool is_mesh_balanced(const stk::mesh::BulkData& bulk)
 
 bool is_mesh_balanced_wrt_weight(const stk::mesh::BulkData& bulk, stk::mesh::Field<double>& weightField)
 {
+    auto weightFieldData = weightField.data();
+
     std::vector<size_t> counts;
     stk::mesh::comm_mesh_counts(bulk, counts);
 
@@ -53,8 +55,8 @@ bool is_mesh_balanced_wrt_weight(const stk::mesh::BulkData& bulk, stk::mesh::Fie
     {
         if(bulk.bucket(element).owned())
         {
-            double *data = stk::mesh::field_data(weightField, element);
-            weightThisProc += *data;
+            auto data = weightFieldData.entity_values(element);
+            weightThisProc += data();
         }
     }
 
@@ -82,9 +84,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithGeometricMethods)
 class ParmetisSettings : public stk::balance::GraphCreationSettings
 {
 public:
-    virtual std::string getDecompMethod() const { return "parmetis"; }
+    virtual std::string getDecompMethod() const override { return "parmetis"; }
 
-    size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
+    size_t getNumNodesRequiredForConnection(
+        stk::topology element1Topology, stk::topology element2Topology) const override
     {
         const int noConnection = 1000;
         const int s = noConnection;
@@ -104,7 +107,7 @@ public:
         return connectionTable[element1Index][element2Index];
     }
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override
     {
         const double noConnection = 0;
         const double s = noConnection;
@@ -132,7 +135,7 @@ public:
 
     using BalanceSettings::getGraphVertexWeight;
 
-    virtual int getGraphVertexWeight(stk::topology type) const
+    virtual int getGraphVertexWeight(stk::topology type) const override
     {
         switch(type)
         {
@@ -190,10 +193,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithParmetis)
 class ParmetisWithSearchSettings : public ParmetisSettings
 {
     using ParmetisSettings::getToleranceForFaceSearch;
-    virtual bool includeSearchResultsInGraph() const { return true; }
+    virtual bool includeSearchResultsInGraph() const override { return true; }
     virtual double getToleranceForFaceSearch() const { return 0.0001; }
-    virtual double getVertexWeightMultiplierForVertexInSearch() const { return 6.0; }
-    virtual double getGraphEdgeWeightForSearch() const { return 1000; }
+    virtual double getVertexWeightMultiplierForVertexInSearch() const override { return 6.0; }
+    virtual double getGraphEdgeWeightForSearch() const override { return 1000; }
 };
 //ENDParmeticSearchSettings
 
@@ -227,11 +230,11 @@ public:
 
     virtual ~FieldVertexWeightSettings() = default;
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
+    virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const override { return 1.0; }
 
-    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-    virtual double getImbalanceTolerance() const { return 1.0001; }
-    virtual std::string getDecompMethod() const { return "rcb"; }
+    virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
+    virtual double getImbalanceTolerance() const override { return 1.0001; }
+    virtual std::string getDecompMethod() const override { return "rcb"; }
 
 protected:
     FieldVertexWeightSettings() = delete;
@@ -243,14 +246,16 @@ protected:
 
 void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double>& weightField)
 {
+    auto weightFieldData = weightField.data<stk::mesh::ReadWrite>();
+
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
     for(stk::mesh::Entity element : elements)
     {
         if(bulk.bucket(element).owned())
         {
-            double *data = stk::mesh::field_data(weightField, element);
-            *data = static_cast<double>(bulk.identifier(element));
+            auto data = weightFieldData.entity_values(element);
+            data() = static_cast<double>(bulk.identifier(element));
         }
     }
 }
@@ -274,24 +279,6 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
 }
 //ENDBalanceTest4
 
-TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLocallyOwnedPart)
-{
-    if(stk::parallel_machine_size(get_comm()) == 2)
-    {
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::mesh::Field<double> &weightField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights");
-        stk::mesh::put_field_on_mesh(weightField, get_meta().locally_owned_part(), nullptr);
-        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
-        set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
-
-        FieldVertexWeightSettings balanceSettings(weightField);
-        stk::balance::balanceStkMesh(balanceSettings, get_bulk());
-
-        EXPECT_TRUE(is_mesh_balanced_wrt_weight(get_bulk(), weightField));
-    }
-}
-
-
 //BEGINMultiCriteriaSelectorSettings
 class MultipleCriteriaSelectorSettings : public ParmetisSettings
 {
@@ -299,7 +286,7 @@ public:
     MultipleCriteriaSelectorSettings() { }
     virtual ~MultipleCriteriaSelectorSettings() = default;
 
-    virtual bool isMultiCriteriaRebalance() const { return true;}
+    virtual bool isMultiCriteriaRebalance() const override { return true;}
 
 protected:
     MultipleCriteriaSelectorSettings(const MultipleCriteriaSelectorSettings&) = delete;
@@ -328,7 +315,6 @@ void verify_mesh_balanced_wrt_selectors(const stk::mesh::BulkData& bulk, const s
     std::vector<size_t> counts;
     for(const stk::mesh::Selector & sel : selectors)
     {
-        stk::mesh::EntityVector elements;
         size_t num_elements = stk::mesh::count_selected_entities(sel, bulk.buckets(stk::topology::ELEM_RANK));
         counts.clear();
         stk::mesh::comm_mesh_counts(bulk, counts, &sel);
@@ -377,7 +363,7 @@ public:
     }
     virtual ~MultipleCriteriaFieldSettings() override = default;
 
-    virtual bool isMultiCriteriaRebalance() const { return true;}
+    virtual bool isMultiCriteriaRebalance() const override { return true;}
 
 protected:
     MultipleCriteriaFieldSettings() = delete;
@@ -395,10 +381,13 @@ void verify_mesh_balanced_wrt_fields(const stk::mesh::BulkData& bulk, const std:
 
     for(size_t i=0;i<critFields.size();++i)
     {
+        auto critField = critFields[i];
+        auto critFieldData = critField->data();
+
         for(stk::mesh::Entity element : elements)
         {
-            double *data = stk::mesh::field_data(*critFields[i], element);
-            sums[i] += *data;
+            auto data = critFieldData.entity_values(element);
+            sums[i] += data();
         }
     }
 
@@ -416,20 +405,23 @@ void set_vertex_weights_checkerboard(stk::mesh::BulkData& bulk, stk::mesh::Selec
 {
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
+
+    auto weightField1Data = weightField1.data<stk::mesh::ReadWrite>();
+    auto weightField2Data = weightField2.data<stk::mesh::ReadWrite>();
     for(stk::mesh::Entity element : elements)
     {
-        double *data1 = stk::mesh::field_data(weightField1, element);
-        double *data2 = stk::mesh::field_data(weightField2, element);
+        auto data1 = weightField1Data.entity_values(element);
+        auto data2 = weightField2Data.entity_values(element);
         stk::mesh::EntityId id = bulk.identifier(element);
         if(id%2==0)
         {
-            *data1 = 1.0;
-            *data2 = 0.0;
+            data1() = 1.0;
+            data2() = 0.0;
         }
         else
         {
-            *data1 = 0.0;
-            *data2 = 1.0;
+            data1() = 0.0;
+            data2() = 1.0;
         }
     }
 }

@@ -1,24 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "PerfTest_ViewFill.hpp"
 
 namespace Test {
 
-#if defined(KOKKOS_ENABLE_CUDA_LAMBDA) || !defined(KOKKOS_ENABLE_CUDA)
 BENCHMARK(ViewFill_Raw<Kokkos::LayoutLeft>)
     ->ArgName("N")
     ->Arg(N)
@@ -28,6 +14,5 @@ BENCHMARK(ViewFill_Raw<Kokkos::LayoutRight>)
     ->ArgName("N")
     ->Arg(N)
     ->UseManualTime();
-#endif
 
 }  // namespace Test

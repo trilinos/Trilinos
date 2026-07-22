@@ -9,6 +9,8 @@
 
 #include <TpetraCore_ETIHelperMacros.h>
 
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
 namespace Tpetra {
     TPETRA_ETI_MANGLING_TYPEDEFS()
 }

@@ -53,9 +53,10 @@ public:
     stk::mesh::EntityRank rank = entityKey.rank();
     stk::mesh::Entity entity = m_bulk->get_entity(entityKey);
     const stk::mesh::FieldBase* field = m_bulk->mesh_meta_data().get_field(rank, fieldName);
-    const double* fieldValue = reinterpret_cast<const double*>(stk::mesh::field_data(*field, entity));
-    if (fieldValue != nullptr) {
-      return *fieldValue;
+    if (field->defined_on(entity)) {
+      auto fieldData = field->data<double>();
+      auto fieldValue = fieldData.entity_values(entity);
+      return fieldValue(0_comp);
     }
     return -99.9;
   }
@@ -67,9 +68,10 @@ public:
     stk::mesh::EntityRank rank = entityKey.rank();
     stk::mesh::Entity entity = m_bulk->get_entity(entityKey);
     const stk::mesh::FieldBase* field = m_bulk->mesh_meta_data().get_field(rank, fieldName);
-    double* fieldData = reinterpret_cast<double*>(stk::mesh::field_data(*field, entity));
-    if (fieldData != nullptr) {
-      *fieldData = fieldValue;
+    if (field->defined_on(entity)) {
+      auto fieldData = field->data<double, stk::mesh::ReadWrite>();
+      auto entityFieldData = fieldData.entity_values(entity);
+      entityFieldData(0_comp) = fieldValue;
     }
   }
 
@@ -89,9 +91,10 @@ public:
     stk::mesh::Selector fieldSelector(*field);
     stk::mesh::EntityVector sides;
     stk::mesh::get_entities(*m_bulk, stk::topology::FACE_RANK, fieldSelector, sides);
+    auto fieldData = field->data<double>();
     for(stk::mesh::Entity side : sides) {
-      const double* fieldData = reinterpret_cast<const double*>(stk::mesh::field_data(*field, side));
-      if (std::abs(*fieldData - expectedFieldValue) > 1.e-6) {
+      auto sideFieldData = fieldData.entity_values(side);
+      if (std::abs(sideFieldData(0_comp) - expectedFieldValue) > 1.e-6) {
         return false;
       }
     }
@@ -106,17 +109,18 @@ public:
     double minXYZ[3] = {maxDouble, maxDouble, maxDouble};
     double maxXYZ[3] = {0.0, 0.0, 0.0};
     const stk::mesh::FieldBase* coordField = m_bulk->mesh_meta_data().coordinate_field();
+    auto coordFieldData = coordField->data<double>();
 
     const stk::mesh::Entity* nodes = m_bulk->begin_nodes(side);
     const unsigned numNodes = m_bulk->num_nodes(side);
     for(unsigned i=0; i<numNodes; ++i) {
-      const double* coords = reinterpret_cast<const double*>(stk::mesh::field_data(*coordField, nodes[i]));
-      minXYZ[0] = std::min(minXYZ[0], coords[0]);
-      minXYZ[1] = std::min(minXYZ[1], coords[1]);
-      minXYZ[2] = std::min(minXYZ[2], coords[2]);
-      maxXYZ[0] = std::max(maxXYZ[0], coords[0]);
-      maxXYZ[1] = std::max(maxXYZ[1], coords[1]);
-      maxXYZ[2] = std::max(maxXYZ[2], coords[2]);
+      auto coords = coordFieldData.entity_values(nodes[i]);
+      minXYZ[0] = std::min(minXYZ[0], coords(0_comp));
+      minXYZ[1] = std::min(minXYZ[1], coords(1_comp));
+      minXYZ[2] = std::min(minXYZ[2], coords(2_comp));
+      maxXYZ[0] = std::max(maxXYZ[0], coords(0_comp));
+      maxXYZ[1] = std::max(maxXYZ[1], coords(1_comp));
+      maxXYZ[2] = std::max(maxXYZ[2], coords(2_comp));
     }
 
     constexpr double tol = 1.e-5;
@@ -141,14 +145,15 @@ public:
   {
     double sumXYZ[3] = {0.0, 0.0, 0.0};
     const stk::mesh::FieldBase* coordField = m_bulk->mesh_meta_data().coordinate_field();
+    auto coordFieldData = coordField->data<double>();
 
     const stk::mesh::Entity* nodes = m_bulk->begin_nodes(side);
     const unsigned numNodes = m_bulk->num_nodes(side);
     for(unsigned i=0; i<numNodes; ++i) {
-      const double* coords = reinterpret_cast<const double*>(stk::mesh::field_data(*coordField, nodes[i]));
-      sumXYZ[0] += coords[0];
-      sumXYZ[1] += coords[1];
-      sumXYZ[2] += coords[2];
+      auto coords = coordFieldData.entity_values(nodes[i]);
+      sumXYZ[0] += coords(0_comp);
+      sumXYZ[1] += coords(1_comp);
+      sumXYZ[2] += coords(2_comp);
     }
 
     return Point(sumXYZ[0]/numNodes, sumXYZ[1]/numNodes, sumXYZ[2]/numNodes);
@@ -168,7 +173,7 @@ public:
     }
   }
 
-  void get_to_points_coordinates(const EntityProcVec &to_entity_keys, ToPointsContainer &to_points)
+  void get_to_points_coordinates(const EntityProcVec & /*to_entity_keys*/, ToPointsContainer &to_points)
   {
     stk::mesh::EntityVector sides;
     stk::mesh::Selector ownedSurface = m_bulk->mesh_meta_data().locally_owned_part() & *m_surface;

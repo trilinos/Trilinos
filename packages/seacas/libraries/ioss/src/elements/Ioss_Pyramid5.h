@@ -13,7 +13,7 @@
 #include "ioss_export.h"
 
 namespace Ioss {
-  class IOSS_EXPORT Pyramid5 : public Ioss::ElementTopology
+  class IOSS_EXPORT Pyramid5 final : public Ioss::ElementTopology
   {
 
   public:

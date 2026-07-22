@@ -225,7 +225,7 @@ namespace Ioss::glob {
     }
 
     std::vector<std::unique_ptr<State<charT>>> states_;
-    size_t                                     match_state_;
+    size_t                                     match_state_{};
 
     size_t start_state_{0};
   };
@@ -839,6 +839,7 @@ namespace Ioss::glob {
   template <class charT> class AstVisitor
   {
   public:
+    virtual ~AstVisitor() = default;
 // define all visitor methods for the nodes
 #define DECLARE_VIRTUAL_FUNC(type)                                                                 \
   virtual void Visit##type(type<charT> * /*node*/) {}

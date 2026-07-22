@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -179,29 +179,53 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
   nc_mode = exi_handle_mode(my_mode, is_parallel, run_version);
 
 #if defined NC_NOATTCREORD
-  /* Disable attribute creation order tracking if available... */
+  /* Disable attribute creation order tracking if available (netcdf-c PR #2056) */
   if (my_mode & EX_NETCDF4) {
     nc_mode |= NC_NOATTCREORD;
   }
 #endif
 
 #if defined NC_NODIMSCALE_ATTACH
-  /* Disable attaching dimscales to variables (netcdf-c issue #2128) if available */
+  /* Disable attaching dimscales to variables if available (netcdf-c issue #2128) */
   if (my_mode & EX_NETCDF4) {
     nc_mode |= NC_NODIMSCALE_ATTACH;
   }
 #endif
 
+#if NC_HAS_PNETCDF
+  bool i_created_info = false;
+  if (info == MPI_INFO_NULL) {
+    MPI_Info_create(&info);
+    i_created_info = true;
+  }
+  int err1 = MPI_Info_set(info, "nc_header_align_size", "1048576");
+  int err2 = MPI_Info_set(info, "nc_num_aggrs_per_node", "4");
+  if (err1 != MPI_SUCCESS || err2 != MPI_SUCCESS) {
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: setting mpi_info for pNetCDF failed for %s.",
+             canon_path);
+    ex_err(__func__, errmsg, status);
+    free(canon_path);
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+#endif
   /* There is an issue on some versions of mpi that limit the length of the path to <250 characters
    * Check for that here and use `path` if `canon_path` is >=250 characters...
    */
+
   if (strlen(canon_path) >= 250) {
     status = nc_create_par(path, nc_mode, comm, info, &exoid);
   }
   else {
     status = nc_create_par(canon_path, nc_mode, comm, info, &exoid);
   }
-  if (status != NC_NOERR) {
+
+#if NC_HAS_PNETCDF
+  if (i_created_info) {
+    MPI_Info_free(&info);
+  }
+#endif
+
+  if (status != EX_NOERR) {
     if (my_mode & EX_NETCDF4) {
 #if NC_HAS_PARALLEL4
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s.", canon_path);

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_MATRIX_DECL_HPP
 #define SHYLUBASKER_MATRIX_DECL_HPP
 
@@ -9,13 +18,7 @@
 #include <limits>
 #include <string>
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
-
-using std::string;
 
 namespace BaskerNS
 {
@@ -29,12 +32,12 @@ namespace BaskerNS
     BASKER_INLINE
     BaskerMatrix();
     BASKER_INLINE
-    BaskerMatrix(string _label);
+    BaskerMatrix(std::string _label);
     BASKER_INLINE
-    BaskerMatrix(Int _m, Int _n, Int _nnz, 
+    BaskerMatrix(Int _m, Int _n, Int _nnz,
                  Int *col_ptr, Int *row_idx, Entry *val);
     BASKER_INLINE
-    BaskerMatrix(string _label, Int _m, Int _n, Int _nnz, 
+    BaskerMatrix(std::string _label, Int _m, Int _n, Int _nnz,
                  Int *col_ptr, Int *row_idx, Entry *val);
     BASKER_INLINE
     ~BaskerMatrix();
@@ -46,14 +49,14 @@ namespace BaskerNS
 
     //init_matrix (want to change these to malloc_matrix)
     BASKER_INLINE
-    void init_matrix(string _label, Int _m, Int _n, Int _nnz);
+    void init_matrix(std::string _label, Int _m, Int _n, Int _nnz);
 
     BASKER_INLINE
-    void init_matrix(string _label, Int _m, Int _n, Int _nnz,
-                    Int *_col_ptr, Int *_row_idx, Entry *_val);
+    void init_matrix(std::string _label, Int _m, Int _n, Int _nnz,
+                     Int *_col_ptr, Int *_row_idx, Entry *_val);
     BASKER_INLINE
-    void init_matrix(string _label, Int _sr, Int _m, 
-                    Int _sc, Int _n, Int _nnz);
+    void init_matrix(std::string _label, Int _sr, Int _m,
+                     Int _sc, Int _n, Int _nnz);
 
     //finalize, used to delete any array structure that where created
     BASKER_INLINE
@@ -87,7 +90,7 @@ namespace BaskerNS
     int fill();
 
     BASKER_INLINE
-    void init_inc_lvl();
+    void init_ptr();
 
 
     //****Deprecated*******
@@ -120,12 +123,12 @@ namespace BaskerNS
     void print();
 
     BASKER_INLINE
-    void print_matrix(const char *filename);
+    void print_matrix(const char *filename, const int base = 0);
 
     //Note: These need to be reordered to make better use of 
     //Class size.
 
-    string label;
+    std::string label;
     BASKER_BOOL v_fill;
 
     Int srow, scol; //start col (wrt global matrix, if a block)
@@ -134,6 +137,7 @@ namespace BaskerNS
     Int mnnz; //malloc nnz
     
     INT_1DARRAY   col_ptr;
+    INT_1DARRAY   dig_ptr;
     INT_1DARRAY   col_idx; // NOTE: auxiliary for find_2D_convert
     INT_1DARRAY   row_idx;
     ENTRY_1DARRAY val;
@@ -144,13 +148,6 @@ namespace BaskerNS
     //***Deprecated***
     BOOL_1DARRAY union_bit;
    
-   
-    //#ifdef BASKER_INC_LVL
-    BASKER_BOOL   inc_lvl_flg;
-    INT_1DARRAY   inc_lvl;
-    //#endif
-
-    #ifdef BASKER_2DL
     BASKER_BOOL   w_fill;
     ENTRY_1DARRAY ews;
     INT_1DARRAY   iws;
@@ -159,7 +156,6 @@ namespace BaskerNS
     Int           iws_mult;
     Int           ews_mult;
     Int           p_size;
-    #endif
     
     using Mag = typename Basker_ScalarTraits<Entry>::magnitudeType;
     Entry tpivot;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Core.hpp>
 #include <cstdio>
@@ -50,9 +37,6 @@ int main(int narg, char* args[]) {
   // region."  That is, every team member is active and will execute
   // the body of the lambda.
   int sum = 0;
-// We also need to protect the usage of a lambda against compiling
-// with a backend which doesn't support it (i.e. Cuda 6.5/7.0).
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
   parallel_reduce(
       policy,
       KOKKOS_LAMBDA(const team_member& thread, int& lsum) {
@@ -65,7 +49,7 @@ int main(int narg, char* args[]) {
                        thread.team_size());
       },
       sum);
-#endif
+
   // The result will be 12*team_policy::team_size_max([=]{})
   printf("Result %i\n", sum);
 

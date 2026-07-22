@@ -46,6 +46,7 @@ namespace Amesos2 {
     typedef Tpetra::Map<>::global_ordinal_type                  global_ordinal_t;
     typedef size_t                                                 global_size_t;
     typedef Scalar                                                      scalar_t;
+    typedef scalar_t                                                host_value_t;
 
     typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, ExecutionSpace> kokkos_view_t;
 
@@ -98,7 +99,7 @@ namespace Amesos2 {
     /// Returns the Teuchos::Comm object associated with this multi-vector
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
-      return Tpetra::getDefaultComm(); // serial only for Kokkos adapter right now
+      return Teuchos::rcp(new Teuchos::SerialComm<int>());
     }
 
     /// Get the length of vectors local to the calling node
@@ -250,6 +251,21 @@ namespace Amesos2 {
       deep_copy_or_assign_view(*mv_, kokkos_new_data);
     }
 
+    template<typename KV, typename host_ordinal_type_array>
+    int
+    gather (KV& kokkos_new_view,
+            host_ordinal_type_array &perm_g2l,
+            host_ordinal_type_array &recvCountRows,
+            host_ordinal_type_array &recvDisplRows,
+            EDistribution distribution ) const;
+
+    template<typename KV, typename host_ordinal_type_array>
+    int
+    scatter (KV& kokkos_old_view,
+             host_ordinal_type_array &perm_g2l,
+             host_ordinal_type_array &recvCountRows,
+             host_ordinal_type_array &recvDisplRows,
+             EDistribution distribution ) const;
 
     //! Get a short description of this adapter class
     std::string description () const;

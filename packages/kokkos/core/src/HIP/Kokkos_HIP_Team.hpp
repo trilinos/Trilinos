@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HIP_TEAM_HPP
 #define KOKKOS_HIP_TEAM_HPP
@@ -46,7 +33,7 @@ struct HIPJoinFunctor {
   }
 };
 
-/**\brief  Team member_type passed to TeamPolicy or TeamTask closures.
+/**\brief  Team member_type passed to the TeamPolicy closure.
  *
  *  HIP thread blocks for team closures are dimensioned as:
  *    blockDim.x == number of "vector lanes" per "thread"
@@ -183,10 +170,23 @@ class HIPTeamMember {
     typename Kokkos::Impl::FunctorAnalysis<
         FunctorPatternInterface::REDUCE, TeamPolicy<HIP>, ReducerType,
         typename ReducerType::value_type>::Reducer wrapped_reducer(reducer);
-    hip_intra_block_shuffle_reduction(value, wrapped_reducer, blockDim.y);
+    impl_team_reduce(wrapped_reducer, value);
     reducer.reference() = value;
 #else
     (void)reducer;
+    (void)value;
+#endif
+  }
+
+  template <typename WrappedReducerType>
+  KOKKOS_INLINE_FUNCTION std::enable_if_t<is_reducer<WrappedReducerType>::value>
+  impl_team_reduce(
+      WrappedReducerType const& wrapped_reducer,
+      typename WrappedReducerType::value_type& value) const noexcept {
+#ifdef __HIP_DEVICE_COMPILE__
+    hip_intra_block_shuffle_reduction(value, wrapped_reducer, blockDim.y);
+#else
+    (void)wrapped_reducer;
     (void)value;
 #endif
   }
@@ -262,16 +262,36 @@ class HIPTeamMember {
   vector_reduce(ReducerType const& reducer,
                 typename ReducerType::value_type& value) {
 #ifdef __HIP_DEVICE_COMPILE__
+    using value_type = typename ReducerType::value_type;
+    using wrapped_reducer_type =
+        typename Impl::FunctorAnalysis<Impl::FunctorPatternInterface::REDUCE,
+                                       TeamPolicy<HIP>, ReducerType,
+                                       value_type>::Reducer;
+
+    impl_vector_reduce(wrapped_reducer_type(reducer), value);
+    reducer.reference() = value;
+#else
+    (void)reducer;
+    (void)value;
+#endif
+  }
+
+  template <typename WrappedReducerType>
+  KOKKOS_INLINE_FUNCTION static std::enable_if_t<
+      is_reducer<WrappedReducerType>::value>
+  impl_vector_reduce(WrappedReducerType const& wrapped_reducer,
+                     typename WrappedReducerType::value_type& value) {
+#ifdef __HIP_DEVICE_COMPILE__
     if (blockDim.x == 1) return;
 
     // Intra vector lane shuffle reduction:
-    typename ReducerType::value_type tmp(value);
-    typename ReducerType::value_type tmp2 = tmp;
+    typename WrappedReducerType::value_type tmp(value);
+    typename WrappedReducerType::value_type tmp2 = tmp;
 
     for (int i = blockDim.x; (i >>= 1);) {
       in_place_shfl_down(tmp2, tmp, i, blockDim.x);
       if (static_cast<int>(threadIdx.x) < i) {
-        reducer.join(tmp, tmp2);
+        wrapped_reducer.join(&tmp, &tmp2);
       }
     }
 
@@ -281,10 +301,9 @@ class HIPTeamMember {
     // and thus different threads could have different results.
 
     in_place_shfl(tmp2, tmp, 0, blockDim.x);
-    value               = tmp2;
-    reducer.reference() = tmp2;
+    value = tmp2;
 #else
-    (void)reducer;
+    (void)wrapped_reducer;
     (void)value;
 #endif
   }
@@ -298,7 +317,7 @@ class HIPTeamMember {
                 const size_t scratch_level_1_size, const int arg_league_rank,
                 const int arg_league_size)
       : m_team_reduce(shared),
-        m_team_shared(((char*)shared) + shared_begin, shared_size,
+        m_team_shared(static_cast<char*>(shared) + shared_begin, shared_size,
                       scratch_level_1_ptr, scratch_level_1_size),
         m_team_reduce_size(shared_begin),
         m_league_rank(arg_league_rank),
@@ -330,13 +349,14 @@ struct TeamThreadRangeBoundariesStruct<iType, HIPTeamMember> {
   const iType end;
 
   KOKKOS_INLINE_FUNCTION
-  TeamThreadRangeBoundariesStruct(const HIPTeamMember& thread_, iType count)
-      : member(thread_), start(0), end(count) {}
+  TeamThreadRangeBoundariesStruct(const HIPTeamMember& arg_thread,
+                                  iType arg_count)
+      : member(arg_thread), start(0), end(arg_count) {}
 
   KOKKOS_INLINE_FUNCTION
-  TeamThreadRangeBoundariesStruct(const HIPTeamMember& thread_, iType begin_,
-                                  iType end_)
-      : member(thread_), start(begin_), end(end_) {}
+  TeamThreadRangeBoundariesStruct(const HIPTeamMember& arg_thread,
+                                  iType arg_begin, iType arg_end)
+      : member(arg_thread), start(arg_begin), end(arg_end) {}
 };
 
 template <typename iType>
@@ -347,14 +367,14 @@ struct TeamVectorRangeBoundariesStruct<iType, HIPTeamMember> {
   const iType end;
 
   KOKKOS_INLINE_FUNCTION
-  TeamVectorRangeBoundariesStruct(const HIPTeamMember& thread_,
-                                  const iType& count)
-      : member(thread_), start(0), end(count) {}
+  TeamVectorRangeBoundariesStruct(const HIPTeamMember& arg_thread,
+                                  const iType& arg_count)
+      : member(arg_thread), start(0), end(arg_count) {}
 
   KOKKOS_INLINE_FUNCTION
-  TeamVectorRangeBoundariesStruct(const HIPTeamMember& thread_,
-                                  const iType& begin_, const iType& end_)
-      : member(thread_), start(begin_), end(end_) {}
+  TeamVectorRangeBoundariesStruct(const HIPTeamMember& arg_thread,
+                                  const iType& arg_begin, const iType& arg_end)
+      : member(arg_thread), start(arg_begin), end(arg_end) {}
 };
 
 template <typename iType>
@@ -364,8 +384,8 @@ struct ThreadVectorRangeBoundariesStruct<iType, HIPTeamMember> {
   const index_type end;
 
   KOKKOS_INLINE_FUNCTION
-  ThreadVectorRangeBoundariesStruct(const HIPTeamMember, index_type count)
-      : start(static_cast<index_type>(0)), end(count) {}
+  ThreadVectorRangeBoundariesStruct(const HIPTeamMember, index_type arg_count)
+      : start(static_cast<index_type>(0)), end(arg_count) {}
 
   KOKKOS_INLINE_FUNCTION
   ThreadVectorRangeBoundariesStruct(const HIPTeamMember, index_type arg_begin,
@@ -479,15 +499,26 @@ parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
                     iType, Impl::HIPTeamMember>& loop_boundaries,
                 const Closure& closure, const ReducerType& reducer) {
 #ifdef __HIP_DEVICE_COMPILE__
-  typename ReducerType::value_type value;
-  reducer.init(value);
+  using value_type            = typename ReducerType::value_type;
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::HIPTeamMember::execution_space>, ReducerType,
+      value_type>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+
+  wrapped_reducer_type wrapped_reducer(reducer);
+  value_type value;
+  wrapped_reducer.init(&value);
 
   for (iType i = loop_boundaries.start + threadIdx.y; i < loop_boundaries.end;
        i += blockDim.y) {
     closure(i, value);
   }
 
-  loop_boundaries.member.team_reduce(reducer, value);
+  loop_boundaries.member.impl_team_reduce(wrapped_reducer, value);
+
+  wrapped_reducer.final(&value);
+  reducer.reference() = value;
 #else
   (void)loop_boundaries;
   (void)closure;
@@ -508,24 +539,24 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer<ValueType>::value>
 parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
                     iType, Impl::HIPTeamMember>& loop_boundaries,
                 const Closure& closure, ValueType& result) {
-#ifdef __HIP_DEVICE_COMPILE__
-  ValueType val;
-  Kokkos::Sum<ValueType> reducer(val);
+  KOKKOS_IF_ON_DEVICE(
+      (using functor_analysis_type = typename Impl::FunctorAnalysis<
+           Impl::FunctorPatternInterface::REDUCE,
+           TeamPolicy<typename Impl::HIPTeamMember::execution_space>, Closure,
+           ValueType>;
+       using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+       using value_type           = typename wrapped_reducer_type::value_type;
 
-  reducer.init(reducer.reference());
+       wrapped_reducer_type wrapped_reducer(closure); value_type value;
+       wrapped_reducer.init(&value);
 
-  for (iType i = loop_boundaries.start + threadIdx.y; i < loop_boundaries.end;
-       i += blockDim.y) {
-    closure(i, val);
-  }
+       for (iType i = loop_boundaries.start + threadIdx.y;
+            i < loop_boundaries.end; i += blockDim.y) { closure(i, value); }
 
-  loop_boundaries.member.team_reduce(reducer, val);
-  result = reducer.reference();
-#else
-  (void)loop_boundaries;
-  (void)closure;
-  (void)result;
-#endif
+       loop_boundaries.member.impl_team_reduce(wrapped_reducer, value);
+
+       wrapped_reducer.final(&value); result = value;))
+  KOKKOS_IF_ON_HOST(((void)loop_boundaries; (void)closure; (void)result;))
 }
 
 /** \brief  Inter-thread parallel exclusive prefix sum.
@@ -536,7 +567,7 @@ parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<
  *  less than N) and a scan operation is performed. The last call to closure has
  *  final == true.
  */
-// This is the same code as in CUDA and largely the same as in OpenMPTarget
+// This is the same code as in CUDA.
 template <typename iType, typename FunctorType, typename ValueType>
 KOKKOS_INLINE_FUNCTION void parallel_scan(
     const Impl::TeamThreadRangeBoundariesStruct<iType, Impl::HIPTeamMember>&
@@ -620,16 +651,26 @@ parallel_reduce(const Impl::TeamVectorRangeBoundariesStruct<
                     iType, Impl::HIPTeamMember>& loop_boundaries,
                 const Closure& closure, const ReducerType& reducer) {
 #ifdef __HIP_DEVICE_COMPILE__
-  typename ReducerType::value_type value;
-  reducer.init(value);
+  using value_type            = typename ReducerType::value_type;
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::HIPTeamMember::execution_space>, ReducerType,
+      value_type>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+
+  wrapped_reducer_type wrapped_reducer(reducer);
+  value_type value;
+  wrapped_reducer.init(&value);
 
   for (iType i = loop_boundaries.start + threadIdx.y * blockDim.x + threadIdx.x;
        i < loop_boundaries.end; i += blockDim.y * blockDim.x) {
     closure(i, value);
   }
 
-  loop_boundaries.member.vector_reduce(reducer, value);
-  loop_boundaries.member.team_reduce(reducer, value);
+  loop_boundaries.member.impl_vector_reduce(wrapped_reducer, value);
+  loop_boundaries.member.impl_team_reduce(wrapped_reducer, value);
+  wrapped_reducer.final(&value);
+  reducer.reference() = value;
 #else
   (void)loop_boundaries;
   (void)closure;
@@ -642,25 +683,27 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<!Kokkos::is_reducer<ValueType>::value>
 parallel_reduce(const Impl::TeamVectorRangeBoundariesStruct<
                     iType, Impl::HIPTeamMember>& loop_boundaries,
                 const Closure& closure, ValueType& result) {
-#ifdef __HIP_DEVICE_COMPILE__
-  ValueType val;
-  Kokkos::Sum<ValueType> reducer(val);
+  KOKKOS_IF_ON_DEVICE(
+      (using functor_analysis_type = typename Impl::FunctorAnalysis<
+           Impl::FunctorPatternInterface::REDUCE,
+           TeamPolicy<typename Impl::HIPTeamMember::execution_space>, Closure,
+           ValueType>;
+       using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+       using value_type           = typename wrapped_reducer_type::value_type;
 
-  reducer.init(reducer.reference());
+       wrapped_reducer_type wrapped_reducer(closure); value_type value;
+       wrapped_reducer.init(&value);
 
-  for (iType i = loop_boundaries.start + threadIdx.y * blockDim.x + threadIdx.x;
-       i < loop_boundaries.end; i += blockDim.y * blockDim.x) {
-    closure(i, val);
-  }
+       for (iType i =
+                loop_boundaries.start + threadIdx.y * blockDim.x + threadIdx.x;
+            i < loop_boundaries.end;
+            i += blockDim.y * blockDim.x) { closure(i, value); }
 
-  loop_boundaries.member.vector_reduce(reducer);
-  loop_boundaries.member.team_reduce(reducer);
-  result = reducer.reference();
-#else
-  (void)loop_boundaries;
-  (void)closure;
-  (void)result;
-#endif
+       loop_boundaries.member.impl_vector_reduce(wrapped_reducer, value);
+       loop_boundaries.member.impl_team_reduce(wrapped_reducer, value);
+       wrapped_reducer.final(&value); result = value;))
+
+  KOKKOS_IF_ON_HOST(((void)loop_boundaries; (void)closure; (void)result;))
 }
 
 //----------------------------------------------------------------------------
@@ -706,14 +749,26 @@ parallel_reduce(Impl::ThreadVectorRangeBoundariesStruct<
                     iType, Impl::HIPTeamMember> const& loop_boundaries,
                 Closure const& closure, ReducerType const& reducer) {
 #ifdef __HIP_DEVICE_COMPILE__
-  reducer.init(reducer.reference());
+  using value_type            = typename ReducerType::value_type;
+  using functor_analysis_type = typename Impl::FunctorAnalysis<
+      Impl::FunctorPatternInterface::REDUCE,
+      TeamPolicy<typename Impl::HIPTeamMember::execution_space>, ReducerType,
+      value_type>;
+  using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+
+  wrapped_reducer_type wrapped_reducer(reducer);
+  value_type value;
+  wrapped_reducer.init(&value);
 
   for (iType i = loop_boundaries.start + threadIdx.x; i < loop_boundaries.end;
        i += blockDim.x) {
-    closure(i, reducer.reference());
+    closure(i, value);
   }
 
-  Impl::HIPTeamMember::vector_reduce(reducer);
+  Impl::HIPTeamMember::impl_vector_reduce(wrapped_reducer, value);
+
+  wrapped_reducer.final(&value);
+  reducer.reference() = value;
 #else
   (void)loop_boundaries;
   (void)closure;
@@ -737,20 +792,24 @@ KOKKOS_INLINE_FUNCTION std::enable_if_t<!is_reducer<ValueType>::value>
 parallel_reduce(Impl::ThreadVectorRangeBoundariesStruct<
                     iType, Impl::HIPTeamMember> const& loop_boundaries,
                 Closure const& closure, ValueType& result) {
-#ifdef __HIP_DEVICE_COMPILE__
-  result = ValueType();
+  KOKKOS_IF_ON_DEVICE(
+      (using functor_analysis_type = typename Impl::FunctorAnalysis<
+           Impl::FunctorPatternInterface::REDUCE,
+           TeamPolicy<typename Impl::HIPTeamMember::execution_space>, Closure,
+           ValueType>;
+       using wrapped_reducer_type = typename functor_analysis_type::Reducer;
+       using value_type           = typename wrapped_reducer_type::value_type;
 
-  for (iType i = loop_boundaries.start + threadIdx.x; i < loop_boundaries.end;
-       i += blockDim.x) {
-    closure(i, result);
-  }
+       wrapped_reducer_type wrapped_reducer(closure); value_type value;
+       wrapped_reducer.init(&value);
 
-  Impl::HIPTeamMember::vector_reduce(Kokkos::Sum<ValueType>(result));
-#else
-  (void)loop_boundaries;
-  (void)closure;
-  (void)result;
-#endif
+       for (iType i = loop_boundaries.start + threadIdx.x;
+            i < loop_boundaries.end; i += blockDim.x) { closure(i, value); }
+
+       Impl::HIPTeamMember::impl_vector_reduce(wrapped_reducer, value);
+       wrapped_reducer.final(&value); result = value;))
+
+  KOKKOS_IF_ON_HOST(((void)loop_boundaries; (void)closure; (void)result;))
 }
 
 //----------------------------------------------------------------------------

@@ -1,31 +1,10 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Denis Ridzal  (dridzal@sandia.gov),
-//                    Kara Peterson (kjpeter@sandia.gov).
-//
-// ************************************************************************
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   example_Maxwell.cpp
@@ -686,10 +665,6 @@ int body(int argc, char *argv[]) {
   im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
-#ifdef HAVE_XPETRA_EPETRA
-  MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numElemsGlobal);
-#endif
-
   long long * block_ids = new long long [numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
@@ -1112,11 +1087,6 @@ int body(int argc, char *argv[]) {
       }
     }
   }
-
-#ifdef HAVE_XPETRA_EPETRA
-  // Statistics: Phase 1
-  MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
-#endif
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
@@ -1670,11 +1640,6 @@ int body(int argc, char *argv[]) {
     if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
                             << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-#ifdef HAVE_XPETRA_EPETRA
-    // Statistics: Phase 2a
-    MLStatistics.Phase2a(worksetJacobDet,cubWeights);
-#endif
-
     /**********************************************************************************/
     /*                          Compute HCURL Mass Matrix                             */
     /**********************************************************************************/
@@ -1856,9 +1821,9 @@ int body(int argc, char *argv[]) {
           for (int nF = 0; nF < numFieldsC; nF++){
             for(int nPt = 0; nPt < numFacePoints; nPt++){
               bcFieldDotNormal(0,nF,nPt)=0.0;
-              for (int dim = 0; dim < spaceDim; dim++){
-                bcFieldDotNormal(0,nF,nPt) += bcCValsTransformed(0,nF,nPt,dim)
-                  * faceNormal(0,nPt,dim) * paramFaceWeights(nPt);
+              for (int dim2 = 0; dim2 < spaceDim; dim2++){
+                bcFieldDotNormal(0,nF,nPt) += bcCValsTransformed(0,nF,nPt,dim2)
+                  * faceNormal(0,nPt,dim2) * paramFaceWeights(nPt);
               } //dim
             } //nPt
           } //nF
@@ -1967,10 +1932,6 @@ int body(int argc, char *argv[]) {
   MassMatrixC1.GlobalAssemble(); MassMatrixC1.FillComplete();
   rhsVector.GlobalAssemble();
 
-#ifdef HAVE_XPETRA_EPETRA
-  MLStatistics.Phase2b(Teuchos::rcp(&MassMatrixG.Graph(),false),Teuchos::rcp(&nCoord,false));
-#endif
-
   if(MyPID==0) {std::cout << "Global assembly                             "
                           << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
@@ -2073,15 +2034,6 @@ int body(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
-#ifdef HAVE_XPETRA_EPETRA
-  MLStatistics.Phase3();
-  Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
-  if(MyPID==0) {
-    std::cout<<"*** Problem Statistics ***"<<std::endl;
-    std::cout<<problemStatistics<<std::endl;
-  }
-#endif
-
   double TotalErrorResidual=0, TotalErrorExactSol=0;
 
   // Parameter list for ML
@@ -2156,26 +2108,6 @@ int body(int argc, char *argv[]) {
   }
 
   
-#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_XPETRA_EPETRA)
-  Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
-  Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
- 
-  std::vector<std::string> AvatarSublists{"Avatar-MueLu-Fine","Avatar-MueLu-11","Avatar-MueLu-22"};
-  std::vector<Teuchos::ParameterList *> MueLuSublists{&MueLuList,&MueList11,&MueList22};
-  for (int i=0; i<(int)AvatarSublists.size(); i++) {
-    if (inputList.isSublist(AvatarSublists[i])) {
-      Teuchos::ParameterList problemFeatures = problemStatistics;
-      Teuchos::ParameterList avatarParams = inputList.sublist(AvatarSublists[i]);
-      std::cout<<"*** Avatar["<<AvatarSublists[i]<<"] Parameters ***\n"<<avatarParams<<std::endl;
-      
-      MueLu::AvatarInterface avatar(comm,avatarParams);
-      std::cout<<"*** Avatar Setup ***"<<std::endl;
-      avatar.Setup();
-      avatar.SetMueLuParameters(problemFeatures,*MueLuSublists[i], true);
-    }
-  }
-#endif
-
   Epetra_FEVector xh(rhsVector);
 
   MassMatrixC.SetLabel("Ms");
@@ -2364,8 +2296,8 @@ int body(int argc, char *argv[]) {
       double y = physCubPointsE(0,nPt,1);
       double z = physCubPointsE(0,nPt,2);
       evalu(uExact1, uExact2, uExact3, x, y, z);
-      double mu = 1.0; // use mu=1 to get the curl without material parameter
-      evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z, mu);
+      double mu2 = 1.0; // use mu=1 to get the curl without material parameter
+      evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z, mu2);
 
       // calculate approximate solution and curls
       double uApprox1 = 0.0;

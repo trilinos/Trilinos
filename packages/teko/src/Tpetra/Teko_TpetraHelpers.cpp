@@ -1,65 +1,14 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teko_TpetraHelpers.hpp"
 #include "Teko_ConfigDefs.hpp"
-
-#ifdef TEKO_HAVE_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-
-// Epetra includes
-#include "Epetra_Vector.h"
-
-// EpetraExt includes
-#include "EpetraExt_ProductOperator.h"
-#include "EpetraExt_MatrixMatrix.h"
-
-#include "Teko_EpetraOperatorWrapper.hpp"
-#endif
 
 // Thyra Includes
 #include "Thyra_BlockedLinearOpBase.hpp"
@@ -163,7 +112,7 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::TpetraMultiVector<ST, LO, GO
   // Build the MultiVector
   spmdMV->initialize(range, domain, tpetraMV);
 
-  // make sure the Epetra_MultiVector doesn't disappear prematurely
+  // make sure the Tpetra::MultiVector doesn't disappear prematurely
   Teuchos::set_extra_data<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >(
       tpetraMV, "Tpetra::MultiVector", Teuchos::outArg(spmdMV));
 }
@@ -235,12 +184,12 @@ void zeroMultiVectorRowIndices(Tpetra::MultiVector<ST, LO, GO, NT>& mv,
 
 /** \brief Constructor for a ZeroedOperator.
  *
- * Build a ZeroedOperator based on a particular Epetra_Operator and
+ * Build a ZeroedOperator based on a particular Tpetra::Operator and
  * a set of indices to zero out. These indices must be local to this
  * processor as specified by RowMap().
  *
  * \param[in] zeroIndices Set of indices to zero out (must be local).
- * \param[in] op           Underlying epetra operator to use.
+ * \param[in] op           Underlying Tpetra operator to use.
  */
 ZeroedOperator::ZeroedOperator(const std::vector<GO>& zeroIndices,
                                const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> >& op)
@@ -251,9 +200,9 @@ void ZeroedOperator::apply(const Tpetra::MultiVector<ST, LO, GO, NT>& X,
                            Tpetra::MultiVector<ST, LO, GO, NT>& Y, Teuchos::ETransp mode, ST alpha,
                            ST beta) const {
   /*
-     Epetra_MultiVector temp(X);
+     Tpetra::MultiVector temp(X);
      zeroMultiVectorRowIndices(temp,zeroIndices_);
-     int result = epetraOp_->Apply(temp,Y);
+     int result = TpetraOp_->Apply(temp,Y);
   */
 
   tpetraOp_->apply(X, Y, mode, alpha, beta);
@@ -309,89 +258,6 @@ RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > getTpetraCrsMatrix(const LinearOp&
 
   return Teuchos::null;
 }
-
-#ifdef TEKO_HAVE_EPETRA
-RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > epetraCrsMatrixToTpetra(
-    const RCP<const Epetra_CrsMatrix> A_e, const RCP<const Teuchos::Comm<int> > comm) {
-  int* ptr;
-  int* ind;
-  double* val;
-
-  int info = A_e->ExtractCrsDataPointers(ptr, ind, val);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Could not extract data from Epetra_CrsMatrix");
-  const LO numRows = A_e->Graph().NumMyRows();
-  const LO nnz     = A_e->Graph().NumMyEntries();
-
-  Teuchos::ArrayRCP<size_t> ptr2(numRows + 1);
-  Teuchos::ArrayRCP<int> ind2(nnz);
-  Teuchos::ArrayRCP<double> val2(nnz);
-
-  std::copy(ptr, ptr + numRows + 1, ptr2.begin());
-  std::copy(ind, ind + nnz, ind2.begin());
-  std::copy(val, val + nnz, val2.begin());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > rowMap = epetraMapToTpetra(A_e->RowMap(), comm);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A_t =
-      Tpetra::createCrsMatrix<ST, LO, GO, NT>(rowMap, A_e->GlobalMaxNumEntries());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > domainMap = epetraMapToTpetra(A_e->OperatorDomainMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > rangeMap  = epetraMapToTpetra(A_e->OperatorRangeMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > colMap    = epetraMapToTpetra(A_e->ColMap(), comm);
-
-  A_t->replaceColMap(colMap);
-  A_t->setAllValues(ptr2, ind2, val2);
-  A_t->fillComplete(domainMap, rangeMap);
-  return A_t;
-}
-
-RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > nonConstEpetraCrsMatrixToTpetra(
-    const RCP<Epetra_CrsMatrix> A_e, const RCP<const Teuchos::Comm<int> > comm) {
-  int* ptr;
-  int* ind;
-  double* val;
-
-  int info = A_e->ExtractCrsDataPointers(ptr, ind, val);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Could not extract data from Epetra_CrsMatrix");
-  const LO numRows = A_e->Graph().NumMyRows();
-  const LO nnz     = A_e->Graph().NumMyEntries();
-
-  Teuchos::ArrayRCP<size_t> ptr2(numRows + 1);
-  Teuchos::ArrayRCP<int> ind2(nnz);
-  Teuchos::ArrayRCP<double> val2(nnz);
-
-  std::copy(ptr, ptr + numRows + 1, ptr2.begin());
-  std::copy(ind, ind + nnz, ind2.begin());
-  std::copy(val, val + nnz, val2.begin());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > rowMap = epetraMapToTpetra(A_e->RowMap(), comm);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A_t =
-      Tpetra::createCrsMatrix<ST, LO, GO, NT>(rowMap, A_e->GlobalMaxNumEntries());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > domainMap = epetraMapToTpetra(A_e->OperatorDomainMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > rangeMap  = epetraMapToTpetra(A_e->OperatorRangeMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > colMap    = epetraMapToTpetra(A_e->ColMap(), comm);
-
-  A_t->replaceColMap(colMap);
-  A_t->setAllValues(ptr2, ind2, val2);
-  A_t->fillComplete(domainMap, rangeMap);
-  return A_t;
-}
-
-RCP<const Tpetra::Map<LO, GO, NT> > epetraMapToTpetra(const Epetra_Map eMap,
-                                                      const RCP<const Teuchos::Comm<int> > comm) {
-  std::vector<int> intGIDs(eMap.NumMyElements());
-  eMap.MyGlobalElements(&intGIDs[0]);
-
-  std::vector<GO> myGIDs(eMap.NumMyElements());
-  for (int k = 0; k < eMap.NumMyElements(); k++) myGIDs[k] = (GO)intGIDs[k];
-
-  return rcp(
-      new const Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-                                        Teuchos::ArrayView<GO>(myGIDs), 0, comm));
-}
-#endif  // TEKO_HAVE_EPETRA
 
 }  // end namespace TpetraHelpers
 }  // end namespace Teko

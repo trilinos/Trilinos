@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,13 +12,16 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
-#include <cassert>
-#include <fmt/ostream.h>
-#include <iosfwd>
-#include <numeric>
-#include <stdint.h>
-
 #include "Ioss_Utils.h"
+
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <numeric>
+#include <vector>
+
 #include "robin_set.h"
 
 // Options for generating hash function key...
@@ -93,8 +96,8 @@ namespace {
         std::array<size_t, 4> conn = {{0, 0, 0, 0}};
         for (int j = 0; j < face_node_count[face]; j++) {
           size_t fnode = offset + face_conn[face][j];
-          size_t lnode = connectivity[fnode]; // local since "connectivity_raw"
-          conn[j]      = local_ids ? lnode : ids[lnode - 1];      // Convert to global
+          size_t lnode = connectivity[fnode];                // local since "connectivity_raw"
+          conn[j]      = local_ids ? lnode : ids[lnode - 1]; // Convert to global
           id += hash_ids[lnode - 1];
         }
         create_face(faces, id, conn, elem_id, face);
@@ -107,10 +110,6 @@ namespace {
                               IOSS_MAYBE_UNUSED Ioss::FaceUnorderedSet &faces,
                               IOSS_MAYBE_UNUSED const std::vector<size_t> &hash_ids, INT /*dummy*/)
   {
-    IOSS_PAR_UNUSED(region);
-    IOSS_PAR_UNUSED(faces);
-    IOSS_PAR_UNUSED(hash_ids);
-
 #ifdef SEACAS_HAVE_MPI
     size_t proc_count = region.get_database()->util().parallel_size();
 
@@ -160,7 +159,7 @@ namespace {
       std::vector<INT> potential_count(proc_count);
       std::vector<int> shared_nodes(proc_count);
       for (auto &face : faces) {
-        if (face.elementCount_ == 1) {
+        if (face.element_count() == 1) {
           // On 'boundary' -- try to determine whether on processor or exterior
           // boundary
           int face_node_count = 0;
@@ -193,7 +192,7 @@ namespace {
       std::vector<int64_t> potential_faces(6 * potential);
 
       for (auto &face : faces) {
-        if (face.elementCount_ == 1) {
+        if (face.element_count() == 1) {
           // On 'boundary' -- try to determine whether on processor or exterior
           // boundary
           int face_node_count = 0;
@@ -219,7 +218,7 @@ namespace {
               potential_faces[6 * offset + 3] = face.connectivity_[2];
               potential_faces[6 * offset + 4] = face.connectivity_[3];
               potential_faces[6 * offset + 5] = face.element[0];
-              assert(face.elementCount_ == 1);
+              assert(face.element_count() == 1);
               potential_offset[i]++;
             }
             shared_nodes[i] = 0; // Reset for next trip through face.connectivity_ loop
@@ -298,15 +297,12 @@ namespace Ioss {
 
   void Face::face_element_error(size_t element_id) const
   {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "ERROR: Face {} has more than two elements using it.\n"
-               "       The element/local_face are: {}:{}, {}:{}, and {}:{}.\n"
-               "       The face connectivity is {} {} {} {}.\n",
-               hashId_, element[0] / 10, element[0] % 10, element[1] / 10, element[1] % 10,
-               element_id / 10, element_id % 10, connectivity_[0], connectivity_[1],
-               connectivity_[2], connectivity_[3]);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format("ERROR: Face {} has more than two elements using it.\n"
+                           "       The element/local_face are: {}:{}, {}:{}, and {}:{}.\n"
+                           "       The face connectivity is {} {} {} {}.\n",
+                           hashId_, element[0] / 10, element[0] % 10, element[1] / 10,
+                           element[1] % 10, element_id / 10, element_id % 10, connectivity_[0],
+                           connectivity_[1], connectivity_[2], connectivity_[3]));
   }
 
   size_t FaceGenerator::id_hash(size_t global_id)
@@ -326,13 +322,18 @@ namespace Ioss {
 
   FaceUnorderedSet &FaceGenerator::faces(const Ioss::ElementBlock *block)
   {
-    auto name = block->name();
+    const auto &name = block->name();
     return faces_[name];
+  }
+
+  void FaceGenerator::progress(const std::string &output) const
+  {
+    region_.get_database()->progress(output);
   }
 
   void FaceGenerator::clear(const Ioss::ElementBlock *block)
   {
-    auto name = block->name();
+    const auto &name = block->name();
     faces_[name].clear();
   }
 
@@ -342,6 +343,7 @@ namespace Ioss {
   template <typename INT>
   void FaceGenerator::generate_faces(INT /*dummy*/, bool block_by_block, bool local_ids)
   {
+    progress(__func__);
     if (block_by_block) {
       const auto &ebs = region_.get_element_blocks();
       generate_block_faces(ebs, INT(0), local_ids);
@@ -353,6 +355,7 @@ namespace Ioss {
 
   template <typename INT> void FaceGenerator::hash_node_ids(const std::vector<INT> &node_ids)
   {
+    progress(__func__);
     hashIds_.reserve(node_ids.size());
     for (auto &id : node_ids) {
       hashIds_.push_back(id_hash(id));
@@ -376,11 +379,12 @@ namespace Ioss {
   void FaceGenerator::generate_block_faces(const Ioss::ElementBlockContainer &ebs, INT /*dummy*/,
                                            bool                               local_ids)
   {
+    progress(__func__);
     // Convert ids into hashed-ids
     Ioss::NodeBlock *nb = region_.get_node_blocks()[0];
 
 #if DO_TIMING
-      auto starth = std::chrono::steady_clock::now();
+    auto starth = std::chrono::steady_clock::now();
 #endif
     std::vector<INT> ids;
     if (local_ids) {
@@ -391,10 +395,11 @@ namespace Ioss {
       hash_node_ids(ids);
     }
 #if DO_TIMING
-      auto endh = std::chrono::steady_clock::now();
+    auto endh = std::chrono::steady_clock::now();
 #endif
 
     for (const auto &eb : ebs) {
+      progress("\tgenerate_block_faces: " + eb->name());
       const std::string &name    = eb->name();
       size_t             numel   = eb->entity_count();
       size_t             reserve = 2.0 * numel;
@@ -402,6 +407,7 @@ namespace Ioss {
       faces_[name].max_load_factor(0.9);
       internal_generate_faces(eb, faces_[name], ids, hashIds_, local_ids, (INT)0);
     }
+    progress("\tgenerate_block_faces: end of blocks");
 
 #if DO_TIMING
     auto endf = std::chrono::steady_clock::now();
@@ -437,11 +443,13 @@ namespace Ioss {
     fmt::print("Total time:          \t{:.6} ms\n\n",
                std::chrono::duration<double, std::milli>(endp - starth).count());
 #endif
+    progress("\tgenerate_block_faces: end of routine");
     hashIds_.clear();
   }
 
   template <typename INT> void FaceGenerator::generate_model_faces(INT /*dummy*/, bool local_ids)
   {
+    progress(__func__);
     // Convert ids into hashed-ids
     Ioss::NodeBlock *nb = region_.get_node_blocks()[0];
 

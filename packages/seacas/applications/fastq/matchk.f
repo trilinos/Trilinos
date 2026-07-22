@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -7,7 +7,7 @@ C    See packages/seacas/LICENSE for details
       LOGICAL FUNCTION MATCHK (MXND, I1, I2, J1, J2, LXN)
 C***********************************************************************
 
-C  FUNCTION MATCHK = CHECKS THE CURRENT COLAPSED LINES TO SEE IF THEY
+C  FUNCTION MATCHK = CHECKS THE CURRENT COLLAPSED LINES TO SEE IF THEY
 C                    CAN BE JOINED WITHOUT AFFECTING THE BOUNDARY.
 C                    I1 & I2 MAY END UP SWITCHED WITH J1 & J2.
 

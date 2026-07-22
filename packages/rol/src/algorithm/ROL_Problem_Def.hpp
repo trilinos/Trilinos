@@ -1,50 +1,24 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_PROBLEM_DEF_HPP
 #define ROL_PROBLEM_DEF_HPP
 
 #include <iostream>
+
+#include "ROL_AugmentedLagrangianObjective2.hpp"
+#include "ROL_AugmentedLagrangianPenalty.hpp"
+#include "ROL_IdentityOperator.hpp"
+#include "ROL_PartitionedVector.hpp"
+#include "ROL_PolyhedralProjection.hpp"
+#include "ROL_Projection_Partitioned.hpp"
+#include "ROL_ZeroProjection.hpp"
 
 namespace ROL {
 
@@ -55,11 +29,13 @@ Problem<Real>::Problem( const Ptr<Objective<Real>> &obj,
   : isFinalized_(false), hasBounds_(false),
     hasEquality_(false), hasInequality_(false),
     hasLinearEquality_(false), hasLinearInequality_(false),
+    hasProximableObjective_(false),
     cnt_econ_(0), cnt_icon_(0), cnt_linear_econ_(0), cnt_linear_icon_(0),
-    obj_(nullPtr), xprim_(nullPtr), xdual_(nullPtr), bnd_(nullPtr),
+    obj_(nullPtr), nobj_(nullPtr), xprim_(nullPtr), xdual_(nullPtr), bnd_(nullPtr),
     con_(nullPtr), mul_(nullPtr), res_(nullPtr), proj_(nullPtr),
     problemType_(TYPE_U) {
   INPUT_obj_   = obj;
+  INPUT_nobj_  = nullPtr;
   INPUT_xprim_ = x;
   INPUT_bnd_   = nullPtr;
   INPUT_con_.clear();
@@ -97,8 +73,14 @@ void Problem<Real>::addConstraint( std::string                  name,
 
   if (reset) INPUT_con_.clear();
 
-  auto it = INPUT_con_.find(name);
-  ROL_TEST_FOR_EXCEPTION(it != INPUT_con_.end(),std::invalid_argument,
+  bool isNameUsed = false;
+  for (const auto& map : {INPUT_con_,INPUT_linear_con_,INPUT_proj_}) {
+    if (map.count(name)) {
+      isNameUsed = true;
+      break;
+    }
+  }
+  ROL_TEST_FOR_EXCEPTION(isNameUsed,std::invalid_argument,
     ">>> ROL::Problem: Constraint names must be distinct!");
 
   INPUT_con_.insert({name,ConstraintData<Real>(econ,emul,eres)});
@@ -118,8 +100,14 @@ void Problem<Real>::addConstraint( std::string                       name,
 
   if (reset) INPUT_con_.clear();
 
-  auto it = INPUT_con_.find(name);
-  ROL_TEST_FOR_EXCEPTION(it != INPUT_con_.end(),std::invalid_argument,
+  bool isNameUsed = false;
+  for (const auto& map : {INPUT_con_,INPUT_linear_con_,INPUT_proj_}) {
+    if (map.count(name)) {
+      isNameUsed = true;
+      break;
+    }
+  }
+  ROL_TEST_FOR_EXCEPTION(isNameUsed,std::invalid_argument,
     ">>> ROL::Problem: Constraint names must be distinct!");
 
   INPUT_con_.insert({name,ConstraintData<Real>(icon,imul,ires,ibnd)});
@@ -128,18 +116,51 @@ void Problem<Real>::addConstraint( std::string                       name,
 }
 
 template<typename Real>
+void Problem<Real>::addConstraint( std::string                  name,
+                                   const Ptr<Constraint<Real>> &pcon,
+                                   const Ptr<Vector<Real>>     &pmul,
+                                   const Ptr<Projection<Real>> &proj,
+                                   const Ptr<Vector<Real>>     &pres,
+                                   bool                         reset) {
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::Problem: Cannot add constraint after problem is finalized!");
+
+  if (reset) INPUT_proj_.clear();
+
+  bool isNameUsed = false;
+  for (const auto& map : {INPUT_con_,INPUT_linear_con_,INPUT_proj_}) {
+    if (map.count(name)) {
+      isNameUsed = true;
+      break;
+    }
+  }
+  ROL_TEST_FOR_EXCEPTION(isNameUsed,std::invalid_argument,
+    ">>> ROL::Problem: Constraint names must be distinct!");
+
+  if (proj == nullPtr) {
+    INPUT_con_.insert({name,ConstraintData<Real>(pcon,pmul,pres)});
+    hasEquality_ = true;
+    cnt_econ_++;
+  }
+  else 
+    INPUT_proj_.insert({name,ConstraintData<Real>(pcon,pmul,pres,nullPtr,proj)});
+}
+
+template<typename Real>
 void Problem<Real>::removeConstraint(std::string name) {
   ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
     ">>> ROL::Problem: Cannot remove constraint after problem is finalized!");
 
   auto it = INPUT_con_.find(name);
-  if (it!=INPUT_con_.end()) {
+  if (it != INPUT_con_.end()) {
     if (it->second.bounds==nullPtr) cnt_econ_--;
     else                            cnt_icon_--;
     INPUT_con_.erase(it);
   }
   if (cnt_econ_==0) hasEquality_   = false;
   if (cnt_icon_==0) hasInequality_ = false;
+  it = INPUT_proj_.find(name);
+  if (it != INPUT_proj_.end()) INPUT_proj_.erase(it);
 }
 
 template<typename Real>
@@ -153,9 +174,15 @@ void Problem<Real>::addLinearConstraint( std::string                  name,
 
   if (reset) INPUT_linear_con_.clear();
 
-  auto it = INPUT_linear_con_.find(name);
-  ROL_TEST_FOR_EXCEPTION(it != INPUT_linear_con_.end(),std::invalid_argument,
-    ">>> ROL::Problem: Linear constraint names must be distinct!");
+  bool isNameUsed = false;
+  for (const auto& map : {INPUT_con_,INPUT_linear_con_,INPUT_proj_}) {
+    if (map.count(name)) {
+      isNameUsed = true;
+      break;
+    }
+  }
+  ROL_TEST_FOR_EXCEPTION(isNameUsed,std::invalid_argument,
+    ">>> ROL::Problem: Constraint names must be distinct!");
 
   INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_econ,linear_emul,linear_eres)});
   hasLinearEquality_ = true;
@@ -174,9 +201,15 @@ void Problem<Real>::addLinearConstraint( std::string                       name,
 
   if (reset) INPUT_linear_con_.clear();
 
-  auto it = INPUT_linear_con_.find(name);
-  ROL_TEST_FOR_EXCEPTION(it != INPUT_linear_con_.end(),std::invalid_argument,
-    ">>> ROL::Problem: Linear constraint names must be distinct!");
+  bool isNameUsed = false;
+  for (const auto& map : {INPUT_con_,INPUT_linear_con_,INPUT_proj_}) {
+    if (map.count(name)) {
+      isNameUsed = true;
+      break;
+    }
+  }
+  ROL_TEST_FOR_EXCEPTION(isNameUsed,std::invalid_argument,
+    ">>> ROL::Problem: Constraint names must be distinct!");
 
   INPUT_linear_con_.insert({name,ConstraintData<Real>(linear_icon,linear_imul,linear_ires,linear_ibnd)});
   hasLinearInequality_ = true;
@@ -207,226 +240,350 @@ void Problem<Real>::setProjectionAlgorithm(ParameterList &list) {
 }
 
 template<typename Real>
-void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
+void Problem<Real>::addProximableObjective(const Ptr<Objective<Real>> &nobj) {
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::Problem: Cannot add regularizer after problem is finalized!");
+
+  INPUT_nobj_ = nobj;
+  hasProximableObjective_ = true;
+}
+
+template<typename Real>
+void Problem<Real>::removeProximableObjective() {
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::Problem: Cannot remove regularizer after problem is finalized!");
+
+  INPUT_nobj_ = nullPtr;
+  hasProximableObjective_ = false;
+}
+
+template<typename Real>
+void Problem<Real>::addConstraintGroup(const std::string              &group_name,
+                                       const std::vector<std::string> &constraint_names) {
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::Problem: Cannot add constraint group after problem is finalized!");
+
+  bool isNameUsed;
+  for (const auto& name : constraint_names) {
+    ROL_TEST_FOR_EXCEPTION(grouped_constraint_names_.count(name),std::invalid_argument,
+      ">>> ROL::Problem: Cannot include the same constraint in two augmented Lagrangian groups!");
+    isNameUsed = false;
+    for (const auto& map : {INPUT_con_,INPUT_linear_con_,INPUT_proj_}) {
+      if (map.count(name)) {
+        isNameUsed = true;
+        break;
+      }
+    }
+    ROL_TEST_FOR_EXCEPTION(!isNameUsed,std::invalid_argument,
+      ">>> ROL::Problem: Constraint names must be distinct!");
+  }
+  for (const auto& name : constraint_names) {
+    grouped_constraint_names_.insert(name);
+    groups_[group_name].push_back(name);
+  }
+}
+
+template<typename Real>
+void Problem<Real>::removeConstraintGroup(const std::string &group_name) {
+  ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
+    ">>> ROL::Problem: Cannot remove augmented Lagrangian group after problem is finalized!");
+  auto it = groups_.find(group_name);
+  ROL_TEST_FOR_EXCEPTION(it==groups_.end(),std::invalid_argument,
+    ">>> ROL::Problem::removeConstraintGroup: Group name does not exist!");
+  const std::vector<std::string>& constraint_names = it->second;
+  for (const auto& name : constraint_names)
+      grouped_constraint_names_.erase(name);
+  groups_.erase(it);
+}
+
+
+template<typename Real>
+void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream, bool useSlackVariables) {
   if (!isFinalized_) {
-    std::unordered_map<std::string,ConstraintData<Real>> con, lcon, icon;
-    bool hasEquality         = hasEquality_;
-    bool hasLinearEquality   = hasLinearEquality_;
-    bool hasInequality       = hasInequality_;
-    bool hasLinearInequality = hasLinearInequality_;
-    con.insert(INPUT_con_.begin(),INPUT_con_.end());
-    if (lumpConstraints) {
-      con.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
-      hasEquality = (hasEquality || hasLinearEquality);
-      hasInequality = (hasInequality || hasLinearInequality);
-      hasLinearEquality = false;
-      hasLinearInequality = false;
-    }
-    else {
-      lcon.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
-    }
-    // Transform optimization problem
-    //std::cout << hasBounds_ << "  " << hasEquality << "  " << hasInequality << "  " << hasLinearEquality << "  " << hasLinearInequality << std::endl;
-    if (!hasLinearEquality && !hasLinearInequality) {
-      proj_ = nullPtr;
-      if (!hasEquality && !hasInequality && !hasBounds_) {
-        problemType_ = TYPE_U;
-        obj_         = INPUT_obj_;
-        xprim_       = INPUT_xprim_;
-        xdual_       = INPUT_xdual_;
-        bnd_         = nullPtr;
-        con_         = nullPtr;
-        mul_         = nullPtr;
-        res_         = nullPtr;
-      }
-      else if (!hasEquality && !hasInequality && hasBounds_) {
-        problemType_ = TYPE_B;
-        obj_         = INPUT_obj_;
-        xprim_       = INPUT_xprim_;
-        xdual_       = INPUT_xdual_;
-        bnd_         = INPUT_bnd_;
-        con_         = nullPtr;
-        mul_         = nullPtr;
-        res_         = nullPtr;
-      }
-      else if (hasEquality && !hasInequality && !hasBounds_) {
-        ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_);
-        problemType_ = TYPE_E;
-        obj_         = INPUT_obj_;
-        xprim_       = INPUT_xprim_;
-        xdual_       = INPUT_xdual_;
-        bnd_         = nullPtr;
-        con_         = cm.getConstraint();
-        mul_         = cm.getMultiplier();
-        res_         = cm.getResidual();
+    // ========================================================================
+    // useSlackVariables = true -> the usual finalize
+    // ========================================================================
+    if (useSlackVariables) {
+      std::unordered_map<std::string,ConstraintData<Real>> con, lcon, icon;
+      bool hasEquality            = hasEquality_;
+      bool hasLinearEquality      = hasLinearEquality_;
+      bool hasInequality          = hasInequality_;
+      bool hasLinearInequality    = hasLinearInequality_;
+      bool hasProximableObjective = hasProximableObjective_;
+      con.insert(INPUT_con_.begin(),INPUT_con_.end());
+      if (lumpConstraints) {
+        con.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
+        hasEquality = (hasEquality || hasLinearEquality);
+        hasInequality = (hasInequality || hasLinearInequality);
+        hasLinearEquality = false;
+        hasLinearInequality = false;
       }
       else {
-        ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
-        problemType_ = TYPE_EB;
-        obj_         = INPUT_obj_;
-        if (cm.hasInequality()) {
-          obj_      = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
-        }
-        xprim_       = cm.getOptVector();
-        xdual_       = cm.getDualOptVector();
-        bnd_         = cm.getBoundConstraint();
-        con_         = cm.getConstraint();
-        mul_         = cm.getMultiplier();
-        res_         = cm.getResidual();
+        lcon.insert(INPUT_linear_con_.begin(),INPUT_linear_con_.end());
       }
-    }
-    else {
-      if (!hasBounds_ && !hasLinearInequality) {
-        ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_);
-        xfeas_ = cm.getOptVector()->clone(); xfeas_->set(*cm.getOptVector());
-        rlc_   = makePtr<ReduceLinearConstraint<Real>>(cm.getConstraint(),xfeas_,cm.getResidual());
-        proj_  = nullPtr;
-        if (!hasEquality && !hasInequality) {
-          problemType_ = TYPE_U;
-          obj_         = rlc_->transform(INPUT_obj_);
-          xprim_       = xfeas_->clone(); xprim_->zero();
-          xdual_       = cm.getDualOptVector();
+      // Transform optimization problem
+      //std::cout << hasBounds_ << "  " << hasEquality << "  " << hasInequality << "  " << hasLinearEquality << "  " << hasLinearInequality << std::endl;
+      nobj_            = nullPtr;
+      if (hasProximableObjective){
+        if (!hasEquality && !hasInequality && !hasBounds_ && !hasLinearEquality && !hasLinearInequality){
+          problemType_ = TYPE_P;
+          obj_         = INPUT_obj_;
+          nobj_        = INPUT_nobj_;
+          xprim_       = INPUT_xprim_;
+          xdual_       = INPUT_xdual_;
           bnd_         = nullPtr;
           con_         = nullPtr;
           mul_         = nullPtr;
           res_         = nullPtr;
-        }
-        else {
-          for (auto it = con.begin(); it != con.end(); ++it) {
-            icon.insert(std::pair<std::string,ConstraintData<Real>>(it->first,
-              ConstraintData<Real>(rlc_->transform(it->second.constraint),
-                it->second.multiplier,it->second.residual,it->second.bounds)));
-          }
-          Ptr<Vector<Real>> xtmp = xfeas_->clone(); xtmp->zero();
-          ConstraintAssembler<Real> cm1(icon,xtmp,cm.getDualOptVector());
-          xprim_         = cm1.getOptVector();
-          xdual_         = cm1.getDualOptVector();
-          con_           = cm1.getConstraint();
-          mul_           = cm1.getMultiplier();
-          res_           = cm1.getResidual();
-          if (!hasInequality) {
-            problemType_ = TYPE_E;
-            obj_         = rlc_->transform(INPUT_obj_);
-            bnd_         = nullPtr;
-          }
-          else {
-            problemType_ = TYPE_EB;
-            obj_         = makePtr<SlacklessObjective<Real>>(rlc_->transform(INPUT_obj_));
-            bnd_         = cm1.getBoundConstraint();
-          }
-        }
-      }
-      else if ((hasBounds_ || hasLinearInequality) && !hasEquality && !hasInequality) {
-        ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
-        problemType_ = TYPE_B;
-        obj_         = INPUT_obj_;
-        if (cm.hasInequality()) {
-          obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
-        }
-        xprim_       = cm.getOptVector();
-        xdual_       = cm.getDualOptVector();
-        bnd_         = cm.getBoundConstraint();
-        con_         = nullPtr;
-        mul_         = nullPtr;
-        res_         = nullPtr;
-        proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
-                         cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_list_);
+       }
+       else {
+         throw Exception::NotImplemented(">>> ROL::TypeP - with constraints is not supported");
+       }
       }
       else {
-        ConstraintAssembler<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
-        problemType_ = TYPE_EB;
-        obj_         = INPUT_obj_;
-        if (cm.hasInequality()) {
-          obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
+        if (!hasLinearEquality && !hasLinearInequality) {
+          proj_ = nullPtr;
+          if (!hasEquality && !hasInequality && !hasBounds_ ) {
+            problemType_ = TYPE_U;
+            obj_         = INPUT_obj_;
+            xprim_       = INPUT_xprim_;
+            xdual_       = INPUT_xdual_;
+            bnd_         = nullPtr;
+            con_         = nullPtr;
+            mul_         = nullPtr;
+            res_         = nullPtr;
+          }
+          else if (!hasEquality && !hasInequality && hasBounds_) {
+            problemType_ = TYPE_B;
+            obj_         = INPUT_obj_;
+            xprim_       = INPUT_xprim_;
+            xdual_       = INPUT_xdual_;
+            bnd_         = INPUT_bnd_;
+            con_         = nullPtr;
+            mul_         = nullPtr;
+            res_         = nullPtr;
+          }
+          else if (hasEquality && !hasInequality && !hasBounds_) {
+            ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_);
+            problemType_ = TYPE_E;
+            obj_         = INPUT_obj_;
+            xprim_       = INPUT_xprim_;
+            xdual_       = INPUT_xdual_;
+            bnd_         = nullPtr;
+            con_         = cm.getConstraint();
+            mul_         = cm.getMultiplier();
+            res_         = cm.getResidual();
+          }
+          else {
+            ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+            problemType_ = TYPE_EB;
+            obj_         = INPUT_obj_;
+            if (cm.hasInequality()) {
+              obj_      = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
+            }
+            xprim_       = cm.getOptVector();
+            xdual_       = cm.getDualOptVector();
+            bnd_         = cm.getBoundConstraint();
+            con_         = cm.getConstraint();
+            mul_         = cm.getMultiplier();
+            res_         = cm.getResidual();
+          }
         }
-        xprim_       = cm.getOptVector();
-        xdual_       = cm.getDualOptVector();
-        con_         = cm.getConstraint();
-        mul_         = cm.getMultiplier();
-        res_         = cm.getResidual();
-        bnd_         = cm.getBoundConstraint();
-        proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
-                        cm.getLinearConstraint(),*cm.getLinearMultiplier(),
-                        *cm.getLinearResidual(),ppa_list_);
+        else {
+          if (!hasBounds_ && !hasLinearInequality) {
+            ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_);
+            xfeas_ = cm.getOptVector()->clone(); xfeas_->set(*cm.getOptVector());
+            rlc_   = makePtr<ReduceLinearConstraint<Real>>(cm.getConstraint(),xfeas_,cm.getResidual());
+            proj_  = nullPtr;
+            if (!hasEquality && !hasInequality) {
+              problemType_ = TYPE_U;
+              obj_         = rlc_->transform(INPUT_obj_);
+              xprim_       = xfeas_->clone(); xprim_->zero();
+              xdual_       = cm.getDualOptVector();
+              bnd_         = nullPtr;
+              con_         = nullPtr;
+              mul_         = nullPtr;
+              res_         = nullPtr;
+            }
+            else {
+              for (auto it = con.begin(); it != con.end(); ++it) {
+                icon.insert(std::pair<std::string,ConstraintData<Real>>(it->first,
+                  ConstraintData<Real>(rlc_->transform(it->second.constraint),
+                    it->second.multiplier,it->second.residual,it->second.bounds)));
+              }
+              Ptr<Vector<Real>> xtmp = xfeas_->clone(); xtmp->zero();
+              ConstraintAssembler<Real> cm1(icon,xtmp,cm.getDualOptVector());
+              xprim_         = cm1.getOptVector();
+              xdual_         = cm1.getDualOptVector();
+              con_           = cm1.getConstraint();
+              mul_           = cm1.getMultiplier();
+              res_           = cm1.getResidual();
+              if (!hasInequality) {
+                problemType_ = TYPE_E;
+                obj_         = rlc_->transform(INPUT_obj_);
+                bnd_         = nullPtr;
+              }
+              else {
+                problemType_ = TYPE_EB;
+                obj_         = makePtr<SlacklessObjective<Real>>(rlc_->transform(INPUT_obj_));
+                bnd_         = cm1.getBoundConstraint();
+              }
+            }
+          }
+          else if ((hasBounds_ || hasLinearInequality) && !hasEquality && !hasInequality) {
+            ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+            problemType_ = TYPE_B;
+            obj_         = INPUT_obj_;
+            if (cm.hasInequality()) {
+              obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
+            }
+            xprim_       = cm.getOptVector();
+            xdual_       = cm.getDualOptVector();
+            bnd_         = cm.getBoundConstraint();
+            con_         = nullPtr;
+            mul_         = nullPtr;
+            res_         = nullPtr;
+            proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
+                             cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_list_);
+          }
+          else {
+            ConstraintAssembler<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+            problemType_ = TYPE_EB;
+            obj_         = INPUT_obj_;
+            if (cm.hasInequality()) {
+              obj_       = makePtr<SlacklessObjective<Real>>(INPUT_obj_);
+            }
+            xprim_       = cm.getOptVector();
+            xdual_       = cm.getDualOptVector();
+            con_         = cm.getConstraint();
+            mul_         = cm.getMultiplier();
+            res_         = cm.getResidual();
+            bnd_         = cm.getBoundConstraint();
+            proj_        = PolyhedralProjectionFactory<Real>(*xprim_,*xdual_,bnd_,
+                            cm.getLinearConstraint(),*cm.getLinearMultiplier(),
+                            *cm.getLinearResidual(),ppa_list_);
+          }
+        }
       }
-    }
-    isFinalized_ = true;
-    if (printToStream) {
-      outStream << std::endl;
-      outStream << "  ROL::Problem::finalize" << std::endl;
-      outStream << "    Problem Summary:" << std::endl;
-      outStream << "      Has Bound Constraint? .............. " << (hasBounds_ ? "yes" : "no") << std::endl;
-      outStream << "      Has Equality Constraint? ........... " << (hasEquality ? "yes" : "no") << std::endl; 
-      if (hasEquality) {
-        int cnt = 0;
-	for (auto it = con.begin(); it != con.end(); ++it) {
-          if (it->second.bounds==nullPtr) {
-            if (cnt==0) {
-              outStream << "        Names: ........................... ";
-	      cnt++;
-	    }
-	    else {
-              outStream << "                                           ";
-	    }
-            outStream << it->first << std::endl;
-	  }
-	}
-        outStream << "        Total: ........................... " << cnt_econ_+(lumpConstraints ? cnt_linear_econ_ : 0) << std::endl; 
-      }
-      outStream << "      Has Inequality Constraint? ......... " << (hasInequality ? "yes" : "no") << std::endl; 
-      if (hasInequality) {
-        int cnt = 0;
-	for (auto it = con.begin(); it != con.end(); ++it) {
-          if (it->second.bounds!=nullPtr) {
-            if (cnt==0) {
-              outStream << "        Names: ........................... ";
-	      cnt++;
-	    }
-	    else {
-              outStream << "                                           ";
-	    }
-            outStream << it->first << std::endl;
-	  }
-	}
-        outStream << "        Total: ........................... " << cnt_icon_+(lumpConstraints ? cnt_linear_icon_ : 0) << std::endl; 
-      }
-      if (!lumpConstraints) {
-        outStream << "      Has Linear Equality Constraint? .... " << (hasLinearEquality ? "yes" : "no") << std::endl;
-        if (hasLinearEquality) {
+      isFinalized_ = true;
+      if (printToStream) {
+        outStream << std::endl;
+        outStream << "  ROL::Problem::finalize" << std::endl;
+        outStream << "    Problem Summary:" << std::endl;
+        outStream << "      Has Proximable Objective? .......... " << (hasProximableObjective ? "yes" : "no") << std::endl;
+        outStream << "      Has Bound Constraint? .............. " << (hasBounds_ ? "yes" : "no") << std::endl;
+        outStream << "      Has Equality Constraint? ........... " << (hasEquality ? "yes" : "no") << std::endl;
+        if (hasEquality) {
           int cnt = 0;
-	  for (auto it = lcon.begin(); it != lcon.end(); ++it) {
+	        for (auto it = con.begin(); it != con.end(); ++it) {
             if (it->second.bounds==nullPtr) {
               if (cnt==0) {
                 outStream << "        Names: ........................... ";
-		cnt++;
-	      }
-	      else {
+	              cnt++;
+	            }
+	            else {
                 outStream << "                                           ";
-	      }
+	            }
               outStream << it->first << std::endl;
-	    }
-	  }
-          outStream << "        Total: ........................... " << cnt_linear_econ_ << std::endl; 
+	          }
+	        }
+          outStream << "        Total: ........................... " << cnt_econ_+(lumpConstraints ? cnt_linear_econ_ : 0) << std::endl;
         }
-        outStream << "      Has Linear Inequality Constraint? .. " << (hasLinearInequality ? "yes" : "no") << std::endl;
-        if (hasLinearInequality) {
+        outStream << "      Has Inequality Constraint? ......... " << (hasInequality ? "yes" : "no") << std::endl;
+        if (hasInequality) {
           int cnt = 0;
-	  for (auto it = lcon.begin(); it != lcon.end(); ++it) {
+	        for (auto it = con.begin(); it != con.end(); ++it) {
             if (it->second.bounds!=nullPtr) {
               if (cnt==0) {
                 outStream << "        Names: ........................... ";
-		cnt++;
-	      }
-	      else {
+	              cnt++;
+	            }
+	            else {
                 outStream << "                                           ";
-	      }
+	            }
               outStream << it->first << std::endl;
-	    }
-	  }
-          outStream << "        Total: ........................... " << cnt_linear_icon_ << std::endl; 
+	          }
+	        }
+          outStream << "        Total: ........................... " << cnt_icon_+(lumpConstraints ? cnt_linear_icon_ : 0) << std::endl;
         }
+        if (!lumpConstraints) {
+          outStream << "      Has Linear Equality Constraint? .... " << (hasLinearEquality ? "yes" : "no") << std::endl;
+          if (hasLinearEquality) {
+            int cnt = 0;
+	          for (auto it = lcon.begin(); it != lcon.end(); ++it) {
+              if (it->second.bounds==nullPtr) {
+                if (cnt==0) {
+                  outStream << "        Names: ........................... ";
+	  	            cnt++;
+	              }
+	              else {
+                  outStream << "                                           ";
+	              }
+                outStream << it->first << std::endl;
+	            }
+	          }
+            outStream << "        Total: ........................... " << cnt_linear_econ_ << std::endl;
+          }
+          outStream << "      Has Linear Inequality Constraint? .. " << (hasLinearInequality ? "yes" : "no") << std::endl;
+          if (hasLinearInequality) {
+            int cnt = 0;
+	          for (auto it = lcon.begin(); it != lcon.end(); ++it) {
+              if (it->second.bounds!=nullPtr) {
+                if (cnt==0) {
+                  outStream << "        Names: ........................... ";
+	  	            cnt++;
+	              }
+	              else {
+                  outStream << "                                           ";
+	              }
+                outStream << it->first << std::endl;
+	            }
+	          }
+            outStream << "        Total: ........................... " << cnt_linear_icon_ << std::endl;
+          }
+        }
+        outStream << std::endl;
       }
-      outStream << std::endl;
+    }
+    // ========================================================================
+    // useSlackVariables = false -> process constraints into groups
+    // ========================================================================
+    else{
+      // Ungrouped constraints
+      std::unordered_set<std::string> ungrouped_constraints;
+      for (const auto& kv : INPUT_con_)        ungrouped_constraints.insert(kv.first);
+      for (const auto& kv : INPUT_linear_con_) ungrouped_constraints.insert(kv.first);
+      for (const auto& kv : INPUT_proj_)       ungrouped_constraints.insert(kv.first);
+      for (const auto& kv : groups_) {
+        for (const auto& constraint_name : kv.second)
+          ungrouped_constraints.erase(constraint_name);
+      }
+      // Convert ungrouped inequalities to their own groups.
+      Ptr<ConstraintData<Real>> constraint_data;
+      Ptr<Projection<Real>> projection;
+      bool is_equality = false;
+      for (const std::string& constraint_name : ungrouped_constraints) {
+        constraint_data = getConstraintData(constraint_name);
+        is_equality = (dynamicPtrCast<ZeroProjection<Real>>(constraint_data->projection) != nullPtr);
+        if (!is_equality) {
+          std::vector<std::string> constraint_name_vector(1,constraint_name);
+          addConstraintGroup(constraint_name, constraint_name_vector);
+        }
+        else if (INPUT_linear_con_.count(constraint_name))
+          ungrouped_linear_equality_constraint_names_.push_back(constraint_name);
+        else
+          ungrouped_equality_constraint_names_.push_back(constraint_name);
+      }
+      problemType_ = TYPE_EB;
+      obj_         = INPUT_obj_;
+      nobj_        = INPUT_nobj_;
+      xprim_       = INPUT_xprim_;
+      xdual_       = INPUT_xdual_;
+      bnd_         = INPUT_bnd_;
+      con_         = nullPtr;
+      mul_         = nullPtr;
+      res_         = nullPtr;
+      isFinalized_ = true;
     }
   }
   else {
@@ -443,6 +600,12 @@ template<typename Real>
 const Ptr<Objective<Real>>& Problem<Real>::getObjective() {
   finalize();
   return obj_;
+}
+
+template<typename Real>
+const Ptr<Objective<Real>>& Problem<Real>::getProximableObjective(){
+  finalize();
+  return nobj_;
 }
 
 template<typename Real>
@@ -492,6 +655,78 @@ EProblem Problem<Real>::getProblemType() {
   finalize();
   return problemType_;
 }
+
+template<typename Real>
+Ptr<ConstraintData<Real>> Problem<Real>::getConstraintData(const std::string &constraint_name) {
+  Ptr<ConstraintData<Real>> constraint_data;
+  bool isConstraintMissing = true;
+  for (const auto& map : {INPUT_con_,INPUT_linear_con_,INPUT_proj_}) {
+    if (const auto& it = map.find(constraint_name); it != map.end()) {
+      constraint_data = makePtr<ConstraintData<Real>>(it->second);
+      if (constraint_data->projection == nullPtr) {
+        if (constraint_data->bounds != nullPtr)
+          constraint_data->projection = makePtr<PolyhedralProjection<Real>>(constraint_data->bounds);
+        else
+          constraint_data->projection = makePtr<ZeroProjection<Real>>();
+      }
+      isConstraintMissing = false;
+      break;
+    }
+  }
+  ROL_TEST_FOR_EXCEPTION(isConstraintMissing,std::invalid_argument,
+    ">>> ROL::Problem::getConstraintData: Invalid constraint name!");
+  return constraint_data;
+}
+
+template<typename Real>
+const std::vector<std::string>& Problem<Real>::getUngroupedEqualityConstraintNames() {
+  return ungrouped_equality_constraint_names_;
+}
+
+template<typename Real>
+const std::vector<std::string>& Problem<Real>::getUngroupedLinearEqualityConstraintNames() {
+  return ungrouped_linear_equality_constraint_names_;
+}
+
+template<typename Real>
+const std::vector<std::string> Problem<Real>::getGroupNames() {
+  std::vector<std::string> group_names;
+  for (const auto& kv : groups_) group_names.push_back(kv.first);
+  return group_names;  // return a vector to preserve group order
+}
+
+template<typename Real>
+const Ptr<ConstraintData<Real>> Problem<Real>::getGroupConstraintData(const std::string &group_name) {
+  ROL_TEST_FOR_EXCEPTION(groups_.count(group_name)==0,std::invalid_argument,
+    ">>> ROL::Problem::getGroupConstraintData A constraint group with the provided name is missing!");
+  if (groups_[group_name].size() == 1) {
+    std::string& constraint_name = groups_[group_name][0];
+    return getConstraintData(constraint_name);
+  }
+  Ptr<ConstraintData<Real>>          constraint_data;
+  std::vector<Ptr<Constraint<Real>>> constraints;
+  std::vector<Ptr<Projection<Real>>> projections;
+  std::vector<Ptr<Vector<Real>>>     con_vectors;
+  std::vector<Ptr<Vector<Real>>>     mul_vectors;
+  for (const std::string& constraint_name : groups_[group_name]) {
+    constraint_data = getConstraintData(constraint_name);
+    constraints.push_back(constraint_data->constraint);
+    mul_vectors.push_back(constraint_data->multiplier);
+    con_vectors.push_back(constraint_data->residual);
+    projections.push_back(constraint_data->projection);
+  }
+  Ptr<Constraint<Real>> partitioned_constraint  = makePtr<Constraint_Partitioned<Real>>(constraints);
+  Ptr<Vector<Real>>     partitioned_mul_vector  = makePtr<PartitionedVector<Real>>(mul_vectors);
+  Ptr<Vector<Real>>     partitioned_con_vector  = makePtr<PartitionedVector<Real>>(con_vectors);
+  Ptr<Projection<Real>> partitioned_projection  = makePtr<Projection_Partitioned<Real>>(projections);
+  Ptr<ConstraintData<Real>> new_constraint_data = makePtr<ConstraintData<Real>>(partitioned_constraint,
+                                                                                partitioned_mul_vector,
+                                                                                partitioned_con_vector,
+                                                                                nullPtr,
+                                                                                partitioned_projection);
+  return new_constraint_data;
+}
+
 
 template<typename Real>
 Real Problem<Real>::checkLinearity(bool printToStream, std::ostream &outStream) const {
@@ -561,7 +796,7 @@ void Problem<Real>::checkVectors(bool printToStream, std::ostream &outStream) co
     outStream << std::endl << "  Check dual optimization space vector" << std::endl;
   }
   INPUT_xdual_->checkVector(*x,*y,printToStream,outStream);
-  
+
   // Check constraint space vectors
   for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
     // Primal constraint space vector
@@ -580,7 +815,7 @@ void Problem<Real>::checkVectors(bool printToStream, std::ostream &outStream) co
     }
     it->second.multiplier->checkVector(*x,*y,printToStream,outStream);
   }
-  
+
   // Check constraint space vectors
   for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
     // Primal constraint space vector
@@ -616,7 +851,7 @@ void Problem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream
   INPUT_obj_->checkGradient(*x,*g,*d,printToStream,outStream);
   INPUT_obj_->checkHessVec(*x,*g,*d,printToStream,outStream);
   INPUT_obj_->checkHessSym(*x,*g,*d,*v,printToStream,outStream);
-  
+  //TODO: Proximable Objective Check
   // Constraint check
   for (auto it = INPUT_con_.begin(); it != INPUT_con_.end(); ++it) {
     c = it->second.residual->clone();   c->randomize(-scale,scale);
@@ -627,7 +862,7 @@ void Problem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream
     it->second.constraint->checkAdjointConsistencyJacobian(*w,*v,*x,printToStream,outStream);
     it->second.constraint->checkApplyAdjointHessian(*x,*w,*v,*g,printToStream,outStream);
   }
-  
+
   // Linear constraint check
   for (auto it = INPUT_linear_con_.begin(); it != INPUT_linear_con_.end(); ++it) {
     c = it->second.residual->clone();   c->randomize(-scale,scale);
@@ -646,6 +881,8 @@ void Problem<Real>::check(bool printToStream, std::ostream &outStream, const Ptr
   if (hasLinearEquality_ || hasLinearInequality_)
     checkLinearity(printToStream,outStream);
   checkDerivatives(printToStream,outStream,x0,scale);
+// if (hasProximableObjective)
+// checkProximableObjective(printToStream, outStream);
 }
 
 template<typename Real>

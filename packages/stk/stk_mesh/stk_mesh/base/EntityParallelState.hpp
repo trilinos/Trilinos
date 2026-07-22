@@ -35,13 +35,10 @@
 #define STK_ENTITYPARALLELSTATE_HPP
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityCommListInfo.hpp>
 
 namespace stk {
 namespace mesh {
-
-class BulkData;
 
 struct EntityParallelState {
   int                 from_proc;

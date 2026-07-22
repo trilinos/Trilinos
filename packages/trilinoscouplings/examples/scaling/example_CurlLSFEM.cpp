@@ -1,31 +1,10 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Denis Ridzal  (dridzal@sandia.gov),
-//                    Kara Peterson (kjpeter@sandia.gov).
-//
-// ************************************************************************
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   example_CurlLSFEM.cpp
@@ -1515,9 +1494,9 @@ int main(int argc, char *argv[]) {
                for (int nF = 0; nF < numFieldsC; nF++){
                   for(int nPt = 0; nPt < numFacePoints; nPt++){
                      bcFieldDotNormal(0,nF,nPt)=0.0;
-                        for (int dim = 0; dim < spaceDim; dim++){
-                           bcFieldDotNormal(0,nF,nPt) += bcCValsTransformed(0,nF,nPt,dim)
-                                              * faceNormal(0,nPt,dim) * paramFaceWeights(nPt);
+                        for (int dim2 = 0; dim2 < spaceDim; dim2++){
+                           bcFieldDotNormal(0,nF,nPt) += bcCValsTransformed(0,nF,nPt,dim2)
+                                              * faceNormal(0,nPt,dim2) * paramFaceWeights(nPt);
                         } //dim
                     } //nPt
                 } //nF
@@ -1873,8 +1852,8 @@ int main(int argc, char *argv[]) {
           double y = physCubPointsE(0,nPt,1);
           double z = physCubPointsE(0,nPt,2);
           evalu(uExact1, uExact2, uExact3, x, y, z);
-          double mu = 1.0; // use mu=1 to get the curl without material parameter
-          evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z, mu);
+          double mu2 = 1.0; // use mu=1 to get the curl without material parameter
+          evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z, mu2);
 
          // calculate approximate solution and curls
           double uApprox1 = 0.0;

@@ -36,23 +36,28 @@
 
       Dimensions getDomainDimensions() {return m_domain_dimensions; }
       Dimensions getCodomainDimensions() { return m_codomain_dimensions; }
-      MDArray getNewDomain()   
+      MDArray getNewDomain() const
       { 
-        return Intrepid::FieldContainer<double>( Teuchos::Array<int>(m_domain_dimensions.begin(),   m_domain_dimensions.end()));   
+        std::vector<size_t> dimensions(3, KOKKOS_INVALID_INDEX);
+        for(size_t i=0; i< m_domain_dimensions.size(); ++i) 
+          dimensions[i]=m_domain_dimensions[i];
+        return Kokkos::DynRankView<double, Kokkos::HostSpace>("GF:NewDomain", dimensions[0], dimensions[1], dimensions[2]);   
       }
 
-      MDArray getNewCodomain() 
-      { 
-        return Intrepid::FieldContainer<double>( Teuchos::Array<int>(m_codomain_dimensions.begin(), m_codomain_dimensions.end())); 
-      }
       MDArray getNewCodomain() const
       { 
-        return Intrepid::FieldContainer<double>( Teuchos::Array<int>(m_codomain_dimensions.begin(), m_codomain_dimensions.end())); 
+        std::vector<size_t> dimensions(3, KOKKOS_INVALID_INDEX);
+        for(size_t i=0; i< m_codomain_dimensions.size(); ++i) 
+          dimensions[i]=m_codomain_dimensions[i];
+        return Kokkos::DynRankView<double, Kokkos::HostSpace>("GF:NewCodomain", dimensions[0], dimensions[1], dimensions[2]); 
       }
 
-      static MDArray getNewMDArray(const Dimensions dims) 
+      static MDArray getNewMDArray(const Dimensions dims)
       { 
-        return Intrepid::FieldContainer<double>( Teuchos::Array<int>(dims.begin(),   dims.end()));   
+        std::vector<size_t> dimensions(3, KOKKOS_INVALID_INDEX);
+        for(size_t i=0; i< dims.size(); ++i) 
+          dimensions[i]=dims[i];
+        return Kokkos::DynRankView<double, Kokkos::HostSpace>("GF:NewMDArray", dimensions[0], dimensions[1], dimensions[2]); 
       }
     protected:
       Dimensions m_domain_dimensions;  // size() gives rank, each entry gives dimension, e.g. {3,3} for a rank-2 3D tensor

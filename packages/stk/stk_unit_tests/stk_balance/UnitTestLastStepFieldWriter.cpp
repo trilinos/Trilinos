@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "mpi.h"
 #include <stk_mesh/base/Comm.hpp>
+#include <unistd.h>
 #include <string>
 
 #include <stk_mesh/base/BulkData.hpp>
@@ -60,12 +61,13 @@ void verify_field_data_is_same_for_all_nodes(const stk::mesh::BulkData& bulkData
   stk::mesh::EntityVector nodes;
   stk::mesh::get_selected_entities(meta.locally_owned_part(), bulkData.buckets(stk::topology::NODE_RANK), nodes);
 
-  stk::mesh::FieldBase* nodalTestData = meta.get_field(stk::topology::NODE_RANK, fieldName);
+  stk::mesh::FieldBase* nodalTestDataField = meta.get_field(stk::topology::NODE_RANK, fieldName);
+  auto nodalTestData = nodalTestDataField->data<double>();
 
   for(stk::mesh::Entity node : nodes)
   {
-    double *data = static_cast<double*>(stk::mesh::field_data(*nodalTestData, node));
-    EXPECT_EQ(initialVal, *data);
+    auto data = nodalTestData.entity_values(node);
+    EXPECT_EQ(initialVal, data());
   }
 }
 
@@ -81,6 +83,7 @@ void read_mesh_and_verify_field_data_added_correctly(const std::string &outputFi
 
 TEST(Stk_Balance, read_and_write_stk_mesh_non_ioss_with_auto_decomp_and_compare_field_data)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
   std::string outputFilename = "output.e";
   std::string inputFilename = "generated:2x2x4";
   std::string fieldName = "nodal_test_data";
@@ -90,6 +93,15 @@ TEST(Stk_Balance, read_and_write_stk_mesh_non_ioss_with_auto_decomp_and_compare_
 
   read_and_write_mesh_with_added_field_data(inputFilename, outputFilename, fieldName, initialVal, timeForStep1);
   read_mesh_and_verify_field_data_added_correctly(outputFilename, fieldName, initialVal, timeForStep1);
+
+  if (stk::parallel_machine_rank(comm) == 0) {
+    unsigned numProcs = stk::parallel_machine_size(comm);
+    unlink(outputFilename.c_str());
+    for (unsigned i = 0; i < numProcs; i++) {
+      std::string output_filename = outputFilename + "." + std::to_string(numProcs) + "." + std::to_string(i);
+      unlink(output_filename.c_str());
+    }
+  }
 }
 
 size_t get_global_num_nodes_serial(const std::string& inputFilename)
@@ -119,7 +131,7 @@ size_t get_global_num_nodes_parallel(const std::string& inputFilename, MPI_Comm 
 TEST(Stk_Balance, checkParallelAndSerialNumNodesConsistency)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  std::string inputFilename = stk::unit_test_util::simple_fields::get_option("-i", "generated:4x4x4");
+  std::string inputFilename = stk::unit_test_util::get_option("-i", "generated:4x4x4");
 
   size_t goldGlobalNumNodes = get_global_num_nodes_serial(inputFilename);
   size_t numNodesWIthComm =   get_global_num_nodes_parallel(inputFilename, comm);

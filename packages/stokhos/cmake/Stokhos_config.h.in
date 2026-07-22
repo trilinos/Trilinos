@@ -132,3 +132,7 @@
 #define STOKHOS_GEMV_CACHE_SIZE @Stokhos_Ensemble_GEMV_Cache_Size@
 #define STOKHOS_GEMV_TEAM_SIZE @Stokhos_Ensemble_GEMV_Team_Size@
 #endif // HAVE_STOKHOS_ENSEMBLE_GEMV
+
+@STOKHOS_DEPRECATED_DECLARATIONS@
+
+#cmakedefine Stokhos_SHOW_DEPRECATED_WARNINGS

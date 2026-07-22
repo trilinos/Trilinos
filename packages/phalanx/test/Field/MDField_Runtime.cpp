@@ -1,48 +1,19 @@
 // @HEADER
-// ************************************************************************
-//
-//        Phalanx: A Partial Differential Equation Field Evaluation
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
-
+#include <Kokkos_Core_fwd.hpp>
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include "Sacado.hpp"
+#else
 #include "Kokkos_DynRankView_Fad.hpp"
+#endif
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
@@ -133,37 +104,26 @@ struct TestAssignmentFunctor {
 
 template<typename FieldType,typename ScalarType>
 struct BracketAssignmentTest {
-  FieldType f1_,f2_,f3_,f4_,f5_,f6_;
-  BracketAssignmentTest(FieldType f1,FieldType f2,FieldType f3,FieldType f4,FieldType f5,FieldType f6)
-    : f1_(f1),f2_(f2),f3_(f3),f4_(f4),f5_(f5),f6_(f6){}
+  FieldType f1_;
+  BracketAssignmentTest(FieldType f1)
+    : f1_(f1){}
   KOKKOS_INLINE_FUNCTION
   void operator() (const int ) const {
     f1_[f1_.size()-1] = ScalarType(2.0);
-    f2_[f2_.size()-1] = ScalarType(3.0);
-    f3_[f3_.size()-1] = ScalarType(4.0);
-    f4_[f4_.size()-1] = ScalarType(5.0);
-    f5_[f5_.size()-1] = ScalarType(6.0);
-    f6_[f6_.size()-1] = ScalarType(7.0);
   }
 };
 
 template<typename FieldType,typename ScalarType>
 struct BracketAssignmentCheck {
-  FieldType f1_,f2_,f3_,f4_,f5_,f6_;
-  const FieldType cf1_,cf2_,cf3_,cf4_,cf5_,cf6_;
-  BracketAssignmentCheck(FieldType f1,FieldType f2,FieldType f3,FieldType f4,FieldType f5,FieldType f6,
-			 const FieldType cf1,const FieldType cf2,const FieldType cf3,const FieldType cf4,const FieldType cf5,const FieldType cf6)
-    : f1_(f1),f2_(f2),f3_(f3),f4_(f4),f5_(f5),f6_(f6),
-      cf1_(cf1),cf2_(cf2),cf3_(cf3),cf4_(cf4),cf5_(cf5),cf6_(cf6){}
+  FieldType f1_;
+  const FieldType cf1_;
+  BracketAssignmentCheck(FieldType f1,const FieldType cf1)
+    : f1_(f1),cf1_(cf1)
+  {}
   KOKKOS_INLINE_FUNCTION
-  void operator() (const int , int& lsum) const {
+  void operator() (const int , int& num_failures) const {
     const double tol = 1.0e-10;
-    PHX_TEST_FLOAT_EQUAL(f1_[f1_.size()-1], cf1_[f1_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f2_[f2_.size()-1], cf2_[f2_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f3_[f3_.size()-1], cf3_[f3_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f4_[f4_.size()-1], cf4_[f4_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f5_[f5_.size()-1], cf5_[f5_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f6_[f6_.size()-1], cf6_[f6_.size()-1], tol, lsum);
+    PHX_TEST_FLOAT_EQUAL(f1_[f1_.size()-1], cf1_[f1_.size()-1], tol, num_failures);
   }
 };
 
@@ -340,12 +300,12 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     out << "Testing setFieldData()...";
     const size_type derivative_dim = 8;
     const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
-    PHX::any a_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(a.fieldTag());
-    PHX::any b_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(b.fieldTag());
-    PHX::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(c.fieldTag(),ddims);
-    PHX::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(d.fieldTag(),ddims);
-    PHX::any e_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(e.fieldTag());
-    PHX::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f.fieldTag(),ddims);
+    std::any a_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(a.fieldTag());
+    std::any b_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(b.fieldTag());
+    std::any c_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(c.fieldTag(),ddims);
+    std::any d_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(d.fieldTag(),ddims);
+    std::any e_mem = PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(e.fieldTag());
+    std::any f_mem = PHX::KokkosViewFactory<MyTraits::FadType,typename PHX::DevLayout<MyTraits::FadType>::type,PHX::Device>::buildView(f.fieldTag(),ddims);
 
     a.setFieldData(a_mem);
     b.setFieldData(b_mem);
@@ -441,7 +401,7 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for const mdfield assignment from non-const factory
-    // PHX::any.  the field manager always sotres the non-const
+    // std::any. The field manager always stores the non-const
     // version.
     {
       MDField<const double> c_f1("CONST Test1",d1);
@@ -504,31 +464,21 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     // operator[]
     out << "Testing operator[](...) accessors...";
 
-    // The bracket operator use in Kokkos is normally liimited to a
-    // rank-1 view. Intrepid requires access to the entire array for
-    // views with rank greater than 1. This is a very dangerous hack
-    // because it allows users to bypass the underlying layout. This
-    // accessor will not work correctly with subviews or
-    // padding. Kokkos will suppor this for now until we can remove
-    // all use of bracket operator from intrepid. Teh below tests
-    // verify that this capability works. We can remove the tests
-    // below once the bracket op is no longer needed in our stack.
-
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<double>,double>(f1,f2,f3,f4,f5,f6));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<double>,double>(f1));
 
     int num_failed = 0;
-    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,f2,f3,f4,f5,f6,cf1,cf2,cf3,cf4,cf5,cf6),num_failed);
+    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,cf1),num_failed);
     TEST_EQUALITY(num_failed,0);
 
     // fad checking
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad,f2_fad,f3_fad,f4_fad,f5_fad,f6_fad));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad));
 
     out << "passed!" << endl;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Do NOT check for array rank enforcement. DynRank MDField sets
     // the rank at runtime and we allow it to be changed!
-    //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
+    //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),std::bad_any_cast);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors

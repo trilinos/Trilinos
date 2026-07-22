@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_TEAMFUNCTOR_FACTORIZE_LDL_HPP__
 #define __TACHO_TEAMFUNCTOR_FACTORIZE_LDL_HPP__
@@ -84,11 +76,13 @@ public:
     using GemmAlgoType = typename GemmAlgorithm_Team::type;
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
 
-    int err = 0;
+    const bool conjugate = false;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
+
+    int err = 0;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
-      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
+      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL, conjugate);
       member.team_barrier();
       err = LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
       member.team_barrier();
@@ -130,13 +124,15 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
-    int err = 0;
+    const bool conjugate = false;
     const value_type one(1), minus_one(-1), zero(0);
+
+    int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
 
-      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
+      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL, conjugate);
       member.team_barrier();
 
       err = LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
@@ -191,13 +187,15 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
-    int err = 0;
+    const bool conjugate = false;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
+
+    int err = 0;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
 
-      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
+      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL, conjugate);
       member.team_barrier();
 
       err = LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
@@ -226,7 +224,7 @@ public:
         Copy<Algo::Internal>::invoke(member, ATR, STR);
         member.team_barrier();
 
-        Symmetrize<Uplo::Lower, Algo::Internal>::invoke(member, T);
+        Symmetrize<Uplo::Lower, Algo::Internal>::invoke(member, T, conjugate);
         SetIdentity<Algo::Internal>::invoke(member, ATL, minus_one);
         Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
             ::invoke(member, P, D, ATR);
@@ -276,8 +274,8 @@ public:
             Kokkos::TeamThreadRange(member, srcsize),
             [&, srcsize, src,
              tgt](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-              const value_type *__restrict__ ss = src + j * srcsize;
-              /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+              const value_type *KOKKOS_RESTRICT ss = src + j * srcsize;
+              /* */ value_type *KOKKOS_RESTRICT tt = tgt + j * srcsize;
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1),
                                    [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
             });

@@ -42,7 +42,7 @@ namespace Amesos2 {
    * \ingroup amesos2_solver_interfaces 
    */
   template <class Matrix,
-	    class Vector>
+            class Vector>
   class Lapack : public SolverCore<Amesos2::Lapack, Matrix, Vector> 
   {
     friend class SolverCore<Amesos2::Lapack,Matrix,Vector>; // Give our base access
@@ -51,7 +51,7 @@ namespace Amesos2 {
   public:
 
     /// The name of this solver interface
-    static const char* name;	// declaration. Initialization outside.
+    static const char* name;        // declaration. Initialization outside.
 
     typedef Lapack<Matrix,Vector>                                                type;
     typedef SolverCore<Amesos2::Lapack,Matrix,Vector>                      super_type;
@@ -82,8 +82,8 @@ namespace Amesos2 {
      * Amesos2::create() to initialize a Lapack interface.
      */
     Lapack(Teuchos::RCP<const Matrix> A,
-	   Teuchos::RCP<Vector>       X,
-	   Teuchos::RCP<const Vector> B);
+           Teuchos::RCP<Vector>       X,
+           Teuchos::RCP<const Vector> B);
     
 
     /// Destructor
@@ -124,7 +124,7 @@ namespace Amesos2 {
      * \throw std::runtime_error Lapack is not able to solve the system.
      */
     int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
-		   const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
+                   const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
 
     /**
@@ -160,6 +160,14 @@ namespace Amesos2 {
      * \return \c true if the matrix was loaded, \c false if not
      */
     bool loadA_impl(EPhase current_phase);
+
+
+    /** 
+     * \brief Prints the status information about the current solver with some level
+     * of verbosity
+     */
+    void describe_impl(Teuchos::FancyOStream &out,
+                       const Teuchos::EVerbosityLevel verbLevel) const;
 
 
     // We keep some `temporary' storage for when we retrive values
@@ -213,9 +221,9 @@ namespace Amesos2 {
   struct solver_traits<Lapack> {
 // #ifdef HAVE_TEUCHOS_COMPLEX
 //     typedef Meta::make_list4<float,
-// 			     double,
-// 			     std::complex<float>,
-// 			     std::complex<double> >supported_scalars;
+//                              double,
+//                              std::complex<float>,
+//                              std::complex<double> >supported_scalars;
 // #else
     typedef Meta::make_list2<float, double> supported_scalars;
 // #endif
@@ -223,4 +231,4 @@ namespace Amesos2 {
   
 } // end namespace Amesos2
 
-#endif	// AMESOS2_NEWSOLVER_DECL_HPP
+#endif        // AMESOS2_NEWSOLVER_DECL_HPP

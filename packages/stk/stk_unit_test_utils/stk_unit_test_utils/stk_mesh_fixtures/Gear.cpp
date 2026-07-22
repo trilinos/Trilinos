@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <cmath>                        // for cos, sin
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -107,6 +107,10 @@ Gear::Gear(MetaData & meta,
 void Gear::populate_fields(FieldState state) {
 
   //setup the cylindrical_coord_field on the hex nodes
+  auto cylindrical_field_data = cylindrical_coord_field.data<stk::mesh::ReadWrite>();
+  auto translation_field_data = translation_field.data<stk::mesh::ReadWrite>();
+  auto cartesian_field_data = cartesian_coord_field.data<stk::mesh::ReadWrite>();
+  auto displacement_field_data = displacement_field.field_of_state(state).data<stk::mesh::ReadWrite>();
   for ( size_t ir = 0 ; ir < rad_num-1; ++ir ) {
     const double rad = rad_min + rad_increment * ir ;
 
@@ -118,26 +122,26 @@ void Gear::populate_fields(FieldState state) {
 
         Entity node = get_node(iz,ir,ia);
 
-        double * const cylindrical_data = stk::mesh::field_data( cylindrical_coord_field , node );
-        double * const translation_data = stk::mesh::field_data( translation_field , node );
-        double * const cartesian_data = stk::mesh::field_data( cartesian_coord_field , node );
-        double * const displacement_data = stk::mesh::field_data( displacement_field.field_of_state(state) , node );
+        auto cylindrical_data = cylindrical_field_data.entity_values(node);
+        auto translation_data = translation_field_data.entity_values(node);
+        auto cartesian_data   = cartesian_field_data.entity_values(node);
+        auto displacement_data = displacement_field_data.entity_values(node);
 
-        cylindrical_data[0] = rad ;
-        cylindrical_data[1] = angle ;
-        cylindrical_data[2] = height;
+        cylindrical_data(0_comp) = rad ;
+        cylindrical_data(1_comp) = angle ;
+        cylindrical_data(2_comp) = height;
 
-        translation_data[0] = 0;
-        translation_data[1] = 0;
-        translation_data[2] = 0;
+        translation_data(0_comp) = 0;
+        translation_data(1_comp) = 0;
+        translation_data(2_comp) = 0;
 
-        displacement_data[0] = 0;
-        displacement_data[1] = 0;
-        displacement_data[2] = 0;
+        displacement_data(0_comp) = 0;
+        displacement_data(1_comp) = 0;
+        displacement_data(2_comp) = 0;
 
-        cartesian_data[0] = rad * std::cos(angle);
-        cartesian_data[1] = rad * std::sin(angle);
-        cartesian_data[2] = height;
+        cartesian_data(0_comp) = rad * std::cos(angle);
+        cartesian_data(1_comp) = rad * std::sin(angle);
+        cartesian_data(2_comp) = height;
       }
     }
   }
@@ -156,26 +160,26 @@ void Gear::populate_fields(FieldState state) {
 
         Entity node = get_node(iz,ir,ia);
 
-        double * const cylindrical_data = stk::mesh::field_data( cylindrical_coord_field , node );
-        double * const translation_data = stk::mesh::field_data( translation_field , node );
-        double * const cartesian_data = stk::mesh::field_data( cartesian_coord_field , node );
-        double * const displacement_data = stk::mesh::field_data( displacement_field.field_of_state(state) , node );
+        auto cylindrical_data = cylindrical_field_data.entity_values(node);
+        auto translation_data = translation_field_data.entity_values(node);
+        auto cartesian_data   = cartesian_field_data.entity_values(node);
+        auto displacement_data = displacement_field_data.entity_values(node);
 
-        cylindrical_data[0] = rad ;
-        cylindrical_data[1] = angle ;
-        cylindrical_data[2] = height;
+        cylindrical_data(0_comp) = rad ;
+        cylindrical_data(1_comp) = angle ;
+        cylindrical_data(2_comp) = height;
 
-        translation_data[0] = 0;
-        translation_data[1] = 0;
-        translation_data[2] = 0;
+        translation_data(0_comp) = 0;
+        translation_data(1_comp) = 0;
+        translation_data(2_comp) = 0;
 
-        displacement_data[0] = 0;
-        displacement_data[1] = 0;
-        displacement_data[2] = 0;
+        displacement_data(0_comp) = 0;
+        displacement_data(1_comp) = 0;
+        displacement_data(2_comp) = 0;
 
-        cartesian_data[0] = rad * std::cos(angle);
-        cartesian_data[1] = rad * std::sin(angle);
-        cartesian_data[2] = height;
+        cartesian_data(0_comp) = rad * std::cos(angle);
+        cartesian_data(1_comp) = rad * std::sin(angle);
+        cartesian_data(2_comp) = height;
       }
     }
   }
@@ -284,27 +288,27 @@ void Gear::move( const GearMovement & data) {
 
   enum { Node = 0 };
 
+  auto cylindrical_field_data = cylindrical_coord_field.data<stk::mesh::ReadWrite>();
+  auto translation_field_data = translation_field.data<stk::mesh::ReadWrite>();
+  auto cartesian_field_data = cartesian_coord_field.data();
+  auto displacement_field_data = displacement_field.field_of_state(StateNew).data<stk::mesh::ReadWrite>();
   Selector select = gear_part & cylindrical_coord_part & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
 
   BucketVector const& node_buckets = bulk_data.get_buckets(NODE_RANK, select);
 
-  for (BucketVector::const_iterator b_itr = node_buckets.begin();
-      b_itr != node_buckets.end();
-      ++b_itr)
+  for (stk::mesh::Bucket* bucket : node_buckets)
   {
-    Bucket & b = **b_itr;
-    double* cylindrical_data = stk::mesh::field_data( cylindrical_coord_field, b);  // ONE STATE
-    double*   translation_data = stk::mesh::field_data( translation_field, b); // ONE STATE
-    const double*   old_coordinate_data = stk::mesh::field_data( cartesian_coord_field, b); // ONE STATE
-    double*   new_displacement_data = stk::mesh::field_data( displacement_field.field_of_state(StateNew), b); // TWO STATE
+    auto cylindrical_data      = cylindrical_field_data.bucket_values(*bucket);
+    auto translation_data      = translation_field_data.bucket_values(*bucket);
+    auto old_coordinate_data    = cartesian_field_data.bucket_values(*bucket);
+    auto new_displacement_data = displacement_field_data.bucket_values(*bucket);
 
-    double new_coordinate_data[3] = {0,0,0};
-    for (size_t i = 0; i < b.size(); ++i) {
-      int index = i;
+    std::array<double, 3> new_coordinate_data = {0,0,0};
+    for (stk::mesh::EntityIdx i : bucket->entities()) {
 
-      const double   radius = cylindrical_data[0+index*3];
-            double & angle  = cylindrical_data[1+index*3];
-      const double   height = cylindrical_data[2+index*3];
+      const double   radius = cylindrical_data(i, 0_comp);
+            double & angle  = cylindrical_data(i, 1_comp);
+      const double   height = cylindrical_data(i, 2_comp);
 
 
       angle += data.rotation;
@@ -316,301 +320,20 @@ void Gear::move( const GearMovement & data) {
         angle -= TWO_PI;
       }
 
-      translation_data[0+index*3] += data.x;
-      translation_data[1+index*3] += data.y;
-      translation_data[2+index*3] += data.z;
+      translation_data(i, 0_comp) += data.x;
+      translation_data(i, 1_comp) += data.y;
+      translation_data(i, 2_comp) += data.z;
 
-      new_coordinate_data[0] = translation_data[0+index*3] + radius * std::cos(angle);
-      new_coordinate_data[1] = translation_data[1+index*3] + radius * std::sin(angle);
-      new_coordinate_data[2] = translation_data[2+index*3] + height;
+      new_coordinate_data[0] = translation_data(i, 0_comp) + radius * std::cos(angle);
+      new_coordinate_data[1] = translation_data(i, 1_comp) + radius * std::sin(angle);
+      new_coordinate_data[2] = translation_data(i, 2_comp) + height;
 
-      new_displacement_data[0+index*3] = new_coordinate_data[0] - old_coordinate_data[0+index*3];
-      new_displacement_data[1+index*3] = new_coordinate_data[1] - old_coordinate_data[1+index*3];
-      new_displacement_data[2+index*3] = new_coordinate_data[2] - old_coordinate_data[2+index*3];
+      new_displacement_data(i, 0_comp) = new_coordinate_data[0] - old_coordinate_data(i, 0_comp);
+      new_displacement_data(i, 1_comp) = new_coordinate_data[1] - old_coordinate_data(i, 1_comp);
+      new_displacement_data(i, 2_comp) = new_coordinate_data[2] - old_coordinate_data(i, 2_comp);
     }
   }
 }
-
-namespace simple_fields {
-
-Gear::Gear(MetaData & meta,
-           BulkData & bulk,
-           Part & gear,
-           Part & arg_cylindrical_coord_part,
-           Part & hex,
-           Part & wedge,
-           CartesianField   & arg_cartesian_coord_field,
-           CartesianField   & arg_displacement_field,
-           CartesianField   & arg_translation_field,
-           CylindricalField & arg_cylindrical_coord_field,
-           double arg_element_size,
-           double arg_radius_min,
-           double arg_radius_max,
-           double arg_height_min,
-           double arg_height_max)
-  : element_size(arg_element_size),
-    rad_min(arg_radius_min),
-    rad_max(arg_radius_max),
-    height_min(arg_height_min),
-    height_max(arg_height_max),
-
-    angle_num(static_cast<size_t>(TWO_PI/element_size)),
-    rad_num(static_cast<size_t>(2 +(rad_max - rad_min)/element_size)),
-    height_num(static_cast<size_t>(2 +(height_max - height_min)/element_size)),
-
-    angle_increment( TWO_PI / static_cast<double>(angle_num)),
-    rad_increment( (rad_max-rad_min) / static_cast<double>(rad_num-1)),
-    height_increment( (height_max-height_min) / static_cast<double>(height_num-1)),
-
-    num_elements( angle_num * (rad_num-1) * (height_num-1) ),
-    num_nodes( angle_num * (rad_num) * (height_num) ),
-
-    meta_data(meta),
-    bulk_data(bulk),
-
-    gear_part(gear),
-    cylindrical_coord_part(arg_cylindrical_coord_part),
-    hex_part(hex),
-    wedge_part(wedge),
-
-    cartesian_coord_field(arg_cartesian_coord_field),
-    displacement_field(arg_displacement_field),
-    translation_field(arg_translation_field),
-    cylindrical_coord_field(arg_cylindrical_coord_field)
-{}
-
-//
-//-----------------------------------------------------------------------------
-//
-
-void Gear::populate_fields(FieldState state) {
-
-  //setup the cylindrical_coord_field on the hex nodes
-  for ( size_t ir = 0 ; ir < rad_num-1; ++ir ) {
-    const double rad = rad_min + rad_increment * ir ;
-
-    for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
-      const double angle = angle_increment * ia ;
-
-      for ( size_t iz = 0 ; iz < height_num; ++iz ) {
-        const double height = height_min + height_increment * iz ;
-
-        Entity node = get_node(iz,ir,ia);
-
-        double * const cylindrical_data = stk::mesh::field_data( cylindrical_coord_field , node );
-        double * const translation_data = stk::mesh::field_data( translation_field , node );
-        double * const cartesian_data = stk::mesh::field_data( cartesian_coord_field , node );
-        double * const displacement_data = stk::mesh::field_data( displacement_field.field_of_state(state) , node );
-
-        cylindrical_data[0] = rad ;
-        cylindrical_data[1] = angle ;
-        cylindrical_data[2] = height;
-
-        translation_data[0] = 0;
-        translation_data[1] = 0;
-        translation_data[2] = 0;
-
-        displacement_data[0] = 0;
-        displacement_data[1] = 0;
-        displacement_data[2] = 0;
-
-        cartesian_data[0] = rad * std::cos(angle);
-        cartesian_data[1] = rad * std::sin(angle);
-        cartesian_data[2] = height;
-      }
-    }
-  }
-
-  //setup the cylindrical_coord_field on the wedge nodes
-  {
-    size_t ir = rad_num-1;
-    //const double rad = rad_min + rad_increment * ir ;
-    const double rad = 1.1*rad_max;
-
-    for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
-      const double angle = angle_increment * (ia + ia +1.0)/2.0;
-
-      for ( size_t iz = 0 ; iz < height_num; ++iz ) {
-        const double height = height_min + height_increment * iz ;
-
-        Entity node = get_node(iz,ir,ia);
-
-        double * const cylindrical_data = stk::mesh::field_data( cylindrical_coord_field , node );
-        double * const translation_data = stk::mesh::field_data( translation_field , node );
-        double * const cartesian_data = stk::mesh::field_data( cartesian_coord_field , node );
-        double * const displacement_data = stk::mesh::field_data( displacement_field.field_of_state(state) , node );
-
-        cylindrical_data[0] = rad ;
-        cylindrical_data[1] = angle ;
-        cylindrical_data[2] = height;
-
-        translation_data[0] = 0;
-        translation_data[1] = 0;
-        translation_data[2] = 0;
-
-        displacement_data[0] = 0;
-        displacement_data[1] = 0;
-        displacement_data[2] = 0;
-
-        cartesian_data[0] = rad * std::cos(angle);
-        cartesian_data[1] = rad * std::sin(angle);
-        cartesian_data[2] = height;
-      }
-    }
-  }
-}
-
-
-//
-//-----------------------------------------------------------------------------
-//
-
-void Gear::generate_gear()
-{
-  const EntityRank element_rank = stk::topology::ELEMENT_RANK;
-
-  std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
-  requests[NODE_RANK]     = num_nodes;
-  requests[element_rank] = num_elements;
-
-  // Parallel collective call:
-  bulk_data.generate_new_entities(requests, gear_entities);
-
-  //setup hex elements
-  {
-    std::vector<Part*> add_parts, remove_parts ;
-    add_parts.push_back( & cylindrical_coord_part );
-    add_parts.push_back( & gear_part );
-    add_parts.push_back( & hex_part );
-
-    for ( size_t ir = 0 ; ir < rad_num -2 ; ++ir ) {
-      for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
-        for ( size_t iz = 0 ; iz < height_num -1 ; ++iz ) {
-
-          Entity elem = get_element(iz, ir, ia);
-          bulk_data.change_entity_parts(elem, add_parts, remove_parts);
-
-          const size_t ia_1 = ( ia + 1 ) % angle_num ;
-          const size_t ir_1 = ir + 1 ;
-          const size_t iz_1 = iz + 1 ;
-
-          Entity node[8] ;
-
-          node[0] = get_node(iz  , ir  , ia   );
-          node[1] = get_node(iz_1, ir  , ia   );
-          node[2] = get_node(iz_1, ir_1, ia   );
-          node[3] = get_node(iz  , ir_1, ia   );
-          node[4] = get_node(iz  , ir  , ia_1 );
-          node[5] = get_node(iz_1, ir  , ia_1 );
-          node[6] = get_node(iz_1, ir_1, ia_1 );
-          node[7] = get_node(iz  , ir_1, ia_1 );
-
-          for ( size_t j = 0 ; j < 8 ; ++j ) {
-            bulk_data.declare_relation( elem , node[j] , j );
-          }
-        }
-      }
-    }
-  }
-
-  //setup wedges elements
-  {
-    std::vector<Part*> add_parts, remove_parts ;
-    add_parts.push_back( & cylindrical_coord_part );
-    add_parts.push_back( & gear_part );
-    add_parts.push_back( & wedge_part );
-
-    size_t ir = rad_num-2 ;
-    for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
-      for ( size_t iz = 0 ; iz < height_num -1 ; ++iz ) {
-
-        Entity elem = get_element(iz, ir, ia);
-        bulk_data.change_entity_parts(elem, add_parts, remove_parts);
-
-        const size_t ia_1 = ( ia + 1 ) % angle_num ;
-        const size_t ir_1 = ir + 1 ;
-        const size_t iz_1 = iz + 1 ;
-
-        Entity node[6] ;
-
-        node[0] = get_node(iz  , ir  , ia_1 );
-        node[1] = get_node(iz  , ir  , ia   );
-        node[2] = get_node(iz  , ir_1, ia   );
-        node[3] = get_node(iz_1, ir  , ia_1 );
-        node[4] = get_node(iz_1, ir  , ia   );
-        node[5] = get_node(iz_1, ir_1, ia   );
-
-        for ( size_t j = 0 ; j < 6 ; ++j ) {
-          bulk_data.declare_relation( elem , node[j] , j );
-        }
-      }
-    }
-  }
-
-  //cylindrical and cartesian coordinates
-  //are 2 state fields.  Need to update
-  //both states at construction
-  populate_fields(StateOld);
-  populate_fields(StateNew);
-
-}
-
-//
-//-----------------------------------------------------------------------------
-//
-
-void Gear::move( const GearMovement & data) {
-
-  enum { Node = 0 };
-
-  Selector select = gear_part & cylindrical_coord_part & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
-
-  BucketVector const& node_buckets = bulk_data.get_buckets(NODE_RANK, select);
-
-  for (BucketVector::const_iterator b_itr = node_buckets.begin();
-      b_itr != node_buckets.end();
-      ++b_itr)
-  {
-    Bucket & b = **b_itr;
-    double* cylindrical_data = stk::mesh::field_data( cylindrical_coord_field, b);  // ONE STATE
-    double*   translation_data = stk::mesh::field_data( translation_field, b); // ONE STATE
-    const double*   old_coordinate_data = stk::mesh::field_data( cartesian_coord_field, b); // ONE STATE
-    double*   new_displacement_data = stk::mesh::field_data( displacement_field.field_of_state(StateNew), b); // TWO STATE
-
-    double new_coordinate_data[3] = {0,0,0};
-    for (size_t i = 0; i < b.size(); ++i) {
-      int index = i;
-
-      const double   radius = cylindrical_data[0+index*3];
-            double & angle  = cylindrical_data[1+index*3];
-      const double   height = cylindrical_data[2+index*3];
-
-
-      angle += data.rotation;
-
-      if ( angle < 0.0) {
-        angle += TWO_PI;
-      }
-      else if ( angle > TWO_PI) {
-        angle -= TWO_PI;
-      }
-
-      translation_data[0+index*3] += data.x;
-      translation_data[1+index*3] += data.y;
-      translation_data[2+index*3] += data.z;
-
-      new_coordinate_data[0] = translation_data[0+index*3] + radius * std::cos(angle);
-      new_coordinate_data[1] = translation_data[1+index*3] + radius * std::sin(angle);
-      new_coordinate_data[2] = translation_data[2+index*3] + height;
-
-      new_displacement_data[0+index*3] = new_coordinate_data[0] - old_coordinate_data[0+index*3];
-      new_displacement_data[1+index*3] = new_coordinate_data[1] - old_coordinate_data[1+index*3];
-      new_displacement_data[2+index*3] = new_coordinate_data[2] - old_coordinate_data[2+index*3];
-    }
-  }
-}
-
-} // namespace simple_fields
 
 } // fixtures
 } // mesh

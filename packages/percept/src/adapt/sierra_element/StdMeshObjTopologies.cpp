@@ -18,7 +18,7 @@
 
 /**
  * NOTE: the text of the RefTopoX tables herein are generated from adapt/UniformRefinerPattern::printRefinementTopoX_Table
- *   This need only be done once at code development time, or if Intrepid changes their definitions of parametric coordinates.
+ *   This need only be done once at code development time, or if Intrepid2 changes their definitions of parametric coordinates.
  *   Note: these tables could be generated each time the code is run by using a 'bootstrap' method and by changing the types
  *     of RefTopoX to be a pointer to an array of RefinementTopologyExtra entries that can be allocated and filled on the fly
  *     in the bootstrap process.  However, we liked the idea of being able to view the tables, that's why they are generated
@@ -2753,8 +2753,6 @@
           //           static const UInt   child_9[] = {  13, 9, 12, 8 , EUA};
 
           //Note: the 99's are filled in programatically
-
-          typedef const UInt * const *ChildNodeTableConst;
 
           static UInt child_node_table_0[][15] = {
             {  0, 5, 13, 8, 9,    99,99,99,99, 99,99,99,99, 99, EUA},

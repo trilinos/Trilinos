@@ -1,12 +1,13 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 #pragma once
 
+#include "util.h"
+
 #include <exodusII.h>
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,7 @@ using EXOTYPE = int;
 using EXOTYPE = int;
 #endif
 
-template <typename INT> class ExoII_Read;
+template <typename INT> class Exo_Read;
 
 class Exo_Entity
 {
@@ -52,10 +53,10 @@ public:
   const double *Get_Attributes(int attr_index) const;
   void          Free_Attributes();
 
-  const std::string              &Get_Attribute_Name(int attr_index) const;
-  const std::string              &Name() const { return name_; }
-  const std::vector<std::string> &Attribute_Names() const { return attributeNames; }
-  int                             Find_Attribute_Index(const std::string &name) const;
+  const std::string &Get_Attribute_Name(int attr_index) const;
+  const std::string &Name() const { return name_; }
+  const NameList    &Attribute_Names() const { return attributeNames; }
+  int                Find_Attribute_Index(const std::string &name) const;
 
   // Return "Element Block", "Nodeset", "Sideset, depending on underlying type.
   virtual const char *label() const = 0;
@@ -90,7 +91,7 @@ private:
   int                   numAttr{0};    // Total number of attributes in the file.
   std::vector<double *> attributes_{}; // Array of pointers (length numAttr)
                                        // to arrays of attributes (length num_entity).
-  std::vector<std::string> attributeNames{};
+  NameList attributeNames{};
 
-  template <typename INT> friend class ExoII_Read;
+  template <typename INT> friend class Exo_Read;
 };

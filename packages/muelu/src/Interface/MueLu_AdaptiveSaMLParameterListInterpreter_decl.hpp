@@ -68,7 +68,7 @@ namespace MueLu {
 // void CreateSublists(const ParameterList &List, ParameterList &newList);
 
 /*!
-  @class AdaptiveSAMLParameterListInterpreter class.
+  @class AdaptiveSAMLParameterListInterpreter
   @brief Class that accepts ML-style parameters and builds a MueLu preconditioner.
   This interpreter uses the same default values as ML. This allows to compare ML/MueLu results
 */

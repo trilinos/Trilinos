@@ -139,7 +139,7 @@ public:
     return true;
   };
 
-  bool computeJacobian(const Epetra_Vector & x, Epetra_Operator & Jac)
+  bool computeJacobian(const Epetra_Vector & x, Epetra_Operator & Jac_)
   {
 
     Problem_->UpdateJacobian(x);

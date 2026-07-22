@@ -85,9 +85,15 @@ def get_changed_files(target_branch, feature_branch):
         start_commit,
         feature_branch
     ]
-    result = subprocess.check_output(cmd).decode("utf-8")
+    out = subprocess.check_output(cmd)
+    result = []
+    for line in out.splitlines():
+        try:
+            result.append(line.decode("utf-8"))
+        except UnicodeDecodeError:
+            print(f"WARNING: Line {line} contains non-UTF8 characters; ignoring it")
 
-    return parse_diff_output(result)
+    return parse_diff_output("\n".join(result))
 
 
 def print_occurences(changed_files, title):

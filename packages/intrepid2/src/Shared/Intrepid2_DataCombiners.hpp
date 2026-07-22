@@ -48,7 +48,8 @@ namespace Intrepid2 {
     this_underlying_(this_underlying),
     A_underlying_(A_underlying),
     B_underlying_(B_underlying),
-    binaryOperator_(binaryOperator)
+    binaryOperator_(binaryOperator),
+    innerLoopSize_(-1)
     {
       INTREPID2_TEST_FOR_EXCEPTION(includeInnerLoop,std::invalid_argument,"If includeInnerLoop is true, must specify the size of the inner loop");
     }

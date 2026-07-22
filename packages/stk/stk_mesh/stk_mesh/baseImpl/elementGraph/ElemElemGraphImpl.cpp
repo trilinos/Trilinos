@@ -150,7 +150,10 @@ bool is_id_already_in_use_locally(stk::mesh::BulkData& bulkData, stk::mesh::Enti
 bool does_side_exist_with_different_permutation(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
         stk::mesh::ConnectivityOrdinal side_ordinal, stk::mesh::Permutation perm)
 {
-    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
+    unsigned ranked_side_ordinal;
+    stk::mesh::EntityRank side_rank;
+
+    bulkData.bucket(element).topology().ranked_side_ordinal(side_ordinal, ranked_side_ordinal, side_rank);
 
     unsigned elem_num_sides = bulkData.num_connectivity(element, side_rank);
     const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulkData.begin_ordinals(element, side_rank);
@@ -158,7 +161,7 @@ bool does_side_exist_with_different_permutation(stk::mesh::BulkData& bulkData, s
 
     for (unsigned i=0 ; i<elem_num_sides ; ++i)
     {
-        if (elem_ord_it[i] == static_cast<unsigned>(side_ordinal))
+        if (elem_ord_it[i] == ranked_side_ordinal)
         {
             if (perm != elem_perm_it[i])
             {
@@ -176,14 +179,17 @@ bool does_side_exist_with_different_permutation(stk::mesh::BulkData& bulkData, s
 bool does_element_side_exist(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side_ordinal)
 {
     stk::mesh::Entity side = stk::mesh::Entity();
-    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
+    unsigned ranked_side_ordinal;
+    stk::mesh::EntityRank side_rank;
+
+    bulkData.bucket(element).topology().ranked_side_ordinal(side_ordinal, ranked_side_ordinal, side_rank);
 
     unsigned elem_num_sides = bulkData.num_connectivity(element, side_rank);
     const stk::mesh::Entity * elem_sides = bulkData.begin(element, side_rank);
     const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulkData.begin_ordinals(element, side_rank);
     for (unsigned i=0 ; i<elem_num_sides ; ++i)
     {
-        if (elem_ord_it[i] == static_cast<unsigned>(side_ordinal))
+        if (elem_ord_it[i] == ranked_side_ordinal)
         {
             side = elem_sides[i];
             break;
@@ -255,30 +261,55 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
     return side_parts;
 }
 
-void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
-        stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
-        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector, const stk::mesh::PartVector *boundary_mesh_parts)
+bool is_exposed_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, int side_id,
+                     const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                     const stk::mesh::Part& activePart)
 {
-//    stk::mesh::EntityId side_global_id = parallel_edge_info.m_chosen_side_id;
+    bool localElementisActive = bulkData.bucket(local_element).member(activePart);
+    int numConnectedActive = impl::get_number_of_connected_active_elements(bulkData, local_element, side_id, activePart, remoteActiveSelector);
+    bool isExposedSide = localElementisActive ? (numConnectedActive == 0) : (numConnectedActive == 1);
+
+    return isExposedSide;
+}
+
+bool can_add_side_into_exposed_boundary(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, int side_id,
+                                        const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                                        const stk::mesh::Part& activePart)
+{
+  if(bulkData.get_face_adjacent_element_graph().has_shell_elements()) {
+    // If there is a possibility that this is a shell edge, only add side if it is an exposed boundary
+    stk::topology elemTopo = bulkData.bucket(local_element).topology();
+    if(elemTopo.is_shell() && !is_exposed_side(bulkData, local_element, side_id, remoteActiveSelector, activePart)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
+                                    stk::mesh::Entity local_element, int side_id,
+                                    const stk::mesh::PartVector& parts_for_creating_side,
+                                    std::vector<stk::mesh::sharing_info> &shared_modified,
+                                    stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                                    const stk::mesh::Part& activePart,
+                                    const stk::mesh::PartVector *boundary_mesh_parts)
+{
+
+    if(!can_add_side_into_exposed_boundary(bulkData, local_element, side_id, remoteActiveSelector, activePart)) {
+      return;
+    }
+
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
 
-    // determine which element is active
-//    stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
     int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
     int owning_proc = std::min(other_proc, bulkData.parallel_rank());
-
-//    if(remoteActiveSelector[-remote_id])
-//    {
-//        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-//    }
 
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
 
     if(!bulkData.is_valid(side))
     {
         stk::mesh::PartVector side_parts = get_parts_for_creating_side(bulkData, parts_for_creating_side, local_element, side_id);
-//        STK_ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id));
-//        side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, side_parts);
         side = bulkData.declare_element_side(local_element, side_ord, side_parts);
         shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
     }
@@ -288,7 +319,13 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
         {
             stk::mesh::ConstPartVector parts = get_stk_parts_for_moving_parts_into_death_boundary(boundary_mesh_parts);
             bulkData.change_entity_parts(side, parts);
-            shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, bulkData.parallel_owner_rank(side)));
+
+            int owner = bulkData.parallel_rank();
+            if(bulkData.state(side) == stk::mesh::Created) {
+              // Owner has not been resolved yet
+              owner = owning_proc;
+            }
+            shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owner));
         }
     }
 }
@@ -299,18 +336,90 @@ bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity 
     return bulkData.is_valid(side) && bulkData.bucket(side).member(sides_created_during_death);
 }
 
-void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
-        stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id)
+int get_number_of_connected_active_elements(const stk::mesh::BulkData& bulkData,
+                                            stk::mesh::Entity localElement,
+                                            int localOrdinal,
+                                            const stk::mesh::Part& activePart,
+                                            const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector)
 {
+  const ElemElemGraph& elementGraph = bulkData.get_face_adjacent_element_graph();
+  stk::mesh::impl::LocalId elemLocalId = elementGraph.get_local_element_id(localElement);
+  stk::mesh::GraphEdgesForElement graphEdges = elementGraph.get_edges_for_element(elemLocalId);
+
+  int numConnectedActiveElements = 0;
+
+  for(size_t i = 0; i < graphEdges.size(); ++i)
+  {
+    const GraphEdge& graphEdge =  elementGraph.get_graph().get_edge_for_element(elemLocalId, i);
+    int sideOrdinal = graphEdge.side1();
+
+    if(localOrdinal == sideOrdinal) {
+      bool isParallelGraphEdge = !stk::mesh::impl::is_local_element(graphEdge.elem2());
+
+      if(!isParallelGraphEdge) {
+        // Local connectivity
+        stk::mesh::Entity otherElement = elementGraph.get_entity(graphEdge.elem2());
+        bool isOtherElementAlive = bulkData.bucket(otherElement).member(activePart);
+        if(isOtherElementAlive) {
+          numConnectedActiveElements++;
+        }
+      } else {
+        auto iter = remoteActiveSelector.find(graphEdge.elem2());
+        bool isOtherElementAlive = (iter != remoteActiveSelector.end() ? iter->second : true);
+        if(isOtherElementAlive) {
+          numConnectedActiveElements++;
+        }
+      }
+    }
+  }
+
+  const std::vector<GraphEdge> & coincidentGraphEdges = elementGraph.get_coincident_edges_for_element(elemLocalId);
+
+  for(const GraphEdge& graphEdge : coincidentGraphEdges) {
+    STK_ThrowAssertMsg(stk::mesh::impl::is_local_element(graphEdge.elem2()), "Violation of split coincident element rule");
+
+    stk::mesh::Entity otherElement = elementGraph.get_entity(graphEdge.elem2());
+    bool isOtherElementAlive = bulkData.bucket(otherElement).member(activePart);
+    if(isOtherElementAlive) {
+      numConnectedActiveElements++;
+    }
+  }
+
+  return numConnectedActiveElements;
+}
+
+bool can_remove_side_from_element_death_boundary(stk::mesh::BulkData& bulkData,
+                                                 stk::mesh::Entity localElement,
+                                                 int localOrdinal,
+                                                 stk::mesh::Part& activePart,
+                                                 stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector)
+{
+  int numConnectedActiveElements = get_number_of_connected_active_elements(bulkData, localElement, localOrdinal,
+                                                                           activePart, remoteActiveSelector);
+
+  return (numConnectedActiveElements == 0);
+}
+
+bool remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
+                                     stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities,
+                                     int side_id, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector)
+{
+    bool status = true;
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, local_element, side_id);
     if(side_created_during_death(bulkData, side))
     {
-        deletedEntities.push_back(side);
+        if(can_remove_side_from_element_death_boundary(bulkData, local_element, side_id, activePart, remoteActiveSelector)) {
+          deletedEntities.push_back(side);
+        } else {
+          status = false;
+        }
     }
     else if(bulkData.is_valid(side) && bulkData.bucket(side).owned())
     {
         bulkData.change_entity_parts(side, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&activePart});
     }
+
+    return status;
 }
 
 
@@ -318,15 +427,18 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
         stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
         stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts)
 {
-    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
+    unsigned ranked_side_ordinal;
+    stk::mesh::EntityRank side_rank;
+
+    stk::topology elem_top = bulkData.bucket(element).topology();
+    elem_top.ranked_side_ordinal(side_ordinal, ranked_side_ordinal, side_rank);
 
     stk::mesh::Entity side = bulkData.internal_declare_entity(side_rank, side_global_id, parts);
 
     // connect element to side
-    bulkData.declare_relation(element, side, side_ordinal, side_permutation);
+    bulkData.declare_relation(element, side, ranked_side_ordinal, side_permutation);
 
     // connect side to nodes
-    stk::topology elem_top = bulkData.bucket(element).topology();
     stk::topology side_top = elem_top.side_topology(side_ordinal);
     const stk::mesh::Entity* elemNodes = bulkData.begin_nodes(element);
     stk::mesh::EntityVector side_nodes;

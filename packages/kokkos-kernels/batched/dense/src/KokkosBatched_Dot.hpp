@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_DOT_HPP__
-#define __KOKKOSBATCHED_DOT_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_DOT_HPP
+#define KOKKOSBATCHED_DOT_HPP
 
 /// \author Kim Liegeois (knliege@sandia.gov)
 
@@ -52,9 +39,7 @@ namespace KokkosBatched {
 template <typename ArgTrans = Trans::NoTranspose>
 struct SerialDot {
   template <typename XViewType, typename YViewType, typename NormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X,
-                                           const YViewType &Y,
-                                           const NormViewType &dot);
+  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X, const YViewType &Y, const NormViewType &dot);
 };
 
 /// \brief Team Batched DOT:
@@ -86,9 +71,7 @@ struct SerialDot {
 template <typename MemberType, typename ArgTrans = Trans::NoTranspose>
 struct TeamDot {
   template <typename XViewType, typename YViewType, typename NormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const XViewType &X,
-                                           const YViewType &Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot);
 };
 
@@ -122,9 +105,7 @@ struct TeamDot {
 template <typename MemberType, typename ArgTrans = Trans::NoTranspose>
 struct TeamVectorDot {
   template <typename XViewType, typename YViewType, typename NormViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const XViewType &X,
-                                           const YViewType &Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const NormViewType &dot);
 };
 

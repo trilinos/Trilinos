@@ -8,21 +8,44 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit test of serial interface Intrepid2::Basis_HGRAD_QUAD_Cn_FEM.
+    \brief  Unit test of Intrepid2::Basis_HGRAD_QUAD_Cn_FEM team-level getValues.
     \author Kyungjoo Kim
 */
 
 #include "Kokkos_Core.hpp"
 
+#define ETI_SACADO @ETI_SACADO@
+#if (ETI_SACADO != 0)  /// SACADO
+#include "Kokkos_ViewFactory.hpp"
+#include "Sacado.hpp"
+#endif
+
+#if (ETI_SACADO == 0)  /// double double
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+#elif (ETI_SACADO == 11 /* SFAD SFAD */ || ETI_SACADO == 33 /* DFAD DFAD */)
+constexpr int num_deriv = 3;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#elif (ETI_SACADO == 23)
+constexpr int num_deriv = 3;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#elif (ETI_SACADO == 20)
+constexpr int num_deriv = 2;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+#endif
+
 #include "test_02.hpp"
 
 int main(int argc, char *argv[]) {
 
+  const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
-  {
-    const bool verbose = (argc-1) > 0;
-    Intrepid2::Test::HGRAD_QUAD_Cn_FEM_Test02<@ETI_VALUETYPE@,@ETI_DEVICE@>(verbose);
-  }
+
+  Intrepid2::Test::HGRAD_QUAD_Cn_FEM_Test02<@ETI_VALUETYPE@,@ETI_DEVICE@>(verbose);
+
   Kokkos::finalize();
   return 0;
 }

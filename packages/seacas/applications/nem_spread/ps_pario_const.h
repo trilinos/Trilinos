@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -8,6 +8,7 @@
 #pragma once
 
 #include "rf_io_const.h"
+#include <array>
 #include <string>
 
 /* Global variables. */
@@ -24,8 +25,8 @@ struct Parallel_IO
 {
   int Dsk_List_Cnt{};
 
-  int  *Dsk_List{nullptr};
-  int **RDsk_List{nullptr};
+  std::vector<int> Dsk_List{};
+  int            **RDsk_List{nullptr};
 
   int Num_Dsk_Ctrlrs{};  /* The number of disk controllers.     */
   int Num_Dsks_PCtrlr{}; /* The number of disks per controller. */

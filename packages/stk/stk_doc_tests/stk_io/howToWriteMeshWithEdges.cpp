@@ -24,7 +24,6 @@ TEST(StkIoHowTo, WriteMeshWithEdges)
     builder.set_spatial_dimension(3);
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Part* edgeBlockPart = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
     stk::io::put_edge_block_io_part_attribute(*edgeBlockPart);
@@ -42,7 +41,6 @@ TEST(StkIoHowTo, WriteMeshWithEdges)
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
     stk::io::fill_mesh(filename, *bulk);
 
     const stk::mesh::Part* edgeBlockPart = meta.get_part("edgeBlock");
@@ -77,7 +75,7 @@ TEST(StkIoHowTo, Write2DMeshWithEdges)
   std::string filename = "output2D.exo";
   {
     unsigned nx = 2, ny = 2;
-    stk::mesh::fixtures::simple_fields::QuadFixture quadFixture(MPI_COMM_WORLD, nx, ny);
+    stk::mesh::fixtures::QuadFixture quadFixture(MPI_COMM_WORLD, nx, ny);
     stk::mesh::Part& sidesetPart = quadFixture.m_meta.declare_part("surface_1", stk::topology::EDGE_RANK);
     stk::mesh::Part& edgeBlockPart = quadFixture.m_meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
 
@@ -108,7 +106,6 @@ TEST(StkIoHowTo, Write2DMeshWithEdges)
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
     stk::io::fill_mesh(filename, *bulk);
 
     EXPECT_EQ(2u, meta.spatial_dimension());

@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_HADAMARDPRODUCT_HPP__
-#define __KOKKOSBATCHED_HADAMARDPRODUCT_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_HADAMARDPRODUCT_HPP
+#define KOKKOSBATCHED_HADAMARDPRODUCT_HPP
 
 /// \author Kim Liegeois (knliege@sandia.gov)
 
@@ -42,9 +29,7 @@ namespace KokkosBatched {
 
 struct SerialHadamardProduct {
   template <typename XViewType, typename YViewType, typename VViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X,
-                                           const YViewType &Y,
-                                           const VViewType &V);
+  KOKKOS_INLINE_FUNCTION static int invoke(const XViewType &X, const YViewType &Y, const VViewType &V);
 };
 
 /// \brief Team Batched Hadamard Product:
@@ -68,9 +53,7 @@ struct SerialHadamardProduct {
 template <typename MemberType>
 struct TeamHadamardProduct {
   template <typename XViewType, typename YViewType, typename VViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const XViewType &X,
-                                           const YViewType &Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const VViewType &V);
 };
 
@@ -96,31 +79,22 @@ struct TeamHadamardProduct {
 template <typename MemberType>
 struct TeamVectorHadamardProduct {
   template <typename XViewType, typename YViewType, typename VViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const XViewType &X,
-                                           const YViewType &Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const VViewType &V);
 };
 
 template <typename MemberType, typename ArgMode>
 struct HadamardProduct {
   template <typename XViewType, typename YViewType, typename VViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const XViewType &X,
-                                           const YViewType &Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const XViewType &X, const YViewType &Y,
                                            const VViewType &V) {
     int r_val = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
-      r_val = SerialHadamardProduct::template invoke<XViewType, YViewType,
-                                                     VViewType>(X, Y, V);
+      r_val = SerialHadamardProduct::template invoke<XViewType, YViewType, VViewType>(X, Y, V);
     } else if (std::is_same<ArgMode, Mode::Team>::value) {
-      r_val =
-          TeamHadamardProduct<MemberType>::template invoke<XViewType, YViewType,
-                                                           VViewType>(member, X,
-                                                                      Y, V);
+      r_val = TeamHadamardProduct<MemberType>::template invoke<XViewType, YViewType, VViewType>(member, X, Y, V);
     } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
-      r_val = TeamVectorHadamardProduct<MemberType>::template invoke<
-          XViewType, YViewType, VViewType>(member, X, Y, V);
+      r_val = TeamVectorHadamardProduct<MemberType>::template invoke<XViewType, YViewType, VViewType>(member, X, Y, V);
     }
     return r_val;
   }

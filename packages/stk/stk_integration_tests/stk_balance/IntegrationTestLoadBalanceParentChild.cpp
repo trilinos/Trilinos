@@ -156,7 +156,8 @@ private:
   stk::mesh::Entity create_family_tree(stk::mesh::Entity entity) const
   {
     stk::mesh::EntityId id = m_stkMeshBulkData.identifier(entity);
-    stk::mesh::Entity familyTree = m_stkMeshBulkData.declare_constraint(id);
+    stk::mesh::Entity familyTree =
+        m_stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, id, stk::mesh::ConstPartVector{});
     m_stkMeshBulkData.declare_relation(familyTree, entity, 0);
     return familyTree;
   }
@@ -202,11 +203,11 @@ public:
   {
   }
 
-  virtual bool allowModificationOfVertexWeightsForSmallMeshes() const { return false; }
+  virtual bool allowModificationOfVertexWeightsForSmallMeshes() const override { return false; }
 
   virtual ~StkFieldWeightRebalance() = default;
 
-  virtual std::string getCoordinateFieldName() const { return "model_coordinates"; }
+  virtual std::string getCoordinateFieldName() const override { return "model_coordinates"; }
 
 protected:
   StkFieldWeightRebalance() = delete;
@@ -229,15 +230,15 @@ public:
 
   virtual ~StkParentRebalance() = default;
 
-  virtual std::string getCoordinateFieldName() const { return "model_coordinates"; }
+  virtual std::string getCoordinateFieldName() const override { return "model_coordinates"; }
 
-  virtual void modifyDecomposition(stk::balance::DecompositionChangeList & decomp) const
+  virtual void modifyDecomposition(stk::balance::DecompositionChangeList& decomp) const override
   {
     delete_child_elements_from_decomposition(decomp);
     move_related_entities_with_parent_element(decomp);
   };
 
-  virtual bool shouldFixMechanisms() const { return false; }
+  virtual bool shouldFixMechanisms() const override { return false; }
 
 private:
 
@@ -421,7 +422,6 @@ protected:
     builder.set_aura_option(auraOption);
     m_bulkData = builder.create();
     m_metaData = &(m_bulkData->mesh_meta_data());
-    m_metaData->use_simple_fields();
   }
 
   void create_coarse_mesh()
@@ -503,11 +503,12 @@ protected:
 
   void set_parent_element_weights(const stk::mesh::EntityVector& parentElements, ParentChildManager& parentChildManager)
   {
+    auto elementWeightFieldData = m_elementWeightField->data<stk::mesh::ReadWrite>();
     for (stk::mesh::Entity parentElement : parentElements) {
-      double * weight = stk::mesh::field_data(*m_elementWeightField, parentElement);
-      EXPECT_TRUE(nullptr != weight);
+      EXPECT_TRUE(m_elementWeightField->defined_on(parentElement));
+      auto weight = elementWeightFieldData.entity_values(parentElement);
 
-      *weight = compute_weight_factor(parentElement, parentChildManager);
+      weight() = compute_weight_factor(parentElement, parentChildManager);
     }
   }
 
@@ -535,10 +536,11 @@ protected:
 
   double get_total_weight_for_these_elements(const stk::mesh::EntityVector & solidElements)
   {
+    auto elementWeightFieldData = m_elementWeightField->data();
     double totalWeightTheseElements = 0.0;
     for (const stk::mesh::Entity element : solidElements) {
-      double* elementWeight = stk::mesh::field_data(*m_elementWeightField, element);
-      totalWeightTheseElements += (*elementWeight);
+      auto elementWeight = elementWeightFieldData.entity_values(element);
+      totalWeightTheseElements += elementWeight();
     }
     return totalWeightTheseElements;
   }
@@ -754,7 +756,7 @@ private:
     }
   }
 
-  void add_all_sharing_for_this_node(int myRank, const NodeSharingData & nodeSharing)
+  void add_all_sharing_for_this_node(int /*myRank*/, const NodeSharingData & nodeSharing)
   {
     stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeSharing.nodeId);
     for (const int proc : nodeSharing.sharingProcs) {

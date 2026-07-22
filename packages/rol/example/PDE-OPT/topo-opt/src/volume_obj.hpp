@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef TOPOPT_VOLUME_OBJ_H
 #define TOPOPT_VOLUME_OBJ_H

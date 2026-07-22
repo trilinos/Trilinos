@@ -53,7 +53,7 @@ namespace
 {
 
 //BEGIN2hex1sideset
-TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
+TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  -------  |S  -------             -------  |F  -------
@@ -67,7 +67,6 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
     //                                                   from Hex1 face5
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("ALA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -117,7 +116,7 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
 //END2hex1sideset
 
 //BEGIN2hex2shell3sideset
-TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
+TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  -------  |S |S| |S|  |S |S  -------
@@ -143,7 +142,6 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     stkMeshIoBroker.add_mesh_database("ALefLRA.e", stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
     stkMeshIoBroker.populate_bulk_data();
@@ -245,13 +243,17 @@ TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
 }
 //END2hex2shell3sideset
 
-class SideCreationExplanation : public stk::unit_test_util::simple_fields::MeshFixture
+class SideCreationExplanation : public stk::unit_test_util::MeshFixture
 {
 protected:
   void test_face_created_on_elem_side_gets_id_16(stk::mesh::EntityId elemId, int sideOrdinal)
   {
     setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+    {
     get_bulk().modification_begin();
     if(get_bulk().is_valid(elem))
     {
@@ -259,6 +261,7 @@ protected:
       EXPECT_EQ(16u, get_bulk().identifier(side));
     }
     get_bulk().modification_end();
+    }
   }
 };
 

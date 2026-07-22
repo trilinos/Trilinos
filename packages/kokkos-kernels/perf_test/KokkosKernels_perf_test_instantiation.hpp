@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 //
 // Created by Berger-Vergiat, Luc on 2/6/23.
 //
@@ -57,9 +44,7 @@ int main_instantiation(int argc, char** argv) {
   else if (params.use_sycl)
     device_id = params.use_sycl - 1;
 
-  Kokkos::initialize(Kokkos::InitializationSettings()
-                         .set_num_threads(num_threads)
-                         .set_device_id(device_id));
+  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
   Kokkos::print_configuration(std::cout);
   std::cout << '\n';
 
@@ -112,8 +97,7 @@ int main_instantiation(int argc, char** argv) {
   if (params.use_sycl) {
 #if defined(KOKKOS_ENABLE_SYCL)
     std::cout << "Running on SYCL backend.\n";
-    KOKKOSKERNELS_PERF_TEST_NAME<Kokkos::Experimental::SYCL>(argc, argv,
-                                                             params);
+    KOKKOSKERNELS_PERF_TEST_NAME<Kokkos::Experimental::SYCL>(argc, argv, params);
     ran = true;
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";

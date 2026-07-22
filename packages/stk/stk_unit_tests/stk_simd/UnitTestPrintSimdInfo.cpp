@@ -46,11 +46,11 @@ TEST( PrintSimdInfo, printTypes )
 {
   std::cout << "Datatype stored by stk::simd::Float is ";
   stk::simd::Float f;
-  stk::unit_test_util::simple_fields::print_type(f._data);
+  stk::unit_test_util::print_type(f._data);
 
   std::cout << "Datatype stored by stk::simd::Double is ";
   stk::simd::Double d;
-  stk::unit_test_util::simple_fields::print_type(d._data);
+  stk::unit_test_util::print_type(d._data);
 }
 
 #ifdef STK_ENABLE_GPU

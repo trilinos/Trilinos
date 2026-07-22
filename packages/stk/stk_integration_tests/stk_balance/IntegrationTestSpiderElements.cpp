@@ -14,7 +14,7 @@
 namespace
 {
 
-class SpiderElementMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class SpiderElementMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_spider_mesh(const std::string & meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -51,11 +51,12 @@ protected:
 
     stk::mesh::Entity sphereNode = get_bulk().get_entity(stk::topology::NODE_RANK, sphereNodeID);
     stk::mesh::FieldBase * coordsField = get_meta().get_field(stk::topology::NODE_RANK,"coordinates");
+    auto coordsFieldData = coordsField->data<double, stk::mesh::ReadWrite>();
     EXPECT_TRUE(coordsField != nullptr);
-    double * coords = reinterpret_cast<double*>(stk::mesh::field_data(*coordsField, sphereNode));
-    coords[0] = 0.0;
-    coords[1] = -1.0;
-    coords[2] = 0.0;
+    auto coords = coordsFieldData.entity_values(sphereNode);
+    coords(0_comp) = 0.0;
+    coords(1_comp) = -1.0;
+    coords(2_comp) = 0.0;
 
     for (int otherProc = 0; otherProc < get_bulk().parallel_size(); ++otherProc) {
       if (otherProc != get_bulk().parallel_rank()) {
@@ -70,8 +71,9 @@ protected:
     stk::mesh::EntityVector nodes;
     stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::NODE_RANK), nodes);
     for (stk::mesh::Entity node : nodes) {
-      double * nodeCoords = reinterpret_cast<double*>(stk::mesh::field_data(*coordsField, node));
-      if (nodeCoords[1] < 0.5 && nodeCoords[1] > -0.5) {
+      coordsFieldData = coordsField->data<double, stk::mesh::ReadWrite>();
+      auto nodeCoords = coordsFieldData.entity_values(node);
+      if (nodeCoords(1_comp) < 0.5 && nodeCoords(1_comp) > -0.5) {
         stk::mesh::EntityIdVector beamNodes = {sphereNodeID, get_bulk().identifier(node)};
         stk::mesh::declare_element(get_bulk(), beamPart, newBeamIds[idIndex++], beamNodes);
       }
@@ -98,7 +100,7 @@ TEST_F(SpiderElementMesh, move_spider_legs_to_volume_elem_proc)
   if (get_parallel_size() > 4) return;
 
   m_balanceSettings.setShouldFixSpiders(true);
-  std::string meshSpec = stk::unit_test_util::simple_fields::get_option("--mesh-spec", "generated:30x3x30");
+  std::string meshSpec = stk::unit_test_util::get_option("--mesh-spec", "generated:30x3x30");
   setup_spider_mesh(meshSpec, stk::mesh::BulkData::NO_AUTO_AURA);
 
   stk::balance::balanceStkMesh(m_balanceSettings, get_bulk());

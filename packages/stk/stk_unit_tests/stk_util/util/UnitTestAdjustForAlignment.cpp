@@ -55,4 +55,9 @@ TEST(UnitAdjustForAlignment, test1)
   EXPECT_EQ(expected_result, stk::adjust_up_to_alignment_boundary(input, alignment));
 }
 
+TEST(UnitAdjustForAlignment, constexpr_return_val_if_args_constexpr)
+{
+  constexpr size_t result = stk::adjust_up_to_alignment_boundary(7, 16);
+  static_assert(result == 16UL);
+}
 }

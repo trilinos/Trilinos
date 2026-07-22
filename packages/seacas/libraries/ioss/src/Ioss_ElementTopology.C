@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -113,9 +113,7 @@ Ioss::ElementTopology *Ioss::ElementTopology::factory(const std::string &type, b
 
   if (iter == registry().end()) {
     if (!ok_to_fail) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: The topology type '{}' is not supported.", type);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: The topology type '{}' is not supported.", type));
     }
   }
   else {
@@ -385,12 +383,10 @@ Ioss::ElementPermutation *Ioss::ElementTopology::permutation() const
   assert(perm != nullptr);
   if (validate_permutation_nodes()) {
     if (static_cast<int>(perm->num_permutation_nodes()) != number_corner_nodes()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: The permutation node count: {} for topology '{}' does not match expected "
-                 "value: {}.",
-                 perm->num_permutation_nodes(), name(), number_corner_nodes());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: The permutation node count: {} for topology '{}' does not match expected "
+          "value: {}.",
+          perm->num_permutation_nodes(), name(), number_corner_nodes()));
     }
   }
   return perm;
@@ -414,10 +410,8 @@ Ioss::ElementTopology::topology_shape_to_permutation_name(Ioss::ElementShape top
 
   auto iter = shapeToPermutationNameMap_.find(topoShape);
   if (iter == shapeToPermutationNameMap_.end()) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg, "ERROR: The topology shape '{}' is not supported.",
-               Ioss::Utils::shape_to_string(topoShape));
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format("ERROR: The topology shape '{}' is not supported.",
+                           Ioss::Utils::shape_to_string(topoShape)));
   }
 
   return iter->second;

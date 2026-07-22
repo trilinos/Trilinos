@@ -88,8 +88,9 @@ void check_particle_on_device()
 
   stk::topology t = stk::topology::PARTICLE;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PARTICLE>::num_nodes;
+  EXPECT_EQ(1u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -116,7 +117,7 @@ void check_particle_on_device()
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,10 +12,12 @@
  * exodus version,
  * integer sizes for ids, maps, bulk data
  * exodus file-size attribute (normal, large)
+ * change-set (netcdf groups) count
  */
 
 #include "exodusII.h"
 #include "netcdf.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,43 +32,15 @@
 #define NOT_NETCDF   2
 #define NOT_EXODUSII 3
 
-char *progname;
-char *filename;
-
 int main(int argc, char *argv[])
 {
-  int   c1;
-  int   c2;
-  int   c3;
-  int   c4;
-  FILE *fid;
-
-  size_t j;
-  size_t k;
-
-  int   exoid;
-  int   CPU_word_size;
-  int   IO_word_size;
-  float version;
-  int   file_size;
-  int   netcdf_based    = 0;
-  int   hdf5_based      = 0;
-  int   nc_format       = 0;
-  int   int64_status    = 0;
-  int   max_name_length = 0;
-  int   fn_idx          = 1;
-
-  CPU_word_size = 0; /* float or double */
-  IO_word_size  = 0; /* use what is stored in file */
-
   /* Determine if filename was given */
-  progname = argv[0];
-
   if (argc <= 1) {
     fprintf(stderr, "USAGE: %s [-config] {filename}\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
+  int fn_idx = 1;
   if (argv[1][0] == '-') {
     if (argv[1][1] == 'c' || (argv[1][1] == '-' && argv[1][2] == 'c')) {
       fprintf(stderr, "\nExodus Configuration Information:\n");
@@ -79,32 +53,39 @@ int main(int argc, char *argv[])
   }
 
   /* examine file */
-  filename = argv[fn_idx]; /* filename path */
+  char *filename = argv[fn_idx]; /* filename path */
 
-  fid = fopen(filename, "r");
+  FILE *fid = fopen(filename, "r");
   if (fid == NULL) {
     fprintf(stderr, "         Could not open %s\n", filename);
     exit(EXIT_FAILURE);
   }
-  c1 = getc(fid);
-  c2 = getc(fid);
-  c3 = getc(fid);
-  c4 = getc(fid);
+  int c1 = getc(fid);
+  int c2 = getc(fid);
+  int c3 = getc(fid);
+  int c4 = getc(fid);
   fclose(fid);
+
+  bool netcdf_based = false;
+  bool hdf5_based   = false;
   if (c1 == 'C' && c2 == 'D' && c3 == 'F') {
-    netcdf_based = 1;
+    netcdf_based = true;
   }
   else if (c2 == 'H' && c3 == 'D' && c4 == 'F') {
-    hdf5_based = 1;
+    hdf5_based = true;
   }
   else {
     fprintf(stderr, "         %s is not an EXODUS or netCDF file\n", filename);
     exit(NOT_NETCDF);
   }
-  exoid = ex_open(filename, EX_READ, /* access mode = READ */
-                  &CPU_word_size,    /* CPU word size */
-                  &IO_word_size,     /* IO word size */
-                  &version);         /* Exodus library version */
+  float version;
+  int   CPU_word_size = 0; /* float or double */
+  int   IO_word_size  = 0; /* use what is stored in file */
+
+  int exoid = ex_open(filename, EX_READ, /* access mode = READ */
+                      &CPU_word_size,    /* CPU word size */
+                      &IO_word_size,     /* IO word size */
+                      &version);         /* Exodus library version */
 
   if (exoid < 0) {
     if (netcdf_based) {
@@ -116,12 +97,12 @@ int main(int argc, char *argv[])
     exit(NOT_EXODUSII);
   }
 
-  file_size = ex_large_model(exoid);
+  int file_size = ex_large_model(exoid);
 
   fprintf(stderr, "\n\t%s is an EXODUS file, version %4.2f\n\n", filename, version);
 
   /* Determine int sizes */
-  int64_status = ex_int64_status(exoid);
+  int int64_status = ex_int64_status(exoid);
   if (int64_status & EX_IDS_INT64_DB) {
     fprintf(stderr, "\t\tIDs are stored as 64-bit integers\n");
   }
@@ -149,17 +130,23 @@ int main(int argc, char *argv[])
   else {
     fprintf(stderr, "\t\tFloating point data are stored as 64-bit doubles\n");
   }
-  max_name_length = (int)ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-  fprintf(stderr, "\n\t\tMaximum name length is %d\n\n", max_name_length);
+  int max_name_length = (int)ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  fprintf(stderr, "\n\t\tMaximum name length is %d\n", max_name_length);
+
+  int num_change_sets = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
+  if (num_change_sets > 0) {
+    fprintf(stderr, "\t\tFile contains %d change sets (groups)\n", num_change_sets);
+  }
 
   if (file_size == 0) {
-    fprintf(stderr, "\t\tFile size attribute is 'normal model'\n");
+    fprintf(stderr, "\n\t\tFile size attribute is 'normal model'\n");
   }
   else {
-    fprintf(stderr, "\t\tFile size attribute is 'large model'\n");
+    fprintf(stderr, "\n\t\tFile size attribute is 'large model'\n");
   }
 
   /* Determine netcdf file version... */
+  int nc_format = 0;
   nc_inq_format(exoid, &nc_format);
   if (nc_format == NC_FORMAT_CLASSIC) {
     fprintf(stderr, "\t\tNetCDF Variant is 'classic'\n");
@@ -193,16 +180,18 @@ int main(int argc, char *argv[])
 
   /* Determine number of dims and vars -- useful in debugging incorrect NC_MAX_DIMS|VARS in netcdf.h
    */
-#if NC_HAS_NC4
   {
     int ndims = 0;
     int nvars = 0;
+#if NC_HAS_HDF5
     nc_inq_dimids(exoid, &ndims, NULL, 0);
     nc_inq_varids(exoid, &nvars, NULL);
-    fprintf(stderr, "\t\tNumber of dims = %d\n", ndims);
-    fprintf(stderr, "\t\tNumber of vars = %d\n", nvars);
-  }
+#else
+    nc_inq(exoid, &ndims, &nvars, NULL, NULL);
 #endif
+    fprintf(stderr, "\t\tNumber of dims = %d\n", ndims);
+    fprintf(stderr, "\t\tNumber of vars = %d\n\n", nvars);
+  }
 
   if (ex_close(exoid) == -1) {
     printf("ex_close failed");
@@ -212,8 +201,9 @@ int main(int argc, char *argv[])
   char cversion[9];
   snprintf(cversion, 9, "%4.2f", version);
 
-  k = strlen(cversion);
-  for (j = 0; j < k; j++) {
+  size_t k = strlen(cversion);
+  size_t j = 0;
+  for (; j < k; j++) {
     if (cversion[j] == '.') {
       break;
     }

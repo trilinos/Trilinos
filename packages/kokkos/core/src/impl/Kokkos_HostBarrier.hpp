@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HOST_BARRIER_HPP
 #define KOKKOS_HOST_BARRIER_HPP
@@ -155,16 +142,17 @@ class HostBarrier {
   KOKKOS_INLINE_FUNCTION
   void wait() const noexcept { wait(m_buffer, m_size, m_step); }
 
-  HostBarrier()              = default;
-  HostBarrier(HostBarrier&&) = default;
+  HostBarrier()                         = default;
+  HostBarrier(HostBarrier&&)            = default;
   HostBarrier& operator=(HostBarrier&&) = default;
 
   KOKKOS_INLINE_FUNCTION
   HostBarrier(int size, int* buffer)
       : m_size{size}, m_step{0u}, m_buffer{buffer} {}
 
-  HostBarrier(const HostBarrier&) = delete;
+  HostBarrier(const HostBarrier&)            = delete;
   HostBarrier& operator=(const HostBarrier&) = delete;
+  ~HostBarrier()                             = default;
 
  private:
   KOKKOS_INLINE_FUNCTION

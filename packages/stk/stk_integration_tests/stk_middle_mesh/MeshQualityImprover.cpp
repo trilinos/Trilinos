@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include <stk_util/stk_config.h>
 #include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/boundary_fixture.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"
@@ -11,7 +12,7 @@
 #include "stk_middle_mesh/regularized_distortion_metric.hpp"
 #include "util/meshes.hpp"
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
 #include "stk_middle_mesh_util/create_stk_mesh.hpp"
 #endif
 
@@ -154,7 +155,7 @@ TEST(MeshQualityImprover, Ellipsoid)
   }
 }
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
 
 TEST(MeshQualityImprover, EllipsoidFromCAD)
 {

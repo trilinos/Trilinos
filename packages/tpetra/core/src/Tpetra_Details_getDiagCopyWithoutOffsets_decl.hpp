@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #ifndef TPETRA_DETAILS_GETDIAGCOPYWITHOUTOFFSETS_DECL_HPP
 #define TPETRA_DETAILS_GETDIAGCOPYWITHOUTOFFSETS_DECL_HPP
@@ -55,7 +21,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Vector_decl.hpp"
@@ -76,12 +42,12 @@ namespace Details {
 /// \tparam CrsMatrixType Specialization of KokkosSparse::CrsMatrix
 /// \tparam LocalMapType Specialization of Tpetra::Details::LocalMap;
 ///   type of the "local" part of a Tpetra::Map
-template<class DiagType,
-         class LocalMapType,
-         class CrsMatrixType>
+template <class DiagType,
+          class LocalMapType,
+          class CrsMatrixType>
 struct CrsMatrixGetDiagCopyFunctor {
-  typedef typename LocalMapType::local_ordinal_type LO; // local ordinal type
-  typedef typename LocalMapType::global_ordinal_type GO; // global ordinal type
+  typedef typename LocalMapType::local_ordinal_type LO;   // local ordinal type
+  typedef typename LocalMapType::global_ordinal_type GO;  // global ordinal type
   typedef typename CrsMatrixType::device_type device_type;
   typedef typename CrsMatrixType::value_type scalar_type;
   typedef typename CrsMatrixType::size_type offset_type;
@@ -96,37 +62,39 @@ struct CrsMatrixGetDiagCopyFunctor {
   /// \param rowMap [in] Local part of the Tpetra row Map.
   /// \param colMap [in] Local part of the Tpetra column Map.
   /// \param A [in] The sparse matrix from which to get the diagonal.
-  CrsMatrixGetDiagCopyFunctor (const DiagType& D,
-                               const LocalMapType& rowMap,
-                               const LocalMapType& colMap,
-                               const CrsMatrixType& A) :
-    D_ (D), rowMap_ (rowMap), colMap_ (colMap), A_ (A)
-  {}
+  CrsMatrixGetDiagCopyFunctor(const DiagType& D,
+                              const LocalMapType& rowMap,
+                              const LocalMapType& colMap,
+                              const CrsMatrixType& A)
+    : D_(D)
+    , rowMap_(rowMap)
+    , colMap_(colMap)
+    , A_(A) {}
 
   /// \brief Operator for Kokkos::parallel_for.
   ///
   /// \param lclRowInd [in] Index of current (local) row of the sparse matrix.
+  /// \param errCount [out] Error count accumulator.
   KOKKOS_FUNCTION void
-  operator () (const LO& lclRowInd, value_type& errCount) const
-  {
-    const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid ();
+  operator()(const LO& lclRowInd, value_type& errCount) const {
+    const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid();
     const scalar_type ZERO =
-      Kokkos::ArithTraits<scalar_type>::zero ();
+        KokkosKernels::ArithTraits<scalar_type>::zero();
 
     // If the row lacks a stored diagonal entry, then its value is zero.
-    D_(lclRowInd) = ZERO;
-    const GO gblInd = rowMap_.getGlobalElement (lclRowInd);
-    const LO lclColInd = colMap_.getLocalElement (gblInd);
+    D_(lclRowInd)      = ZERO;
+    const GO gblInd    = rowMap_.getGlobalElement(lclRowInd);
+    const LO lclColInd = colMap_.getLocalElement(gblInd);
 
     if (lclColInd != INV) {
-      auto curRow = A_.rowConst (lclRowInd);
+      auto curRow = A_.rowConst(lclRowInd);
 
       // FIXME (mfh 12 May 2016) Use binary search when the row is
       // long enough.  findRelOffset currently lives in KokkosKernels
       // (in tpetra/kernels/src/Kokkos_Sparse_findRelOffset.hpp).
-      LO offset = 0;
+      LO offset       = 0;
       const LO numEnt = curRow.length;
-      for ( ; offset < numEnt; ++offset) {
+      for (; offset < numEnt; ++offset) {
         if (curRow.colidx(offset) == lclColInd) {
           break;
         }
@@ -134,14 +102,13 @@ struct CrsMatrixGetDiagCopyFunctor {
 
       if (offset == numEnt) {
         ++errCount;
-      }
-      else {
+      } else {
         D_(lclRowInd) = curRow.value(offset);
       }
     }
   }
 
-private:
+ private:
   //! 1-D Kokkos::View into which to store the matrix's diagonal.
   DiagType D_;
   //! Local part of the Tpetra row Map.
@@ -151,7 +118,6 @@ private:
   //! The sparse matrix from which to get the diagonal.
   CrsMatrixType A_;
 };
-
 
 /// \brief Given a locally indexed, local sparse matrix, and
 ///   corresponding local row and column Maps, extract the matrix's
@@ -175,36 +141,36 @@ private:
 /// \param rowMap [in] "Local" part of the sparse matrix's row Map.
 /// \param colMap [in] "Local" part of the sparse matrix's column Map.
 /// \param A [in] The sparse matrix.
-template<class DiagType,
-         class LocalMapType,
-         class CrsMatrixType>
+template <class DiagType,
+          class LocalMapType,
+          class CrsMatrixType>
 static typename LocalMapType::local_ordinal_type
-getDiagCopyWithoutOffsets (const DiagType& D,
-                           const LocalMapType& rowMap,
-                           const LocalMapType& colMap,
-                           const CrsMatrixType& A)
-{
-  static_assert (Kokkos::is_view<DiagType>::value,
-                 "DiagType must be a Kokkos::View.");
-  static_assert (static_cast<int> (DiagType::rank) == 1,
-                 "DiagType must be a 1-D Kokkos::View.");
-  static_assert (std::is_same<typename DiagType::value_type, typename DiagType::non_const_value_type>::value,
-                 "DiagType must be a nonconst Kokkos::View.");
+getDiagCopyWithoutOffsets(const DiagType& D,
+                          const LocalMapType& rowMap,
+                          const LocalMapType& colMap,
+                          const CrsMatrixType& A) {
+  static_assert(Kokkos::is_view<DiagType>::value,
+                "DiagType must be a Kokkos::View.");
+  static_assert(static_cast<int>(DiagType::rank) == 1,
+                "DiagType must be a 1-D Kokkos::View.");
+  static_assert(std::is_same<typename DiagType::value_type, typename DiagType::non_const_value_type>::value,
+                "DiagType must be a nonconst Kokkos::View.");
   typedef typename LocalMapType::local_ordinal_type LO;
   typedef typename CrsMatrixType::device_type device_type;
   typedef typename device_type::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
 
   typedef Kokkos::View<typename DiagType::non_const_value_type*,
-    typename DiagType::array_layout,
-    typename DiagType::device_type,
-    Kokkos::MemoryUnmanaged> diag_type;
+                       typename DiagType::array_layout,
+                       typename DiagType::device_type,
+                       Kokkos::MemoryUnmanaged>
+      diag_type;
   diag_type D_out = D;
   CrsMatrixGetDiagCopyFunctor<diag_type, LocalMapType, CrsMatrixType>
-    functor (D_out, rowMap, colMap, A);
-  const LO numRows = static_cast<LO> (D.extent (0));
-  LO errCount = 0;
-  Kokkos::parallel_reduce (policy_type (0, numRows), functor, errCount);
+      functor(D_out, rowMap, colMap, A);
+  const LO numRows = static_cast<LO>(D.extent(0));
+  LO errCount      = 0;
+  Kokkos::parallel_reduce(policy_type(0, numRows), functor, errCount);
   return errCount;
 }
 
@@ -244,18 +210,17 @@ getDiagCopyWithoutOffsets (const DiagType& D,
 /// implementation of Tpetra::CrsMatrix uses this function, and we
 /// want to avoid a circular header dependency.  On the other hand,
 /// the implementation does not actually depend on Tpetra::CrsMatrix.
-template<class SC, class LO, class GO, class NT>
-LO
-getLocalDiagCopyWithoutOffsetsNotFillComplete ( ::Tpetra::Vector<SC, LO, GO, NT>& diag,
-                                                const ::Tpetra::RowMatrix<SC, LO, GO, NT>& A,
-                                                const bool debug =
+template <class SC, class LO, class GO, class NT>
+LO getLocalDiagCopyWithoutOffsetsNotFillComplete(::Tpetra::Vector<SC, LO, GO, NT>& diag,
+                                                 const ::Tpetra::RowMatrix<SC, LO, GO, NT>& A,
+                                                 const bool debug =
 #ifdef HAVE_TPETRA_DEBUG
-                                                true);
-#else // ! HAVE_TPETRA_DEBUG
-                                                false);
-#endif // HAVE_TPETRA_DEBUG
+                                                     true);
+#else   // ! HAVE_TPETRA_DEBUG
+                                                     false);
+#endif  // HAVE_TPETRA_DEBUG
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_GETDIAGCOPYWITHOUTOFFSETS_DECL_HPP
+#endif  // TPETRA_DETAILS_GETDIAGCOPYWITHOUTOFFSETS_DECL_HPP

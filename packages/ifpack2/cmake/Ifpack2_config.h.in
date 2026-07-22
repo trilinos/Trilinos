@@ -76,15 +76,6 @@
 /* Define if we have KokkosClassic */
 #cmakedefine HAVE_IFPACK2_KOKKOSCLASSIC
 
-/* Define if we have ML */
-#cmakedefine HAVE_IFPACK2_ML
-
-/* Define if we have AztecOO */
-#cmakedefine HAVE_IFPACK2_AZTECOO
-
-/* Define if we have Epetra */
-#cmakedefine HAVE_IFPACK2_EPETRA
-
 /* Define if we have ThyraTpetraAdapters */
 #cmakedefine HAVE_IFPACK2_THYRATPETRAADAPTERS
 
@@ -120,8 +111,9 @@
 #cmakedefine HAVE_IFPACK2_QD
 
 /* Define if want to build with hypre enabled */
+/* extra logic due to a hypre header file name change from version 2->3 */
 #cmakedefine HAVE_IFPACK2_HYPRE
-
+#cmakedefine HAVE_IFPACK2_HYPRE_UNDERSCORE_KRYLOV_H
 
 /* Define if we have ShyLU FastILU (an inner preconditioner for Additive Schwarz) */
 #cmakedefine HAVE_IFPACK2_SHYLU_NODEFASTILU

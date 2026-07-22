@@ -43,7 +43,7 @@ int get_float_width_on_device()
 {
   int result = 0;
 
-  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(int i, int& width) {
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(int /*i*/, int& width) {
     stk::simd::Float f;
     width = f._data.size();
   }, result);
@@ -55,7 +55,7 @@ int get_double_width_on_device()
 {
   int result = 0;
 
-  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(int i, int& width) {
+  Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(int /*i*/, int& width) {
     stk::simd::Double d;
     width = d._data.size();
   }, result);

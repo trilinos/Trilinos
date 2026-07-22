@@ -34,7 +34,6 @@
 #define STK_BALANCE_UTILS
 
 #include "mpi.h"
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
@@ -44,6 +43,8 @@
 
 namespace stk
 {
+namespace mesh { class BulkData; }
+
 namespace balance
 {
 
@@ -52,6 +53,7 @@ class FaceSearchTolerance;
 using ElementDecomposition = std::vector<int>;
 using DoubleFieldType =  stk::mesh::Field<double>;
 using BlockWeightMultipliers =  std::map<std::string, double>;
+using CohesiveElements =  std::vector<std::string>;
 
 class DecompositionChangeList
 {
@@ -138,6 +140,9 @@ public:
 
   virtual void setVertexWeightBlockMultiplier(const std::string & blockName, double multiplier);
   virtual const BlockWeightMultipliers & getVertexWeightBlockMultipliers() const;
+  virtual void setCohesiveElements(const std::string & blockName);
+  virtual const CohesiveElements & getCohesiveElements() const;
+  virtual bool hasCohesiveElements() const;
 
   virtual bool isIncrementalRebalance() const;
   virtual bool isMultiCriteriaRebalance() const;
@@ -202,11 +207,11 @@ public:
   virtual void set_log_filename(const std::string& filename);
   virtual std::string get_log_filename() const;
 
-  virtual void setShouldFixMechanisms(bool fixMechanisms) { }
-  virtual void setShouldFixSpiders(bool fixSpiders) { }
-  virtual void setEdgeWeightForSearch(double w) { }
-  virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
-  virtual void setToleranceForFaceSearch(double tol) { }
+  virtual void setShouldFixMechanisms(bool /*fixMechanisms*/) { }
+  virtual void setShouldFixSpiders(bool /*fixSpiders*/) { }
+  virtual void setEdgeWeightForSearch(double /*w*/) { }
+  virtual void setVertexWeightMultiplierForVertexInSearch(double /*w*/) { }
+  virtual void setToleranceForFaceSearch(double /*tol*/) { }
   virtual void setGraphEdgeWeightMultiplier(double multiplier);
 
   void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
@@ -225,6 +230,7 @@ private:
   double m_defaultFieldWeight;
   std::vector<std::string> m_vertexWeightFieldNames;
   BlockWeightMultipliers m_vertexWeightBlockMultipliers;
+  CohesiveElements m_cohesiveElements;
   bool m_useNestedDecomp;
   bool m_shouldPrintDiagnostics;
   mutable const stk::mesh::Field<double> * m_diagnosticElementWeightsField;
@@ -237,7 +243,7 @@ private:
 class BasicGeometricSettings : public BalanceSettings
 {
 public:
-  virtual std::string getDecompMethod() const { return "rcb"; }
+  virtual std::string getDecompMethod() const override { return "rcb"; }
 };
 
 class GraphCreationSettings : public BalanceSettings
@@ -327,8 +333,8 @@ public:
     m_ToleranceForParticleSearch = 1.0;
   }
 
-  virtual bool getEdgesForParticlesUsingSearch() const { return true; }
-  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return true; }
+  virtual bool getEdgesForParticlesUsingSearch() const override { return true; }
+  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const override { return true; }
 };
 
 class StkBalanceSettings : public GraphCreationSettings
@@ -353,13 +359,13 @@ public:
   {
     m_includeSearchResultInGraph = false;
   }
-  virtual bool getEdgesForParticlesUsingSearch() const { return true; }
+  virtual bool getEdgesForParticlesUsingSearch() const override { return true; }
 };
 
 class GraphCreationSettingsForZoltan2 : public GraphCreationSettingsWithCustomTolerances
 {
 public:
-  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return false; }
+  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const override { return false; }
 };
 
 class FieldVertexWeightSettings : public GraphCreationSettings
@@ -378,11 +384,11 @@ public:
   }
   virtual ~FieldVertexWeightSettings() = default;
 
-  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-  virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-  virtual double getImbalanceTolerance() const { return 1.05; }
-  virtual void setDecompMethod(const std::string& input_method) { m_method = input_method;}
-  virtual std::string getDecompMethod() const { return m_method; }
+  virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const override { return 1.0; }
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
+  virtual double getImbalanceTolerance() const override { return 1.05; }
+  virtual void setDecompMethod(const std::string& input_method) override { m_method = input_method;}
+  virtual std::string getDecompMethod() const override { return m_method; }
 
 protected:
   FieldVertexWeightSettings() = delete;
@@ -424,9 +430,9 @@ public:
 
   virtual ~MultipleCriteriaSettings() override = default;
 
-  virtual double getGraphEdgeWeight(stk::topology element1Topology,
-                                    stk::topology element2Topology) const override { return 1.0; }
-  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/,
+                                    stk::topology /*element2Topology*/) const override { return 1.0; }
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
   virtual bool isMultiCriteriaRebalance() const override { return true;}
   virtual bool isIncrementalRebalance() const override { return true; }
@@ -457,38 +463,6 @@ public:
   {
     return BalanceSettings::COLOR_MESH_BY_TOPOLOGY;
   }
-};
-
-class M2NBalanceSettings : public GraphCreationSettings
-{
-public:
-  M2NBalanceSettings()
-    : GraphCreationSettings(),
-      m_numOutputProcs(0),
-      m_useNestedDecomp(false)
-  {}
-
-  M2NBalanceSettings(const std::string & inputFileName,
-                     unsigned numOutputProcs,
-                     bool useNestedDecomp = false)
-    : GraphCreationSettings(),
-      m_numOutputProcs(numOutputProcs),
-      m_useNestedDecomp(useNestedDecomp)
-  {
-    set_input_filename(inputFileName);
-  }
-
-  ~M2NBalanceSettings() = default;
-
-  void set_num_output_processors(unsigned numOutputProcs) { m_numOutputProcs = numOutputProcs; }
-  unsigned get_num_output_processors() const { return m_numOutputProcs; }
-
-  void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
-  bool get_use_nested_decomp() const { return m_useNestedDecomp; }
-
-protected:
-  unsigned m_numOutputProcs;
-  bool m_useNestedDecomp;
 };
 
 class GraphEdge

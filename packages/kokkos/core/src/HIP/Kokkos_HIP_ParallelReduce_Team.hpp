@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HIP_PARALLEL_REDUCE_TEAM_HPP
 #define KOKKOS_HIP_PARALLEL_REDUCE_TEAM_HPP
@@ -31,7 +18,7 @@ template <class CombinedFunctorReducerType, class... Properties>
 class ParallelReduce<CombinedFunctorReducerType,
                      Kokkos::TeamPolicy<Properties...>, HIP> {
  public:
-  using Policy      = TeamPolicyInternal<HIP, Properties...>;
+  using Policy      = TeamPolicy<Properties...>;
   using FunctorType = typename CombinedFunctorReducerType::functor_type;
   using ReducerType = typename CombinedFunctorReducerType::reducer_type;
 
@@ -46,6 +33,23 @@ class ParallelReduce<CombinedFunctorReducerType,
 
  public:
   using functor_type = FunctorType;
+  // Conditionally set word_size_type to int16_t or int8_t if value_type is
+  // smaller than int32_t (Kokkos::HIP::size_type)
+  // word_size_type is used to determine the word count, shared memory buffer
+  // size, and global memory buffer size before the reduction is performed.
+  // Within the reduction, the word count is recomputed based on word_size_type
+  // and when calculating indexes into the shared/global memory buffers for
+  // performing the reduction, word_size_type is used again.
+  // For scalars > 4 bytes in size, indexing into shared/global memory relies
+  // on the block and grid dimensions to ensure that we index at the correct
+  // offset rather than at every 4 byte word; such that, when the join is
+  // performed, we have the correct data that was copied over in chunks of 4
+  // bytes.
+  using word_size_type = std::conditional_t<
+      sizeof(value_type) < sizeof(Kokkos::HIP::size_type),
+      std::conditional_t<sizeof(value_type) == 2, int16_t, int8_t>,
+      Kokkos::HIP::size_type>;
+  using reducer_type = ReducerType;
   using size_type    = HIP::size_type;
 
   // static int constexpr UseShflReduction = false;
@@ -71,7 +75,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   const pointer_type m_result_ptr;
   const bool m_result_ptr_device_accessible;
   const bool m_result_ptr_host_accessible;
-  size_type* m_scratch_space;
+  word_size_type* m_scratch_space;
   size_type* m_scratch_flags;
   size_type m_team_begin;
   size_type m_shmem_begin;
@@ -86,13 +90,13 @@ class ParallelReduce<CombinedFunctorReducerType,
   const size_type m_vector_size;
 
   template <class TagType>
-  __device__ inline std::enable_if_t<std::is_void<TagType>::value> exec_team(
+  __device__ inline std::enable_if_t<std::is_void_v<TagType>> exec_team(
       member_type const& member, reference_type update) const {
     m_functor_reducer.get_functor()(member, update);
   }
 
   template <class TagType>
-  __device__ inline std::enable_if_t<!std::is_void<TagType>::value> exec_team(
+  __device__ inline std::enable_if_t<!std::is_void_v<TagType>> exec_team(
       member_type const& member, reference_type update) const {
     m_functor_reducer.get_functor()(TagType(), member, update);
   }
@@ -164,33 +168,34 @@ class ParallelReduce<CombinedFunctorReducerType,
   __device__ inline void run(SHMEMReductionTag, int const threadid) const {
     const ReducerType& reducer = m_functor_reducer.get_reducer();
 
-    integral_nonzero_constant<size_type, ReducerType::static_value_size() /
-                                             sizeof(size_type)> const
-        word_count(reducer.value_size() / sizeof(size_type));
+    integral_nonzero_constant<word_size_type, ReducerType::static_value_size() /
+                                                  sizeof(word_size_type)> const
+        word_count(reducer.value_size() / sizeof(word_size_type));
 
-    reference_type value =
-        reducer.init(kokkos_impl_hip_shared_memory<size_type>() +
-                     threadIdx.y * word_count.value);
+    reference_type value = reducer.init(reinterpret_cast<pointer_type>(
+        kokkos_impl_hip_shared_memory<word_size_type>() +
+        threadIdx.y * word_count.value));
     // Iterate this block through the league
     iterate_through_league(threadid, value);
 
     // Reduce with final value at blockDim.y - 1 location.
     bool do_final_reduce = (m_league_size == 0);
     if (!do_final_reduce)
-      do_final_reduce =
-          hip_single_inter_block_reduce_scan<false, FunctorType, work_tag>(
-              reducer, blockIdx.x, gridDim.x,
-              kokkos_impl_hip_shared_memory<size_type>(), m_scratch_space,
-              m_scratch_flags);
+      do_final_reduce = hip_single_inter_block_reduce_scan<false>(
+          reducer, blockIdx.x, gridDim.x,
+          kokkos_impl_hip_shared_memory<word_size_type>(), m_scratch_space,
+          m_scratch_flags);
     if (do_final_reduce) {
       // This is the final block with the final result at the final threads'
       // location
 
-      size_type* const shared = kokkos_impl_hip_shared_memory<size_type>() +
-                                (blockDim.y - 1) * word_count.value;
-      size_type* const global = m_result_ptr_device_accessible
-                                    ? reinterpret_cast<size_type*>(m_result_ptr)
-                                    : m_scratch_space;
+      word_size_type* const shared =
+          kokkos_impl_hip_shared_memory<word_size_type>() +
+          (blockDim.y - 1) * word_count.value;
+      size_type* const global =
+          m_result_ptr_device_accessible
+              ? reinterpret_cast<word_size_type*>(m_result_ptr)
+              : m_scratch_space;
 
       if (threadIdx.y == 0) {
         reducer.final(reinterpret_cast<value_type*>(shared));
@@ -226,7 +231,8 @@ class ParallelReduce<CombinedFunctorReducerType,
       reducer.final(&value);
       *result = value;
     } else if (Impl::hip_inter_block_shuffle_reduction(
-                   value, init, reducer, m_scratch_space, result,
+                   value, init, reducer,
+                   reinterpret_cast<pointer_type>(m_scratch_space), result,
                    m_scratch_flags, blockDim.y)) {
       unsigned int const id = threadIdx.y * blockDim.x + threadIdx.x;
       if (id == 0) {
@@ -248,8 +254,9 @@ class ParallelReduce<CombinedFunctorReducerType,
     if (!is_empty_range || need_device_set) {
       int const block_count = compute_block_count();
 
-      m_scratch_space = hip_internal_scratch_space(
-          m_policy.space(), reducer.value_size() * block_count);
+      m_scratch_space =
+          reinterpret_cast<word_size_type*>(hip_internal_scratch_space(
+              m_policy.space(), reducer.value_size() * block_count));
       m_scratch_flags =
           hip_internal_scratch_flags(m_policy.space(), sizeof(size_type));
 
@@ -280,6 +287,12 @@ class ParallelReduce<CombinedFunctorReducerType,
         reducer.init(m_result_ptr);
       }
     }
+
+    if (m_scratch_pool_id >= 0) {
+      m_policy.space()
+          .impl_internal_space_instance()
+          ->release_team_scratch_space(m_scratch_pool_id);
+    }
   }
 
   template <class ViewType>
@@ -305,11 +318,15 @@ class ParallelReduce<CombinedFunctorReducerType,
         m_vector_size(arg_policy.impl_vector_length()) {
     auto internal_space_instance =
         m_policy.space().impl_internal_space_instance();
-    m_team_size = m_team_size >= 0 ? m_team_size
-                                   : arg_policy.team_size_recommended(
-                                         arg_functor_reducer.get_functor(),
-                                         arg_functor_reducer.get_reducer(),
-                                         ParallelReduceTag());
+    if (m_team_size < 0) {
+      m_team_size = arg_policy.team_size_recommended_internal(
+          arg_functor_reducer.get_functor(), arg_functor_reducer.get_reducer(),
+          ParallelReduceTag());
+      if (m_team_size <= 0)
+        Kokkos::Impl::throw_runtime_exception(
+            "Kokkos::Impl::ParallelReduce<HIP, TeamPolicy> could not find a "
+            "valid execution configuration.");
+    }
 
     m_team_begin =
         UseShflReduction
@@ -333,7 +350,7 @@ class ParallelReduce<CombinedFunctorReducerType,
           m_scratch_pool_id,
           static_cast<std::int64_t>(m_scratch_size[1]) *
               (std::min(
-                  static_cast<std::int64_t>(HIP().concurrency() /
+                  static_cast<std::int64_t>(m_policy.space().concurrency() /
                                             (m_team_size * m_vector_size)),
                   static_cast<std::int64_t>(m_league_size))));
     }
@@ -355,35 +372,48 @@ class ParallelReduce<CombinedFunctorReducerType,
     // Functor's reduce memory, team scan memory, and team shared memory depend
     // upon team size.
 
-    const int shmem_size_total = m_team_begin + m_shmem_begin + m_shmem_size;
+    const unsigned int shmem_size_total =
+        m_team_begin + m_shmem_begin + m_shmem_size;
 
-    if (!Kokkos::Impl::is_integral_power_of_two(m_team_size) &&
+    if (!Kokkos::has_single_bit(static_cast<unsigned>(m_team_size)) &&
         !UseShflReduction) {
       Kokkos::Impl::throw_runtime_exception(
           std::string("Kokkos::Impl::ParallelReduce< HIP > bad team size"));
     }
 
-    if (internal_space_instance->m_maxShmemPerBlock < shmem_size_total) {
-      Kokkos::Impl::throw_runtime_exception(
-          std::string("Kokkos::Impl::ParallelReduce< HIP > requested too much "
-                      "L0 scratch memory"));
+    auto maxShmemPerBlock =
+        internal_space_instance->m_deviceProp.sharedMemPerBlock;
+    if (maxShmemPerBlock < shmem_size_total) {
+      std::stringstream error;
+      error
+          << "Kokkos::parallel_reduce<HIP>: Requested too much scratch memory "
+             "on level 0. Requested: "
+          << m_shmem_size
+          << ", Maximum: " << maxShmemPerBlock - m_shmem_begin - m_team_begin;
+      Kokkos::Impl::throw_runtime_exception(error.str().c_str());
     }
 
-    size_t max_size = arg_policy.team_size_max(
-        arg_functor_reducer.get_functor(), arg_functor_reducer.get_reducer(),
-        ParallelReduceTag());
-    if (static_cast<int>(m_team_size) > static_cast<int>(max_size)) {
-      Kokkos::Impl::throw_runtime_exception(
-          std::string("Kokkos::Impl::ParallelReduce< HIP > requested too "
-                      "large team size."));
+    if (m_scratch_size[1] > static_cast<size_t>(m_policy.scratch_size_max(1))) {
+      std::stringstream error;
+      error
+          << "Kokkos::parallel_reduce<HIP>: Requested too much scratch memory "
+             "on level 1. Requested: "
+          << m_scratch_size[1] << ", Maximum: " << m_policy.scratch_size_max(1);
+      Kokkos::Impl::throw_runtime_exception(error.str().c_str());
     }
-  }
 
-  ~ParallelReduce() {
-    if (m_scratch_pool_id >= 0) {
-      m_policy.space()
-          .impl_internal_space_instance()
-          ->release_team_scratch_space(m_scratch_pool_id);
+    if (m_team_size >
+        arg_policy.team_size_max_internal(m_functor_reducer.get_functor(),
+                                          m_functor_reducer.get_reducer(),
+                                          ParallelReduceTag())) {
+      std::stringstream error;
+      error << "Kokkos::parallel_reduce<HIP>: Requested too large team size. "
+               "Requested: "
+            << m_team_size << ", Maximum: "
+            << arg_policy.team_size_max_internal(
+                   m_functor_reducer.get_functor(),
+                   m_functor_reducer.get_reducer(), ParallelReduceTag());
+      Kokkos::Impl::throw_runtime_exception(error.str().c_str());
     }
   }
 };

@@ -1,36 +1,37 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_CodeTypes.h" // for Int64Vector, IntVector
-#include "Ioss_SideBlock.h" // for SideBlock
-#include "Ioss_Utils.h"     // for Utils, IOSS_ERROR
+#include "Ioss_CodeTypes.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_State.h"
+#include "Ioss_Utils.h"
 #include "gen_struc/Iogs_DatabaseIO.h"
-#include "gen_struc/Iogs_GeneratedMesh.h" // for GeneratedMesh
-#include <cassert>                        // for assert
-#include <cmath>                          // for sqrt
-#include <iostream>                       // for ostringstream, operator<<, etc
-#include <stdlib.h>
-#include <string> // for string, operator==, etc
+#include "gen_struc/Iogs_GeneratedMesh.h"
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <fmt/format.h>
+#include <string>
 
-#include "Ioss_CommSet.h"         // for CommSet
-#include "Ioss_DBUsage.h"         // for DatabaseUsage
-#include "Ioss_DatabaseIO.h"      // for DatabaseIO
-#include "Ioss_EntityType.h"      // for EntityType, etc
-#include "Ioss_Field.h"           // for Field, etc
-#include "Ioss_GroupingEntity.h"  // for GroupingEntity
-#include "Ioss_IOFactory.h"       // for IOFactory
-#include "Ioss_Map.h"             // for Map, MapContainer
-#include "Ioss_NodeBlock.h"       // for NodeBlock
-#include "Ioss_ParallelUtils.h"   // for ParallelUtils
-#include "Ioss_Property.h"        // for Property
-#include "Ioss_PropertyManager.h" // for PropertyManager
-#include "Ioss_Region.h"          // for Region
-#include "Ioss_SideSet.h"         // for SideSet
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_Map.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideSet.h"
 #include "Ioss_StructuredBlock.h"
-#include "Ioss_VariableType.h" // for VariableType
+#include "Ioss_VariableType.h"
 
 namespace {
   template <typename INT>
@@ -112,17 +113,13 @@ namespace Iogs {
       dbState = Ioss::STATE_UNKNOWN;
     }
     else {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: Structured Generated mesh option is only valid for input mesh.";
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR("ERROR: Structured Generated mesh option is only valid for input mesh.");
     }
     if (props.exists("USE_CONSTANT_DF")) {
       m_useVariableDf = false;
     }
     if (util().parallel_size() > 1) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: Structured Generated mesh option is not valid for parallel yet.";
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR("ERROR: Structured Generated mesh option is not valid for parallel yet.");
     }
   }
 
@@ -132,10 +129,8 @@ namespace Iogs {
   {
     if (m_generatedMesh == nullptr) {
       if (get_filename() == "external") {
-        std::ostringstream errmsg;
-        errmsg << "ERROR: (gen_struc mesh) 'external' specified for mesh, but "
-               << "getGeneratedMesh was not called to set the external mesh.\n";
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR("ERROR: (gen_struc mesh) 'external' specified for mesh, but "
+                   "getGeneratedMesh was not called to set the external mesh.\n");
       }
       else {
         m_generatedMesh =
@@ -298,9 +293,7 @@ namespace Iogs {
     int64_t id           = sd_blk->get_property("id").get_int();
     size_t  entity_count = sd_blk->entity_count();
     if (num_to_get != entity_count) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: Partial field input not implemented for side blocks";
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR("ERROR: Partial field input not implemented for side blocks");
     }
 
     Ioss::Field::RoleType role = field.get_role();
@@ -431,9 +424,7 @@ namespace Iogs {
         }
       }
       else {
-        std::ostringstream errmsg;
-        errmsg << "Invalid commset type " << type;
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("Invalid commset type {}", type));
       }
     }
     else if (field.get_name() == "ids") {
@@ -489,6 +480,20 @@ namespace Iogs {
     }
   }
 
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    std::vector<double> timesteps;
+
+    int time_step_count = m_generatedMesh->timestep_count();
+    timesteps.reserve(time_step_count);
+
+    for (int i = 0; i < time_step_count; i++) {
+      timesteps.push_back(i);
+    }
+
+    return timesteps;
+  }
+
   void DatabaseIO::get_structured_blocks()
   {
     // Name, global range, local offset, local range.
@@ -524,7 +529,7 @@ namespace Iogs {
         std::string elem_topo_name = "unknown";
         int64_t     number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
 
-        auto sd_block =
+        auto *sd_block =
             new Ioss::SideBlock(this, sd_block_name, side_topo_name, elem_topo_name, number_faces);
         sideset->add(sd_block);
         sd_block->property_add(Ioss::Property("id", ifs + 1));
@@ -548,8 +553,8 @@ namespace Iogs {
           std::string elem_topo_name = "unknown";
           int64_t     number_faces   = m_generatedMesh->sideset_side_count_proc(ifs + 1);
 
-          auto sd_block = new Ioss::SideBlock(this, sd_block_name, side_topo_name, elem_topo_name,
-                                              number_faces);
+          auto *sd_block = new Ioss::SideBlock(this, sd_block_name, side_topo_name, elem_topo_name,
+                                               number_faces);
           sideset->add(sd_block);
           sd_block->property_add(Ioss::Property("id", ifs + 1));
           sd_block->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));

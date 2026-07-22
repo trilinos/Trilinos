@@ -28,7 +28,7 @@ stk::mesh::Field<double>* StkFieldCopier::create_stk_field(mesh::FieldPtr<double
 {
   auto metaData = m_bulkDataPtr->mesh_meta_data_ptr();
   stk::mesh::Field<double>* stkField = &(metaData->declare_field<double>(stk::topology::NODE_RANK, name));
-  stk::mesh::put_field_on_mesh(*stkField, *m_part, middleMeshField->get_num_comp(), 
+  stk::mesh::put_field_on_mesh(*stkField, *m_part, middleMeshField->get_num_comp(),
                                 middleMeshField->get_field_shape().get_num_nodes(0), 0);
 
   return stkField;
@@ -38,23 +38,26 @@ void StkFieldCopier::copy(const stk::mesh::Field<double>& stkField, mesh::FieldP
 {
   check_field_shapes(stkField, middleMeshFieldPtr);
 
-  stk::mesh::Selector selector(stkField);
+  auto meshMetaDataPtr = m_bulkDataPtr->mesh_meta_data_ptr();
+  stk::mesh::Selector selector(stkField & (meshMetaDataPtr->locally_owned_part() | meshMetaDataPtr->globally_shared_part()));
   const stk::mesh::BucketVector& buckets = m_bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
   int numNodesPerEntity = middleMeshFieldPtr->get_field_shape().get_num_nodes(0);
   int numCompPerNode = middleMeshFieldPtr->get_num_comp();
   auto& middleMeshField = *middleMeshFieldPtr;
 
+  auto stkVertFieldData = m_stkVertField->data();
+  auto stkFieldData     = stkField.data();
   for (const stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)
     {
-      VertIdType* stkNodeFieldData = stk::mesh::field_data(*m_stkVertField, node);
-      int meshVertId = static_cast<int>(stkNodeFieldData[0]);
+      VertIdType meshVertId = stkVertFieldData.entity_values(node)(0_comp);
       mesh::MeshEntityPtr vert = m_middleMesh->get_vertices()[meshVertId];
-      const double* stkFieldData = stk::mesh::field_data(stkField, node);
-      for (int i=0; i < numNodesPerEntity; ++i)
-        for (int j=0; j < numCompPerNode; ++j)
-          middleMeshField(vert, i, j) = stkFieldData[i * numCompPerNode + j];
+
+      auto stkFieldDataForNode = stkFieldData.entity_values(node);
+      for (stk::mesh::CopyIdx i=0_copy; i < numNodesPerEntity; ++i)
+        for (stk::mesh::ComponentIdx j=0_comp; j < numCompPerNode; ++j)
+          middleMeshField(vert, i, j) = stkFieldDataForNode(i, j);
     }
 }
 
@@ -62,23 +65,26 @@ void StkFieldCopier::copy(const mesh::FieldPtr<double> middleMeshFieldPtr, stk::
 {
   check_field_shapes(stkField, middleMeshFieldPtr);
 
-  stk::mesh::Selector selector(stkField);
+  auto meshMetaDataPtr = m_bulkDataPtr->mesh_meta_data_ptr();
+  stk::mesh::Selector selector(stkField & (meshMetaDataPtr->locally_owned_part() | meshMetaDataPtr->globally_shared_part()));
   const stk::mesh::BucketVector& buckets = m_bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
   int numNodesPerEntity = middleMeshFieldPtr->get_field_shape().get_num_nodes(0);
   int numCompPerNode = middleMeshFieldPtr->get_num_comp();
   auto& middleMeshField = *middleMeshFieldPtr;
+
+  auto stkVertFieldData = m_stkVertField->data();
+  auto stkFieldData = stkField.data<stk::mesh::ReadWrite>();
   for (const stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)
     {
-      VertIdType* stkNodeFieldData = stk::mesh::field_data(*m_stkVertField, node);
-      int meshVertId = static_cast<int>(stkNodeFieldData[0]);
+      VertIdType meshVertId = stkVertFieldData.entity_values(node)(0_comp);
       mesh::MeshEntityPtr vert = m_middleMesh->get_vertices()[meshVertId];
 
-      double* stkFieldData = stk::mesh::field_data(stkField, node);
-      for (int i=0; i < numNodesPerEntity; ++i)
-        for (int j=0; j < numCompPerNode; ++j)
-          stkFieldData[i * numCompPerNode + j] = middleMeshField(vert, i, j);
+      auto stkFieldDataForNode = stkFieldData.entity_values(node);
+      for (stk::mesh::CopyIdx i=0_copy; i < numNodesPerEntity; ++i)
+        for (stk::mesh::ComponentIdx j=0_comp; j < numCompPerNode; ++j)
+          stkFieldDataForNode(i, j) = middleMeshField(vert, i, j);
     }
 }
 
@@ -109,7 +115,7 @@ void StkFieldCopier::check_field_shapes(const stk::mesh::Field<double>& stkField
       std::string("Field shapes not compatible: stk field has ") + std::to_string(stk_field_dims.second) +
       " components per node, while the middle mesh field has " + std::to_string(meshField->get_num_comp())
     );
-  } 
+  }
 }
 
 std::pair<mesh::FieldShape, int> StkFieldCopier::get_field_shape_and_num_components(const stk::mesh::Field<double>& stkField)

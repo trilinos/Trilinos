@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_UPDATE_GIVENS_INTERNAL_HPP__
-#define __KOKKOSBATCHED_UPDATE_GIVENS_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_UPDATE_GIVENS_INTERNAL_HPP
+#define KOKKOSBATCHED_UPDATE_GIVENS_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -30,9 +17,8 @@ namespace KokkosBatched {
 ///
 struct SerialUpdateGivensInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const Kokkos::pair<ValueType, ValueType> &S,
-      /* */ Kokkos::pair<ValueType, ValueType> &G) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const Kokkos::pair<ValueType, ValueType> &S,
+                                           /* */ Kokkos::pair<ValueType, ValueType> &G) {
     const ValueType tmp = S.first * G.first - S.second * G.second;
     G.second            = S.first * G.second + S.second * G.first;
     G.first             = tmp;

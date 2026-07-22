@@ -1,5 +1,3 @@
-#@HEADER
-#@HEADER
 
 # include definitions of ML_INCLUDES and ML_LIBS
 include $(top_builddir)/Makefile.export.trilinoscouplings

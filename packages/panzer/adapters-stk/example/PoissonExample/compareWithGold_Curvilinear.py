@@ -44,11 +44,11 @@ try:
 
   for i in range(len(q2gold_errors)):
     if abs(q2gold_errors[i] - q2_errors[i]) > tol:
-      print( 'Poisson example using a Q2 mesh does not pass regression check' )
+      print( 'Poisson example using a Q2 mesh does not pass regression check:',abs(q2gold_errors[i] - q2_errors[i]),"must be less than",tol )
       raise 'Exception'
 
     if abs(q1gold_errors[i] - q1_errors[i]) > tol:
-      print( 'Poisson example using a Q1 mesh does not pass regression check' )
+      print( 'Poisson example using a Q1 mesh does not pass regression check:',abs(q1gold_errors[i] - q1_errors[i]),"must be less than",tol )
       raise 'Exception'
 
     if q2_errors[i] > q1_errors[i]:

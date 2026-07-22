@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -68,7 +68,7 @@ namespace Iovs_exodus {
       CatalystExodusMeshBase::ElementBlockIdNameList ebinList;
       Ioss::ElementBlockContainer const             &ebc = region->get_element_blocks();
       for (auto i : ebc) {
-        ebinList.emplace_back(get_id(i, &ids_), i->name());
+        ebinList.emplace_back((int)get_id(i, &ids_), i->name());
       }
       this->catExoMesh->InitializeElementBlocks(ebinList);
     }
@@ -185,7 +185,7 @@ namespace Iovs_exodus {
       errmsg << "The variable named '" << field.get_name()
              << "' is of the wrong type. A region variable must be of type"
              << " TRANSIENT or REDUCTION.\n"
-             << "This is probably an internal error; please notify gdsjaar@sandia.gov";
+             << "This is probably an internal error; please notify sierra-help@sandia.gov";
       IOSS_ERROR(errmsg);
     }
     return num_to_get;
@@ -427,7 +427,10 @@ namespace Iovs_exodus {
      * NOTE: The mapping is done on TRANSIENT fields only; MODEL fields
      *       should be in the original order...
      */
-    assert(num_to_get == nodeCount);
+
+    if (this->globalNodeAndElementIDsCreated) {
+      return num_to_get;
+    }
 
     nodeMap.set_size(nodeCount);
 
@@ -439,16 +442,11 @@ namespace Iovs_exodus {
       nodeMap.set_map(static_cast<int64_t *>(ids), num_to_get, 0, in_define);
     }
 
-    if (in_define) {
-      // Only a single nodeblock and all set
-      assert(get_region()->get_property("node_block_count").get_int() == 1);
-    }
     return num_to_get;
   }
 
   size_t handle_block_ids(const Ioss::EntityBlock *eb, Ioss::State db_state, Ioss::Map &entity_map,
-                          void *ids, size_t int_byte_size, size_t num_to_get,
-                          /*int file_pointer,*/ int /*my_processor*/)
+                          void *ids, size_t int_byte_size, size_t num_to_get, bool idsCreated)
   {
     /*!
      * NOTE: "element" is generic for "element", "face", or "edge"
@@ -508,9 +506,14 @@ namespace Iovs_exodus {
     // 'eb_offset+offset+num_to_get'. If the entire block is being
     // processed, this reduces to the range 'eb_offset..eb_offset+my_element_count'
 
+    if (idsCreated) {
+      return num_to_get;
+    }
+
     int64_t eb_offset = eb->get_offset();
 
     bool in_define = (db_state == Ioss::STATE_MODEL) || (db_state == Ioss::STATE_DEFINE_MODEL);
+
     if (int_byte_size == 4) {
       entity_map.set_map(static_cast<int *>(ids), num_to_get, eb_offset, in_define);
     }
@@ -524,7 +527,7 @@ namespace Iovs_exodus {
   {
     elemMap.set_size(elementCount);
     return handle_block_ids(eb, dbState, elemMap, ids, int_byte_size_api(), num_to_get,
-                            /*get_file_pointer(),*/ myProcessor);
+                            this->globalNodeAndElementIDsCreated);
   }
 
   const Ioss::Map &DatabaseIO::get_node_map() const

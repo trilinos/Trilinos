@@ -37,6 +37,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -44,7 +45,7 @@
 #include <stk_io/WriteMesh.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
-#include <stk_tools/mesh_tools/DetectHingesImpl.hpp>
+#include <stk_tools/mesh_tools/DetectHinges.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
@@ -781,18 +782,18 @@ TEST(DetectHinge3D, inputFile)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
-  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
-  bool nodesOnly = stk::unit_test_util::simple_fields::has_option("--nodesOnly");
+  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
+  bool nodesOnly = stk::unit_test_util::has_option("--nodesOnly");
 
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
     stk::io::fill_mesh(inputFileName, bulk);
     double meshReadTime = stk::wall_time();
-    stk::tools::impl::HingeNodeVector hingeNodes;
-    stk::tools::impl::HingeEdgeVector hingeEdges;
+    stk::tools::HingeNodeVector hingeNodes;
+    stk::tools::HingeEdgeVector hingeEdges;
 
     std::string blockList = "";
-    std::string inputBlockList = stk::unit_test_util::simple_fields::get_command_line_option("--blockList", blockList);
+    std::string inputBlockList = stk::unit_test_util::get_command_line_option("--blockList", blockList);
 
     std::vector<std::string> blocksToDetect = stk::split_csv_string(inputBlockList);
     for (std::string & blockToDetect : blocksToDetect) {
@@ -825,9 +826,32 @@ TEST(DetectHinge3D, GeneratedMesh)
   unsigned nproc = stk::parallel_machine_size(MPI_COMM_WORLD);
   os << "generated:" << nproc << "x" << nproc << "x" << nproc;
   stk::io::fill_mesh(os.str(), bulk);
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
+  print_hinge_info(bulk, hingeNodes, hingeEdges);
+
+  EXPECT_EQ(0u, hingeNodes.size());
+  EXPECT_EQ(0u, hingeEdges.size());
+  output_mesh(bulk);
+}
+
+TEST(DetectHinge3D, TextMesh_skipHingesNotConnectedToSolid)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  std::string meshDesc = "0,1,SHELL_TRI_3, 1, 2, 3\n"
+                         "0,2,SHELL_TRI_3, 1, 2, 3\n"
+                         "0,3,SHELL_TRI_3, 2, 3, 4";
+  std::vector<double> coords = {0,0,0, 1,0,0, 0,1,0, 1,1,0};
+  stk::unit_test_util::setup_text_mesh(*bulkPtr, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
+  const bool onlyIfConnectedToSolidElements = true;
+  fill_mesh_hinges(bulk, hingeNodes, hingeEdges, onlyIfConnectedToSolidElements);
   print_hinge_info(bulk, hingeNodes, hingeEdges);
 
   EXPECT_EQ(0u, hingeNodes.size());
@@ -837,8 +861,8 @@ TEST(DetectHinge3D, GeneratedMesh)
 
 TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHingeOneEdgeHinge)
 {
-  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 3)
-    return;
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 3) { GTEST_SKIP(); }
+
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_2node_one_edge_hinge(bulk);
@@ -849,6 +873,14 @@ TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHingeOneEdgeHinge)
   std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
   EXPECT_EQ(2u, hingeCount.first);
   EXPECT_EQ(1u, hingeCount.second);
+
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
+  const bool onlyIfConnectedToSolidElements = true;
+  fill_mesh_hinges(bulk, hingeNodes, hingeEdges, onlyIfConnectedToSolidElements);
+  print_hinge_info(bulk, hingeNodes, hingeEdges);
+  std::cout<<"hingeNodes.size()="<<hingeNodes.size()<<", hingeEdges.size()="<<hingeEdges.size()<<std::endl;
+
   output_mesh(bulk);
 }
 
@@ -875,9 +907,9 @@ TEST(DetectHinge3D, DetectHingeRing)
   stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_with_hinge_ring(bulk);
 
-  stk::tools::impl::HingeNodeVector hingeNodes = stk::tools::impl::get_hinge_nodes(bulk);
-  stk::tools::impl::HingeEdgeVector hingeEdges = stk::tools::impl::get_hinge_edges(bulk, hingeNodes);
-  stk::tools::impl::HingeNodeVector hingeCyclicNodes = stk::tools::impl::get_cyclic_hinge_nodes(bulk, hingeNodes);
+  stk::tools::HingeNodeVector hingeNodes = stk::tools::impl::get_hinge_nodes(bulk);
+  stk::tools::HingeEdgeVector hingeEdges = stk::tools::impl::get_hinge_edges(bulk, hingeNodes);
+  stk::tools::HingeNodeVector hingeCyclicNodes = stk::tools::impl::get_cyclic_hinge_nodes(bulk, hingeNodes);
 
   EXPECT_EQ(4u, hingeNodes.size());
   EXPECT_EQ(4u, hingeEdges.size());
@@ -1004,7 +1036,7 @@ TEST(ElementGroups2D, SingleBlockFourQuadOneNodeHinge)
   stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_4quad_bowtie_1hinge(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 4u);
-  stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
+  stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
   if(!groupings.empty()) {
     EXPECT_EQ(groupings.size(), 4u);
     EXPECT_EQ(groupings[0].size(), 1u);
@@ -1018,7 +1050,7 @@ TEST(ElementGroups2D, SingleBlockThreeQuadOneNodeHinge)
   stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_3quad_1hinge(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 4u);
-  stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
+  stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
   if(!groupings.empty()) {
     EXPECT_EQ(groupings.size(), 2u);
     EXPECT_EQ(groupings[0].size(), 2u);
@@ -1032,7 +1064,7 @@ TEST(ElementGroups3D, EmptyMesh)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
   stk::mesh::Entity entity;
-  stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, entity);
+  stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, entity);
   if(!groupings.empty()) {
     EXPECT_EQ(groupings.size(), 0u);
   }
@@ -1045,7 +1077,7 @@ TEST(ElementGroups3D, SingleBlockOneHex)
   setup_mesh_1block_1hex(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 1u);
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEMENT_RANK, 1u);
-  stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
+  stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
   if(!groupings.empty()) {
     EXPECT_EQ(groupings.size(), 1u);
     EXPECT_EQ(groupings[0].size(), 1u);
@@ -1063,7 +1095,7 @@ TEST(ElementGroups3D, SingleBlockTwoHex)
   setup_mesh_1block_2hex(bulk);
   two_elements_decomposition(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 1u);
-  stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
+  stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
   if(!groupings.empty()) {
     EXPECT_EQ(groupings.size(), 1u);
     EXPECT_EQ(groupings[0].size(), 1u);
@@ -1103,7 +1135,7 @@ TEST(ElementGroups3D, InsertGroupTest)
   infoVec.push_back(stk::tools::impl::PairwiseSideInfo(bulk, elem3, elem4));
   infoVec.push_back(stk::tools::impl::PairwiseSideInfo(bulk, elem1, elem3));
 
-  stk::tools::impl::HingeGroupVector groupings;
+  stk::tools::HingeGroupVector groupings;
   insert_into_group(infoVec, groupings);
 
   if(!groupings.empty()) {
@@ -1126,7 +1158,7 @@ TEST(ElementGroups3D, MergeTest)
   stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:2x2x2", bulk);
 
-  stk::tools::impl::HingeGroupVector groupings;
+  stk::tools::HingeGroupVector groupings;
   stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1u);
   stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEMENT_RANK, 2u);
   stk::mesh::Entity elem3 = bulk.get_entity(stk::topology::ELEMENT_RANK, 3u);
@@ -1170,15 +1202,15 @@ TEST(ElementGroups2D, TwoBlockFiveElementsOneHinge)
   setup_mesh_2block_3quad_2tri_1hinge(bulk);
   five_elements_decomposition(bulk);
 
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
 
   int ranTest = 0;
 
   if(hingeNodes.size() == 1) {
     ranTest = 1;
-    stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeNodes[0].get_node());
+    stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeNodes[0].get_node());
     EXPECT_EQ(2u, groupings.size());
     EXPECT_EQ(5u, groupings[0].size() + groupings[1].size() );
     if(groupings[0].size() == 2) {
@@ -1199,15 +1231,15 @@ TEST(ElementGroups3D, OneBlockFourElementsTwoNodeHinge)
   stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_2node_hinge(bulk);
   four_elements_decomposition2(bulk);
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
 
   stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1u);
   stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEM_RANK, 2u);
 
-  for(const stk::tools::impl::HingeNode& node : hingeNodes) {
-    stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node.get_node());
+  for(const stk::tools::HingeNode& node : hingeNodes) {
+    stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node.get_node());
     if(!groupings.empty()) {
       EXPECT_EQ(2u, groupings.size());
       EXPECT_EQ(3u, groupings[0].size() + groupings[1].size());
@@ -1255,16 +1287,16 @@ TEST(ElementGroups3D, OneBlockEightElementsOneNodeHinge)
     distribute_mesh(bulk, idProcVec);
   }
 
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
 
   int ranTest = 0;
 
   if(hingeNodes.size() > 0) {
     ranTest = 1;
-    for(const stk::tools::impl::HingeNode& node : hingeNodes) {
-      stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
+    for(const stk::tools::HingeNode& node : hingeNodes) {
+      stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
       if(!groupings.empty()) {
         EXPECT_EQ(4u, groupings.size());
         EXPECT_EQ(8u, groupings[0].size() + groupings[1].size() + groupings[2].size() + groupings[3].size());
@@ -1289,8 +1321,8 @@ TEST(ElementGroups3D, SingleBlockTwoHexOneEdgeHinge)
 
   two_elements_decomposition(bulk);
 
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
 
   EXPECT_EQ(0u, hingeNodes.size());
@@ -1310,14 +1342,14 @@ TEST(ElementGroups3D, SingleBlockFourElementsBowtieOneEdgeHinge)
 
   four_elements_decomposition2(bulk);
 
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
   int ranTest = 0;
 
   if(hingeEdges.size() > 0) {
     ranTest = 1;
-    stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[0]);
+    stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[0]);
     if(!groupings.empty()) {
       EXPECT_EQ(4u, groupings.size());
       EXPECT_EQ(4u, groupings[0].size() + groupings[1].size() + groupings[2].size() + groupings[3].size());
@@ -1345,14 +1377,14 @@ TEST(ElementGroups3D, SingleBlockTwoByTwoHexTwoEdgeHinge_Decomp2)
 
   four_elements_decomposition2(bulk);
 
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
   int ranTest = 0;
 
   if(hingeEdges.size() > 0) {
     ranTest = 1;
-    stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[0]);
+    stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[0]);
     if(!groupings.empty()) {
       EXPECT_EQ(2u, groupings.size());
       EXPECT_EQ(2u, groupings[0].size() + groupings[1].size());
@@ -1387,8 +1419,8 @@ TEST(ElementGroups3D, SingleBlockThreeElementsOneNodeHingeOneEdgeHinge)
 
   three_elements_decomposition(bulk);
 
-  stk::tools::impl::HingeNodeVector hingeNodes;
-  stk::tools::impl::HingeEdgeVector hingeEdges;
+  stk::tools::HingeNodeVector hingeNodes;
+  stk::tools::HingeEdgeVector hingeEdges;
   fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
 
 
@@ -1396,7 +1428,7 @@ TEST(ElementGroups3D, SingleBlockThreeElementsOneNodeHingeOneEdgeHinge)
 
   if(hingeNodes.size() > 0) {
     ranTest = 1;
-    stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeNodes[0]);
+    stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeNodes[0]);
     if(!groupings.empty()) {
       EXPECT_EQ(3u, groupings.size());
       EXPECT_EQ(3u, groupings[0].size() + groupings[1].size() + groupings[2].size());
@@ -1413,7 +1445,7 @@ TEST(ElementGroups3D, SingleBlockThreeElementsOneNodeHingeOneEdgeHinge)
   ranTest = 0;
   if(hingeEdges.size() > 0) {
     ranTest = 1;
-    stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[0]);
+    stk::tools::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, hingeEdges[0]);
     if(!groupings.empty()) {
       EXPECT_EQ(2u, groupings.size());
       EXPECT_EQ(2u, groupings[0].size() + groupings[1].size());
@@ -1732,7 +1764,7 @@ TEST(SnipHinge, inputFile)
 {
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
   stk::mesh::BulkData& bulk = *bulkPtr;
-  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
+  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
     stk::io::fill_mesh(inputFileName, bulk);

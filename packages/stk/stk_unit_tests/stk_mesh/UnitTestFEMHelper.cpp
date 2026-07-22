@@ -70,7 +70,6 @@ TEST(FEMHelper, get_ordinal_and_permutation)
     unsigned gold_num_nodes = 4;
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     std::string name = "generated:1x1x2";
     stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
@@ -128,7 +127,6 @@ TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
     unsigned gold_num_nodes = 4;
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     std::string name = "generated:1x1x2";
     stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
@@ -153,7 +151,7 @@ TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
 
     stk::mesh::Part &part = mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4);
     mesh.modification_begin();
-    stk::mesh::Entity side = stk::unit_test_util::simple_fields::declare_element_side_with_nodes(mesh, elem, side_nodes, global_side_id, part);
+    stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(mesh, elem, side_nodes, global_side_id, part);
     EXPECT_NO_THROW(mesh.modification_end());
 
     std::vector<size_t> mesh_counts;
@@ -204,7 +202,7 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
   for(uint i = 0; i < num_sides; ++i)
   {
     // FIXME SHELL_SIDE_TOPO
-    if (topo.is_shell_side_ordinal(i)) { continue; }
+    if (topo.is_shell() && topo.side_rank() == stk::topology::FACE_RANK && i >= topo.num_faces()) { continue; }
 
     stk::topology sub_topo = topo.side_topology(i);
     bulk.declare_element_side(elem, i, stk::mesh::ConstPartVector{&meta.get_topology_root_part(sub_topo)});

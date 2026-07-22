@@ -34,6 +34,7 @@
 #ifndef TextMesh_hpp
 #define TextMesh_hpp
 
+#include "stk_util/stk_config.h"
 #include <string>
 #include <vector>
 namespace stk { namespace mesh { class BulkData; }}
@@ -45,13 +46,6 @@ namespace unit_test_util
 
 std::string get_full_text_mesh_desc(const std::string& textMeshConnectivityDesc, const std::vector<double>& coordVec);
 void setup_text_mesh(stk::mesh::BulkData& bulkData, const std::string& meshDesc);
-
-namespace simple_fields {
-
-std::string get_full_text_mesh_desc(const std::string& textMeshConnectivityDesc, const std::vector<double>& coordVec);
-void setup_text_mesh(stk::mesh::BulkData& bulkData, const std::string& meshDesc);
-
-}
 
 } // namespace unit_test_util
 } // namespace stk

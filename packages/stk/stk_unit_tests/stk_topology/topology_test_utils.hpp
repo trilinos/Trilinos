@@ -43,7 +43,7 @@
 #define INVALID UINT8_MAX
 
 using OrdinalType = Kokkos::View<uint8_t**, stk::ngp::MemSpace>;
-using OrdinalTypeHost = OrdinalType::HostMirror;
+using OrdinalTypeHost = OrdinalType::host_mirror_type;
 
 inline OrdinalType fillGoldOrdinals(const std::vector<std::vector<uint8_t>> & goldOrdinals) {
   const unsigned numPermutations = goldOrdinals.size();
@@ -79,7 +79,7 @@ inline void check_edge_node_ordinals(stk::topology topology, const std::vector<s
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_edge_node_ordinals_ngp(stk::topology topology, const OrdinalType & goldEdgeNodeOrdinals)
 {
   uint8_t edgeNodeOrdinals[NUM_NODES];
@@ -106,7 +106,7 @@ inline void check_face_node_ordinals(stk::topology topology, const std::vector<s
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_face_node_ordinals_ngp(stk::topology topology, const OrdinalType & goldFaceNodeOrdinals)
 {
   uint8_t faceNodeOrdinals[NUM_NODES];
@@ -130,12 +130,15 @@ inline void check_side_node_ordinals(stk::topology topology, const std::vector<s
     unsigned numSideNodes = (sideTopo.num_nodes() > 0) ? sideTopo.num_nodes() : 1;
     std::vector<uint8_t> side_node_ordinals(numSideNodes);
     topology.side_node_ordinals(side, side_node_ordinals.data());
-    EXPECT_EQ(gold_side_node_ordinals[side], side_node_ordinals);
+
+    for (unsigned i = 0; i < numSideNodes; ++i) {
+      EXPECT_EQ(gold_side_node_ordinals[side][i], side_node_ordinals[i]);
+    }
   }
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_side_node_ordinals_ngp(stk::topology topology, const OrdinalType & goldSideNodeOrdinals)
 {
   uint8_t sideNodeOrdinals[NUM_NODES];
@@ -172,7 +175,7 @@ inline void check_edge_nodes(stk::topology topology, const std::vector<std::vect
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_edge_nodes_ngp(stk::topology topology, const OrdinalType & goldEdgeNodeOrdinals)
 {
   unsigned allElemNodes[NUM_NODES];
@@ -214,7 +217,7 @@ inline void check_face_nodes(stk::topology topology, const std::vector<std::vect
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_face_nodes_ngp(stk::topology topology, const OrdinalType & goldFaceNodeOrdinals)
 {
   unsigned allElemNodes[NUM_NODES];
@@ -257,7 +260,7 @@ inline void check_side_nodes(stk::topology topology, const std::vector<std::vect
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_side_nodes_ngp(stk::topology topology, const OrdinalType & goldSideNodeOrdinals)
 {
   unsigned allElemNodes[NUM_NODES];
@@ -291,7 +294,7 @@ inline void check_permutation_node_ordinals(stk::topology topology, const std::v
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_permutation_node_ordinals_ngp(stk::topology topology, const OrdinalType & goldPermutationNodeOrdinals)
 {
   uint8_t permutationNodeOrdinals[NUM_NODES];
@@ -323,7 +326,7 @@ inline void check_permutation_nodes(stk::topology topology, const std::vector<st
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_permutation_nodes_ngp(stk::topology topology, const OrdinalType & goldPermutationNodeOrdinals)
 {
   unsigned allNodes[NUM_NODES];
@@ -352,7 +355,7 @@ inline void fill_permutation(unsigned permutation, const std::vector<std::vector
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void fill_permutation_ngp(unsigned permutation, const OrdinalType & goldPermutationNodeOrdinals, uint8_t permutedOrdinals[NUM_NODES])
 {
   for (unsigned node = 0; node < NUM_NODES; ++node) {
@@ -386,7 +389,7 @@ inline void check_equivalent(stk::topology topology, const std::vector<std::vect
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_equivalent_ngp(stk::topology topology, const OrdinalType & goldPermutationNodeOrdinals)
 {
   const unsigned numPermutations = topology.num_permutations();
@@ -449,7 +452,7 @@ inline void check_lexicographical_smallest_permutation(stk::topology topology, c
 }
 
 template <unsigned NUM_NODES>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void check_lexicographical_smallest_permutation_ngp(stk::topology topology, const OrdinalType & goldPermutationNodeOrdinals)
 {
   if (topology.num_nodes() == 0) {

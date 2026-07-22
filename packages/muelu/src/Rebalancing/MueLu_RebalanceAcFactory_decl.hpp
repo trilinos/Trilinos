@@ -39,9 +39,9 @@ class RebalanceAcFactory : public TwoLevelFactoryBase {
   //! @name Constructors/Destructors.
   //@{
 
-  RebalanceAcFactory() {}
+  RebalanceAcFactory();
 
-  virtual ~RebalanceAcFactory() {}
+  virtual ~RebalanceAcFactory();
 
   RCP<const ParameterList> GetValidParameterList() const;
   //@}

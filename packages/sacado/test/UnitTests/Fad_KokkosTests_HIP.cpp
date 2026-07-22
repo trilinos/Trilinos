@@ -1,31 +1,12 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -57,10 +38,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipAligned)
   typedef Kokkos::HIP Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   typedef typename ViewType::traits TraitsType;
   typedef Kokkos::Impl::ViewMapping< TraitsType , typename TraitsType::specialize > MappingType;
   const int view_static_dim = MappingType::FadStaticDimension;
   TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
+  #endif
 
   typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
@@ -73,7 +56,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipAligned)
 
   ViewType v("v", num_rows, fad_size+1);
   const size_t span = v.span();
+  // This doesn't make sense really - span is number of elements not subelements
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
+  #else
+  TEUCHOS_TEST_EQUALITY(span, num_rows, out, success);
+  #endif
 }
 
 TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipNotAligned)
@@ -86,10 +74,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipNotAligned)
   typedef Kokkos::HIP Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   typedef typename ViewType::traits TraitsType;
   typedef Kokkos::Impl::ViewMapping< TraitsType , typename TraitsType::specialize > MappingType;
   const int view_static_dim = MappingType::FadStaticDimension;
   TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
+  #endif
 
   typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
@@ -102,7 +92,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipNotAligned)
 
   ViewType v("v", num_rows, fad_size+1);
   const size_t span = v.span();
+  // This doesn't make sense really - span is number of elements not subelements
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
+  #else
+  TEUCHOS_TEST_EQUALITY(span, num_rows, out, success);
+  #endif
 }
 
 int main( int argc, char* argv[] ) {

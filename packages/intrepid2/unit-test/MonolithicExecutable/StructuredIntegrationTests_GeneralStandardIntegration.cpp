@@ -83,6 +83,7 @@ void testStandardIntegration(int meshWidth, int polyOrder, int worksetSize,
   EFunctionSpace fs;
   EOperator op1, op2;
   int numOps = 0; // can be 1 or 2
+  Teuchos::RCP<Kokkos::Array<Scalar,spaceDim>> vectorWeight1, vectorWeight2;
   switch (formulation)
   {
     case Poisson:
@@ -113,12 +114,32 @@ void testStandardIntegration(int meshWidth, int polyOrder, int worksetSize,
       op1 = EOperator::OPERATOR_VALUE;
       fs = EFunctionSpace::FUNCTION_SPACE_HDIV;
       break;
+    case VectorWeightedPoisson:
+      numOps = 1;
+      op1 = EOperator::OPERATOR_GRAD;
+      fs = EFunctionSpace::FUNCTION_SPACE_HGRAD;
+      vectorWeight1 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+      vectorWeight2 = Teuchos::rcp(new Kokkos::Array<double,spaceDim>);
+      double weight = 1.0;
+      for (int d=0; d<spaceDim; d++)
+      {
+        (*vectorWeight1)[d] = weight;
+        weight /= 2.0;
+      }
+      
+      weight = 0.5;
+      for (int d=0; d<spaceDim; d++)
+      {
+        (*vectorWeight2)[d] = weight;
+        weight *= 2.0;
+      }
+      break;
   }
     
   double flopCountIntegration = 0, flopCountJacobian = 0;
   auto generalIntegrals = performStandardAssembly<Scalar,BasisFamily>(geometry, worksetSize,
-                                                                      polyOrder, fs, op1,
-                                                                      polyOrder, fs, op1,
+                                                                      polyOrder, fs, op1, vectorWeight1,
+                                                                      polyOrder, fs, op1, vectorWeight2,
                                                                       flopCountIntegration, flopCountJacobian);
   if (numOps == 2)
   {
@@ -136,7 +157,7 @@ void testStandardIntegration(int meshWidth, int polyOrder, int worksetSize,
     });
   }
   
-  auto specificIntegrals = performStandardQuadrature<Scalar, BasisFamily>(formulation, geometry, polyOrder, worksetSize, flopCountIntegration, flopCountJacobian);
+  auto specificIntegrals = performStandardQuadrature<Scalar,BasisFamily>(formulation, geometry, polyOrder, worksetSize, flopCountIntegration, flopCountJacobian, vectorWeight1, vectorWeight2);
     
   out << "Comparing new general standard assembly implementation to previous formulation-specific integration path…\n";
   testFloatingEquality3(generalIntegrals, specificIntegrals, relTol, absTol, out, success, "general integral", "specific formulation integral");
@@ -166,5 +187,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(StructuredIntegration, GeneralStandardIntegrat
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStandardIntegration, PoissonFormulation, D1, P1)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStandardIntegration, PoissonFormulation, D2, P3)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStandardIntegration, PoissonFormulation, D3, P3)
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStandardIntegration, VectorWeightedPoissonFormulation, D1, P1)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStandardIntegration, VectorWeightedPoissonFormulation, D2, P3)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(StructuredIntegration, GeneralStandardIntegration, VectorWeightedPoissonFormulation, D3, P3)
 
 } // anonymous namespace

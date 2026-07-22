@@ -14,8 +14,7 @@
 
 #include <typeinfo>
 
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 
 #include <percept/function/MDArray.hpp>
 
@@ -36,10 +35,7 @@
 
     class ComputeBases 
     {
-      //typedef Intrepid::Basis<double, MDArray > IntrepidBasisType;
       unsigned m_cached_topo_key;
-      //IntrepidBasisType *m_cached_basis;
-      //PerceptMesh::BasisTypeRCP m_cached_basis;
       BasisTable::BasisType* m_cached_basis;
     public:
       ComputeBases() : m_cached_topo_key(0), m_cached_basis(0) {}
@@ -56,12 +52,12 @@
       {
         VERIFY_OP(parametric_coordinates.rank(), ==, 2, "ComputeBases::operator() parametric_coordinates bad rank");
         VERIFY_OP(transformed_basis_values.rank(), ==, 3, "ComputeBases::operator() transformed_basis_values bad rank");
-        VERIFY_OP(transformed_basis_values.dimension(2), ==, parametric_coordinates.dimension(0), 
+        VERIFY_OP(transformed_basis_values.extent_int(2), ==, parametric_coordinates.extent_int(0), 
                   "ComputeBases::operator() transformed_basis_values.dim(2) != parametric_coordinates.dim(0)");
         //VERIFY_OP(output_field_values.rank(), ==, 2, "FieldFunction::operator() output_field_values bad rank");
 
         // [P] = number of integration points
-        int numInterpPoints = parametric_coordinates.dimension(0);
+        int numInterpPoints = parametric_coordinates.extent_int(0);
 
         //const stk::mesh::Bucket & bucket = element->bucket();
         const CellTopologyData * const bucket_cell_topo_data = stk::mesh::get_cell_topology(bucket.topology()).getCellTopologyData();
@@ -85,7 +81,7 @@
         int cellDim  = topo.getDimension();
         if (0)
           {
-            MDArray cellWorkset(numCells, numNodes, cellDim);
+            MDArray cellWorkset("cellWorkset", numCells, numNodes, cellDim);
             if (0) cellWorkset(0,0,0) = 0.0;
           }
 
@@ -94,7 +90,7 @@
         //PerceptMesh::BasisTypeRCP basis;
         if (m_cached_topo_key != bucket_cell_topo_data->key)
           {
-            BasisTable::BasisTypeRCP basisRCP = BasisTable::getBasis(topo);
+            BasisTable::BasisTypeRCP basisRCP = BasisTable::getInstance()->getBasis(topo);
             basis = basisRCP.get();
             m_cached_basis = basis;
             m_cached_topo_key = bucket_cell_topo_data->key;
@@ -111,15 +107,15 @@
           }
 
         // ([B],[P]), or ([B],[P],[D]) for GRAD
-        MDArray basis_values(numBases, numInterpPoints); 
+        MDArray basis_values("basis_values", numBases, numInterpPoints); 
 
         // ([C],[B],[P]), or ([C],[B],[P],[D]) for GRAD
         //MDArray transformed_basis_values(numCells, numBases, numInterpPoints); 
 
-        basis->getValues(basis_values, parametric_coordinates, Intrepid::OPERATOR_VALUE);
+        basis->getValues(basis_values, parametric_coordinates, Intrepid2::OPERATOR_VALUE);
 
         // this function just spreads (copies) the values of the basis to all elements in the workset (numCells)
-        FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
+        Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::HGRADtransformVALUE(transformed_basis_values, basis_values);
       }
 
       void getBases(const stk::mesh::BulkData& bulk, const stk::mesh::Entity element, const MDArray& parametric_coordinates, MDArray& transformed_basis_values)

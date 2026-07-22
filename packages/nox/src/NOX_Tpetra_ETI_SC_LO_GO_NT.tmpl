@@ -1,0 +1,30 @@
+// @HEADER
+// *****************************************************************************
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//
+// Copyright 2002 NTESS and the NOX contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#include "NOX_Config.h"
+#if defined(HAVE_NOX_EXPLICIT_INSTANTIATION)
+
+#include "Tpetra_Core.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
+#include "NOX_Tpetra_@CLASS_NAME@.hpp"
+#include "NOX_Tpetra_@CLASS_NAME@_def.hpp"
+
+#if defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@SC_MACRO_NAME@) && defined (HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) @SC_MACRO_EXPR@
+
+// Need this for the mangling of the Node typedef.
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+NOX_TPETRA_@CLASS_MACRO_NAME@_INSTANT(@SC_MANGLED_NAME@, @LO_MANGLED_NAME@, @GO_MANGLED_NAME@, @NT_MANGLED_NAME@)
+
+#else
+#warning "We don't have the @NT_MACRO_NAME@ node."
+
+#endif
+
+#endif // HAVE_NOX_EXPLICIT_INSTANTIATION

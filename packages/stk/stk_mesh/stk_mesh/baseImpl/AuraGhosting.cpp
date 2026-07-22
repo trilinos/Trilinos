@@ -34,9 +34,9 @@
 
 #include <stk_mesh/baseImpl/AuraGhosting.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/Visitors.hpp>
 #include <stk_mesh/base/EntityLess.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
@@ -84,23 +84,27 @@ void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
   impl::for_each_selected_entity_run_no_threads(bulkData, stk::topology::NODE_RANK, shared,
     [&sendAuraEntityProcs, &sharingProcs, &endRank, &maxRank]
     (const BulkData& bulk, const MeshIndex& meshIndex) {
-      const Bucket& bucket = *meshIndex.bucket;
-      const unsigned bucketOrd = meshIndex.bucket_ordinal;
+      if (meshIndex.bucket != nullptr) {
+        const Bucket& bucket = *meshIndex.bucket;
+        const unsigned bucketOrd = meshIndex.bucket_ordinal;
 
-      bulk.comm_shared_procs(bucket[bucketOrd], sharingProcs);
+        bulk.comm_shared_procs(bucket[bucketOrd], sharingProcs);
 
-      static constexpr EntityRank nextHigherRank = stk::topology::EDGE_RANK;
-      for (EntityRank higherRank = nextHigherRank; higherRank < endRank; ++higherRank) {
-        const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
-        const Entity* rels     = bucket.begin(bucketOrd, higherRank);
+        static constexpr EntityRank nextHigherRank = stk::topology::EDGE_RANK;
+        for (EntityRank higherRank = nextHigherRank; higherRank < endRank; ++higherRank) {
+          const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
+          if (num_rels > 0) {
+            const Entity* rels     = bucket.begin(bucketOrd, higherRank);
 
-        for (unsigned r = 0; r < num_rels; ++r) {
-          if (bulk.parallel_rank() == bulk.parallel_owner_rank(rels[r])) {
-            stk::mesh::impl::insert_upward_relations_for_owned(bulk, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+            for (unsigned r = 0; r < num_rels; ++r) {
+              if (bulk.is_valid(rels[r]) && bulk.parallel_rank() == bulk.parallel_owner_rank(rels[r])) {
+                stk::mesh::impl::insert_upward_relations_for_owned(bulk, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+              }
+            }
           }
         }
       }
-    }    
+    }
   ); // for_each_entity_run
 }
 
@@ -148,9 +152,10 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   const unsigned auraGhostingOrdinal = bulkData.aura_ghosting().ordinal();
 
   const EntityCommDatabase& commDB = bulkData.internal_comm_db();
+  EntityCommListInfoVector& commList = const_cast<EntityCommListInfoVector&>(commDB.comm_list());
   EntityCommInfoVector comm_ghost ;
   for ( EntityCommListInfoVector::reverse_iterator
-        i = bulkData.m_entity_comm_list.rbegin() ; i != bulkData.m_entity_comm_list.rend() ; ++i) {
+        i = commList.rbegin() ; i != commList.rend() ; ++i) {
 
     if (i->entity_comm == -1) {
       continue;
@@ -194,7 +199,7 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
       }
     }
 
-    if ( bulkData.internal_entity_comm_map(entityComm.entity).empty() ) {
+    if ( entityComm.entity_comm == -1 || commDB.comm(entityComm.entity_comm).empty() ) {
       removed = true ;
       entityComm.key = EntityKey(); // No longer communicated
     }
@@ -226,6 +231,8 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   sendAuraEntityProcs.swap_vec(sendAuraGhosts);
   sendAuraEntityProcs.deallocate();
   stk::util::sort_and_unique(sendAuraGhosts, entityLess);
+
+  bulkData.m_modSummary.track_change_ghosting(bulkData.aura_ghosting(), sendAuraGhosts, removedSendGhosts);
 
   const bool isFullRegen = true;
   bulkData.ghost_entities_and_fields(bulkData.aura_ghosting(), std::move(sendAuraGhosts), isFullRegen, removedSendGhosts);

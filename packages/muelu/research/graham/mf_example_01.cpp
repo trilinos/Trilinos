@@ -186,8 +186,8 @@ class TridiagonalOperator : public Xpetra::Operator<Scalar, LocalOrdinal, Global
     redistDataX->doImport(X, *importer_, Xpetra::INSERT);
 
     // Get a view of the multivector
-    auto KokkosViewX = redistDataX->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    auto KokkosViewY = Y.getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto KokkosViewX = redistDataX->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto KokkosViewY = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Perform the matvec with the locally owned data
     // For each column
@@ -322,8 +322,8 @@ class MFProlongatorOperator : public Xpetra::Operator<Scalar, LocalOrdinal, Glob
     // redistDataX->doImport(X, *importer_, Xpetra::INSERT);
 
     // // Get a view of the multivector
-    // auto KokkosViewX = redistDataX->getLocalView<HostDevice>(Xpetra::Access::ReadOnly);
-    // auto KokkosViewY = Y.getLocalView<HostDevice>(Xpetra::Access::ReadWrite);
+    // auto KokkosViewX = redistDataX->getLocalView<HostDevice>(Tpetra::Access::ReadOnly);
+    // auto KokkosViewY = Y.getLocalView<HostDevice>(Tpetra::Access::ReadWrite);
 
     // // Perform the matvec with the locally owned data
     // // For each column
@@ -473,7 +473,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
       const SC h           = (x_right - x_left) / (n_local - 1);
 
       // fill the RHS appropriately
-      auto rhs_2d = rhs->getHostLocalView(Xpetra::Access::OverwriteAll);
+      auto rhs_2d = rhs->getLocalViewHost(Tpetra::Access::OverwriteAll);
       auto rhs_1d = Kokkos::subview(rhs_2d, Kokkos::ALL(), 0);
       SC x        = x_left;
       for (size_t i = 0; i < n_local; ++i) {
@@ -577,9 +577,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     // (sleep my_rank is very hacky here, but keeps prints contiguous)
     if (print_RHS_and_solution) {
       sleep(my_rank);
-      auto rhs_2d = rhs->getHostLocalView(Xpetra::Access::ReadOnly);
+      auto rhs_2d = rhs->getLocalViewHost(Tpetra::Access::ReadOnly);
       PRINT_VIEW2_LINEAR(rhs_2d)
-      auto solution_2d = solution->getHostLocalView(Xpetra::Access::ReadOnly);
+      auto solution_2d = solution->getLocalViewHost(Tpetra::Access::ReadOnly);
       PRINT_VIEW2_LINEAR(solution_2d)
     }
 

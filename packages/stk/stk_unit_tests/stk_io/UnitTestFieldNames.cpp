@@ -38,6 +38,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_util/util/string_case_compare.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string
 #include <algorithm>
@@ -64,20 +65,17 @@ void createNamedFieldOnMesh(stk::mesh::MetaData &stkMeshMetaData, const std::str
   stk::mesh::put_field_on_mesh(field0, stkMeshMetaData.universal_part(), nullptr);
 }
 
-void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm communicator, std::vector<std::string> goldFieldNames)
+void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm /*communicator*/, std::vector<std::string> goldFieldNames)
 {
   Ioss::NodeBlock *nodeBlockAssociatedWithField0 = ioRegion.get_node_blocks()[0];
   Ioss::NameList fieldNames;
   nodeBlockAssociatedWithField0->field_describe(Ioss::Field::TRANSIENT, &fieldNames);
-  for (std::string & name : goldFieldNames) {
-    for (char & c : name) {
-      c = tolower(c);
-    }
-  }
 
   ASSERT_EQ(goldFieldNames.size(), fieldNames.size());
-  for (auto goldFieldName : goldFieldNames) {
-    auto entry = std::find(fieldNames.begin(), fieldNames.end(), goldFieldName.c_str());
+  for (const auto &goldFieldName : goldFieldNames) {
+    auto entry = std::find_if(fieldNames.begin(), fieldNames.end(), 
+			   [goldFieldName](const std::string &a)
+			   {return stk::equal_case(a, goldFieldName);});
     if (entry == fieldNames.end()) {
       EXPECT_TRUE(false) << "Field " << goldFieldName << " not found in file" << std::endl;
     }
@@ -93,7 +91,6 @@ TEST(FieldNamesTest, FieldNameRenameTwice)
   std::vector<std::string> outputFieldNames;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
@@ -131,7 +128,6 @@ TEST(FieldNamesTest, FieldNameWithRestart)
   const std::string internalClientFieldName = "Field0";
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);
@@ -168,7 +164,6 @@ TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
   const std::string internalClientFieldName = "Field0";
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     size_t index = stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.set_active_mesh(index);

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2025, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,13 +7,14 @@
 #include "ED_SystemInterface.h"
 #include "exo_entity.h"
 #include "exodusII.h" // for ex_get_var, EX_INVALID_ID, etc
-#include "fmt/color.h"
-#include "fmt/ostream.h"
-#include "smart_assert.h" // for SMART_ASSERT
-#include "stringx.h"      // for to_lower
-#include <cstdint>        // for int64_t
-#include <cstdlib>        // for exit
-#include <cstring>        // for strlen
+#include "stringx.h"  // for to_lower
+
+#include <cstdint> // for int64_t
+#include <cstdlib> // for exit
+#include <cstring> // for strlen
+#include <fmt/color.h>
+#include <fmt/ostream.h>
+#include <smart_assert.h>
 #include <string>
 #include <vector>
 
@@ -30,14 +31,14 @@ namespace {
 Exo_Entity::Exo_Entity(int file_id, size_t id) : fileId(file_id), id_(id)
 {
   SMART_ASSERT(file_id > 0);
-  SMART_ASSERT((int)id > EX_INVALID_ID);
+  SMART_ASSERT(static_cast<int>(id) > EX_INVALID_ID);
 }
 
 Exo_Entity::Exo_Entity(int file_id, size_t id, size_t nnodes)
     : fileId(file_id), id_(id), numEntity(nnodes)
 {
   SMART_ASSERT(file_id > 0);
-  SMART_ASSERT((int)id > EX_INVALID_ID);
+  SMART_ASSERT(static_cast<int>(id) > EX_INVALID_ID);
 }
 
 Exo_Entity::~Exo_Entity()
@@ -70,7 +71,7 @@ void Exo_Entity::initialize(int file_id, size_t id)
 
 bool Exo_Entity::is_valid_var(size_t var_index) const
 {
-  SMART_ASSERT((int)var_index < numVars);
+  SMART_ASSERT(static_cast<int>(var_index) < numVars);
   if (truth_ == nullptr) {
     get_truth_table();
   }
@@ -91,7 +92,7 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
   if (var_index < 0 || var_index >= numVars) {
     Error("Exo_Entity::Load_Results(): var_index is invalid. Aborting...\n");
   }
-  SMART_ASSERT(time_step >= 1 && time_step <= (int)get_num_timesteps(fileId));
+  SMART_ASSERT(time_step >= 1 && time_step <= static_cast<int>(get_num_timesteps(fileId)));
 
   if (time_step != currentStep) {
     Free_Results();
@@ -146,8 +147,8 @@ std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_
     return "exodiff: ERROR:  Must initialize block parameters first!";
   }
   SMART_ASSERT(var_index >= 0 && var_index < numVars);
-  SMART_ASSERT(t1 >= 1 && t1 <= (int)get_num_timesteps(fileId));
-  SMART_ASSERT(t2 >= 1 && t2 <= (int)get_num_timesteps(fileId));
+  SMART_ASSERT(t1 >= 1 && t1 <= static_cast<int>(get_num_timesteps(fileId)));
+  SMART_ASSERT(t2 >= 1 && t2 <= static_cast<int>(get_num_timesteps(fileId)));
 
   if (t1 != currentStep) {
     Free_Results();
@@ -359,7 +360,7 @@ void Exo_Entity::internal_load_params()
       int    err   = ex_get_attr_names(fileId, exodus_type(), id_, names);
       if (err < 0) {
         Error(fmt::format(
-            "ExoII_Read::Get_Init_Data(): Failed to get {} attribute names!  Aborting...\n",
+            "Exo_Read::Get_Init_Data(): Failed to get {} attribute names!  Aborting...\n",
             label()));
       }
 

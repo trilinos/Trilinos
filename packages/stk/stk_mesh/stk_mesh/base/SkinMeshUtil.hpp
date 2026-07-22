@@ -35,7 +35,6 @@
 #ifndef SKINMESHUTIL_HPP_
 #define SKINMESHUTIL_HPP_
 
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -46,6 +45,8 @@
 
 namespace stk {
 namespace mesh {
+
+class BulkData;
 
 class SkinMeshUtil {
 public:

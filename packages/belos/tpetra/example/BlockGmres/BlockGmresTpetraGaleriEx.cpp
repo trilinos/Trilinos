@@ -60,8 +60,6 @@ int run(int argc, char *argv[]) {
   using MT = typename Teuchos::ScalarTraits<ST>::magnitudeType;
 
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
-  using tvector_t    = Tpetra::Vector<ST,LO,GO,NT>;
-  using trowmatrix_t = Tpetra::RowMatrix<ST,LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 
   using MVT = typename Belos::MultiVecTraits<ST,MV>;
@@ -129,7 +127,7 @@ int run(int argc, char *argv[]) {
     GaleriList.set ("ny", nx);
     GaleriList.set ("nz", nx);
 
-    auto Map = RCP{Galeri::Xpetra::CreateMap<ST,GO,tmap_t>("Cartesian3D", comm, GaleriList)};
+    auto Map = RCP{Galeri::Xpetra::CreateMap<LO,GO,tmap_t>("Cartesian3D", comm, GaleriList)};
     auto GaleriProblem = Galeri::Xpetra::BuildProblem<ST,LO,GO,tmap_t,tcrsmatrix_t,MV>("Laplace3D", Map, GaleriList);
 
     // Create matrix from problem
@@ -227,13 +225,13 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret!=Belos::Converged || badRes) {
+    if (ret==Belos::Converged && !badRes) {
+      if (procVerbose)
+        std::cout << "End Result: TEST PASSED" << std::endl;
+    } else {
       success = false;
       if (procVerbose)
         std::cout << "End Result: TEST FAILED" << std::endl;
-    } else {
-      if (procVerbose)
-        std::cout << "End Result: TEST PASSED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

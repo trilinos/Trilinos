@@ -680,7 +680,7 @@ struct OperatorTensorDecomposition
       }
       
       // set cell topology
-      this->basisCellTopology_ = tensorComponents_[0]->getBaseCellTopology();
+      this->basisCellTopologyKey_ = tensorComponents_[0]->getBaseCellTopology().getKey();
       this->numTensorialExtrusions_ = tensorComponents_.size() - 1;
       
       this->basisType_         = basis1_->getBasisType();
@@ -748,7 +748,7 @@ struct OperatorTensorDecomposition
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
   
         // we assume that basis2_ is defined on a line, and that basis1_ is defined on a domain that is once-extruded in by that line.
-        auto cellTopo = CellTopology::cellTopology(this->basisCellTopology_, numTensorialExtrusions_);
+        auto cellTopo = CellTopology::cellTopology(tensorComponents_[0]->getBaseCellTopology(), numTensorialExtrusions_);
         auto basis1Topo = cellTopo->getTensorialComponent();
         
         const ordinal_type spaceDim = spaceDim1 + spaceDim2;
@@ -825,25 +825,25 @@ struct OperatorTensorDecomposition
       const int numTensorialExtrusions = basis1_->getNumTensorialExtrusions() + basis2_->getNumTensorialExtrusions();
       if ((cellKey1 == shards::Line<2>::key) && (cellKey2 == shards::Line<2>::key) && (numTensorialExtrusions == 0))
       {
-        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+        this->basisCellTopologyKey_ = shards::Quadrilateral<4>::key;
       }
       else if (   ((cellKey1 == shards::Quadrilateral<4>::key) && (cellKey2 == shards::Line<2>::key))
                || ((cellKey2 == shards::Quadrilateral<4>::key) && (cellKey1 == shards::Line<2>::key))
                || ((cellKey1 == shards::Line<2>::key) && (cellKey2 == shards::Line<2>::key) && (numTensorialExtrusions == 1))
               )
       {
-        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+        this->basisCellTopologyKey_ = shards::Hexahedron<8>::key;
       }
       else if ((cellKey1 == shards::Triangle<3>::key) && (cellKey2 == shards::Line<2>::key))
       {
-        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
+        this->basisCellTopologyKey_ = shards::Wedge<6>::key;
       }
       else
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cell topology combination not yet supported");
       }
       
-      // numTensorialExtrusions_ is relative to the basisCellTopology_; what we've just done is found a cell topology of the same spatial dimension as the extruded topology, so now numTensorialExtrusions_ should be 0.
+      // numTensorialExtrusions_ is relative to the baseCellTopology; what we've just done is found a cell topology of the same spatial dimension as the extruded topology, so now numTensorialExtrusions_ should be 0.
       numTensorialExtrusions_ = 0;
       
       // initialize tags
@@ -858,7 +858,7 @@ struct OperatorTensorDecomposition
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
         
-        shards::CellTopology cellTopo = this->basisCellTopology_;
+        shards::CellTopology cellTopo = this->getBaseCellTopology();
         
         ordinal_type tensorSpaceDim  = cellTopo.getDimension();
         ordinal_type spaceDim1       = cellTopo1.getDimension();
@@ -1651,14 +1651,14 @@ struct OperatorTensorDecomposition
               
               OutputViewType outputValues1, outputValues2;
               if (op1 == OPERATOR_VALUE)
-                outputValues1 = getMatchingViewWithLabel(outputValues, "output values - basis 1",basisCardinality1,pointCount1);
+                outputValues1 = Impl::createMatchingDynRankView(outputValues, "output values - basis 1",basisCardinality1,pointCount1);
               else
-                outputValues1 = getMatchingViewWithLabel(outputValues, "output values - basis 1",basisCardinality1,pointCount1,dkCardinality1);
+                outputValues1 = Impl::createMatchingDynRankView(outputValues, "output values - basis 1",basisCardinality1,pointCount1,dkCardinality1);
               
               if (op2 == OPERATOR_VALUE)
-                outputValues2 = getMatchingViewWithLabel(outputValues, "output values - basis 2",basisCardinality2,pointCount2);
+                outputValues2 = Impl::createMatchingDynRankView(outputValues, "output values - basis 2",basisCardinality2,pointCount2);
               else
-                outputValues2 = getMatchingViewWithLabel(outputValues, "output values - basis 2",basisCardinality2,pointCount2,dkCardinality2);
+                outputValues2 = Impl::createMatchingDynRankView(outputValues, "output values - basis 2",basisCardinality2,pointCount2,dkCardinality2);
                 
               basis1_->getValues(outputValues1,inputPoints1,op1);
               basis2_->getValues(outputValues2,inputPoints2,op2);
@@ -1798,11 +1798,11 @@ struct OperatorTensorDecomposition
       OutputViewType outputValues1, outputValues2;
       if (outputRank1 == 0)
       {
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
       }
       else if (outputRank1 == 1)
       {
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
       }
       else
       {
@@ -1811,11 +1811,11 @@ struct OperatorTensorDecomposition
       
       if (outputRank2 == 0)
       {
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
       }
       else if (outputRank2 == 1)
       {
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
       }
       else
       {
@@ -1951,7 +1951,7 @@ struct OperatorTensorDecomposition
               {
                 for (int d=0; d<spaceDim; d++)
                 {
-                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal,d) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal);
+                  output_.access(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal,d) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal);
                 }
               }
             }
@@ -1968,7 +1968,7 @@ struct OperatorTensorDecomposition
               {
                 for (int d=0; d<spaceDim; d++)
                 {
-                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal,d) * input3_(fieldOrdinal3,pointOrdinal);
+                  output_.access(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal,d) * input3_(fieldOrdinal3,pointOrdinal);
                 }
               }
             }
@@ -1985,7 +1985,7 @@ struct OperatorTensorDecomposition
               {
                 for (int d=0; d<spaceDim; d++)
                 {
-                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal,d);
+                  output_.access(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal,d);
                 }
               }
             }
@@ -2314,29 +2314,29 @@ struct OperatorTensorDecomposition
       if ((spaceDim1 == 1) && (operatorType1 == OPERATOR_VALUE))
       {
         // use a rank 2 container for basis1
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
       }
       else
       {
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
       }
       if ((spaceDim2 == 1) && (operatorType2 == OPERATOR_VALUE))
       {
         // use a rank 2 container for basis2
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
       }
       else
       {
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
       }
       if ((spaceDim3 == 1) && (operatorType3 == OPERATOR_VALUE))
       {
         // use a rank 2 container for basis2
-        outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3);
+        outputValues3 = Impl::createMatchingDynRankView(outputValues,"output values - basis 3",basisCardinality3,pointCount3);
       }
       else
       {
-        outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3,spaceDim3);
+        outputValues3 = Impl::createMatchingDynRankView(outputValues,"output values - basis 3",basisCardinality3,pointCount3,spaceDim3);
       }
 
       basis1_->getValues(outputValues1,inputPoints1,operatorType1);

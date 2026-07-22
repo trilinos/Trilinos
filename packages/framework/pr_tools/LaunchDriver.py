@@ -82,7 +82,9 @@ def main(argv):
   parser.add_argument('--in-container', default=False, action="store_true",
                       help="Build is happening in a container")
   parser.add_argument("--kokkos-develop", default=False, action="store_true",
-                       help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
+                      help="Build is requiring to pull the current develop of kokkos and kokkos-kernels packages")
+  parser.add_argument("--extra-configure-args",
+                      help="Extra arguments that will be passed to CMake for configuring Trilinos.")
   args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
@@ -97,12 +99,6 @@ def main(argv):
   launch_cmd = get_launch_cmd(ds.system_name)
   driver_args = get_driver_args(ds.system_name)
 
-  # Specify, and override the driver script for ATDM ATS2 builds. Note that
-  # args.build_name is a required argument so it will be valid by the time it
-  # reaches this check.
-  if args.build_name.startswith("ats2_cuda"):
-      args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxCudaVortexDriver.sh"
-
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
   if args.build_name.startswith("rhel8"):
@@ -113,6 +109,12 @@ def main(argv):
 
   if args.kokkos_develop:
      cmd += " --kokkos-develop"
+
+  # extra-configure-args flag currently takes precedence over the env. var.
+  if args.extra_configure_args:
+     cmd += f" --extra-configure-args=\"{args.extra_configure_args}\""
+  elif os.getenv("EXTRA_CONFIGURE_ARGS"):
+     cmd += f" --extra-configure-args=\"{os.getenv('EXTRA_CONFIGURE_ARGS')}\""
 
   print("LaunchDriver> EXEC: " + cmd, flush=True)
 

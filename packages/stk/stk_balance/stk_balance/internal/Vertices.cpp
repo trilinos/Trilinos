@@ -47,8 +47,9 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
   }
   else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::CONNECTIVITY) {
     const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(bulkData);
+    auto connectivityWeightsData = connectivityWeights.data();
     for (size_t i = 0; i < entities.size(); ++i) {
-      mVertexWeights[i] = *stk::mesh::field_data(connectivityWeights, entities[i]);
+      mVertexWeights[i] = connectivityWeightsData.entity_values(entities[i])();
     }
   }
   else if (balanceSettings.getVertexWeightMethod() == VertexWeightMethod::FIELD) {

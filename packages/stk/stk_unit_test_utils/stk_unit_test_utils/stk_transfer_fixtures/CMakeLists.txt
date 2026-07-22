@@ -40,8 +40,8 @@ SET(SOURCES "")
 # Core headers
 #
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 IF(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(
@@ -49,25 +49,29 @@ IF(HAVE_STK_Trilinos)
     NOINSTALLHEADERS ${HEADERS}
     SOURCES ${SOURCES}
     ${Gtest_NO_INSTALL_LIB_OR_HEADERS_ARG}
-    )
+  )
 ELSE()
   add_library(stk_transfer_fixtures ${SOURCES})
   target_link_libraries(stk_transfer_fixtures PUBLIC stk_middle_mesh)
 
   target_include_directories(stk_transfer_fixtures PUBLIC
-  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_unit_test_utils>
-  $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_unit_test_utils>
+    $<INSTALL_INTERFACE:include>
   )
   target_include_directories(stk_transfer_fixtures PUBLIC
-  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_transfer>
-  $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_transfer>
+    $<INSTALL_INTERFACE:include>
   )
   target_include_directories(stk_transfer_fixtures PUBLIC
-  $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_middle_mesh>
-  $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_middle_mesh>
+    $<INSTALL_INTERFACE:include>
   )
+  find_package(GTest)
+  target_link_libraries(stk_transfer_fixtures PUBLIC stk_unit_test_utils)
+  
+  INSTALL(TARGETS stk_transfer_fixtures EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/stk_transfer_fixtures)
+  ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_unit_test_utils/stk_transfer_fixtures)
 

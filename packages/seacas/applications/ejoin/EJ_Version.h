@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,6 +9,6 @@
 
 static const std::array<std::string, 3> qainfo{
     "ejoin",
-    "2024/02/21",
-    "1.6.3",
+    "2025/09/10",
+    "1.8.4",
 };

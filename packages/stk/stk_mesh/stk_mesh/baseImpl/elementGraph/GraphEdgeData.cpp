@@ -64,12 +64,16 @@ std::vector<GraphEdge> Graph::get_edges_for_element_side(impl::LocalId elem, int
 
 GraphEdgesForElement Graph::get_edges_for_element(impl::LocalId elem) const
 {
-    const unsigned beginOffset = m_elemOffsets[elem].first;
-    const unsigned endOffset   = m_elemOffsets[elem].second;
+    if (m_graphEdges.data() != nullptr) {
+      const unsigned beginOffset = m_elemOffsets[elem].first;
+      const unsigned endOffset   = m_elemOffsets[elem].second;
 
-    const GraphEdge* beginEdge = m_graphEdges.data() + beginOffset;
-    const GraphEdge* endEdge   = m_graphEdges.data() + endOffset;
-    return GraphEdgesForElement(beginEdge, endEdge);
+      const GraphEdge* beginEdge = m_graphEdges.data() + beginOffset;
+      const GraphEdge* endEdge   = m_graphEdges.data() + endOffset;
+      return GraphEdgesForElement(beginEdge, endEdge);
+    }
+
+    return GraphEdgesForElement(nullptr, nullptr);
 }
 
 
@@ -107,7 +111,7 @@ using IterType = std::vector<GraphEdge>::iterator;
 
 void Graph::add_sorted_edges(const std::vector<GraphEdge>& graphEdges)
 {
-  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+//  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
 
   for (auto& edge : graphEdges)
   {
@@ -225,6 +229,17 @@ unsigned Graph::get_end_of_element_range_for_sorted_edges(const std::vector<Grap
     return endIdx;
 }
 
+void Graph::delete_edges_for_element(impl::LocalId elem)
+{
+  auto& indices = m_elemOffsets[elem];
+  for(unsigned offset = indices.first; offset < indices.second; ++offset) {
+    m_graphEdges[offset] = GraphEdge();
+  }
+  unsigned numEdgesToDelete = indices.second - indices.first;
+  m_numUnusedEntries += numEdgesToDelete;
+  indices.second = indices.first;
+}
+
 void Graph::delete_edge(const GraphEdge& edgeToDelete)
 {
   impl::LocalId elem1 = edgeToDelete.elem1();
@@ -251,6 +266,17 @@ void Graph::clear()
     m_numUnusedEntries = 0;
 }
 
+void Graph::print(std::ostream& os)
+{
+  for(impl::LocalId i=0; i<(impl::LocalId)get_num_elements_in_graph(); ++i) {
+    GraphEdgesForElement graphEdges = get_edges_for_element(i);
+    os << "elem "<<i<<":\n   ";
+    for(const GraphEdge& graphEdge : graphEdges) {
+      os << graphEdge << "; "<<std::endl;
+    }
+  }
+  os << std::endl;
+}
 
 void Graph::move_edges_to_end(impl::LocalId elem)
 {
@@ -364,19 +390,24 @@ void ParallelInfoForGraphEdges::erase_parallel_info_for_graph_edge(const GraphEd
   }
 }
 
-impl::ParallelGraphInfo::const_iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge) const
+impl::ParallelGraphInfo::const_iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge, bool throwIfNotFound) const
 {
     impl::ParallelGraphInfo::const_iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
-    STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
+    if (throwIfNotFound) {
+      STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge,
+        "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
                      << graphEdge << ".");
+    }
     return iter;
 }
 
-impl::ParallelGraphInfo::iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge)
+impl::ParallelGraphInfo::iterator ParallelInfoForGraphEdges::get_parallel_info_iterator_for_graph_edge(const GraphEdge& graphEdge, bool throwIfNotFound)
 {
     impl::ParallelGraphInfo::iterator iter = std::lower_bound(m_parallel_graph_info.begin(), m_parallel_graph_info.end(), graphEdge, GraphEdgeLessByElem2());
-    STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
+    if (throwIfNotFound) {
+      STK_ThrowRequireMsg( iter != m_parallel_graph_info.end() && iter->first == graphEdge, "ERROR: Proc " << m_procRank << " failed to find parallel graph info for edge "
                      << graphEdge << ".");
+    }
     return iter;
 }
 

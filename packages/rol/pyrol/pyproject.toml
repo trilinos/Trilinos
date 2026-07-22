@@ -1,29 +1,29 @@
 [build-system]
-requires = ["scikit-build-core>=0.3.3","pybind11 @ git+https://github.com/pybind/pybind11.git@smart_holder"]
+requires = ["scikit-build-core>=0.3.3","pybind11 @ git+https://github.com/pybind/pybind11.git@c6c9a9e59b2b64393de0432aa6867ed27367912a"]
 build-backend = "scikit_build_core.build"
 
-
 [project]
-name = "pyrol"
-version = "0.0.1"
-description="A Python interface to the Rapid Optimization Library (ROL)"
-readme = "README.md"
+name = "rol-python"
+version = "VERSION"
+description="Python interface to the Rapid Optimization Library (ROL)"
+readme = "packages/rol/README.md"
+license = "BSD-3-Clause"
 authors = [
   { name = "Christian Glusa" },
   { name = "Kim Liegeois" },
   { name = "Aurya Javeed" },
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = ["numpy"]
 classifiers = [
   "Development Status :: 4 - Beta",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 
 [tool.scikit-build]
@@ -47,3 +47,4 @@ ROL_ENABLE_PYROL = "ON"
 PYROL_ENABLE_BINDER = "OFF"
 PYROL_PIP_INSTALL = "ON"
 CMAKE_INSTALL_RPATH="$ORIGIN/lib64;$ORIGIN/lib;$ORIGIN;@loader_path/lib64;@loader_path/lib;@loader_path"
+CMAKE_INTERPROCEDURAL_OPTIMIZATION="OFF"

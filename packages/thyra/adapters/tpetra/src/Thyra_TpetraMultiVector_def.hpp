@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Thyra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef THYRA_TPETRA_MULTIVECTOR_HPP
@@ -46,6 +14,7 @@
 #include "Thyra_TpetraVectorSpace.hpp"
 #include "Thyra_TpetraVector.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Kokkos_Core.hpp"
 
 
 namespace Thyra {
@@ -55,8 +24,11 @@ namespace Thyra {
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraMultiVector()
-{}
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraMultiVector() = default;
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraMultiVector() = default;
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -682,7 +654,50 @@ getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+tpetraMultiVector(
+  const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraMultiVector
+  )
+{
+  RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv =
+    Teuchos::rcp(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
+  tmv->initialize(tpetraVectorSpace, domainSpace, tpetraMultiVector);
+  return tmv;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+constTpetraMultiVector(
+  const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraMultiVector
+  )
+{
+  RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv =
+    Teuchos::rcp(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
+  tmv->constInitialize(tpetraVectorSpace, domainSpace, tpetraMultiVector);
+  return tmv;
+}
+
 } // end namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRAMULTIVECTOR_INSTANT(S, LO, GO, N)            \
+  template class Thyra::TpetraMultiVector<S, LO, GO, N>;                       \
+                                                                               \
+  template Teuchos::RCP<Thyra::TpetraMultiVector<S, LO, GO, N>>                \
+  Thyra::tpetraMultiVector(                                                    \
+      const Teuchos::RCP<const Thyra::TpetraVectorSpace<S, LO, GO, N>> &,      \
+      const Teuchos::RCP<const Thyra::ScalarProdVectorSpaceBase<S>> &,         \
+      const Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, N>> &);                \
+                                                                               \
+  template Teuchos::RCP<const Thyra::TpetraMultiVector<S, LO, GO, N>>          \
+  Thyra::constTpetraMultiVector(                                               \
+      const Teuchos::RCP<const Thyra::TpetraVectorSpace<S, LO, GO, N>> &,      \
+      const Teuchos::RCP<const Thyra::ScalarProdVectorSpaceBase<S>> &,         \
+      const Teuchos::RCP<const Tpetra::MultiVector<S, LO, GO, N>> &r);
 
 #endif // THYRA_TPETRA_MULTIVECTOR_HPP

@@ -36,6 +36,7 @@
 #define PARSEDEVAL_HPP
 
 #include "Kokkos_Core.hpp"
+#include "stk_expreval/Function.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_expreval/Eval.hpp"
 #include "stk_expreval/ParsedEvalBase.hpp"
@@ -72,6 +73,8 @@ public:
       m_hostNodes(i) = NgpNode(*(eval.get_node(i)));
     }
     Kokkos::deep_copy(m_deviceNodes, m_hostNodes);
+
+    check_for_errors();
   }
 
   KOKKOS_DEFAULTED_FUNCTION ParsedEval(const ParsedEval&) = default;
@@ -79,6 +82,7 @@ public:
   KOKKOS_DEFAULTED_FUNCTION virtual ~ParsedEval() override = default;
 
   virtual int get_result_buffer_size() override { return RESULT_BUFFER_SIZE; }
+
 
   KOKKOS_INLINE_FUNCTION
   int get_num_variables() const { return m_numVariables; }
@@ -121,13 +125,26 @@ private:
   template <int MAX_BOUND_VARIABLES>
   friend class DeviceVariableMap;
 
+  void check_for_errors() const
+  {
+    for (size_t i=0; i < m_hostNodes.size(); ++i)
+    {
+      const NgpNode& node = m_hostNodes(i);
+      if (node.m_opcode == OPCODE_FUNCTION)
+      {
+        FunctionType funcType = node.m_data.function.functionType;
+        STK_ThrowRequireMsg(funcType != FunctionType::UNDEFINED, "user defined functions and system functions (rand(), time() etc.) are not supported by ParsedEval");
+      }
+    }
+  }
+
   int m_numVariables;
   int m_requiredResultBufferSize;
   Variable::ArrayOffset m_arrayOffsetType;
   int m_firstNodeIndex;
   int m_lastNodeIndex;
   NodeView m_deviceNodes;
-  NodeView::HostMirror m_hostNodes;
+  NodeView::host_mirror_type m_hostNodes;
 };
 
 }

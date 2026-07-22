@@ -10,6 +10,10 @@ namespace impl {
 
 class AbstractCDTInterface
 {
+  public:
+    virtual ~AbstractCDTInterface() = default;
+
+  private:
     virtual void triangulate(const utils::impl::Projection& proj) = 0;
 };
 

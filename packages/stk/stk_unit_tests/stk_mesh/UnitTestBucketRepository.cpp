@@ -42,6 +42,7 @@
 #include <utility>                      // for pair
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
@@ -49,12 +50,29 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, OrdinalVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 
+TEST(BucketRepositoryTest, createPartitions)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(stk::parallel_machine_world()).set_spatial_dimension(3).create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Part& myUnrankedNodePart = meta.declare_part("myNodePart");
+  stk::mesh::OrdinalVector partOrds = {0, 1, myUnrankedNodePart.mesh_meta_data_ordinal()};
+  stk::mesh::impl::BucketRepository bucketRepo(*bulkPtr, meta.entity_rank_count(), 16, 512);
+
+  stk::mesh::EntityRank rank = stk::topology::NODE_RANK;
+  stk::mesh::impl::Partition* partition = bucketRepo.get_or_create_partition(rank, partOrds);
+  EXPECT_TRUE(partition != nullptr);
+  EXPECT_EQ(1u, bucketRepo.get_partitions(rank).size());
+
+  stk::mesh::impl::Partition* samePartition = bucketRepo.get_or_create_partition(rank, partOrds);
+  EXPECT_EQ(partition, samePartition);
+  EXPECT_EQ(1u, bucketRepo.get_partitions(rank).size());
+}
+
 TEST(BucketRepositoryTest, createBuckets)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   size_t spatialDim = 3;
   stk::mesh::MetaData stkMeshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  stkMeshMetaData.use_simple_fields();
 
   stk::mesh::OrdinalVector parts, scratch;
   parts.push_back(stkMeshMetaData.universal_part().mesh_meta_data_ordinal());

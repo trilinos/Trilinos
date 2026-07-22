@@ -1107,7 +1107,7 @@ can be used in the logic in these files.  Some of the variables that should
 already be defined (in addition to all of the basic user TriBITS cache
 variables set in ``tribits_define_global_options_and_define_extra_repos()``)
 include ``CMAKE_HOST_SYSTEM_NAME``, ``${PROJECT_NAME}_HOSTNAME``, and
-``PYTHON_EXECUTABLE`` (see `Python Support`_).  The types of commands and
+``Python3_EXECUTABLE`` (see `Python Support`_).  The types of commands and
 logic to put in this file include:
 
 * Setting additional user cache variable options that are used by multiple
@@ -2006,7 +2006,9 @@ FindTPL<tplName>.cmake modules`_).
 
 The form of a simple ``FindTPL<tplName>.cmake`` file that uses an internal
 call to ``find_package(<externalPkg>)`` which provides modern IMPORTED CMake
-targets looks like::
+targets can use the
+`tribits_extpkg_create_imported_all_libs_target_and_config_file()`_ function
+and looks like::
 
   find_package(<externalPkg> REQUIRED)
   tribits_extpkg_create_imported_all_libs_target_and_config_file(
@@ -2014,7 +2016,7 @@ targets looks like::
     INNER_FIND_PACKAGE_NAME <externalPkg>
     IMPORTED_TARGETS_FOR_ALL_LIBS <importedTarget0> <importedTarget1> ... )
 
-In this case, the purpose for the ``FindTPL<tplName>.cmake`` file (as apposed
+In this case, the purpose for the ``FindTPL<tplName>.cmake`` file (as opposed
 to a direct call to ``find_package(<externalPkg>)``) is to ensure the
 definition of the complete target ``<tplName>::all_libs`` which contains all
 usage requirements for the external package/TPL (i.e. all of the libraries,
@@ -2023,7 +2025,8 @@ file ``<tplName>Config.cmake``.
 
 The form of a simple ``FindTPL<tplName>.cmake`` file that just provides a list
 of required header files and libraries that does **not** use an internal call
-to ``find_package()`` looks like::
+to ``find_package()`` and instead uses the function
+`tribits_tpl_find_include_dirs_and_libraries()`_ looks like::
 
   tribits_tpl_find_include_dirs_and_libraries( <tplName>
     REQUIRED_HEADERS <header0> <header1> ...
@@ -2228,7 +2231,7 @@ proceeds through the call to `tribits_project()`_.
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
 |   4)  Find some optional command-line tools:
-|       a)  Find Python (sets ``PYTHON_EXECUTABLE``, see `Python Support`_)
+|       a)  Find Python (sets ``Python3_EXECUTABLE``, see `Python Support`_)
 |       b)  Find Git (sets ``GIT_EXECUTABLE`` and ``GIT_VERSION_STRING``)
 |   5)  ``include(`` `<projectDir>/Version.cmake`_ ``)``
 |   6)  Define primary TriBITS options and read in the list of extra repositories
@@ -2666,6 +2669,9 @@ If a TriBITS package provides any CTest tests/examples, then it must also
 satisfy the following requirements:
 
 * Test names must be prefixed with the package name ``<Package>_``.
+
+* The package name ``<Package>`` must be appended to the ``LABELS`` test
+  property list.
 
 * Tests should only be added if the variable ``<Package>_ENABLE_TESTS`` is
   true.
@@ -4230,7 +4236,8 @@ repositories if specified).  There are several python tools under
 ``tribits/ci_support/`` that read in this file and use the created
 data-structure for various tasks.  This file and these tools are used by
 `checkin-test.py`_ and `tribits_ctest_driver()`_.  But these tools can also be
-used to construct other workflows and tools.
+used to construct other workflows and tools.  These tools require a Python3
+installation and for the `python3` executable to be installed.
 
 .. _TribitsDumpDepsXmlScript.cmake:
 
@@ -5935,6 +5942,22 @@ header files and libraries that must be found.  A simple
     MUST_FIND_ALL_LIBS
     )
 
+Note that a set of alternate names for each library can be specified using
+quotes around the set of alternative library names using the syntax::
+
+  tribits_tpl_find_include_dirs_and_libraries( <tplName>
+    ...
+    REQUIRED_LIBS_NAMES "<libname0> <libname0alt0> <libname0alt1> ..." ...
+    ...
+    )
+
+This is most commonly used for simple single-library TPLs like BLAS that has
+different potential implementations like::
+
+  tribits_tpl_find_include_dirs_and_libraries( BLAS
+    REQUIRED_LIBS_NAMES "blas openblas atlas"
+    ...
+    )
 
 Requirements for FindTPL<tplName>.cmake modules
 +++++++++++++++++++++++++++++++++++++++++++++++
@@ -7000,17 +7023,16 @@ Python Support
 
 TriBITS Core does not require anything other than raw CMake.  However, Python
 Utils, TriBITS CI Support, and other extended TriBITS components require
-Python.  These extra TriBITS tools only require Python 2.7+ (and 3.x).  By
-default, when a TriBITS project starts to configure using CMake, it will try
-to find Python 2.7+ on the system (see `Full Processing of TriBITS Project
-Files`_).  If Python is found, it will set the global cache variable
-``PYTHON_EXECUTABLE``.  If it is not found, then it will print a warning and
-``PYTHON_EXECUTABLE`` will be empty.  With this default behavior, if Python is
-found, then the TriBITS project can use it.  Otherwise, it can do without it.
+Python.  These extra TriBITS tools only require Python 3.6+.  By default, when
+a TriBITS project starts to configure using CMake, it will try to find Python
+3.6+ on the system (see `Full Processing of TriBITS Project Files`_).  If
+Python is found, it will set the global cache variable ``Python3_EXECUTABLE``.
+If it is not found, then it will print a warning and ``Python3_EXECUTABLE``
+will be empty.  With this default behavior, if Python is found, then the
+TriBITS project can use it.  Otherwise, it can do without it.
 
 While the default behavior for finding Python described above is useful for
-many TriBITS project (such as Trilinos), some TriBITS projects need different
-behavior such as:
+many TriBITS projects, some TriBITS projects need different behavior such as:
 
 1. The TriBITS project may not ever use Python so there is no need to look for
    it at all.  In this case, the TriBITS project would set
@@ -7020,11 +7042,12 @@ behavior such as:
    can't be found.  In this case, the TriBITS project would set
    `${PROJECT_NAME}_REQUIRES_PYTHON`_ to ``TRUE``.
 
-3. Some TriBITS projects may require a version of Python more recent than 2.7.
-   In this case, the TriBITS project would set `PythonInterp_FIND_VERSION`_ to
-   some value higher than ``2.7``.  For example, may newer systems have only
-   Python 3.5.2 or higher versions installed by default and projects developed
-   on such a system typically requires this version or higher.
+3. Some TriBITS projects may require a version of Python more recent than 3.6.
+   In this case, the TriBITS project would set
+   `${PROJECT_NAME}_Python3_FIND_VERSION`_ to some value higher than ``3.6``.
+   For example, may newer systems have higher versions of Python installed by
+   default, and projects developed on such a system typically require this
+   version or higher.
 
 
 Project-Specific Build Reference

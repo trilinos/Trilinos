@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
       for (int j = 0; j < att_count; j++) {
         printf("\tName: '%s', Type = %d, Value Count = %d\n\t", attr[j].name, attr[j].type,
                (int)attr[j].value_count);
-        for (size_t k = 0; k < attr[j].value_count; k++) {
+        for (int k = 0; k < attr[j].value_count; k++) {
           if (attr[j].type == EX_INTEGER) {
             int *vals = attr[j].values;
             printf("\t%d", vals[k]);

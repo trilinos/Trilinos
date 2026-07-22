@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -110,7 +110,7 @@ int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
 
     int status;
     int propid;
-    if ((status = nc_inq_varid(exoid, var_name, &propid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, var_name, &propid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate property array %s in file id %d",
                var_name, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -121,17 +121,17 @@ int ex_get_prop_names(int exoid, ex_entity_type obj_type, char **prop_names)
      */
     size_t  att_len;
     nc_type att_type;
-    if ((status = nc_inq_att(exoid, propid, ATT_PROP_NAME, &att_type, &att_len)) != NC_NOERR) {
+    if ((status = nc_inq_att(exoid, propid, ATT_PROP_NAME, &att_type, &att_len)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get property attributes (type, len) in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    int api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
+    size_t api_name_size = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
     if (att_len - 1 <= api_name_size) {
       /* Client has large enough char string to hold text... */
-      if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, prop_names[i])) != NC_NOERR) {
+      if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, prop_names[i])) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);

@@ -1,43 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #ifndef TPETRA_DETAILS_COMPUTEOFFSETS_HPP
 #define TPETRA_DETAILS_COMPUTEOFFSETS_HPP
@@ -61,7 +29,7 @@ namespace Details {
 // Implementation details for computeOffsetsFromCounts (see below).
 // Users should skip over this anonymous namespace.
 //
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
 /// \brief Parallel scan functor for computing offsets from counts.
 ///
@@ -72,66 +40,63 @@ namespace { // (anonymous)
 /// OffsetType must be able to store the sum of all the entries of the
 /// \c counts input array.  This functor makes no attempt to check for
 /// overflow in this sum.
-template<class OffsetType,
-         class CountType,
-         class SizeType>
+template <class OffsetType,
+          class CountType,
+          class SizeType>
 class ComputeOffsetsFromCounts {
-public:
-  static_assert (std::is_integral<OffsetType>::value,
-                 "OffsetType must be a built-in integer.");
-  static_assert (std::is_integral<CountType>::value,
-                 "CountType must be a built-in integer.");
-  static_assert (std::is_integral<SizeType>::value,
-                 "SizeType must be a built-in integer.");
+ public:
+  static_assert(std::is_integral<OffsetType>::value,
+                "OffsetType must be a built-in integer.");
+  static_assert(std::is_integral<CountType>::value,
+                "CountType must be a built-in integer.");
+  static_assert(std::is_integral<SizeType>::value,
+                "SizeType must be a built-in integer.");
 
   using offsets_view_type =
-    Kokkos::View<OffsetType*, Kokkos::AnonymousSpace>;
+      Kokkos::View<OffsetType*, Kokkos::AnonymousSpace>;
   using counts_view_type =
-    Kokkos::View<const CountType*, Kokkos::AnonymousSpace>;
+      Kokkos::View<const CountType*, Kokkos::AnonymousSpace>;
 
   /// \brief Constructor
   ///
   /// \param offsets [out] (Preallocated) offsets; one entry longer
   ///   than \c counts
   /// \param counts [in] View of bucket counts
-  ComputeOffsetsFromCounts (const offsets_view_type& offsets,
-                            const counts_view_type& counts) :
-    offsets_ (offsets),
-    counts_ (counts),
-    size_ (counts.extent (0))
-  {}
+  ComputeOffsetsFromCounts(const offsets_view_type& offsets,
+                           const counts_view_type& counts)
+    : offsets_(offsets)
+    , counts_(counts)
+    , size_(counts.extent(0)) {}
 
   //! Reduction operator.
   KOKKOS_INLINE_FUNCTION void
-  operator () (const SizeType i, OffsetType& update,
-               const bool finalPass) const
-  {
-    const auto curVal = (i < size_) ? counts_[i] : OffsetType ();
+  operator()(const SizeType i, OffsetType& update,
+             const bool finalPass) const {
+    const auto curVal = (i < size_) ? counts_[i] : OffsetType();
     if (finalPass) {
       offsets_[i] = update;
     }
-    update += (i < size_) ? curVal : OffsetType ();
+    update += (i < size_) ? curVal : OffsetType();
   }
 
-  template<class ExecutionSpace>
+  template <class ExecutionSpace>
   static OffsetType
-  run (const ExecutionSpace& execSpace,
-       const offsets_view_type& offsets,
-       const counts_view_type& counts)
-  {
-    const SizeType numCounts (counts.extent (0));
+  run(const ExecutionSpace& execSpace,
+      const offsets_view_type& offsets,
+      const counts_view_type& counts) {
+    const SizeType numCounts(counts.extent(0));
     using range_type = Kokkos::RangePolicy<ExecutionSpace, SizeType>;
-    range_type range (execSpace, 0, numCounts + SizeType (1));
+    range_type range(execSpace, 0, numCounts + SizeType(1));
     using functor_type =
-      ComputeOffsetsFromCounts<OffsetType, CountType, SizeType>;
-    functor_type functor (offsets, counts);
-    OffsetType total (0);
+        ComputeOffsetsFromCounts<OffsetType, CountType, SizeType>;
+    functor_type functor(offsets, counts);
+    OffsetType total(0);
     const char funcName[] = "Tpetra::Details::computeOffsetsFromCounts";
-    Kokkos::parallel_scan (funcName, range, functor, total);
+    Kokkos::parallel_scan(funcName, range, functor, total);
     return total;
   }
 
-private:
+ private:
   //! Offsets (output argument)
   offsets_view_type offsets_;
   //! Bucket counts (input argument).
@@ -149,71 +114,67 @@ private:
 ///
 /// OffsetType must be able to store <tt>ptr.extent(0) * count</tt>.
 /// This functor makes no attempt to check for overflow in this sum.
-template<class OffsetType,
-         class CountType,
-         class SizeType>
+template <class OffsetType,
+          class CountType,
+          class SizeType>
 class ComputeOffsetsFromConstantCount {
-public:
-  static_assert (std::is_integral<OffsetType>::value,
-                 "OffsetType must be a built-in integer.");
-  static_assert (std::is_integral<CountType>::value,
-                 "CountType must be a built-in integer.");
-  static_assert (std::is_integral<SizeType>::value,
-                 "SizeType must be a built-in integer.");
+ public:
+  static_assert(std::is_integral<OffsetType>::value,
+                "OffsetType must be a built-in integer.");
+  static_assert(std::is_integral<CountType>::value,
+                "CountType must be a built-in integer.");
+  static_assert(std::is_integral<SizeType>::value,
+                "SizeType must be a built-in integer.");
 
   using offsets_view_type =
-    Kokkos::View<OffsetType*, Kokkos::AnonymousSpace>;
+      Kokkos::View<OffsetType*, Kokkos::AnonymousSpace>;
 
   /// \brief Constructor
   ///
   /// \param offsets [out] (Preallocated) offsets; one entry longer
   ///   than \c counts
   /// \param count [in] The constant count
-  ComputeOffsetsFromConstantCount (const offsets_view_type& offsets,
-                                   const CountType count) :
-    offsets_ (offsets),
-    count_ (count)
-  {}
+  ComputeOffsetsFromConstantCount(const offsets_view_type& offsets,
+                                  const CountType count)
+    : offsets_(offsets)
+    , count_(count) {}
 
   //! Reduction operator.
   KOKKOS_INLINE_FUNCTION void
-  operator () (const SizeType i) const
-  {
-    offsets_[i] = count_*i;
+  operator()(const SizeType i) const {
+    offsets_[i] = count_ * i;
   }
 
-  template<class ExecutionSpace>
+  template <class ExecutionSpace>
   static OffsetType
-  run (const ExecutionSpace& execSpace,
-       const offsets_view_type& offsets,
-       const CountType count)
-  {
-    const SizeType numOffsets (offsets.extent (0));
-    if(numOffsets == SizeType(0))
-    {
+  run(const ExecutionSpace& execSpace,
+      const offsets_view_type& offsets,
+      const CountType count) {
+    const SizeType numOffsets(offsets.extent(0));
+    if (numOffsets == SizeType(0)) {
       // Special case that is possible with zero rows
       return 0;
     }
     using range_type = Kokkos::RangePolicy<ExecutionSpace, SizeType>;
-    range_type range (execSpace, 0, numOffsets);
+    range_type range(execSpace, 0, numOffsets);
     using functor_type =
-      ComputeOffsetsFromConstantCount<OffsetType, CountType, SizeType>;
-    functor_type functor (offsets, count);
+        ComputeOffsetsFromConstantCount<OffsetType, CountType, SizeType>;
+    functor_type functor(offsets, count);
     const OffsetType total = (numOffsets - 1) * count;
     const char funcName[] =
-      "Tpetra::Details::computeOffsetsFromConstantCount";
-    Kokkos::parallel_for (funcName, range, functor);
+        "Tpetra::Details::computeOffsetsFromConstantCount";
+    Kokkos::parallel_for(funcName, range, functor);
     return total;
   }
 
-private:
+ private:
   //! Offsets (output argument)
   offsets_view_type offsets_;
   //! "Count" input argument
   CountType count_;
 };
 
-} // namespace (anonymous)
+}  // namespace
 
 /// \brief Compute offsets from counts
 ///
@@ -240,49 +201,45 @@ private:
 /// The type of each entry of the \c ptr array must be able to store
 /// the sum of all the entries of \c counts.  This functor makes no
 /// attempt to check for overflow in this sum.
-template<class ExecutionSpace,
-         class OffsetsViewType,
-         class CountsViewType,
-         class SizeType = typename OffsetsViewType::size_type>
+template <class ExecutionSpace,
+          class OffsetsViewType,
+          class CountsViewType,
+          class SizeType = typename OffsetsViewType::size_type>
 typename OffsetsViewType::non_const_value_type
-computeOffsetsFromCounts (const ExecutionSpace& execSpace,
-                          const OffsetsViewType& ptr,
-                          const CountsViewType& counts)
-{
-  static_assert (Kokkos::is_execution_space<ExecutionSpace>::value,
-                 "ExecutionSpace must be a Kokkos execution space.");
-  static_assert (Kokkos::is_view<OffsetsViewType>::value,
-                 "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
-  static_assert (Kokkos::is_view<CountsViewType>::value,
-                 "CountsViewType (the type of counts) must be a Kokkos::View.");
-  static_assert (std::is_same<typename OffsetsViewType::value_type,
-                   typename OffsetsViewType::non_const_value_type>::value,
-                 "OffsetsViewType (the type of ptr) must be a nonconst Kokkos::View.");
-  static_assert (static_cast<int> (OffsetsViewType::rank) == 1,
-                 "OffsetsViewType (the type of ptr) must be a rank-1 Kokkos::View.");
-  static_assert (static_cast<int> (CountsViewType::rank) == 1,
-                 "CountsViewType (the type of counts) must be a rank-1 Kokkos::View.");
+computeOffsetsFromCounts(const ExecutionSpace& execSpace,
+                         const OffsetsViewType& ptr,
+                         const CountsViewType& counts) {
+  static_assert(Kokkos::is_execution_space<ExecutionSpace>::value,
+                "ExecutionSpace must be a Kokkos execution space.");
+  static_assert(Kokkos::is_view<OffsetsViewType>::value,
+                "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<CountsViewType>::value,
+                "CountsViewType (the type of counts) must be a Kokkos::View.");
+  static_assert(std::is_same<typename OffsetsViewType::value_type,
+                             typename OffsetsViewType::non_const_value_type>::value,
+                "OffsetsViewType (the type of ptr) must be a nonconst Kokkos::View.");
+  static_assert(static_cast<int>(OffsetsViewType::rank) == 1,
+                "OffsetsViewType (the type of ptr) must be a rank-1 Kokkos::View.");
+  static_assert(static_cast<int>(CountsViewType::rank) == 1,
+                "CountsViewType (the type of counts) must be a rank-1 Kokkos::View.");
 
   using offset_type = typename OffsetsViewType::non_const_value_type;
-  static_assert (std::is_integral<offset_type>::value,
-                 "The entries of ptr must be built-in integers.");
+  static_assert(std::is_integral<offset_type>::value,
+                "The entries of ptr must be built-in integers.");
   using count_type = typename CountsViewType::non_const_value_type;
-  static_assert (std::is_integral<count_type>::value,
-                 "The entries of counts must be built-in integers.");
-  static_assert (std::is_integral<SizeType>::value,
-                 "SizeType must be a built-in integer type.");
+  static_assert(std::is_integral<count_type>::value,
+                "The entries of counts must be built-in integers.");
+  static_assert(std::is_integral<SizeType>::value,
+                "SizeType must be a built-in integer type.");
 
   const char funcName[] = "Tpetra::Details::computeOffsetsFromCounts";
 
-  const auto numOffsets = ptr.size ();
-  const auto numCounts = counts.size ();
-  offset_type total (0);
+  const auto numOffsets = ptr.size();
+  const auto numCounts  = counts.size();
+  offset_type total(0);
 
   if (numOffsets != 0) {
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (numCounts >= numOffsets, std::invalid_argument, funcName <<
-       ": counts.size() = " << numCounts << " >= ptr.size() = " <<
-       numOffsets << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(numCounts >= numOffsets, std::invalid_argument, funcName << ": counts.size() = " << numCounts << " >= ptr.size() = " << numOffsets << ".");
 
     using Kokkos::AnonymousSpace;
     using Kokkos::View;
@@ -290,49 +247,46 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
     View<const count_type*, AnonymousSpace> counts_a;
 
     using offsets_device_type = typename OffsetsViewType::device_type;
-    using counts_copy_type = View<count_type*, offsets_device_type>;
+    using counts_copy_type    = View<count_type*, offsets_device_type>;
     counts_copy_type counts_copy;
 
     using offsets_memory_space =
-      typename offsets_device_type::memory_space;
+        typename offsets_device_type::memory_space;
     using counts_memory_space = typename CountsViewType::memory_space;
     constexpr bool countsAccessibleFromOffsetsExecSpace =
-      Kokkos::SpaceAccessibility<
-        offsets_memory_space, counts_memory_space>::accessible;
+        Kokkos::SpaceAccessibility<
+            offsets_memory_space, counts_memory_space>::accessible;
     if (countsAccessibleFromOffsetsExecSpace) {
       // NOTE (mfh 21 Aug 2019) Some compilers have trouble deducing
       // that operator= works if more than one template argument
       // differ.  If that should happen, introduce an intermediate
       // type here.
       counts_a = counts;
-    }
-    else {
+    } else {
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
-      counts_copy = counts_copy_type
-        (view_alloc ("counts_copy", WithoutInitializing), numCounts);
-      Kokkos::deep_copy (execSpace, counts_copy, counts);
+      counts_copy = counts_copy_type(view_alloc("counts_copy", WithoutInitializing), numCounts);
+      Kokkos::deep_copy(execSpace, counts_copy, counts);
       counts_a = counts_copy;
     }
 
     using functor_type =
-      ComputeOffsetsFromCounts<offset_type, count_type, SizeType>;
-    total = functor_type::run (execSpace, ptr_a, counts_a);
+        ComputeOffsetsFromCounts<offset_type, count_type, SizeType>;
+    total = functor_type::run(execSpace, ptr_a, counts_a);
   }
 
   return total;
 }
 
 //! Overload that uses OffsetsViewType's execution space.
-template<class OffsetsViewType,
-         class CountsViewType,
-         class SizeType = typename OffsetsViewType::size_type>
+template <class OffsetsViewType,
+          class CountsViewType,
+          class SizeType = typename OffsetsViewType::size_type>
 typename OffsetsViewType::non_const_value_type
-computeOffsetsFromCounts (const OffsetsViewType& ptr,
-                          const CountsViewType& counts)
-{
+computeOffsetsFromCounts(const OffsetsViewType& ptr,
+                         const CountsViewType& counts) {
   using execution_space = typename OffsetsViewType::execution_space;
-  return computeOffsetsFromCounts (execution_space (), ptr, counts);
+  return computeOffsetsFromCounts(execution_space(), ptr, counts);
 }
 
 /// \brief Compute offsets from a constant count
@@ -357,45 +311,44 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
 /// The type of each entry of the \c ptr array must be able to store
 /// <tt>ptr.extent (0) * count</tt>.  This functor makes no
 /// attempt to check for overflow in this sum.
-template<class OffsetsViewType,
-         class CountType,
-         class SizeType = typename OffsetsViewType::size_type>
+template <class OffsetsViewType,
+          class CountType,
+          class SizeType = typename OffsetsViewType::size_type>
 typename OffsetsViewType::non_const_value_type
-computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
-                                 const CountType count)
-{
-  static_assert (Kokkos::is_view<OffsetsViewType>::value,
-                 "ptr must be a Kokkos::View.");
-  static_assert (std::is_same<typename OffsetsViewType::value_type,
-                   typename OffsetsViewType::non_const_value_type>::value,
-                 "ptr must be a nonconst Kokkos::View.");
-  static_assert (static_cast<int> (OffsetsViewType::rank) == 1,
-                 "ptr must be a rank-1 Kokkos::View.");
+computeOffsetsFromConstantCount(const OffsetsViewType& ptr,
+                                const CountType count) {
+  static_assert(Kokkos::is_view<OffsetsViewType>::value,
+                "ptr must be a Kokkos::View.");
+  static_assert(std::is_same<typename OffsetsViewType::value_type,
+                             typename OffsetsViewType::non_const_value_type>::value,
+                "ptr must be a nonconst Kokkos::View.");
+  static_assert(static_cast<int>(OffsetsViewType::rank) == 1,
+                "ptr must be a rank-1 Kokkos::View.");
 
   using offset_type = typename OffsetsViewType::non_const_value_type;
-  static_assert (std::is_integral<offset_type>::value,
-                 "The type of each entry of ptr must be a "
-                 "built-in integer.");
-  static_assert (std::is_integral<CountType>::value,
-                 "CountType must be a built-in integer.");
-  static_assert (std::is_integral<SizeType>::value,
-                 "SizeType must be a built-in integer.");
+  static_assert(std::is_integral<offset_type>::value,
+                "The type of each entry of ptr must be a "
+                "built-in integer.");
+  static_assert(std::is_integral<CountType>::value,
+                "CountType must be a built-in integer.");
+  static_assert(std::is_integral<SizeType>::value,
+                "SizeType must be a built-in integer.");
 
-  using device_type = typename OffsetsViewType::device_type;
+  using device_type     = typename OffsetsViewType::device_type;
   using execution_space = typename device_type::execution_space;
 
-  offset_type total (0);
-  if (ptr.extent (0) != 0) {
+  offset_type total(0);
+  if (ptr.extent(0) != 0) {
     using CT = CountType;
     using functor_type =
-      ComputeOffsetsFromConstantCount<offset_type, CT, SizeType>;
+        ComputeOffsetsFromConstantCount<offset_type, CT, SizeType>;
     execution_space execSpace;
-    total = functor_type::run (execSpace, ptr, count);
+    total = functor_type::run(execSpace, ptr, count);
   }
   return total;
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_COMPUTEOFFSETS_HPP
+#endif  // TPETRA_DETAILS_COMPUTEOFFSETS_HPP

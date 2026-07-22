@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -48,37 +48,37 @@ public:
 
   int max_warnings{100};
 
-  std::vector<std::string> glob_var_names{};
-  Tolerance                glob_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   glob_var{};
+  NameList               glob_var_names{};
+  Tolerance              glob_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> glob_var{};
 
-  std::vector<std::string> node_var_names{};
-  Tolerance                node_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   node_var{};
+  NameList               node_var_names{};
+  Tolerance              node_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> node_var{};
 
-  std::vector<std::string> elmt_var_names{};
-  Tolerance                elmt_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   elmt_var{};
+  NameList               elmt_var_names{};
+  Tolerance              elmt_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> elmt_var{};
 
-  std::vector<std::string> elmt_att_names{};
-  Tolerance                elmt_att_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   elmt_att{};
+  NameList               elmt_att_names{};
+  Tolerance              elmt_att_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> elmt_att{};
 
-  std::vector<std::string> ns_var_names{};
-  Tolerance                ns_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   ns_var{};
+  NameList               ns_var_names{};
+  Tolerance              ns_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> ns_var{};
 
-  std::vector<std::string> ss_var_names{};
-  Tolerance                ss_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   ss_var{};
+  NameList               ss_var_names{};
+  Tolerance              ss_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> ss_var{};
 
-  std::vector<std::string> eb_var_names{};
-  Tolerance                eb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   eb_var{};
+  NameList               eb_var_names{};
+  Tolerance              eb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> eb_var{};
 
-  std::vector<std::string> fb_var_names{};
-  Tolerance                fb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
-  std::vector<Tolerance>   fb_var{};
+  NameList               fb_var_names{};
+  Tolerance              fb_var_default{ToleranceMode::RELATIVE_, 1.0e-6, 0.0};
+  std::vector<Tolerance> fb_var{};
 
   // time step exclusion data
   std::vector<int> exclude_steps{};
@@ -87,6 +87,7 @@ public:
   std::string file2{};
   std::string diff_file{};
   std::string command_file{};
+  std::string change_sets{};
 
   bool quiet_flag{false};     // By default, warnings and other info is produced
   bool show_all_diffs{false}; // Be default, show only maximum diff for each variable;
@@ -124,6 +125,8 @@ public:
   bool doL1Norm{false};
   bool doL2Norm{false};
   bool pedantic{false}; // Be most picky on what is different (not fully picky yet)
+  bool allowPermutation{
+      false}; // Allow element connectivity to be permuted -- same nodes; different order.
 
   bool interpolating{false}; // Interpolate times on file2 to match times on file1;
   bool by_name{false};       // Match entities by name instead of by id.
@@ -136,6 +139,8 @@ public:
   bool ss_var_do_all_flag{false};
   bool eb_var_do_all_flag{false};
   bool fb_var_do_all_flag{false};
+
+  bool has_change_sets{false};
 
 private:
   void          enroll_options();

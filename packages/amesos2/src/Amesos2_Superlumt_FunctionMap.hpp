@@ -37,6 +37,7 @@ typedef int int_t;
 #include "slu_mt_util.h"
 #include "pxgstrf_synch.h"	// preemptive inclusion
 
+// NOTE: renamed p*sp_defs.h -> slumt_*defs.h at SuperLU_MT 3.0
 namespace S {
 #include "pssp_defs.h"          // single-precision real definitions
 }

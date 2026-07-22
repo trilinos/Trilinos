@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -89,15 +89,27 @@ namespace {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf5"));
     }
 
-    if (interFace.compressionLevel_ > 0 || interFace.shuffle_ || interFace.szip_) {
+    if (interFace.compressionLevel_ > 0 || interFace.shuffle_ || interFace.szip_ ||
+        interFace.zlib_ || interFace.zstd_) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
       properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compressionLevel_));
       properties.add(Ioss::Property("COMPRESSION_SHUFFLE", static_cast<int>(interFace.shuffle_)));
-      if (interFace.szip_) {
+
+      if (interFace.zlib_) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+      }
+      else if (interFace.szip_) {
         properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
       }
-      else if (interFace.zlib_) {
-        properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+      else if (interFace.zstd_) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "zstd"));
+      }
+      else if (interFace.bz2_) {
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "bzip2"));
+      }
+
+      if (interFace.quantizeNSD_ > 0) {
+        properties.add(Ioss::Property("COMPRESSION_QUANTIZE_NSD", interFace.quantizeNSD_));
       }
     }
 
@@ -385,6 +397,7 @@ int main(int argc, char *argv[])
     dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
   }
 
+  dbi->set_lowercase_database_names(false);
   dbi->set_surface_split_type(Ioss::SPLIT_BY_DONT_SPLIT);
   dbi->set_field_separator(0);
 
@@ -912,6 +925,8 @@ namespace {
                           size_t proc_size)
   {
     progress(__func__);
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
     std::vector<double> glob_coord_x;
     std::vector<double> glob_coord_y;
     std::vector<double> glob_coord_z;
@@ -968,8 +983,12 @@ namespace {
     }
     else {
       gnb->get_field_data("mesh_model_coordinates_x", glob_coord_x);
-      gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
-      gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      if (spatial_dimension > 1) {
+        gnb->get_field_data("mesh_model_coordinates_y", glob_coord_y);
+      }
+      if (spatial_dimension > 2) {
+        gnb->get_field_data("mesh_model_coordinates_z", glob_coord_z);
+      }
       progress("\tRead global mesh_model_coordinates");
 
       for (size_t i = 0; i < node_count; i++) {
@@ -993,8 +1012,12 @@ namespace {
     for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
       Ioss::NodeBlock *nb = proc_region[p]->get_node_blocks()[0];
       nb->put_field_data("mesh_model_coordinates_x", coordinates_x[p]);
-      nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
-      nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      if (spatial_dimension > 1) {
+        nb->put_field_data("mesh_model_coordinates_y", coordinates_y[p]);
+      }
+      if (spatial_dimension > 2) {
+        nb->put_field_data("mesh_model_coordinates_z", coordinates_z[p]);
+      }
       proc_progress(p, processor_count);
     }
     progress("\tOutput processor coordinate vectors");
@@ -1028,7 +1051,9 @@ namespace {
     }
     progress("\tReserve processor coordinate vectors");
 
-    for (size_t comp = 0; comp < 3; comp++) {
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
+
+    for (size_t comp = 0; comp < spatial_dimension; comp++) {
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
         coordinates[p].resize(0);
       }
@@ -1292,9 +1317,10 @@ namespace {
         offset += element_count;
       }
     }
+    size_t spatial_dimension = region.get_property("spatial_dimension").get_int();
     for (size_t p = 0; p < proc_count; p++) {
-      auto *nb =
-          new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1", on_proc_count[p], 3);
+      auto *nb = new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1",
+                                     on_proc_count[p], spatial_dimension);
       proc_region[p]->add(nb);
       if (debug_level & 2) {
         fmt::print(stderr, "\tProcessor {} has {} nodes.\n", fmt::group_digits(p),
@@ -1405,7 +1431,10 @@ namespace {
     }
 
     if (debug_level & 32) {
-      Ioss::DecompUtils::output_decomposition_statistics(elem_to_proc, interFace.processor_count());
+      auto work_per_rank =
+          Ioss::DecompUtils::get_work_per_rank(elem_to_proc, interFace.processor_count());
+      auto avg_median = Ioss::DecompUtils::output_decomposition_statistics(work_per_rank);
+      Ioss::DecompUtils::output_histogram(work_per_rank, avg_median.first, avg_median.second);
     }
 
     if (!create_split_files) {

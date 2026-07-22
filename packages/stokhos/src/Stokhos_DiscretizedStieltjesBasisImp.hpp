@@ -1,54 +1,22 @@
 // @HEADER
-// ***********************************************************************
-// 
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 template <typename ordinal_type, typename value_type>
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
 DiscretizedStieltjesBasis(const std::string& label,
-			  const ordinal_type& p, 
+			  const ordinal_type& ap, 
 			  value_type (*weightFn)(const value_type&),
 			  const value_type& leftEndPt,
 			  const value_type& rightEndPt, 
-			  bool normalize, 
-			  Stokhos::GrowthPolicy growth) :
-  RecurrenceBasis<ordinal_type,value_type>(std::string("DiscretizedStieltjes -- ") + label, p, normalize, growth),
+			  bool anormalize, 
+			  Stokhos::GrowthPolicy agrowth) :
+  RecurrenceBasis<ordinal_type,value_type>(std::string("DiscretizedStieltjes -- ") + label, ap, anormalize, agrowth),
   scaleFactor(1),
   leftEndPt_(leftEndPt),
   rightEndPt_(rightEndPt),
@@ -65,9 +33,9 @@ DiscretizedStieltjesBasis(const std::string& label,
 
 template <typename ordinal_type, typename value_type>
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
-DiscretizedStieltjesBasis(const ordinal_type& p, 
+DiscretizedStieltjesBasis(const ordinal_type& ap, 
 			  const DiscretizedStieltjesBasis& basis) :
-  RecurrenceBasis<ordinal_type,value_type>(p, basis),
+  RecurrenceBasis<ordinal_type,value_type>(ap, basis),
   scaleFactor(basis.scaleFactor),
   leftEndPt_(basis.leftEndPt_),
   rightEndPt_(basis.rightEndPt_),
@@ -79,7 +47,7 @@ DiscretizedStieltjesBasis(const ordinal_type& p,
   quadBasis->getQuadPoints(200*this->p, quad_points, quad_weights, quad_values);
 
   // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta,
+  computeRecurrenceCoefficients(ap+1, this->alpha, this->beta, this->delta,
 				this->gamma);
 
   // Setup rest of recurrence basis
@@ -96,10 +64,10 @@ template <typename ordinal_type, typename value_type>
 bool
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
 computeRecurrenceCoefficients(ordinal_type k,
-			      Teuchos::Array<value_type>& alpha,
-			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta,
-			      Teuchos::Array<value_type>& gamma) const
+			      Teuchos::Array<value_type>& aalpha,
+			      Teuchos::Array<value_type>& abeta,
+			      Teuchos::Array<value_type>& adelta,
+			      Teuchos::Array<value_type>& agamma) const
 {
   //The Discretized Stieltjes polynomials are defined by a recurrance relation,
   //P_n+1 = \gamma_n+1[(x-\alpha_n) P_n - \beta_n P_n-1].
@@ -111,7 +79,7 @@ computeRecurrenceCoefficients(ordinal_type k,
   scaleFactor = 1;
    
   //First renormalize the weight function so that it has measure 1.
-  value_type oneNorm = expectedValue_J_nsquared(0, alpha, beta);
+  value_type oneNorm = expectedValue_J_nsquared(0, aalpha, abeta);
   //future evaluations of the weight function will scale it by this factor.
   scaleFactor = 1/oneNorm;
   
@@ -121,20 +89,20 @@ computeRecurrenceCoefficients(ordinal_type k,
   //from the one above since we rescaled the weight.  Don't combine
   //the two!!!
 
-  value_type past_integral = expectedValue_J_nsquared(0, alpha, beta);
-  alpha[0] = expectedValue_tJ_nsquared(0, alpha, beta)/past_integral;
+  value_type past_integral = expectedValue_J_nsquared(0, aalpha, abeta);
+  aalpha[0] = expectedValue_tJ_nsquared(0, aalpha, abeta)/past_integral;
   //beta[0] := \int_-c^c w(x) dx.
-  beta[0] = 1;
-  delta[0] = 1;
-  gamma[0] = 1;
+  abeta[0] = 1;
+  adelta[0] = 1;
+  agamma[0] = 1;
   //These formulas are from the above reference.
   for (ordinal_type n = 1; n<k; n++){
-    integral2 = expectedValue_J_nsquared(n, alpha, beta);
-    alpha[n] = expectedValue_tJ_nsquared(n, alpha, beta)/integral2;
-    beta[n] = integral2/past_integral;
+    integral2 = expectedValue_J_nsquared(n, aalpha, abeta);
+    aalpha[n] = expectedValue_tJ_nsquared(n, aalpha, abeta)/integral2;
+    abeta[n] = integral2/past_integral;
     past_integral = integral2;
-    delta[n] = 1.0;
-    gamma[n] = 1.0;
+    adelta[n] = 1.0;
+    agamma[n] = 1.0;
   }
 
   return false;
@@ -152,8 +120,8 @@ template <typename ordinal_type, typename value_type>
 value_type
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
 expectedValue_tJ_nsquared(const ordinal_type& order, 
-			  const Teuchos::Array<value_type>& alpha,
-			  const Teuchos::Array<value_type>& beta) const
+			  const Teuchos::Array<value_type>& aalpha,
+			  const Teuchos::Array<value_type>& abeta) const
 {
   //Impliments a gaussian quadrature routine to evaluate the integral,
   // \int_-c^c J_n(x)^2w(x)dx.  This is needed to compute the recurrance coefficients.
@@ -162,7 +130,7 @@ expectedValue_tJ_nsquared(const ordinal_type& order,
       quadIdx < static_cast<ordinal_type>(quad_points.size()); quadIdx++) {
     value_type x = (rightEndPt_ - leftEndPt_)*.5*quad_points[quadIdx] + 
       (rightEndPt_ + leftEndPt_)*.5;
-    value_type val = evaluateRecurrence(x,order,alpha,beta);
+    value_type val = evaluateRecurrence(x,order,aalpha,abeta);
     integral += x*val*val*evaluateWeight(x)*quad_weights[quadIdx];
   }
   
@@ -173,8 +141,8 @@ template <typename ordinal_type, typename value_type>
 value_type
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
 expectedValue_J_nsquared(const ordinal_type& order, 
-			 const Teuchos::Array<value_type>& alpha,
-			 const Teuchos::Array<value_type>& beta) const
+			 const Teuchos::Array<value_type>& aalpha,
+			 const Teuchos::Array<value_type>& abeta) const
 {
   //Impliments a gaussian quadrature routineroutine to evaluate the integral,
   // \int_-c^c J_n(x)^2w(x)dx.  This is needed to compute the recurrance coefficients.
@@ -183,7 +151,7 @@ expectedValue_J_nsquared(const ordinal_type& order,
       quadIdx < static_cast<ordinal_type>(quad_points.size()); quadIdx++){
     value_type x = (rightEndPt_ - leftEndPt_)*.5*quad_points[quadIdx] + 
       (rightEndPt_ + leftEndPt_)*.5;
-    value_type val = evaluateRecurrence(x,order,alpha,beta);
+    value_type val = evaluateRecurrence(x,order,aalpha,abeta);
     integral += val*val*evaluateWeight(x)*quad_weights[quadIdx];
   }
   
@@ -214,19 +182,19 @@ value_type
 Stokhos::DiscretizedStieltjesBasis<ordinal_type, value_type>::
 evaluateRecurrence(const value_type& x, 
 		   ordinal_type k, 
-		   const Teuchos::Array<value_type>& alpha,
-		   const Teuchos::Array<value_type>& beta) const
+		   const Teuchos::Array<value_type>& aalpha,
+		   const Teuchos::Array<value_type>& abeta) const
 {
   if (k == 0)
     return value_type(1.0);
   else if (k == 1)
-    return x-alpha[0];
+    return x-aalpha[0];
 
   value_type v0 = value_type(1.0);
-  value_type v1 = x-alpha[0]*v0;
+  value_type v1 = x-aalpha[0]*v0;
   value_type v2 = value_type(0.0);
   for (ordinal_type i=2; i<=k; i++) {
-    v2 = (x-alpha[i-1])*v1 - beta[i-1]*v0;
+    v2 = (x-aalpha[i-1])*v1 - abeta[i-1]*v0;
     v0 = v1;
     v1 = v2;
   }
@@ -237,7 +205,7 @@ evaluateRecurrence(const value_type& x,
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
 Stokhos::DiscretizedStieltjesBasis<ordinal_type, value_type>::
-cloneWithOrder(ordinal_type p) const
+cloneWithOrder(ordinal_type ap) const
 {
-   return Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>(p,*this));
+   return Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>(ap,*this));
 }

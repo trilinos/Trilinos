@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TPETRA_DETAILS_EXEUTIONSPACESSLOT_HPP
 #define TPETRA_DETAILS_EXEUTIONSPACESSLOT_HPP
 
@@ -19,8 +28,9 @@ namespace Spaces {
  *
  * @tparam ExecSpace the type of the execution space to be wrapped.
  */
-template <typename ExecSpace> class Slot {
-public:
+template <typename ExecSpace>
+class Slot {
+ public:
   using execution_space = ExecSpace;
 
   /**
@@ -66,28 +76,28 @@ public:
   Teuchos::RCP<const execution_space>
   space_instance(const Spaces::Priority &priority) const {
     switch (priority) {
-    case Spaces::Priority::high:
-      return space_instance<Spaces::Priority::high>();
-    case Spaces::Priority::medium:
-      return space_instance<Spaces::Priority::medium>();
-    case Spaces::Priority::low:
-      return space_instance<Spaces::Priority::low>();
-    default:
-      throw std::runtime_error("unexpected Tpetra Space priority");
+      case Spaces::Priority::high:
+        return space_instance<Spaces::Priority::high>();
+      case Spaces::Priority::medium:
+        return space_instance<Spaces::Priority::medium>();
+      case Spaces::Priority::low:
+        return space_instance<Spaces::Priority::low>();
+      default:
+        throw std::runtime_error("unexpected Tpetra Space priority");
     }
   }
 
-private:
+ private:
   /**
    * @brief Array that contains instances of different execution space
    * prioritized by priority levels.
    */
   Teuchos::RCP<const execution_space>
       instances_[static_cast<int>(Spaces::Priority::NUM_LEVELS)];
-}; // Slot
+};  // Slot
 
-} // namespace Spaces
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Spaces
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_EXEUTIONSPACESSLOT_HPP
+#endif  // TPETRA_DETAILS_EXEUTIONSPACESSLOT_HPP

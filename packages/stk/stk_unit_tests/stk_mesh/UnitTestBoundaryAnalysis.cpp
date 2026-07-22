@@ -115,7 +115,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   }
 
   // set up grid_mesh
-  stk::mesh::fixtures::simple_fields::GridFixture grid_mesh(MPI_COMM_WORLD);
+  stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
@@ -269,16 +269,12 @@ TEST(BoundaryAnalysis, get_adjacent_entities)
   }
 
   stk::io::StkMeshIoBroker meshReader(comm);
-  meshReader.use_simple_fields();
   std::string mesh_spec("generated:3x3x3");
   meshReader.add_mesh_database(mesh_spec, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
 
   stk::mesh::BulkData& stkMeshBulkData = meshReader.bulk_data();
-
-  //    unsigned file_index = meshReader.create_output_mesh("alan.exo", stk::io::WRITE_RESULTS);
-  //    meshReader.write_output_mesh(file_index);
 
   unsigned numEntitiesToTest = 4;
   stk::mesh::EntityId ids[] = { 14, 1, 2, 5 };

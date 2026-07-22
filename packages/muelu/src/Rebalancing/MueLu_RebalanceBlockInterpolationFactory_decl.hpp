@@ -29,7 +29,7 @@
 namespace MueLu {
 
 /*!
-  @class RebalanceBlockInterpolationFactory class.
+  @class RebalanceBlockInterpolationFactory
   @brief Applies permutation to prolongation operators.
   @ingroup MueLuTransferClasses
 */

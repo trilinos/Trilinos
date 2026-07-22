@@ -53,7 +53,7 @@ using stk::mesh::BulkData;
 using stk::mesh::Entity;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::fixtures::simple_fields::RingFixture;
+using stk::mesh::fixtures::RingFixture;
 
 //----------------------------------------------------------------------
 

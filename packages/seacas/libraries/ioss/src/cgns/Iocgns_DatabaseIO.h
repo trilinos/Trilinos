@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -53,7 +53,7 @@ namespace Ioss {
  */
 namespace Iocgns {
 
-  class IOCGNS_EXPORT DatabaseIO : public Ioss::DatabaseIO
+  class IOCGNS_EXPORT DatabaseIO final : public Ioss::DatabaseIO
   {
   public:
     enum class entity_type { NODE, ELEM };
@@ -102,12 +102,13 @@ namespace Iocgns {
     IOSS_NODISCARD bool end_state_nl(int state, double time) override;
     void                flush_database_nl() const override;
 
-    bool   check_valid_file_open(int status) const;
-    void   create_structured_block(int base, int zone, size_t &num_node);
-    void   create_structured_block_fpp(int base, int num_zones, size_t &num_node);
-    size_t finalize_structured_blocks();
-    void   finalize_database() const override;
-    void   get_step_times_nl() override;
+    bool                check_valid_file_open(int status) const;
+    void                create_structured_block(int base, int zone, size_t &num_node);
+    void                create_structured_block_fpp(int base, int num_zones, size_t &num_node);
+    size_t              finalize_structured_blocks();
+    void                finalize_database() const override;
+    void                get_step_times_nl() override;
+    std::vector<double> get_db_step_times_nl() override;
 
     void create_unstructured_block(int base, int zone, size_t &num_node);
     void write_adjacency_data();

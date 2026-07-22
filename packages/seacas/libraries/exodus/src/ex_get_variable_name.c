@@ -66,7 +66,7 @@ int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num, char *
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vname, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variable names stored in file id %d",
              ex_name_of_object(obj_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -80,7 +80,7 @@ int ex_get_variable_name(int exoid, ex_entity_type obj_type, int var_num, char *
     int name_size     = db_name_size < api_name_size ? db_name_size : api_name_size;
 
     status = exi_get_name(exoid, varid, var_num - 1, var_name, name_size, obj_type, __func__);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }

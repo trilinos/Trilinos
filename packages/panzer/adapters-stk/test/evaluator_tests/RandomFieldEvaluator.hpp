@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef POINT_EVALUATOR
@@ -48,6 +16,7 @@
 #include "Phalanx_MDField.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Kokkos_Random.hpp"
 
 template <typename ScalarT>
 class PointEvaluation {
@@ -58,68 +27,40 @@ public:
 
 template<typename EvalT, typename Traits>
 class RandomFieldEvaluator
-  :
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits>
+  : public PHX::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<EvalT, Traits>
 {
   public:
+  void evaluateFields(typename Traits::EvalData d);
 
-    RandomFieldEvaluator(
-      const Teuchos::ParameterList& p);
-
-    void
-    postRegistrationSetup(
-      typename Traits::SetupData d,
-      PHX::FieldManager<Traits>& fm);
-
-    void
-    evaluateFields(
-      typename Traits::EvalData d);
-
-  private:
-
-    using ScalarT = typename EvalT::ScalarT;
-
-  PHX::MDField<ScalarT> field;
+private:
+  using ScalarT = typename EvalT::ScalarT;
+  PHX::MDField<ScalarT> field_;
+  Kokkos::Random_XorShift64_Pool<PHX::Device> random_pool_;
 
 public:
   RandomFieldEvaluator(const std::string & name,
                        const Teuchos::RCP<PHX::DataLayout> & dl)
-     : field(name,dl) { this->addEvaluatedField(field); }
-}; // end of class RandomFieldEvaluator
-
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-RandomFieldEvaluator<EvalT, Traits>::
-RandomFieldEvaluator(
-  const Teuchos::ParameterList& p)
-{
-   TEUCHOS_ASSERT(false); // don't do this
-}
+    : field_(name,dl),random_pool_(12345)
+  { this->addEvaluatedField(field_); }
+};
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void
 RandomFieldEvaluator<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* sd */,
-  PHX::FieldManager<Traits>&  fm)
+evaluateFields(typename Traits::EvalData workset)
 {
-  this->utils.setFieldData(field,fm);
-}
+  auto field = field_;
+  auto random_pool = random_pool_;
 
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-RandomFieldEvaluator<EvalT, Traits>::
-evaluateFields(
-  typename Traits::EvalData  /* workset */)
-{
-  auto field_h = Kokkos::create_mirror_view(field.get_view());
-   for(int i=0;i<static_cast<int>(field.size());i++)
-      field_h[i] = double(std::rand())/double(RAND_MAX);
-   Kokkos::deep_copy(field.get_view(),field_h);
+  Kokkos::parallel_for("panzer::RandomFieldEvalautor",workset.num_cells,KOKKOS_LAMBDA(const int i){
+    auto generator = random_pool.get_state();
+    for (size_t j=0; j < field.extent(1); ++j) {
+      field(i,j) = generator.drand(0.0,1.0);
+    }
+    random_pool.free_state(generator);
+  });
 }
 
 //**********************************************************************

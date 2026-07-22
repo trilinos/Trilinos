@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <PanzerAdaptersSTK_config.hpp>
@@ -52,7 +20,6 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 
@@ -63,6 +30,8 @@
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+
+#include <stk_tools/mesh_tools/FixNodeSharingViaSearch.hpp>
 
 #ifdef PANZER_HAVE_IOSS
 #include <Ionit_Initializer.h>
@@ -437,60 +406,27 @@ void STK_Interface::beginModification()
    bulkData_->modification_begin();
 }
 
-void STK_Interface::endModification()
+void STK_Interface::endModification(const bool find_and_set_shared_nodes_in_stk)
 {
-   TEUCHOS_TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
-                      "STK_Interface: Must call \"initialized\" or \"instantiateBulkData\" before \"endModification\"");
+  TEUCHOS_TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
+                             "STK_Interface: Must call \"initialized\" or \"instantiateBulkData\" before \"endModification\"");
 
-   // TODO: Resolving sharing this way comes at a cost in performance. The STK
-   // team has decided that users need to declare their own sharing. We should
-   // find where shared entities are being created in Panzer and declare it.
-   // Once this is done, the extra code below can be deleted.
+   // Resolving sharing this way comes at a cost in performance. The
+   // STK mesh database requires users to declare their own node
+   // sharing. We should find where shared entities are being created
+   // in Panzer (the inline mesh factories) and declare it.  Once this
+   // is done, the extra code below can be deleted. Note that the
+   // exodus reader already has shared nodes set up properly, so only
+   // the inline mesh factories need this.
+   if (find_and_set_shared_nodes_in_stk) {
+     const double radius = 10.0 * std::numeric_limits<double>::epsilon();
+     stk::tools::fix_node_sharing_via_search(*bulkData_,radius);
+   }
 
-    stk::CommSparse comm(bulkData_->parallel());
-
-    for (int phase=0;phase<2;++phase) {
-      for (int i=0;i<bulkData_->parallel_size();++i) {
-        if ( i != bulkData_->parallel_rank() ) {
-          const stk::mesh::BucketVector& buckets = bulkData_->buckets(stk::topology::NODE_RANK);
-          for (size_t j=0;j<buckets.size();++j) {
-            const stk::mesh::Bucket& bucket = *buckets[j];
-            if ( bucket.owned() ) {
-              for (size_t k=0;k<bucket.size();++k) {
-                stk::mesh::EntityKey key = bulkData_->entity_key(bucket[k]);
-                comm.send_buffer(i).pack<stk::mesh::EntityKey>(key);
-              }
-            }
-          }
-        }
-      }
-
-      if (phase == 0 ) {
-        comm.allocate_buffers();
-      }
-      else {
-        comm.communicate();
-      }
-    }
-
-    for (int i=0;i<bulkData_->parallel_size();++i) {
-      if ( i != bulkData_->parallel_rank() ) {
-        while(comm.recv_buffer(i).remaining()) {
-          stk::mesh::EntityKey key;
-          comm.recv_buffer(i).unpack<stk::mesh::EntityKey>(key);
-          stk::mesh::Entity node = bulkData_->get_entity(key);
-          if ( bulkData_->is_valid(node) ) {
-            bulkData_->add_node_sharing(node, i);
-          }
-        }
-      }
-    }
-
-
-    bulkData_->modification_end();
-
-    buildEntityCounts();
-    buildMaxEntityIds();
+   bulkData_->modification_end();
+   
+   buildEntityCounts();
+   buildMaxEntityIds();
 }
 
 void STK_Interface::addNode(stk::mesh::EntityId gid, const std::vector<double> & coord)
@@ -682,6 +618,22 @@ setupExodusFile(const std::string& filename,
                 const bool append_after_restart_time,
                 const double restart_time)
 {
+  std::vector<Ioss::Property> ioss_properties;
+  setupExodusFile(filename,
+                  ioss_properties,
+                  append,
+                  append_after_restart_time,
+                  restart_time);
+}
+
+void
+STK_Interface::
+setupExodusFile(const std::string& filename,
+                const std::vector<Ioss::Property>& ioss_properties,
+                const bool append,
+                const bool append_after_restart_time,
+                const double restart_time)
+{
   using std::runtime_error;
   using stk::io::StkMeshIoBroker;
   using stk::mesh::FieldVector;
@@ -696,6 +648,9 @@ setupExodusFile(const std::string& filename,
   meshData_->set_bulk_data(Teuchos::get_shared_ptr(bulkData_));
   Ioss::PropertyManager props;
   props.add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "FALSE"));
+  for ( const auto& p : ioss_properties ) {
+    props.add(p);
+  }
   if (append) {
     if (append_after_restart_time) {
       meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS,

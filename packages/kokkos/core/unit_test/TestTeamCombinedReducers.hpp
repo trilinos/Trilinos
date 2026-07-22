@@ -1,27 +1,17 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <gtest/gtest.h>
 
-namespace {
+#include <cmath>
 
-// Extended lambdas in parallel_for and parallel_reduce will not compile if
-// KOKKOS_ENABLE_CUDA_LAMBDA is off
-#if !defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
+namespace {
 
 struct TeamTeamCombinedReducer {
  public:
@@ -450,13 +440,7 @@ struct TeamTeamCombinedReducer {
 };
 
 TEST(TEST_CATEGORY, team_thread_range_combined_reducers) {
-#if defined(KOKKOS_ENABLE_OPENMPTARGET)
-  if constexpr (std::is_same_v<TEST_EXECSPACE,
-                               Kokkos::Experimental::OpenMPTarget>)
-    GTEST_SKIP() << "team_reduce with a generic reducer is not implemented for "
-                 << TEST_EXECSPACE::name();
-
-#elif defined(KOKKOS_ENABLE_OPENACC)
+#if defined(KOKKOS_ENABLE_OPENACC)
   if constexpr (std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::OpenACC>)
     GTEST_SKIP() << "team_reduce with a generic reducer is not implemented for "
                  << TEST_EXECSPACE::name();
@@ -470,13 +454,7 @@ TEST(TEST_CATEGORY, team_thread_range_combined_reducers) {
 }
 
 TEST(TEST_CATEGORY, thread_vector_range_combined_reducers) {
-#if defined(KOKKOS_ENABLE_OPENMPTARGET)
-  if constexpr (std::is_same_v<TEST_EXECSPACE,
-                               Kokkos::Experimental::OpenMPTarget>)
-    GTEST_SKIP() << "team_reduce with a generic reducer is not implemented for "
-                 << TEST_EXECSPACE::name();
-
-#elif defined(KOKKOS_ENABLE_OPENACC)
+#if defined(KOKKOS_ENABLE_OPENACC)
   if constexpr (std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::OpenACC>)
     GTEST_SKIP() << "team_reduce with a generic reducer is not implemented for "
                  << TEST_EXECSPACE::name();
@@ -490,13 +468,6 @@ TEST(TEST_CATEGORY, thread_vector_range_combined_reducers) {
 }
 
 TEST(TEST_CATEGORY, team_vector_range_combined_reducers) {
-#ifdef KOKKOS_ENABLE_OPENMPTARGET  // FIXME_OPENMPTARGET
-  if constexpr (std::is_same_v<TEST_EXECSPACE,
-                               Kokkos::Experimental::OpenMPTarget>)
-    GTEST_SKIP() << "team_reduce with a generic reducer is not implemented for "
-                 << TEST_EXECSPACE::name();
-#endif
-
 #ifdef KOKKOS_ENABLE_OPENACC  // FIXME_OPENACC
   if constexpr (std::is_same_v<TEST_EXECSPACE, Kokkos::Experimental::OpenACC>)
     GTEST_SKIP() << "team_reduce with a generic reducer is not implemented for "
@@ -509,7 +480,5 @@ TEST(TEST_CATEGORY, team_vector_range_combined_reducers) {
   tester.test_team_vector_range_combined_reducers(0);
   tester.test_team_vector_range_combined_reducers(9);
 }
-
-#endif
 
 }  // namespace

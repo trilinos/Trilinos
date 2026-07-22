@@ -19,6 +19,10 @@ public:
   SubElementNodeAncestry(const SubElementNodeAncestry & rhs) = default;
   SubElementNodeAncestry(const SubElementNode * node) : my_node(node) {}
 
+  // Friend declaration is required to build in c++20 mode or else the vector<SubElementNodeAncestry>::operator<
+  // call in compare below fails to compile.
+  friend inline bool operator<(const SubElementNodeAncestry & x, const SubElementNodeAncestry & y);
+
   template<class LESS>
   static bool compare(const SubElementNodeAncestry & x, const SubElementNodeAncestry & y, const LESS & compare)
   {

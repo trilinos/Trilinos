@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #pragma once
 
 #include <stdexcept>
@@ -34,7 +43,7 @@ public:
   typedef typename node_t::device_type device_t;
   typedef typename device_t::execution_space execution_space;
   typedef Kokkos::View<int *, device_t> list_of_colors_t;
-  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
+  typedef typename list_of_colors_t::host_mirror_type list_of_colors_host_t;
 
   // Constructor
   TpetraCrsColorer(const Teuchos::RCP<matrix_t> &matrix_);
@@ -120,7 +129,7 @@ public:
   typedef typename node_t::device_type device_t;
   typedef typename device_t::execution_space execution_space;
   typedef Kokkos::View<int *, device_t> list_of_colors_t;
-  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
+  typedef typename list_of_colors_t::host_mirror_type list_of_colors_host_t;
 
   // Constructor
   TpetraCrsColorer(const Teuchos::RCP<matrix_t> &matrix_);

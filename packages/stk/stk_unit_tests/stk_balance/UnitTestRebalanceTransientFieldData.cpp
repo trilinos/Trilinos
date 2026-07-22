@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "MeshFixtureRebalance.hpp"
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_balance/rebalance.hpp>
 #include <vector>
 
@@ -49,9 +49,9 @@ public:
     m_balanceSettings.set_num_output_processors(numFinalProcs);
     m_balanceSettings.setDecompMethod(decompMethod);
 
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::rebalance(m_ioBroker, m_balanceSettings);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
   }
 };
 

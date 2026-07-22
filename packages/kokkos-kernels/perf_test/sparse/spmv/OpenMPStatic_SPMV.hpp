@@ -1,24 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef OPENMP_STATIC_SPMV_HPP_
 #define OPENMP_STATIC_SPMV_HPP_
 
-template <typename AType, typename XType, typename YType, typename Offset,
-          typename Ordinal, typename Scalar>
+template <typename AType, typename XType, typename YType, typename Offset, typename Ordinal, typename Scalar>
 void openmp_static_matvec(AType A, XType x, YType y) {
 #define OMP_BENCH_RESTRICT __restrict__
 

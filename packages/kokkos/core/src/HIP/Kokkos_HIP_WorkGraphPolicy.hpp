@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HIP_WORKGRAPHPOLICY_HPP
 #define KOKKOS_HIP_WORKGRAPHPOLICY_HPP
@@ -35,13 +22,13 @@ class ParallelFor<FunctorType, Kokkos::WorkGraphPolicy<Traits...>, HIP> {
   FunctorType m_functor;
 
   template <class TagType>
-  __device__ inline std::enable_if_t<std::is_void<TagType>::value> exec_one(
+  __device__ inline std::enable_if_t<std::is_void_v<TagType>> exec_one(
       const std::int32_t w) const noexcept {
     m_functor(w);
   }
 
   template <class TagType>
-  __device__ inline std::enable_if_t<!std::is_void<TagType>::value> exec_one(
+  __device__ inline std::enable_if_t<!std::is_void_v<TagType>> exec_one(
       const std::int32_t w) const noexcept {
     const TagType t{};
     m_functor(t, w);
@@ -62,12 +49,15 @@ class ParallelFor<FunctorType, Kokkos::WorkGraphPolicy<Traits...>, HIP> {
 
   inline void execute() {
     const int warps_per_block = 4;
-    const dim3 grid(hip_internal_multiprocessor_count(), 1, 1);
+    const int multiProcessorCount =
+        m_policy.space().hip_device_prop().multiProcessorCount;
+    const dim3 grid(multiProcessorCount, 1, 1);
     const dim3 block(1, HIPTraits::WarpSize, warps_per_block);
     const int shared = 0;
 
     HIPParallelLaunch<Self>(*this, grid, block, shared,
-                            HIP().impl_internal_space_instance(), false);
+                            m_policy.space().impl_internal_space_instance(),
+                            false);
   }
 
   inline ParallelFor(const FunctorType& arg_functor, const Policy& arg_policy)

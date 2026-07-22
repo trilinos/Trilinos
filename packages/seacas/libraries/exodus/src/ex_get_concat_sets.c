@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,11 +39,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
 
   void *sets_dist_fact = set_specs->sets_dist_fact;
 
-  int        num_sets, i;
-  float     *flt_dist_fact;
-  double    *dbl_dist_fact;
-  char       errmsg[MAX_ERR_LENGTH];
-  ex_inquiry ex_inq_val;
+  char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
   if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
@@ -53,6 +49,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
   /* setup pointers based on set_type
      NOTE: there is another block that sets more stuff later ... */
 
+  ex_inquiry ex_inq_val;
   if (set_type == EX_NODE_SET) {
     ex_inq_val = EX_INQ_NODE_SETS;
   }
@@ -76,7 +73,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
 
   /* first check if any sets are specified */
 
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != EX_NOERR) {
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined for file id %d",
                ex_name_of_object(set_type), exoid);
@@ -91,7 +88,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
 
   /* inquire how many sets have been stored */
 
-  num_sets = ex_inquire_int(exoid, ex_inq_val);
+  int num_sets = ex_inquire_int(exoid, ex_inq_val);
   if (num_sets < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss defined for file id %d",
              ex_name_of_object(set_type), exoid);
@@ -100,7 +97,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (ex_get_ids(exoid, set_type, set_specs->sets_ids) != NC_NOERR) {
+  if (ex_get_ids(exoid, set_type, set_specs->sets_ids) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s ids for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
@@ -117,7 +114,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     ((int *)sets_dist_index)[0]  = 0;
   }
 
-  for (i = 0; i < num_sets; i++) {
+  for (int i = 0; i < num_sets; i++) {
     int64_t set_id;
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
       set_id = ((int64_t *)set_specs->sets_ids)[i];
@@ -128,7 +125,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
 
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       if (ex_get_set_param(exoid, set_type, set_id, &(((int64_t *)num_entries_per_set)[i]),
-                           &(((int64_t *)num_dist_per_set)[i])) != NC_NOERR) {
+                           &(((int64_t *)num_dist_per_set)[i])) != EX_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by sub */
       }
 
@@ -156,7 +153,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     }
     else {
       if (ex_get_set_param(exoid, set_type, set_id, &(((int *)num_entries_per_set)[i]),
-                           &(((int *)num_dist_per_set)[i])) != NC_NOERR) {
+                           &(((int *)num_dist_per_set)[i])) != EX_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by sub */
       }
 
@@ -182,7 +179,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
       }
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by subroutine */
     }
 
@@ -200,14 +197,14 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
       }
       if (num_dist > 0) { /* only get df if they exist */
         if (exi_comp_ws(exoid) == sizeof(float)) {
-          flt_dist_fact = sets_dist_fact;
-          status        = ex_get_set_dist_fact(exoid, set_type, set_id, &(flt_dist_fact[df_idx]));
+          float *flt_dist_fact = sets_dist_fact;
+          status = ex_get_set_dist_fact(exoid, set_type, set_id, &(flt_dist_fact[df_idx]));
         }
         else {
-          dbl_dist_fact = sets_dist_fact;
-          status        = ex_get_set_dist_fact(exoid, set_type, set_id, &(dbl_dist_fact[df_idx]));
+          double *dbl_dist_fact = sets_dist_fact;
+          status = ex_get_set_dist_fact(exoid, set_type, set_id, &(dbl_dist_fact[df_idx]));
         }
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by subroutine */
         }
       }

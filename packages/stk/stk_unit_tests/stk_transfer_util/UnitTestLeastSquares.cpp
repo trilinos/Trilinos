@@ -64,7 +64,6 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"        // for MeshFixtureNoTest
 #include "stk_unit_test_utils/TextMesh.hpp"           // for setup_text_mesh
 #include "stk_unit_test_utils/getOption.h"            // for get_command_lin...
-#include "stk_util/diag/String.hpp"                   // for String
 #include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
 #include "stk_util/util/ReportHandler.hpp"            // for ThrowRequireMsg
 #include <stk_transfer_util/EntityCentroidRecoverField.hpp>
@@ -75,14 +74,14 @@
 
 namespace {
 
-class LeastSquaresTester : public stk::unit_test_util::simple_fields::MeshFixtureNoTest, public ::testing::Test {
+class LeastSquaresTester : public stk::unit_test_util::MeshFixtureNoTest, public ::testing::Test {
  public:
   LeastSquaresTester()
-    : stk::unit_test_util::simple_fields::MeshFixtureNoTest(3)
+    : stk::unit_test_util::MeshFixtureNoTest(3)
   {
-    m_scaleFactorX = stk::unit_test_util::simple_fields::get_command_line_option("-sx", 1.0);
-    m_scaleFactorY = stk::unit_test_util::simple_fields::get_command_line_option("-sy", 1.0);
-    m_stretchFactorZ = stk::unit_test_util::simple_fields::get_command_line_option("-sz", 1.0);
+    m_scaleFactorX = stk::unit_test_util::get_command_line_option("-sx", 1.0);
+    m_scaleFactorY = stk::unit_test_util::get_command_line_option("-sy", 1.0);
+    m_stretchFactorZ = stk::unit_test_util::get_command_line_option("-sz", 1.0);
 
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   }
@@ -140,9 +139,9 @@ class LeastSquaresTester : public stk::unit_test_util::simple_fields::MeshFixtur
 
   void generate_stretched_mesh(stk::mesh::BulkData& bulk, unsigned numElemPerDim)
   {
-    double scaleFactorX = stk::unit_test_util::simple_fields::get_command_line_option("-sx", 1.0);
-    double scaleFactorY = stk::unit_test_util::simple_fields::get_command_line_option("-sy", 1.0);
-    double stretchFactorZ = stk::unit_test_util::simple_fields::get_command_line_option("-sz", 1.0);
+    double scaleFactorX = stk::unit_test_util::get_command_line_option("-sx", 1.0);
+    double scaleFactorY = stk::unit_test_util::get_command_line_option("-sy", 1.0);
+    double stretchFactorZ = stk::unit_test_util::get_command_line_option("-sz", 1.0);
 
     ASSERT_TRUE(scaleFactorX >= 0.0);
     ASSERT_TRUE(scaleFactorY >= 0.0);
@@ -208,7 +207,7 @@ class LeastSquaresTester : public stk::unit_test_util::simple_fields::MeshFixtur
   void finish_extrapolation_setup(stk::unit_test_util::FieldEvaluator& eval,
       stk::transfer::RecoverField::RecoveryType recoveryType)
   {
-    stk::unit_test_util::set_element_field(get_bulk(), *m_field, eval);
+    stk::unit_test_util::set_entity_field(get_bulk(), *m_field, eval);
 
     double delta = 0.05;
     m_evalPoint = get_default_evaluation_point();
@@ -523,7 +522,7 @@ TEST_F(LeastSquaresTester, interpolateQuadratic_UsingLeastSquares_AtCentroid)
 
     for(stk::mesh::Entity e : elements) {
       std::vector<double> centroid;
-      stk::unit_test_util::determine_centroid(spatialDimension, e, *coord, centroid);
+      stk::search::determine_centroid(spatialDimension, e, *coord, centroid);
 
       leastSquaresCalculator.resize_data(m_nComponents, m_nSamples, m_basisSize);
       test_quadratic_evaluation(leastSquaresCalculator, evaluator, centroid);

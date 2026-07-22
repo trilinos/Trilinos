@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // Test to exercise fix to Teuchos::Comm's createSubcommunicator, which
 // had leaked memory.
 // The fix added MPI_Comm_free to the opaqueWrappers. 

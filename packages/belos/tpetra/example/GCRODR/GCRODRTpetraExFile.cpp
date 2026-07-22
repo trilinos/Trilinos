@@ -50,7 +50,6 @@ int run(int argc, char *argv[]) {
   using MT = typename Teuchos::ScalarTraits<ST>::magnitudeType;
 
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
-  using tvector_t    = Tpetra::Vector<ST,LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 
   using MVT = typename Belos::MultiVecTraits<ST,MV>;
@@ -197,14 +196,14 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret!=Belos::Converged || badRes) {
-      success = false;
-      if (proc_verbose)
-        std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
-    } else {
+    if (ret==Belos::Converged && !badRes) {
       success = true;
       if (proc_verbose)
         std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    } else {
+      success = false;
+      if (proc_verbose)
+        std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

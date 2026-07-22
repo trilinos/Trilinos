@@ -26,6 +26,7 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_IO.hpp>
 
+#include "MueLu_KeepType.hpp"
 #include "Xpetra_TpetraBlockCrsMatrix.hpp"
 
 #include "MueLu_TentativePFactory_decl.hpp"
@@ -47,6 +48,7 @@ RCP<const ParameterList> TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
   SET_VALID_ENTRY("tentative: calculate qr");
   SET_VALID_ENTRY("tentative: build coarse coordinates");
   SET_VALID_ENTRY("tentative: constant column sums");
+  SET_VALID_ENTRY("sa: keep tentative prolongator");
 #undef SET_VALID_ENTRY
   validParamList->set<std::string>("Nullspace name", "Nullspace", "Name for the input nullspace");
 
@@ -153,11 +155,14 @@ void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
     for (LO i = 0; i < numCoarseNodes; i++) {
       nodeList[i] = (elementAList[i * blkSize] - indexBase) / blkSize + indexBase;
     }
+    Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
+    params->set("compute global constants", false);
     RCP<const Map> coarseCoordsMap = MapFactory::Build(fineCoords->getMap()->lib(),
-                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                       blkSize * coarseMap->getGlobalNumElements(),
                                                        nodeList,
                                                        indexBase,
-                                                       fineCoords->getMap()->getComm());
+                                                       fineCoords->getMap()->getComm(),
+                                                       params);
     coarseCoords                   = RealValuedMultiVectorFactory::Build(coarseCoordsMap, numDimensions);
 
     // Create overlapped fine coordinates to reduce global communication
@@ -217,14 +222,17 @@ void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   // coarsest levels.
   if (A->IsView("stridedMaps") == true)
     Ptentative->CreateView("stridedMaps", A->getRowMap("stridedMaps"), coarseMap);
-  else
-    Ptentative->CreateView("stridedMaps", Ptentative->getRangeMap(), coarseMap);
 
   if (bTransferCoordinates_) {
     Set(coarseLevel, "Coordinates", coarseCoords);
   }
   Set(coarseLevel, "Nullspace", coarseNullspace);
   Set(coarseLevel, "P", Ptentative);
+
+  if (pL.get<bool>("sa: keep tentative prolongator")) {
+    coarseLevel.Set("Ptent", Ptentative, NoFactory::get());
+    coarseLevel.AddKeepFlag("Ptent", NoFactory::get(), MueLu::Final);
+  }
 
   if (IsPrint(Statistics2)) {
     RCP<ParameterList> params = rcp(new ParameterList());
@@ -851,7 +859,7 @@ void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Time to construct the matrix and fill in the values
   Ptentative              = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
-  RCP<CrsMatrix> PtentCrs = rcp_dynamic_cast<CrsMatrixWrap>(Ptentative)->getCrsMatrix();
+  RCP<CrsMatrix> PtentCrs = toCrsMatrix(Ptentative);
 
   ArrayRCP<size_t> iaPtent;
   ArrayRCP<LO> jaPtent;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_SERIAL_PARALLEL_RANGE_HPP
 #define KOKKOS_SERIAL_PARALLEL_RANGE_HPP
@@ -31,7 +18,7 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>, Kokkos::Serial> {
   const Policy m_policy;
 
   template <class TagType>
-  std::enable_if_t<std::is_void<TagType>::value> exec() const {
+  std::enable_if_t<std::is_void_v<TagType>> exec() const {
     const typename Policy::member_type e = m_policy.end();
     for (typename Policy::member_type i = m_policy.begin(); i < e; ++i) {
       m_functor(i);
@@ -39,7 +26,7 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>, Kokkos::Serial> {
   }
 
   template <class TagType>
-  std::enable_if_t<!std::is_void<TagType>::value> exec() const {
+  std::enable_if_t<!std::is_void_v<TagType>> exec() const {
     const TagType t{};
     const typename Policy::member_type e = m_policy.end();
     for (typename Policy::member_type i = m_policy.begin(); i < e; ++i) {
@@ -49,6 +36,15 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>, Kokkos::Serial> {
 
  public:
   inline void execute() const {
+    // caused a possibly codegen-related slowdown, especially in GCC 9-11
+    // with KOKKOS_ARCH_NATIVE
+    // https://github.com/kokkos/kokkos/issues/7268
+#ifndef KOKKOS_ENABLE_ATOMICS_BYPASS
+    // Make sure kernels are running sequentially even when using multiple
+    // threads
+    auto* internal_instance = m_policy.space().impl_internal_space_instance();
+    std::lock_guard<std::mutex> lock(internal_instance->m_instance_mutex);
+#endif
     this->template exec<typename Policy::work_tag>();
   }
 
@@ -75,7 +71,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   const pointer_type m_result_ptr;
 
   template <class TagType>
-  inline std::enable_if_t<std::is_void<TagType>::value> exec(
+  inline std::enable_if_t<std::is_void_v<TagType>> exec(
       reference_type update) const {
     const typename Policy::member_type e = m_policy.end();
     for (typename Policy::member_type i = m_policy.begin(); i < e; ++i) {
@@ -84,7 +80,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline std::enable_if_t<!std::is_void<TagType>::value> exec(
+  inline std::enable_if_t<!std::is_void_v<TagType>> exec(
       reference_type update) const {
     const TagType t{};
 
@@ -103,9 +99,16 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
     const size_t thread_local_size = 0;  // Never shrinks
 
     auto* internal_instance = m_policy.space().impl_internal_space_instance();
-    // Need to lock resize_thread_team_data
-    std::lock_guard<std::mutex> lock(
-        internal_instance->m_thread_team_data_mutex);
+
+    // caused a possibly codegen-related slowdown, especially in GCC 9-11
+    // with KOKKOS_ARCH_NATIVE
+    // https://github.com/kokkos/kokkos/issues/7268
+#ifndef KOKKOS_ENABLE_ATOMICS_BYPASS
+    // Make sure kernels are running sequentially even when using multiple
+    // threads, lock resize_thread_team_data
+    std::lock_guard<std::mutex> instance_lock(
+        internal_instance->m_instance_mutex);
+#endif
     internal_instance->resize_thread_team_data(
         pool_reduce_size, team_reduce_size, team_shared_size,
         thread_local_size);
@@ -160,7 +163,7 @@ class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
   const Policy m_policy;
 
   template <class TagType>
-  inline std::enable_if_t<std::is_void<TagType>::value> exec(
+  inline std::enable_if_t<std::is_void_v<TagType>> exec(
       reference_type update) const {
     const typename Policy::member_type e = m_policy.end();
     for (typename Policy::member_type i = m_policy.begin(); i < e; ++i) {
@@ -169,7 +172,7 @@ class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline std::enable_if_t<!std::is_void<TagType>::value> exec(
+  inline std::enable_if_t<!std::is_void_v<TagType>> exec(
       reference_type update) const {
     const TagType t{};
     const typename Policy::member_type e = m_policy.end();
@@ -187,10 +190,18 @@ class ParallelScan<FunctorType, Kokkos::RangePolicy<Traits...>,
     const size_t team_shared_size  = 0;  // Never shrinks
     const size_t thread_local_size = 0;  // Never shrinks
 
-    // Need to lock resize_thread_team_data
     auto* internal_instance = m_policy.space().impl_internal_space_instance();
-    std::lock_guard<std::mutex> lock(
-        internal_instance->m_thread_team_data_mutex);
+
+    // caused a possibly codegen-related slowdown, especially in GCC 9-11
+    // with KOKKOS_ARCH_NATIVE
+    // https://github.com/kokkos/kokkos/issues/7268
+#ifndef KOKKOS_ENABLE_ATOMICS_BYPASS
+    // Make sure kernels are running sequentially even when using multiple
+    // threads, lock resize_thread_team_data
+    std::lock_guard<std::mutex> instance_lock(
+        internal_instance->m_instance_mutex);
+#endif
+
     internal_instance->resize_thread_team_data(
         pool_reduce_size, team_reduce_size, team_shared_size,
         thread_local_size);
@@ -227,7 +238,7 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
   const pointer_type m_result_ptr;
 
   template <class TagType>
-  inline std::enable_if_t<std::is_void<TagType>::value> exec(
+  inline std::enable_if_t<std::is_void_v<TagType>> exec(
       reference_type update) const {
     const typename Policy::member_type e = m_policy.end();
     for (typename Policy::member_type i = m_policy.begin(); i < e; ++i) {
@@ -236,7 +247,7 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline std::enable_if_t<!std::is_void<TagType>::value> exec(
+  inline std::enable_if_t<!std::is_void_v<TagType>> exec(
       reference_type update) const {
     const TagType t{};
     const typename Policy::member_type e = m_policy.end();
@@ -253,10 +264,18 @@ class ParallelScanWithTotal<FunctorType, Kokkos::RangePolicy<Traits...>,
     const size_t team_shared_size  = 0;  // Never shrinks
     const size_t thread_local_size = 0;  // Never shrinks
 
-    // Need to lock resize_thread_team_data
     auto* internal_instance = m_policy.space().impl_internal_space_instance();
-    std::lock_guard<std::mutex> lock(
-        internal_instance->m_thread_team_data_mutex);
+
+    // caused a possibly codegen-related slowdown, especially in GCC 9-11
+    // with KOKKOS_ARCH_NATIVE
+    // https://github.com/kokkos/kokkos/issues/7268
+#ifndef KOKKOS_ENABLE_ATOMICS_BYPASS
+    // Make sure kernels are running sequentially even when using multiple
+    // threads, lock resize_thread_team_data
+    std::lock_guard<std::mutex> instance_lock(
+        internal_instance->m_instance_mutex);
+#endif
+
     internal_instance->resize_thread_team_data(
         pool_reduce_size, team_reduce_size, team_shared_size,
         thread_local_size);

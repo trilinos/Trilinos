@@ -49,17 +49,5 @@ bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, c
     return isEqual;
 }
 
-namespace simple_fields {
-
-bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::string &actualWord, double tol) {
-  return stk::unit_test_util::approximatelyEqualAsNumbers(expectedWord, actualWord, tol);
-}
-
-bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol) {
-  return stk::unit_test_util::areStringsEqualWithToleranceForNumbers(expectedString, actualString, tol);
-}
-
-} // namespace simple_fields
-
 }
 }

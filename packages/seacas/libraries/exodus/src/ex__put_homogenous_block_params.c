@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,7 +47,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
              "ERROR: Bad block type (%d) specified for all blocks file id %d", blocks[0].type,
              exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   { /* Output ids for this block */
@@ -58,27 +58,27 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
                "array in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     for (size_t i = 0; i < block_count; i++) {
       ids[i] = (long long)blocks[i].id;
     }
     /* write out block id to previously defined id array variable*/
-    if ((status = nc_inq_varid(exoid, vblkids, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, vblkids, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids in file id %d",
                ex_name_of_object(blocks[0].type), exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       free(ids);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
-    if ((status = nc_put_var_longlong(exoid, varid, ids)) != NC_NOERR) {
+    if ((status = nc_put_var_longlong(exoid, varid, ids)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s ids to file id %d",
                ex_name_of_object(blocks[0].type), exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       free(ids);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
     free(ids);
   }
@@ -91,42 +91,42 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
                "array in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     for (size_t i = 0; i < block_count; i++) {
       stat[i] = (blocks[i].num_entry == 0) ? 0 : 1;
     }
 
-    if ((status = nc_inq_varid(exoid, vblksta, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, vblksta, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s status in file id %d",
                ex_name_of_object(blocks[0].type), exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       free(stat);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
-    if ((status = nc_put_var_int(exoid, varid, stat)) != NC_NOERR) {
+    if ((status = nc_put_var_int(exoid, varid, stat)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s status to file id %d",
                ex_name_of_object(blocks[0].type), exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       free(stat);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
     free(stat);
   }
 
   /* ======================================================================== */
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   /* inquire previously defined dimensions  */
   int strdim = 0;
-  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
@@ -192,7 +192,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
 
     /* define some dimensions and variables*/
     int numblkdim = 0;
-    if ((status = nc_def_dim(exoid, dneblk, blocks[i].num_entry, &numblkdim)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, dneblk, blocks[i].num_entry, &numblkdim)) != EX_NOERR) {
       if (status == NC_ENAMEINUSE) { /* duplicate entry */
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s %" PRId64 " already defined in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -211,7 +211,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
     if (dnnpe && blocks[i].num_nodes_per_entry > 0) {
       /* A nfaced block would not have any nodes defined... */
       if ((status = nc_def_dim(exoid, dnnpe, blocks[i].num_nodes_per_entry, &nnodperentdim)) !=
-          NC_NOERR) {
+          EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define number of nodes/entity for %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -223,7 +223,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
     int nedgperentdim = -1;
     if (dnepe && blocks[i].num_edges_per_entry > 0) {
       if ((status = nc_def_dim(exoid, dnepe, blocks[i].num_edges_per_entry, &nedgperentdim)) !=
-          NC_NOERR) {
+          EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define number of edges/entity for %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -235,7 +235,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
     int nfacperentdim = -1;
     if (dnfpe && blocks[i].num_faces_per_entry > 0) {
       if ((status = nc_def_dim(exoid, dnfpe, blocks[i].num_faces_per_entry, &nfacperentdim)) !=
-          NC_NOERR) {
+          EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define number of faces/entity for %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -248,7 +248,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
     if (blocks[i].num_attribute > 0) {
 
       int numattrdim = 0;
-      if ((status = nc_def_dim(exoid, dnape, blocks[i].num_attribute, &numattrdim)) != NC_NOERR) {
+      if ((status = nc_def_dim(exoid, dnape, blocks[i].num_attribute, &numattrdim)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define number of attributes in %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -259,7 +259,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
       dims[0] = numblkdim;
       dims[1] = numattrdim;
 
-      if ((status = nc_def_var(exoid, vblkatt, nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, vblkatt, nc_flt_code(exoid), 2, dims, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR:  failed to define attributes for %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -273,7 +273,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
       dims[1] = strdim;
 
       int att_name_varid = -1;
-      if ((status = nc_def_var(exoid, vattnam, NC_CHAR, 2, dims, &att_name_varid)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, vattnam, NC_CHAR, 2, dims, &att_name_varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define %s attribute name array in file id %d",
                  ex_name_of_object(blocks[i].type), exoid);
@@ -298,7 +298,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
       dims[1] = nnodperentdim;
 
       int connid = 0;
-      if ((status = nc_def_var(exoid, vnodcon, conn_int_type, 2, dims, &connid)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, vnodcon, conn_int_type, 2, dims, &connid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to create connectivity array for %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -309,7 +309,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
 
       /* store element type as attribute of connectivity variable */
       if ((status = nc_put_att_text(exoid, connid, ATT_NAME_ELB, strlen(blocks[i].topology) + 1,
-                                    blocks[i].topology)) != NC_NOERR) {
+                                    blocks[i].topology)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s type name %s in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].topology, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -321,7 +321,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
       dims[0] = numblkdim;
       dims[1] = nedgperentdim;
 
-      if ((status = nc_def_var(exoid, vedgcon, conn_int_type, 2, dims, &varid)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, vedgcon, conn_int_type, 2, dims, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to create edge connectivity array for %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -334,7 +334,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
       dims[0] = numblkdim;
       dims[1] = nfacperentdim;
 
-      if ((status = nc_def_var(exoid, vfaccon, conn_int_type, 2, dims, &varid)) != NC_NOERR) {
+      if ((status = nc_def_var(exoid, vfaccon, conn_int_type, 2, dims, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to create face connectivity array for %s %" PRId64 " in file id %d",
                  ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
@@ -345,10 +345,10 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
   }
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   /* ======================================================================== */
@@ -357,7 +357,7 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
     case EX_EDGE_BLOCK: vblkids = VAR_ID_ED_BLK; break;
     case EX_FACE_BLOCK: vblkids = VAR_ID_FA_BLK; break;
     case EX_ELEM_BLOCK: vblkids = VAR_ID_EL_BLK; break;
-    default: return (EX_FATAL); /* should have been handled earlier; quiet compiler here */
+    default: return EX_FATAL; /* should have been handled earlier; quiet compiler here */
     }
 
     int att_name_varid = -1;
@@ -375,17 +375,17 @@ int exi_put_homogenous_block_params(int exoid, size_t block_count, const struct 
       start[1] = 0;
       count[1] = strlen(text) + 1;
 
-      for (size_t j = 0; j < blocks[i].num_attribute; j++) {
+      for (int64_t j = 0; j < blocks[i].num_attribute; j++) {
         start[0] = j;
         nc_put_vara_text(exoid, att_name_varid, start, count, text);
       }
     }
   }
 
-  return (EX_NOERR);
+  return EX_NOERR;
 
 /* Fatal error: exit definition mode and return */
 error_ret:
   exi_leavedef(exoid, __func__);
-  return (EX_FATAL);
+  return EX_FATAL;
 }

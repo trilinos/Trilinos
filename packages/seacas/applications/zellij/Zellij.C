@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023, 2025, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,6 +11,7 @@
 #include "add_to_log.h"
 #include "fmt/chrono.h"
 #include "fmt/color.h"
+#include "fmt/format.h"
 #include "fmt/ostream.h"
 #include "time_stamp.h"
 #include "tokenize.h"

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,10 +38,10 @@
 
 int ex_put_variable_name(int exoid, ex_entity_type obj_type, int var_num, const char *var_name)
 {
-  int         status;
-  int         varid;
+  int         status = 0;
+  int         varid  = 0;
   char        errmsg[MAX_ERR_LENGTH];
-  const char *vname;
+  const char *vname = NULL;
 
   EX_FUNC_ENTER();
 
@@ -70,7 +70,7 @@ int ex_put_variable_name(int exoid, ex_entity_type obj_type, int var_num, const 
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vname, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variables names stored in file id %d",
              ex_name_of_object(obj_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

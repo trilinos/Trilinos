@@ -38,6 +38,7 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -161,7 +162,7 @@ public:
     const stk::mesh::MetaData& meta = get_meta();
     stk::mesh::PartVector triParts = {&meta.get_topology_root_part(stk::topology::TRI_3_2D)};
 
-    stk::mesh::EntityId elemId = 3;
+    const stk::mesh::EntityId elemId = 3;
     stk::mesh::EntityIdVector nodeIds = {1,2,4};
 
     const int otherProc = 1 - get_bulk().parallel_rank();
@@ -201,6 +202,33 @@ public:
     EXPECT_TRUE(get_bulk().in_ghost(get_bulk().aura_ghosting(), node1));
     EXPECT_FALSE(get_bulk().in_shared(node1));
     EXPECT_TRUE(1 == get_bulk().parallel_owner_rank(node1));
+
+    const stk::mesh::ElemElemGraph& eeGraph = get_bulk().get_face_adjacent_element_graph();
+
+    stk::mesh::Entity elem3 = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    ASSERT_TRUE(get_bulk().is_valid(elem3));
+
+    if (get_bulk().parallel_rank() == 0) {
+      EXPECT_TRUE(get_bulk().bucket(elem3).in_aura());
+      constexpr bool requireValidId = false;
+      stk::mesh::impl::LocalId elem3LocalId = eeGraph.get_local_element_id(elem3, requireValidId);
+      EXPECT_EQ(stk::mesh::impl::INVALID_LOCAL_ID, elem3LocalId);
+    }
+
+    if (get_bulk().parallel_rank() == 1) {
+      EXPECT_TRUE(get_bulk().bucket(elem3).owned());
+      constexpr bool requireValidId = true;
+      stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+      stk::mesh::impl::LocalId elem2LocalId = eeGraph.get_local_element_id(elem2, requireValidId);
+      stk::mesh::impl::LocalId elem3LocalId = eeGraph.get_local_element_id(elem3, requireValidId);
+      constexpr size_t numConnectedElems = 1;
+      EXPECT_EQ(numConnectedElems, eeGraph.get_num_connected_elems(elem3));
+      stk::mesh::GraphEdgesForElement graphEdges = eeGraph.get_edges_for_element(elem3LocalId);
+      ASSERT_EQ(1u, graphEdges.size());
+      const stk::mesh::GraphEdge& graphEdge = graphEdges[0];
+      EXPECT_EQ(elem3LocalId, graphEdge.elem1());
+      EXPECT_EQ(elem2LocalId, graphEdge.elem2());
+    }
   }
 };
 
@@ -236,13 +264,6 @@ public:
       EXPECT_TRUE(get_bulk().destroy_relation(elem2, node3, ord));
       get_bulk().declare_relation(elem2, node6, ord);
     }
-{ 
-stk::parallel_machine_barrier(get_bulk().parallel());
-std::ostringstream os;
-os<<"P"<<get_bulk().parallel_rank()<<" test about to call modification_end"<<std::endl;
-std::cerr<<os.str();
-stk::parallel_machine_barrier(get_bulk().parallel());
-}
     get_bulk().modification_end();
   }
 };

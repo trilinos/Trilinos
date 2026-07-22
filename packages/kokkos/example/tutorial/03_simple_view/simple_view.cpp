@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 //
 // First Kokkos::View (multidimensional array) example:
@@ -39,7 +26,7 @@
 //
 // The first dimension of the View is the dimension over which it is
 // efficient for Kokkos to parallelize.
-using view_type = Kokkos::View<double * [3]>;
+using view_type = Kokkos::View<double* [3]>;
 
 // parallel_for functor that fills the View given to its constructor.
 // The View must already have been allocated.

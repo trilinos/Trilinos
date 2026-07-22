@@ -39,6 +39,8 @@
 #include <Kokkos_Timer.hpp>
 #include <algorithm>
 #include <functional>
+#include <limits>
+#include <iomanip>
 
 namespace stk
 {
@@ -76,6 +78,18 @@ int size() {
 inline
 int simd_size() { return size() / stk::simd::ndoubles; }
 
+// Combined relative/absolute check.
+// Passes if |a-b| <= max(absTol, relTol * |b|).
+inline void ExpectNearRelAbs(double a, double b,
+                             double relTol = 8 * std::numeric_limits<double>::epsilon(),
+                             double absTol = 1e-14) {
+  const double diff = std::abs(a - b);
+  const double tol  = std::max(absTol, relTol * std::abs(b));
+  EXPECT_LE(diff, tol) << "a=" << std::setprecision(17) << a
+                       << " b=" << b
+                       << " |a-b|=" << diff
+                       << " tol=" << tol;
+}
 
 class TestSimdMathFunction : public ::testing::Test
 {
@@ -130,7 +144,7 @@ class TestSimdMathFunction : public ::testing::Test
   void verify_arrays_equal(const DoubleVector& scalarVec, const SimdDoubleVector& simdVec) const {
     const double* simdSol = reinterpret_cast<const double*>(simdVec.data());
     for (int i=0; i < size(); ++i) {
-      EXPECT_DOUBLE_EQ(scalarVec[i], simdSol[i]) << "input values = " + get_input_vals(i);
+      ExpectNearRelAbs(scalarVec[i], simdSol[i]);
     }
   }
 };

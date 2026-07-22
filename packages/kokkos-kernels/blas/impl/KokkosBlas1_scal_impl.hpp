@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_SCAL_IMPL_HPP_
 #define KOKKOSBLAS1_SCAL_IMPL_HPP_
 
@@ -45,29 +32,22 @@ namespace Impl {
 template <class RV, class AV, class XV, int scalar_x, class SizeType>
 struct V_Scal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV m_r;
   XV m_x;
   AV m_a;
 
-  V_Scal_Functor(const RV& r, const XV& x, const AV& a,
-                 const SizeType startingColumn)
-      : m_r(r), m_x(x), m_a(a) {
-    static_assert(Kokkos::is_view<RV>::value,
-                  "V_Scal_Functor: RV is not a Kokkos::View.");
-    static_assert(Kokkos::is_view<AV>::value,
-                  "V_Scal_Functor: AV is not a Kokkos::View.");
-    static_assert(Kokkos::is_view<XV>::value,
-                  "V_Scal_Functor: XV is not a Kokkos::View.");
+  V_Scal_Functor(const RV& r, const XV& x, const AV& a, const SizeType startingColumn) : m_r(r), m_x(x), m_a(a) {
+    static_assert(Kokkos::is_view<RV>::value, "V_Scal_Functor: RV is not a Kokkos::View.");
+    static_assert(Kokkos::is_view<AV>::value, "V_Scal_Functor: AV is not a Kokkos::View.");
+    static_assert(Kokkos::is_view<XV>::value, "V_Scal_Functor: XV is not a Kokkos::View.");
     static_assert(RV::rank == 1, "V_Scal_Functor: RV is not rank 1.");
     static_assert(AV::rank == 1, "V_Scal_Functor: AV is not rank 1.");
     static_assert(XV::rank == 1, "V_Scal_Functor: XV is not rank 1.");
 
     if (startingColumn != 0) {
-      m_a = Kokkos::subview(
-          a,
-          std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0))));
+      m_a = Kokkos::subview(a, std::make_pair(startingColumn, static_cast<SizeType>(a.extent(0))));
     }
   }
 
@@ -98,17 +78,15 @@ struct V_Scal_Functor {
 // 1. Y(i) = alpha*X(i) for alpha in -1,0,1
 // 2. Y(i) = a*X(i)
 template <class RV, class XV, int scalar_x, class SizeType>
-struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x,
-                      SizeType> {
+struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x, SizeType> {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV m_r;
   XV m_x;
   const typename XV::non_const_value_type m_a;
 
-  V_Scal_Functor(const RV& r, const XV& x,
-                 const typename XV::non_const_value_type& a,
+  V_Scal_Functor(const RV& r, const XV& x, const typename XV::non_const_value_type& a,
                  const SizeType /* startingColumn */)
       : m_r(r), m_x(x), m_a(a) {}
 
@@ -133,12 +111,10 @@ struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x,
 // As above, av is either a 1-D View (and only its first entry will be
 // read), or a scalar.
 template <class execution_space, class RV, class AV, class XV, class SizeType>
-void V_Scal_Generic(const execution_space& space, const RV& r, const AV& av,
-                    const XV& x, const SizeType startingColumn, int a = 2) {
-  static_assert(Kokkos::is_view<RV>::value,
-                "V_Scal_Generic: RV is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<XV>::value,
-                "V_Scal_Generic: XV is not a Kokkos::View.");
+void V_Scal_Generic(const execution_space& space, const RV& r, const AV& av, const XV& x, const SizeType startingColumn,
+                    int a = 2) {
+  static_assert(Kokkos::is_view<RV>::value, "V_Scal_Generic: RV is not a Kokkos::View.");
+  static_assert(Kokkos::is_view<XV>::value, "V_Scal_Generic: XV is not a Kokkos::View.");
   static_assert(RV::rank == 1, "V_Scal_Generic: RV is not rank 1.");
   static_assert(XV::rank == 1, "V_Scal_Generic: XV is not rank 1.");
 

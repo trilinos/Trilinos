@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 # Disable Kokkos warning about not supporting C++ extensions
 set(CMAKE_CXX_EXTENSIONS OFF)

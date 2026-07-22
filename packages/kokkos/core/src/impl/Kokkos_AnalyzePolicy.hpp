@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_ANALYZE_POLICY_HPP
 #define KOKKOS_IMPL_ANALYZE_POLICY_HPP
@@ -27,6 +14,7 @@
 #include <traits/Kokkos_IndexTypeTrait.hpp>
 #include <traits/Kokkos_IterationPatternTrait.hpp>
 #include <traits/Kokkos_LaunchBoundsTrait.hpp>
+#include <traits/Kokkos_StaticBatchSizeTrait.hpp>
 #include <traits/Kokkos_OccupancyControlTrait.hpp>
 #include <traits/Kokkos_ScheduleTrait.hpp>
 #include <traits/Kokkos_WorkItemPropertyTrait.hpp>
@@ -143,7 +131,7 @@ struct AnalyzeExecPolicyUseMatcher<void, type_list<>, Trait, Traits...> {
   static constexpr auto trigger_error_message =
       show_name_of_invalid_execution_policy_trait<Trait>{};
   static_assert(
-      /* always false: */ std::is_void<Trait>::value,
+      /* always false: */ std::is_void_v<Trait>,
       "Unknown execution policy trait. Search compiler output for "
       "'show_name_of_invalid_execution_policy_trait' to see the type of the "
       "invalid trait.");

@@ -38,6 +38,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Part.hpp>       // for PartLess, intersect, Part, etc
 #include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
+#include <stk_mesh/baseImpl/PartAttribute.hpp>
 #include <string>                       // for string, char_traits
 #include <vector>                       // for vector
 #include "stk_mesh/base/Types.hpp"      // for PartVector
@@ -55,7 +56,6 @@ TEST(UnitTestPart, testUnit)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
-  m.use_simple_fields();
   PartRepository partRepo(&m);
   PartRepository partRepo2(&m);
   PartRepository partRepo3(&m);
@@ -123,13 +123,35 @@ TEST(UnitTestPart, testUnit)
 
 }
 
-//----------------------------------------------------------------------
+struct TestAttribute
+{
+  bool value;
+};
+
+TEST(UnitTestPart, PartAttribute)
+{
+  const int spatialDim = 3;
+  MetaData m(spatialDim);
+  PartRepository partRepo(&m);
+  Part & universal = *partRepo.universal_part();
+  m.commit();
+
+  EXPECT_FALSE(stk::mesh::impl::has_part_attribute<int>(universal));
+  EXPECT_FALSE(stk::mesh::impl::has_part_attribute<TestAttribute>(universal));
+
+  stk::mesh::impl::set_part_attribute<TestAttribute>(universal, false);
+  EXPECT_TRUE(stk::mesh::impl::has_part_attribute<TestAttribute>(universal));
+  EXPECT_FALSE(stk::mesh::impl::get_part_attribute<TestAttribute>(universal));
+
+  stk::mesh::impl::set_part_attribute<TestAttribute>(universal, true);
+  EXPECT_TRUE(stk::mesh::impl::has_part_attribute<TestAttribute>(universal));
+  EXPECT_TRUE(stk::mesh::impl::get_part_attribute<TestAttribute>(universal));
+}
 
 TEST(UnitTestPart, testPartVector)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
-  m.use_simple_fields();
   PartRepository partRepo(&m);
 
   Part * const pa =  partRepo.declare_part( std::string("a") , stk::topology::NODE_RANK );

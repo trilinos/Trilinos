@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_DRIVER_HPP__
 #define __TACHO_DRIVER_HPP__
@@ -24,6 +16,7 @@ Sandia National Laboratories, Albuquerque, NM, USA
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho.hpp"
+#include "Tacho_Util.hpp"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
@@ -32,7 +25,7 @@ namespace Tacho {
 
 /// forward decl
 class Graph;
-#if defined(TACHO_HAVE_METIS)
+#if defined(TACHO_HAVE_METIS) || defined(TACHO_HAVE_TRILINOS_SS)
 class GraphTools_Metis;
 #else
 class GraphTools;
@@ -50,6 +43,7 @@ template <typename ValueType, typename DeviceType, int Var> class NumericToolsLe
 template <typename ValueType, typename DeviceType> struct Driver {
 public:
   using value_type = ValueType;
+  using mag_type = typename ArithTraits<ValueType>::mag_type;
   using device_type = DeviceType;
   using exec_space = typename device_type::execution_space;
   using exec_memory_space = typename device_type::memory_space;
@@ -71,7 +65,7 @@ public:
   using crs_matrix_type = CrsMatrixBase<value_type, device_type>;
   using crs_matrix_type_host = CrsMatrixBase<value_type, host_device_type>;
 
-#if defined(TACHO_HAVE_METIS)
+#if defined(TACHO_HAVE_METIS) || defined(TACHO_HAVE_TRILINOS_SS)
   using graph_tools_type = GraphTools_Metis;
 #else
   using graph_tools_type = GraphTools;
@@ -85,13 +79,15 @@ public:
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
 
 private:
-  enum : int { Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
+  enum : int { LDL_nopiv = 0, Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
 
   // ** solver mode
+  ordinal_type _method_setup;
   ordinal_type _method;
 
   // ** ordering options
-  ordinal_type _order_connected_graph_separately;
+  bool _order_connected_graph_separately;
+  int _graph_algo_type;
 
   // ** problem
   ordinal_type _m;
@@ -119,6 +115,7 @@ private:
   ordinal_type_array_host _h_peri_graph;
 
   // ** symbolic factorization output
+  ordinal_type _nnz_u;
   // supernodes output
   ordinal_type _nsupernodes;
   ordinal_type_array _supernodes;
@@ -154,22 +151,37 @@ private:
   ordinal_type _verbose;             // print
   ordinal_type _small_problem_thres; // smaller than this, use lapack
 
+#ifdef TACHO_DEPRECATED_PARAMETERS
   // // ** tasking options
   ordinal_type _serial_thres_size; // serialization threshold size
   ordinal_type _mb;                // block size for byblocks algorithms
   ordinal_type _nb;                // panel size for panel algorithms
   ordinal_type _front_update_mode; // front update mode 0 - lock, 1 - atomic
+#endif
 
   // ** levelset options
+#ifdef TACHO_DEPRECATED_PARAMETERS
   bool _levelset;                    // use level set code instead of tasking
+#endif
   ordinal_type _device_level_cut;    // above this level, matrices are computed on device
   ordinal_type _device_factor_thres; // bigger than this threshold, device function is used
   ordinal_type _device_solve_thres;  // bigger than this threshold, device function is used
   ordinal_type _variant;             // algorithmic variant in levelset 0: naive, 1: invert diagonals
   ordinal_type _nstreams;            // on cuda, multi streams are used
+  bool _team_on_user_stream;         // run team/batched kernel on user steram-0
 
+  int _shift_diag;                   // shift diagonal with small perturbation
+  mag_type _shift;
+  value_type_array _dv;
+
+  int _replace_tiny_pivot;           // replace tiny pivot
+  mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
+  bool _store_transpose;             // store transpose explicitly
+
+#ifdef TACHO_DEPRECATED_PARAMETERS
   // parallelism and memory constraint is made via this parameter
   ordinal_type _max_num_superblocks; // # of superblocks in the memoyrpool
+#endif
 
 public:
   Driver();
@@ -188,12 +200,14 @@ public:
   void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024);
   void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                      const bool is_positive_definite);
-  void setSolutionMethod(const int method); /// 1 - cholesky, 2 - LDL, 3 - LU
+  void setSolutionMethod(const int method);      /// 1 - cholesky, 2 - LDL, 3 - LU
+  void setFactorizationMethod(const int method); /// 1 - cholesky, 2 - LDL, 3 - LU
 
   ///
   /// Graph options
   ///
-  void setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately = 1);
+  void setOrderConnectedGraphSeparately(const bool order_connected_graph_separately = true);
+  void setGraphAlgorithmType(const int graph_algo_type);
 
   ///
   /// tasking options
@@ -211,12 +225,20 @@ public:
   void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut);
   void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
                                                 const ordinal_type device_solve_thres);
-  void setLevelSetOptionNumStreams(const ordinal_type nstreams);
+  void setLevelSetOptionNumStreams(const ordinal_type nstreams, const bool team_on_user_stream = false);
   void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
+
+  void shiftDiagonal(const int option = 1);
+  mag_type currentShift() { return _shift; }
+  void setPivotTolerance(const mag_type pivot_tol);
+  void useNoPivotTolerance();
+  void useDefaultPivotTolerance(const int option = 1);
+  void storeExplicitTranspose(bool flag);
 
   ///
   /// get interface
   ///
+  ordinal_type getNumNonZerosU() const;
   ordinal_type getNumSupernodes() const;
   ordinal_type_array getSupernodes() const;
   ordinal_type_array getPermutationVector() const;
@@ -230,6 +252,7 @@ public:
   template <typename arg_size_type_array, typename arg_ordinal_type_array>
   int analyze(const ordinal_type m, const arg_size_type_array &ap, const arg_ordinal_type_array &aj,
               const bool duplicate = false) {
+
     _m = m;
 
     if (duplicate) {
@@ -278,6 +301,7 @@ public:
               const arg_perm_type_array &perm, const arg_perm_type_array &peri, const bool duplicate = false) {
     _m = m;
 
+    // this takes the user-specified perm, such that analyze() won't call graph partitioner
     if (duplicate) {
       /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
       _h_ap = size_type_array_host(Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0));
@@ -383,19 +407,62 @@ public:
     return analyze();
   }
 
+  template <typename arg_size_type_array, typename arg_ordinal_type_array>
+  int analyze(const ordinal_type m, const ordinal_type blk_size,
+              const arg_size_type_array &ap, const arg_ordinal_type_array &aj,
+              const bool duplicate = false) {
+
+    if (blk_size > 1) {
+      //condense graph before calling analyze
+      const size_type nnz = ap(m);
+      ordinal_type m_graph = m / blk_size;
+      size_type nnz_graph = nnz / (blk_size*blk_size);
+      TACHO_TEST_FOR_EXCEPTION((m != blk_size * m_graph || nnz != size_type(blk_size*blk_size) * nnz_graph),
+        std::logic_error, "Failed to initialize the condensed graph");
+
+      size_type_array_host ap_graph
+        (Kokkos::ViewAllocateWithoutInitializing("ap_graph"), 1+m_graph);
+      ordinal_type_array_host aj_graph
+        (Kokkos::ViewAllocateWithoutInitializing("aj_graph"), nnz_graph);
+      ordinal_type_array_host aw_graph
+        (Kokkos::ViewAllocateWithoutInitializing("wgs"), m_graph);
+      // condense the graph
+      nnz_graph = 0;
+      ap_graph(0) = 0;
+      for (ordinal_type i = 0; i < m; i += blk_size) {
+        for (size_type k = ap(i); k < ap(i+1); k++) {
+          if (aj(k)%blk_size == 0) {
+            aj_graph(nnz_graph) = aj(k)/blk_size;
+            nnz_graph++;
+          }
+          aw_graph(i/blk_size) = blk_size;
+          ap_graph((i/blk_size)+1) = nnz_graph;
+        }
+      }
+      TACHO_TEST_FOR_EXCEPTION((nnz != size_type(blk_size*blk_size) * nnz_graph),
+        std::logic_error, "Failed to condense graph");
+      return analyze(m, ap, aj, m_graph, ap_graph, aj_graph, aw_graph, duplicate);
+    } else {
+      return analyze(m, ap, aj, duplicate);
+    }
+  }
+
   int initialize();
 
   int factorize(const value_type_array &ax);
-  int factorize_small_host(const value_type_array &ax);
+  int factorize(const value_type_array &ax, ordinal_type method);
+  int factorize_small_host(const value_type_array &ax, const mag_type shift);
 
   int solve(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
   int solve_small_host(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
 
-  double computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x, const value_type_matrix &b);
+  double computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x, const value_type_matrix &b, const mag_type shift = 0.0);
   void   computeSpMV(const value_type_array &ax, const value_type_matrix &x, value_type_matrix &b);
 
   int exportFactorsToCrsMatrix(crs_matrix_type &A);
   int release();
+
+  void printParameters();
 };
 
 } // namespace Tacho

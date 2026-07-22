@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,20 +30,14 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef STK_MESH_BASE_NGPFIELDBLAS_HPP
 #define STK_MESH_BASE_NGPFIELDBLAS_HPP
 
 #include <stk_util/stk_config.h>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/NgpField.hpp>
-#include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/baseImpl/NgpFieldBLASImpl.hpp>
 
@@ -52,139 +46,514 @@
 #include <iostream>
 #include <algorithm>
 
-namespace stk {
-namespace mesh {
+namespace stk::mesh {
 
-template<class Scalar, typename EXEC_SPACE>
-inline
-void field_fill(const Scalar alpha, const FieldBase& field, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+namespace impl {
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template<class EXEC_SPACE>
+STK_DEPRECATED
+constexpr bool operate_on_ngp_mesh()
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
 #ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
+
+#ifdef STK_ENABLE_GPU
+  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
+  constexpr bool operateOnNgpMesh = isActuallyDeviceExecSpace;
 #else
-  constexpr bool operateOnDevice = false;
+  constexpr bool operateOnNgpMesh = true;
 #endif
 
-  field.clear_sync_state();
+#else
+  constexpr bool operateOnNgpMesh = false;
+#endif
 
-  if constexpr (operateOnDevice) {
-    NgpField<Scalar>& ngpField = get_updated_ngp_field<Scalar>(field);
-    impl::field_fill_no_sync_or_mark(alpha, ngpField, execSpace);
+  return operateOnNgpMesh;
+}
+#endif
+
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template<class Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, field, component, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_fill(const Scalar alpha,
+                const FieldBase& field,
+                int component,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, field, component, selector, execSpace);
   }
   else {
-    stk::mesh::field_fill(alpha, field);
-  }
-
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    field.modify_on_device();
-  }
-  else {
-    field.modify_on_host();
+    stk::mesh::field_fill<stk::ngp::HostSpace>(alpha, field, component, selector, execSpace);
   }
 }
 
-template<class Scalar, typename EXEC_SPACE>
-inline
-void field_fill(const Scalar alpha, const FieldBase& field, const Selector& selector, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+template<class Scalar, class EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, field, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_fill(const Scalar alpha,
+                const FieldBase& field,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
-#ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
-#else
-  constexpr bool operateOnDevice = false;
-#endif
-
-  field.clear_sync_state();
-
-  if constexpr (operateOnDevice) {
-    NgpField<Scalar>& ngpField = get_updated_ngp_field<Scalar>(field);
-    impl::field_fill_no_sync_or_mark(alpha, ngpField, selector, execSpace);
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, field, execSpace);
   }
   else {
-    stk::mesh::field_fill(alpha, field, selector);
+    stk::mesh::field_fill<stk::ngp::HostSpace>(alpha, field, execSpace);
   }
+}
 
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    field.modify_on_device();
+template<class Scalar, class EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, field, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_fill(const Scalar alpha,
+                const FieldBase& field,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, field, selector, execSpace);
   }
   else {
-    field.modify_on_host();
+    stk::mesh::field_fill<stk::ngp::HostSpace>(alpha, field, selector, execSpace);
+  }
+}
+
+
+template<class Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, fields, component, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_fill(const Scalar alpha,
+                const std::vector<const FieldBase*>& fields,
+                int component,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, fields, component, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_fill<stk::ngp::HostSpace>(alpha, fields, component, selector, execSpace);
+  }
+}
+
+template<class Scalar, class EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, fields, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_fill(const Scalar alpha,
+                const std::vector<const FieldBase*>& fields,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, fields, execSpace);
+  }
+  else {
+    stk::mesh::field_fill<stk::ngp::HostSpace>(alpha, fields, execSpace);
+  }
+}
+
+template<class Scalar, class EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, fields, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_fill(const Scalar alpha,
+                const std::vector<const FieldBase*>& fields,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(alpha, fields, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_fill<stk::ngp::HostSpace>(alpha, fields, selector, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amax<stk::ngp::DeviceSpace>(amaxOut, xField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_amax(Scalar& amaxOut,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace, EXEC_SPACE>) )
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_amax<stk::ngp::DeviceSpace>(amaxOut, xField, execSpace);
+  }
+  else {
+    stk::mesh::field_amax<stk::ngp::HostSpace>(amaxOut, xField, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amax<stk::ngp::DeviceSpace>(amaxOut, xField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_amax(Scalar& amaxOut,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace, EXEC_SPACE>) )
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_amax<stk::ngp::DeviceSpace>(amaxOut, xField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_amax<stk::ngp::HostSpace>(amaxOut, xField, selector, execSpace);
   }
 }
 
 template<typename EXEC_SPACE>
-inline
-void field_copy(const FieldBase& xField, const FieldBase& yField, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_copy<stk::ngp::DeviceSpace>(xField, yField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_copy(const FieldBase& xField,
+                const FieldBase& yField,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
-#ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
-#else
-  constexpr bool operateOnDevice = false;
-#endif
-
-  yField.clear_sync_state();
-
-  if constexpr (operateOnDevice) {
-    xField.sync_to_device();
-    impl::field_copy_no_sync_or_mark(xField, yField, execSpace);
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_copy<stk::ngp::DeviceSpace>(xField, yField, execSpace);
   }
   else {
-    xField.sync_to_host();
-    stk::mesh::field_copy(xField, yField);
-  }
-
-  yField.clear_sync_state();
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    yField.modify_on_device();
-  }
-  else {
-    yField.modify_on_host();
+    stk::mesh::field_copy<stk::ngp::HostSpace>(xField, yField, execSpace);
   }
 }
 
 template<typename EXEC_SPACE>
-inline
-void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector, const EXEC_SPACE& execSpace,
-                bool IsDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_copy<stk::ngp::DeviceSpace>(xField, yField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_copy(const FieldBase& xField,
+                const FieldBase& yField,
+                const Selector& selector,
+                const EXEC_SPACE& execSpace,
+                bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  constexpr bool isActuallyDeviceExecSpace = !Kokkos::SpaceAccessibility<EXEC_SPACE, stk::ngp::HostExecSpace::memory_space>::accessible;
-#ifdef STK_USE_DEVICE_MESH
-  constexpr bool operateOnDevice = isActuallyDeviceExecSpace;
-#else
-  constexpr bool operateOnDevice = false;
-#endif
-
-  yField.clear_sync_state();
-
-  if constexpr (operateOnDevice) {
-    xField.sync_to_device();
-    impl::field_copy_no_sync_or_mark(xField, yField, selector, execSpace);
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_copy<stk::ngp::DeviceSpace>(xField, yField, selector, execSpace);
   }
   else {
-    xField.sync_to_host();
-    stk::mesh::field_copy(xField, yField, selector);
-  }
-
-  yField.clear_sync_state();
-  const bool markModifiedOnDevice = isActuallyDeviceExecSpace || IsDeviceExecSpaceUserOverride;
-  if (markModifiedOnDevice) {
-    yField.modify_on_device();
-  }
-  else {
-    yField.modify_on_host();
+    stk::mesh::field_copy<stk::ngp::HostSpace>(xField, yField, selector, execSpace);
   }
 }
 
-} // mesh
-} // stk
+template<class DataType, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_axpby<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_axpby(const stk::mesh::BulkData& mesh,
+    const DataType alpha,
+    const stk::mesh::FieldBase & xField,
+    const DataType beta,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_axpby<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_axpby<stk::ngp::HostSpace>(alpha, xField, beta, yField, selector, execSpace);
+  }
+}
+
+template<class DataType, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_axpby<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_axpby(const stk::mesh::BulkData& mesh,
+    const DataType alpha,
+    const stk::mesh::FieldBase & xField,
+    const DataType beta,
+    const stk::mesh::FieldBase & yField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_axpby<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, execSpace);
+  }
+  else {
+    stk::mesh::field_axpby<stk::ngp::HostSpace>(alpha, xField, beta, yField, execSpace);
+  }
+}
+
+template<class Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_axpbyz<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, zField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_axpbyz(const stk::mesh::BulkData& mesh,
+    const Scalar alpha,
+    const stk::mesh::FieldBase & xField,
+    const Scalar beta,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::FieldBase & zField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_axpbyz<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, zField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_axpbyz<stk::ngp::HostSpace>(alpha, xField, beta, yField, zField, selector, execSpace);
+  }
+}
+
+template<class Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_axpbyz<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, zField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_axpbyz(const stk::mesh::BulkData& mesh,
+    const Scalar alpha,
+    const stk::mesh::FieldBase & xField,
+    const Scalar beta,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::FieldBase & zField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_axpbyz<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, zField, execSpace);
+  }
+  else {
+    stk::mesh::field_axpbyz<stk::ngp::HostSpace>(alpha, xField, beta, yField, zField, execSpace);
+  }
+}
+
+
+template<class Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_axpy<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_axpy(const stk::mesh::BulkData& mesh,
+    const Scalar alpha,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_axpy<stk::ngp::DeviceSpace>(alpha, xField, yField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_axpy<stk::ngp::HostSpace>(alpha, xField, yField, selector, execSpace);
+  }
+}
+
+template<class Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_axpy<stk::ngp::DeviceSpace>(alpha, xField, beta, yField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_axpy(const stk::mesh::BulkData& mesh,
+    const Scalar alpha,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_axpy<stk::ngp::DeviceSpace>(alpha, xField, yField, execSpace);
+  }
+  else {
+    stk::mesh::field_axpy<stk::ngp::HostSpace>(alpha, xField, yField, execSpace);
+  }
+}
+
+template<typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_product<stk::ngp::DeviceSpace>(xField, yField, zField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_product(const stk::mesh::BulkData& mesh,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::FieldBase & zField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_product<stk::ngp::DeviceSpace>(xField, yField, zField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_product<stk::ngp::HostSpace>(xField, yField, zField, selector, execSpace);
+  }
+}
+
+template<typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_product<stk::ngp::DeviceSpace>(xField, yField, zField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_product(const stk::mesh::BulkData& mesh,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::FieldBase & zField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_product<stk::ngp::DeviceSpace>(xField, yField, zField, execSpace);
+  }
+  else {
+    stk::mesh::field_product<stk::ngp::HostSpace>(xField, yField, zField, execSpace);
+  }
+}
+
+
+template<typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_scale<stk::ngp::DeviceSpace>(alpha, xField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_scale(const stk::mesh::BulkData& mesh,
+    const Scalar alpha,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_scale<stk::ngp::DeviceSpace>(alpha, xField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_scale<stk::ngp::HostSpace>(alpha, xField, selector, execSpace);
+  }
+}
+
+template<typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_scale<stk::ngp::DeviceSpace>(alpha, xField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_scale(const stk::mesh::BulkData& mesh,
+    const Scalar alpha,
+    const stk::mesh::FieldBase & xField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_scale<stk::ngp::DeviceSpace>(alpha, xField, execSpace);
+  }
+  else {
+    stk::mesh::field_scale<stk::ngp::HostSpace>(alpha, xField, execSpace);
+  }
+}
+
+template<typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_swap<stk::ngp::DeviceSpace>(xField, yField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_swap(const stk::mesh::BulkData& mesh,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    const stk::mesh::Selector & selector,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_swap<stk::ngp::DeviceSpace>(xField, yField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_swap<stk::ngp::HostSpace>(xField, yField, selector, execSpace);
+  }
+}
+
+template<typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_swap<stk::ngp::DeviceSpace>(xField, yField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_swap(const stk::mesh::BulkData& mesh,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    const EXEC_SPACE& execSpace,
+    bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_swap<stk::ngp::DeviceSpace>(xField, yField, execSpace);
+  }
+  else {
+    stk::mesh::field_swap<stk::ngp::HostSpace>(xField, yField, execSpace);
+  }
+}
+
+template<typename ReturnT, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_dot<stk::ngp::DeviceSpace>(result, xField, yField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_dot(ReturnT& result,
+                      const stk::mesh::BulkData& mesh,
+                      const stk::mesh::FieldBase & xField,
+                      const stk::mesh::FieldBase & yField,
+                      const stk::mesh::Selector & selector,
+                      const EXEC_SPACE& execSpace)
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_dot<stk::ngp::DeviceSpace>(result, xField, yField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_dot<stk::ngp::HostSpace>(result, xField, yField, selector, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amin<stk::ngp::DeviceSpace>(result, xField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_amin(Scalar& aminOut,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace)
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_amin<stk::ngp::DeviceSpace>(aminOut, xField, execSpace);
+  }
+  else {
+    stk::mesh::field_amin<stk::ngp::HostSpace>(aminOut, xField, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amin<stk::ngp::DeviceSpace>(result, xField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_amin(Scalar& aminOut,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace)
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_amin<stk::ngp::DeviceSpace>(aminOut, xField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_amin<stk::ngp::HostSpace>(aminOut, xField, selector, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_sum<stk::ngp::DeviceSpace>(result, xField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_asum(Scalar& aminOut,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace )
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_asum<stk::ngp::DeviceSpace>(aminOut, xField, execSpace);
+  }
+  else {
+    stk::mesh::field_asum<stk::ngp::HostSpace>(aminOut, xField, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_sum<stk::ngp::DeviceSpace>(result, xField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_asum(Scalar& aminOut,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace)
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_asum<stk::ngp::DeviceSpace>(aminOut, xField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_asum<stk::ngp::HostSpace>(aminOut, xField, selector, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_nrm2<stk::ngp::DeviceSpace>(result, xField, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_nrm2(Scalar& nrm2Out,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace )
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_nrm2<stk::ngp::DeviceSpace>(nrm2Out, xField, execSpace);
+  }
+  else {
+    stk::mesh::field_nrm2<stk::ngp::HostSpace>(nrm2Out, xField, execSpace);
+  }
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_nrm2<stk::ngp::DeviceSpace>(result, xField, selector, execSpace)`.  execSpace is not required if you're just using the default.  To run on host, use `stk::ngp::HostSpace`")
+void field_nrm2(Scalar& nrm2Out,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace)
+{
+  if constexpr (impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    stk::mesh::field_nrm2<stk::ngp::DeviceSpace>(nrm2Out, xField, selector, execSpace);
+  }
+  else {
+    stk::mesh::field_nrm2<stk::ngp::HostSpace>(nrm2Out, xField, selector, execSpace);
+  }
+}
+#endif
+
+} // stk::mesh
 
 #endif // STK_MESH_BASE_NGPFIELDBLAS_HPP
 

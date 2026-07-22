@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,10 +9,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <exception>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <iostream>
 #include <limits>
 #include <map>
 #include <numeric>
@@ -41,14 +39,13 @@
 #include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
 #include "Ioss_Utils.h"
-#include "robin_hash.h"
 #include "skinner_interface.h"
 
 // ========================================================================
 namespace {
   template <typename INT> void skinner(Skinner::Interface &interFace, INT /*dummy*/);
   std::string                  codename;
-  std::string                  version = "1.02";
+  std::string                  version = "1.03 (2025-04-18)";
 
   void transfer_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                            Ioss::Field::RoleType role, const Ioss::IntVector &ref_nodes);
@@ -65,11 +62,9 @@ namespace {
     size_t max_face = std::string("Face Count").length();
     for (auto &eb : ebs) {
       const std::string &name = eb->name();
-      if (name.length() > max_name) {
-        max_name = name.length();
-      }
-      size_t face_width = Ioss::Utils::number_width(boundary_faces[name].size());
-      max_face          = face_width > max_face ? face_width : max_face;
+      max_name                = std::max(max_name, name.length());
+      size_t face_width       = Ioss::Utils::number_width(boundary_faces[name].size());
+      max_face                = std::max(max_face, face_width);
     }
     max_name += 4; // Padding
     max_face += 4;
@@ -146,7 +141,7 @@ int main(int argc, char *argv[])
 
   codename = Ioss::FileInfo(argv[0]).basename();
 
-  Skinner::Interface interFace;
+  Skinner::Interface interFace(version);
   bool               success = interFace.parse_options(argc, argv);
   if (!success) {
     return EXIT_FAILURE;
@@ -209,6 +204,8 @@ namespace {
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     }
 
+    dbi->set_lowercase_database_names(false);
+
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
     int          my_rank = region.get_database()->util().parallel_rank();
@@ -230,7 +227,7 @@ namespace {
       auto              &boundary = boundary_faces[name];
       auto              &faces    = face_generator.faces(name);
       for (auto &face : faces) {
-        if (face.elementCount_ == 1) {
+        if (face.element_count() == 1) {
           boundary.push_back(face);
         }
       }
@@ -325,12 +322,9 @@ namespace {
       auto               face_topo = eb->topology()->face_type(0);
       std::string        topo      = "shell";
       if (face_topo == nullptr) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: Block '{}' with topology '{}' does not have"
-                   " a unique face topology.\nThis is not supported at this time.\n",
-                   name, eb->topology()->name());
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: Block '{}' with topology '{}' does not have"
+                               " a unique face topology.\nThis is not supported at this time.\n",
+                               name, eb->topology()->name()));
       }
       if (face_topo->name() == "tri3") {
         topo = "trishell";

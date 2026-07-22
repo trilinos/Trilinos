@@ -38,14 +38,14 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_put_att_double(exoid, varid, atr_name, NC_DOUBLE, num_values, values)) !=
-      NC_NOERR) {
+      EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store double attribute %s on %s with id %" PRId64 " in file id %d",
              atr_name, ex_name_of_object(obj_type), id, exoid);
@@ -54,7 +54,7 @@ int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
   }
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -84,7 +84,7 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -97,7 +97,7 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
     status = nc_put_att_int(exoid, varid, atr_name, NC_INT, num_values, values);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store integer attribute %s on %s with id %" PRId64 " in file id %d",
              atr_name, ex_name_of_object(obj_type), id, exoid);
@@ -106,7 +106,7 @@ int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id
   }
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -137,13 +137,13 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_put_att_text(exoid, varid, atr_name, strlen(value) + 1, value)) != NC_NOERR) {
+  if ((status = nc_put_att_text(exoid, varid, atr_name, strlen(value) + 1, value)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store text attribute %s on %s with id %" PRId64 " in file id %d",
              atr_name, ex_name_of_object(obj_type), id, exoid);
@@ -152,7 +152,7 @@ int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id, c
   }
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

@@ -1,5 +1,6 @@
 tribits_configure_file(${PACKAGE_NAME}_config.h)
 
+add_subdirectory(vector)
 
 set(HEADERS "")
 set(SOURCES "")
@@ -26,4 +27,5 @@ tribits_add_library(
   mixedlang
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS mixedlang_vector
   )

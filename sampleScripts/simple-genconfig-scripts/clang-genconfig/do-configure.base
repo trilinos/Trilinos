@@ -1,0 +1,17 @@
+#!/bin/bash
+if [[ -e CMakeCache.txt ]] ; then
+  rm  CMakeCache.txt
+fi
+if [[ -d CMakeFiles ]] ; then
+  rm -r CMakeFiles
+fi  
+cmake \
+-GNinja \
+-C GenConfigSettings.cmake \
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+-D CTEST_BUILD_NAME=clang-$(clang++ --version | head -1 | cut -d ' ' -f 3)-mpich-$(mpirun --version | head -1 | cut -d ' ' -f 4)-$(git branch --show-current) \
+-D CTEST_BUILD_FLAGS=-j$(nproc) \
+-D CTEST_PARALLEL_LEVEL=$(nproc) \
+-D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=OFF \
+"$@" \
+../..

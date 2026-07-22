@@ -54,6 +54,7 @@ namespace Amesos2 {
     typedef GlobalOrdinal                   global_ordinal_t;
     typedef Node                            node_t;
     typedef Tpetra::global_size_t           global_size_t;
+    typedef typename multivec_t::dual_view_type::t_host::value_type host_value_t;
 
     friend Teuchos::RCP<MultiVecAdapter<multivec_t> > createMultiVecAdapter<> (Teuchos::RCP<multivec_t>);
     friend Teuchos::RCP<const MultiVecAdapter<multivec_t> > createConstMultiVecAdapter<> (Teuchos::RCP<const multivec_t>);
@@ -262,6 +263,22 @@ namespace Amesos2 {
                                         node_t> > source_map,
                                         EDistribution distribution );
 
+    template<typename KV, typename host_ordinal_type_array>
+    LocalOrdinal
+    gather (KV& kokkos_new_view,
+            host_ordinal_type_array &perm_g2l,
+            host_ordinal_type_array &recvCountRows,
+            host_ordinal_type_array &recvDisplRows,
+            EDistribution distribution) const;
+
+    template<typename KV, typename host_ordinal_type_array>
+    LocalOrdinal
+    scatter (KV& kokkos_new_view,
+             host_ordinal_type_array &perm_g2l,
+             host_ordinal_type_array &recvCountRows,
+             host_ordinal_type_array &recvDisplRows,
+             EDistribution distribution) const;
+
 
     //! Get a short description of this adapter class
     std::string description () const;
@@ -275,6 +292,7 @@ namespace Amesos2 {
   private:
     //! The multivector which this adapter wraps
     Teuchos::RCP<multivec_t> mv_;
+    mutable typename multivec_t::host_view_type buf_;
 
     //! The Tpetra::Export specialization used by this class.
     typedef Tpetra::Export<local_ordinal_t, global_ordinal_t, node_t> export_type;

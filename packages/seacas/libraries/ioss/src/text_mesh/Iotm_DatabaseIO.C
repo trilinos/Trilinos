@@ -11,11 +11,11 @@
 #include "Ioss_SmartAssert.h"
 #include <cassert> // for assert
 #include <cmath>   // for sqrt
+#include <cstdlib>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iostream> // for ostringstream
-#include <stdlib.h>
-#include <string> // for string, operator==, etc
+#include <string>   // for string, operator==, etc
 #include <vector>
 
 #include "Ioss_Assembly.h"        // for Assembly
@@ -641,6 +641,19 @@ namespace Iotm {
     for (int i = 0; i < time_step_count; i++) {
       get_region()->add_state(i);
     }
+  }
+
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    std::vector<double> timesteps;
+
+    int time_step_count = m_textMesh->timestep_count();
+    timesteps.reserve(time_step_count);
+    for (int i = 0; i < time_step_count; i++) {
+      timesteps.push_back(i);
+    }
+
+    return timesteps;
   }
 
   void DatabaseIO::update_block_omissions_from_assemblies()

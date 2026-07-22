@@ -1,46 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file Zoltan2_ComparisonHelper.hpp
@@ -57,6 +21,7 @@
 #include <AdapterForTests.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Time.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <sstream>
 #include <string>
@@ -79,27 +44,44 @@ using namespace Zoltan2_TestingFramework;
 class ComparisonSource
 {
 public:
-  /* \brief Add a timer by name to the comparison sources timers map.
-   * \param name is the name of the timer to be defined
-   */
-  void addTimer(const std::string &name)
-  {
-    timers.insert(std::pair<const std::string &, RCP<Time> >(name,rcp(new Time(name))));
-    timers[name]->enable();
+
+  ComparisonSource(Teuchos::RCP<Teuchos::StackedTimer>& stackedTimer,
+                   const std::string& problemName)
+  : stackedTimer_(stackedTimer)
+  , problemName_(problemName) {}
+
+  void startBaseTimer() {
+    stackedTimer_->start(problemName_);
   }
 
-  void printTimers() 
-  {
-    for(auto it = timers.begin(); it != timers.end(); ++it) {
-      std::cout << it->first << " " << it->second->totalElapsedTime() 
-                << std::endl;
+  void stopBaseTimer() {
+    stackedTimer_->stop(problemName_);
+  }
+
+  void startTimer(const std::string& timerName) {
+    stackedTimer_->start(timerName);
+  }
+
+  void stopTimer(const std::string& timerName) {
+    stackedTimer_->stop(timerName);
+  }
+
+  std::map<std::string, double> getTimingsMap() const {
+    // todo: get all sub-timers
+    std::map<std::string, double> timings;
+    std::string prefix = stackedTimer_->name()+"@"+problemName_+"@";
+    for (auto timerName : {"adapter construction timer", "problem construction time", "solve time"}) {
+      auto t = stackedTimer_->findTimer(prefix+timerName);
+      timings[timerName] = t.time;
     }
+    return timings;
   }
 
-  // TODO:  Add method to print a timer summary:  max/min/avg over all procs
-  
-  std::map<const std::string, RCP<Time> > timers;
+private:
+  Teuchos::RCP<Teuchos::StackedTimer> stackedTimer_;
+  const std::string problemName_;
 
+public:
   RCP<EvaluateFactory> evaluateFactory;
   RCP<ProblemFactory> problemFactory;
   RCP<AdapterFactory> adapterFactory;
@@ -110,6 +92,10 @@ public:
 class ComparisonHelper
 {
 public:
+
+  ComparisonHelper(Teuchos::RCP<Teuchos::StackedTimer>& stackedTimer)
+  :stackedTimer_(stackedTimer) {}
+
   /* \brief Compare the solutions, metrics or timers of two Zoltan2 solutions.
    * \param pList is a parameter list defining the comparison
    * \param comm is the process communicator
@@ -120,7 +106,7 @@ public:
    * \param name is the name of the new source
    * \param source a problem source that to be used for comparison to another source
    */
-  void AddSource(const string &name, RCP<ComparisonSource> source);
+  RCP<ComparisonSource> AddSource(const string &name);
   
   /* \brief Return the total number of saved sources.
    */
@@ -242,15 +228,19 @@ private:
   reduceWithMessage(const RCP<const Comm<int> > &comm,
                     const std::string &msg_in,
                     int &local_status, std::ostringstream &msg);
+
+private:
+  RCP<Teuchos::StackedTimer> stackedTimer_;
   
 };
 
 
-void ComparisonHelper::AddSource(const string &name,
-                                 RCP<ComparisonSource> source)
+RCP<ComparisonSource> ComparisonHelper::AddSource(const string &name)
 {
   typedef std::pair<const string &, RCP<const ComparisonSource> > pair_t;
+  auto source = Teuchos::rcp(new ComparisonSource(stackedTimer_, name));
   this->sources.insert(pair_t(name, source));
+  return source;
 }
 
 bool ComparisonHelper::Compare(const ParameterList &pList,
@@ -550,8 +540,8 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   RCP<const ComparisonSource> sourceRef = this->sources[ref_name];
 
   // get timing data
-  std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);
-  std::map< const string, const double> ref_timers = this->timerDataToMap(sourceRef->timers);
+  const std::map< string, double>& prb_timers = sourcePrb->getTimingsMap();
+  const std::map< string, double>& ref_timers = sourceRef->getTimingsMap();
 
   // get all of the metrics to be tested
   std::queue<ParameterList> metrics = ComparisonHelper::getMetricsToCompare(metricsPlist);
@@ -614,16 +604,6 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   }
 
   return (all_tests_pass == 1);
-}
-
-std::map<const string, const double> ComparisonHelper::timerDataToMap(const map<const std::string, RCP<Time> > &timers)
-{
-  typedef std::pair<const string,const double> pair_t;
-  std::map<const string, const double> time_data;
-  for (auto &i : timers) {
-    time_data.insert(pair_t(i.first, i.second->totalElapsedTime()));
-  }
-  return time_data;
 }
 
 bool ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,

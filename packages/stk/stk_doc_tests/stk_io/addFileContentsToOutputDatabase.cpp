@@ -78,7 +78,6 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
     // ============================================================
     //+ EXAMPLE
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     size_t ifh = stkIo.add_mesh_database("9x9x9|shell:xyzXYZ", "generated", stk::io::READ_MESH);
     stkIo.set_active_mesh(ifh);
     stkIo.create_input_mesh();
@@ -107,7 +106,6 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
 
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     // Verify output mesh contains the data in
     // 'input_file' as information records...  Note that
     // the output mesh will contain all element blocks; however, the

@@ -41,35 +41,34 @@
 
 namespace stk::topology_detail {
 
-//------------------------------------------------------------------------------
 template <typename Topology, unsigned EdgeOrdinal>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr unsigned num_edge_nodes_() {
   return (Topology::edge_node_ordinals_offsets[EdgeOrdinal+1] - Topology::edge_node_ordinals_offsets[EdgeOrdinal]);
 }
 
 template <typename Topology, unsigned FaceOrdinal>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr unsigned num_face_nodes_() {
   return (Topology::face_node_ordinals_offsets[FaceOrdinal+1] - Topology::face_node_ordinals_offsets[FaceOrdinal]);
 }
 
 template <typename Topology, unsigned EdgeOrdinal, unsigned NodeOrdinal>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr unsigned edge_node_ordinal_()
 {
   return (Topology::edge_node_ordinals_vector[Topology::edge_node_ordinals_offsets[EdgeOrdinal] + NodeOrdinal]);
 }
 
 template <typename Topology, unsigned FaceOrdinal, unsigned NodeOrdinal>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr unsigned face_node_ordinal_()
 {
   return (Topology::face_node_ordinals_vector[Topology::face_node_ordinals_offsets[FaceOrdinal] + NodeOrdinal]);
 }
 
 template <typename Topology, unsigned PermutationOrdinal, unsigned NodeOrdinal>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr unsigned permutation_node_ordinal_()
 {
   return Topology::permutation_node_ordinals_vector[PermutationOrdinal*Topology::num_nodes + NodeOrdinal];
@@ -78,7 +77,7 @@ constexpr unsigned permutation_node_ordinal_()
 
 //------------------------------------------------------------------------------
 template <typename Topology, unsigned SpatialDimension>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr bool defined_on_spatial_dimension_()
 {
   static_assert(SpatialDimension < 4, "Invalid spatial dimension");
@@ -88,7 +87,7 @@ constexpr bool defined_on_spatial_dimension_()
 //------------------------------------------------------------------------------
 
 template <typename Topology, unsigned EdgeOrdinal>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr topology::topology_t edge_topology_()
 {
   if constexpr (EdgeOrdinal < Topology::num_edges)
@@ -101,7 +100,7 @@ constexpr topology::topology_t edge_topology_()
 //------------------------------------------------------------------------------
 
 template <typename Topology, unsigned FaceOrdinal>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr topology::topology_t face_topology_()
 {
   if constexpr (FaceOrdinal < Topology::num_faces)
@@ -113,21 +112,43 @@ constexpr topology::topology_t face_topology_()
 
 //------------------------------------------------------------------------------
 
-template <typename Topology, unsigned ShellSideOrdinal>
-STK_INLINE_FUNCTION
-constexpr topology::topology_t shell_side_topology_()
+template <typename Topology, unsigned SideOrdinal>
+KOKKOS_INLINE_FUNCTION
+constexpr topology::rank_t side_rank_()
 {
-  if constexpr (Topology::is_shell && Topology::dimension == 3 && ShellSideOrdinal < Topology::num_edges)
-  {
-    return Topology::shell_side_topology_vector[ShellSideOrdinal];
+  if constexpr (SideOrdinal < Topology::num_faces) {
+    return topology::FACE_RANK;
+  } else {
+    return topology::EDGE_RANK;
   }
-  return topology::INVALID_TOPOLOGY;
+  return Topology::side_rank;
+}
+
+template <typename Topology>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned num_side_ranks_() {
+  if constexpr (Topology::has_mixed_rank_sides) {
+    return 2u;
+  }
+  return (Topology::side_rank != topology::INVALID_RANK ? 1u : 0u);
+}
+
+template <typename Topology, typename SideRankOutputIterator>
+KOKKOS_INLINE_FUNCTION
+constexpr void side_ranks_( SideRankOutputIterator output_ranks )
+{
+  if constexpr (num_side_ranks_<Topology>() == 2) {
+    *output_ranks = topology::FACE_RANK; ++output_ranks;
+    *output_ranks = topology::EDGE_RANK;
+  } else if constexpr (num_side_ranks_<Topology>() == 1) {
+    *output_ranks = Topology::side_rank;
+  }
 }
 
 //------------------------------------------------------------------------------
 template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
 struct edge_node_ordinals_impl_ {
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   constexpr static int execute(OrdinalOutputFunctor fillOutput) {
     return fillOutput(edge_node_ordinal_<Topology, EdgeOrdinal, CurrentNode>()),
            edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, NumNodes, CurrentNode+1>::execute(fillOutput);
@@ -136,14 +157,14 @@ struct edge_node_ordinals_impl_ {
 
 template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes>
 struct edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, NumNodes, NumNodes> {
-  STK_INLINE_FUNCTION
-  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+  KOKKOS_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor /*fillOutput*/) {
     return 0;
   }
 };
 
 template <typename Topology, unsigned EdgeOrdinal, typename OrdinalOutputFunctor>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr int edge_node_ordinals_(OrdinalOutputFunctor fillOutput)
 {
   if constexpr (EdgeOrdinal < Topology::num_edges)
@@ -157,7 +178,7 @@ constexpr int edge_node_ordinals_(OrdinalOutputFunctor fillOutput)
 //------------------------------------------------------------------------------
 template <typename Topology, typename OrdinalOutputFunctor, unsigned FaceOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
 struct face_node_ordinals_impl_ {
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   constexpr static int execute(OrdinalOutputFunctor fillOutput) {
     return fillOutput(face_node_ordinal_<Topology, FaceOrdinal, CurrentNode>()),
            face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, NumNodes, CurrentNode+1>::execute(fillOutput);
@@ -166,14 +187,14 @@ struct face_node_ordinals_impl_ {
 
 template <typename Topology, typename OrdinalOutputFunctor, unsigned FaceOrdinal, unsigned NumNodes>
 struct face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, NumNodes, NumNodes> {
-  STK_INLINE_FUNCTION
-  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+  KOKKOS_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor /*fillOutput*/) {
     return 0;
   }
 };
 
 template <typename Topology, unsigned FaceOrdinal, typename OrdinalOutputFunctor>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr int face_node_ordinals_(OrdinalOutputFunctor fillOutput)
 {
   if constexpr (FaceOrdinal < Topology::num_faces)
@@ -187,7 +208,7 @@ constexpr int face_node_ordinals_(OrdinalOutputFunctor fillOutput)
 //------------------------------------------------------------------------------
 template <typename Topology, typename OrdinalOutputFunctor, unsigned PermutationOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
 struct permutation_node_ordinals_impl_ {
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   constexpr static int execute(OrdinalOutputFunctor fillOutput) {
     return fillOutput(permutation_node_ordinal_<Topology, PermutationOrdinal, CurrentNode>()),
            permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, NumNodes, CurrentNode+1>::execute(fillOutput);
@@ -196,14 +217,14 @@ struct permutation_node_ordinals_impl_ {
 
 template <typename Topology, typename OrdinalOutputFunctor, unsigned PermutationOrdinal, unsigned NumNodes>
 struct permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, NumNodes, NumNodes> {
-  STK_INLINE_FUNCTION
-  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+  KOKKOS_INLINE_FUNCTION
+  constexpr static int execute(OrdinalOutputFunctor /*fillOutput*/) {
     return 0;
   }
 };
 
 template <typename Topology, unsigned PermutationOrdinal, typename OrdinalOutputFunctor>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 constexpr int permutation_node_ordinals_(OrdinalOutputFunctor fillOutput)
 {
   if constexpr (PermutationOrdinal < Topology::num_permutations)

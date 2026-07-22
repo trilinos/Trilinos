@@ -25,7 +25,6 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
     builder.set_spatial_dimension(3);
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Part* part = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
     stk::mesh::Field<double>& edgeField = meta.declare_field<double>(stk::topology::EDGE_RANK, "edgeField", numStates);
@@ -37,10 +36,12 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
     stk::mesh::EntityVector edges;
     stk::mesh::get_entities(*bulk, stk::topology::EDGE_RANK, meta.universal_part(), edges);
 
-    for(auto edge : edges) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
+    auto edgeFieldData = edgeField.data<stk::mesh::ReadWrite>();
 
-      *data = bulk->identifier(edge);
+    for(auto edge : edges) {
+      auto data = edgeFieldData.entity_values(edge);
+
+      data() = bulk->identifier(edge);
     }
 
     stk::io::StkMeshIoBroker ioBroker;
@@ -51,7 +52,6 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
   {
     std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
     stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-    meta.use_simple_fields();
 
     stk::mesh::Field<double>& edgeField = meta.declare_field<double>(stk::topology::EDGE_RANK, "edgeField", numStates);
     stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(), nullptr);
@@ -67,11 +67,13 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
     stk::mesh::EntityVector edges;
     stk::mesh::get_entities(*bulk, stk::topology::EDGE_RANK, edges);
 
+    auto edgeFieldData = edgeField.data();
+
     for(auto edge : edges) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
+      auto data = edgeFieldData.entity_values(edge);
       double expectedValue = bulk->identifier(edge);
 
-      EXPECT_EQ(expectedValue, *data);
+      EXPECT_EQ(expectedValue, data());
     }
   }
 

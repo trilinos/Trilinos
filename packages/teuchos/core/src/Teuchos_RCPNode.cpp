@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_RCPNode.hpp"
@@ -271,6 +239,52 @@ any* RCPNode::get_optional_extra_data( const std::string& type_name,
   if(itr != extra_data_map_->end())
     return &(*itr).second.extra_data;
   return NULL;
+}
+
+
+void throw_invalid_obj_exception_free_fun( const std::string& rcp_type_name,
+    const void* rcp_ptr,
+    const RCPNode* rcp_node_ptr,
+    const void* rcp_obj_ptr,
+    const void *ptr_,
+#ifdef TEUCHOS_DEBUG
+    const void *deleted_ptr_,
+#endif
+    const std::string& type_name)
+{
+  TEUCHOS_TEST_FOR_EXCEPT_MSG( ptr_!=0, "Internal coding error!" );
+  const void* deleted_ptr =
+#ifdef TEUCHOS_DEBUG
+  deleted_ptr_
+#else
+  0
+#endif
+  ;
+  TEUCHOS_ASSERT(rcp_node_ptr);
+  TEUCHOS_TEST_FOR_EXCEPTION( true, DanglingReferenceError,
+        "Error, an attempt has been made to dereference the underlying object\n"
+        "from a weak smart pointer object where the underling object has already\n"
+        "been deleted since the strong count has already gone to zero.\n"
+        "\n"
+        "Context information:\n"
+        "\n"
+        "  RCP type:             " << rcp_type_name << "\n"
+        "  RCP address:          " << rcp_ptr << "\n"
+        "  RCPNode type:         " << type_name << "\n"
+        "  RCPNode address:      " << rcp_node_ptr << "\n"
+        TEUCHOS_RCP_INSERION_NUMBER_STR()
+        "  RCP ptr address:      " << rcp_obj_ptr << "\n"
+        "  Concrete ptr address: " << deleted_ptr << "\n"
+        "\n"
+        << RCPNodeTracer::getCommonDebugNotesString()
+        );
+  // 2008/09/22: rabartl: Above, we do not provide the concreate object
+  // type or the concrete object address.  In the case of the concrete
+  // object address, in a non-debug build, we don't want to pay a price
+  // for extra storage that we strictly don't need.  In the case of the
+  // concrete object type name, we don't want to force non-debug built
+  // code to have the require that types be fully defined in order to use
+  // the memory management software.  This is related to bug 4016.
 }
 
 

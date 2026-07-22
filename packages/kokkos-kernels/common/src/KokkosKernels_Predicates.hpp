@@ -1,23 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef _KOKKOSKERNELS_PREDICATES_HPP
-#define _KOKKOSKERNELS_PREDICATES_HPP
+#ifndef KOKKOSKERNELS_PREDICATES_HPP
+#define KOKKOSKERNELS_PREDICATES_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 /*! \file KokkosKernels_Predicates.hpp
  * Define predicates for KokkosKernels search functions
@@ -32,7 +19,7 @@ namespace KokkosKernels {
 template <typename T>
 struct GT {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
                 "Please define custom predicates for ordering complex types");
 
   /**
@@ -40,9 +27,7 @@ struct GT {
    * @param a First value to be compared
    * @param b Second value to be compared
    */
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a > b;
   }
 };
@@ -53,13 +38,11 @@ struct GT {
 template <typename T>
 struct GTE {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
                 "Please define custom predicates for ordering complex types");
 
   /// \brief return a >= b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a >= b;
   }
 };
@@ -70,13 +53,11 @@ struct GTE {
 template <typename T>
 struct LT {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
                 "Please define custom predicates for ordering complex types");
 
   /// \brief return a < b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a < b;
   }
 };
@@ -87,13 +68,11 @@ struct LT {
 template <typename T>
 struct LTE {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
                 "Please define custom predicates for ordering complex types");
 
   /// \brief return a <= b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const
-      noexcept {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
     return a <= b;
   }
 };
@@ -106,10 +85,7 @@ struct Equal {
   using value_type = T;
 
   /// \brief return a == b
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const {
-    return a == b;
-  }
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const { return a == b; }
 };
 
 /**
@@ -133,8 +109,7 @@ struct Neg {
    * @param b Second value to be compared by the predicate
    * @return Boolean inverse of the result of the predicate applied to a and b
    */
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const {
     return !pred_(a, b);
   }
 
@@ -153,8 +128,7 @@ struct Refl {
   constexpr Refl(const Pred &pred) : pred_(pred) {}
 
   /// \brief return the underlying binary predicate with reversed arguments
-  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a,
-                                                   const value_type &b) const {
+  KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const {
     return pred_(b, a);
   }
 
@@ -164,4 +138,4 @@ struct Refl {
 
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNELS_PREDICATES_HPP
+#endif  // KOKKOSKERNELS_PREDICATES_HPP

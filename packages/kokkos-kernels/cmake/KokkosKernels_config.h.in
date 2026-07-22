@@ -29,10 +29,9 @@
    requires (a) header file(s) as well, and may use functions other
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
-#cmakedefine KOKKOSKERNELS_ENABLE_TPL_MKL_SYCL_OVERRIDE
 
-#cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARK
+/* Define this macro to build the benchmark tests */
+#cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARKS
 
 /* Define this macro if experimental features of Kokkoskernels are enabled */
 #cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
@@ -143,17 +142,26 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 /* ROCSOLVER */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
+/* ACCELERATE */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_ACCELERATE
 
 #cmakedefine KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
 /* if MKL or ARMPL, BLAS is also defined */
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+    defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif
 #endif
 
+/* Whether MKL is providing the BLAS and LAPACK implementation */
+#cmakedefine MKL_PROVIDES_BLAS_LAPACK
+
+/* KOKKOSKERNELS_ENABLE_HOST_ONLY is deprecated and will be removed in a future
+ * release. There is no replacement.
+ */
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
 #define KOKKOSKERNELS_ENABLE_HOST_ONLY
@@ -171,5 +179,13 @@
 #ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false
 #endif
+
+/* Enabled components */
+#cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_BATCHED
+#cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_BLAS
+#cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_LAPACK
+#cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_SPARSE
+#cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_GRAPH
+#cmakedefine KOKKOSKERNELS_ENABLE_COMPONENT_ODE
 
 #endif  // KOKKOSKERNELS_CONFIG_H

@@ -25,9 +25,7 @@
 #endif
 
 // I/O for Harwell-Boeing files
-#ifdef HAVE_BELOS_TRIUTILS
-#include "Trilinos_Util_iohb.h"
-#endif
+#include "Tpetra_Util_iohb.h"
 
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
@@ -84,22 +82,13 @@ int main(int argc, char *argv[]) {
     if (!verbose)
       frequency = -1;  // reset frequency if test is not verbose
 
-
-#ifndef HAVE_BELOS_TRIUTILS
-    std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
-    if (MyPID==0) {
-      std::cout << "End Result: TEST FAILED" << std::endl;
-    }
-    return EXIT_FAILURE;
-#endif
-
     // Get the data from the HB file
     int dim,dim2,nnz;
     MT *dvals;
     int *colptr,*rowind;
     ST *cvals;
     nnz = -1;
-    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
+    info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
         &colptr,&rowind,&dvals);
     if (info == 0 || nnz < 0) {
       if (MyPID==0) {

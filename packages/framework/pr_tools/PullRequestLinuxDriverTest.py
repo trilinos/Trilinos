@@ -3,34 +3,8 @@
 #
 # Change shebang line to '/usr/bin/python -3' for python 3.x porting warnings
 """
-This script drives a PR testing build.  It assume that Trilinos is already
-cloned under $WORKSPACE/Trilinos and that the 'origin' remote points to
-$TRILINOS_TARGET_REPO (but that is not checked here).
-
-As long as the ${WORKSPACE}/Trilinos git repo has the correct 'origin', this
-script will automatically set it up to do the merge correctly, no matter
-what its state before this script is called (i.e. from a past PR
-attempt). Unless the Trilinos/.git directory becomes corrupted, there should
-*NEVER* be any need to delete and reclone this Trilinos git repo.
-
-This script can be run in a mode where the driver scripts are run from one
-Trilinos git repo and operate on another Trilinos git repo that gets
-manipulated in order to merge the "source" topic branch into the "target"
-branch.  This makes it easy to test changes to the PR scripts.  But if this
-script is run from ${WORKSPACE}/Trilinos, then these repos are one and the same
-and we get the correct behavior for PR testing.
-
-Expectations
-------------
-
-### Required Environment Variables
-- MODULESHOME : Path to the location where modulefiles are.
-- CC : C Compiler
-- FC : Fortran Compiler
-- PULLREQUEST_CDASH_TRACK : Which CDash track should this result be published to?
-
-### Other Expectations?
-
+This script drives a PR testing build (configure, build, test, report) given
+an existing directory of Trilinos source code.
 """
 from __future__ import print_function
 
@@ -66,30 +40,11 @@ def parse_args():
     default_filename_packageenables = os.path.join("..", "packageEnables.cmake")
     default_filename_subprojects = os.path.join("..", "package_subproject_list.cmake")
 
-
-    required.add_argument('--source-repo-url',
-                          dest="source_repo_url",
-                          action='store',
-                          help='Repo with the new changes',
-                          required=True)
-
-    required.add_argument('--target-repo-url',
-                          dest="target_repo_url",
-                          action='store',
-                          help='Repo to merge into',
-                          required=True)
-
     required.add_argument('--target-branch-name',
                           dest="target_branch_name",
                           action='store',
                           help='Branch to merge into',
-                          required=True)
-
-    required.add_argument('--pullrequest-build-name',
-                          dest="pullrequest_build_name",
-                          action='store',
-                          help='The Jenkins job base name',
-                          required=True)
+                          required=False)
 
     required.add_argument('--genconfig-build-name',
                           dest="genconfig_build_name",
@@ -101,33 +56,36 @@ def parse_args():
                           dest="pullrequest_number",
                           action='store',
                           help='The github PR number',
+                          required=False)
+
+    required.add_argument('--source-dir',
+                          dest="source_dir",
+                          action='store',
+                          help="Directory containing the source code to compile/test.",
                           required=True)
 
-    required.add_argument('--jenkins-job-number',
+    required.add_argument('--build-dir',
+                          dest="build_dir",
+                          action='store',
+                          help="Path to the build directory.",
+                          required=True)
+
+    optional.add_argument('--pullrequest-build-name',
+                          dest="pullrequest_build_name",
+                          action='store',
+                          help='The Jenkins job base name',
+                          required=False)
+
+    optional.add_argument('--jenkins-job-number',
                           dest="jenkins_job_number",
                           action='store',
                           help='The Jenkins build number',
-                          required=True)
+                          required=False)
 
     optional.add_argument('--dashboard-build-name',
                           dest="dashboard_build_name",
                           action='store',
-                          default="UNKNOWN",
                           help='The build name posted by ctest to a dashboard',
-                          required=False)
-
-    optional.add_argument('--source-dir',
-                          dest="source_dir",
-                          action='store',
-                          default="UNKNOWN",
-                          help="Directory containing the source code to compile/test.",
-                          required=False)
-
-    optional.add_argument('--build-dir',
-                          dest="build_dir",
-                          action='store',
-                          default="UNKNOWN",
-                          help="Path to the build directory.",
                           required=False)
 
     optional.add_argument('--use-explicit-cachefile',
@@ -140,7 +98,6 @@ def parse_args():
     optional.add_argument('--ctest-driver',
                           dest="ctest_driver",
                           action='store',
-                          default="UNKNOWN",
                           help="Location of the CTest driver script to load via `-S`.",
                           required=False)
 
@@ -192,6 +149,14 @@ def parse_args():
                           default=default_filename_packageenables,
                           help="{} Default={}".format(desc_package_enables, default_filename_packageenables))
 
+    optional.add_argument('--skip-create-packageenables',
+                          dest="skip_create_packageenables",
+                          action="store_true",
+                          default=False,
+                          help="Skip the creation of the packageEnables.cmake fragment file generated by " + \
+                          "the TriBITS infrastructure indicating which packages are to be enabled based on file " + \
+                          "changes between a source and target branch. Default=False")
+
     desc_subprojects_file = "The subprojects_file is used by the testing infrastructure. This parameter " + \
                             "allows the default, generated file, to be overridden. Generally this should " + \
                             "not be changed from the defaults."
@@ -227,10 +192,19 @@ def parse_args():
                           dest='num_concurrent_tests',
                           action='store',
                           default=-1,
-                          help="Set the number of concurrent tests allowd in CTest. " + \
+                          help="Set the number of concurrent tests allowed in CTest. " + \
                                "This is equivalent to `ctest -j <num-concurrent-tests>`. "
                                "If > 0 then this value is used, otherwise the value is calculated " + \
                                "based on number_of_available_cores / max_test_parallelism" + \
+                               " Default = %(default)s")
+
+    optional.add_argument('--slots-per-gpu',
+                          dest='slots_per_gpu',
+                          action='store',
+                          default=2,
+                          help="If the machine has GPUs, this value will be the number " + \
+                               "of resource slots allowed per GPU (e.g. 4 would allow 4 MPI " + \
+                               "ranks to talk to each GPU)" + \
                                " Default = %(default)s")
 
     optional.add_argument("--enable-ccache",
@@ -245,6 +219,12 @@ def parse_args():
                           default=False,
                           help="Enable dry-run mode. Script will run but not execute the build steps. Default = %(default)s")
 
+    optional.add_argument("--skip-run-tests",
+                          dest="skip_run_tests",
+                          action="store_true",
+                          default=False,
+                          help="Skip running tests in SimpleTesting test stage. Default = %(default)s")
+
     optional.add_argument("--extra-configure-args",
                           dest="extra_configure_args",
                           action="store",
@@ -252,6 +232,9 @@ def parse_args():
                           help="Extra arguments that will be passed to CMake for configuring Trilinos.")
 
     arguments = parser.parse_args()
+
+    if not arguments.ctest_driver:
+        arguments.ctest_driver = os.path.join(arguments.source_dir, 'cmake', 'SimpleTesting', 'cmake', 'ctest-driver.cmake')
 
     # Type conversions
     arguments.max_cores_allowed    = int(arguments.max_cores_allowed)
@@ -263,8 +246,6 @@ def parse_args():
     print("+" + "="*78 + "+")
     print("| PullRequestLinuxDriverTest Parameters")
     print("+" + "="*78 + "+")
-    print("| - [R] source-repo-url             : {source_repo_url}".format(**vars(arguments)))
-    print("| - [R] target_repo_url             : {target_repo_url}".format(**vars(arguments)))
     print("| - [R] target_branch_name          : {target_branch_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-build-name      : {pullrequest_build_name}".format(**vars(arguments)))
     print("| - [R] genconfig-build-name        : {genconfig_build_name}".format(**vars(arguments)))
@@ -286,8 +267,10 @@ def parse_args():
     print("| - [O] req-mem-per-core            : {req_mem_per_core}".format(**vars(arguments)))
     print("| - [O] test-mode                   : {test_mode}".format(**vars(arguments)))
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
+    print("| - [O] skip-run-tests              : {skip_run_tests}".format(**vars(arguments)))
     print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
     print("| - [O] dashboard_build_name        : {dashboard_build_name}".format(**vars(arguments)))
+    print("| - [O] use_explicit_cachefile       : {use_explicit_cachefile}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 

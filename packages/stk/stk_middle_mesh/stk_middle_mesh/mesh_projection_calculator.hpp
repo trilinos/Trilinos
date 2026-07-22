@@ -22,7 +22,7 @@ class MeshProjectionCalculator
                              std::shared_ptr<MeshRelationalData> relationalData,
                              std::shared_ptr<predicates::impl::PointClassifierNormalWrapper> pointClassifier,
                              const middle_mesh::impl::EdgeTracerTolerances& edgeTracerTolerances,
-                             const search::BoundingBoxSearchOpts& searchOpts = search::BoundingBoxSearchOpts())
+                             [[maybe_unused]] const search::BoundingBoxSearchOpts& searchOpts = search::BoundingBoxSearchOpts())
       : m_mesh1(mesh1)
       , m_mesh2(mesh2)
       , m_pointClassifier(pointClassifier)

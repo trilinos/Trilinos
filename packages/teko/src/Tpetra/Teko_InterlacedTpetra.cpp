@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teko_InterlacedTpetra.hpp"
 #include "Tpetra_Import.hpp"
@@ -213,7 +176,7 @@ void associateSubVectors(
                             Teuchos::POST_DESTROY, false);
 }
 
-// build a single subblock Epetra_CrsMatrix
+// build a single subblock Tpetra::CrsMatrix
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
     const std::vector<std::pair<int, RCP<Tpetra::Map<LO, GO, NT> > > >& subMaps) {
@@ -353,7 +316,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
   return mat;
 }
 
-// rebuild a single subblock Epetra_CrsMatrix
+// rebuild a single subblock Tpetra::CrsMatrix
 void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
                      const std::vector<std::pair<int, RCP<Tpetra::Map<LO, GO, NT> > > >& subMaps,
                      Tpetra::CrsMatrix<ST, LO, GO, NT>& mat) {
@@ -461,7 +424,7 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
 void many2one(Tpetra::MultiVector<ST, LO, GO, NT>& one,
               const std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > >& many,
               const std::vector<RCP<Tpetra::Export<LO, GO, NT> > >& subExport) {
-  // std::vector<RCP<const Epetra_Vector> >::const_iterator vecItr;
+  // std::vector<RCP<const Tpetra::Vector> >::const_iterator vecItr;
   std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > >::const_iterator vecItr;
   std::vector<RCP<Tpetra::Export<LO, GO, NT> > >::const_iterator expItr;
 
@@ -493,7 +456,7 @@ void many2one(Tpetra::MultiVector<ST, LO, GO, NT>& one,
 void one2many(std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >& many,
               const Tpetra::MultiVector<ST, LO, GO, NT>& single,
               const std::vector<RCP<Tpetra::Import<LO, GO, NT> > >& subImport) {
-  // std::vector<RCP<Epetra_Vector> >::const_iterator vecItr;
+  // std::vector<RCP<Tpetra::Vector> >::const_iterator vecItr;
   std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > >::const_iterator vecItr;
   std::vector<RCP<Tpetra::Import<LO, GO, NT> > >::const_iterator impItr;
 

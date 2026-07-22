@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_TRSV_ON_DEVICE_HPP__
 #define __TACHO_TRSV_ON_DEVICE_HPP__
@@ -34,11 +26,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     const ordinal_type m = B.extent(0), n = B.extent(1);
     if (m > 0 && n > 0) {
       if (n == 1) {
-        Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride_1(), B.data(),
-                               B.stride_0());
+        Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride(1), B.data(),
+                               B.stride(0));
       } else {
         Blas<value_type>::trsm(Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(1),
-                               A.data(), A.stride_1(), B.data(), B.stride_1());
+                               A.data(), A.stride(1), B.data(), B.stride(1));
       }
     }
     return 0;
@@ -54,11 +46,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     if (m > 0 && n > 0) {
       if (n == 1) {
         r_val = Blas<value_type>::trsv(handle, ArgUplo::cublas_param, ArgTransA::cublas_param, diagA.cublas_param, m,
-                                       A.data(), A.stride_1(), B.data(), B.stride_0());
+                                       A.data(), A.stride(1), B.data(), B.stride(0));
       } else {
         r_val = Blas<value_type>::trsm(handle, Side::Left::cublas_param, ArgUplo::cublas_param, ArgTransA::cublas_param,
-                                       diagA.cublas_param, m, n, value_type(1), A.data(), A.stride_1(), B.data(),
-                                       B.stride_1());
+                                       diagA.cublas_param, m, n, value_type(1), A.data(), A.stride(1), B.data(),
+                                       B.stride(1));
       }
     }
     return r_val;
@@ -66,6 +58,7 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
+  // TODO: CHECK
   template <typename DiagType, typename ViewTypeA, typename ViewTypeB>
   inline static int rocblas_invoke(rocblas_handle &handle, const DiagType diagA, const ViewTypeA &A,
                                    const ViewTypeB &B) {
@@ -75,11 +68,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     if (m > 0 && n > 0) {
       if (n == 1) {
         r_val = Blas<value_type>::trsv(handle, ArgUplo::rocblas_param, ArgTransA::rocblas_param, diagA.rocblas_param, m,
-                                       A.data(), A.stride_1(), B.data(), B.stride_0());
+                                       A.data(), A.stride(1), B.data(), B.stride(0));
       } else {
         r_val = Blas<value_type>::trsm(handle, Side::Left::rocblas_param, ArgUplo::rocblas_param,
                                        ArgTransA::rocblas_param, diagA.rocblas_param, m, n, value_type(1), A.data(),
-                                       A.stride_1(), B.data(), B.stride_1());
+                                       A.stride(1), B.data(), B.stride(1));
       }
     }
     return r_val;
@@ -98,8 +91,8 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     static_assert(ViewTypeB::rank == 2, "B is not rank 2 view.");
 
     static_assert(std::is_same<value_type, value_type_b>::value, "A and B do not have the same value type.");
-
     static_assert(std::is_same<memory_space, memory_space_b>::value, "A and B do not have the same memory space.");
+
     int r_val(0);
     if (std::is_same<memory_space, Kokkos::HostSpace>::value)
       r_val = blas_invoke(diagA, A, B);

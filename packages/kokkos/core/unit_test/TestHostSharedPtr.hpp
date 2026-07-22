@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <impl/Kokkos_HostSharedPtr.hpp>
 
@@ -105,7 +92,7 @@ TEST(TEST_CATEGORY, host_shared_ptr_get) {
     T i;
     HostSharedPtr<T> p1(&i, [](T*) {});
     HostSharedPtr<T> p2(std::move(p1));  // move construction
-    EXPECT_EQ(p1.get(), nullptr);
+    EXPECT_EQ(p1.get(), nullptr);        // NOLINT(bugprone-use-after-move)
     EXPECT_EQ(p2.get(), &i);
   }
   {
@@ -120,8 +107,8 @@ TEST(TEST_CATEGORY, host_shared_ptr_get) {
     T i;
     HostSharedPtr<T> p1(&i, [](T*) {});
     HostSharedPtr<T> p2;
-    p2 = std::move(p1);  // move assignment
-    EXPECT_EQ(p1.get(), nullptr);
+    p2 = std::move(p1);            // move assignment
+    EXPECT_EQ(p1.get(), nullptr);  // NOLINT(bugprone-use-after-move)
     EXPECT_EQ(p2.get(), &i);
   }
 }

@@ -654,7 +654,7 @@ void test_clusters(const stk::mesh::BulkData& bulk, const std::vector<ElementClu
 void run_traverser(const std::string& meshDesc, const ElementClusterVector& goldIds, const unsigned dim = 3)
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(dim,MPI_COMM_WORLD);
-  stk::unit_test_util::simple_fields::setup_text_mesh(*bulk, meshDesc);
+  stk::unit_test_util::setup_text_mesh(*bulk, meshDesc);
 
   MeshTraverser bfs(*bulk);
   test_clusters(*bulk, bfs.get_clusters(), goldIds);

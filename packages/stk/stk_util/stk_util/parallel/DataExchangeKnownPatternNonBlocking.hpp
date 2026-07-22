@@ -35,23 +35,25 @@
 #ifndef stk_util_parallel_DataExchangeKnownPatternNonBlocking_hpp
 #define stk_util_parallel_DataExchangeKnownPatternNonBlocking_hpp
 
+#include "stk_util/parallel/DataExchangeKnownPatternUserDataNonBlocking.hpp"
 #include "stk_util/parallel/Parallel.hpp"   // for MPI
 
 #if defined(STK_HAS_MPI)
 
 #include "stk_util/parallel/MPITagManager.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "ReceiveCounter.hpp"
 
 namespace stk {
 
 class DataExchangeKnownPatternNonBlocking
 {
   public:
+    static constexpr size_t MAX_MESSAGE_SIZE = std::numeric_limits<int>::max();
+  
     DataExchangeKnownPatternNonBlocking(MPI_Comm comm, int tag_hint=11176);
 
-    MPI_Comm get_comm() const { return m_comm; }
-
-    ~DataExchangeKnownPatternNonBlocking();
+    MPI_Comm get_comm() const { return m_exchanger.get_comm(); }
 
     // Start non-blocking sends and receives.  The recvLists must be sized
     // correctly to indicate how many items are expected to be received from
@@ -75,21 +77,18 @@ class DataExchangeKnownPatternNonBlocking
 
 
   private:
-    template <typename T>
-    void start_recvs(std::vector< std::vector<T> > &recvLists);
     
-    template <typename T>
-    void start_sends(std::vector< std::vector<T> > &sendLists);
-
-    MPI_Comm m_comm;
-    MPITag m_tag;
-
-    std::vector<int> m_recvRankMap;
-    std::vector<int> m_sendRankMap;
-    std::vector<MPI_Request> m_recvReqs;
-    std::vector<MPI_Request> m_sendReqs;
-    bool m_areSendsInProgress = false;
-    bool m_areRecvsInProgress = false;
+    struct RecvCounts
+    {
+      int numPosted = 0;
+      int numCompleted = 0;
+    };
+    
+    DataExchangeKnownPatternUserDataNonBlocking m_exchanger;
+    std::vector<int> m_sendRanks;
+    std::vector<int> m_recvRanks;
+    std::vector<PointerAndSize> m_sendData;
+    std::vector<PointerAndSize> m_recvData;
 };
 
 
@@ -97,77 +96,46 @@ template <typename T>
 void DataExchangeKnownPatternNonBlocking::start_nonblocking(std::vector< std::vector<T> > &sendLists,
                                                             std::vector< std::vector<T> > &recvLists)
 {
-  start_recvs(recvLists);
-  start_sends(sendLists);
-}
-
-
-template <typename T>
-void DataExchangeKnownPatternNonBlocking::start_recvs(std::vector< std::vector<T> > &recvLists)
-{
-  STK_ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(m_comm)), "recvLists must have length comm_size()");
-  STK_ThrowRequireMsg(!m_areRecvsInProgress,
-                  "cannot start new round of communication until the recvs from the previous round are complete");
-
-  m_recvRankMap.resize(0);
-  m_recvReqs.resize(0);
-  for (size_t rank=0; rank < recvLists.size(); ++rank)
-  {
-    auto& recvBuf = recvLists[rank];
-    if (recvBuf.size() > 0)
-    {
-      m_recvRankMap.push_back(rank);
-      m_recvReqs.emplace_back();
-
-      MPI_Irecv(recvBuf.data(), recvBuf.size()*sizeof(T), MPI_BYTE, rank, 
-                m_tag, m_comm, &(m_recvReqs.back()));
-    }
-  }
-
-  m_areRecvsInProgress = true;
-}
-
-template <typename T>
-void DataExchangeKnownPatternNonBlocking::start_sends(std::vector< std::vector<T> > &sendLists)
-{
-  STK_ThrowRequireMsg(sendLists.size() == size_t(stk::parallel_machine_size(m_comm)), "sendLists must have length comm_size()");
-  STK_ThrowRequireMsg(!m_areSendsInProgress, 
-                  "cannot start new round of communication until the sends from the previous round are complete");
+  STK_ThrowRequireMsg(sendLists.size() == size_t(stk::parallel_machine_size(get_comm())), "sendLists must have length comm_size()");  
+  STK_ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(get_comm())), "recvLists must have length comm_size()");
   
-  m_sendRankMap.resize(0);
-  m_sendReqs.resize(0);
-  for (size_t rank=0; rank < sendLists.size(); ++rank)
+  m_sendRanks.resize(0);
+  m_sendData.resize(0);
+  m_recvRanks.resize(0);
+  m_recvData.resize(0);
+  for (size_t i=0; i < sendLists.size(); ++i)
   {
-    auto& sendBuf = sendLists[rank];
-    if (sendBuf.size() > 0)
+    if (sendLists[i].size() > 0)
     {
-      m_sendRankMap.push_back(rank);
-      m_sendReqs.emplace_back();
-
-      MPI_Isend(sendBuf.data(), sendBuf.size()*sizeof(T), MPI_BYTE, rank,
-                m_tag, m_comm, &(m_sendReqs.back()));
+      m_sendRanks.push_back(i);
+      m_sendData.emplace_back(reinterpret_cast<unsigned char*>(sendLists[i].data()),
+                              sendLists[i].size() * sizeof(T));
     }
+    
+    if (recvLists[i].size() > 0)
+    {
+      m_recvRanks.push_back(i);
+      m_recvData.emplace_back(reinterpret_cast<unsigned char*>(recvLists[i].data()),
+                              recvLists[i].size() * sizeof(T));
+    }    
   }
-
-  m_areSendsInProgress = true;
+  
+  m_exchanger.start_nonblocking(m_sendData, m_sendRanks, m_recvData, m_recvRanks);
 }
+
 
 template <typename T, typename Tfunc>
 void DataExchangeKnownPatternNonBlocking::complete_receives(std::vector< std::vector<T> >& recvLists, Tfunc func)
 {
-  STK_ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(m_comm)), "recvLists must have length comm_size()");
-  STK_ThrowRequireMsg(m_areRecvsInProgress, "Receives must have been started before they can be completed");
-
-  for (size_t i=0; i < m_recvReqs.size(); ++i)
+  STK_ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(get_comm())), "recvLists must have length comm_size()");
+  
+  auto funcWrapper = [&](int rank, const PointerAndSize& /*buf*/)
   {
-    int idx;
-    MPI_Waitany(m_recvReqs.size(), m_recvReqs.data(), &idx, MPI_STATUS_IGNORE);
-
-    int rank = m_recvRankMap[idx];
     func(rank, recvLists[rank]);
-  }
+  };
+  
+  m_exchanger.complete_receives(m_recvData, m_recvRanks, funcWrapper);
 
-  m_areRecvsInProgress = false;
 }
 
 }  // namespace

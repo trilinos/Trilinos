@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Siva Rajamanickam (srajama@sandia.gov)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 // The struct that iterates over all non-zeros for the FastILDL
 //  Contact for bugs and complaints - Siva Rajamanickam (srajama@sandia.gov)
@@ -89,8 +57,8 @@ class FastILDLPrec
 
         typedef Kokkos::RangePolicy<ExecSpace> RangePolicy;
 
-        using STS = Kokkos::ArithTraits<Scalar>;
-        using RTS = Kokkos::ArithTraits<Real>;
+        using STS = KokkosKernels::ArithTraits<Scalar>;
+        using RTS = KokkosKernels::ArithTraits<Real>;
 
     private:
         double computeTime;
@@ -188,7 +156,7 @@ class FastILDLPrec
             blkSzILDL = blkSzILDL_;
             blkSz = blkSz_;
 
-            const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+            const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
             onesVector = ScalarArray("onesVector", nRow_);
             Kokkos::deep_copy(onesVector, one);
 
@@ -650,7 +618,7 @@ class FastILDLPrec
         void applyDiagonalScaling()
         {
             int anext = 0;
-            const Real one = Kokkos::ArithTraits<Real>::one();
+            const Real one = KokkosKernels::ArithTraits<Real>::one();
             //First fill Aj and extract the diagonal scaling factors
             //Use diag array to store scaling factors since
             //it gets set to the correct value by findFactorPattern anyway.
@@ -691,7 +659,7 @@ class FastILDLPrec
 
         void applyManteuffelShift()
         {
-            const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+            const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
             //Scalar shift = 0.05;
             for (Ordinal i = 0; i < nRows; i++)
             {
@@ -791,7 +759,7 @@ class FastILDLPrec
 
         void compute()
         {
-            const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+            const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
             if((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->compute();
@@ -836,16 +804,16 @@ class FastILDLPrec
                 // setup L solve
                 khL.create_sptrsv_handle(algo, nRows, true);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
+                KokkosSparse::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx);
+                KokkosSparse::sptrsv_symbolic(&khL, lRowMap, lColIdx);
                 #endif
                 // setup Lt solve
                 khLt.create_sptrsv_handle(algo, nRows, false);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx, ltVal);
+                KokkosSparse::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx, ltVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx);
+                KokkosSparse::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx);
                 #endif
             }
         }
@@ -861,13 +829,13 @@ class FastILDLPrec
 
             applyD(x, xTemp);
             if (standard_sptrsv) {
-                KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
+                KokkosSparse::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
             } else {
                 applyLIC(xTemp, y);
             }
             applyDD(y, xTemp);
             if (standard_sptrsv) {
-                KokkosSparse::Experimental::sptrsv_solve(&khLt, ltRowMap, ltColIdx, ltVal, xTemp, y);
+                KokkosSparse::sptrsv_solve(&khLt, ltRowMap, ltColIdx, ltVal, xTemp, y);
             } else {
                 applyLT(xTemp, y);
             }
@@ -985,8 +953,8 @@ class FastILDLFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
             {
-                const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
-                const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+                const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
+                const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 
                 Ordinal start = blk_index * blk_size;
                 Ordinal end = start + blk_size;

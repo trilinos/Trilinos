@@ -58,7 +58,8 @@ inline void coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIde
                                  std::vector< std::pair<RangeObjType,  RangeIdentifier > > const & local_range,
                                  MPI_Comm comm,
                                  std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
-                                 bool enforceSearchResultSymmetry=true)
+                                 bool enforceSearchResultSymmetry = true,
+                                 bool sortSearchResults = false)
 {
 
   int num_procs = -1;
@@ -146,6 +147,9 @@ inline void coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIde
 
   if(enforceSearchResultSymmetry) {
     stk::search::communicate_vector(comm, searchResults, enforceSearchResultSymmetry);
+  }
+
+  if (sortSearchResults) {
     std::sort(searchResults.begin(), searchResults.end());
   }
 }
@@ -160,7 +164,8 @@ inline void coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIde
                                  std::vector< std::pair<stk::search::Box<RBoxNumType>,  RangeIdentifier > > const & local_range,
                                  MPI_Comm comm,
                                  std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
-                                 bool enforceSearchResultSymmetry=true)
+                                 bool enforceSearchResultSymmetry=true,
+                                 bool sortSearchResults = false)
 {
   int num_procs = -1;
   int proc_id   = -1;
@@ -232,6 +237,9 @@ inline void coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIde
 #endif
   if(enforceSearchResultSymmetry) {
     stk::search::communicate_vector(comm, searchResults, enforceSearchResultSymmetry);
+  }
+
+  if (sortSearchResults) {
     std::sort(searchResults.begin(), searchResults.end());
   }
 }
@@ -241,7 +249,8 @@ inline void coarse_search_kdtree_driver(std::vector< std::pair<DomainObjType, Do
                                         std::vector< std::pair<RangeObjType,  RangeIdentifier > > const & local_range,
                                         MPI_Comm comm,
                                         std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
-                                        bool enforceSearchResultSymmetry=true)
+                                        bool enforceSearchResultSymmetry = true,
+                                        bool sortSearchResults = false)
 {
   const size_t local_sizes[2] = {local_domain.size(), local_range.size()};
   size_t global_sizes[2];
@@ -249,12 +258,12 @@ inline void coarse_search_kdtree_driver(std::vector< std::pair<DomainObjType, Do
   const bool domain_has_more_boxes = (global_sizes[0] >= global_sizes[1]);
   if(domain_has_more_boxes)
   {
-    coarse_search_kdtree(local_domain, local_range, comm, searchResults, enforceSearchResultSymmetry);
+    coarse_search_kdtree(local_domain, local_range, comm, searchResults, enforceSearchResultSymmetry, sortSearchResults);
   }
   else
   {
     std::vector<std::pair<RangeIdentifier, DomainIdentifier> > tempSearchResults;
-    coarse_search_kdtree(local_range, local_domain, comm, tempSearchResults, enforceSearchResultSymmetry);
+    coarse_search_kdtree(local_range, local_domain, comm, tempSearchResults, enforceSearchResultSymmetry, sortSearchResults);
     const int p_rank = stk::parallel_machine_rank(comm);
     searchResults.reserve(tempSearchResults.size());
     for(size_t i=0; i<tempSearchResults.size(); ++i)
@@ -263,6 +272,10 @@ inline void coarse_search_kdtree_driver(std::vector< std::pair<DomainObjType, Do
       auto&& pair = tempSearchResults[idx];
       if (enforceSearchResultSymmetry || get_proc<DomainIdentifier>()(pair.second) == p_rank)
         searchResults.emplace_back(pair.second, pair.first);
+    }
+  
+    if (sortSearchResults) {
+      std::sort(searchResults.begin(), searchResults.end());
     }
   }
 }

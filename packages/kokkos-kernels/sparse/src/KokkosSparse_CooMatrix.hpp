@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file KokkosSparse_CooMatrix.hpp
 /// \brief Local sparse matrix interface
@@ -21,8 +8,8 @@
 /// local (no MPI) sparse matrix stored in coordinate ("Coo") format
 /// which is also known as ivj or triplet format.
 
-#ifndef KOKKOS_SPARSE_COOMATRIX_HPP_
-#define KOKKOS_SPARSE_COOMATRIX_HPP_
+#ifndef KOKKOSSPARSE_COOMATRIX_HPP_
+#define KOKKOSSPARSE_COOMATRIX_HPP_
 
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_Error.hpp"
@@ -40,10 +27,8 @@ namespace KokkosSparse {
 /// \tparam MemoryTraits Traits describing how Kokkos manages and
 ///   accesses data.  The default parameter suffices for most users.
 /// "Coo" stands for "coordinate format".
-template <class ScalarType, class OrdinalType, class Device,
-          class MemoryTraits = void,
-          class SizeType     = typename Kokkos::ViewTraits<OrdinalType*, Device,
-                                                       void, void>::size_type>
+template <class ScalarType, class OrdinalType, class Device, class MemoryTraits = void,
+          class SizeType = typename Kokkos::ViewTraits<OrdinalType*, Device, void, void>::size_type>
 class CooMatrix {
  public:
   //! Type of each value in the matrix
@@ -73,21 +58,16 @@ class CooMatrix {
   //! Type of all integral class members
   using size_type = SizeType;
 
-  static_assert(std::is_integral_v<OrdinalType>,
-                "OrdinalType must be an integral.");
+  static_assert(std::is_integral_v<OrdinalType>, "OrdinalType must be an integral.");
 
   //! The type of the row index view in the matrix
-  using row_view =
-      Kokkos::View<row_type*, Kokkos::LayoutRight, device_type, memory_traits>;
+  using row_view = Kokkos::View<row_type*, Kokkos::LayoutRight, device_type, memory_traits>;
   //! The type of the column index view in the matrix
-  using column_view = Kokkos::View<column_type*, Kokkos::LayoutRight,
-                                   device_type, memory_traits>;
+  using column_view = Kokkos::View<column_type*, Kokkos::LayoutRight, device_type, memory_traits>;
   //! The type of the scalar values view in the matrix
-  using scalar_view = Kokkos::View<scalar_type*, Kokkos::LayoutRight,
-                                   device_type, memory_traits>;
+  using scalar_view = Kokkos::View<scalar_type*, Kokkos::LayoutRight, device_type, memory_traits>;
   //! The type of a constant CooMatrix
-  using const_type = CooMatrix<const_scalar_type, const_ordinal_type,
-                               device_type, memory_traits, size_type>;
+  using const_type = CooMatrix<const_scalar_type, const_ordinal_type, device_type, memory_traits, size_type>;
 
  private:
   size_type m_num_rows, m_num_cols;
@@ -113,15 +93,9 @@ class CooMatrix {
   /// \param col_in  [in] The column indexes.
   /// \param data_in [in] The values.
   // clang-format on
-  CooMatrix(size_type nrows, size_type ncols, row_view row_in,
-            column_view col_in, scalar_view data_in)
-      : m_num_rows(nrows),
-        m_num_cols(ncols),
-        m_row(row_in),
-        m_col(col_in),
-        m_data(data_in) {
-    if (m_data.extent(0) != m_row.extent(0) ||
-        m_row.extent(0) != m_col.extent(0)) {
+  CooMatrix(size_type nrows, size_type ncols, row_view row_in, column_view col_in, scalar_view data_in)
+      : m_num_rows(nrows), m_num_cols(ncols), m_row(row_in), m_col(col_in), m_data(data_in) {
+    if (m_data.extent(0) != m_row.extent(0) || m_row.extent(0) != m_col.extent(0)) {
       std::ostringstream os;
       os << "data.extent(0): " << m_data.extent(0) << " != "
          << "row.extent(0): " << m_row.extent(0) << " != "
@@ -130,11 +104,21 @@ class CooMatrix {
     }
   }
 
+  //! The number of rows in the sparse matrix.
+  KOKKOS_INLINE_FUNCTION size_type numRows() const { return m_num_rows; }
+
   //! The number of columns in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type numCols() const { return m_num_cols; }
 
-  //! The number of rows in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION size_type numRows() const { return m_num_rows; }
+  /// \brief Modify the number of rows in the sparse matrix.
+  ///
+  /// This invalidates any algorithm handles which previously used this matrix.
+  void setNumRows(size_type r) { m_num_rows = r; }
+
+  /// \brief Modify the number of columns in the sparse matrix.
+  ///
+  /// This invalidates any algorithm handles which previously used this matrix.
+  void setNumCols(size_type c) { m_num_cols = c; }
 
   //! The number of stored entries in the sparse matrix, including zeros.
   KOKKOS_INLINE_FUNCTION size_type nnz() const { return m_data.extent(0); }
@@ -160,4 +144,4 @@ template <typename... P>
 struct is_coo_matrix<const CooMatrix<P...>> : public std::true_type {};
 
 }  // namespace KokkosSparse
-#endif
+#endif  // KOKKOSSPARSE_COOMATRIX_HPP_

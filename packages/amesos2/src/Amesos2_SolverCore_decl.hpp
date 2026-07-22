@@ -474,6 +474,22 @@ namespace Amesos2 {
     /// Number of process images in the matrix communicator
     int nprocs_;
 
+    /// Contiguous GID map for reindex
+    typedef Tpetra::Map<local_ordinal_type,
+                        global_ordinal_type,
+                        node_type> map_type;
+    Teuchos::RCP<const map_type> contig_rowmap_;
+    Teuchos::RCP<const map_type> contig_colmap_;
+
+    /// Communication pattern for gather
+    typedef Kokkos::DefaultHostExecutionSpace                 HostExecSpaceType;
+    typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
+    typedef Kokkos::View<       scalar_type*, HostExecSpaceType> host_scalar_type_array;
+    host_ordinal_type_array perm_g2l;
+    host_ordinal_type_array recvCountRows, recvDisplRows;
+    host_ordinal_type_array recvCounts, recvDispls;
+    host_ordinal_type_array transpose_map;
+    host_scalar_type_array  nzvals_t;
   };				// End class Amesos2::SolverCore
 
 

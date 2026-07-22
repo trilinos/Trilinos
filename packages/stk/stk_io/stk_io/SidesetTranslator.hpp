@@ -34,17 +34,47 @@
 #ifndef SIDESETTRANSLATOR_HPP_
 #define SIDESETTRANSLATOR_HPP_
 
+#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/EquivalentEntityBlocks.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
-#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/SideSetUtil.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/base/EntityLess.hpp"
+#include "stk_mesh/base/Relation.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_io/OutputParams.hpp"
 
 namespace stk {
 namespace io {
+
+namespace impl {
+
+inline bool check_parent_topology_has_mixed_ranked_sides(const stk::mesh::Part* part, const stk::mesh::Part* parentElementBlock,
+                                                         stk::topology stk_element_topology)
+{
+  if (parentElementBlock != nullptr) {
+    if (parentElementBlock->primary_entity_rank() != stk::topology::ELEM_RANK) {
+      STK_ThrowErrorMsg("Part: " << parentElementBlock->name() << " is not an element part.");
+    }
+    return parentElementBlock->topology().has_mixed_rank_sides();
+  }
+
+  if (stk_element_topology.rank() == stk::topology::ELEM_RANK) {
+    return stk_element_topology.has_mixed_rank_sides();
+  }
+
+  auto supersets = part->supersets();
+  auto hasMixedRankSides = false;
+  for (auto topoPart : supersets) {
+    if (is_element_block(*topoPart)) {
+      hasMixedRankSides = true;
+    }
+  }
+  return hasMixedRankSides;
+}
+
+}
 
 template<typename INT>
 void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
@@ -69,7 +99,6 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
     selector &= *faceOutputSelector;
   }
   stk::mesh::Selector parentElementSelector =  (parentElementBlock == nullptr) ? stk::mesh::Selector() : *parentElementBlock;
-  const stk::mesh::EntityRank sideRank = part->primary_entity_rank();
 
   unsigned previousBucketId = stk::mesh::INVALID_BUCKET_ID;
 
@@ -77,8 +106,14 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
   {
     stk::mesh::Entity element = sset[i].element;
     stk::mesh::EntityId elemId = bulk_data.identifier(element);
-    int zero_based_side_ord = sset[i].side - sideOrdOffset;
-    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair_of_rank(bulk_data, element, zero_based_side_ord, sideRank);
+    stk::mesh::EntityRank sideRank = bulk_data.bucket(element).topology().side_rank(sset[i].side);
+    int ioss_zero_based_side_ord = sset[i].side - sideOrdOffset;
+    int stk_zero_based_side_ord = sset[i].side;
+    if (part->primary_entity_rank() == stk::topology::EDGE_RANK &&
+        impl::check_parent_topology_has_mixed_ranked_sides(part, parentElementBlock, stk_element_topology)) {
+      stk_zero_based_side_ord -= sideOrdOffset;
+    }
+    stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair_of_rank(bulk_data, element, stk_zero_based_side_ord, sideRank);
     if(bulk_data.is_valid(side))
     {
       stk::mesh::Bucket &sideBucket = bulk_data.bucket(side);
@@ -105,7 +140,7 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
 
           if (selectedByBucket && selectedByParent && selectedByOutput) {
             elem_side_ids.push_back(elemId);
-            elem_side_ids.push_back(zero_based_side_ord + 1);
+            elem_side_ids.push_back(ioss_zero_based_side_ord + 1);
             sides.push_back(side);
           }
         }
@@ -142,8 +177,8 @@ inline bool is_correct_sub_topology(const stk::mesh::BulkData &mesh,
 template<typename INT>
 void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
                                                  const stk::mesh::Part * part,
-                                                 const stk::mesh::Part *parentElementBlock,
-                                                 stk::topology stk_element_topology,
+                                                 const stk::mesh::Part * /*parentElementBlock*/,
+                                                 stk::topology /*stk_element_topology*/,
                                                  stk::mesh::EntityVector &sides,
                                                  std::vector<INT>& elem_side_ids,
                                                  INT sideOrdOffset = 0)
@@ -159,11 +194,11 @@ void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
     size_t num_sides = stk::io::get_entities(params, *part, type, allSides, false);
     elem_side_ids.reserve(num_sides * 2);
 
+    std::vector<stk::mesh::Entity> side_elements;
+    std::vector<stk::mesh::Entity> side_nodes;
     for(size_t i = 0; i < num_sides; ++i)
     {
         stk::mesh::Entity side = allSides[i];
-        std::vector<stk::mesh::Entity> side_elements;
-        std::vector<stk::mesh::Entity> side_nodes;
 
         fill_side_elements_and_nodes(bulk_data, side, side_elements, side_nodes);
 

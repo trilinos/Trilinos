@@ -51,10 +51,11 @@ static void register_blocks_for_decomposition_by_levelsets(Phase_Support & phase
 {
   for (unsigned ls = 0; ls < numLevelSets; ++ls)
     phaseSupport.register_blocks_for_level_set(Surface_Identifier(ls), blocks);
-  std::vector<std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
-  auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-  ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, namedPhases));
-  phaseSupport.decompose_blocks(ls_sets);
+
+  DecompositionPackage decomps;
+  decomps.add_levelset_decomposition(blocks, namedPhases);
+  phaseSupport.decompose_blocks(decomps);
+  phaseSupport.build_decomposed_block_surface_connectivity();
 }
 
 static PhaseVec create_named_phases_for_levelset_per_phase(const unsigned numLevelSets)
@@ -169,15 +170,21 @@ std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_all_blocks(stk::m
   return setup_levelsets_on_blocks(meta, numLevelSets, get_all_block_parts(meta), inputBlockSurfaceInfo, true, nullptr);
 }
 
-std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(stk::mesh::MetaData & meta, const unsigned numLevelSets)
+std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_blocks_with_void_phase_for_any_negative_levelset(stk::mesh::MetaData & meta, 
+    const unsigned numLevelSets, const stk::mesh::PartVector & blocks)
 {
   const std::vector<LS_Field> lsFields = declare_levelset_fields_and_add_as_interpolation_fields(meta, numLevelSets);
   const PhaseVec namedPhases = create_named_phases_with_void_phase_for_any_negative_levelset(numLevelSets);
 
   Block_Surface_Connectivity blockSurfaceInfo(meta);
-  setup_phase_support_and_optionally_register_levelset_fields(meta, lsFields, namedPhases, get_all_block_parts(meta), blockSurfaceInfo, false, true);
+  setup_phase_support_and_optionally_register_levelset_fields(meta, lsFields, namedPhases, blocks, blockSurfaceInfo, false, true);
 
   return lsFields;
+}
+
+std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(stk::mesh::MetaData & meta, const unsigned numLevelSets)
+{
+  return setup_levelsets_on_blocks_with_void_phase_for_any_negative_levelset(meta, numLevelSets, get_all_block_parts(meta));
 }
 
 std::vector<LS_Field> LSPerInterfacePolicy::setup_levelsets_on_blocks(stk::mesh::MetaData & meta,

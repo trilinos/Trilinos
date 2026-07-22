@@ -20,7 +20,7 @@ struct TriDescription
   std::array<int, 3> sideIds;
 };
 
-std::vector<TriDescription> refinement_child_nodes_and_sides_tri3(const unsigned encodedEdgesToRefine, const std::array<stk::math::Vector3d,3> & elementNodeCoords, const std::array<int,3> & elementNodeScore);
+std::vector<TriDescription> refinement_child_nodes_and_sides_tri3(const unsigned encodedEdgesToRefine, const std::array<stk::math::Vector3d,6> & elementNodeCoords, const std::array<int,3> & elementNodeScore);
 unsigned determine_permutation_tri3(const unsigned caseId);
 unsigned determine_permuted_case_id_tri3(const unsigned caseId);
 unsigned num_new_child_elements_tri3(const int caseId);

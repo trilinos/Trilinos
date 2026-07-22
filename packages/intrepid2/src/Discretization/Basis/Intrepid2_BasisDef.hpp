@@ -831,7 +831,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateOutputView()");
     
     const int numFields = this->getCardinality();
-    const int spaceDim  = basisCellTopology_.getDimension() + this->getNumTensorialExtrusions();
+    const int spaceDim  = this->getBaseCellTopology().getDimension() + this->getNumTensorialExtrusions();
     
     using OutputViewAllocatable = Kokkos::DynRankView<outputValueType,DeviceType>;
     

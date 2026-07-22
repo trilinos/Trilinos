@@ -43,14 +43,14 @@
 
 struct expression_evaluation_exception : public virtual std::exception
 {
-  virtual const char* what() const throw() {
+  virtual const char* what() const throw() override {
     return "Error evaluating expressions";
   }
 };
 
 struct expression_undefined_exception : public virtual std::exception
 {
-  virtual const char* what() const throw() {
+  virtual const char* what() const throw() override {
     static std::string rtnMsg;
     rtnMsg = "Found undefined function with name: " + m_msg + " and " + std::to_string(m_numArgs)  + " argument(s)";
     return rtnMsg.c_str();
@@ -145,8 +145,8 @@ using NodeWeightMap = std::map<Node*, int>;
 class Node
 {
 public:
-  enum { MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES = 5 };
-  enum { MAXIMUM_FUNCTION_NAME_LENGTH = 32 };
+  static constexpr int MAXIMUM_FUNCTION_NAME_LENGTH = 32;
+  static constexpr int MAXIMUM_NUMBER_OF_FUNCTION_ARGS = 20;
 
   explicit Node(Opcode opcode, Eval* owner);
 
@@ -163,11 +163,15 @@ public:
   void computeNodeWeight(NodeWeightMap & nodeWeights);
   void evalTrace(const NodeWeightMap & nodeWeights, EvalNodesType & evaluationNodes);
 
+  int countNumFunctionArgs();
+
   int getNextNodeIndex();
 
   double getResult() const;
 
   double& setResult();
+
+  void checkFPError(const char* fname = nullptr);
 
   const Opcode m_opcode;
 
@@ -185,8 +189,7 @@ public:
 
     struct _function
     {
-      CFunctionBase * function[MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES];
-      bool undefinedFunction;
+      CFunctionBase * function;
       char functionName[MAXIMUM_FUNCTION_NAME_LENGTH];
       FunctionType functionType;
     } function;

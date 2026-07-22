@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_OBJECTIVE_DEF_H
@@ -112,6 +78,28 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
     hv.axpy(-one,*dual_);             // Compute difference (f'(x+hv)-f'(x))
     hv.scale(one/h);                  // Compute Newton quotient (f'(x+hv)-f'(x))/h
     update(x,UpdateType::Revert);          // Reset objective to x
+  }
+}
+
+template<typename Real>
+void Objective<Real>::proxJacVec(Vector<Real> &Jv, const Vector<Real> &v, const Vector<Real> &x, Real t, Real &tol) {
+  const Real zero(0), vnorm = v.norm();
+  // Get Step Length
+  if ( vnorm == zero ) {
+    Jv.zero();
+  }
+  else {
+    if (prim_ == nullPtr) prim_ = x.clone();
+
+    //Real h = 2.0/(v.norm()*v.norm())*tol;
+    const Real one(1), h(std::max(one,x.norm()/vnorm)*tol);
+
+    prim_->set(x); prim_->axpy(h,v);  // Set prim = x + hv
+    prox(Jv,*prim_,t,tol);            // Compute prox at prim
+    prim_->zero();
+    prox(*prim_,x,t,tol);             // Compute prox at x
+    Jv.axpy(-one,*prim_);             // Construct FD approximation
+    Jv.scale(one/h);
   }
 }
 
@@ -396,6 +384,82 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   return hsymCheck;
 
 } // checkHessSym
+
+template<typename Real>
+std::vector<std::vector<Real>> Objective<Real>::checkProxJacVec( const Vector<Real> &x,
+                                                                 const Vector<Real> &v,
+                                                                 Real t,
+                                                                 bool printToStream,
+                                                                 std::ostream & outStream,
+                                                                 int numSteps) {
+
+  const Real one(1), scale(0.1);
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
+
+  int numVals = 4;
+  std::vector<Real> tmp(numVals);
+  std::vector<std::vector<Real>> hvCheck(numSteps, tmp);
+
+  // Save the format state of the original outStream.
+  nullstream oldFormatState;
+  oldFormatState.copyfmt(outStream);
+
+  // Compute prox at x.
+  Ptr<Vector<Real>> p = x.clone();
+  prox(*p, x, t, tol);
+
+  // Temporary vectors.
+  Ptr<Vector<Real>> pdif = x.clone();
+  Ptr<Vector<Real>> Jnew = x.clone();
+  Ptr<Vector<Real>> xnew = x.clone();
+
+  Real eta(10);
+  for (int i=0; i<numSteps; i++) {
+    eta *= scale;
+
+    // Evaluate prox and Jacobian at x+eta*d.
+    xnew->set(x);
+    xnew->axpy(eta, v);
+    prox(*pdif,*xnew,t,tol);
+    pdif->axpy(-one,*p);
+    pdif->scale(one/eta);
+    proxJacVec(*Jnew,v,*xnew,t,tol);
+
+    // Compute norms of jacvec, finite-difference jacvec, and error.
+    hvCheck[i][0] = eta;
+    hvCheck[i][1] = Jnew->norm();
+    hvCheck[i][2] = pdif->norm();
+    pdif->axpy(-one, *Jnew);
+    hvCheck[i][3] = pdif->norm();
+
+    if (printToStream) {
+      if (i==0) {
+      outStream << std::right
+                << std::setw(20) << "Step size"
+                << std::setw(20) << "norm(Jac*vec)"
+                << std::setw(20) << "norm(FD approx)"
+                << std::setw(20) << "norm(abs error)"
+                << std::endl
+                << std::setw(20) << "---------"
+                << std::setw(20) << "--------------"
+                << std::setw(20) << "---------------"
+                << std::setw(20) << "---------------"
+                << std::endl;
+      }
+      outStream << std::scientific << std::setprecision(11) << std::right
+                << std::setw(20) << hvCheck[i][0]
+                << std::setw(20) << hvCheck[i][1]
+                << std::setw(20) << hvCheck[i][2]
+                << std::setw(20) << hvCheck[i][3]
+                << std::endl;
+    }
+  }
+
+  // Reset format state of outStream.
+  outStream.copyfmt(oldFormatState);
+
+  return hvCheck;
+} // checkProxJacVec
 
 } // namespace ROL
 

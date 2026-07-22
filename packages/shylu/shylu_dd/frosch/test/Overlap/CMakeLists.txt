@@ -10,46 +10,11 @@ ParameterLists
 ###############################
 # Overlap Determination Graph #
 ###############################
-## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Graph_DIM2_DPN1_EPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Graph_DIM2_DPN2_EPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Graph_DIM3_DPN1_EPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 8
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Graph_DIM3_DPN3_EPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 8
-)
-ENDIF()
-
 ## Tpetra
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Graph_DIM2_DPN1_TPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USETPETRA"
+ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -57,7 +22,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Graph_DIM2_DPN2_TPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USETPETRA"
+ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -65,7 +30,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Graph_DIM3_DPN1_TPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USETPETRA"
+ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -73,7 +38,7 @@ NUM_MPI_PROCS 8
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Graph_DIM3_DPN3_TPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml --USETPETRA"
+ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Graph.xml"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -81,46 +46,11 @@ NUM_MPI_PROCS 8
 ################################
 # Overlap Determination Matrix #
 ################################
-## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Matrix_DIM2_DPN1_EPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Matrix_DIM2_DPN2_EPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Matrix_DIM3_DPN1_EPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 8
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Matrix_DIM3_DPN3_EPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 8
-)
-ENDIF()
-
 ## Tpetra
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Matrix_DIM2_DPN1_TPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USETPETRA"
+ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -128,7 +58,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Matrix_DIM2_DPN2_TPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USETPETRA"
+ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -136,7 +66,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Matrix_DIM3_DPN1_TPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USETPETRA"
+ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -144,7 +74,7 @@ NUM_MPI_PROCS 8
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Matrix_DIM3_DPN3_TPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml --USETPETRA"
+ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Matrix.xml"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -152,46 +82,11 @@ NUM_MPI_PROCS 8
 #############################
 # Overlap Determination Old #
 #############################
-## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Old_DIM2_DPN1_EPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Old_DIM2_DPN2_EPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Old_DIM3_DPN1_EPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 8
-)
-
-TRIBITS_ADD_TEST(
-overlap
-NAME test_overlap_Old_DIM3_DPN3_EPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 8
-)
-ENDIF()
-
 ## Tpetra
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Old_DIM2_DPN1_TPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USETPETRA"
+ARGS "--M=5 --DIM=2 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -199,7 +94,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Old_DIM2_DPN2_TPETRA
-ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USETPETRA"
+ARGS "--M=5 --DIM=2 --O=2 --DPN=2 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -207,7 +102,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Old_DIM3_DPN1_TPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USETPETRA"
+ARGS "--M=5 --DIM=3 --O=2 --DPN=1 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -215,7 +110,7 @@ NUM_MPI_PROCS 8
 TRIBITS_ADD_TEST(
 overlap
 NAME test_overlap_Old_DIM3_DPN3_TPETRA
-ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml --USETPETRA"
+ARGS "--M=5 --DIM=3 --O=2 --DPN=3 --PLIST=ParameterLists/ParameterList_OneLevelPreconditioner_Old.xml"
 COMM mpi
 NUM_MPI_PROCS 8
 )

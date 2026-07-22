@@ -100,9 +100,10 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   //now insist that data for dfield on node is equal to the initial-value specified above:
 
-  double* data_ptr = stk::mesh::field_data( dfield, node);
+  auto dfieldData = dfield.data();
+  auto data = dfieldData.entity_values(node);
 
-  ASSERT_EQ( *data_ptr, initial_value );
+  ASSERT_EQ( data(0_comp), initial_value );
 }
 
 TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
@@ -148,13 +149,14 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
 
     mesh.modification_end();
 
+    ASSERT_TRUE( dfield.defined_on(node_tmp));
+    auto dfieldData = dfield.data<stk::mesh::ReadWrite>();
     //zero the field-data for the nodes that have dfield:
-    double* data_ptr = stk::mesh::field_data( dfield, node_tmp);
-    ASSERT_TRUE( nullptr != data_ptr);
-    *data_ptr = 0.0;
-    data_ptr = stk::mesh::field_data( dfield, node_tmp2);
-    ASSERT_TRUE( nullptr != data_ptr);
-    *data_ptr = 0.0;
+    auto data = dfieldData.entity_values(node_tmp);
+    data(0_comp) = 0.0;
+    ASSERT_TRUE( dfield.defined_on(node_tmp2));
+    data = dfieldData.entity_values(node_tmp2);
+    data(0_comp) = 0.0;
 
     mesh.modification_begin();
     //delete one of the nodes in newPart, add the node that wasn't previously in newPart:
@@ -162,10 +164,11 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field_part_change)
     mesh.change_entity_parts(node, stk::mesh::ConstPartVector{&newPart});
     mesh.modification_end();
 
+    dfieldData = dfield.data<stk::mesh::ReadWrite>();
     //now expect that data for dfield on node matches initial value
-    data_ptr = stk::mesh::field_data( dfield, node);
+    data = dfieldData.entity_values(node);
 
-    ASSERT_EQ( initial_value, *data_ptr);
+    ASSERT_EQ( initial_value, data(0_comp));
   }
 }
 
@@ -209,11 +212,11 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
   mesh.modification_end();
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
+  auto vfieldData = vfield.data();
+  auto data = vfieldData.entity_values(node);
 
-  double* data_ptr = stk::mesh::field_data( vfield, node);
-
-  ASSERT_EQ( data_ptr[0], initial_value[0] );
-  ASSERT_EQ( data_ptr[1], initial_value[1] );
+  ASSERT_EQ( data(0_comp), initial_value[0] );
+  ASSERT_EQ( data(1_comp), initial_value[1] );
 }
 
 TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
@@ -276,10 +279,11 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
-  double* data_ptr = stk::mesh::field_data( vfield, node);
+  auto vfieldData = vfield.data();
+  auto data = vfieldData.entity_values(node);
 
-  ASSERT_EQ( data_ptr[0], initial_value[0] );
-  ASSERT_EQ( data_ptr[1], initial_value[1] );
+  ASSERT_EQ( data(0_comp), initial_value[0] );
+  ASSERT_EQ( data(1_comp), initial_value[1] );
 }
 
 TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
@@ -330,14 +334,16 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   VectorField& vfield_old = vfield.field_of_state(stk::mesh::StateOld);
 
   {
-    double* data_ptr_new = stk::mesh::field_data( vfield_new, node);
-    double* data_ptr_old = stk::mesh::field_data( vfield_old, node);
+    auto vfieldDataNew = vfield_new.data();
+    auto vfieldDataOld = vfield_old.data();
+    auto dataNew = vfieldDataNew.entity_values(node);
+    auto dataOld = vfieldDataOld.entity_values(node);
 
-    ASSERT_EQ( data_ptr_new[0], initial_value[0] );
-    ASSERT_EQ( data_ptr_new[1], initial_value[1] );
+    ASSERT_EQ( dataNew(0_comp), initial_value[0] );
+    ASSERT_EQ( dataNew(1_comp), initial_value[1] );
 
-    ASSERT_EQ( data_ptr_old[0], initial_value[0] );
-    ASSERT_EQ( data_ptr_old[1], initial_value[1] );
+    ASSERT_EQ( dataOld(0_comp), initial_value[0] );
+    ASSERT_EQ( dataOld(1_comp), initial_value[1] );
   }
 }
 

@@ -26,7 +26,7 @@ WrapperModelEvaluatorSecondOrder<Scalar>::createInArgs() const
   inArgs.set_Np(appModel_->Np());
   inArgs.setSupports(MEB::IN_ARG_x);
 
-  return std::move(inArgs);
+  return inArgs;
 }
 
 template <typename Scalar>
@@ -44,7 +44,7 @@ WrapperModelEvaluatorSecondOrder<Scalar>::createOutArgsImpl() const
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
 
-  return std::move(outArgs);
+  return outArgs;
 }
 
 template <typename Scalar>

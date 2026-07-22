@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /**
  * Before digging in to the code, it's worth taking a moment to review this
  * design. Fundamentally, what we're looking to do is allow people to test that
@@ -37,7 +24,12 @@
  * Current examples are in TestEventCorrectness.hpp
  */
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <sstream>
 #include <iostream>
 #include <utility>
@@ -63,6 +55,27 @@ struct MatchDiagnostic {
 struct EventBase;  // forward declaration
 using EventBasePtr = std::shared_ptr<EventBase>;
 using event_vector = std::vector<EventBasePtr>;
+
+// unique identifier for derived event classes
+template <class EventDerived,
+          std::enable_if_t<std::is_base_of_v<EventBase, EventDerived> &&
+                           std::is_final_v<EventDerived>>* = nullptr>
+uintptr_t event_type_uid() {
+  static char x{};
+  return reinterpret_cast<uintptr_t>(&x);
+}
+
+// runtime check to determine if an event object of EventBase class is in fact
+// of a particular EventDerived class in which case it is safe to downcast
+// (essentially some hand-rolled form of dynamic pointer casting w/o using RTTI)
+template <
+    class EventDerived, class SomeEventBasePtr,
+    std::enable_if_t<std::is_base_of_v<EventBase, EventDerived> &&
+                     std::is_final_v<EventDerived> &&
+                     std::is_same_v<SomeEventBasePtr, EventBasePtr>>* = nullptr>
+bool is_a(SomeEventBasePtr const& e) {
+  return e->kind() == event_type_uid<EventDerived>();
+}
 
 /**
  * @brief In order to call some arbitrary set of lambdas representing matchers,
@@ -103,10 +116,10 @@ struct function_traits<R (*)(A...)> {
   constexpr static int num_arguments = sizeof...(A);
   template <class Call, class... Args>
   static auto invoke_as(const Call& call, Args&&... args) {
-    if (!(std::dynamic_pointer_cast<A>(std::forward<Args>(args)) && ...)) {
+    if (!(is_a<A>(std::forward<Args>(args)) && ...)) {
       return MatchDiagnostic{false, {"Types didn't match on arguments"}};
     }
-    return call(*std::dynamic_pointer_cast<A>(std::forward<Args>(args))...);
+    return call(*std::static_pointer_cast<A>(std::forward<Args>(args))...);
   }
 };
 
@@ -127,10 +140,10 @@ struct function_traits<R (C::*)(A...)> {
   constexpr static int num_arguments = sizeof...(A);
   template <class Call, class... Args>
   static auto invoke_as(const Call& call, Args&&... args) {
-    if (!(std::dynamic_pointer_cast<A>(std::forward<Args>(args)) && ...)) {
+    if (!(is_a<A>(std::forward<Args>(args)) && ...)) {
       return MatchDiagnostic{false, {"Types didn't match on arguments"}};
     }
-    return call(*std::dynamic_pointer_cast<A>(std::forward<Args>(args))...);
+    return call(*std::static_pointer_cast<A>(std::forward<Args>(args))...);
   }
 };
 
@@ -152,10 +165,10 @@ struct function_traits<R (C::*)(A...) const>  // const
   constexpr static int num_arguments = sizeof...(A);
   template <class Call, class... Args>
   static auto invoke_as(const Call& call, Args&&... args) {
-    if (!(std::dynamic_pointer_cast<A>(std::forward<Args>(args)) && ...)) {
+    if (!(is_a<A>(std::forward<Args>(args)) && ...)) {
       return MatchDiagnostic{false, {"Types didn't match on arguments"}};
     }
-    return call(*std::dynamic_pointer_cast<A>(std::forward<Args>(args))...);
+    return call(*std::static_pointer_cast<A>(std::forward<Args>(args))...);
   }
 };
 
@@ -168,7 +181,7 @@ struct function_traits<R (C::*)(A...) const>  // const
  * @tparam T The functor type
  */
 template <typename T>
-struct function_traits<T, std::void_t<decltype(&T::operator())> >
+struct function_traits<T, std::void_t<decltype(&T::operator())>>
     : public function_traits<decltype(&T::operator())> {};
 
 /**
@@ -284,6 +297,14 @@ struct EventBase {
   using PtrHandle                        = const void* const;
   virtual ~EventBase()                   = default;
   virtual std::string descriptor() const = 0;
+  virtual uintptr_t kind() const         = 0;
+};
+
+template <class Derived>
+struct UniquelyIdentifiableEventType : public EventBase {
+  uintptr_t kind() const override { return event_type_uid<Derived>(); }
+  // NOLINTNEXTLINE(bugprone-crtp-constructor-accessibility)
+  UniquelyIdentifiableEventType() = default;
 };
 
 /**
@@ -293,12 +314,10 @@ struct EventBase {
  * @tparam Derived CRTP, intended for use with dynamic_casts
  */
 template <class Derived>
-struct BeginOperation : public EventBase {
+struct BeginOperation : public UniquelyIdentifiableEventType<Derived> {
   const std::string name;
   const uint32_t deviceID;
   uint64_t kID;
-  BeginOperation(const std::string& n, const uint32_t devID, uint64_t k)
-      : name(n), deviceID(devID), kID(k) {}
   std::string descriptor() const override {
     std::stringstream s;
     s << Derived::begin_op_name() << " { \"" << name << "\", ";
@@ -308,6 +327,11 @@ struct BeginOperation : public EventBase {
     s << "}";
     return s.str();
   }
+
+ private:
+  BeginOperation(const std::string& n, const uint32_t devID, uint64_t k)
+      : name(n), deviceID(devID), kID(k) {}
+  friend Derived;
 };
 /**
  * @brief Analogous to BeginOperation, there are a lot of things in Kokkos
@@ -317,9 +341,8 @@ struct BeginOperation : public EventBase {
  * same type
  */
 template <class Derived>
-struct EndOperation : public EventBase {
+struct EndOperation : public UniquelyIdentifiableEventType<Derived> {
   uint64_t kID;
-  EndOperation(uint64_t k) : kID(k) {}
 
   std::string descriptor() const override {
     std::stringstream s;
@@ -328,6 +351,10 @@ struct EndOperation : public EventBase {
     s << "}";
     return s.str();
   }
+
+ private:
+  EndOperation(uint64_t k) : kID(k) {}
+  friend Derived;
 };
 
 /**
@@ -336,7 +363,8 @@ struct EndOperation : public EventBase {
  * type. So the different type names here are meaningful, even though the
  * classes are empty
  */
-struct BeginParallelForEvent : public BeginOperation<BeginParallelForEvent> {
+struct BeginParallelForEvent final
+    : public BeginOperation<BeginParallelForEvent> {
   static const std::string& begin_op_name() {
     static std::string value = "BeginParallelFor";
     return value;
@@ -344,7 +372,7 @@ struct BeginParallelForEvent : public BeginOperation<BeginParallelForEvent> {
   BeginParallelForEvent(std::string n, const uint32_t devID, uint64_t k)
       : BeginOperation<BeginParallelForEvent>(n, devID, k) {}
 };
-struct BeginParallelReduceEvent
+struct BeginParallelReduceEvent final
     : public BeginOperation<BeginParallelReduceEvent> {
   static const std::string& begin_op_name() {
     static std::string value = "BeginParallelReduce";
@@ -354,7 +382,8 @@ struct BeginParallelReduceEvent
   BeginParallelReduceEvent(std::string n, const uint32_t devID, uint64_t k)
       : BeginOperation<BeginParallelReduceEvent>(n, devID, k) {}
 };
-struct BeginParallelScanEvent : public BeginOperation<BeginParallelScanEvent> {
+struct BeginParallelScanEvent final
+    : public BeginOperation<BeginParallelScanEvent> {
   static const std::string& begin_op_name() {
     static std::string value = "BeginParallelScan";
     return value;
@@ -363,7 +392,7 @@ struct BeginParallelScanEvent : public BeginOperation<BeginParallelScanEvent> {
   BeginParallelScanEvent(std::string n, const uint32_t devID, uint64_t k)
       : BeginOperation<BeginParallelScanEvent>(n, devID, k) {}
 };
-struct BeginFenceEvent : public BeginOperation<BeginFenceEvent> {
+struct BeginFenceEvent final : public BeginOperation<BeginFenceEvent> {
   static const std::string& begin_op_name() {
     static std::string value = "BeginFence";
     return value;
@@ -373,7 +402,7 @@ struct BeginFenceEvent : public BeginOperation<BeginFenceEvent> {
       : BeginOperation<BeginFenceEvent>(n, devID, k) {}
 };
 
-struct EndParallelForEvent : public EndOperation<EndParallelForEvent> {
+struct EndParallelForEvent final : public EndOperation<EndParallelForEvent> {
   static const std::string& end_op_name() {
     static std::string value = "EndParallelFor";
     return value;
@@ -381,7 +410,8 @@ struct EndParallelForEvent : public EndOperation<EndParallelForEvent> {
 
   EndParallelForEvent(uint64_t k) : EndOperation<EndParallelForEvent>(k) {}
 };
-struct EndParallelReduceEvent : public EndOperation<EndParallelReduceEvent> {
+struct EndParallelReduceEvent final
+    : public EndOperation<EndParallelReduceEvent> {
   static const std::string& end_op_name() {
     static std::string value = "EndParallelReduce";
     return value;
@@ -390,7 +420,7 @@ struct EndParallelReduceEvent : public EndOperation<EndParallelReduceEvent> {
   EndParallelReduceEvent(uint64_t k)
       : EndOperation<EndParallelReduceEvent>(k) {}
 };
-struct EndParallelScanEvent : public EndOperation<EndParallelScanEvent> {
+struct EndParallelScanEvent final : public EndOperation<EndParallelScanEvent> {
   static const std::string& end_op_name() {
     static std::string value = "EndParallelScan";
     return value;
@@ -398,7 +428,7 @@ struct EndParallelScanEvent : public EndOperation<EndParallelScanEvent> {
 
   EndParallelScanEvent(uint64_t k) : EndOperation<EndParallelScanEvent>(k) {}
 };
-struct EndFenceEvent : public EndOperation<EndFenceEvent> {
+struct EndFenceEvent final : public EndOperation<EndFenceEvent> {
   static const std::string& end_op_name() {
     static std::string value = "EndFence";
     return value;
@@ -407,7 +437,7 @@ struct EndFenceEvent : public EndOperation<EndFenceEvent> {
   EndFenceEvent(uint64_t k) : EndOperation<EndFenceEvent>(k) {}
 };
 
-struct InitEvent : public EventBase {
+struct InitEvent final : public UniquelyIdentifiableEventType<InitEvent> {
   int load_sequence;
   uint64_t version_number;
   uint32_t num_device_infos;
@@ -425,11 +455,13 @@ struct InitEvent : public EventBase {
         num_device_infos(n_d_i),
         device_infos(d_i) {}
 };
-struct FinalizeEvent : public EventBase {
+struct FinalizeEvent final
+    : public UniquelyIdentifiableEventType<FinalizeEvent> {
   std::string descriptor() const override { return "FinalizeEvent{}"; }
 };
 
-struct ParseArgsEvent : public EventBase {
+struct ParseArgsEvent final
+    : public UniquelyIdentifiableEventType<ParseArgsEvent> {
   int num_args;
   char** args;
 
@@ -444,26 +476,29 @@ struct ParseArgsEvent : public EventBase {
   }
   ParseArgsEvent(int n_a, char** a) : num_args(n_a), args(a) {}
 };
-struct PrintHelpEvent : public EventBase {
+struct PrintHelpEvent final
+    : public UniquelyIdentifiableEventType<PrintHelpEvent> {
   char* prog_name;
   std::string descriptor() const override {
     return "PrintHelpEvent { Program Name: \"" + std::string(prog_name) + "\"}";
   }
   PrintHelpEvent(char* p_n) : prog_name(p_n) {}
 };
-struct PushRegionEvent : public EventBase {
+struct PushRegionEvent final
+    : public UniquelyIdentifiableEventType<PushRegionEvent> {
   std::string name;
   std::string descriptor() const override {
     return "PushRegionEvent { Region Name: \"" + name + "\" }";
   }
   PushRegionEvent(std::string n) : name(n) {}
 };
-struct PopRegionEvent : public EventBase {
+struct PopRegionEvent final
+    : public UniquelyIdentifiableEventType<PopRegionEvent> {
   std::string descriptor() const override { return "PopRegionEvent{}"; }
 };
 
 template <class Derived>
-struct DataEvent : public EventBase {
+struct DataEvent : public UniquelyIdentifiableEventType<Derived> {
   using SpaceHandleType = Kokkos::Profiling::SpaceHandle;
   SpaceHandleType handle;
   std::string name;
@@ -477,25 +512,29 @@ struct DataEvent : public EventBase {
       << "}";
     return s.str();
   }
+
+ private:
   DataEvent(SpaceHandleType h, std::string n, EventBase::PtrHandle p,
             uint64_t s)
       : handle(h), name(n), ptr(p), size(s) {}
+  friend Derived;
 };
 
-struct AllocateDataEvent : public DataEvent<AllocateDataEvent> {
+struct AllocateDataEvent final : public DataEvent<AllocateDataEvent> {
   static std::string event_name() { return "AllocateDataEvent"; }
   AllocateDataEvent(DataEvent::SpaceHandleType h, std::string n,
                     EventBase::PtrHandle p, uint64_t s)
       : DataEvent<AllocateDataEvent>(h, n, p, s) {}
 };
-struct DeallocateDataEvent : public DataEvent<DeallocateDataEvent> {
+struct DeallocateDataEvent final : public DataEvent<DeallocateDataEvent> {
   static std::string event_name() { return "DeallocateDataEvent"; }
   DeallocateDataEvent(DataEvent::SpaceHandleType h, std::string n,
                       EventBase::PtrHandle p, uint64_t s)
       : DataEvent<DeallocateDataEvent>(h, n, p, s) {}
 };
 
-struct CreateProfileSectionEvent : public EventBase {
+struct CreateProfileSectionEvent final
+    : public UniquelyIdentifiableEventType<CreateProfileSectionEvent> {
   std::string name;
   uint32_t id;
   std::string descriptor() const override {
@@ -506,36 +545,40 @@ struct CreateProfileSectionEvent : public EventBase {
 };
 
 template <class Derived>
-struct ProfileSectionManipulationEvent : public EventBase {
+struct ProfileSectionManipulationEvent
+    : public UniquelyIdentifiableEventType<Derived> {
   uint32_t id;
   std::string descriptor() const override {
     std::stringstream s;
     s << Derived::event_name() << "{ " << id << "}";
     return s.str();
   }
-  ProfileSectionManipulationEvent(uint32_t d_i) : id(d_i){};
+
+ private:
+  ProfileSectionManipulationEvent(uint32_t d_i) : id(d_i) {}
+  friend Derived;
 };
 
-struct StartProfileSectionEvent
+struct StartProfileSectionEvent final
     : public ProfileSectionManipulationEvent<StartProfileSectionEvent> {
   static std::string event_name() { return "StartProfileSectionEvent"; }
   StartProfileSectionEvent(uint32_t d_i)
-      : ProfileSectionManipulationEvent<StartProfileSectionEvent>(d_i){};
+      : ProfileSectionManipulationEvent<StartProfileSectionEvent>(d_i) {}
 };
-struct StopProfileSectionEvent
+struct StopProfileSectionEvent final
     : public ProfileSectionManipulationEvent<StopProfileSectionEvent> {
   static std::string event_name() { return "StopProfileSectionEvent"; }
   StopProfileSectionEvent(uint32_t d_i)
-      : ProfileSectionManipulationEvent<StopProfileSectionEvent>(d_i){};
+      : ProfileSectionManipulationEvent<StopProfileSectionEvent>(d_i) {}
 };
-struct DestroyProfileSectionEvent
+struct DestroyProfileSectionEvent final
     : public ProfileSectionManipulationEvent<DestroyProfileSectionEvent> {
   static std::string event_name() { return "DestroyProfileSectionEvent"; }
   DestroyProfileSectionEvent(uint32_t d_i)
-      : ProfileSectionManipulationEvent<DestroyProfileSectionEvent>(d_i){};
+      : ProfileSectionManipulationEvent<DestroyProfileSectionEvent>(d_i) {}
 };
 
-struct ProfileEvent : public EventBase {
+struct ProfileEvent final : public UniquelyIdentifiableEventType<ProfileEvent> {
   std::string name;
   std::string descriptor() const override {
     return "ProfileEvent {\"" + name + "\"}";
@@ -543,7 +586,8 @@ struct ProfileEvent : public EventBase {
   ProfileEvent(std::string n) : name(n) {}
 };
 
-struct BeginDeepCopyEvent : public EventBase {
+struct BeginDeepCopyEvent final
+    : public UniquelyIdentifiableEventType<BeginDeepCopyEvent> {
   using SpaceHandleType = Kokkos::Profiling::SpaceHandle;
   SpaceHandleType src_handle;
   std::string src_name;
@@ -573,36 +617,41 @@ struct BeginDeepCopyEvent : public EventBase {
         dst_ptr(d_p),
         size(s) {}
 };
-struct EndDeepCopyEvent : public EventBase {
+struct EndDeepCopyEvent final
+    : public UniquelyIdentifiableEventType<EndDeepCopyEvent> {
   std::string descriptor() const override { return "EndDeepCopyEvent{}"; }
 };
 
 template <class Derived>
-struct DualViewEvent : public EventBase {
+struct DualViewEvent : public UniquelyIdentifiableEventType<Derived> {
   std::string name;
   EventBase::PtrHandle ptr;
   bool is_device;
-  DualViewEvent(std::string n, EventBase::PtrHandle p, bool i_d)
-      : name(n), ptr(p), is_device(i_d) {}
   std::string descriptor() const override {
     std::stringstream s;
     s << Derived::event_name() << " { \"" << name << "\", " << std::hex << ptr
       << ", " << std::boolalpha << is_device << "}";
     return s.str();
   }
+
+ private:
+  DualViewEvent(std::string n, EventBase::PtrHandle p, bool i_d)
+      : name(n), ptr(p), is_device(i_d) {}
+  friend Derived;
 };
-struct DualViewModifyEvent : public DualViewEvent<DualViewModifyEvent> {
+struct DualViewModifyEvent final : public DualViewEvent<DualViewModifyEvent> {
   static std::string event_name() { return "DualViewModifyEvent"; }
   DualViewModifyEvent(std::string n, EventBase::PtrHandle p, bool i_d)
       : DualViewEvent(n, p, i_d) {}
 };
-struct DualViewSyncEvent : public DualViewEvent<DualViewSyncEvent> {
+struct DualViewSyncEvent final : public DualViewEvent<DualViewSyncEvent> {
   static std::string event_name() { return "DualViewSyncEvent"; }
   DualViewSyncEvent(std::string n, EventBase::PtrHandle p, bool i_d)
       : DualViewEvent(n, p, i_d) {}
 };
 
-struct DeclareMetadataEvent : public EventBase {
+struct DeclareMetadataEvent final
+    : public UniquelyIdentifiableEventType<DeclareMetadataEvent> {
   std::string key;
   std::string value;
   std::string descriptor() const override {
@@ -611,7 +660,9 @@ struct DeclareMetadataEvent : public EventBase {
   DeclareMetadataEvent(std::string k, std::string v) : key(k), value(v) {}
 };
 
-struct ProvideToolProgrammingInterfaceEvent : public EventBase {
+struct ProvideToolProgrammingInterfaceEvent final
+    : public UniquelyIdentifiableEventType<
+          ProvideToolProgrammingInterfaceEvent> {
   using Interface = Kokkos::Tools::Experimental::ToolProgrammingInterface;
 
   uint32_t num_functions;
@@ -623,7 +674,8 @@ struct ProvideToolProgrammingInterfaceEvent : public EventBase {
            std::to_string(num_functions) + "}";
   }
 };
-struct RequestToolSettingsEvent : public EventBase {
+struct RequestToolSettingsEvent final
+    : public UniquelyIdentifiableEventType<RequestToolSettingsEvent> {
   using Settings = Kokkos::Tools::Experimental::ToolSettings;
 
   uint32_t num_settings;
@@ -636,7 +688,7 @@ struct RequestToolSettingsEvent : public EventBase {
 };
 
 template <class Derived>
-struct TypeDeclarationEvent : public EventBase {
+struct TypeDeclarationEvent : public UniquelyIdentifiableEventType<Derived> {
   std::string name;
   size_t variable_id;
   Kokkos::Tools::Experimental::VariableInfo info;
@@ -644,18 +696,21 @@ struct TypeDeclarationEvent : public EventBase {
     return Derived::event_name() + "{ \"" + name + "\"," +
            std::to_string(variable_id) + "}";
   }
+
+ private:
   TypeDeclarationEvent(std::string n, size_t v_i,
                        Kokkos::Tools::Experimental::VariableInfo i)
       : name(n), variable_id(v_i), info(i) {}
+  friend Derived;
 };
-struct DeclareOutputTypeEvent
+struct DeclareOutputTypeEvent final
     : public TypeDeclarationEvent<DeclareOutputTypeEvent> {
   static std::string event_name() { return "DeclarateOutputTypeEvent"; }
   DeclareOutputTypeEvent(std::string n, size_t v_i,
                          Kokkos::Tools::Experimental::VariableInfo i)
       : TypeDeclarationEvent(n, v_i, i) {}
 };
-struct DeclareInputTypeEvent
+struct DeclareInputTypeEvent final
     : public TypeDeclarationEvent<DeclareInputTypeEvent> {
   static std::string event_name() { return "DeclareInputTypeEvent"; }
   DeclareInputTypeEvent(std::string n, size_t v_i,
@@ -663,7 +718,8 @@ struct DeclareInputTypeEvent
       : TypeDeclarationEvent(n, v_i, i) {}
 };
 
-struct RequestOutputValuesEvent : public EventBase {
+struct RequestOutputValuesEvent final
+    : public UniquelyIdentifiableEventType<RequestOutputValuesEvent> {
   size_t context;
   size_t num_inputs;
   std::vector<Kokkos::Tools::Experimental::VariableValue> inputs;
@@ -683,14 +739,16 @@ struct RequestOutputValuesEvent : public EventBase {
       : context(c), num_inputs(n_i), inputs(i), num_outputs(n_o), outputs(o) {}
 };
 
-struct BeginContextEvent : public EventBase {
+struct BeginContextEvent final
+    : public UniquelyIdentifiableEventType<BeginContextEvent> {
   size_t context;
   std::string descriptor() const override {
     return "ContextBeginEvent{ " + std::to_string(context) + "}";
   }
   BeginContextEvent(size_t c) : context(c) {}
 };
-struct EndContextEvent : public EventBase {
+struct EndContextEvent final
+    : public UniquelyIdentifiableEventType<EndContextEvent> {
   size_t context;
   Kokkos::Tools::Experimental::VariableValue value;
   std::string descriptor() const override {
@@ -700,7 +758,8 @@ struct EndContextEvent : public EventBase {
       : context(c), value(v) {}
 };
 
-struct OptimizationGoalDeclarationEvent : public EventBase {
+struct OptimizationGoalDeclarationEvent final
+    : public UniquelyIdentifiableEventType<OptimizationGoalDeclarationEvent> {
   size_t context;
   Kokkos::Tools::Experimental::OptimizationGoal goal;
   std::string descriptor() const override {
@@ -925,7 +984,8 @@ static uint64_t last_kernel_id;
 static uint32_t last_section_id;
 
 /** Subscribes to all of the requested callbacks */
-static void set_tool_events_impl(const ToolValidatorConfiguration& config) {
+static inline void set_tool_events_impl(
+    const ToolValidatorConfiguration& config) {
   Kokkos::Tools::Experimental::pause_tools();  // remove all events
   if (config.profiling.kernels) {
     Kokkos::Tools::Experimental::set_begin_parallel_for_callback(
@@ -1149,7 +1209,7 @@ void listen_tool_events_impl(std::integral_constant<int, priority> prio,
   listen_tool_events_impl(prio, in, configs...);
 }
 template <class... Configs>
-void listen_tool_events(Configs... confs) {
+static void listen_tool_events(Configs... confs) {
   ToolValidatorConfiguration conf;
   listen_tool_events_impl(std::integral_constant<int, 0>{}, conf, confs...);
   listen_tool_events_impl(std::integral_constant<int, 1>{}, conf, confs...);
@@ -1172,7 +1232,7 @@ void listen_tool_events(Configs... confs) {
  * matchers success, false otherwise
  */
 template <class Lambda, class... Matchers>
-bool validate_event_set(const Lambda& lam, Matchers&&... matchers) {
+static bool validate_event_set(const Lambda& lam, Matchers&&... matchers) {
   // First, erase events from previous invocations
   found_events.clear();
   // Invoke the lambda (this will populate found_events, via tooling)
@@ -1197,7 +1257,7 @@ bool validate_event_set(const Lambda& lam, Matchers&&... matchers) {
  * @return auto
  */
 template <class Lambda>
-auto get_event_set(const Lambda& lam) {
+static auto get_event_set(const Lambda& lam) {
   found_events.clear();
   lam();
   // return compare_event_vectors(expected, found_events);
@@ -1225,7 +1285,7 @@ MatchDiagnostic check_presence_of(const EventBasePtr& event, const Matcher& m,
 }
 
 template <class Lambda, class... Matchers>
-bool validate_absence(const Lambda& lam, const Matchers... matchers) {
+static bool validate_absence(const Lambda& lam, const Matchers... matchers) {
   // First, erase events from previous invocations
   found_events.clear();
   // Invoke the lambda (this will populate found_events, via tooling)
@@ -1250,7 +1310,7 @@ bool validate_absence(const Lambda& lam, const Matchers... matchers) {
 }
 
 template <class Lambda, class Matcher>
-bool validate_existence(const Lambda& lam, const Matcher matcher) {
+static bool validate_existence(const Lambda& lam, const Matcher matcher) {
   // First, erase events from previous invocations
   found_events.clear();
   // Invoke the lambda (this will populate found_events, via tooling)

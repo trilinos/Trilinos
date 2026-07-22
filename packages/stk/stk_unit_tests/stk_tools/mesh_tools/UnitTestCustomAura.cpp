@@ -217,24 +217,18 @@ void sym_comm_post_ghost_check(stk::mesh::BulkData& bulk) {
     return;
   }
 
-  std::vector<int> goldOwnedCommProcs;
-  for ( int p(1); p < bulk.parallel_size(); ++p ) {
-    goldOwnedCommProcs.emplace_back(p);
+  std::vector<int> goldGhostCommProcs;
+  for ( int p=0; p < bulk.parallel_size(); ++p ) {
+    if (p != bulk.parallel_rank()) {
+      goldGhostCommProcs.push_back(p);
+    }
   }
-  std::vector<int> goldGhostCommProcs = {0};
-
 
   std::vector<int> commProcs;
   bulk.comm_procs(n1,commProcs);
   std::sort(commProcs.begin(),commProcs.end());
 
-  // check owned comm_procs
-  if (bulk.parallel_rank() == 0) {
-    EXPECT_EQ(commProcs,goldOwnedCommProcs);
-    // check ghost comm_procs
-  } else {
-    EXPECT_EQ(commProcs,goldGhostCommProcs);
-  }
+  EXPECT_EQ(commProcs,goldGhostCommProcs);
 
   std::map<stk::mesh::EntityKey, std::set<int>> symmMap;
   stk::tools::populate_symm_comm_map(bulk,symmMap,stk::topology::NODE_RANK);

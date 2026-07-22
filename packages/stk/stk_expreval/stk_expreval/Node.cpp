@@ -35,6 +35,7 @@
 #include "stk_expreval/Node.hpp"
 #include "stk_expreval/Eval.hpp"
 #include "stk_expreval/Constants.hpp"
+#include "stk_util/util/FPExceptions.hpp"
 #include <string>
 
 namespace stk {
@@ -53,10 +54,7 @@ Node::Node(Opcode opcode, Eval* owner)
     m_owner(owner),
     m_hasBeenEvaluated(false)
 {
-  m_data.function.undefinedFunction = false;
-  for (unsigned i=0; i<MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES; ++i) {
-    m_data.function.function[i] = nullptr;
-  }
+  m_data.function.function = nullptr;
 }
 
 int
@@ -84,6 +82,11 @@ double& Node::setResult() {
 void
 Node::eval()
 {
+  if (m_owner->get_fp_error_behavior() != Eval::FPErrorBehavior::Ignore)
+  {
+    stk::util::clear_fp_errors();
+  }
+
   switch (m_opcode) {
   case OPCODE_STATEMENT: {
     setResult() = m_left->getResult();
@@ -108,10 +111,12 @@ Node::eval()
   }
   case OPCODE_EXPONENIATION: {
     setResult() = std::pow(m_left->getResult(),m_right->getResult());
+    checkFPError("std::pow");
     break;
   }
   case OPCODE_DIVIDE: {
     setResult() = m_left->getResult()/m_right->getResult();
+    checkFPError("operator/");
     break;
   }
   case OPCODE_MODULUS: {
@@ -200,35 +205,23 @@ Node::eval()
     break;
   }
   case OPCODE_FUNCTION: {
-    double argv[20];
+    double argv[MAXIMUM_NUMBER_OF_FUNCTION_ARGS];
 
     int argc = 0;
     for (Node *arg = m_right; arg; arg = arg->m_right) {
       argv[argc++] = arg->getResult();
     }
 
-    bool foundMatchingFunction = false;
-    unsigned i = 0;
-    while (!foundMatchingFunction && (i < Node::MAXIMUM_NUMBER_OF_OVERLOADED_FUNCTION_NAMES)) {
-      if (nullptr == m_data.function.function[i]) {
-        throw expression_undefined_exception(m_data.function.functionName, argc);
-      }
+    setResult() = (*m_data.function.function)(argc, argv);
+    checkFPError(m_data.function.functionName);
 
-      if ( m_data.function.function[i]->getArgCount() == argc) {
-        setResult() = (*m_data.function.function[i])(argc, argv);
-        foundMatchingFunction = true;
-      }
-
-      ++i;
-    }
-
-    STK_ThrowRequireMsg(foundMatchingFunction, "Function had wrong number of arguments");
     break;
   }
   default: {
     STK_ThrowErrorMsg("Unknown OpCode (" + std::to_string(m_opcode) + ")");
   }
   }
+  checkFPError();
 
   m_hasBeenEvaluated = true;
 }
@@ -446,6 +439,29 @@ Node::evalTrace(const NodeWeightMap & nodeWeights, EvalNodesType & evaluationNod
     evaluationNodes.push_back(this);
   }
 }
+
+void Node::checkFPError(const char* fname)
+{
+  Eval::FPErrorBehavior behavior = m_owner->get_fp_error_behavior();
+  if (behavior == Eval::FPErrorBehavior::Ignore)
+  {
+    return;
+  } else if (behavior == Eval::FPErrorBehavior::Warn || behavior == Eval::FPErrorBehavior::WarnOnce)
+  {
+    if (!(behavior == Eval::FPErrorBehavior::WarnOnce && m_owner->get_fp_warning_issued()))
+    {
+      bool did_warn = stk::util::warn_on_fp_error(fname);    
+      if (did_warn)
+      {
+        m_owner->set_fp_warning_issued();    
+      }
+    }
+  } else if (behavior == Eval::FPErrorBehavior::Error)
+  {
+    stk::util::throw_on_fp_error(fname);
+  }
+}
+
 
 }
 }

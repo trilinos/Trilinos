@@ -1,8 +1,21 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_SCALAR_TRAITS_HPP
 #define SHYLUBASKER_SCALAR_TRAITS_HPP
 
 #ifndef MY_SCALAR_ABS
 #define MY_SCALAR_ABS(x) (((x) < 0) ? -(x) : (x))
+#endif
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include "Teuchos_ScalarTraits.hpp"
 #endif
 
 namespace BaskerNS

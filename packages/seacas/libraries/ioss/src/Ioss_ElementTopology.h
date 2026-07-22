@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -51,6 +51,11 @@ namespace Ioss {
       return m_registry.find(type);
     }
 
+    ETRegistry()                              = default;
+    ETRegistry(const ETRegistry &)            = delete;
+    ETRegistry &operator=(const ETRegistry &) = delete;
+    ETRegistry(ETRegistry &&)                 = delete;
+    ETRegistry &operator=(ETRegistry &&)      = delete;
     ~ETRegistry();
 
   private:
@@ -72,6 +77,8 @@ namespace Ioss {
 
     ElementTopology(const ElementTopology &)            = delete;
     ElementTopology &operator=(const ElementTopology &) = delete;
+    ElementTopology(ElementTopology &&)                 = delete;
+    ElementTopology &operator=(ElementTopology &&)      = delete;
 
     virtual ~ElementTopology() = default;
 

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include "KokkosBlas_common.hpp"
 #include "blas/blas3/KokkosBlas_trtri_perf_test.hpp"
 
@@ -20,22 +7,21 @@
 #include <unistd.h>
 #include <getopt.h>
 
-static struct option long_options[] = {
-    {"help", no_argument, 0, 'h'},
-    {"test", required_argument, 0, 't'},
-    {"loop_type", required_argument, 0, 'l'},
-    {"matrix_size_start", required_argument, 0, 'b'},
-    {"matrix_size_stop", required_argument, 0, 'e'},
-    {"matrix_size_step", required_argument, 0, 's'},
-    {"warm_up_loop", required_argument, 0, 'w'},
-    {"iter", required_argument, 0, 'i'},
-    {"batch_size", required_argument, 0, 'k'},
-    {"csv", required_argument, 0, 'c'},
-    {"routines", required_argument, 0, 'r'},
-    {"trtri_options", required_argument, 0, 'o'},
-    {0, 0, 0, 0}};
+static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+                                       {"test", required_argument, 0, 't'},
+                                       {"loop_type", required_argument, 0, 'l'},
+                                       {"matrix_size_start", required_argument, 0, 'b'},
+                                       {"matrix_size_stop", required_argument, 0, 'e'},
+                                       {"matrix_size_step", required_argument, 0, 's'},
+                                       {"warm_up_loop", required_argument, 0, 'w'},
+                                       {"iter", required_argument, 0, 'i'},
+                                       {"batch_size", required_argument, 0, 'k'},
+                                       {"csv", required_argument, 0, 'c'},
+                                       {"routines", required_argument, 0, 'r'},
+                                       {"trtri_options", required_argument, 0, 'o'},
+                                       {0, 0, 0, 0}};
 
-static void __print_help_blas_perf_test() {
+static void print_help_blas_perf_test() {
   printf("Options:\n");
 
   printf("\t-h, --help\n");
@@ -55,9 +41,7 @@ static void __print_help_blas_perf_test() {
 
   printf("\t-o, --trtri_options=OPTION_STRING\n");
   printf("\t\tTRTRI uplo and diag options.\n");
-  printf(
-      "\t\t\tValid format for OPTION_STRING is \"%%c%%c\". (default: %s)\n\n",
-      DEFAULT_TRTRI_ARGS);
+  printf("\t\t\tValid format for OPTION_STRING is \"%%c%%c\". (default: %s)\n\n", DEFAULT_TRTRI_ARGS);
 
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
@@ -76,16 +60,14 @@ static void __print_help_blas_perf_test() {
   printf(
       "\t\t\tValid values for M and N are any non-negative 32-bit integers. "
       "(default: %dx%d,%dx%d)\n\n",
-      DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START,
-      DEFAULT_MATRIX_START);
+      DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START);
 
   printf("\t-e, --matrix_size_stop=PxQ,SxT\n");
   printf("\t\tMatrix size selection where A is PxQ and B is SxT (stop)\n");
   printf(
       "\t\t\tValid values for P and Q are any non-negative 32-bit integers. "
       "(default: %dx%d,%dx%d)\n\n",
-      DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP,
-      DEFAULT_MATRIX_STOP);
+      DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP);
 
   printf("\t-s, --matrix_size_step=K\n");
   printf("\t\tMatrix step selection.\n");
@@ -126,10 +108,9 @@ static void __print_help_blas_perf_test() {
       DEFAULT_BLAS_ROUTINES);
 }
 
-static void __blas_perf_test_input_error(char **argv, int option_idx) {
-  fprintf(stderr, "ERROR: invalid option \"%s %s\".\n", argv[option_idx],
-          argv[option_idx + 1]);
-  __print_help_blas_perf_test();
+static void blas_perf_test_input_error(char **argv, int option_idx) {
+  fprintf(stderr, "ERROR: invalid option \"%s %s\".\n", argv[option_idx], argv[option_idx + 1]);
+  print_help_blas_perf_test();
   exit(-EINVAL);
 }
 
@@ -163,10 +144,9 @@ int main(int argc, char **argv) {
 
   options.blas_args.trtri.trtri_args = DEFAULT_TRTRI_ARGS;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:c:r:k:", long_options,
-                            &option_idx)) != -1) {
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:c:r:k:", long_options, &option_idx)) != -1) {
     switch (ret) {
-      case 'h': __print_help_blas_perf_test(); return 0;
+      case 'h': print_help_blas_perf_test(); return 0;
       case 't':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (!strncasecmp(optarg, "blas", 4)) {
@@ -174,13 +154,13 @@ int main(int argc, char **argv) {
         } else if (!strncasecmp(optarg, "batched", 6)) {
           options.test = BATCHED;
         } else {
-          __blas_perf_test_input_error(argv, option_idx);
+          blas_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'o':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
         if (strlen(optarg) != 2) {
-          __blas_perf_test_input_error(argv, option_idx);
+          blas_perf_test_input_error(argv, option_idx);
         }
         options.blas_args.trtri.trtri_args = optarg;
         break;
@@ -190,7 +170,7 @@ int main(int argc, char **argv) {
         } else if (!strncasecmp(optarg, "parallel", 8)) {
           options.loop = PARALLEL;
         } else {
-          __blas_perf_test_input_error(argv, option_idx);
+          blas_perf_test_input_error(argv, option_idx);
         }
         break;
       case 'b':
@@ -200,14 +180,14 @@ int main(int argc, char **argv) {
         bdim    = &bdim[1];
 
         n_str = strcasestr(adim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]          = '\0';
         options.start.a.m = atoi(adim);
         options.start.a.n = atoi(&n_str[1]);
 
         n_str = strcasestr(bdim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]          = '\0';
         options.start.b.m = atoi(bdim);
@@ -220,14 +200,14 @@ int main(int argc, char **argv) {
         bdim    = &bdim[1];
 
         n_str = strcasestr(adim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]         = '\0';
         options.stop.a.m = atoi(adim);
         options.stop.a.n = atoi(&n_str[1]);
 
         n_str = strcasestr(bdim, "x");
-        if (n_str == NULL) __blas_perf_test_input_error(argv, option_idx);
+        if (n_str == NULL) blas_perf_test_input_error(argv, option_idx);
 
         n_str[0]         = '\0';
         options.stop.b.m = atoi(bdim);
@@ -236,17 +216,14 @@ int main(int argc, char **argv) {
       case 's': options.step = atoi(optarg); break;
       case 'w': options.warm_up_n = atoi(optarg); break;
       case 'i': options.n = atoi(optarg); break;
-      case 'k':
-        options.start.a.k = options.stop.a.k = options.start.b.k =
-            options.stop.b.k                 = atoi(optarg);
-        break;
+      case 'k': options.start.a.k = options.stop.a.k = options.start.b.k = options.stop.b.k = atoi(optarg); break;
       case 'c':
         out_file         = optarg;
         options.out_file = std::string(out_file);
         break;
       case 'r': options.blas_routines = std::string(optarg); break;
       case '?':
-      default: __blas_perf_test_input_error(argv, option_idx);
+      default: blas_perf_test_input_error(argv, option_idx);
     }
   }
 
@@ -256,14 +233,12 @@ int main(int argc, char **argv) {
     options.out = &out;
   }
 
-  if (options.warm_up_n > options.n)
-    __blas_perf_test_input_error(argv, option_idx);
+  if (options.warm_up_n > options.n) blas_perf_test_input_error(argv, option_idx);
 
   Kokkos::initialize(argc, argv);
 
   for (int i = 0; i < BLAS_ROUTINES_N; i++) {
-    if (options.blas_routines.find(blas_routines_e_str[TRTRI]) !=
-        std::string::npos)
+    if (options.blas_routines.find(blas_routines_e_str[TRTRI]) != std::string::npos)
       do_trtri_invoke[options.loop][options.test](options);
     // ADD MORE BLAS ROUTINES HERE
   }

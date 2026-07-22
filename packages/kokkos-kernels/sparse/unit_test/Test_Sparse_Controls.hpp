@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef TEST_SPARSE_CONTROLS_HPP
 #define TEST_SPARSE_CONTROLS_HPP
@@ -46,8 +33,7 @@ void test_controls_il() {
     EXPECT_EQ(c.getParameter("key1"), "val1");
   }
   {
-    KokkosKernels::Experimental::Controls c(
-        {{"key1", "val1"}, {"key2", "val2"}});
+    KokkosKernels::Experimental::Controls c({{"key1", "val1"}, {"key2", "val2"}});
     EXPECT_EQ(c.isParameter("blah"), false);
     EXPECT_EQ(c.getParameter("blah"), "");
     EXPECT_EQ(c.getParameter("key1"), "val1");

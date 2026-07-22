@@ -42,7 +42,7 @@ class TpetraOperator : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdin
     : Hierarchy_(H) {}
 
   //! Destructor.
-  virtual ~TpetraOperator() {}
+  virtual ~TpetraOperator();
 
   //@}
 

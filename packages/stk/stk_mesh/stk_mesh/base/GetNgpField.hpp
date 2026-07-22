@@ -35,58 +35,80 @@
 #define GETNGPFIELD_HPP
 
 #include "stk_mesh/base/NgpField.hpp"
-#include "stk_mesh/base/NgpFieldSyncDebugger.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 
 namespace stk {
 namespace mesh {
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
+template <typename T, typename NgpMemSpace>  // Default mem space from FieldBase.hpp declaration
+NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
 {
+  static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, NgpMemSpace>::accessible);
+
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    const bool isConstructingNewDeviceData = not stkField.has_device_data();
+
+    ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(execSpace);
-    ngpField->debug_initialize_debug_views();
+#if (!defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)) || (defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU))
+    if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::HostMemSpace>) {
+      // Add a false sync to match first-time updating of DeviceFields
+      stkField.increment_num_syncs_to_device();
+    }
+#endif
     impl::set_ngp_field(stkField, ngpField);
-    ngpField->clear_host_sync_state();
-  }
-  else {
-    if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField->update_field(execSpace);
+
+    if (isConstructingNewDeviceData) {
+      ngpField->clear_host_sync_state();
     }
   }
+  else {
+    ngpField->update_field(execSpace);
+  }
 
-  return dynamic_cast< NgpField<T, NgpDebugger>& >(*ngpField);
+  return dynamic_cast< NgpField<T, NgpMemSpace>& >(*ngpField);
 }
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, stk::ngp::ExecSpace&& execSpace)
+template <typename T, typename NgpMemSpace>  // Default mem space from FieldBase.hpp declaration
+NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkField, stk::ngp::ExecSpace&& execSpace)
 {
+  static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, NgpMemSpace>::accessible);
+
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    const bool isConstructingNewDeviceData = not stkField.has_device_data();
+
+    ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
-    ngpField->debug_initialize_debug_views();
+#if (!defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)) || (defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU))
+    if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::HostMemSpace>) {
+      // Add a false sync to match first-time updating of DeviceFields
+      stkField.increment_num_syncs_to_device();
+    }
+#endif
     impl::set_ngp_field(stkField, ngpField);
-    ngpField->clear_host_sync_state();
-  }
-  else {
-    if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
+
+    if (isConstructingNewDeviceData) {
+      ngpField->clear_host_sync_state();
     }
   }
+  else {
+    ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
+  }
 
-  return dynamic_cast< NgpField<T, NgpDebugger>& >(*ngpField);
+  return dynamic_cast< NgpField<T, NgpMemSpace>& >(*ngpField);
 }
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
+template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+NgpField<T, NgpMemSpace> & get_updated_ngp_field(const FieldBase & stkField)
 {
-  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpDebugger>(stkField, Kokkos::DefaultExecutionSpace());
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+  static_assert(Kokkos::SpaceAccessibility<ExecSpace, NgpMemSpace>::accessible);
+
+  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpMemSpace>(stkField, ExecSpace());
   ngpFieldRef.fence();
   return ngpFieldRef;
 }
@@ -94,3 +116,4 @@ NgpField<T, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
 }}
 
 #endif // GETNGPFIELD_HPP
+

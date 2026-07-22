@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -34,10 +21,6 @@
 
 #include <spmv/KokkosKernels_spmv_data.hpp>
 
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#include <PerfTestUtilities.hpp>
-#endif
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
 #include <spmv/ArmPL_SPMV.hpp>
 #endif
@@ -46,8 +29,7 @@
 //    rows_per_thread, team_size, vector_length,
 //    test, schedule, ave_time, max_time, min_time);
 
-SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
-                        Ordinal rows_per_thread, int team_size,
+SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A, Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int) {
   SPMVTestData test_data;
   using mv_type         = SPMVTestData::mv_type;
@@ -65,7 +47,7 @@ SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
   test_data.h_y         = Kokkos::create_mirror_view(y);
   test_data.h_y_compare = Kokkos::create_mirror(y);
 
-  h_graph_type h_graph   = Kokkos::create_mirror(test_data.A.graph);
+  h_graph_type h_graph   = KokkosSparse::create_mirror(test_data.A.graph);
   h_values_type h_values = Kokkos::create_mirror_view(test_data.A.values);
 
   for (int i = 0; i < test_data.numCols; i++) {
@@ -86,8 +68,7 @@ SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
   test_data.y1 = mv_type("Y1", test_data.numRows);
 
   // int nnz_per_row = A.nnz()/A.numRows(); // TODO: relocate
-  matvec(A, test_data.x1, test_data.y1, rows_per_thread, team_size,
-         vector_length, data, schedule);
+  matvec(A, test_data.x1, test_data.y1, rows_per_thread, team_size, vector_length, data, schedule);
 
   // Error Check
   Kokkos::deep_copy(test_data.h_y, test_data.y1);
@@ -106,8 +87,7 @@ SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
 }
 void run_benchmark(SPMVTestData& data) {
   Kokkos::Timer timer;
-  matvec(data.A, data.x1, data.y1, data.rows_per_thread, data.team_size,
-         data.vector_length, data.data, data.schedule);
+  matvec(data.A, data.x1, data.y1, data.rows_per_thread, data.team_size, data.vector_length, data.data, data.schedule);
   Kokkos::fence();
   double time = timer.seconds();
   data.ave_time += time;
@@ -123,49 +103,3 @@ struct SPMVConfiguration {
   int schedule;
   int loop;
 };
-
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-
-namespace readers {
-template <>
-struct test_reader<SPMVConfiguration> {
-  static SPMVConfiguration read(const std::string& filename) {
-    std::ifstream input(filename);
-    SPMVConfiguration config;
-    input >> config.test >> config.rows_per_thread >> config.team_size >>
-        config.vector_length >> config.schedule >> config.loop;
-    return config;
-  }
-};
-
-}  // namespace readers
-test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
-  using matrix_type = SPMVTestData::matrix_type;
-  srand(17312837);
-  data_retriever<matrix_type, SPMVConfiguration> reader(
-      "sparse/spmv/", "sample.mtx", "config.cfg");
-  std::vector<rajaperf::KernelBase*> test_cases;
-  for (auto test_case : reader.test_cases) {
-    auto& config = std::get<1>(test_case.test_data);
-    test_cases.push_back(rajaperf::make_kernel_base(
-        "Sparse_SPMV:" + test_case.filename, run_params,
-        [=](const int, const int) {
-          spmv_additional_data data(config.test);
-          return std::make_tuple(
-              setup_test(&data, std::get<0>(test_case.test_data),
-                         config.rows_per_thread, config.team_size,
-                         config.vector_length, config.schedule, config.loop));
-        },
-        [&](const int, const int, SPMVTestData& data) {
-          run_benchmark(data);
-        }));
-  }
-  return test_cases;
-}
-
-std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
-    const rajaperf::RunParams& params) {
-  return construct_kernel_base(params);
-}
-
-#endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE

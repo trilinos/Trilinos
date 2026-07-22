@@ -7,7 +7,6 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_CDFEM_Support.hpp>
-#include <Akri_LevelSet.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
@@ -47,7 +46,7 @@ bool CDFEM_Support::is_active(const stk::mesh::MetaData & meta)
 CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
   : my_meta(meta),
     my_aux_meta(AuxMetaData::get(meta)),
-    my_simplex_generation_method(CUT_QUADS_BY_LARGEST_ANGLE),
+    my_simplex_generation_method(CUT_QUADS_BY_DEFAULT_METHOD),
     my_fully_coupled_cdfem(false),
     my_num_initial_decomposition_cycles(1),
     myGlobalIDsAreParallelConsistent(true),
@@ -65,10 +64,7 @@ CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
     myFlagUseVelocityToEvaluateInterfaceCFL(false),
     my_timer_cdfem("CDFEM", sierra::Diag::sierraTimer())
 {
-  my_prolongation_model = ALE_NEAREST_POINT;
-
-  if (3 == my_meta.spatial_dimension())
-    my_simplex_generation_method = CUT_QUADS_BY_NEAREST_EDGE_CUT;
+  my_prolongation_model = ALE_CLOSEST_POINT;
 
   create_parts();
 }
@@ -105,8 +101,11 @@ void CDFEM_Support::register_cdfem_snap_displacements_field()
   STK_ThrowRequireMsg(my_meta.spatial_dimension() > 1, "Spatial dimension must be set and equal to 2 or 3.");
 
   const FieldType & vec_type = (my_meta.spatial_dimension() == 3) ? FieldType::VECTOR_3D : FieldType::VECTOR_2D;
-  FieldRef cdfem_disp_field = my_aux_meta.register_field(cdfem_snap_displacements_field_name(), vec_type, stk::topology::NODE_RANK, 2, 1, get_universal_part());
-  set_cdfem_snap_displacement_field(cdfem_disp_field);
+  FieldRef cdfemSnapField = my_aux_meta.register_field(cdfem_snap_displacements_field_name(), vec_type, stk::topology::NODE_RANK, 2, 1, get_universal_part());
+  set_cdfem_snap_displacement_field(cdfemSnapField);
+
+  add_edge_interpolation_field(cdfemSnapField);
+  add_do_not_snap_field(cdfemSnapField);
 }
 
 void CDFEM_Support::register_parent_node_ids_field()
@@ -145,21 +144,6 @@ CDFEM_Support::get_post_cdfem_refinement_selector() const
 }
 
 void
-CDFEM_Support::setup_fields()
-{
-  my_coords_field = my_aux_meta.get_current_coordinates();
-
-  Phase_Support::get(my_meta).check_phase_parts();
-
-  myLevelSetFields.clear();
-  const Surface_Manager & surfaceManager = Surface_Manager::get(my_meta);
-  for (auto&& ls : surfaceManager.get_levelsets())
-  {
-    myLevelSetFields.insert(ls->get_isovar_field());
-  }
-}
-
-void
 CDFEM_Support::add_ale_prolongation_field(const FieldRef field)
 {
   STK_ThrowAssert(field.valid());
@@ -186,6 +170,22 @@ CDFEM_Support::add_interpolation_field(const FieldRef field)
 }
 
 void
+CDFEM_Support::add_do_not_snap_field_state(const FieldRef stateField)
+{
+  myDoNotSnapFields.insert(stateField);
+}
+
+void
+CDFEM_Support::add_do_not_snap_field(const FieldRef field)
+{
+  for ( unsigned is = 0; is < field.number_of_states(); ++is )
+  {
+    const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
+    add_do_not_snap_field_state(field.field_state(state));
+  }
+}
+
+void
 CDFEM_Support::add_edge_interpolation_field(const FieldRef field)
 {
   STK_ThrowAssert(field.valid());
@@ -207,19 +207,11 @@ CDFEM_Support::set_snap_fields()
       get_resnap_method() == RESNAP_AFTER_USING_INTERPOLATION_TO_UNSNAP)
   {
     mySnapFields.insert(my_interpolation_fields.begin(), my_interpolation_fields.end());
+  }
 
-    if (get_resnap_method() == RESNAP_AFTER_USING_ALE_TO_UNSNAP)
-    {
-      for (auto && lsField : get_levelset_fields())
-      {
-        for ( unsigned is = 0; is < lsField.number_of_states(); ++is )
-        {
-          const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
-          if (state != stk::mesh::StateNew)
-            mySnapFields.erase(lsField.field_state(state));
-        }
-      }
-    }
+  for (auto && field : myDoNotSnapFields)
+  {
+    mySnapFields.erase(field);
   }
 
   FieldRef cdfemSnapField = get_cdfem_snap_displacements_field();
@@ -231,6 +223,9 @@ CDFEM_Support::set_snap_fields()
       mySnapFields.erase(cdfemSnapField.field_state(state));
     }
   }
+
+  for (auto & field : mySnapFields)
+    krinolog << "Snap field " << field.name()  << " (" << state_string(field.state()) << ")" << stk::diag::dendl;
 }
 
 void
@@ -242,10 +237,7 @@ CDFEM_Support::finalize_fields()
     const FieldRef field(field_ptr);
     if( !field.type_is<double>() || field.field_state(stk::mesh::StateNew) == my_cdfem_displacements_field ) continue;
 
-    if( field.entity_rank()==stk::topology::ELEMENT_RANK &&
-        !stk::equal_case(field.name(), "transition_element") &&
-        !stk::equal_case(field.name(), "transition_element_3") &&
-        !stk::equal_case(field.name(), "parent_element") )
+    if( field.entity_rank()==stk::topology::ELEMENT_RANK )
     {
       my_element_fields.insert(field);
     }

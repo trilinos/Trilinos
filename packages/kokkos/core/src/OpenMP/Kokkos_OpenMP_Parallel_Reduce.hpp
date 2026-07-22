@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_OPENMP_PARALLEL_REDUCE_HPP
 #define KOKKOS_OPENMP_PARALLEL_REDUCE_HPP
@@ -20,6 +7,7 @@
 #include <omp.h>
 #include <OpenMP/Kokkos_OpenMP_Instance.hpp>
 #include <KokkosExp_MDRangePolicy.hpp>
+#include <sstream>
 
 namespace Kokkos {
 namespace Impl {
@@ -47,7 +35,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   const pointer_type m_result_ptr;
 
   template <class TagType>
-  inline static std::enable_if_t<std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<std::is_void_v<TagType>> exec_range(
       const FunctorType& functor, const Member ibeg, const Member iend,
       reference_type update) {
     for (Member iwork = ibeg; iwork < iend; ++iwork) {
@@ -56,7 +44,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline static std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<!std::is_void_v<TagType>> exec_range(
       const FunctorType& functor, const Member ibeg, const Member iend,
       reference_type update) {
     const TagType t{};
@@ -77,13 +65,14 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
       return;
     }
     enum {
-      is_dynamic = std::is_same<typename Policy::schedule_type::type,
-                                Kokkos::Dynamic>::value
+      is_dynamic =
+          std::is_same_v<typename Policy::schedule_type::type, Kokkos::Dynamic>
     };
 
     const size_t pool_reduce_bytes = reducer.value_size();
 
-    m_instance->acquire_lock();
+    // Serialize kernels on the same execution space instance
+    std::lock_guard<std::mutex> lock(m_instance->m_instance_mutex);
 
     m_instance->resize_thread_data(pool_reduce_bytes, 0  // team_reduce_bytes
                                    ,
@@ -106,6 +95,7 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
           update);
 
       reducer.final(ptr);
+
       return;
     }
     const int pool_size = m_instance->thread_pool_size();
@@ -157,8 +147,6 @@ class ParallelReduce<CombinedFunctorReducerType, Kokkos::RangePolicy<Traits...>,
         m_result_ptr[j] = ptr[j];
       }
     }
-
-    m_instance->release_lock();
   }
 
   //----------------------------------------
@@ -218,7 +206,8 @@ class ParallelReduce<CombinedFunctorReducerType,
     const ReducerType& reducer     = m_iter.m_func.get_reducer();
     const size_t pool_reduce_bytes = reducer.value_size();
 
-    m_instance->acquire_lock();
+    // Serialize kernels on the same execution space instance
+    std::lock_guard<std::mutex> lock(m_instance->m_instance_mutex);
 
     m_instance->resize_thread_data(pool_reduce_bytes, 0  // team_reduce_bytes
                                    ,
@@ -227,7 +216,6 @@ class ParallelReduce<CombinedFunctorReducerType,
                                    0  // thread_local_bytes
     );
 
-#ifndef KOKKOS_COMPILER_INTEL
     if (execute_in_serial(m_iter.m_rp.space())) {
       const pointer_type ptr =
           m_result_ptr
@@ -241,15 +229,12 @@ class ParallelReduce<CombinedFunctorReducerType,
 
       reducer.final(ptr);
 
-      m_instance->release_lock();
-
       return;
     }
-#endif
 
     enum {
-      is_dynamic = std::is_same<typename Policy::schedule_type::type,
-                                Kokkos::Dynamic>::value
+      is_dynamic =
+          std::is_same_v<typename Policy::schedule_type::type, Kokkos::Dynamic>
     };
 
     const int pool_size = m_instance->thread_pool_size();
@@ -299,8 +284,6 @@ class ParallelReduce<CombinedFunctorReducerType,
         m_result_ptr[j] = ptr[j];
       }
     }
-
-    m_instance->release_lock();
   }
 
   //----------------------------------------
@@ -358,7 +341,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   const int m_shmem_size;
 
   template <class TagType>
-  inline static std::enable_if_t<(std::is_void<TagType>::value)> exec_team(
+  inline static std::enable_if_t<(std::is_void_v<TagType>)> exec_team(
       const FunctorType& functor, HostThreadTeamData& data,
       reference_type& update, const int league_rank_begin,
       const int league_rank_end, const int league_size) {
@@ -376,7 +359,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   }
 
   template <class TagType>
-  inline static std::enable_if_t<(!std::is_void<TagType>::value)> exec_team(
+  inline static std::enable_if_t<(!std::is_void_v<TagType>)> exec_team(
       const FunctorType& functor, HostThreadTeamData& data,
       reference_type& update, const int league_rank_begin,
       const int league_rank_end, const int league_size) {
@@ -397,7 +380,7 @@ class ParallelReduce<CombinedFunctorReducerType,
 
  public:
   inline void execute() const {
-    enum { is_dynamic = std::is_same<SchedTag, Kokkos::Dynamic>::value };
+    enum { is_dynamic = std::is_same_v<SchedTag, Kokkos::Dynamic> };
 
     const ReducerType& reducer = m_functor_reducer.get_reducer();
 
@@ -415,7 +398,8 @@ class ParallelReduce<CombinedFunctorReducerType,
     const size_t team_shared_size  = m_shmem_size + m_policy.scratch_size(1);
     const size_t thread_local_size = 0;  // Never shrinks
 
-    m_instance->acquire_lock();
+    // Serialize kernels on the same execution space instance
+    std::lock_guard<std::mutex> lock(m_instance->m_instance_mutex);
 
     m_instance->resize_thread_data(pool_reduce_size, team_reduce_size,
                                    team_shared_size, thread_local_size);
@@ -432,8 +416,6 @@ class ParallelReduce<CombinedFunctorReducerType,
           league_rank_end, m_policy.league_size());
 
       reducer.final(ptr);
-
-      m_instance->release_lock();
 
       return;
     }
@@ -510,8 +492,6 @@ class ParallelReduce<CombinedFunctorReducerType,
         m_result_ptr[j] = ptr[j];
       }
     }
-
-    m_instance->release_lock();
   }
 
   //----------------------------------------
@@ -534,6 +514,29 @@ class ParallelReduce<CombinedFunctorReducerType,
                                         Kokkos::HostSpace>::accessible,
         "Kokkos::OpenMP reduce result must be a View accessible from "
         "HostSpace");
+
+    if ((arg_policy.scratch_size(0) +
+         FunctorTeamShmemSize<FunctorType>::value(
+             m_functor_reducer.get_functor(), arg_policy.team_size())) >
+        static_cast<size_t>(TeamPolicy<Kokkos::OpenMP>::scratch_size_max(0))) {
+      std::stringstream error;
+      error << "Kokkos::parallel_reduce<OpenMP>: Requested too much scratch "
+               "memory on level 0. Requested: "
+            << arg_policy.scratch_size(0) +
+                   FunctorTeamShmemSize<FunctorType>::value(
+                       m_functor_reducer.get_functor(), arg_policy.team_size())
+            << ", Maximum: " << TeamPolicy<Kokkos::OpenMP>::scratch_size_max(0);
+      Kokkos::Impl::throw_runtime_exception(error.str().c_str());
+    }
+    if (arg_policy.scratch_size(1) >
+        static_cast<size_t>(TeamPolicy<Kokkos::OpenMP>::scratch_size_max(1))) {
+      std::stringstream error;
+      error << "Kokkos::parallel_reduce<OpenMP>: Requested too much scratch "
+               "memory on level 1. Requested: "
+            << arg_policy.scratch_size(1)
+            << ", Maximum: " << TeamPolicy<Kokkos::OpenMP>::scratch_size_max(1);
+      Kokkos::Impl::throw_runtime_exception(error.str().c_str());
+    }
   }
 };
 

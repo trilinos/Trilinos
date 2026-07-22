@@ -23,6 +23,30 @@
 
 namespace krino {
 
+static void parse_postprocessors(const Parser::Node & regionNode, PostProcessors & postprocessors)
+{
+  const Parser::Node ppNodes = regionNode.get_sequence_if_present("postprocessors");
+  if ( ppNodes )
+  {
+    for ( auto && ppNode : ppNodes )
+    {
+      std::string fieldName;
+      ppNode.get_if_present("field", fieldName);
+      if (fieldName.empty())
+      {
+        stk::RuntimeDoomedAdHoc() << "Blank or missing field name in postprocessor.\n";
+      }
+      std::string analyticalExpr;
+      ppNode.get_if_present("expression", analyticalExpr);
+      if (analyticalExpr.empty())
+      {
+        stk::RuntimeDoomedAdHoc() << "Blank or missing expression in postprocessor.\n";
+      }
+      postprocessors.add_scalar_postprocesor(fieldName, analyticalExpr);
+    }
+  }
+}
+
 void
 Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulation)
 {
@@ -90,6 +114,38 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
       refinementSupport.set_refinement_interval(refinementInterval);
     }
 
+    bool interface_refinement_specified = false;
+    int interface_minimum_refinement_level = 0;
+    if(region_node.get_if_present("interface_minimum_refinement_level", interface_minimum_refinement_level))
+    {
+      interface_refinement_specified = true;
+    }
+
+    int interface_maximum_refinement_level = 0;
+    if(region_node.get_if_present("interface_maximum_refinement_level", interface_maximum_refinement_level))
+    {
+      interface_refinement_specified = true;
+    }
+
+    if (interface_refinement_specified)
+    {
+      if (interface_maximum_refinement_level > interface_minimum_refinement_level)
+        refinementSupport.setup_refinement_error_indicator();
+      refinementSupport.activate_interface_refinement( interface_minimum_refinement_level, interface_maximum_refinement_level );
+    }
+
+    bool myFlagDoNearbyRefinementBeforeInterfaceRefinement = false;
+    region_node.get_if_present("perform_initial_refinement_near_interfaces", myFlagDoNearbyRefinementBeforeInterfaceRefinement);
+    refinementSupport.do_nearby_refinement_before_interface_refinement( myFlagDoNearbyRefinementBeforeInterfaceRefinement );
+
+    int refinement_rebalance_interval = 0;
+    if(region_node.get_if_present("refinement_rebalance_interval", refinement_rebalance_interval))
+    {
+      refinementSupport.set_rebalance_interval(refinement_rebalance_interval);
+    }
+
+    parse_postprocessors(region_node, region->get_postprocessors());
+
     const stk::diag::Timer & regionTimer = region->getRegionTimer();
     Phase_Support::associate_FEModel_and_metadata(fem_model_name, meta);
     Surface_Manager::associate_FEModel_and_metadata(fem_model_name, meta);
@@ -104,6 +160,7 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     BoundingSurface_Parser::parse(region_node, meta, regionTimer);
     CDFEM_Options_Parser::parse(region_node, meta);
     ResultsOutput_Parser::parse(region_node, *region);
+    ResultsSurfaceShellOutput_Parser::parse(region_node, *region);
   }
 }
 

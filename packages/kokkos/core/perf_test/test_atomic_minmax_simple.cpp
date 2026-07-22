@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // export OMP_PROC_BIND=spread ; export OMP_PLACES=threads
 // c++  -O2 -g -DNDEBUG  -fopenmp
@@ -25,7 +12,12 @@
 
 #include "Benchmark_Context.hpp"
 #include "PerfTest_Category.hpp"
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 using exec_space = Kokkos::DefaultExecutionSpace;
 
@@ -183,7 +175,8 @@ double atomic_contentious_max_replacement(benchmark::State& state,
   Kokkos::parallel_reduce(
       con_length,
       KOKKOS_LAMBDA(const int i, T& inner) {
-        inner = Kokkos::atomic_max_fetch(&(input(0)), inner + 1);
+        inner = Kokkos::atomic_max_fetch(&(input(0)),
+                                         Kokkos::min(inner, max - 1) + 1);
         if (i == con_length - 1) {
           Kokkos::atomic_max_fetch(&(input(0)), max);
           inner = max;
@@ -223,7 +216,8 @@ double atomic_contentious_min_replacement(benchmark::State& state,
   Kokkos::parallel_reduce(
       con_length,
       KOKKOS_LAMBDA(const int i, T& inner) {
-        inner = Kokkos::atomic_min_fetch(&(input(0)), inner - 1);
+        inner = Kokkos::atomic_min_fetch(&(input(0)),
+                                         Kokkos::max(inner, min + 1) - 1);
         if (i == con_length - 1) {
           Kokkos::atomic_min_fetch(&(input(0)), min);
           inner = min;
@@ -246,7 +240,7 @@ static void Atomic_ContentiousMinReplacements(benchmark::State& state) {
   auto inp          = prepare_input(1, std::numeric_limits<T>::max());
 
   for (auto _ : state) {
-    const auto time = atomic_contentious_max_replacement(state, inp, length);
+    const auto time = atomic_contentious_min_replacement(state, inp, length);
 
     state.SetIterationTime(time);
   }

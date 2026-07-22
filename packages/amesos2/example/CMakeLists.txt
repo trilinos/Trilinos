@@ -20,7 +20,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 ENDIF ()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(GappedMtxGIDs_File
-  SOURCE_FILES gap-ids-1proc-rowmap.mm gap-ids-1procA.mm gap-ids-1procRhs.mm
+  SOURCE_FILES gap-ids-1proc-rowmap-tpetra.mm gap-ids-1procA.mm gap-ids-1procRhs.mm
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/matrices/
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )
@@ -79,12 +79,6 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES SimpleSolve_IR.cpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
-  TRIBITS_ADD_EXECUTABLE(
-    QuickSolveEpetra
-    SOURCES quick_solve_epetra.cpp
-  )
-ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Amesos2_SimpleSolve_File
   SOURCE_FILES arc130.mtx

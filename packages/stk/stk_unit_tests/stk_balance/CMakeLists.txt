@@ -32,7 +32,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -65,6 +65,6 @@ else()
   target_link_libraries(stk_balance_unit_tester stk_balance_lib)
   target_link_libraries(stk_balance_unit_tester stk_unit_main)
   
-  add_test("stk_balance" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_balance_unit_tester --gtest_filter=BasicLoadBalance.*")
+  INSTALL(TARGETS stk_balance_unit_tester EXPORT stkTargets DESTINATION ${STK_INSTALL_BINDIR})
 endif()
 

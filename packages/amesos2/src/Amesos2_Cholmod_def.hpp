@@ -529,6 +529,17 @@ Cholmod<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
+Cholmod<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                      const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " CHOLMOD current parameters:" << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << std::endl;
+}
+
+
+template <class Matrix, class Vector>
+void
 Cholmod<Matrix,Vector>::triangular_solve_symbolic()
 {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)

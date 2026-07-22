@@ -77,8 +77,8 @@ void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   const int myRank  = graph.GetComm()->getRank();
 
   // 3) the aggregates
-  auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto procWinner   = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto vertex2AggId = aggregates.GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto procWinner   = aggregates.GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
   // A view is needed to count on the fly the current number of local aggregates
   Kokkos::View<LO, device_type> aggCount("aggCount");
@@ -101,7 +101,7 @@ void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
           }
         }
       });
-  typename Kokkos::View<LO, device_type>::HostMirror aggCount_h = Kokkos::create_mirror_view(aggCount);
+  typename Kokkos::View<LO, device_type>::host_mirror_type aggCount_h = Kokkos::create_mirror_view(aggCount);
   Kokkos::deep_copy(aggCount_h, aggCount);
   // In this phase the number of new aggregates is the same
   // as the number of newly aggregated nodes.

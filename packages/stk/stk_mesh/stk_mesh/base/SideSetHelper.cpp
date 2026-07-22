@@ -116,22 +116,6 @@ void SideSetHelper::remove_entity_entries_from_sidesets(const Entity entity, std
   remove_entity_entries_from_sidesets(sidesets, entity, touchedSidesetParts);
 }
 
-Entity get_side(const BulkData& bulk, Entity elem, ConnectivityOrdinal ordinal)
-{
-  const ConnectivityOrdinal* ordinals = bulk.begin_ordinals(elem, bulk.mesh_meta_data().side_rank());
-  const Entity* sides = bulk.begin(elem, bulk.mesh_meta_data().side_rank());
-  unsigned numSides = bulk.num_connectivity(elem, bulk.mesh_meta_data().side_rank());
-  Entity side;
-
-  for(unsigned i=0; i<numSides; ++i) {
-    if(ordinals[i] == ordinal) {
-      side = sides[i];
-    }
-  }
-
-  return side;
-}
-
 void SideSetHelper::add_element_side_entry_to_sideset(SideSetSelector& sidesetSelector, Entity elem, ConnectivityOrdinal ordinal)
 {
   if(ordinal != INVALID_CONNECTIVITY_ORDINAL && mesh.entity_rank(elem) == stk::topology::ELEM_RANK) {
@@ -208,7 +192,7 @@ void SideSetHelper::fill_coincident_sideset_entries_for_side_using_connectivity(
       for(unsigned j=i+1; j<numElements; ++j) {
         impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[j]).topology(), mesh.begin_nodes(elems[j]), ordinals[j], sideNodes_j);
 
-        if(impl::is_coincident_connection(mesh, elems[i], sideNodes_i, ordinals[i], mesh.bucket(elems[j]).topology(), sideNodes_j)) {
+        if(impl::is_coincident_connection(mesh, elems[i], sideNodes_i, ordinals[i], mesh.bucket(elems[j]).topology(), sideNodes_j, ordinals[j])) {
           coincidentEdges.emplace_back(std::make_pair(SideSetEntry(elems[i], ordinals[i]), SideSetEntry(elems[j], ordinals[j])));
         }
       }
@@ -252,7 +236,7 @@ bool SideSetHelper::graph_edge_can_be_distinguished(const ElemElemGraph& eeGraph
   return false;
 }
 
-bool SideSetHelper::element_side_can_be_distinguished_using_elem_elem_graph(const Entity side, const Entity element,
+bool SideSetHelper::element_side_can_be_distinguished_using_elem_elem_graph(const Entity /*side*/, const Entity element,
                                                                             const ConnectivityOrdinal ordinal, const SideSetSelector& sideset)
 {
   if(mesh.entity_rank(element) == stk::topology::ELEM_RANK && mesh.bucket(element).owned()) {
@@ -314,16 +298,6 @@ bool SideSetHelper::element_side_can_be_distinguished_using_connectivity(const E
   return false;
 }
 
-bool SideSetHelper::element_side_can_be_distinguished(const Entity side, const Entity element,
-                                                      const ConnectivityOrdinal ordinal, const SideSetSelector& sideset)
-{
-  if(mesh.bucket(element).owned() && mesh.has_face_adjacent_element_graph()) {
-    return element_side_can_be_distinguished_using_elem_elem_graph(side, element, ordinal, sideset);
-  }
-
-  return element_side_can_be_distinguished_using_connectivity(side, element, ordinal, sideset);
-}
-
 bool SideSetHelper::element_side_has_local_coincidence_using_elem_elem_graph(Entity element,  ConnectivityOrdinal ordinal)
 {
   bool hasLocalCoincidence = false;
@@ -371,7 +345,7 @@ bool SideSetHelper::element_side_has_remote_coincidence_using_elem_elem_graph(En
   return hasRemoteCoincidence;
 }
 
-bool SideSetHelper::element_side_has_coincidence_using_elem_elem_graph( Entity side,  Entity element,  ConnectivityOrdinal ordinal)
+bool SideSetHelper::element_side_has_coincidence_using_elem_elem_graph( Entity /*side*/,  Entity element,  ConnectivityOrdinal ordinal)
 {
   bool hasLocalCoincidence  = element_side_has_local_coincidence_using_elem_elem_graph(element, ordinal);
   bool hasRemoteCoincidence = element_side_has_remote_coincidence_using_elem_elem_graph(element, ordinal);
@@ -399,7 +373,7 @@ bool SideSetHelper::element_side_has_coincidence_using_connectivity(const Entity
       if(elems[i] != element) {
         impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[i]).topology(), mesh.begin_nodes(elems[i]), ordinals[i], sideNodes);
 
-        if(impl::is_coincident_connection(mesh, element, inputSideNodes, ordinal, mesh.bucket(elems[i]).topology(), sideNodes)) {
+        if(impl::is_coincident_connection(mesh, element, inputSideNodes, ordinal, mesh.bucket(elems[i]).topology(), sideNodes, ordinals[i])) {
           return true;
         }
       }
@@ -473,11 +447,11 @@ void SideSetHelper::add_sideset_entry_for_element_selected_by_sidesets(Entity en
 {
   if(mesh.bucket_ptr(entity) == nullptr) { return; }
 
-  const unsigned numSides = mesh.num_sides(entity);
+  const unsigned numSides = stk::mesh::num_sides(mesh, entity);
 
   if(sidesetsAndSelectors.size() > 0 && mesh.entity_rank(entity) == stk::topology::ELEM_RANK && numSides > 0) {
-    const stk::mesh::ConnectivityOrdinal* ordinals = mesh.begin_ordinals(entity, mesh.mesh_meta_data().side_rank());
-    const stk::mesh::Entity* sides = mesh.begin(entity, mesh.mesh_meta_data().side_rank());
+    const std::vector<stk::mesh::ConnectivityOrdinal> ordinals = stk::mesh::get_side_ordinals(mesh, entity);
+    const stk::mesh::EntityVector sides = stk::mesh::get_sides(mesh, entity);
 
     stk::mesh::SideSetEntry entry(entity);
 

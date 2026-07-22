@@ -1,10 +1,12 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 #include "iqsort.h"
+#include <assert.h>
 #include <cstdint>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 
 namespace {
@@ -147,6 +149,7 @@ namespace {
     for (size_t i = 1; i < N; i++) {
       INT tmp = iv[i];
       for (j = i; v[tmp] < v[iv[j - 1]]; j--) {
+        assert(j >= 1);
         iv[j] = iv[j - 1];
       }
       iv[j] = tmp;
@@ -155,7 +158,7 @@ namespace {
 
   template <typename T, typename INT> void check(const T v[], INT iv[], size_t N)
   {
-    fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
+    fmt::print(stderr, fmt::runtime("Checking sort of {:n} values\n"), N + 1);
     size_t i;
     for (i = 1; i < N; i++) {
       SMART_ASSERT(v[iv[i - 1]] <= v[iv[i]]);

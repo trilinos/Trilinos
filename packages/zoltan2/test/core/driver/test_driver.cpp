@@ -1,46 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /* \file test_driver.cpp
@@ -69,6 +33,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_XMLObject.hpp>
 #include <Teuchos_FileInputSource.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include <sstream>
 #include <string>
@@ -262,25 +227,22 @@ bool run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 0. add comparison source
   ////////////////////////////////////////////////////////////
-  RCP<ComparisonSource> comparison_source = rcp(new ComparisonSource);
+  auto comparison_source = comparison_helper->AddSource(problem_parameters.name());
 
-  comparison_helper->AddSource(problem_parameters.name(), comparison_source);
-  comparison_source->addTimer("adapter construction time");
-  comparison_source->addTimer("problem construction time");
-  comparison_source->addTimer("solve time");
+  comparison_source->startBaseTimer();
 
   ////////////////////////////////////////////////////////////
   // 1. get basic input adapter
   ////////////////////////////////////////////////////////////
   const ParameterList &adapterPlist =
                       problem_parameters.sublist("InputAdapterParameters");
-  comparison_source->timers["adapter construction time"]->start();
+  comparison_source->startTimer("adapter construction time");
 
   // a pointer to a basic type
   RCP<AdapterFactory> adapterFactory = rcp(new AdapterFactory(
     const_cast<UserInputForTests*>(&uinput), adapterPlist, comm));
 
-  comparison_source->timers["adapter construction time"]->stop();
+  comparison_source->stopTimer("adapter construction time");
 
   comparison_source->adapterFactory = adapterFactory; // saves until done
 
@@ -296,7 +258,7 @@ bool run(const UserInputForTests &uinput,
     std::cout << std::endl;
   }
 
-  comparison_source->timers["problem construction time"]->start();
+  comparison_source->startTimer("problem construction time");
   std::string problem_kind = problem_parameters.get<std::string>("kind");
   if (rank == 0) {
     std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
@@ -315,16 +277,18 @@ bool run(const UserInputForTests &uinput,
     std::cout << "Using input adapter type: " + adapter_name << std::endl;
   }
 
+  comparison_source->stopTimer("problem construction time");
+
   comparison_source->problemFactory = problemFactory; // saves until done
 
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
-  comparison_source->timers["solve time"]->start();
+  comparison_source->startTimer("solve time");
 
   problemFactory->getProblem()->solve();
 
-  comparison_source->timers["solve time"]->stop();
+  comparison_source->stopTimer("solve time");
   if (rank == 0) {
     std::cout << problem_kind + " problem solved." << std::endl;
   }
@@ -446,7 +410,7 @@ bool run(const UserInputForTests &uinput,
     }
 #endif
 
-    comparison_source->printTimers();
+    comparison_source->stopBaseTimer();
 
     // write mesh solution
     // if(problem_kind == "partitioning") {
@@ -460,6 +424,8 @@ bool run(const UserInputForTests &uinput,
 
 bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
 {
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = Teuchos::rcp(new Teuchos::StackedTimer("Zoltan2_Driver"));;
+
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
   ////////////////////////////////////////////////////////////
@@ -520,7 +486,7 @@ bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
 //    MyUtils::writeMesh(uinput,comm);
 //    MyUtils::getConnectivityGraph(uinput, comm);
 
-    RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
+    RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper(stacked_timer));
     while (!problems.empty()) {
       UserInputForTests uinput(inputParameters,comm);
 
@@ -556,6 +522,15 @@ bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
       return false;
     }
   }
+
+  stacked_timer->stopBaseTimer();
+  Teuchos::StackedTimer::OutputOptions options;
+  options.output_fraction = options.output_histogram = options.output_minmax = true;
+  stacked_timer->report(std::cout, comm, options);
+  std::string watchrProblemName = std::string("Zoltan2 test driver ") + std::to_string(comm->getSize()) + " ranks";
+  auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
+  if (xmlOut.length())
+    std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
 
   return bPass;
 }

@@ -1,22 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <fstream>
-
-#define KOKKOSKERNELS_DEBUG_LEVEL 0
 
 /// Kokkos headers
 #include "Kokkos_Core.hpp"
@@ -34,7 +19,7 @@
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_SparseUtils_cusparse.hpp"
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
 #include <KokkosBatched_Copy_Decl.hpp>
@@ -71,9 +56,7 @@ struct Functor_Test_BatchedDenseCuSolve {
   const VectorViewType _B;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_Test_BatchedDenseCuSolve(const MatrixViewType &A,
-                                   const VectorViewType &X,
-                                   const VectorViewType &B)
+  Functor_Test_BatchedDenseCuSolve(const MatrixViewType &A, const VectorViewType &X, const VectorViewType &B)
       : _A(A), _X(X), _B(B) {}
 
   inline double run() {
@@ -100,10 +83,8 @@ struct Functor_Test_BatchedDenseCuSolve {
     double **d_Aarray = nullptr;
     double **d_Barray = nullptr;
 
-    cudaMalloc(reinterpret_cast<void **>(&d_Aarray),
-               sizeof(double *) * batchSize);
-    cudaMalloc(reinterpret_cast<void **>(&d_Barray),
-               sizeof(double *) * batchSize);
+    cudaMalloc(reinterpret_cast<void **>(&d_Aarray), sizeof(double *) * batchSize);
+    cudaMalloc(reinterpret_cast<void **>(&d_Barray), sizeof(double *) * batchSize);
 
     std::vector<double *> Aarray(batchSize, nullptr);
     std::vector<double *> Barray(batchSize, nullptr);
@@ -112,34 +93,26 @@ struct Functor_Test_BatchedDenseCuSolve {
       Barray[i] = Kokkos::subview(_X, i, Kokkos::ALL).data();
     }
 
-    cudaMemcpyAsync(d_Aarray, Aarray.data(), sizeof(double *) * batchSize,
-                    cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(d_Barray, Barray.data(), sizeof(double *) * batchSize,
-                    cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_Aarray, Aarray.data(), sizeof(double *) * batchSize, cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_Barray, Barray.data(), sizeof(double *) * batchSize, cudaMemcpyHostToDevice);
 
     cudaDeviceSynchronize();
     exec_space().fence();
     timer.reset();
-    auto status1 = cusolverDnDpotrfBatched(handle, uplo, m, d_Aarray, lda,
-                                           d_infoArray, batchSize);
+    auto status1 = cusolverDnDpotrfBatched(handle, uplo, m, d_Aarray, lda, d_infoArray, batchSize);
     if (status1 != CUSOLVER_STATUS_SUCCESS)
-      std::cout << "Error in cusolverDnDpotrfBatched with batchSize = "
-                << batchSize << " and m = " << m << std::endl;
+      std::cout << "Error in cusolverDnDpotrfBatched with batchSize = " << batchSize << " and m = " << m << std::endl;
     cudaDeviceSynchronize();
-    auto status2 = cusolverDnDpotrsBatched(handle, uplo, m, 1, d_Aarray, lda,
-                                           d_Barray, ldb, info, batchSize);
+    auto status2 = cusolverDnDpotrsBatched(handle, uplo, m, 1, d_Aarray, lda, d_Barray, ldb, info, batchSize);
     if (status2 != CUSOLVER_STATUS_SUCCESS) {
       if (status2 == CUSOLVER_STATUS_NOT_INITIALIZED)
-        std::cout << "Error in cusolverDnDpotrsBatched with batchSize = "
-                  << batchSize << " and m = " << m
+        std::cout << "Error in cusolverDnDpotrsBatched with batchSize = " << batchSize << " and m = " << m
                   << " CUSOLVER_STATUS_NOT_INITIALIZED " << std::endl;
       if (status2 == CUSOLVER_STATUS_INVALID_VALUE)
-        std::cout << "Error in cusolverDnDpotrsBatched with batchSize = "
-                  << batchSize << " and m = " << m
+        std::cout << "Error in cusolverDnDpotrsBatched with batchSize = " << batchSize << " and m = " << m
                   << " CUSOLVER_STATUS_INVALID_VALUE " << std::endl;
       if (status2 == CUSOLVER_STATUS_INTERNAL_ERROR)
-        std::cout << "Error in cusolverDnDpotrsBatched with batchSize = "
-                  << batchSize << " and m = " << m
+        std::cout << "Error in cusolverDnDpotrsBatched with batchSize = " << batchSize << " and m = " << m
                   << " CUSOLVER_STATUS_INTERNAL_ERROR " << std::endl;
       cudaDeviceSynchronize();
       exec_space().fence();
@@ -163,7 +136,7 @@ int main(int argc, char *argv[]) {
 #endif
     Kokkos::print_configuration(std::cout);
 
-    // typedef Kokkos::ArithTraits<value_type> ats;
+    // typedef KokkosKernels::ArithTraits<value_type> ats;
 
     ///
     /// input arguments parsing
@@ -189,12 +162,9 @@ int main(int argc, char *argv[]) {
       if (token == std::string("-X")) name_X = argv[++i];
       if (token == std::string("-timers")) name_timer = argv[++i];
       if (token == std::string("-team_size")) team_size = std::atoi(argv[++i]);
-      if (token == std::string("-vector_length"))
-        vector_length = std::atoi(argv[++i]);
-      if (token == std::string("-n_implementations"))
-        n_impl = std::atoi(argv[++i]);
-      if (token == std::string("-implementation"))
-        impls.push_back(std::atoi(argv[++i]));
+      if (token == std::string("-vector_length")) vector_length = std::atoi(argv[++i]);
+      if (token == std::string("-n_implementations")) n_impl = std::atoi(argv[++i]);
+      if (token == std::string("-implementation")) impls.push_back(std::atoi(argv[++i]));
       if (token == std::string("-l")) {
         layout_left  = true;
         layout_right = false;
@@ -219,8 +189,7 @@ int main(int argc, char *argv[]) {
     constexpr size_t LLC_CAPACITY = 80 * 6 * 1024 * 1024;
     KokkosBatched::Flush<LLC_CAPACITY, exec_space> flush;
 
-    printf(" :::: CusolverDn Testing (N = %d, Blk = %d, vl = %d, n = %d)\n", N,
-           Blk, vector_length, n_rep_1);
+    printf(" :::: CusolverDn Testing (N = %d, Blk = %d, vl = %d, n = %d)\n", N, Blk, vector_length, n_rep_1);
 
     typedef Kokkos::LayoutRight LR;
     typedef Kokkos::LayoutLeft LL;
@@ -240,10 +209,8 @@ int main(int argc, char *argv[]) {
     XYTypeLL xLL("values", N, Blk);
     XYTypeLL yLL("values", N, Blk);
 
-    if (layout_left)
-      printf(" :::: Testing left layout (team_size = %d)\n", team_size);
-    if (layout_right)
-      printf(" :::: Testing right layout (team_size = %d)\n", team_size);
+    if (layout_left) printf(" :::: Testing left layout (team_size = %d)\n", team_size);
+    if (layout_right) printf(" :::: Testing right layout (team_size = %d)\n", team_size);
 
     if (layout_left) {
       readDenseFromMM(name_A, aLL);
@@ -269,9 +236,7 @@ int main(int argc, char *argv[]) {
 
       if (i_impl == 0) {
         if (layout_right) {
-          t_spmv = Functor_Test_BatchedDenseCuSolve<exec_space, AMatrixViewLR,
-                                                    XYTypeLR>(aLR, xLR, yLR)
-                       .run();
+          t_spmv = Functor_Test_BatchedDenseCuSolve<exec_space, AMatrixViewLR, XYTypeLR>(aLR, xLR, yLR).run();
         }
       }
       exec_space().fence();
@@ -285,10 +250,8 @@ int main(int argc, char *argv[]) {
       {
         std::ofstream myfile;
         std::string name;
-        if (layout_left)
-          name = name_timer + "_" + std::to_string(i_impl) + "_left.txt";
-        if (layout_right)
-          name = name_timer + "_" + std::to_string(i_impl) + "_right.txt";
+        if (layout_left) name = name_timer + "_" + std::to_string(i_impl) + "_left.txt";
+        if (layout_right) name = name_timer + "_" + std::to_string(i_impl) + "_right.txt";
 
         myfile.open(name);
 
@@ -301,15 +264,10 @@ int main(int argc, char *argv[]) {
 
       double average_time = 0.;
 
-      for (size_t i = 0; i < timers.size(); ++i)
-        average_time += timers[i] / timers.size();
+      for (size_t i = 0; i < timers.size(); ++i) average_time += timers[i] / timers.size();
 
-      if (layout_left)
-        printf("Left layout: Implementation %d: solve time = %f\n", i_impl,
-               average_time);
-      if (layout_right)
-        printf("Right layout: Implementation %d: solve time = %f\n", i_impl,
-               average_time);
+      if (layout_left) printf("Left layout: Implementation %d: solve time = %f\n", i_impl, average_time);
+      if (layout_right) printf("Right layout: Implementation %d: solve time = %f\n", i_impl, average_time);
 
       if (layout_left) {
         writeArrayToMM(name_X + std::to_string(i_impl) + "_l.mm", xLL);

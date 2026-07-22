@@ -95,7 +95,7 @@ int DeRhamCommutativityWedge(const bool verbose) {
   *outStream << "\n";
 
   int errorFlag = 0;
-  const ValueType tol = tolerence();
+  const ValueType tol = tolerance();
 
   //target functions and their derivatives
 

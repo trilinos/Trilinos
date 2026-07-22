@@ -29,6 +29,7 @@
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
 #include <MueLu_Maxwell1.hpp>
+#include <MueLu_Maxwell_Utils.hpp>
 #include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
@@ -58,158 +59,6 @@ using Teuchos::TimeMonitor;
 #include <Stratimikos_MueLuHelpers.hpp>
 #endif
 
-// Support for ML interface
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-#include <Xpetra_EpetraOperator.hpp>
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_MultiLevelOperator.h"
-#include "ml_RefMaxwell.h"
-#endif
-
-// Helper functions for compilation purposes
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-struct EpetraSolvers_Wrapper {
-  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& SM,
-                                                Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& D0,
-                                                Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Kn,
-                                                Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
-                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coords,
-                                                Teuchos::ParameterList& mueluList,
-                                                Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& mlopX) {
-    throw std::runtime_error("Template parameter mismatch");
-  }
-
-  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& SM,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& D0,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Ms,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& M0inv,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& M1,
-                                                   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
-                                                   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& node_material,
-                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coords,
-                                                   Teuchos::ParameterList& mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& mlopX) {
-    throw std::runtime_error("Template parameter mismatch");
-  }
-};
-
-#if defined(HAVE_MUELU_EPETRA)
-template <class GlobalOrdinal>
-struct EpetraSolvers_Wrapper<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> {
-  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
-                                                Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
-                                                Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Kn,
-                                                Teuchos::RCP<Xpetra::MultiVector<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
-                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
-                                                Teuchos::ParameterList& mueluList,
-                                                Teuchos::RCP<Xpetra::Operator<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
-#if defined(HAVE_MUELU_ML)
-    typedef double SC;
-    typedef int LO;
-    typedef GlobalOrdinal GO;
-    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
-    typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
-    typedef typename Xpetra::Matrix<SC, LO, GO, NO> Matrix;
-
-    RCP<const Epetra_CrsMatrix> epetraSM = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(SM);
-    RCP<const Epetra_CrsMatrix> epetraD0 = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(D0);
-    if (!coords.is_null()) {
-      RCP<const Epetra_MultiVector> epetraCoord = MueLu::Utilities<coordinate_type, LO, GO, NO>::MV2EpetraMV(coords);
-      if (epetraCoord->NumVectors() > 0) mueluList.set("x-coordinates", (*epetraCoord)[0]);
-      if (epetraCoord->NumVectors() > 1) mueluList.set("y-coordinates", (*epetraCoord)[1]);
-      if (epetraCoord->NumVectors() > 2) mueluList.set("z-coordinates", (*epetraCoord)[2]);
-    }
-    if (!nullspace.is_null()) {
-      RCP<const Epetra_MultiVector> epetraNullspace = MueLu::Utilities<SC, LO, GO, NO>::MV2EpetraMV(nullspace);
-      mueluList.set("null space: dimension", epetraNullspace->NumVectors());
-      mueluList.set("null space: vectors", (*epetraNullspace)[0]);
-      mueluList.set("null space: type", "pre-computed");
-    }
-    RCP<const Epetra_CrsMatrix> epetraKn;
-    if (Kn.is_null()) {
-      RCP<Matrix> temp = Xpetra::MatrixFactory<SC, LO, GO, NO>::Build(SM->getRangeMap());
-      Xpetra::MatrixMatrix<SC, LO, GO, NO>::Multiply(*SM, false, *D0, false, *temp, true, true);
-      RCP<Matrix> Kn2 = Xpetra::MatrixFactory<SC, LO, GO, NO>::Build(D0->getDomainMap());
-      Xpetra::MatrixMatrix<SC, LO, GO, NO>::Multiply(*D0, true, *temp, false, *Kn2, true, true);
-      epetraKn = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Kn2);
-    } else
-      epetraKn = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Kn);
-
-    RCP<Epetra_Operator> mlop = rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*epetraSM, *epetraD0, *epetraKn, mueluList, true));
-#if defined(HAVE_MUELU_BELOS)
-    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
-    mlop = rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
-#endif
-
-    mlopX = rcp(new Xpetra::EpetraOperator<GO, NO>(mlop));
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                               "Need ML & Epetra support");
-#endif
-  }
-
-  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Ms,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M0inv,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M1,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& node_material,
-                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
-                                                   Teuchos::ParameterList& mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
-#if defined(HAVE_MUELU_ML)
-    typedef double SC;
-    typedef int LO;
-    typedef GlobalOrdinal GO;
-    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
-    typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
-
-    RCP<const Epetra_CrsMatrix> epetraSM    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(SM);
-    RCP<const Epetra_CrsMatrix> epetraD0    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(D0);
-    RCP<const Epetra_CrsMatrix> epetraM0inv = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(M0inv);
-    RCP<const Epetra_CrsMatrix> epetraMs;
-    RCP<const Epetra_CrsMatrix> epetraM1 = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(M1);
-    if (!Ms.is_null())
-      epetraMs = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Ms);
-    else
-      epetraMs = epetraM1;
-    mueluList.set("D0", epetraD0);
-    mueluList.set("Ms", epetraMs);
-    mueluList.set("M0inv", epetraM0inv);
-    mueluList.set("M1", epetraM1);
-    if (!coords.is_null()) {
-      RCP<const Epetra_MultiVector> epetraCoord = MueLu::Utilities<coordinate_type, LO, GO, NO>::MV2EpetraMV(coords);
-      if (epetraCoord->NumVectors() > 0) mueluList.sublist("refmaxwell: 11list").set("x-coordinates", (*epetraCoord)[0]);
-      if (epetraCoord->NumVectors() > 1) mueluList.sublist("refmaxwell: 11list").set("y-coordinates", (*epetraCoord)[1]);
-      if (epetraCoord->NumVectors() > 2) mueluList.sublist("refmaxwell: 11list").set("z-coordinates", (*epetraCoord)[2]);
-    }
-    if (!node_material.is_null()) {
-      RCP<const Epetra_MultiVector> epetraMaterial = MueLu::Utilities<coordinate_type, LO, GO, NO>::MV2EpetraMV(node_material);
-      mueluList.sublist("refmaxwell: 11list").set("material coordinates", (*epetraMaterial)[0]);
-    }
-    if (!nullspace.is_null()) {
-      RCP<const Epetra_MultiVector> epetraNullspace = MueLu::Utilities<SC, LO, GO, NO>::MV2EpetraMV(nullspace);
-      mueluList.sublist("refmaxwell: 11list").set("null space: dimension", epetraNullspace->NumVectors());
-      mueluList.sublist("refmaxwell: 11list").set("null space: vectors", (*epetraNullspace)[0]);
-      mueluList.sublist("refmaxwell: 11list").set("null space: type", "pre-computed");
-    }
-
-    RCP<Epetra_Operator> mlop = rcp<Epetra_Operator>(new ML_Epetra::RefMaxwellPreconditioner(*epetraSM, mueluList, true));
-#if defined(HAVE_MUELU_BELOS)
-    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
-    mlop = rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
-#endif
-
-    mlopX = rcp(new Xpetra::EpetraOperator<GO, NO>(mlop));
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                               "Need ML & Epetra support");
-#endif
-  }
-};
-#endif  // HAVE_MUELU_EPETRA
-
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool SetupSolve(std::map<std::string, void*> inputs) {
 #include <MueLu_UseShortNames.hpp>
@@ -217,6 +66,7 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
   typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> coordMV;
 
   RCP<Matrix> SM_Matrix    = *static_cast<RCP<Matrix>*>(inputs["SM"]);
+  RCP<Matrix> S_Matrix     = *static_cast<RCP<Matrix>*>(inputs["S"]);
   RCP<Matrix> GmhdA_Matrix = *static_cast<RCP<Matrix>*>(inputs["GmhdA"]);
   RCP<Matrix> D0_Matrix    = *static_cast<RCP<Matrix>*>(inputs["D0"]);
   RCP<Matrix> M1_Matrix    = *static_cast<RCP<Matrix>*>(inputs["M1"]);
@@ -253,27 +103,13 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
     RCP<Operator> preconditioner;
     if (precType == "MueLu-RefMaxwell") {
       preconditioner = rcp(new MueLu::RefMaxwell<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Ms_Matrix, M0inv_Matrix,
-                                                                 M1_Matrix, nullspace, coords, params));
+                                                                 M1_Matrix, nullspace, coords, material, params));
     } else if (precType == "MueLu-Maxwell1" || precType == "MueLu-Reitzinger") {
       if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
-        preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, params));
+        preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, S_Matrix, material, params));
       else
         preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, params, GmhdA_Matrix));
-
     }
-#ifdef HAVE_MUELU_EPETRA
-    else if (precType == "ML-RefMaxwell") {
-      Xpetra::UnderlyingLib lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
-      TEUCHOS_ASSERT(lib == Xpetra::UseEpetra);
-      EpetraSolvers_Wrapper<SC, LO, GO, NO>::Generate_ML_RefMaxwellPreconditioner(SM_Matrix, D0_Matrix, Ms_Matrix, M0inv_Matrix,
-                                                                                  M1_Matrix, nullspace, material, coords, params, preconditioner);
-    } else if (precType == "ML-Maxwell") {
-      Xpetra::UnderlyingLib lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
-      TEUCHOS_ASSERT(lib == Xpetra::UseEpetra);
-      EpetraSolvers_Wrapper<SC, LO, GO, NO>::Generate_ML_MaxwellPreconditioner(SM_Matrix, D0_Matrix, Kn_Matrix,
-                                                                               nullspace, coords, params, preconditioner);
-    }
-#endif
 
     {
       // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
@@ -325,8 +161,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
       Belos::ReturnType status = solver->solve();
       int iters                = solver->getNumIters();
       success                  = (iters < 50 && status == Belos::Converged);
+      if (status == Belos::Converged)
+        *out << "Belos converged in " << iters << " iterations." << std::endl;
       if (success)
-        *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+        *out << "SUCCESS!" << std::endl;
       else
         *out << "FAILURE! Belos did not converge fast enough." << std::endl;
     }
@@ -348,8 +186,10 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
         Belos::ReturnType status = solver->solve();
         int iters                = solver->getNumIters();
         success                  = (iters < 50 && status == Belos::Converged);
+        if (status == Belos::Converged)
+          *out << "Belos converged in " << iters << " iterations." << std::endl;
         if (success)
-          *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+          *out << "SUCCESS!" << std::endl;
         else
           *out << "FAILURE! Belos did not converge fast enough." << std::endl;
       }
@@ -393,20 +233,13 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
           sublist->set(*key_it, Kn_Matrix);
         else if (value == "Coordinates")
           sublist->set(*key_it, coords);
-          // else if (*key_it == "Nullspace")
-          //     sublist->set(*key_it, Nullspace);
-#ifdef HAVE_MUELU_EPETRA
-        else if (value == "eD0") {
-          auto eD0 = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getEpetra_CrsMatrix();
-          sublist->set(*key_it, eD0);
-        } else if (value == "eCoordinates")
-          sublist->set(*key_it, Teuchos::rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node> >(coords, true)->getEpetra_MultiVector());
-#endif
+        // else if (*key_it == "Nullspace")
+        //     sublist->set(*key_it, Nullspace);
         else if (value == "tD0") {
-          auto tD0 = Teuchos::rcp_dynamic_cast<TpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getTpetra_CrsMatrix();
+          auto tD0 = toTpetra(D0_Matrix);
           sublist->set(*key_it, tD0);
         } else if (value == "tCoordinates") {
-          sublist->set(*key_it, Teuchos::rcp_dynamic_cast<TpetraMultiVector>(coords, true)->getTpetra_MultiVector());
+          sublist->set(*key_it, toTpetra(coords));
         }
       }
     }
@@ -494,7 +327,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   std::string belosSolverType = "Block CG";
   clp.setOption("belosSolverType", &belosSolverType, "Name of the Belos linear solver");
   std::string precType = "MueLu-RefMaxwell";
-  clp.setOption("precType", &precType, "preconditioner to use (MueLu-RefMaxwell|ML-RefMaxwell|none)");
+  clp.setOption("precType", &precType, "preconditioner to use (MueLu-RefMaxwell|MueLu-Maxwell1|none)");
   std::string xml = "";
   clp.setOption("xml", &xml, "xml file with solver parameters (default: \"Maxwell.xml\")");
   std::string belos_xml = "Belos.xml";
@@ -512,6 +345,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   bool use_stacked_timer = false;
   clp.setOption("stacked-timer",
                 "no-stacked-timer", &use_stacked_timer, "use stacked timer");
+  bool ensure_kn = false;
+  clp.setOption("ensure-kn",
+                "no-ensure-kn", &ensure_kn, "generate a kn matrix if the user doesn't provide one");
 
   std::string S_file, D0_file, M1_file, M0_file;
   if (!Teuchos::ScalarTraits<Scalar>::isComplex) {
@@ -560,7 +396,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
-  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1" || precType == "ML-Maxwell") {
+  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1") {
     if (SM_file != "")
       M1_file = "";
     M0_file = "";
@@ -571,10 +407,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
       xml = "Maxwell.xml";
     else if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1")
       xml = "Maxwell_Reitzinger.xml";
-    else if (precType == "ML-RefMaxwell")
-      xml = "Maxwell_ML.xml";
-    else if (precType == "ML-Maxwell")
-      xml = "Maxwell_ML1.xml";
     else if (precType == "Hypre")
 
       xml = "Hypre.xml";
@@ -589,7 +421,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
   // Read matrices in from files
-  RCP<Matrix> D0_Matrix, SM_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix, GmhdA_Matrix;
+  RCP<Matrix> D0_Matrix, SM_Matrix, S_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix, GmhdA_Matrix;
 
   // maps for nodal and edge matrices
   RCP<const Map> node_map;
@@ -620,8 +452,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   // build stiffness plus mass matrix (SM_Matrix)
   if (SM_file == "") {
     // edge stiffness matrix
-    RCP<Matrix> S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
-    M1_Matrix            = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
+    S_Matrix  = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
+    M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
     Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*S_Matrix, false, (SC)1.0, *M1_Matrix, false, scaling, SM_Matrix, *out);
     SM_Matrix->fillComplete();
   } else {
@@ -645,8 +477,17 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     Ms_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Ms_file, edge_map);
   else
     Ms_Matrix = M1_Matrix;
-  if (Kn_file != "")
+  if (Kn_file != "") {
+    *out << "User provided Kn matrix" << std::endl;
     Kn_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(Kn_file, node_map);
+  } else if (ensure_kn) {
+    // The user requested we generate Kn_Matrix with an SpGEMM
+    Teuchos::ParameterList params;
+    *out << "Making Kn Matrix as requested by yser" << std::endl;
+    Kn_Matrix = MueLu::Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(SM_Matrix, D0_Matrix, params, "User Kn");
+  } else {
+    *out << "NOT using a Kn matrix" << std::endl;
+  }
 
   if ((M0inv_file == "") && (M0_file != "")) {
     // nodal mass matrix
@@ -718,6 +559,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
   std::map<std::string, void*> inputs;
   inputs["SM"]    = &SM_Matrix;
+  inputs["S"]     = &S_Matrix;
   inputs["GmhdA"] = &GmhdA_Matrix;
   inputs["D0"]    = &D0_Matrix;
   inputs["M1"]    = &M1_Matrix;

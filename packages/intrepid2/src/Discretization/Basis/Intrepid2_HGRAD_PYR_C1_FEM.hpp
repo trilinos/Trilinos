@@ -97,28 +97,22 @@ namespace Intrepid2 {
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const ordinal_type pt) const {
-          switch (opType) {
-          case OPERATOR_VALUE : {
+          if constexpr (opType == OPERATOR_VALUE) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
           }
-          case OPERATOR_GRAD :
-          case OPERATOR_CURL :
-          case OPERATOR_D2 : {
+          else if constexpr ((opType == OPERATOR_GRAD) || (opType == OPERATOR_CURL) || (opType == OPERATOR_D2)) {
             auto       output = Kokkos::subview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
             const auto input  = Kokkos::subview( _inputPoints,                 pt, Kokkos::ALL() );
             Serial<opType>::getValues( output, input );
-            break;
           }
-          default: {
+          else {
             INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                       opType != OPERATOR_GRAD &&
                                       opType != OPERATOR_CURL &&
                                       opType != OPERATOR_D2,
                                       ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
-          }
           }
         }
       };
@@ -162,6 +156,22 @@ namespace Intrepid2 {
                                   inputPoints,
                                   operatorType );
     }
+
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
+                        const PointViewType inputPointsconst,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
 
     virtual
     void

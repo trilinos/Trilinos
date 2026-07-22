@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 // Note: Luc Berger-Vergiat 04/14/21
@@ -21,10 +8,8 @@
 //       to ensure it is not included in these
 //       backends unit-test
 
-#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && \
-    !defined(TEST_HIP_BATCHED_DENSE_CPP) &&  \
-    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && \
-    !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
+#if !defined(TEST_CUDA_BATCHED_DENSE_CPP) && !defined(TEST_HIP_BATCHED_DENSE_CPP) && \
+    !defined(TEST_SYCL_BATCHED_DENSE_CPP) && !defined(TEST_OPENMPTARGET_BATCHED_DENSE_CPP)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
@@ -46,7 +31,7 @@ void impl_test_batched_vector_math() {
   typedef typename vector_type::value_type value_type;
   const int vector_length = vector_type::vector_length;
 
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
   typedef typename ats::mag_type mag_type;
 
   vector_type a, b, aref, bref;
@@ -67,11 +52,10 @@ void impl_test_batched_vector_math() {
 
     {
 #undef CHECK
-#define CHECK(op)                                        \
-  {                                                      \
-    a = op(aref);                                        \
-    for (int i = 0; i < vector_length; ++i)              \
-      EXPECT_NEAR_KK(a[i], ats::op(aref[i]), eps* a[i]); \
+#define CHECK(op)                                                                              \
+  {                                                                                            \
+    a = op(aref);                                                                              \
+    for (int i = 0; i < vector_length; ++i) EXPECT_NEAR_KK(a[i], ats::op(aref[i]), eps* a[i]); \
   }
 
       CHECK(sqrt);
@@ -89,32 +73,29 @@ void impl_test_batched_vector_math() {
       CHECK(atan);
 
 #undef CHECK
-#define CHECK                                                      \
-  {                                                                \
-    a = pow(aref, bref);                                           \
-    for (int i = 0; i < vector_length; ++i)                        \
-      EXPECT_NEAR_KK(a[i], ats::pow(aref[i], bref[i]), eps* a[i]); \
-  }                                                                \
+#define CHECK                                                                                            \
+  {                                                                                                      \
+    a = pow(aref, bref);                                                                                 \
+    for (int i = 0; i < vector_length; ++i) EXPECT_NEAR_KK(a[i], ats::pow(aref[i], bref[i]), eps* a[i]); \
+  }                                                                                                      \
   CHECK;
 
 #undef CHECK
-#define CHECK(op)                                              \
-  {                                                            \
-    mag_type beta = mag_type(3.2);                             \
-    a             = op(aref, beta);                            \
-    for (int i = 0; i < vector_length; ++i)                    \
-      EXPECT_NEAR_KK(a[i], ats::op(aref[i], beta), eps* a[i]); \
+#define CHECK(op)                                                                                    \
+  {                                                                                                  \
+    mag_type beta = mag_type(3.2);                                                                   \
+    a             = op(aref, beta);                                                                  \
+    for (int i = 0; i < vector_length; ++i) EXPECT_NEAR_KK(a[i], ats::op(aref[i], beta), eps* a[i]); \
   }
 
       CHECK(pow);
 
 #undef CHECK
-#define CHECK(op)                                               \
-  {                                                             \
-    value_type alpha = random.value() + 2.0;                    \
-    a                = op(alpha, bref);                         \
-    for (int i = 0; i < vector_length; ++i)                     \
-      EXPECT_NEAR_KK(a[i], ats::op(alpha, bref[i]), eps* a[i]); \
+#define CHECK(op)                                                                                     \
+  {                                                                                                   \
+    value_type alpha = random.value() + 2.0;                                                          \
+    a                = op(alpha, bref);                                                               \
+    for (int i = 0; i < vector_length; ++i) EXPECT_NEAR_KK(a[i], ats::op(alpha, bref[i]), eps* a[i]); \
   }
 
       CHECK(pow);
@@ -126,9 +107,8 @@ void impl_test_batched_vector_math() {
 
 template <typename DeviceType, typename VectorTagType, int VectorLength>
 int test_batched_vector_math() {
-  static_assert(
-      Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
-      "vector datatype is only tested on host space");
+  static_assert(Kokkos::SpaceAccessibility<DeviceType, Kokkos::HostSpace>::accessible,
+                "vector datatype is only tested on host space");
   Test::impl_test_batched_vector_math<VectorTagType, VectorLength>();
 
   return 0;
@@ -136,7 +116,7 @@ int test_batched_vector_math() {
 
 // template<typename ValueType>
 // int test_complex_pow() {
-//   typedef Kokkos::ArithTraits<Kokkos::complex<ValueType> > ats;
+//   typedef KokkosKernels::ArithTraits<Kokkos::complex<ValueType> > ats;
 //   typedef typename ats::mag_type mag_type;
 
 //   const mag_type eps = 1.0e3 * ats::epsilon();
@@ -156,21 +136,13 @@ int test_batched_vector_math() {
 ///
 
 #if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, batched_vector_math_simd_float3) {
-  test_batched_vector_math<TestDevice, SIMD<float>, 3>();
-}
-TEST_F(TestCategory, batched_vector_math_simd_float8) {
-  test_batched_vector_math<TestDevice, SIMD<float>, 8>();
-}
+TEST_F(TestCategory, batched_vector_math_simd_float3) { test_batched_vector_math<TestDevice, SIMD<float>, 3>(); }
+TEST_F(TestCategory, batched_vector_math_simd_float8) { test_batched_vector_math<TestDevice, SIMD<float>, 8>(); }
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, batched_vector_math_simd_double3) {
-  test_batched_vector_math<TestDevice, SIMD<double>, 3>();
-}
-TEST_F(TestCategory, batched_vector_math_simd_double4) {
-  test_batched_vector_math<TestDevice, SIMD<double>, 4>();
-}
+TEST_F(TestCategory, batched_vector_math_simd_double3) { test_batched_vector_math<TestDevice, SIMD<double>, 3>(); }
+TEST_F(TestCategory, batched_vector_math_simd_double4) { test_batched_vector_math<TestDevice, SIMD<double>, 4>(); }
 #endif
 
 // using namespace Test;

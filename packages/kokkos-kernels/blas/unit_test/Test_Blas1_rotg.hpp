@@ -1,30 +1,16 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <KokkosBlas1_rotg.hpp>
 
 namespace Test {
 template <class Device, class Scalar>
-void test_rotg_impl(typename Device::execution_space const& space,
-                    Scalar const a_in, Scalar const b_in) {
-  using magnitude_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
+void test_rotg_impl(typename Device::execution_space const& space, Scalar const a_in, Scalar const b_in) {
+  using magnitude_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
   using SViewType      = Kokkos::View<Scalar, Device>;
   using MViewType      = Kokkos::View<magnitude_type, Device>;
 
-  // const magnitude_type eps = Kokkos::ArithTraits<Scalar>::eps();
-  // const Scalar zero        = Kokkos::ArithTraits<Scalar>::zero();
+  // const magnitude_type eps = KokkosKernels::ArithTraits<Scalar>::eps();
+  // const Scalar zero        = KokkosKernels::ArithTraits<Scalar>::zero();
 
   // Initialize inputs/outputs
   SViewType a("a");
@@ -45,8 +31,8 @@ void test_rotg_impl(typename Device::execution_space const& space,
 
 template <class Scalar, class Device>
 int test_rotg() {
-  const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
-  const Scalar one  = Kokkos::ArithTraits<Scalar>::one();
+  const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
+  const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
   const Scalar two  = one + one;
 
   typename Device::execution_space space{};
@@ -59,8 +45,7 @@ int test_rotg() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<float, TestDevice>();
@@ -69,8 +54,7 @@ TEST_F(TestCategory, rotg_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<double, TestDevice>();
@@ -79,8 +63,7 @@ TEST_F(TestCategory, rotg_double) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&         \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_complex_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<Kokkos::complex<float>, TestDevice>();
@@ -89,8 +72,7 @@ TEST_F(TestCategory, rotg_complex_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&          \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotg_complex_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotg");
   test_rotg<Kokkos::complex<double>, TestDevice>();

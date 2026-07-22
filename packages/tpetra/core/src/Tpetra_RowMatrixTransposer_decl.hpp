@@ -1,43 +1,11 @@
 
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP
@@ -56,10 +24,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
-  // Forward declaration of ParameterList
-  class ParameterList;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+// Forward declaration of ParameterList
+class ParameterList;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -73,12 +41,12 @@ namespace Tpetra {
 /// "unique", i.e., a row is wholly owned by one process.
 ///
 /// This class takes the same template parameters as CrsMatrix.
-template<class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class RowMatrixTransposer {
-public:
+ public:
   //! @name Typedefs
   //@{
   typedef Scalar scalar_type;
@@ -94,14 +62,19 @@ public:
   //@{
 
   //! Constructor that takes the matrix to transpose.
-  RowMatrixTransposer (const Teuchos::RCP<const crs_matrix_type>& origMatrix,const std::string & label = std::string());
+  RowMatrixTransposer(const Teuchos::RCP<const crs_matrix_type> &origMatrix, const std::string &label = std::string());
 
   //@}
   //! @name Methods for computing the explicit transpose.
   //@{
 
-  //! Compute and return the transpose of the matrix given to the constructor.
-  Teuchos::RCP<crs_matrix_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+  /// \brief Compute and return the transpose of the matrix given to the constructor.
+  ///
+  /// \param params [in] Optional list of parameters. "compute global constants" (bool, default "true") determines
+  ///   if the the resulting matrix will have global constants. "conjugate values" (bool) determines if the values
+  ///   of the transposed matrix should also be complex conjugated. For complex matrices the default behavior is to
+  ///   conjugate the values.
+  Teuchos::RCP<crs_matrix_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   /// \brief Compute and return the transpose of the matrix given to the constructor.
   ///
@@ -111,9 +84,9 @@ public:
   ///
   /// \warning This routine leaves overlapping rows.  Unless you're
   /// sure that's OK, call createTranspose() instead.
-  Teuchos::RCP<crs_matrix_type> createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+  Teuchos::RCP<crs_matrix_type> createTransposeLocal(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
-private:
+ private:
   //! The original matrix to be transposed.
   Teuchos::RCP<const crs_matrix_type> origMatrix_;
 
@@ -121,18 +94,17 @@ private:
   std::string label_;
 };
 
-
 /// \class BlockCrsMatrixTransposer
 /// \brief Construct and (optionally) redistribute the explicitly
 ///   stored transpose of a BlockCrsMatrix.
 ///
 /// This class takes the same template parameters as BlockCrsMatrix.
-template<class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class BlockCrsMatrixTransposer {
-public:
+ public:
   //! @name Typedefs
   //@{
   typedef Scalar scalar_type;
@@ -148,14 +120,14 @@ public:
   //@{
 
   //! Constructor that takes the matrix to transpose.
-  BlockCrsMatrixTransposer (const Teuchos::RCP<const bcrs_matrix_type>& origMatrix,const std::string & label = std::string());
+  BlockCrsMatrixTransposer(const Teuchos::RCP<const bcrs_matrix_type> &origMatrix, const std::string &label = std::string());
 
   //@}
   //! @name Methods for computing the explicit transpose.
   //@{
 
   //! Compute and return the transpose of the matrix given to the constructor.
-  Teuchos::RCP<bcrs_matrix_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+  Teuchos::RCP<bcrs_matrix_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   /// \brief Compute and return the transpose of the matrix given to the constructor.
   ///
@@ -165,17 +137,13 @@ public:
   ///
   /// \warning This routine leaves overlapping rows.  Unless you're
   /// sure that's OK, call createTranspose() instead.
-  Teuchos::RCP<bcrs_matrix_type> createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+  Teuchos::RCP<bcrs_matrix_type> createTransposeLocal(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
-private:
+ private:
   //! The original matrix to be transposed.
   Teuchos::RCP<const bcrs_matrix_type> origMatrix_;
-
-  //! Label for timers
-  std::string label_;
 };
 
-
-} // namespace Tpetra
+}  // namespace Tpetra
 
 #endif /* TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP */

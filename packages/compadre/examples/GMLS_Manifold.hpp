@@ -76,10 +76,10 @@ double sphere_harmonic54(double x, double y, double z) {
 
 KOKKOS_INLINE_FUNCTION
 void curl_sphere_harmonic54(double *curl, double x, double y, double z) {
-    const scalar_type lon = longitude(x, y, z); // theta
-    const scalar_type lat = acos(z); // phi
-    const scalar_type sigma_lon_comp = std::pow(sin(lat), 2) * (5.0* std::pow(cos(lat), 2) - 1.0) * cos(4.0 *lon);
-    const scalar_type sigma_lat_comp = 4*cos(lat) * std::pow(sin(lat), 3) * sin(4.0 * lon);
+    const Compadre::scalar_type lon = longitude(x, y, z); // theta
+    const Compadre::scalar_type lat = acos(z); // phi
+    const Compadre::scalar_type sigma_lon_comp = std::pow(sin(lat), 2) * (5.0* std::pow(cos(lat), 2) - 1.0) * cos(4.0 *lon);
+    const Compadre::scalar_type sigma_lat_comp = 4*cos(lat) * std::pow(sin(lat), 3) * sin(4.0 * lon);
     // solution oriented for inward normal, so we flip sign for outward
     curl[0] = -(-sin(lat)*sin(lon)*sigma_lon_comp + cos(lat)*cos(lon)*sigma_lat_comp);
     curl[1] = -(sin(lat)*cos(lon)*sigma_lon_comp + cos(lat)*sin(lon)*sigma_lat_comp);

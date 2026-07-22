@@ -295,9 +295,9 @@ getCoeffMatrix_HCURL(OutputViewType &output,
         Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type> work("pivVec", 2*ndofSubcell, 1);
         lapack.GELS('N', ndofSubcell*card, ndofSubcell, ndofSubcell,
             RefMat.data(),
-            RefMat.stride_1(),
+            RefMat.stride(1),
             OrtMat.data(),
-            OrtMat.stride_1(),
+            OrtMat.stride(1),
             work.data(), work.extent(0),
             &info);
 
@@ -305,10 +305,10 @@ getCoeffMatrix_HCURL(OutputViewType &output,
     Kokkos::DynRankView<ordinal_type,host_device_type> pivVec("pivVec", ndofSubcell);
     lapack.GESV(ndofSubcell, ndofSubcell,
         RefMat.data(),
-        RefMat.stride_1(),
+        RefMat.stride(1),
         pivVec.data(),
         OrtMat.data(),
-        OrtMat.stride_1(),
+        OrtMat.stride(1),
         &info);
     //*/
     if (info) {
@@ -322,7 +322,7 @@ getCoeffMatrix_HCURL(OutputViewType &output,
     {
       //After solving the system w/ LAPACK, Phi contains A^T (or A^-T)
       // transpose and clean up numerical noise (for permutation matrices)
-      const double eps = tolerence();
+      const double eps = std::sqrt(tolerance()); // NVR: loosened this to allow better noise-cleaning for high-order polynomials
       for (ordinal_type i=0;i<ndofSubcell;++i) {
         auto intmatii = std::round(OrtMat(i,i));
         OrtMat(i,i) = (std::abs(OrtMat(i,i) - intmatii) < eps) ? intmatii : OrtMat(i,i);

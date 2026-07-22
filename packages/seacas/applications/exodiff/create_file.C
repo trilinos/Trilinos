@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,38 +8,37 @@
 #include "Tolerance.h"          // for Tolerance, etc
 #include "exo_entity.h"         // for Exo_Entity, EXOTYPE
 #include "exodusII.h"
-#include "fmt/color.h"
-#include "fmt/ostream.h"
-#include "smart_assert.h" // for SMART_ASSERT
-#include "stringx.h"      // for find_string, etc
+#include "stringx.h" // for find_string, etc
 #include "util.h"
 #include <cstddef> // for size_t
 #include <cstdio>  // for nullptr
-#include <string>  // for string, char_traits, etc
-#include <vector>  // for vector
-template <typename INT> class ExoII_Read;
+#include <fmt/color.h>
+#include <fmt/ostream.h>
+#include <smart_assert.h> // for SMART_ASSERT
+#include <string>         // for string, char_traits, etc
+#include <vector>         // for vector
+template <typename INT> class Exo_Read;
 
 namespace {
-  void build_variable_names(const char *type, std::vector<std::string> &names,
-                            std::vector<Tolerance> &tols, const Tolerance &default_tol,
-                            bool do_all_flag, const std::vector<std::string> &var_names1,
-                            const std::vector<std::string> &var_names2, bool *diff_found);
+  void build_variable_names(const char *type, NameList &names, std::vector<Tolerance> &tols,
+                            const Tolerance &default_tol, bool do_all_flag,
+                            const NameList &var_names1, const NameList &var_names2,
+                            bool *diff_found);
 
   template <typename INT>
-  void build_truth_table(EXOTYPE type, const char *label, std::vector<std::string> &names,
-                         size_t num_entity, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                         const std::vector<std::string> &var_names1,
-                         const std::vector<std::string> &var_names2, std::vector<int> &truth_tab,
-                         bool quiet_flag, bool *diff_found);
+  void build_truth_table(EXOTYPE type, const char *label, NameList &names, size_t num_entity,
+                         Exo_Read<INT> &file1, Exo_Read<INT> &file2, const NameList &var_names1,
+                         const NameList &var_names2, std::vector<int> &truth_tab, bool quiet_flag,
+                         bool *diff_found);
 
-  void output_exodus_names(int file_id, EXOTYPE type, const std::vector<std::string> &names);
-  void output_diff_names(const char *type, const std::vector<std::string> &names);
-  void output_compare_names(const char *type, const std::vector<std::string> &names,
+  void output_exodus_names(int file_id, EXOTYPE type, const NameList &names);
+  void output_diff_names(const char *type, const NameList &names);
+  void output_compare_names(const char *type, const NameList &names,
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2);
 } // namespace
 
 template <typename INT>
-void Build_Variable_Names(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool *diff_found)
+void Build_Variable_Names(Exo_Read<INT> &file1, Exo_Read<INT> &file2, bool *diff_found)
 {
   // Build (and compare) global variable names.
   build_variable_names("global", interFace.glob_var_names, interFace.glob_var,
@@ -85,7 +84,7 @@ void Build_Variable_Names(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool *
 }
 
 template <typename INT>
-int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::string &diffile_name,
+int Create_File(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::string &diffile_name,
                 bool *diff_found)
 {
   // Multiple modes:
@@ -261,7 +260,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
 }
 
 namespace {
-  void output_exodus_names(int file_id, EXOTYPE type, const std::vector<std::string> &names)
+  void output_exodus_names(int file_id, EXOTYPE type, const NameList &names)
   {
     if (!names.empty()) {
       std::vector<char *> vars(names.size());
@@ -272,7 +271,7 @@ namespace {
     }
   }
 
-  void output_compare_names(const char *type, const std::vector<std::string> &names,
+  void output_compare_names(const char *type, const NameList &names,
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2)
   {
     if (!names.empty()) {
@@ -296,7 +295,7 @@ namespace {
     }
   }
 
-  void output_diff_names(const char *type, const std::vector<std::string> &names)
+  void output_diff_names(const char *type, const NameList &names)
   {
     if (!names.empty()) {
       fmt::print("{} variables to be differenced:\n", type);
@@ -309,12 +308,12 @@ namespace {
     }
   }
 
-  void build_variable_names(const char *type, std::vector<std::string> &names,
-                            std::vector<Tolerance> &tols, const Tolerance &default_tol,
-                            bool do_all_flag, const std::vector<std::string> &var_names1,
-                            const std::vector<std::string> &var_names2, bool *diff_found)
+  void build_variable_names(const char *type, NameList &names, std::vector<Tolerance> &tols,
+                            const Tolerance &default_tol, bool do_all_flag,
+                            const NameList &var_names1, const NameList &var_names2,
+                            bool *diff_found)
   {
-    std::vector<std::string> x_list; // exclusion list
+    NameList x_list; // exclusion list
     for (auto name : names) {
       chop_whitespace(name);
       SMART_ASSERT(!name.empty());
@@ -380,8 +379,8 @@ namespace {
       }
     }
 
-    std::vector<std::string> tmp_list;
-    std::vector<Tolerance>   tmp_tols;
+    NameList               tmp_list;
+    std::vector<Tolerance> tmp_tols;
     for (size_t n = 0; n < names.size(); ++n) {
       std::string name = names[n];
       chop_whitespace(name);
@@ -401,21 +400,33 @@ namespace {
           if (!interFace.quiet_flag) {
             std::ostringstream diff;
             fmt::print(diff,
-                       "exodiff: DIFFERENCE .. The {} variable \"{}\" is not in the second file.\n",
+                       "exodiff: DIFFERENCE .. The {} variable \"{}\" is in the first file, but "
+                       "not the second file.\n",
                        type, name);
             DIFF_OUT(diff);
           }
         }
       }
       else {
-        *diff_found = true;
-        if (!interFace.quiet_flag) {
-          std::ostringstream diff;
-          fmt::print(
-              diff,
-              "exodiff: DIFFERENCE .. Specified {} variable \"{}\" is not in the first file.\n",
-              type, name);
-          DIFF_OUT(diff);
+        // Variable is in `names`, but not in `var_names1`.  This is a difference unless the file
+        // has changesets in which case the variable might exist in a different change set.  In this
+        // case, we check that if the variable does not exist in in either `var_names1` or
+        // `var_names2` and there are change sets, there is no diff.
+        if (interFace.has_change_sets &&
+            (interFace.summary_flag ||
+             find_string(var_names2, name, interFace.nocase_var_names) < 0)) {
+          // OK that variable not found in file1 and file2
+        }
+        else {
+          *diff_found = true;
+          if (!interFace.quiet_flag) {
+            std::ostringstream diff;
+            fmt::print(
+                diff,
+                "exodiff: DIFFERENCE .. Specified {} variable \"{}\" is not in the first file.\n",
+                type, name);
+            DIFF_OUT(diff);
+          }
         }
       }
     }
@@ -425,11 +436,10 @@ namespace {
   }
 
   template <typename INT>
-  void build_truth_table(EXOTYPE type, const char *label, std::vector<std::string> &names,
-                         size_t num_entity, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                         const std::vector<std::string> &var_names1,
-                         const std::vector<std::string> &var_names2, std::vector<int> &truth_tab,
-                         bool quiet_flag, bool *diff_found)
+  void build_truth_table(EXOTYPE type, const char *label, NameList &names, size_t num_entity,
+                         Exo_Read<INT> &file1, Exo_Read<INT> &file2, const NameList &var_names1,
+                         const NameList &var_names2, std::vector<int> &truth_tab, bool quiet_flag,
+                         bool *diff_found)
   {
     if (!names.empty()) {
       int num_vars = names.size();
@@ -500,12 +510,11 @@ namespace {
   }
 } // End of namespace
 
-template int  Create_File(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
+template int  Create_File(Exo_Read<int> &file1, Exo_Read<int> &file2,
                           const std::string &diffile_name, bool *diff_found);
-template void Build_Variable_Names(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
-                                   bool *diff_found);
+template void Build_Variable_Names(Exo_Read<int> &file1, Exo_Read<int> &file2, bool *diff_found);
 
-template int  Create_File(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
+template int  Create_File(Exo_Read<int64_t> &file1, Exo_Read<int64_t> &file2,
                           const std::string &diffile_name, bool *diff_found);
-template void Build_Variable_Names(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
+template void Build_Variable_Names(Exo_Read<int64_t> &file1, Exo_Read<int64_t> &file2,
                                    bool *diff_found);

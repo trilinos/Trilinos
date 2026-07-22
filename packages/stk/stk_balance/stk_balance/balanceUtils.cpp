@@ -10,10 +10,8 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_topology/topology.hpp>
 
-namespace stk
-{
-namespace balance
-{
+namespace stk {
+namespace balance {
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -35,17 +33,17 @@ BalanceSettings::BalanceSettings()
     m_graphEdgeWeightMultiplier(DefaultSettings::graphEdgeWeightMultiplier)
 {}
 
-size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
+size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const
 {
   return 1;
 }
 
-double BalanceSettings::getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
+double BalanceSettings::getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const
 {
   return 1;
 }
 
-int BalanceSettings::getGraphVertexWeight(stk::topology type) const
+int BalanceSettings::getGraphVertexWeight(stk::topology /*type*/) const
 {
   return 1;
 }
@@ -53,10 +51,11 @@ int BalanceSettings::getGraphVertexWeight(stk::topology type) const
 double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const
 {
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
-    const double *weight = stk::mesh::field_data(field, entity);
-    if (weight != nullptr) {
-      STK_ThrowRequireWithSierraHelpMsg(*weight >= 0);
-      return *weight;
+    if (field.defined_on(entity)) {
+      auto fieldData = field.data();
+      auto weight = fieldData.entity_values(entity);
+      STK_ThrowRequireWithSierraHelpMsg(weight() >= 0);
+      return weight();
     }
     else {
       return m_defaultFieldWeight;
@@ -105,19 +104,19 @@ bool BalanceSettings::includeSearchResultsInGraph() const
   return false;
 }
 
-void BalanceSettings::setIncludeSearchResultsInGraph(bool doContactSearch) 
+void BalanceSettings::setIncludeSearchResultsInGraph(bool /*doContactSearch*/) 
 {
 }
 
-double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
-                                                  const stk::mesh::FieldBase & coordField,
-                                                  const stk::mesh::Entity * faceNodes,
-                                                  const unsigned numFaceNodes) const
+double BalanceSettings::getToleranceForFaceSearch(const stk::mesh::BulkData & /*mesh*/,
+                                                  const stk::mesh::FieldBase & /*coordField*/,
+                                                  const stk::mesh::Entity * /*faceNodes*/,
+                                                  const unsigned /*numFaceNodes*/) const
 {
   return 0.0;
 }
 
-void BalanceSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance)
+void BalanceSettings::setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> /*faceSearchTolerance*/)
 {
 }
 
@@ -160,6 +159,22 @@ const BlockWeightMultipliers &
 BalanceSettings::getVertexWeightBlockMultipliers() const
 {
   return m_vertexWeightBlockMultipliers;
+}
+
+void BalanceSettings::setCohesiveElements(const std::string & blockName)
+{
+  m_cohesiveElements.push_back(blockName);
+}
+
+const CohesiveElements &
+BalanceSettings::getCohesiveElements() const
+{
+  return m_cohesiveElements;
+}
+
+bool BalanceSettings::hasCohesiveElements() const
+{
+  return !m_cohesiveElements.empty();
 }
 
 bool BalanceSettings::isIncrementalRebalance() const
@@ -213,7 +228,7 @@ double BalanceSettings::getImbalanceTolerance() const
   return 1.01;
 }
 
-void BalanceSettings::setDecompMethod(const std::string& method)
+void BalanceSettings::setDecompMethod(const std::string& /*method*/)
 {
 }
 
@@ -254,10 +269,10 @@ void BalanceSettings::setNumCriteria(int num_criteria)
   m_vertexWeightFields.resize(m_numCriteria); 
 }
 
-void BalanceSettings::modifyDecomposition(DecompositionChangeList & decomp) const
+void BalanceSettings::modifyDecomposition(DecompositionChangeList & /*decomp*/) const
 {}
 
-double BalanceSettings::getParticleRadius(stk::mesh::Entity particle) const
+double BalanceSettings::getParticleRadius(stk::mesh::Entity /*particle*/) const
 {
   return 0.5;
 }
@@ -310,17 +325,17 @@ std::string BalanceSettings::getVertexConnectivityWeightFieldName() const
   return "stk_balance_vertex_connectivity_weight";
 }
 
-stk::mesh::Part * BalanceSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
+stk::mesh::Part * BalanceSettings::getSpiderPart(const stk::mesh::BulkData & /*stkMeshBulkData*/) const
 {
   return nullptr;
 }
 
-const stk::mesh::Field<int> * BalanceSettings::getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
+const stk::mesh::Field<int> * BalanceSettings::getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & /*stkMeshBulkData*/) const
 {
   return nullptr;
 }
 
-const stk::mesh::Field<int> * BalanceSettings::getOutputSubdomainField(const stk::mesh::BulkData & stkMeshBulkData) const
+const stk::mesh::Field<int> * BalanceSettings::getOutputSubdomainField(const stk::mesh::BulkData & /*stkMeshBulkData*/) const
 {
   return nullptr;
 }
@@ -532,11 +547,23 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
     return 4;
   case stk::topology::SHELL_TRI_6:
     return 8;
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+    return 3;
+  case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
+    return 4;
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+    return 8;
   case stk::topology::SHELL_QUAD_4:
     return 6;
   case stk::topology::SHELL_QUAD_8:
     return 8;
   case stk::topology::SHELL_QUAD_9:
+    return 9;
+  case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
+    return 6;
+  case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
+    return 8;
+  case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
     return 9;
   case stk::topology::TET_4:
     return 1;
@@ -680,8 +707,11 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
   case stk::topology::TRI_4_2D:
   case stk::topology::QUAD_4_2D:
   case stk::topology::SHELL_TRI_3:
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
   case stk::topology::SHELL_TRI_4:
+  case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_4:
+  case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
     tableIndex = 2;
     break;
   case stk::topology::TET_4:
@@ -694,8 +724,11 @@ int GraphCreationSettings::getConnectionTableIndex(stk::topology elementTopology
   case stk::topology::QUAD_8_2D:
   case stk::topology::QUAD_9_2D:
   case stk::topology::SHELL_TRI_6:
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_8:
+  case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_9:
+  case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
     tableIndex = 4;
     break;
   case stk::topology::TET_8:
@@ -746,8 +779,11 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
   case stk::topology::TRI_4_2D:
   case stk::topology::QUAD_4_2D:
   case stk::topology::SHELL_TRI_3:
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
   case stk::topology::SHELL_TRI_4:
+  case stk::topology::SHELL_TRI_4_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_4:
+  case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
     tableIndex = 2;
     break;
   case stk::topology::TET_4:
@@ -762,10 +798,13 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
   case stk::topology::QUAD_8_2D:
   case stk::topology::QUAD_9_2D:
   case stk::topology::SHELL_TRI_6:
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
   case stk::topology::SHELL_QUAD_9:
+  case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
     tableIndex = 5;
     break;
   case stk::topology::SHELL_QUAD_8:
+  case stk::topology::SHELL_QUAD_8_ALL_FACE_SIDES:
   case stk::topology::TET_8:
   case stk::topology::TET_10:
   case stk::topology::TET_11:

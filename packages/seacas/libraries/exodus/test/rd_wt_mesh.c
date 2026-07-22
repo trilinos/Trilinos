@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
 #ifdef PARALLEL_AWARE_EXODUS
   MPI_Finalize();
 #endif
-  return (0);
+  return 0;
 }
 
 /***********************************************************************
@@ -349,16 +349,16 @@ int parse_input(int argc, char *argv[], bool *exodus, bool *close_files, char *f
       fprintf(stderr, "-C             minimize open files.                             \n");
       fprintf(stderr, "-u             display help/usage information                   \n");
       fprintf(stderr, "-w time        wait (sleep) specified time between timesteps.\n");
-      return (1);
+      return 1;
     }
     else {
       fprintf(stderr, "Unknown option: %s\n", argv[arg]);
       fprintf(stderr, "Enter rd_wt_mesh -h for description of valid options.\n");
 
-      return (1);
+      return 1;
     }
   }
-  return (0);
+  return 0;
 }
 
 /***********************************************************************
@@ -402,7 +402,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
 
     if (exoid < 0) {
       printf("after ex_open\n");
-      return (1);
+      return 1;
     }
 
     raw_read_time = 0.0;
@@ -416,7 +416,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     if (err) {
       printf("after ex_get_init, error = %d\n", err);
       ex_close(exoid);
-      return (1);
+      return 1;
     }
 
     len_connect = (size_t)NUM_NODES_PER_ELEM * (*num_elems);
@@ -450,7 +450,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     if (err) {
       printf("after ex_get_coord, error = %d\n", err);
       ex_close(exoid);
-      return (1);
+      return 1;
     }
 
     err = ex_get_block(exoid, EX_ELEM_BLOCK, EBLK_ID, type, num_elems, &num_nodes_per_elem, 0, 0,
@@ -459,7 +459,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     if (err) {
       printf("after ex_get_elem_block, error = %d\n", err);
       ex_close(exoid);
-      return (1);
+      return 1;
     }
 
     t_tmp1 = my_timer();
@@ -474,7 +474,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     if (err) {
       printf("after ex_get_elem_conn, error = %d\n", err);
       ex_close(exoid);
-      return (1);
+      return 1;
     }
 
     /* read element and node maps */
@@ -497,7 +497,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
-      return (1);
+      return 1;
     }
     *num_nodal_fields = num_vars;
 
@@ -505,7 +505,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     if (err) {
       printf("after ex_get_variable_param, error = %d\n", err);
       ex_close(exoid);
-      return (1);
+      return 1;
     }
     *num_global_fields = num_vars;
     if (*num_global_fields > 0) {
@@ -520,7 +520,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
       if (globals) {
         free(globals);
       }
-      return (1);
+      return 1;
     }
     *num_element_fields = num_vars;
 
@@ -566,7 +566,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
           if (err) {
             printf("after ex_get_nodal_var, error = %d\n", err);
             ex_close(exoid);
-            return (1);
+            return 1;
           }
         }
 
@@ -580,7 +580,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
         if (err) {
           printf("after ex_get_glob_vars, error = %d\n", err);
           ex_close(exoid);
-          return (1);
+          return 1;
         }
 
         for (i = 1; i <= *num_element_fields; i++) {
@@ -594,7 +594,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
           if (err) {
             printf("after ex_get_elem_var, error = %d\n", err);
             ex_close(exoid);
-            return (1);
+            return 1;
           }
         }
       }
@@ -607,7 +607,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     err = ex_close(exoid);
     if (err) {
       printf("after ex_close, error = %d\n", err);
-      return (1);
+      return 1;
     }
     tend = my_timer();
 
@@ -645,7 +645,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
     if (rank == 0) {
       fprintf(stderr, "Exodus Read: cannot get %s file size.\n", tmp_name);
     }
-    return (1);
+    return 1;
   }
   {
     file_size = file_status.st_size;
@@ -689,7 +689,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
   if (*num_global_fields > 0) {
     free(globals);
   }
-  return (0);
+  return 0;
 }
 
 /***********************************************************************
@@ -748,7 +748,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         if (exoid[npd] < 0) {
           printf("after ex_create\n");
           free(exoid);
-          return (1);
+          return 1;
         }
       }
       t_tmp2 = my_timer();
@@ -778,7 +778,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
             globals = NULL;
           }
           free(exoid);
-          return (1);
+          return 1;
         }
       }
       err = ex_put_init(exoid[npd], "This is an EXODUSII performance test.", num_dim, num_nodes,
@@ -789,7 +789,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         ex_close(exoid[npd]);
         free(exoid);
 
-        return (1);
+        return 1;
       }
 
 #if 0
@@ -814,7 +814,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         printf("after ex_put_elem_block, error = %d\n", err);
         ex_close(exoid[npd]);
         free(exoid);
-        return (1);
+        return 1;
       }
 
       t_tmp1 = my_timer();
@@ -829,7 +829,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         ex_close(exoid[npd]);
         free(exoid);
 
-        return (1);
+        return 1;
       }
 
       t_tmp1 = my_timer();
@@ -844,7 +844,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         ex_close(exoid[npd]);
         free(exoid);
 
-        return (1);
+        return 1;
       }
 
       /* write out element and node maps */
@@ -860,7 +860,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         ex_close(exoid[npd]);
         free(exoid);
 
-        return (1);
+        return 1;
       }
 
       t_tmp1 = my_timer();
@@ -877,7 +877,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         ex_close(exoid[npd]);
         free(exoid);
 
-        return (1);
+        return 1;
       }
 
       /* write out simulated results fields;
@@ -1075,7 +1075,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         if (err) {
           printf("after ex_close, error = %d\n", err);
           free(exoid);
-          return (1);
+          return 1;
         }
       }
       if (rank == 0) {
@@ -1144,7 +1144,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
     }
 
     free(exoid);
-    return (1);
+    return 1;
   }
   {
     file_size = file_status.st_size * files_per_domain;
@@ -1192,7 +1192,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
     free(globals);
     globals = NULL;
   }
-  return (0);
+  return 0;
 }
 
 /*****************************************************************************/

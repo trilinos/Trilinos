@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,6 +13,7 @@
 #include "Ioss_NodeSet.h"
 #include "Ioss_PropertyManager.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_Shell4.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
@@ -20,7 +21,7 @@
 
 #include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
@@ -30,7 +31,6 @@
 #include "Ioss_Field.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
-#include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
 #include "Ioss_SurfaceSplit.h"
 

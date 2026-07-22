@@ -90,13 +90,16 @@ private:
 
 public:
   int         compressionLevel_{0};
+  int         quantizeNSD_{0};
   bool        shuffle_{false};
   bool        ints64Bit_{false};
   bool        netcdf4_{false};
   bool        netcdf5_{false};
   bool        disableFieldRecognition_{false};
+  bool        zlib_{false};
   bool        szip_{false};
-  bool        zlib_{true};
+  bool        zstd_{false};
+  bool        bz2_{false};
   bool        outputDecompMap_{false};
   bool        outputDecompField_{false};
   bool        ignore_x_{false};

@@ -1,27 +1,23 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_ALGORITHMS_UNITTESTS_TEST_BINSORTA_HPP
 #define KOKKOS_ALGORITHMS_UNITTESTS_TEST_BINSORTA_HPP
 
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.random;
+import kokkos.sort;
+#else
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <Kokkos_Sort.hpp>
+#endif
+
 #include <random>
+#include <algorithm>
 
 namespace Test {
 namespace BinSortSetA {
@@ -31,13 +27,13 @@ struct bin3d_is_sorted_struct {
   using value_type      = unsigned int;
   using execution_space = ExecutionSpace;
 
-  Kokkos::View<Scalar * [3], ExecutionSpace> keys;
+  Kokkos::View<Scalar* [3], ExecutionSpace> keys;
 
   int max_bins;
   Scalar min;
   Scalar max;
 
-  bin3d_is_sorted_struct(Kokkos::View<Scalar * [3], ExecutionSpace> keys_,
+  bin3d_is_sorted_struct(Kokkos::View<Scalar* [3], ExecutionSpace> keys_,
                          int max_bins_, Scalar min_, Scalar max_)
       : keys(keys_), max_bins(max_bins_), min(min_), max(max_) {}
   KOKKOS_INLINE_FUNCTION
@@ -49,6 +45,7 @@ struct bin3d_is_sorted_struct {
     int iy2 = int((keys(i + 1, 1) - min) / max * max_bins);
     int iz2 = int((keys(i + 1, 2) - min) / max * max_bins);
 
+    // NOLINTBEGIN(bugprone-branch-clone)
     if (ix1 > ix2)
       count++;
     else if (ix1 == ix2) {
@@ -57,6 +54,7 @@ struct bin3d_is_sorted_struct {
       else if ((iy1 == iy2) && (iz1 > iz2))
         count++;
     }
+    // NOLINTEND(bugprone-branch-clone)
   }
 };
 
@@ -65,9 +63,9 @@ struct sum3D {
   using value_type      = double;
   using execution_space = ExecutionSpace;
 
-  Kokkos::View<Scalar * [3], ExecutionSpace> keys;
+  Kokkos::View<Scalar* [3], ExecutionSpace> keys;
 
-  sum3D(Kokkos::View<Scalar * [3], ExecutionSpace> keys_) : keys(keys_) {}
+  sum3D(Kokkos::View<Scalar* [3], ExecutionSpace> keys_) : keys(keys_) {}
   KOKKOS_INLINE_FUNCTION
   void operator()(int i, double& count) const {
     count += keys(i, 0);
@@ -77,8 +75,8 @@ struct sum3D {
 };
 
 template <class ExecutionSpace, typename KeyType>
-void test_3D_sort_impl(unsigned int n) {
-  using KeyViewType = Kokkos::View<KeyType * [3], ExecutionSpace>;
+void test_3D_sort_impl(size_t n) {
+  using KeyViewType = Kokkos::View<KeyType* [3], ExecutionSpace>;
 
   KeyViewType keys("Keys", n * n * n);
 
@@ -207,7 +205,7 @@ void test_sort_integer_overflow() {
   // array with two extrema in reverse order to expose integer overflow bug in
   // bin calculation
   T a[2]  = {Kokkos::Experimental::finite_max<T>::value,
-            Kokkos::Experimental::finite_min<T>::value};
+             Kokkos::Experimental::finite_min<T>::value};
   auto vd = Kokkos::create_mirror_view_and_copy(
       ExecutionSpace(), Kokkos::View<T[2], Kokkos::HostSpace>(a));
   Kokkos::sort(vd);
@@ -246,11 +244,11 @@ TEST(TEST_CATEGORY, BinSortEmptyView) {
   // does not matter if we use int or something else
   Kokkos::View<int*, ExecutionSpace> v("v", 0);
 
-  // test all exposed public sort methods
-  ASSERT_NO_THROW(Sorter.sort(ExecutionSpace(), v, 0, 0));
-  ASSERT_NO_THROW(Sorter.sort(v, 0, 0));
-  ASSERT_NO_THROW(Sorter.sort(ExecutionSpace(), v));
-  ASSERT_NO_THROW(Sorter.sort(v));
+  // test all exposed public sort methods are callable and do not throw
+  Sorter.sort(ExecutionSpace(), v, 0, 0);
+  Sorter.sort(v, 0, 0);
+  Sorter.sort(ExecutionSpace(), v);
+  Sorter.sort(v);
 }
 
 TEST(TEST_CATEGORY, BinSortEmptyKeysView) {
@@ -263,7 +261,26 @@ TEST(TEST_CATEGORY, BinSortEmptyKeysView) {
   BinOp_t binOp(5, 0, 10);
   Kokkos::BinSort<KeyViewType, BinOp_t> Sorter(ExecutionSpace{}, kv, binOp);
 
-  ASSERT_NO_THROW(Sorter.create_permute_vector(ExecutionSpace{}));
+  Sorter.create_permute_vector(ExecutionSpace{});  // does not throw
+}
+
+// BinSort may delegate sorting within bins to std::sort when running on host
+// and having a sufficiently large number of items within a single bin (10 by
+// default). Test that this is done without undefined behavior when accessing
+// the boundaries of the bin. Should be used in conjunction with a memory
+// sanitizer or bounds check.
+TEST(TEST_CATEGORY, BinSort_issue_7221) {
+  using ExecutionSpace = TEST_EXECSPACE;
+
+  using KeyViewType = Kokkos::View<int*, ExecutionSpace>;
+  KeyViewType kv("kv", 11);
+
+  using BinOp_t = Kokkos::BinOp1D<KeyViewType>;
+  BinOp_t binOp(1, -10, 10);
+  Kokkos::BinSort<KeyViewType, BinOp_t> Sorter(ExecutionSpace{}, kv, binOp,
+                                               /*sort_within_bins*/ true);
+
+  Sorter.create_permute_vector(ExecutionSpace{});  // does not throw
 }
 
 }  // namespace Test

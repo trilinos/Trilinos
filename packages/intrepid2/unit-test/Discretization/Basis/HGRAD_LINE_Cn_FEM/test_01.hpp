@@ -51,7 +51,7 @@ namespace Test {
       typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
 
       constexpr int spaceDim = 1;
-      const scalar_type tol = tolerence();
+      const scalar_type tol = tolerance();
       int errorFlag = 0;
 
       // for virtual function, value and point types are declared in the class
@@ -176,6 +176,7 @@ namespace Test {
           *outStream << " -- Testing " << EPointTypeToString(pts[idx]) << " -- \n";
           for (auto ip=1;ip<maxOrder;++ip) {
 
+            const double pTol = (ip < 10) ? tol : (ip < 15) ? tol * 10. : tol * 100.;
             LineBasisType lineBasis(ip, pts[idx]);
 
             const auto numDofs   = lineBasis.getCardinality();
@@ -198,7 +199,7 @@ namespace Test {
               for (int j=0;j<numPoints;++j) {
                 const scalar_type  exactVal = (i == j);
                 const auto val = get_scalar_value(valsHost(i,j));
-                if (std::isnan(val) || std::abs(val-exactVal) > tol) {
+                if (std::isnan(val) || std::abs(val-exactVal) > pTol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                   *outStream << " Basis function at i= " << i << ", j=" << j << ": "

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,7 +12,9 @@
 #include "fix_column_partitions.h"
 #include <array>
 #include <cmath>
-#include <fmt/core.h>
+#ifdef DEBUG
+#include <fmt/format.h>
+#endif
 #include <iostream>
 #include <map>
 #include <vector>
@@ -34,7 +36,7 @@ namespace {
   */
 
   template <typename INT>
-  void find_adjacent_element(INT cur_elem, E_Type etype, int side_id, int nadj, INT const *adj,
+  void find_adjacent_element(INT cur_elem, ElementType etype, int side_id, int nadj, INT const *adj,
                              Mesh_Description<INT> const *const mesh, INT *adj_elem, int *adj_side)
   {
     *adj_elem = -1;
@@ -54,8 +56,8 @@ namespace {
     get_ss_mirror(etype, Data(side_nodes), side_id, Data(side_nodes_flipped));
 
     for (int i = 0; i < nadj; i++) {
-      INT    adj_elem_id = adj[i] - 1; // Adjacency graph entries start from 1
-      E_Type etype2      = mesh->elem_type[adj_elem_id];
+      INT         adj_elem_id = adj[i] - 1; // Adjacency graph entries start from 1
+      ElementType etype2      = mesh->elem_type[adj_elem_id];
 
       // Does this side occurs in the adjacent element?
 
@@ -113,7 +115,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
       continue;
     }
 
-    E_Type etype = mesh->elem_type[i];
+    ElementType etype = mesh->elem_type[i];
 
     // Only hexes and wedges can be stacked in columns
     if (!is_hex(etype) && !is_wedge(etype)) {
@@ -124,7 +126,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
     // local numbering of nodes with respect to the element node list
 
     INT *elnodes  = mesh->connect[i];
-    int  nelnodes = get_elem_info(NNODES, etype);
+    int  nelnodes = get_elem_info(ElementInfo::NNODES, etype);
 
     float elcoord[27][3];
     for (int j = 0; j < nelnodes; j++) {
@@ -135,7 +137,7 @@ int fix_column_partitions(LB_Description<INT> *lb, Mesh_Description<INT> const *
 
     int top_side0 = 0;
     int bot_side0 = 0;
-    int nelfaces  = get_elem_info(NSIDES, etype);
+    int nelfaces  = get_elem_info(ElementInfo::NSIDES, etype);
 
     // Find top and bottom faces by eliminating lateral faces under
     // the assumption that lateral face normals have no Z component

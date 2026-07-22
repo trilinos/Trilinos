@@ -69,7 +69,7 @@ void MeshExchangeBoundaryEdges::update_shared_vertex_coordinates()
 
   exchanger.start_nonblocking();
 
-  auto f = [&](int rank, const std::vector<VertexUpdateInfo>& buf)
+  auto f = [&](int /*rank*/, const std::vector<VertexUpdateInfo>& buf)
   {
     for (const VertexUpdateInfo& info : buf)
     {
@@ -82,7 +82,7 @@ void MeshExchangeBoundaryEdges::update_shared_vertex_coordinates()
 
 void MeshExchangeBoundaryEdges::apply_snapped_boundaries(VertexPointExchanger& exchanger)
 {
-  auto f = [&](int rank, const std::vector<utils::Point>& updatedVertexInfo)
+  auto f = [&](int /*rank*/, const std::vector<utils::Point>& updatedVertexInfo)
   {
     for (size_t i=0; i < m_localBoundaryVertices.size(); ++i)
     {
@@ -134,7 +134,7 @@ void MeshExchangeBoundaryEdges::add_boundary_edges_on_root(VertexExchange& bound
                                                            EdgeExchange& boundaryEdgeExchanger)
 {
   
-  auto unpackVerts = [&](int rank, const std::vector<BoundaryVertexInfo>& recvVertexBuffer)
+  auto unpackVerts = [&](int /*rank*/, const std::vector<BoundaryVertexInfo>& recvVertexBuffer)
   {
     for (unsigned j = 0; j < recvVertexBuffer.size(); ++j) {
       auto newVertex = m_boundaryMesh->create_vertex(recvVertexBuffer[j].pts);
@@ -142,7 +142,7 @@ void MeshExchangeBoundaryEdges::add_boundary_edges_on_root(VertexExchange& bound
     }
   };
 
-  auto unpackEdges = [&](int rank, const std::vector<BoundaryEdgeInfo>& recvEdgeBuffer)
+  auto unpackEdges = [&](int /*rank*/, const std::vector<BoundaryEdgeInfo>& recvEdgeBuffer)
   {
     for (unsigned j = 0; j < recvEdgeBuffer.size(); ++j) {
       BoundaryEdgeInfo edgeInfo = recvEdgeBuffer[j];
@@ -242,7 +242,7 @@ void MeshExchangeBoundaryEdges::gather_boundary_entity_counts_to_root()
 
   m_entityCountExchanger.start_nonblocking();
 
-  auto f = [&](int rank, const std::vector<int>& buf) {};
+  auto f = [&](int /*rank*/, const std::vector<int>& /*buf*/) {};
   m_entityCountExchanger.complete_receives(f);
 }
 

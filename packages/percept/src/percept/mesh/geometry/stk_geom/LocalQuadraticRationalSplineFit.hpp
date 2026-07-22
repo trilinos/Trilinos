@@ -19,7 +19,7 @@
     {
     public:
       // computes m_CV, m_U
-      virtual void fit_internal(int n, Vectors2D& Q, Vectors2D& T);
+      virtual void fit_internal(int n, Vectors2D& Q, Vectors2D& T) override;
     };
 
   }

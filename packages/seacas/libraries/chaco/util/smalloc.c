@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,7 +19,7 @@ static struct smalloc_debug_data
 {
   int                        order; /* which smalloc call is it? */
   size_t                     size;  /* size of malloc invocation */
-  double                    *ptr;   /* memory location returned */
+  void                      *ptr;   /* memory location returned */
   struct smalloc_debug_data *next;  /* pointer to next element */
 } *top = NULL;
 
@@ -163,7 +163,7 @@ void *srealloc(void *ptr, size_t n)
         ;
       }
       if (dbptr == NULL) {
-        fprintf(stderr, "Memory error: In srealloc, address not found in debug list (%p)\n", ptr);
+        fprintf(stderr, "Memory error: In srealloc, pointer address not found in debug list.\n");
       }
       else {
         dbptr->size = n;
@@ -211,8 +211,8 @@ void *srealloc_ret(void *ptr, size_t n)
         ;
       }
       if (dbptr == NULL) {
-        fprintf(stderr, "Memory error: In srealloc_ret, address not found in debug list (%p)\n",
-                ptr);
+        fprintf(stderr,
+                "Memory error: In srealloc_ret, pointer address not found in debug list.\n");
       }
       else {
         dbptr->size = n;

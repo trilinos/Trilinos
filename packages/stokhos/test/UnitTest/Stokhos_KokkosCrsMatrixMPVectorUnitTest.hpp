@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_UnitTestHelpers.hpp"
@@ -139,8 +107,8 @@ bool compare_rank_2_views(const array_type& y,
                           Teuchos::FancyOStream& out)
 {
   typedef typename array_type::size_type size_type;
-  typename array_type::HostMirror hy = Kokkos::create_mirror_view(y);
-  typename array_type::HostMirror hy_exp = Kokkos::create_mirror_view(y_exp);
+  typename array_type::host_mirror_type hy = Kokkos::create_mirror_view(y);
+  typename array_type::host_mirror_type hy_exp = Kokkos::create_mirror_view(y_exp);
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
@@ -183,7 +151,7 @@ buildDiagonalMatrix(typename MatrixType::ordinal_type nrow,
   ordinal_type graph_length = nrow;
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>("graph", graph);
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>("graph", graph);
   matrix_values_type matrix_values =
     matrix_values_type("values", graph_length, mp_vector_size);
 
@@ -225,7 +193,7 @@ struct ReplaceDiagonalValuesKernel {
   static bool check(const MatrixType matrix,
                     Teuchos::FancyOStream& out) {
     typedef typename MatrixType::values_type matrix_values_type;
-    typename matrix_values_type::HostMirror host_matrix_values =
+    typename matrix_values_type::host_mirror_type host_matrix_values =
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
@@ -273,7 +241,7 @@ struct AddDiagonalValuesKernel {
   static bool check(const MatrixType matrix,
                     Teuchos::FancyOStream& out) {
     typedef typename MatrixType::values_type matrix_values_type;
-    typename matrix_values_type::HostMirror host_matrix_values =
+    typename matrix_values_type::host_mirror_type host_matrix_values =
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
@@ -322,7 +290,7 @@ struct AddDiagonalValuesAtomicKernel {
   static bool check(const MatrixType matrix,
                     Teuchos::FancyOStream& out) {
     typedef typename MatrixType::values_type matrix_values_type;
-    typename matrix_values_type::HostMirror host_matrix_values =
+    typename matrix_values_type::host_mirror_type host_matrix_values =
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
@@ -480,12 +448,17 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   block_vector_type y =
     block_vector_type("y", fem_length, stoch_length);
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
+  typename block_vector_type::host_mirror_type hx = Kokkos::create_mirror_view( x );
+  typename block_vector_type::host_mirror_type hy = Kokkos::create_mirror_view( y );
 
   // View the block vector as an array of the embedded intrinsic type.
-  typename block_vector_type::HostMirror::array_type hax = hx ;
-  typename block_vector_type::HostMirror::array_type hay = hy ;
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  typename block_vector_type::host_mirror_type::array_type hax = hx ;
+  typename block_vector_type::host_mirror_type::array_type hay = hy ;
+#else
+  auto hax = Stokhos::reinterpret_as_unmanaged_scalar_view(hx);
+  auto hay = Stokhos::reinterpret_as_unmanaged_scalar_view(hy);
+#endif
 
   for (ordinal_type iRowFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
@@ -503,7 +476,7 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   // Generate block matrix
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   // FIXME:
   // matrix_values_type matrix_values =
@@ -515,10 +488,14 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
 
-  typename matrix_values_type::HostMirror hM =
+  typename matrix_values_type::host_mirror_type hM =
     Kokkos::create_mirror_view( matrix.values );
 
-  typename matrix_values_type::HostMirror::array_type haM = hM ;
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  typename matrix_values_type::host_mirror_type::array_type haM = hM ;
+#else
+  auto haM = Stokhos::reinterpret_as_unmanaged_scalar_view(hM) ;
+#endif
 
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     const ordinal_type row_size = fem_graph[iRowFEM].size();
@@ -544,7 +521,15 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   //------------------------------
   // generate correct answer
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef typename block_vector_type::array_type array_type;
+#else
+  // Workaround for NVCC 12.x with x<6 issue. See: https://github.com/kokkos/kokkos/issues/8718
+  // typedef Stokhos::scalar_view_t<block_vector_type> array_type;
+  auto xs = reinterpret_as_unmanaged_scalar_view(x);
+  using array_type = decltype(xs);
+#endif
+
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   array_type ay_expected =
     array_type("ay_expected", fem_length, stoch_length);
@@ -552,7 +537,7 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   array_type ay_expected =
     RankTypeSelector<array_type, ordinal_type, array_type::traits::rank_dynamic>::create_view("ay_expected", fem_length, stoch_length);
 #endif
-  typename array_type::HostMirror hay_expected =
+  auto hay_expected =
     Kokkos::create_mirror_view(ay_expected);
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     const ordinal_type row_size = fem_graph[iRowFEM].size();
@@ -573,7 +558,12 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   //------------------------------
   // check
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typename block_vector_type::array_type ay = y;
+#else
+  array_type ay = Stokhos::reinterpret_as_unmanaged_scalar_view(y);
+#endif
+
   scalar_type rel_tol = ScalarTol<scalar_type>::tol();
   scalar_type abs_tol = ScalarTol<scalar_type>::tol();
   bool success = compare_rank_2_views(ay, ay_expected, rel_tol, abs_tol, out);
@@ -618,11 +608,17 @@ typedef Stokhos_MV_Multiply_Op<Stokhos::DefaultMultiply> DefaultMultiply;
   typedef Sacado::MP::Vector<STORAGE> MP_Vector_ ## STORAGE;            \
   CRSMATRIX_MP_VECTOR_TESTS_MATRIXSCALAR( MP_Vector_ ## STORAGE )
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 #define CRSMATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
   typedef Stokhos::StaticFixedStorage<ORDINAL,SCALAR,VectorSize,DEVICE> SFS; \
   typedef Stokhos::DynamicStorage<ORDINAL,SCALAR,DEVICE> DS;            \
   CRSMATRIX_MP_VECTOR_TESTS_STORAGE( SFS )                              \
   CRSMATRIX_MP_VECTOR_TESTS_STORAGE( DS )
+#else
+#define CRSMATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
+  typedef Stokhos::StaticFixedStorage<ORDINAL,SCALAR,VectorSize,DEVICE> SFS; \
+  CRSMATRIX_MP_VECTOR_TESTS_STORAGE( SFS )
+#endif
 
 #define CRSMATRIX_MP_VECTOR_TESTS_DEVICE( DEVICE ) \
   CRSMATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( int, double, DEVICE )

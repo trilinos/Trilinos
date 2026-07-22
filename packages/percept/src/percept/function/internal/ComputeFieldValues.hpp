@@ -42,13 +42,13 @@
       {
         VERIFY_OP(output_field_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues output_field_values bad rank");
         VERIFY_OP(transformed_basis_values.rank(), ==, 3, "FieldValuesComputer::get_fieldValues transformed_basis_values bad rank");
-        VERIFY_OP(output_field_values.dimension(0), ==, transformed_basis_values.dimension(0),
+        VERIFY_OP(output_field_values.extent_int(0), ==, transformed_basis_values.extent_int(0),
                   "FieldValuesComputer::get_fieldValues output_field_values.dim(0) doesn't match transformed_basis_values.dim(0)");
-        VERIFY_OP(output_field_values.dimension(1), ==, transformed_basis_values.dimension(1),
+        VERIFY_OP(output_field_values.extent_int(1), ==, transformed_basis_values.extent_int(1),
                   "FieldValuesComputer::get_fieldValues output_field_values.dim(1) doesn't match transformed_basis_values.dim(1)");
 
         // [P] = num integration points
-        int numInterpPoints = transformed_basis_values.dimension(2);
+        int numInterpPoints = transformed_basis_values.extent_int(2);
 
         unsigned stride = 0;
         //double * fdata_bucket = stk::mesh::field_data( m_my_field , bucket, &stride);
@@ -57,12 +57,12 @@
         unsigned nDOF = stride;
 
 #ifndef NDEBUG
-        int nOutDim = output_field_values.dimension(2); // FIXME for tensor
+        int nOutDim = output_field_values.extent_int(2); // FIXME for tensor
         VERIFY_OP((int)nDOF, == , nOutDim,
                   "FieldValuesComputer::get_fieldValues: invalid dimensions nDof, m_codomain_dimensions[0]= ");
 #endif
 
-        int numCells = transformed_basis_values.dimension(0); // FIXME for multiple cells
+        int numCells = transformed_basis_values.extent_int(0); // FIXME for multiple cells
 
 //         shards::CellTopology topo(bucket_cell_topo_data);
 //         int numNodes = topo.getNodeCount();
@@ -74,23 +74,23 @@
 //             if (0) cellWorkset(0,0,0) = 0.0;
 //           }
 
-        int numBases = transformed_basis_values.dimension(1);
+        int numBases = transformed_basis_values.extent_int(1);
         int numNodes = numBases;  // FIXME
 
         // ([C],[F],[P]), or ([C],[F],[P],[D]) for GRAD
         //MDArray transformed_basis_values(numCells, numBases, numInterpPoints);
 
-        // FIXME - it appears that Intrepid only supports the evaluation of scalar-valued fields, so we have
+        // FIXME - it appears that Intrepid2 only supports the evaluation of scalar-valued fields, so we have
         //   to copy the field one DOF at a time into a local array, evaluate, then copy back
         // ([C],[F])
-        MDArray field_data_values(numCells, numBases);
+        MDArray field_data_values("field_data_values", numCells, numBases);
 
         stk::mesh::Entity const* elem_nodes = bulk.begin_nodes(element);
 
         // ([P],[D])  [P] points in [D] dimensions
 
         // ([C],[P]) - place for results of evaluation
-        MDArray loc_output_field_values(numCells, numInterpPoints);
+        MDArray loc_output_field_values("loc_output_field_values", numCells, numInterpPoints);
 
         // gather
         for (unsigned iDOF = 0; iDOF < nDOF; iDOF++)
@@ -106,8 +106,8 @@
               }
 
             /// NOTE: this is needed since FunctionSpaceTools::evaluate method assumes the output array is initialized to 0
-            loc_output_field_values.initialize(0.0);
-            FunctionSpaceTools::evaluate<double>(loc_output_field_values, field_data_values, transformed_basis_values);
+            Kokkos::deep_copy(loc_output_field_values,0.0);
+            Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>::evaluate(loc_output_field_values, field_data_values, transformed_basis_values);
 
             for (int iCell = 0; iCell < numCells; iCell++)
               {

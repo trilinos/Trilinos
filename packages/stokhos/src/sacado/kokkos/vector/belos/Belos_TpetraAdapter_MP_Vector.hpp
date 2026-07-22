@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef BELOS_TPETRA_ADAPTER_MP_VECTOR_HPP
@@ -388,8 +356,15 @@ namespace Belos {
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      typename flat_view_type::const_type flat_A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
-      flat_view_type flat_C_view = Ctmp->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+      auto A_View= Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto C_View = Ctmp->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      typename flat_view_type::const_type flat_A_view = A_View;
+      flat_view_type flat_C_view = C_View;
+#else
+      auto flat_A_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(A_View);      
+      auto flat_C_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(C_View);
+#endif
 
       // Create a view for B on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> b_host_view_type;
@@ -509,8 +484,15 @@ namespace Belos {
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      typename flat_view_type::const_type flat_A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
-      typename flat_view_type::const_type flat_B_view = Btmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto B_view = Btmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      typename flat_view_type::const_type flat_A_view = A_view;
+      typename flat_view_type::const_type flat_B_view = B_view;
+#else
+      auto flat_A_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(A_view);
+      auto flat_B_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(B_view);
+#endif
 
       // Create a view for C on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> c_host_view_type;
@@ -532,7 +514,7 @@ namespace Belos {
         KokkosBlas::gemm (
           &ctransA, &ctransB,
           alpha, flat_A_view, flat_B_view,
-          Kokkos::ArithTraits<dot_type>::zero(),
+          KokkosKernels::ArithTraits<dot_type>::zero(),
           C_view_dev);
       }
 

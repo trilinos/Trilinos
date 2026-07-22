@@ -25,9 +25,6 @@
    The example is hard-coded for 1 MPI processes
 */
 
-#include <iostream>
-#include <cstdio>
-#include <iostream>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_oblackholestream.hpp>
@@ -43,33 +40,16 @@
 
 #include "Amesos2.hpp"
 #include "Amesos2_Version.hpp"
+#include "Amesos2_Util.hpp"
 
 
 using map_type = Tpetra::Map<>;
 using LO = map_type::local_ordinal_type;
 using GO = map_type::global_ordinal_type;
 using Scalar = double;
-using MAT = Tpetra::CrsMatrix<Scalar>;
-using MV = Tpetra::MultiVector<Scalar>;
+using MAT = Tpetra::CrsMatrix<Scalar,LO,GO>;
+using MV = Tpetra::MultiVector<Scalar,LO,GO>;
 using reader_type = Tpetra::MatrixMarket::Reader<MAT>;
-
-
-// Fwd decl - codes from Mark Hoemmen
-bool
-readEntryFromFile (GO& gblRowInd, GO& gblColInd, Scalar& val, const std::string& s);
-
-
-// NOTE: This is not a general routine, despite occasional efforts at
-// being so.  It expects a particular input file and only works with a
-// particular test, namely the test for Issue #3647.
-Teuchos::RCP<MAT>
-readCrsMatrixFromFile (const std::string& matrixFilename,
-                       Teuchos::RCP<Teuchos::FancyOStream> & fos,
-                       const Teuchos::RCP<const map_type>& rowMap,
-                       const Teuchos::RCP<const map_type>& domainMap,
-                       const Teuchos::RCP<const map_type>& rangeMap,
-                       const bool convert_to_zero_base = true,
-                       const int header_size=2);
 
 
 // ------------------------------------------------
@@ -80,13 +60,6 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
   using Teuchos::tuple;
   using std::endl;
-
-  typedef double Scalar;
-  typedef Tpetra::Map<>::local_ordinal_type LO;
-  typedef Tpetra::Map<>::global_ordinal_type GO;
-
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
-  typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
 
   Tpetra::ScopeGuard tpetraScope(&argc,&argv);
   {
@@ -102,7 +75,7 @@ int main(int argc, char *argv[]) {
 
 #if 1
     std::string mtx_name = "gap-ids-1procA.mm";
-    std::string map_name = "gap-ids-1proc-rowmap.mm";
+    std::string map_name = "gap-ids-1proc-rowmap-tpetra.mm";
     std::string rhs_name = "gap-ids-1procRhs.mm";
 #else
     std::string mtx_name = "badMatrix.mm";
@@ -160,8 +133,10 @@ int main(int argc, char *argv[]) {
          "does not result in the same Map.");
     }
 
-    if ( myRank == 0 && verbose ) {
-      *fos << "\nrowMap->describe output:" << endl;
+    if ( verbose ) {
+      if ( myRank == 0 ) {
+        *fos << "\nrowMap->describe output:" << endl;
+      }
       rowMap->describe(*fos, Teuchos::VERB_EXTREME);
     }
 
@@ -177,25 +152,29 @@ int main(int argc, char *argv[]) {
       convert_mtx_to_zero_base=false;
       *fos << "  num_header_lines to remove: " << num_header_lines << endl;
       *fos << "  convert mtx base hard-coded to false in this case. checking value: " << convert_mtx_to_zero_base << endl;
-      A = readCrsMatrixFromFile (mtx_name, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
+      A = Amesos2::Util::readCrsMatrixFromFile<map_type, MAT> (mtx_name, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
     }
     else {
       *fos << "Preparing to read in matrix file with gapped rowids" << endl;
       *fos << "  num_header_lines to remove: " << num_header_lines << endl;
       *fos << "  convert mtx base: " << convert_mtx_to_zero_base << endl;
-      A = readCrsMatrixFromFile (mtx_name, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
+      A = Amesos2::Util::readCrsMatrixFromFile<map_type, MAT> (mtx_name, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
     }
 
-    if ( myRank == 0 && verbose ) {
-      *fos << "A->describe" << endl;
+    if ( verbose ) {
+      if ( myRank == 0 ) {
+        *fos << "A->describe" << endl;
+      }
       A->describe(*fos, Teuchos::VERB_EXTREME);
     }
 
 
     RCP<MV> RHS;
     RHS = Tpetra::MatrixMarket::Reader<MAT>::readDenseFile (rhs_name, comm, rangeMap);
-    if ( myRank == 0 && verbose ) {
-      *fos << "RHS->describe" << endl;
+    if ( verbose ) {
+      if ( myRank == 0 ) {
+        *fos << "RHS->describe" << endl;
+      }
       RHS->describe(*fos, Teuchos::VERB_EXTREME);
     }
 
@@ -301,118 +280,4 @@ int main(int argc, char *argv[]) {
 
   return 0;
 } // end main
-
-
-
-bool
-readEntryFromFile (GO& gblRowInd, GO& gblColInd, Scalar& val, const std::string& s)
-{
-  if (s.size () == 0 || s.find ("%") != std::string::npos) {
-    return false; // empty line or comment line
-  }
-  std::istringstream in (s);
-
-  if (! in) {
-    return false;
-  }
-  in >> gblRowInd;
-  if (! in) {
-    return false;
-  }
-  in >> gblColInd;
-  if (! in) {
-    return false;
-  }
-  in >> val;
-  return true;
-}
-
-// NOTE: This is not a general routine, despite occasional efforts at
-// being so.  It expects a particular input file and only works with a
-// particular test, namely the test for Issue #3647.
-Teuchos::RCP<MAT>
-readCrsMatrixFromFile (const std::string& matrixFilename,
-                       Teuchos::RCP<Teuchos::FancyOStream> & fos,
-                       const Teuchos::RCP<const map_type>& rowMap,
-                       const Teuchos::RCP<const map_type>& domainMap,
-                       const Teuchos::RCP<const map_type>& rangeMap,
-                       const bool convert_to_zero_base,
-                       const int header_size)
-{
-  auto comm = rowMap->getComm ();
-  const int myRank = comm->getRank ();
-
-  std::ifstream inFile;
-  int opened = 0;
-  if (myRank == 0) 
-  {
-    try {
-      inFile.open (matrixFilename);
-      if (inFile) {
-        opened = 1;
-      }
-    }
-    catch (...) {
-      opened = 0;
-    }
-  }
-  Teuchos::broadcast<int, int> (*comm, 0, Teuchos::outArg (opened));
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (opened == 0, std::runtime_error, "readCrsMatrixFromFile: "
-     "Failed to open file \"" << matrixFilename << "\" on Process 0.");
-
-  using Teuchos::RCP;
-  RCP<MAT> A;
-
-  if (myRank == 0) 
-  {
-    std::string line;
-
-    // Skip the first N lines.  This is a hack, specific to the input file in question.
-
-    //*fos << "  Reading matrix market file. Skip " << header_size << "  header lines" << std::endl;
-    for ( int i = 0; i < header_size; ++i ) {
-      std::getline (inFile, line);
-    } 
-
-    std::map<GO, size_t> counts;
-    Teuchos::Array<Scalar> vals;
-    Teuchos::Array<GO> gblRowInds;
-    Teuchos::Array<GO> gblColInds;
-    while (inFile) {
-      std::getline (inFile, line);
-      GO gblRowInd {};
-      GO gblColInd {};
-      Scalar val {};
-      const bool gotLine = readEntryFromFile (gblRowInd, gblColInd, val, line);
-      if (gotLine) {
-        //*fos << "  read mtx rank: " << myRank << " |  gblRowInd = " << gblRowInd << "  gblColInd = " << gblColInd << std::endl;
-        if ( convert_to_zero_base ) {
-          gblRowInd -= 1 ;
-          gblColInd -= 1 ;
-        }
-        counts[gblRowInd]++;
-        vals.push_back(val);
-        gblRowInds.push_back(gblRowInd);
-        gblColInds.push_back(gblColInd);
-      }
-    }
-
-    // Max number of entries in any row
-    using pair_type = decltype(counts)::value_type;
-    auto pr = std::max_element(
-        std::begin(counts),
-        std::end(counts),
-        [] (pair_type const& p1, pair_type const& p2){ return p1.second < p2.second; }
-    );
-    size_t maxCount = (counts.empty()) ? size_t(0) : pr->second;
-    A = Teuchos::rcp(new MAT(rowMap, maxCount));
-    for (typename Teuchos::Array<GO>::size_type i=0; i<gblRowInds.size(); i++) {
-      A->insertGlobalValues (gblRowInds[i], gblColInds(i,1), vals(i,1));
-    }
-  }
-
-  A->fillComplete (domainMap, rangeMap);
-  return A;
-}
 

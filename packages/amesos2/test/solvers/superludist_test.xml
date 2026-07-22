@@ -3,13 +3,7 @@
   <ParameterList name="arc130.mtx">
     <Parameter name="complex" type="bool" value="false"/>
     <ParameterList name="SuperLU_DIST">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run0">
 	  <Parameter name="Scalar" type="string" value="double"/>
@@ -28,13 +22,7 @@
   <ParameterList name="orsirr_2.mtx">
     <Parameter name="complex" type="bool" value="false"/>
     <ParameterList name="SuperLU_DIST">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run0">
 	  <Parameter name="Scalar" type="string" value="double"/>

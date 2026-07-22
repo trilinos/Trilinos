@@ -61,7 +61,6 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     //+ INITIALIZATION:
     //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
     size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -78,7 +77,6 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     //+ EXAMPLE:
     //+ Read mesh data from the specified file.
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
 
     //+ Creates meta data; creates parts
@@ -87,7 +85,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     //+ Declare a field
     //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
     //+       since it commits the meta data.
-    const std::string fieldName = "disp";
+    const std::string fieldName = "field1";
     stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 1);
     stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), nullptr);
 
@@ -101,13 +99,14 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
 
     //-BEGIN
-    //+ The field 'fieldName' will be output to the results file with the name 'alternateFieldName'
-    std::string alternateFieldName("displacement");
+    //+ The field 'field1' will be output to the results file with the name 'nodalField'
+    std::string alternateFieldName("nodalField");
     stkIo.add_field(fh, field, alternateFieldName);
     //-END
 
     std::vector<stk::mesh::Entity> nodes;
     stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
+    auto fieldData = field.data<stk::mesh::ReadWrite>();
 
     // Iterate the application's execute loop five times and output
     // field data each iteration.
@@ -117,8 +116,8 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
       // Application execution...
       double value = 10.0 * time;
       for(size_t i=0; i<nodes.size(); i++) {
-        double *node_data = stk::mesh::field_data(field, nodes[i]);
-        *node_data = value;
+        auto node_data = fieldData.entity_values(nodes[i]);
+        node_data() = value;
       }
 
       //+ Output the field data calculated by the application.

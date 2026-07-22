@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 // Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
 // only the .cu version of this file is actually compiled
@@ -87,30 +53,29 @@
 // mfh 16 Dec 2012: The one-template-argument version breaks explicit
 // instantiation.  Ah well.
 //
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixType )
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType )
-{
+// TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NonlocalSumInto_Ignore, CrsMatrixType )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, NonlocalSumInto_Ignore, LocalOrdinalType, GlobalOrdinalType, ScalarType, NodeType) {
   using Tpetra::createContigMapWithNode;
   using Tpetra::global_size_t;
   using Tpetra::Map;
   using namespace Tpetra::TestingUtilities;
+  using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::av_const_cast;
   using Teuchos::Comm;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
   using Teuchos::OrdinalTraits;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
   using Teuchos::reduceAll;
   using Teuchos::ScalarTraits;
   using Teuchos::tuple;
   using Teuchos::TypeNameTraits;
-  using std::endl;
 
 #if 0
   // Extract typedefs from the CrsMatrix specialization.
@@ -118,7 +83,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   typedef typename CrsMatrixType::local_ordinal_type local_ordinal_type;
   typedef typename CrsMatrixType::global_ordinal_type global_ordinal_type;
   typedef typename CrsMatrixType::node_type node_type;
-#endif // 0
+#endif  // 0
 
   typedef ScalarType scalar_type;
   typedef LocalOrdinalType local_ordinal_type;
@@ -148,9 +113,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
 
   // Get the default communicator.
-  RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
-  const int numProcs = comm->getSize ();
-  const int myRank = comm->getRank ();
+  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  const int numProcs         = comm->getSize();
+  const int myRank           = comm->getRank();
 
   if (myRank == 0) {
     out << "Test with " << numProcs << " process" << (numProcs != 1 ? "es" : "") << endl;
@@ -166,12 +131,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   // Number of rows in the matrix owned by each process.
   const LO numLocalRows = 10;
 
-  //CrT: 4Feb14: the void trick does not seem to work, I get warnings
-  // Number of (global) rows and columns in the matrix.
-  //const GO numGlobalRows = numLocalRows * numProcs;
-  //const GO numGlobalCols = numGlobalRows;
-  // Prevent compile warning for unused variable.
-  // (It's not really "variable" if it's const, but oh well.)
+  // CrT: 4Feb14: the void trick does not seem to work, I get warnings
+  //  Number of (global) rows and columns in the matrix.
+  // const GO numGlobalRows = numLocalRows * numProcs;
+  // const GO numGlobalCols = numGlobalRows;
+  //  Prevent compile warning for unused variable.
+  //  (It's not really "variable" if it's const, but oh well.)
   //(void) numGlobalCols;
 
   if (myRank == 0) {
@@ -179,20 +144,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   }
 
   // Create a contiguous row Map, with numLocalRows rows per process.
-  RCP<const map_type> rowMap = createContigMapWithNode<LO, GO, NT> (INVALID, numLocalRows, comm);
+  RCP<const map_type> rowMap = createContigMapWithNode<LO, GO, NT>(INVALID, numLocalRows, comm);
 
   // For now, reuse the row Map for the domain and range Maps.  Later,
   // we might want to test using different domain or range Maps.
   RCP<const map_type> domainMap = rowMap;
-  RCP<const map_type> rangeMap = rowMap;
+  RCP<const map_type> rangeMap  = rowMap;
 
   // Min and max row and column index of this process.  Use the row
   // Map for the row and column indices, since we're only inserting
   // indices into the graph for rows that the calling process owns.
-  const GO globalMinRow = rowMap->getMinGlobalIndex ();
-  const GO globalMaxRow = rowMap->getMaxGlobalIndex ();
-  const GO globalMinCol = domainMap->getMinAllGlobalIndex ();
-  const GO globalMaxCol = domainMap->getMaxAllGlobalIndex ();
+  const GO globalMinRow = rowMap->getMinGlobalIndex();
+  const GO globalMaxRow = rowMap->getMaxGlobalIndex();
+  const GO globalMinCol = domainMap->getMinAllGlobalIndex();
+  const GO globalMaxCol = domainMap->getMaxAllGlobalIndex();
 
   if (myRank == 0) {
     out << "Creating graph" << endl;
@@ -210,19 +175,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
     // is in the CrsMatrix_NonlocalSumInto.cpp test) so that there
     // would actually be room for the incoming entries from remote
     // calls to sumIntoGlobalValues().
-    RCP<crs_graph_type> nonconstGraph (new crs_graph_type (rowMap, 2));
+    RCP<crs_graph_type> nonconstGraph(new crs_graph_type(rowMap, 2));
 
     TEUCHOS_TEST_FOR_EXCEPTION(globalMinRow >= globalMaxRow, std::logic_error,
-      "This test only works if globalMinRow < globalMaxRow.");
+                               "This test only works if globalMinRow < globalMaxRow.");
 
     // Insert all the diagonal entries, and only the diagonal entries
     // (unlike in the other test).
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
-      nonconstGraph->insertGlobalIndices (globalRow, tuple (globalRow));
+      nonconstGraph->insertGlobalIndices(globalRow, tuple(globalRow));
     }
 
-    nonconstGraph->fillComplete (domainMap, rangeMap);
-    graph = rcp_const_cast<const crs_graph_type> (nonconstGraph);
+    nonconstGraph->fillComplete(domainMap, rangeMap);
+    graph = rcp_const_cast<const crs_graph_type>(nonconstGraph);
   }
 
   // Test whether the graph has the correct structure.
@@ -230,16 +195,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   std::ostringstream graphFailMsg;
   {
     using indices_type = typename crs_graph_type::nonconst_global_inds_host_view_type;
-    indices_type indView("indices",2);//upper bound    
+    indices_type indView("indices", 2);  // upper bound
 
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
-      size_t numEntries = 0; // output argument of below line.
-      graph->getGlobalRowCopy (globalRow, indView, numEntries);
+      size_t numEntries = 0;  // output argument of below line.
+      graph->getGlobalRowCopy(globalRow, indView, numEntries);
 
       // Sort the view.
-      Tpetra::sort(indView,numEntries);
+      Tpetra::sort(indView, numEntries);
 
-      if (numEntries != as<size_t> (1)) {
+      if (numEntries != as<size_t>(1)) {
         localGraphSuccess = false;
         graphFailMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
       }
@@ -254,33 +219,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   bool globalGraphSuccess = true;
   {
     int globalGraphSuccess_int = 1;
-    reduceAll (*comm, Teuchos::REDUCE_MIN, localGraphSuccess ? 1 : 0, outArg (globalGraphSuccess_int));
+    reduceAll(*comm, Teuchos::REDUCE_MIN, localGraphSuccess ? 1 : 0, outArg(globalGraphSuccess_int));
     globalGraphSuccess = (globalGraphSuccess_int != 0);
   }
-  if (! globalGraphSuccess) {
+  if (!globalGraphSuccess) {
     if (myRank == 0) {
-      out << "Graph structure not all correct:" << endl << endl;
+      out << "Graph structure not all correct:" << endl
+          << endl;
     }
     // Print out the failure messages on all processes.
     for (int p = 0; p < numProcs; ++p) {
       if (p == myRank) {
-        out << graphFailMsg.str () << endl;
-        std::flush (out);
+        out << graphFailMsg.str() << endl;
+        std::flush(out);
       }
       // Do some barriers to allow output to finish.
-      comm->barrier ();
-      comm->barrier ();
-      comm->barrier ();
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
     }
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(! globalGraphSuccess, std::logic_error, "Graph structure test failed.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!globalGraphSuccess, std::logic_error, "Graph structure test failed.");
 
   if (myRank == 0) {
     out << "Creating matrix" << endl;
   }
 
   // Create the matrix, using the above graph.
-  RCP<CrsMatrixType> matrix (new CrsMatrixType (graph));
+  RCP<CrsMatrixType> matrix(new CrsMatrixType(graph));
 
   if (myRank == 0) {
     out << "Setting all matrix entries to 1" << endl;
@@ -288,7 +254,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
 
   // Set all the owned entries to one.  Later we'll set nonlocal
   // entries' values in a loop.
-  matrix->setAllToScalar (STS::one ());
+  matrix->setAllToScalar(STS::one());
 
   // Attempt to sum into nonowned entries (which nevertheless exist in
   // the matrix, just not on this process) using this process' rank.
@@ -309,19 +275,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   // exception to the remote process in globalAssemble().  If we
   // switch to that implementation, this unit test must be changed
   // accordingly.
-  if (globalMinRow > rowMap->getMinAllGlobalIndex ()) {
+  if (globalMinRow > rowMap->getMinAllGlobalIndex()) {
     // Attempt to write to the (numLocalRows-1,numLocalCols-1) local entry of the previous process.
-    matrix->sumIntoGlobalValues (globalMinRow-1, tuple (globalMaxCol), tuple (as<ST> (myRank)));
+    matrix->sumIntoGlobalValues(globalMinRow - 1, tuple(globalMaxCol), tuple(as<ST>(myRank)));
   }
-  if (globalMaxRow < rowMap->getMaxAllGlobalIndex ()) {
+  if (globalMaxRow < rowMap->getMaxAllGlobalIndex()) {
     // Attempt to write to the (0,0) local entry of the next process.
-    matrix->sumIntoGlobalValues (globalMaxRow+1, tuple (globalMinCol), tuple (as<ST> (myRank)));
+    matrix->sumIntoGlobalValues(globalMaxRow + 1, tuple(globalMinCol), tuple(as<ST>(myRank)));
   }
 
   if (myRank == 0) {
     out << "Calling fillComplete on the matrix" << endl;
   }
-  TEST_NOTHROW(matrix->fillComplete (domainMap, rangeMap)); // Tpetra::Details::InvalidGlobalIndex<GO>
+  TEST_NOTHROW(matrix->fillComplete(domainMap, rangeMap));  // Tpetra::Details::InvalidGlobalIndex<GO>
 
   // mfh 15 Dec 2012: We currently don't make promises about the state
   // of the matrix if fillComplete() throws.  Later, we might like to
@@ -337,18 +303,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   std::ostringstream failMsg;
   {
     using indices_type = typename CrsMatrixType::nonconst_global_inds_host_view_type;
-    using values_type = typename CrsMatrixType::nonconst_values_host_view_type;
-    indices_type indView("indices",2);//upper bound
-    values_type valView("values",2);//upper bound
+    using values_type  = typename CrsMatrixType::nonconst_values_host_view_type;
+    indices_type indView("indices", 2);  // upper bound
+    values_type valView("values", 2);    // upper bound
 
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
-      size_t numEntries = 0; // output argument of below line.
-      matrix->getGlobalRowCopy (globalRow, indView, valView, numEntries);
+      size_t numEntries = 0;  // output argument of below line.
+      matrix->getGlobalRowCopy(globalRow, indView, valView, numEntries);
 
       // Sort the views jointly by column index.
-      Tpetra::sort2 (indView, numEntries, valView);
+      Tpetra::sort2(indView, numEntries, valView);
 
-      if (numEntries != as<size_t> (1)) {
+      if (numEntries != as<size_t>(1)) {
         localSuccess = false;
         failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": numEntries = " << numEntries << " != 1" << endl;
       }
@@ -356,7 +322,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
         localSuccess = false;
         failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": indView[0] = " << indView[0] << " != globalRow = " << globalRow << endl;
       }
-      if (numEntries > 0 && valView[0] != STS::one ()) {
+      if (numEntries > 0 && valView[0] != STS::one()) {
         localSuccess = false;
         failMsg << "Proc " << myRank << ": globalRow = " << globalRow << ": valView[0] = " << valView[0] << " != 1" << endl;
       }
@@ -366,22 +332,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
   bool globalSuccess = true;
   {
     int globalSuccess_int = 1;
-    reduceAll (*comm, Teuchos::REDUCE_MIN, localSuccess ? 1 : 0, outArg (globalSuccess_int));
+    reduceAll(*comm, Teuchos::REDUCE_MIN, localSuccess ? 1 : 0, outArg(globalSuccess_int));
     globalSuccess = (globalSuccess_int != 0);
   }
 
-  if (! globalSuccess) {
+  if (!globalSuccess) {
     // Print out the failure messages on all processes.
     for (int p = 0; p < numProcs; ++p) {
       if (p == myRank) {
-        out << failMsg.str () << endl;
+        out << failMsg.str() << endl;
         out << "Proc " << myRank << ": localSuccess = " << localSuccess << ", globalSuccess = " << globalSuccess << endl;
         //      std::flush (out);
       }
       // Do some barriers to allow output to finish.
-      comm->barrier ();
-      comm->barrier ();
-      comm->barrier ();
+      comm->barrier();
+      comm->barrier();
+      comm->barrier();
     }
   }
 
@@ -429,16 +395,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_com
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_complex_double_int_int_type )
 // TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, mat_complex_double_int_long_type )
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#endif  // HAVE_TEUCHOS_COMPLEX
 
-#endif // 0
+#endif  // 0
 
-
-#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonlocalSumInto_Ignore, LO, GO, SCALAR, NODE )
+#define UNIT_TEST_GROUP(SCALAR, LO, GO, NODE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, NonlocalSumInto_Ignore, LO, GO, SCALAR, NODE)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_SLGN( UNIT_TEST_GROUP )
-
-
+TPETRA_INSTANTIATE_SLGN(UNIT_TEST_GROUP)

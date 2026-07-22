@@ -123,13 +123,13 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
 
   /* element attribute array */
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_def_dim(exoid, dnumobjatt, num_attr_per_entry, &numattrdim)) != NC_NOERR) {
+  if ((status = nc_def_dim(exoid, dnumobjatt, num_attr_per_entry, &numattrdim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to define number of attributes in %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
@@ -142,7 +142,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   dims[0] = numobjentdim;
   dims[1] = numattrdim;
 
-  if ((status = nc_def_var(exoid, vobjatt, nc_flt_code(exoid), 2, dims, &varid)) != NC_NOERR) {
+  if ((status = nc_def_var(exoid, vobjatt, nc_flt_code(exoid), 2, dims, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR:  failed to define attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
@@ -152,7 +152,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   exi_compress_variable(exoid, varid, 2);
 
   /* inquire previously defined dimensions  */
-  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -162,7 +162,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
   dims[0] = numattrdim;
   dims[1] = strdim;
 
-  if ((status = nc_def_var(exoid, vattnam, NC_CHAR, 2, dims, &att_name_varid)) != NC_NOERR) {
+  if ((status = nc_def_var(exoid, vattnam, NC_CHAR, 2, dims, &att_name_varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to define %s attribute name array in file id %d",
              ex_name_of_object(obj_type), exoid);
@@ -172,7 +172,7 @@ int ex_add_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, int64_t
 
   /* leave define mode  */
 
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 

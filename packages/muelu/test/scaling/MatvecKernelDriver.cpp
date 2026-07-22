@@ -240,11 +240,6 @@ class Petsc_SpmV_Pack {
 // =========================================================================
 #if defined(HAVE_MUELU_HYPRE) && defined(HAVE_MPI)
 
-#define HYPRE_CHK_ERR(x)                                                              \
-  {                                                                                   \
-    if (x != 0) throw std::runtime_error("ERROR: HYPRE returned non-zero exit code"); \
-  }
-
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class HYPRE_SpmV_Pack {
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
@@ -270,9 +265,9 @@ class HYPRE_SpmV_Pack {
     int row_hi = c_row_map->getMaxGlobalIndex();
     int dom_lo = c_domain_map->getMinGlobalIndex();
     int dom_hi = c_domain_map->getMaxGlobalIndex();
-    HYPRE_CHK_ERR(HYPRE_IJMatrixCreate(comm, row_lo, row_hi, dom_lo, dom_hi, &ij_matrix));
-    HYPRE_CHK_ERR(HYPRE_IJMatrixSetObjectType(ij_matrix, HYPRE_PARCSR));
-    HYPRE_CHK_ERR(HYPRE_IJMatrixInitialize(ij_matrix));
+    HYPRE_IJMatrixCreate(comm, row_lo, row_hi, dom_lo, dom_hi, &ij_matrix);
+    HYPRE_IJMatrixSetObjectType(ij_matrix, HYPRE_PARCSR);
+    HYPRE_IJMatrixInitialize(ij_matrix);
 
     // Fill matrix
     std::vector<GO> new_indices(A.getLocalMaxNumRowEntries());
@@ -286,28 +281,28 @@ class HYPRE_SpmV_Pack {
       GO GlobalRow[1];
       GO numEntries = (GO)indices.extent(0);
       GlobalRow[0]  = c_row_map->getGlobalElement(i);
-      HYPRE_CHK_ERR(HYPRE_IJMatrixSetValues(ij_matrix, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
+      HYPRE_IJMatrixSetValues(ij_matrix, 1, &numEntries, GlobalRow, new_indices.data(), values.data());
     }
-    HYPRE_CHK_ERR(HYPRE_IJMatrixAssemble(ij_matrix));
-    HYPRE_CHK_ERR(HYPRE_IJMatrixGetObject(ij_matrix, (void**)&parcsr_matrix));
+    HYPRE_IJMatrixAssemble(ij_matrix);
+    HYPRE_IJMatrixGetObject(ij_matrix, (void**)&parcsr_matrix);
 
     // Now the x vector
     GO* dom_indices = const_cast<GO*>(c_domain_map->getLocalElementList().getRawPtr());
-    HYPRE_CHK_ERR(HYPRE_IJVectorCreate(comm, dom_lo, dom_hi, &x_ij));
-    HYPRE_CHK_ERR(HYPRE_IJVectorSetObjectType(x_ij, HYPRE_PARCSR));
-    HYPRE_CHK_ERR(HYPRE_IJVectorInitialize(x_ij));
-    HYPRE_CHK_ERR(HYPRE_IJVectorSetValues(x_ij, X.getLocalLength(), dom_indices, const_cast<vector_type*>(&X)->getDataNonConst(0).getRawPtr()));
-    HYPRE_CHK_ERR(HYPRE_IJVectorAssemble(x_ij));
-    HYPRE_CHK_ERR(HYPRE_IJVectorGetObject(x_ij, (void**)&x_par));
+    HYPRE_IJVectorCreate(comm, dom_lo, dom_hi, &x_ij);
+    HYPRE_IJVectorSetObjectType(x_ij, HYPRE_PARCSR);
+    HYPRE_IJVectorInitialize(x_ij);
+    HYPRE_IJVectorSetValues(x_ij, X.getLocalLength(), dom_indices, const_cast<vector_type*>(&X)->getDataNonConst(0).getRawPtr());
+    HYPRE_IJVectorAssemble(x_ij);
+    HYPRE_IJVectorGetObject(x_ij, (void**)&x_par);
 
     // Now the y vector
     GO* row_indices = const_cast<GO*>(c_row_map->getLocalElementList().getRawPtr());
-    HYPRE_CHK_ERR(HYPRE_IJVectorCreate(comm, row_lo, row_hi, &y_ij));
-    HYPRE_CHK_ERR(HYPRE_IJVectorSetObjectType(y_ij, HYPRE_PARCSR));
-    HYPRE_CHK_ERR(HYPRE_IJVectorInitialize(y_ij));
-    HYPRE_CHK_ERR(HYPRE_IJVectorSetValues(y_ij, Y.getLocalLength(), row_indices, Y.getDataNonConst(0).getRawPtr()));
-    HYPRE_CHK_ERR(HYPRE_IJVectorAssemble(y_ij));
-    HYPRE_CHK_ERR(HYPRE_IJVectorGetObject(y_ij, (void**)&y_par));
+    HYPRE_IJVectorCreate(comm, row_lo, row_hi, &y_ij);
+    HYPRE_IJVectorSetObjectType(y_ij, HYPRE_PARCSR);
+    HYPRE_IJVectorInitialize(y_ij);
+    HYPRE_IJVectorSetValues(y_ij, Y.getLocalLength(), row_indices, Y.getDataNonConst(0).getRawPtr());
+    HYPRE_IJVectorAssemble(y_ij);
+    HYPRE_IJVectorGetObject(y_ij, (void**)&y_par);
   }
 
   ~HYPRE_SpmV_Pack() {
@@ -381,7 +376,7 @@ class MagmaSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosC
                         const vector_type& X,
                         vector_type& Y) {
     // data access common to other TPLs
-    const KCRS& Amat          = A.getLocalMatrixHost();
+    const KCRS Amat           = A.getLocalMatrixHost();
     c_lno_view_t Arowptr      = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind  = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
@@ -527,7 +522,7 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
                      const vector_type& X,
                      vector_type& Y) {
     // data access common to other TPLs
-    const KCRS& Amat          = A.getLocalMatrixDevice();
+    const KCRS Amat           = A.getLocalMatrixDevice();
     c_lno_view_t Arowptr      = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind  = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
@@ -685,9 +680,9 @@ void MV_Tpetra(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_KK(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y) {
   typedef typename Node::device_type device_type;
-  const auto& AK = A.getLocalMatrixDevice();
-  auto X_lcl     = x.getLocalViewDevice(Tpetra::Access::ReadOnly);
-  auto Y_lcl     = y.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  const auto AK = A.getLocalMatrixDevice();
+  auto X_lcl    = x.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto Y_lcl    = y.getLocalViewDevice(Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose, Teuchos::ScalarTraits<Scalar>::one(), AK, X_lcl, Teuchos::ScalarTraits<Scalar>::zero(), Y_lcl);
   Kokkos::fence();
 }
@@ -753,6 +748,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("showmatrix", "noshowmatrix", &describeMatrix, "describe matrix");
     bool useStackedTimer = false;
     clp.setOption("stackedtimer", "nostackedtimer", &useStackedTimer, "use stacked timer");
+    std::string watchrProblemName = std::string("MueLu Matvec ") + std::to_string(comm->getSize()) + " ranks";
+    clp.setOption("watchr-problem-name", &watchrProblemName, "Problem name for Watchr plot headers");
     bool verboseModel = false;
     clp.setOption("verbosemodel", "noverbosemodel", &verboseModel, "use stacked verbose performance model");
 
@@ -794,13 +791,15 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("report_error_norms", "noreport_error_norms", &report_error_norms, "Report L2 norms for the solution");
 
     std::ostringstream galeriStream;
-    std::string rhsFile, coordFile, coordMapFile, nullFile, materialFile;  // unused
+    std::string rhsFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, massFile;  // unused
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
     RCP<RealValuedMultiVector> coordinates;
     RCP<MultiVector> nullspace, material, x, b;
+    RCP<LOVector> blocknumber;
     RCP<Matrix> A;
     RCP<const Map> map;
+    RCP<Matrix> mass;
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
@@ -810,7 +809,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     }
 
     // Load the matrix off disk (or generate it via Galeri), assuming only one right hand side is loaded.
-    MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
+    MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, massFile, map, A, coordinates, nullspace, material, blocknumber, mass, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
 
     if (do_kk && comm->getSize() > 1) {
       out << "KK was requested, but this kernel this cannot be run on more than one rank. Disabling..." << endl;
@@ -927,9 +926,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     // =========================================================================
     // Problem construction
     // =========================================================================
-    if (useStackedTimer)
+    if (useStackedTimer) {
       stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_MatvecKernelDriver"));
-    else
+      Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+    } else
       globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatrixRead: S - Global Time")));
 
     comm->barrier();
@@ -946,7 +946,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     vector_type xt;
     vector_type yt;
 
-    At                         = Utilities::Op2TpetraCrs(A);
+    At                         = toTpetra(A);
     const crs_matrix_type& Att = *At;
     xt                         = Xpetra::toTpetra(*x);
     yt                         = Xpetra::toTpetra(*y);
@@ -987,7 +987,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     typedef typename Node::device_type device_type;
 
     // data access common to other TPLs
-    const KCRS& Amat          = At->getLocalMatrixHost();
+    const KCRS Amat           = At->getLocalMatrixHost();
     c_lno_view_t Arowptr      = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind  = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
@@ -1178,6 +1178,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       Teuchos::StackedTimer::OutputOptions options;
       options.output_fraction = options.output_histogram = options.output_minmax = true;
       stacked_timer->report(out, comm, options);
+      auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
+      if (xmlOut.length())
+        std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
     } else {
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
     }

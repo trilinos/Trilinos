@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <Teuchos_ConfigDefs.hpp>
@@ -507,20 +475,18 @@ TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
   vector<string> globalNames;
   stkIo.get_global_variable_names(globalNames);
 
-  // Ensure that we have the right global variable names.  Note that
-  // get_global_variable_names() transforms the strings such that they're
-  // lowercased and spaces are replaced with underscores.
+  // Ensure that we have the right global variable names.
   TEST_EQUALITY(globalNames.size(), 4)
   int found(0);
   for (const auto& name : globalNames)
   {
-    if (name == "answer")
+    if (name == "Answer")
       found |= 1;
-    else if (name == "perfection")
+    else if (name == "Perfection")
       found |= 2;
-    else if (name == "spiral_encoding")
+    else if (name == "Spiral Encoding")
       found |= 4;
-    else if (name == "physics_favorites")
+    else if (name == "Physics Favorites")
       found |= 8;
   } // end loop over globalNames
   TEST_EQUALITY(found, 1 | 2 | 4 | 8)
@@ -532,13 +498,13 @@ TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
   vector<double> physicsFavoritesFromFile;
   for (const auto& name : globalNames)
   {
-    if (name == "answer")
+    if (name == "Answer")
       stkIo.get_global(name, answerFromFile);
-    else if (name == "perfection")
+    else if (name == "Perfection")
       stkIo.get_global(name, perfectionFromFile);
-    else if (name == "spiral_encoding")
+    else if (name == "Spiral Encoding")
       stkIo.get_global(name, spiralEncodingFromFile);
-    else if (name == "physics_favorites")
+    else if (name == "Physics Favorites")
       stkIo.get_global(name, physicsFavoritesFromFile);
   } // end loop over globalNames
 

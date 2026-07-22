@@ -36,6 +36,7 @@
 #define PARSEDEVALBASE_HPP
 
 #include <Kokkos_Core.hpp>
+#include "stk_util/stk_config.h"
 
 namespace stk {
 namespace expreval {
@@ -50,6 +51,7 @@ public:
   KOKKOS_DEFAULTED_FUNCTION virtual ~ParsedEvalBase() = default;
 
   virtual int get_result_buffer_size() = 0;
+
 };
 
 }

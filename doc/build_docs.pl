@@ -146,6 +146,7 @@ sub buildDocs {
         print "$shortDir...\n";
         
         my $output = `$absFile 2>&1`;
+        print "$output\n\n";
         my $failed = $?;
     }    
     

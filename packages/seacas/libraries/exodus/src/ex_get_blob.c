@@ -34,7 +34,7 @@ int ex_get_blob(int exoid, ex_blob *blob)
 
   /* First, locate varid of blob  */
   int entlst_id = 0;
-  if ((status = nc_inq_varid(exoid, VAR_ENTITY_BLOB(blob->id), &entlst_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_ENTITY_BLOB(blob->id), &entlst_id)) != EX_NOERR) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
       if (blob->name != NULL) {
@@ -53,7 +53,7 @@ int ex_get_blob(int exoid, ex_blob *blob)
   }
 
   char *numentryptr = DIM_NUM_VALUES_BLOB(blob->id);
-  if ((status = nc_inq_dimid(exoid, numentryptr, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, numentryptr, &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate number of entities in blob %" PRId64 " in file id %d",
              blob->id, exoid);
@@ -61,7 +61,7 @@ int ex_get_blob(int exoid, ex_blob *blob)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &len)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of entities in blob %" PRId64 " in file id %d", blob->id,
              exoid);
@@ -72,7 +72,7 @@ int ex_get_blob(int exoid, ex_blob *blob)
   blob->num_entry = len;
 
   /* look up entity list array for this blob id */
-  if ((status = nc_inq_varid(exoid, VAR_ENTITY_BLOB(blob->id), &entlst_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_ENTITY_BLOB(blob->id), &entlst_id)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entity list array for blob %" PRId64 " in file id %d",
              blob->id, exoid);
@@ -84,7 +84,7 @@ int ex_get_blob(int exoid, ex_blob *blob)
   if (blob->name != NULL) {
     int  name_size             = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
     char tmp_name[EX_MAX_NAME] = "";
-    if ((status = nc_get_att_text(exoid, entlst_id, EX_ATTRIBUTE_NAME, tmp_name)) != NC_NOERR) {
+    if ((status = nc_get_att_text(exoid, entlst_id, EX_ATTRIBUTE_NAME, tmp_name)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read blob name for blob %" PRId64 " in file id %d", blob->id,
                exoid);

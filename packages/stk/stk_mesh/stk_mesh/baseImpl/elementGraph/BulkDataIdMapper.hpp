@@ -68,11 +68,11 @@ public:
         set_local_ids(bulk, rank, sel & bulk.mesh_meta_data().locally_owned_part());
     }
 
-    const LocalIDType INVALID_LOCAL_ID = std::numeric_limits<LocalIDType>::max();
+    static constexpr LocalIDType INVALID_LOCAL_ID_TYPE = std::numeric_limits<LocalIDType>::max();
 
     void set_size(const stk::mesh::BulkData &bulk)
     {
-        entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID);
+        entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID_TYPE);
     }
 
     void clear()
@@ -82,7 +82,7 @@ public:
 
     void set_local_ids(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, const stk::mesh::Selector& selector)
     {
-        entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID);
+        entityToLocalId.resize(bulk.get_size_of_entity_index_space(), INVALID_LOCAL_ID_TYPE);
         if(bulk.mesh_meta_data().entity_rank_count() >= rank)
         {
             stk::mesh::EntityVector entities;
@@ -97,14 +97,12 @@ public:
 
     bool does_entity_have_local_id(stk::mesh::Entity entity) const
     {
-        return (entity.local_offset() < entityToLocalId.size() && entityToLocalId[entity.local_offset()] != INVALID_LOCAL_ID);
+        return (entity.local_offset() < entityToLocalId.size() && entityToLocalId[entity.local_offset()] != INVALID_LOCAL_ID_TYPE);
     }
 
     LocalIDType entity_to_local(stk::mesh::Entity entity) const
     {
-        STK_ThrowAssert(entityToLocalId.size() > entity.local_offset());
-
-        return entityToLocalId[entity.local_offset()];
+        return (entityToLocalId.size() > entity.local_offset()) ? entityToLocalId[entity.local_offset()] : INVALID_LOCAL_ID_TYPE;
     }
 
     void make_space_for_new_elements(const stk::mesh::EntityVector & elements)
@@ -115,7 +113,7 @@ public:
             maxEntity.set_local_offset(std::max(maxEntity.local_offset(), elem.local_offset()));
 
         if(maxEntity.local_offset() >= entityToLocalId.size())
-            entityToLocalId.resize(maxEntity.local_offset() + 1, INVALID_LOCAL_ID);
+            entityToLocalId.resize(maxEntity.local_offset() + 1, INVALID_LOCAL_ID_TYPE);
     }
 
     void create_local_ids_for_elements(const stk::mesh::EntityVector & elements)
@@ -132,7 +130,7 @@ public:
 
     void clear_local_id_for_elem(stk::mesh::Entity elem)
     {
-        entityToLocalId[elem.local_offset()] = INVALID_LOCAL_ID;
+        entityToLocalId[elem.local_offset()] = INVALID_LOCAL_ID_TYPE;
     }
 private:
     std::vector<LocalIDType> entityToLocalId;

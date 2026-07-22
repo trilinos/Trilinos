@@ -28,7 +28,7 @@
 
 namespace MueLu {
 /*!
-  @class OnePtAggregationAlgorithm class.
+  @class OnePtAggregationAlgorithm
   @brief Algorithm for coarsening a graph with uncoupled aggregation.
   keep special marked nodes as singleton node aggregates over all multigrid levels
 

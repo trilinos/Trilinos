@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,7 +36,11 @@
 
 int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var, int *var_tab)
 {
-  int    dimid, varid, tabid, status, status1;
+  int    dimid      = 0;
+  int    varid      = 0;
+  int    tabid      = 0;
+  int    status     = 0;
+  int    status1    = 0;
   size_t num_var_db = 0;
   char   errmsg[MAX_ERR_LENGTH];
 
@@ -124,7 +128,7 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -135,7 +139,7 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
   else {
     status = exi_get_dimension(exoid, exi_dim_num_objects(obj_type), ex_name_of_object(obj_type),
                                &num_entity, &dimid, __func__);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -155,14 +159,14 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (status1 != NC_NOERR) {
+  if (status1 != EX_NOERR) {
     /* since truth table isn't stored in the data file, derive it dynamically */
     for (int j = 0; j < num_blk; j++) {
 
       for (int i = 0; i < num_var; i++) {
         /* NOTE: names are 1-based */
         if (nc_inq_varid(exoid, exi_catstr2(var_name, i + 1, ent_type, j + 1), &tabid) ==
-            NC_NOERR) {
+            EX_NOERR) {
           /* variable exists; put a 1 in the truth table */
           var_tab[j * num_var + i] = 1;
         }
@@ -177,7 +181,7 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     /* read in the truth table */
     status = nc_get_var_int(exoid, tabid, var_tab);
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s truth table from file id %d",
                ex_name_of_object(obj_type), exoid);
       ex_err_fn(exoid, __func__, errmsg, status);

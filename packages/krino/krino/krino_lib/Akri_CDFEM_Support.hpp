@@ -24,12 +24,12 @@
 namespace krino {
 
 class Phase_Support;
-class RefinementInterface;
+class RefinementManager;
 
 enum Prolongation_Model
 {
-  ALE_NEAREST_NODE=0,
-  ALE_NEAREST_POINT,
+  ALE_CLOSEST_POINT=0,
+  ALE_CLOSEST_NODE,
   INTERPOLATION,
   MAX_PROLONGATION_MODEL
 };
@@ -62,6 +62,7 @@ enum Simplex_Generation_Method
   CUT_QUADS_BY_GLOBAL_IDENTIFIER=0,
   CUT_QUADS_BY_LARGEST_ANGLE,
   CUT_QUADS_BY_NEAREST_EDGE_CUT,
+  CUT_QUADS_BY_DEFAULT_METHOD,
   MAX_SIMPLEX_GENERATION_METHOD
 };
 
@@ -116,9 +117,12 @@ public:
   void add_ale_prolongation_field(const FieldRef field);
   void add_interpolation_field(const FieldRef field);
   void add_edge_interpolation_field(const FieldRef field);
+  void add_do_not_snap_field_state(const FieldRef stateField);
+  void add_do_not_snap_field(const FieldRef field);
 
-  void set_coords_field(const FieldRef coords_field) { my_coords_field = coords_field; }
+  void set_coords_field(const FieldRef coordsField) { my_coords_field = coordsField; add_edge_interpolation_field(coordsField); }
   const FieldRef get_coords_field() const { return my_coords_field; }
+
   const FieldRef get_cdfem_displacements_field() { return my_cdfem_displacements_field; }
   const FieldRef get_cdfem_snap_displacements_field() const { return myCDFEMSnapDisplacementsField; }
   const FieldSet & get_ale_prolongation_fields() const { return my_ale_prolongation_fields; }
@@ -127,7 +131,6 @@ public:
   const FieldSet & get_zeroed_fields() const { return my_zeroed_fields; }
   const FieldSet & get_element_fields() const { return my_element_fields; }
   const FieldSet & get_snap_fields() const { return mySnapFields; }
-  const FieldSet & get_levelset_fields() const { return myLevelSetFields; }
 
   bool add_initial_prolongation_field(const std::string & dest_field_name, const std::string & src_field_name);
   FieldRef get_initial_prolongation_field(const FieldRef field) const;
@@ -236,7 +239,7 @@ private:
   FieldSet my_zeroed_fields;
   FieldSet my_element_fields;
   FieldSet mySnapFields;
-  FieldSet myLevelSetFields;
+  FieldSet myDoNotSnapFields;
   std::map<std::string, std::string> my_initial_prolongation_field_name_map;
   std::map<FieldRef, FieldRef> my_initial_prolongation_field_map;
   static Edge_Interpolation_Model the_edge_interpolation_model;

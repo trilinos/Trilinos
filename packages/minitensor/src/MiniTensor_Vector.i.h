@@ -7,7 +7,11 @@
 // *****************************************************************************
 // @HEADER
 
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #if !defined(MiniTensor_Vector_i_h)
 #define MiniTensor_Vector_i_h
 

@@ -55,7 +55,7 @@ void create_two_tet_element_mesh(stk::mesh::BulkData &bulk)
 {
   std::string meshSpec = "0, 1,TET_4, 1,2,3,4\n"
                          "0, 2,TET_4, 2,3,4,5";
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulk, meshSpec);
+  stk::unit_test_util::setup_text_mesh(bulk, meshSpec);
 }
 
 //BEGINUseFieldBLAS
@@ -65,7 +65,6 @@ TEST(stkMeshHowTo, useFieldBLAS)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(SpatialDimension);
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
   typedef stk::mesh::Field<double> DoubleField;
@@ -74,7 +73,7 @@ TEST(stkMeshHowTo, useFieldBLAS)
   DoubleField& velocityField = metaData.declare_field<double>(stk::topology::NODE_RANK, "velocity");
 
   double initialPressureValue = 4.4;
-  constexpr unsigned numValuesPerNode = 3;
+  constexpr int numValuesPerNode = 3;
   stk::mesh::put_field_on_entire_mesh_with_initial_value(pressureField, &initialPressureValue);
   stk::mesh::put_field_on_mesh(displacementsField, metaData.universal_part(), numValuesPerNode, nullptr);
   stk::mesh::put_field_on_mesh(velocityField, metaData.universal_part(), numValuesPerNode, nullptr);
@@ -91,10 +90,11 @@ TEST(stkMeshHowTo, useFieldBLAS)
 
   const double expectedVal = 10.0 + alpha*99.0;
 
-  auto expectEqualVal = [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-    const double* velocityDataForNode = stk::mesh::field_data(velocityField, node);
-    for(unsigned i=0; i<numValuesPerNode; ++i) {
-      EXPECT_NEAR(expectedVal, velocityDataForNode[i], 1.e-8);
+  auto velocityFieldData = velocityField.data();
+  auto expectEqualVal = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+    auto velocityDataForNode = velocityFieldData.entity_values(node);
+    for(stk::mesh::ComponentIdx i=0_comp; i<numValuesPerNode; ++i) {
+      EXPECT_NEAR(expectedVal, velocityDataForNode(i), 1.e-8);
     }
   };
 

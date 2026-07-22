@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOS_DETECTION_IDIOM_HPP
 #define KOKKOS_DETECTION_IDIOM_HPP
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
@@ -54,8 +41,8 @@ struct detector<Default, std::void_t<Op<Args...>>, Op, Args...> {
 }  // namespace Impl
 
 struct nonesuch : private Impl::nonesuch_base {
-  ~nonesuch()               = delete;
-  nonesuch(nonesuch const&) = delete;
+  ~nonesuch()                     = delete;
+  nonesuch(nonesuch const&)       = delete;
   void operator=(nonesuch const&) = delete;
 };
 
@@ -81,7 +68,7 @@ inline constexpr bool is_detected_v = is_detected<Op, Args...>::value;
 
 template <class Expected, template <class...> class Op, class... Args>
 inline constexpr bool is_detected_exact_v =
-    is_detected_exact<Expected, Op, Args...>::value;
+    is_detected_exact<Expected, Op, Args...>::value;  // NOLINT
 
 template <class Expected, template <class...> class Op, class... Args>
 inline constexpr bool is_detected_convertible_v =

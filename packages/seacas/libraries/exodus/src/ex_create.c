@@ -163,16 +163,16 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
   }
 
 #if defined NC_NOATTCREORD
-  /* Disable attribute creation order tracking if available... */
+  /* Disable attribute creation order tracking if available (netcdf-c PR #2056) */
   nc_mode |= NC_NOATTCREORD;
 #endif
 
 #if defined NC_NODIMSCALE_ATTACH
-  /* Disable attaching dimscales to variables (netcdf-c issue #2128) if available */
+  /* Disable attaching dimscales to variables if available (netcdf-c issue #2128) */
   nc_mode |= NC_NODIMSCALE_ATTACH;
 #endif
 
-  if ((status = nc_create(path, nc_mode, &exoid)) != NC_NOERR) {
+  if ((status = nc_create(path, nc_mode, &exoid)) != EX_NOERR) {
 #if NC_HAS_HDF5
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", canon_path);
 #else

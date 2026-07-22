@@ -29,7 +29,7 @@ if (SEACASExodus_ENABLE_STATIC)
     set_target_properties(exoIIv2for32_static PROPERTIES OUTPUT_NAME exoIIv2for32)
     # This keeps the library out of the `all_libs` targets...
     set_target_properties(exoIIv2for32_static PROPERTIES TRIBITS_TESTONLY_LIB TRUE)
-    INSTALL(TARGETS exoIIv2for32_static DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+    INSTALL(TARGETS exoIIv2for32_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

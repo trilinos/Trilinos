@@ -36,10 +36,10 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
-FILE(GLOB PRED_HEADERS predicates/*.hpp)
-FILE(GLOB PRED_SOURCES predicates/*.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+FILE(GLOB PRED_HEADERS CONFIGURE_DEPENDS predicates/*.hpp)
+FILE(GLOB PRED_SOURCES CONFIGURE_DEPENDS predicates/*.cpp)
 
 message("STKMiddle_mesh requires CDT. (use -DSTK_ENABLE_STKMiddle_mesh=OFF if you don't need it and you don't have CDT.)")
 find_package(CDT REQUIRED)
@@ -58,6 +58,9 @@ else()
   add_library(stk_middle_mesh ${SOURCES} ${PRED_SOURCES})
   target_link_libraries(stk_middle_mesh PUBLIC stk_util_parallel)
   target_link_libraries(stk_middle_mesh PUBLIC stk_search)
+
+  find_package(LAPACK REQUIRED)
+  target_link_libraries(stk_middle_mesh PRIVATE ${LAPACK_LIBRARIES})
 endif()
 
 target_include_directories(stk_middle_mesh PUBLIC
@@ -86,5 +89,5 @@ INSTALL(FILES ${PRED_HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_middle_mesh/predicates)
 
 if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_middle_mesh DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_middle_mesh EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()

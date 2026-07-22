@@ -1,4 +1,11 @@
-// $Id$
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
 
 #include <ctype.h>
 #include <assert.h>
@@ -706,7 +713,6 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
   char * s = ctime(&tim);
   s[strlen(s)-1]=0;
 
-  typedef std::string QA_Record[4];
   QA_Record * qa_recs = ndb->QA_Records();
   qa_recs[0][0] = "PAMGEN";
   qa_recs[0][1] = "PArallel Mesh GENerator";

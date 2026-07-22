@@ -63,13 +63,11 @@ TEST(StkMeshHowTo, CreateStkMesh)
   // MetaData creates the universal_part, locally-owned part, and globally shared part.
   std::shared_ptr<stk::mesh::BulkData> stkMeshBulkDataPtr = stk::mesh::MeshBuilder(communicator).create();
   stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkDataPtr->mesh_meta_data();
-  stkMeshMetaData.use_simple_fields();
 
   // Read the mesh data from the Exodus file and populate an STK Mesh.
   // The order of the following lines in {} are important
   {
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.use_simple_fields();
 
     // Provide STK Mesh object to be populated
     exodusFileReader.set_bulk_data(*stkMeshBulkDataPtr);
@@ -98,7 +96,6 @@ void create_example_exodus_file(MPI_Comm communicator, const std::string & exodu
   //+ INITIALIZATION:
   //+ Create a mesh
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
 
   const std::string generatedFileName = "generated:8x8x8";
   size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);

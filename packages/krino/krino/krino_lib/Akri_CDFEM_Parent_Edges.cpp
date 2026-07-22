@@ -148,24 +148,19 @@ void fill_face_nodes_and_parent_edges(const stk::topology & elementTopology,
   }
 }
 
-bool is_cdfem_use_case(const Phase_Support & phaseSupport)
-{
-  return !(phaseSupport.get_all_decomposed_blocks_selector() == stk::mesh::Selector());
-}
-
 static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
     const Phase_Support & phaseSupport,
     const stk::mesh::Entity node_or_elem,
     const LS_Field & lsField )
 {
-  STK_ThrowAssert(is_cdfem_use_case(phaseSupport));
+  STK_ThrowAssert(phaseSupport.is_cdfem_use_case());
 
   for(auto * partPtr : mesh.bucket(node_or_elem).supersets())
   {
     if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
       stk::io::is_part_io_part(*partPtr) &&
-      !phaseSupport.is_nonconformal(partPtr) &&
-      phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, phaseSupport.find_nonconformal_part(*partPtr)))
+      !phaseSupport.is_nonconformal(*partPtr) &&
+      phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, &phaseSupport.find_nonconformal_part(*partPtr)))
       return true;
   }
   return false;
@@ -187,7 +182,7 @@ has_io_part_containing_phase(const Phase_Support & phase_support, const stk::mes
     const stk::mesh::Part * const part = *part_iter;
     if (part->primary_entity_rank() != stk::topology::ELEMENT_RANK || // limit ourselves to volume parts
         !(stk::io::is_part_io_part(*part) ||
-        phase_support.is_nonconformal(part)))
+        phase_support.is_nonconformal(*part)))
       continue;
 
     const PhaseTag & iopart_phase = phase_support.get_iopart_phase(*part);
@@ -235,7 +230,7 @@ static bool node_has_real_ls_value(const stk::mesh::BulkData & mesh,
       !node_touches_alive_block(mesh, phaseSupport, node, lsField) )
     return false;
 
-  return (is_cdfem_use_case(phaseSupport)) ?
+  return (phaseSupport.is_cdfem_use_case()) ?
       in_block_decomposed_by_ls(mesh, phaseSupport, node, lsField) :
       has_levelset_registered(mesh, node, lsField);
 }
@@ -268,77 +263,86 @@ static void debug_print_edge_info(const stk::mesh::BulkData & mesh,
   }
 }
 
+double ls_node_value(const stk::mesh::BulkData & mesh,
+  const Phase_Support & phaseSupport,
+  const LS_Field & lsField,
+  const stk::mesh::Entity node)
+{
+  const CDFEM_Inequality_Spec * death_spec = lsField.deathPtr;
+  FieldRef isovar = lsField.isovar;
+
+  const bool node_has_ls = node_has_real_ls_value(mesh, phaseSupport, node, lsField);
+  double nodeLS = 0.0;
+  if (node_has_ls)
+  {
+    if (nullptr != death_spec && isovar.entity_rank() == stk::topology::ELEMENT_RANK)
+    {
+      // currently requires aura to work correctly in parallel
+      STK_ThrowAssertMsg(mesh.is_automatic_aura_on(), "Capability requires aura.");
+      bool have_pos_elem = false;
+      bool have_neg_elem = false;
+      const unsigned num_node_elems = mesh.num_elements(node);
+      const stk::mesh::Entity* node_elems = mesh.begin_elements(node);
+      for (unsigned node_elem_index=0; node_elem_index<num_node_elems; ++node_elem_index)
+      {
+	stk::mesh::Entity node_elem = node_elems[node_elem_index];
+	const double * isoptr = field_data<double>(isovar, node_elem);
+	if (nullptr != isoptr)
+	{
+	  if (*isoptr - lsField.isoval < 0.)
+	    have_neg_elem = true;
+	  else
+	    have_pos_elem = true;
+	}
+      }
+      nodeLS = (have_pos_elem) ? (have_neg_elem ? 0.0 : 1.0) : -1.0;
+    }
+    else
+    {
+      const double * isoptr = field_data<double>(isovar, node);
+      STK_ThrowRequireMsg(nullptr != isoptr, "Isovar " << isovar.name() << " missing on node " << debug_entity(mesh, node));
+      nodeLS = *isoptr - lsField.isoval;
+    }
+  }
+  else if (nullptr != death_spec && node_touches_dead_block(mesh, phaseSupport, node, lsField))
+  {
+    const bool dead_is_positive = death_spec->get_deactivated_phase().contain(lsField.identifier,+1);
+    if (dead_is_positive) nodeLS = 1.0;
+  }
+
+  if (nullptr != death_spec && node_touches_dead_block(mesh, phaseSupport, node, lsField))
+  {
+    const bool dead_is_positive = death_spec->get_deactivated_phase().contain(lsField.identifier, +1);
+    if (dead_is_positive && nodeLS < 0.0)
+    {
+      if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "Setting node " << mesh.identifier(node) << " to zero to enforce irreversibility, ls = " << nodeLS << "\n";
+      nodeLS = 0.0;
+    }
+    else if (!dead_is_positive && nodeLS >= 0.0)
+    {
+      if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "Setting node " << mesh.identifier(node) << " to -REAL_MIN to enforce irreversibility, ls = " << nodeLS << "\n";
+      nodeLS = -std::numeric_limits<double>::min();
+    }
+  }
+
+  return nodeLS;
+}
+
 static void edge_ls_node_values(const stk::mesh::BulkData & mesh,
     const Phase_Support & phaseSupport,
     const std::vector<LS_Field> & lsFields,
-    const std::vector<stk::mesh::Entity> & edge_nodes,
-    std::vector<std::vector<double> >& nodes_isovar)
+    const std::vector<stk::mesh::Entity> & edgeNodes,
+    std::vector<std::vector<double> >& nodesIsovar)
 {
-  const unsigned num_nodes = edge_nodes.size();
-  const int num_ls = lsFields.size();
+  const unsigned numNodes = edgeNodes.size();
+  const unsigned numLS = lsFields.size();
 
-  nodes_isovar.assign(num_nodes, std::vector<double>(num_ls, -1.0));
-  for (unsigned n = 0; n < num_nodes; ++n)
+  nodesIsovar.resize(numNodes);
+  for (unsigned n = 0; n < numNodes; ++n)
   {
-    for (int ls_index = 0; ls_index < num_ls; ++ls_index)
-    {
-      const CDFEM_Inequality_Spec * death_spec = lsFields[ls_index].deathPtr;
-      FieldRef isovar = lsFields[ls_index].isovar;
-
-      const bool node_has_ls = node_has_real_ls_value(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]);
-      nodes_isovar[n][ls_index] = 0.0;
-      if (node_has_ls)
-      {
-        if (nullptr != death_spec && isovar.entity_rank() == stk::topology::ELEMENT_RANK)
-        {
-          // currently requires aura to work correctly in parallel
-          STK_ThrowAssertMsg(mesh.is_automatic_aura_on(), "Capability requires aura.");
-          bool have_pos_elem = false;
-          bool have_neg_elem = false;
-          const unsigned num_node_elems = mesh.num_elements(edge_nodes[n]);
-          const stk::mesh::Entity* node_elems = mesh.begin_elements(edge_nodes[n]);
-          for (unsigned node_elem_index=0; node_elem_index<num_node_elems; ++node_elem_index)
-          {
-            stk::mesh::Entity node_elem = node_elems[node_elem_index];
-            const double * isoptr = field_data<double>(isovar, node_elem);
-            if (nullptr != isoptr)
-            {
-              if (*isoptr - lsFields[ls_index].isoval < 0.)
-                have_neg_elem = true;
-              else
-                have_pos_elem = true;
-            }
-          }
-          nodes_isovar[n][ls_index] = (have_pos_elem) ? (have_neg_elem ? 0.0 : 1.0) : -1.0;
-        }
-        else
-        {
-          const double * isoptr = field_data<double>(isovar, edge_nodes[n]);
-          STK_ThrowRequireMsg(nullptr != isoptr, "Isovar " << isovar.name() << " missing on node " << debug_entity(mesh, edge_nodes[n]));
-          nodes_isovar[n][ls_index] = *isoptr - lsFields[ls_index].isoval;
-        }
-      }
-      else if (nullptr != death_spec && node_touches_dead_block(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]))
-      {
-        const bool dead_is_positive = death_spec->get_deactivated_phase().contain(lsFields[ls_index].identifier,+1);
-        if (dead_is_positive) nodes_isovar[n][ls_index] = 1.0;
-      }
-
-      if (nullptr != death_spec && node_touches_dead_block(mesh, phaseSupport, edge_nodes[n], lsFields[ls_index]))
-      {
-        const bool dead_is_positive = death_spec->get_deactivated_phase().contain(lsFields[ls_index].identifier, +1);
-        if (dead_is_positive && nodes_isovar[n][ls_index] < 0.0)
-        {
-          if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "Setting node " << mesh.identifier(edge_nodes[n]) << " to zero to enforce irreversibility, ls = " << nodes_isovar[n][ls_index] << "\n";
-          nodes_isovar[n][ls_index] = 0.0;
-        }
-        else if (!dead_is_positive && nodes_isovar[n][ls_index] >= 0.0)
-        {
-          if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << "Setting node " << mesh.identifier(edge_nodes[n]) << " to -REAL_MIN to enforce irreversibility, ls = " << nodes_isovar[n][ls_index] << "\n";
-          nodes_isovar[n][ls_index] = -std::numeric_limits<double>::min();
-        }
-      }
-    }
+    nodesIsovar[n].resize(numLS);
+    for (unsigned lsIndex = 0; lsIndex < numLS; ++lsIndex)
+      nodesIsovar[n][lsIndex] = ls_node_value(mesh, phaseSupport, lsFields[lsIndex], edgeNodes[n]);
   }
 }
 
@@ -383,13 +387,22 @@ static void find_parent_edge_crossings(const stk::mesh::BulkData & mesh,
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << stk::diag::dendl;
 }
 
-stk::mesh::Selector get_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
+stk::mesh::Selector get_decomposed_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport)
 {
   stk::mesh::Selector parentElementSelector =
       (cdfemSupport.get_parent_part() | (activePart & !cdfemSupport.get_child_part())) &
       phaseSupport.get_all_decomposed_blocks_selector();
+
+  return parentElementSelector;
+}
+
+stk::mesh::Selector get_potential_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
+    const CDFEM_Support & cdfemSupport)
+{
+  stk::mesh::Selector parentElementSelector =
+      (cdfemSupport.get_parent_part() | (activePart & !cdfemSupport.get_child_part()));;
 
   return parentElementSelector;
 }

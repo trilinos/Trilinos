@@ -111,7 +111,7 @@ public:
     return ret;
   }
 
-  static inline std::string demangled_stacktrace(size_t sz=10, bool also_mangled=false, const std::string& msg="")
+  static inline std::string demangled_stacktrace(size_t sz=10, bool also_mangled=false, const std::string& /*msg*/="")
   {
     void **array = new void*[sz];
     size_t size;

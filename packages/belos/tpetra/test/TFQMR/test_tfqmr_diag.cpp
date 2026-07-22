@@ -87,7 +87,7 @@ class DiagonalOperator2 : public VectorOperator<MV>
 {
   public:
 
-    DiagonalOperator2<ST,MV>(int n_in, int min_gid_in, ST v_in)
+    DiagonalOperator2(int n_in, int min_gid_in, ST v_in)
     : VectorOperator<MV>(n_in, n_in), min_gid(min_gid_in), v(v_in) {}
 
     ~DiagonalOperator2() { };
@@ -171,7 +171,7 @@ class TrilinosInterface : public OP
 
     virtual ~TrilinosInterface() {};
 
-    bool hasTransposeApply() const {return(use_transpose);};
+    bool hasTransposeApply() const override {return(use_transpose);};
 
     Teuchos::RCP<const MP> getDomainMap() const override {return pMap; }
 

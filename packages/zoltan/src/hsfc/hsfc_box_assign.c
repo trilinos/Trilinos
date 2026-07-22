@@ -1,48 +1,11 @@
-/* 
- * @HEADER
- *
- * ***********************************************************************
- *
- *  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
- *                  Copyright 2012 Sandia Corporation
- *
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * 1. Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the Corporation nor the names of the
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Questions? Contact Karen Devine	kddevin@sandia.gov
- *                    Erik Boman	egboman@sandia.gov
- *
- * ***********************************************************************
- *
- * @HEADER
- */
+// @HEADER
+// *****************************************************************************
+//  Zoltan Toolkit for Load-balancing, Partitioning, Ordering and Coloring
+//
+// Copyright 2012 NTESS and the Zoltan contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -297,9 +260,8 @@ End:
 
 
 /* returns the first Hilbert coordinate in [s,1] to enter the user's query box */
-static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
- double s)
-   {
+static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox, double s) 
+{
    int state, newstate=0, savelevel, prune, backtrack;
    unsigned int temp, x, y;
    unsigned int savestate=0, savequad=0, savenpt=0;  /* saved info for backtracking */
@@ -309,10 +271,8 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
    unsigned int intersect_hi, intersect_lo;
    double t;
    unsigned i, level, quadrant;                    /* loop counters */
-   static const unsigned int *dk[]
-    = {data2d,  data2d  +4, data2d  +8, data2d  +12};
-   static const unsigned int *st[]
-    = {state2d, state2d +4, state2d +8, state2d +12};
+   const unsigned int* const dk = tables2d[useCurve].data;
+   const unsigned int* const st = tables2d[useCurve].state;
    static const unsigned int MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
 
    /* convert floating normalized, intersected query box corners to integers */
@@ -357,12 +317,12 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
          quad that intersects with query region and is larger than start key */
       temp = (prune) ? startbits : 0;
       for (quadrant = temp; quadrant < 4; quadrant++)  {
-         newnpt = *(dk[state] + quadrant);         /* get new 2 bit npt value */
+         newnpt = dk[4 * state + quadrant];         /* get new 2 bit npt value */
          if (!((newnpt ^ intersect_hi) & (newnpt ^ intersect_lo)))
             break;   /* successfully found intersecting quadrant at this level */
          }
       if (quadrant < 4) {
-         newstate = *(st[state] + quadrant);
+         newstate = st[4 * state + quadrant];
          if  (prune && (quadrant > startbits))
             prune = 0;                            /* no more pruning required */
          }
@@ -371,10 +331,10 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
       if (backtrack)
          for (i = quadrant+1; i < 4; i++)  {
             /* intersect test - subquad intersecting with search/query region */
-            temp = *(dk[state] + i);               /* get new npt */
+            temp = dk[4 * state + i];               /* get new npt */
             if (!((temp ^ intersect_hi) & (temp ^ intersect_lo)))  {
                savelevel = level;
-               savestate = *(st[state] + i);
+               savestate = st[4 * state + i];
                savenpt   = temp;
                savequad  = i;
                break;
@@ -425,9 +385,8 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
 
 
 /* returns the first Hilbert coordinate in [s,1] to enter the user's query box */
-static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
- double s)
-   {
+static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox, double s)
+{
    int state, newstate = 0, savelevel, prune, backtrack;
    unsigned int temp, x, y, z;
    unsigned int savestate = 0, savequad = 0, savenpt = 0;
@@ -437,21 +396,8 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
    unsigned int intersect_hi, intersect_lo;
    double t;
    unsigned i, quadrant, level;
-   static const unsigned int *dk[] =
-      {data3d,      data3d +8,   data3d +16,  data3d +24,
-       data3d +32,  data3d +40,  data3d +48,  data3d +56,
-       data3d +64,  data3d +72,  data3d +80,  data3d +88,
-       data3d +96,  data3d +104, data3d +112, data3d +120,
-       data3d +128, data3d +136, data3d +144, data3d +152,
-       data3d +160, data3d +168, data3d +176, data3d +184};
-
-   static const unsigned int *st[] =
-      {state3d,      state3d +8,   state3d +16,  state3d +24,
-       state3d +32,  state3d +40,  state3d +48,  state3d +56,
-       state3d +64,  state3d +72,  state3d +80,  state3d +88,
-       state3d +96,  state3d +104, state3d +112, state3d +120,
-       state3d +128, state3d +136, state3d +144, state3d +152,
-       state3d +160, state3d +168, state3d +176, state3d +184};
+   unsigned const int* const dk = tables3d[useCurve].data;
+   unsigned const int* const st = tables3d[useCurve].state;
 
    static const unsigned int MAXLEVEL = 18;  /* only 56 significant bits, 18 per dimension */
 
@@ -506,12 +452,12 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
          quad that intersects with query region and is larger than start key */
       temp = (prune) ? startbits : 0;
       for (quadrant = temp; quadrant < 8; quadrant++)  {
-         newnpt = *(dk[state] + quadrant);         /* get new 3 bit npt value */
+         newnpt = dk[8 * state + quadrant];         /* get new 3 bit npt value */
          if (!((newnpt ^ intersect_hi) & (newnpt ^ intersect_lo)))
             break;   /* successfully found intersecting quadrant at this level */
          }
       if (quadrant < 8)  {
-         newstate = *(st[state] + quadrant);
+         newstate = st[8 * state + quadrant];
          if  (prune && (quadrant > startbits))
             prune = 0;                            /* no more pruning required */
          }
@@ -519,12 +465,12 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
       /* determine backtracking point, in case backtracking is needed */
       if (backtrack)
          for (i = quadrant+1; i < 8; i++)  {
-            temp = *(dk[state] + i);         /* get new npt */
+            temp = dk[8 * state + i];         /* get new npt */
 
             /* intersect test - subquad intersecting with search/query region */
             if (!((temp ^ intersect_hi) & (temp ^ intersect_lo)))  {
                savelevel = level;
-               savestate = *(st[state] + i);
+               savestate = st[8 * state + i];
                savenpt   = temp;
                savequad  = i;
                break;
@@ -575,7 +521,7 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
                                  | ((keyz >> (31-i)) & 1);
       }
    return ldexp ((double) start[0], -22) + ldexp((double) start[1], -54);
-   }
+}
 
 
 /* Maintenance Note:  Per the review 04.15.03, the following section addresses

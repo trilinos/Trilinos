@@ -1,32 +1,19 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Vinh Dang (vqdang@sandia.gov)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
+// #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Serial_Impl.hpp"
 #include "KokkosBatched_SolveLU_Decl.hpp"
-//#include "KokkosBatched_SolveLU_Serial_Impl.hpp"
+// #include "KokkosBatched_SolveLU_Serial_Impl.hpp"
 
 #include "KokkosKernels_TestUtils.hpp"
 
@@ -41,8 +28,7 @@ struct ParamTag {
   typedef TB transB;
 };
 
-template <typename DeviceType, typename ViewType, typename ScalarType,
-          typename ParamTagType, typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedSerialGemm {
   using execution_space = typename DeviceType::execution_space;
   ViewType _a, _b, _c;
@@ -50,8 +36,7 @@ struct Functor_BatchedSerialGemm {
   ScalarType _alpha, _beta;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialGemm(const ScalarType alpha, const ViewType &a,
-                            const ViewType &b, const ScalarType beta,
+  Functor_BatchedSerialGemm(const ScalarType alpha, const ViewType &a, const ViewType &b, const ScalarType beta,
                             const ViewType &c)
       : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
 
@@ -63,8 +48,8 @@ struct Functor_BatchedSerialGemm {
 
     for (int i = 0; i < static_cast<int>(aa.extent(0)); ++i) aa(i, i) += 10.0;
 
-    SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB,
-               AlgoTagType>::invoke(_alpha, aa, bb, _beta, cc);
+    SerialGemm<typename ParamTagType::transA, typename ParamTagType::transB, AlgoTagType>::invoke(_alpha, aa, bb, _beta,
+                                                                                                  cc);
   }
 
   inline void run() {
@@ -108,16 +93,14 @@ struct Functor_BatchedSerialLU {
   }
 };
 
-template <typename DeviceType, typename ViewType, typename TransType,
-          typename AlgoTagType>
+template <typename DeviceType, typename ViewType, typename TransType, typename AlgoTagType>
 struct Functor_TestBatchedSerialSolveLU {
   using execution_space = typename DeviceType::execution_space;
   ViewType _a;
   ViewType _b;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_TestBatchedSerialSolveLU(const ViewType &a, const ViewType &b)
-      : _a(a), _b(b) {}
+  Functor_TestBatchedSerialSolveLU(const ViewType &a, const ViewType &b) : _a(a), _b(b) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k) const {
@@ -142,7 +125,7 @@ struct Functor_TestBatchedSerialSolveLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_solvelu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize);
@@ -152,8 +135,7 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   // ViewType a0_T("a0_T", N, BlkSize, BlkSize);
   // ViewType b_T ("b_T",  N, BlkSize, 5 );
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a0, random, value_type(1.0));
   Kokkos::fill_random(x0, random, value_type(1.0));
 
@@ -165,15 +147,12 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   value_type alpha = 1.0, beta = 0.0;
   typedef ParamTag<Trans::NoTranspose, Trans::NoTranspose> param_tag_type;
 
-  Functor_BatchedSerialGemm<DeviceType, ViewType, value_type, param_tag_type,
-                            AlgoTagType>(alpha, a0, x0, beta, b)
+  Functor_BatchedSerialGemm<DeviceType, ViewType, value_type, param_tag_type, AlgoTagType>(alpha, a0, x0, beta, b)
       .run();
 
   Functor_BatchedSerialLU<DeviceType, ViewType, AlgoTagType>(a1).run();
 
-  Functor_TestBatchedSerialSolveLU<DeviceType, ViewType, Trans::NoTranspose,
-                                   AlgoTagType>(a1, b)
-      .run();
+  Functor_TestBatchedSerialSolveLU<DeviceType, ViewType, Trans::NoTranspose, AlgoTagType>(a1, b).run();
 
   Kokkos::fence();
 
@@ -188,9 +167,9 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   // Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror x0_host = Kokkos::create_mirror_view(x0);
-  typename ViewType::HostMirror b_host  = Kokkos::create_mirror_view(b);
-  // typename ViewType::HostMirror b_T_host = Kokkos::create_mirror_view(b_T);
+  typename ViewType::host_mirror_type x0_host = Kokkos::create_mirror_view(x0);
+  typename ViewType::host_mirror_type b_host  = Kokkos::create_mirror_view(b);
+  // typename ViewType::host_mirror_type b_T_host = Kokkos::create_mirror_view(b_T);
 
   Kokkos::deep_copy(x0_host, x0);
   Kokkos::deep_copy(b_host, b);
@@ -230,25 +209,19 @@ template <typename DeviceType, typename ValueType, typename AlgoTagType>
 int test_batched_solvelu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
-    Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                   AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> ViewType;
+    Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
-      Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                     AlgoTagType>(1024, i);
+      Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                   AlgoTagType>(0, 10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> ViewType;
+    Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
-      Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType,
-                                                     AlgoTagType>(1024, i);
+      Test::SerialSolveLU::impl_test_batched_solvelu<DeviceType, ViewType, AlgoTagType>(1024, i);
     }
   }
 #endif

@@ -1,36 +1,27 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
 #include "Sacado_ConfigDefs.h"
+
+#include "Kokkos_Core_fwd.hpp"
+
+#if (KOKKOS_VERSION > 40700) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY) \
+    && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#define SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+#endif
+
+#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+#include "Sacado_Fad_Kokkos_View_Support.hpp"
+#else
 #if defined(HAVE_SACADO_KOKKOS)
 
 // Only include forward declarations so any overloads appear before they
@@ -112,9 +103,9 @@ template <typename T, typename ... P>
 struct is_view_fad< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFad >::value ||
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -122,7 +113,7 @@ template <typename T, typename ... P>
 struct is_view_fad_contiguous< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -445,11 +436,11 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
@@ -466,12 +457,12 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
   typedef typename src_type::array_type  src_array_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
@@ -504,13 +495,13 @@ typename std::enable_if<
     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value,
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(src.label(),layout);
+  return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(src.label(),layout);
 }
 
 template< class T , class ... P >
@@ -522,12 +513,12 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
@@ -545,13 +536,13 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
   typedef typename src_type::array_type  src_array_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
@@ -585,14 +576,14 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
     std::is_same< typename ViewTraits<T,P...>::specialize ,
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ),
-  typename Impl::MirrorType<Space,T,P ...>::view_type>::type
+  typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space& , const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...> src_type ;
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
-  return typename Impl::MirrorType<Space,T,P ...>::view_type(
+  return typename Impl::MirrorViewType<Space,T,P ...>::dest_view_type(
     Kokkos::view_alloc(src.label(), wi), layout);
 }
 
@@ -1076,6 +1067,10 @@ public:
   typedef typename
     ViewDataType< non_const_value_type , dimension >::type  non_const_type ;
 
+  using data_type = type;
+  using const_data_type = const_type;
+  using non_const_data_type = non_const_type;
+
 private:
 
   // A const ?
@@ -1135,6 +1130,10 @@ public:
     ViewDataType< const_value_type , dimension >::type  const_type ;
   typedef typename
     ViewDataType< non_const_value_type , dimension >::type  non_const_type ;
+
+  using data_type = type;
+  using const_data_type = const_type;
+  using non_const_data_type = non_const_type;
 
 private:
 
@@ -1208,6 +1207,10 @@ public:
   typedef type            scalar_array_type ;
   typedef const_type      const_scalar_array_type ;
   typedef non_const_type  non_const_scalar_array_type ;
+
+  using data_type = type;
+  using const_data_type = const_type;
+  using non_const_data_type = non_const_type;
 
 };
 
@@ -1419,7 +1422,7 @@ struct check_has_common_view_alloc_prop<P>
 template < typename P0, typename ... P >
 struct check_has_common_view_alloc_prop<P0, P...>
 {
-  enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : check_has_common_view_alloc_prop<P...>::value ) };
+  enum { value = ( (has_common_view_alloc_prop<P0>::value == true) ? true : static_cast<bool>(check_has_common_view_alloc_prop<P...>::value) ) };
 };
 
 template < typename ... >
@@ -2369,7 +2372,7 @@ reduceAll
 
   // Copy send buffer into local array
   Teuchos::Array<send_value_type> localSendBuffer(count);
-  typename SendViewType::HostMirror hostSendBuffer =
+  typename SendViewType::host_mirror_type hostSendBuffer =
     Kokkos::create_mirror_view(sendBuffer);
   Kokkos::deep_copy(hostSendBuffer, sendBuffer);
   for (Ordinal i=0; i<count; ++i)
@@ -2378,7 +2381,7 @@ reduceAll
   // Copy receive buffer into local array (necessary to initialize Fad types
   // properly)
   Teuchos::Array<recv_value_type> localRecvBuffer(count);
-  typename RecvViewType::HostMirror hostRecvBuffer =
+  typename RecvViewType::host_mirror_type hostRecvBuffer =
     Kokkos::create_mirror_view(recvBuffer);
   Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
   for (Ordinal i=0; i<count; ++i)
@@ -2426,7 +2429,7 @@ reduceAll
 
   // Copy send buffer into local array
   Teuchos::Array<send_value_type> localSendBuffer(count);
-  typename SendViewType::HostMirror hostSendBuffer =
+  typename SendViewType::host_mirror_type hostSendBuffer =
     Kokkos::create_mirror_view(sendBuffer);
   Kokkos::deep_copy(hostSendBuffer, sendBuffer);
   for (Ordinal i=0; i<count; ++i)
@@ -2435,7 +2438,7 @@ reduceAll
   // Copy receive buffer into local array (necessary to initialize Fad types
   // properly)
   Teuchos::Array<recv_value_type> localRecvBuffer(count);
-  typename RecvViewType::HostMirror hostRecvBuffer =
+  typename RecvViewType::host_mirror_type hostRecvBuffer =
     Kokkos::create_mirror_view(recvBuffer);
   Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
   for (Ordinal i=0; i<count; ++i)
@@ -2497,4 +2500,5 @@ broadcast
 
 #include "KokkosExp_View_Fad_Contiguous.hpp"
 
+#endif // defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */

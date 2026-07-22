@@ -34,6 +34,7 @@
 
 #include "stk_expreval/NgpNode.hpp"
 #include "stk_expreval/Function.hpp"
+#include "stk_expreval/Eval.hpp"
 
 namespace stk {
 namespace expreval {
@@ -47,7 +48,8 @@ NgpNode::NgpNode(const Node& node)
     m_ternaryFalseNextNodeIndex(node.m_ternaryFalseNextNodeIndex),
     m_leftNodeIndex((node.m_left != nullptr) ? node.m_left->m_currentNodeIndex : -1),
     m_rightNodeIndex((node.m_right != nullptr) ? node.m_right->m_currentNodeIndex : -1),
-    m_ternaryOtherNodeIndex((node.m_ternaryOther != nullptr) ? node.m_ternaryOther->m_currentNodeIndex : -1)
+    m_ternaryOtherNodeIndex((node.m_ternaryOther != nullptr) ? node.m_ternaryOther->m_currentNodeIndex : -1),
+    m_fpErrorBehavior(node.m_owner->get_fp_error_behavior())
 {
   if (m_opcode == OPCODE_CONSTANT) {
     m_data.constant.value = node.m_data.constant.value;

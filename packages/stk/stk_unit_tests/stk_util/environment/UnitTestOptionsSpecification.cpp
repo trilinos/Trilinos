@@ -30,6 +30,48 @@ TEST(OptionsSpecification, insert_flag_and_print)
     EXPECT_EQ(expected, os.str());
 }
 
+TEST(OptionsSpecification, assign)
+{
+  stk::OptionsSpecification optionsSpec;
+  optionsSpec.add_options()("flag,f", "this is a flag");
+
+  stk::OptionsSpecification optSpec2;
+  stk::OptionsSpecification optSpec3;
+  optSpec2 = std::move(optionsSpec);
+  optSpec3 = optSpec2;
+
+  std::ostringstream oss;
+  oss<<"--flag,-f   this is a flag"<<std::endl<<std::endl;
+  std::string expected = oss.str();
+
+  {
+    std::ostringstream os;
+    os << optSpec2;
+    EXPECT_EQ(expected, os.str());
+  }
+  {
+    std::ostringstream os;
+    os << optSpec3;
+    EXPECT_EQ(expected, os.str());
+  }
+}
+
+TEST(OptionsSpecification, move_construct)
+{
+  stk::OptionsSpecification optionsSpec;
+  optionsSpec.add_options()("flag,f", "this is a flag");
+
+  stk::OptionsSpecification optSpec2(std::move(optionsSpec));
+
+  std::ostringstream oss;
+  oss<<"--flag,-f   this is a flag"<<std::endl<<std::endl;
+  std::string expected = oss.str();
+
+  std::ostringstream os;
+  os << optSpec2;
+  EXPECT_EQ(expected, os.str());
+}
+
 TEST(OptionsSpecification, insert_required_option_and_print)
 {
     stk::OptionsSpecification optionsSpec;

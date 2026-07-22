@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TSQR_IMPL_CUBLASHANDLE_FWD_HPP
 #define TSQR_IMPL_CUBLASHANDLE_FWD_HPP
 
@@ -22,9 +31,9 @@ class CuBlasHandle;
 //! Get TSQR's global cuBLAS handle wrapper.
 std::shared_ptr<CuBlasHandle> getCuBlasHandleSingleton();
 
-} // namespace Impl
-} // namespace TSQR
+}  // namespace Impl
+}  // namespace TSQR
 
-#endif // HAVE_TPETRATSQR_CUBLAS
+#endif  // HAVE_TPETRATSQR_CUBLAS
 
-#endif // TSQR_IMPL_CUBLASHANDLE_FWD_HPP
+#endif  // TSQR_IMPL_CUBLASHANDLE_FWD_HPP

@@ -11,9 +11,9 @@
     <Parameter name="State Boundary Cost"       type="double" value="1e0"         />
     <Parameter name="Final Time State Cost"     type="double" value="1e0"         />
     <Parameter name="L2 Control Cost"           type="double" value="0e0"         />
-		<Parameter name="L1 Control Cost"           type="double" value="1.e-2"       />
-		<Parameter name="Lower Control Bound"       type="double" value="-1.e1"       />
-		<Parameter name="Upper Control Bound"       type="double" value="1.e1"        />
+    <Parameter name="L1 Control Cost"           type="double" value="1.e-2"       />
+    <Parameter name="Lower Control Bound"       type="double" value="-1.e1"       />
+    <Parameter name="Upper Control Bound"       type="double" value="1.e1"        />
     <Parameter name="Reynolds Number"           type="double" value="200.0"       />
     <Parameter name="Use Parametric Control"    type="bool"   value="true"        />
     <Parameter name="Use Parabolic Inflow"      type="bool"   value="false"       />

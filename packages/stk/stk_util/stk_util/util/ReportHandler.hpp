@@ -40,8 +40,7 @@
 #include <string>     // for operator+, allocator, string, char_traits
 #include <type_traits>
 
-#include "stk_util/diag/String.hpp"
-#include "stk_util/stk_kokkos_macros.h"  // for STK_FUNCTION
+#include "stk_util/stk_kokkos_macros.h"  // for KOKKOS_FUNCTION
 
 #ifdef STK_ENABLE_GPU_BUT_NO_RDC
 #include <Kokkos_Core.hpp>
@@ -114,6 +113,16 @@ void report(const char *message, int type);
  * @return      a <b>std::string</b> value of the stripped path.
  */
 std::string source_relative_path(const std::string &path);
+
+// Put together a source file name with full path and a line number into a
+// colon-separated string with the path removed from the file name.  This is
+// intended to be used with something like std::source_location output.  If the
+// sentinel value of 0 for the line number is detected (indicating trouble), an
+// empty string is returned.  The optional trailing_delimeter argument defaults to a
+// string that is appropriate for use of the output from this function as a
+// prefix for an error line.
+//
+std::string source_location_string(const char* file, unsigned line, const char* trailing_delimeter = ": ");
 
 /**
  * A function used to create and throw nice-looking exceptions for assertion
@@ -266,7 +275,7 @@ class is_valid_throw_condition
 
  public:
   static constexpr bool value =
-      !is_same_as_any<raw_t, sierra::String, std::string, const char*, char*>::value && !is_string_literal<T>::value;
+      !is_same_as_any<raw_t, std::string, const char*, char*>::value && !is_string_literal<T>::value;
 };
 template <typename T>
 inline auto eval_test_condition(const T& val)
@@ -290,7 +299,7 @@ inline auto eval_test_condition(const T& val)
     }                                                                                                          \
   } while (false)
 
-inline void ThrowMsgHost(bool /* expr */, const char* exprString, const char* message, const std::string& location)
+[[noreturn]] inline void ThrowMsgHost(bool /* expr */, const char* exprString, const char* message, const std::string& location)
 {
   std::ostringstream stk_util_internal_throw_require_loc_oss;
   stk_util_internal_throw_require_loc_oss << stk::source_relative_path(location) << "\n";
@@ -302,15 +311,15 @@ inline void ThrowMsgHost(bool /* expr */, const char* exprString, const char* me
 }
 
 #ifdef STK_ENABLE_GPU_BUT_NO_RDC
-STK_INLINE_FUNCTION void ThrowMsgDevice(const char * message)
+[[noreturn]] KOKKOS_INLINE_FUNCTION void ThrowMsgDevice(const char * message)
 { 
   Kokkos::abort(message);
 }
 #else
-STK_FUNCTION void ThrowMsgDevice(const char * message);
+[[noreturn]] KOKKOS_FUNCTION void ThrowMsgDevice(const char * message);
 #endif
 
-inline void ThrowHost(bool /* expr */, const char* exprString, const std::string& location)
+[[noreturn]] inline void ThrowHost(bool /* expr */, const char* exprString, const std::string& location)
 {
   std::ostringstream stk_util_internal_throw_require_loc_oss;
   stk_util_internal_throw_require_loc_oss << stk::source_relative_path(location) << "\n";
@@ -320,7 +329,7 @@ inline void ThrowHost(bool /* expr */, const char* exprString, const std::string
     "Error occurred at: " + stk_util_internal_throw_require_loc_oss.str() + "\n");
 }
 
-inline void ThrowErrorMsgHost(const char * message, const std::string & location)
+[[noreturn]] inline void ThrowErrorMsgHost(const char * message, const std::string & location)
 {
   std::ostringstream stk_util_internal_throw_require_loc_oss;
   stk_util_internal_throw_require_loc_oss << stk::source_relative_path(location) << "\n";
@@ -331,12 +340,12 @@ inline void ThrowErrorMsgHost(const char * message, const std::string & location
 }
 
 #ifdef STK_ENABLE_GPU_BUT_NO_RDC
-STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
+[[noreturn]] KOKKOS_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 { 
   Kokkos::abort(message);
 }
 #else
-STK_FUNCTION void ThrowErrorMsgDevice(const char * message);
+[[noreturn]] KOKKOS_FUNCTION void ThrowErrorMsgDevice(const char * message);
 #endif
 
 // This generic macro is for unconditional throws. We pass "" as the expr
@@ -412,8 +421,6 @@ STK_FUNCTION void ThrowErrorMsgDevice(const char * message);
 #define STK_ThrowRequireMsg(expr, message) STK_ThrowGenericCond(expr, message, handle_assert)
 #define STK_ThrowRequire(expr) STK_ThrowRequireMsg(expr, "")
 
-#ifndef __HIP_DEVICE_COMPILE__
-
 #ifdef NDEBUG
 #  define STK_ThrowAssert(expr)                                              (static_cast<void>(0))
 #  define STK_ThrowAssertMsg(expr,message)                                   (static_cast<void>(0))
@@ -428,19 +435,6 @@ STK_FUNCTION void ThrowErrorMsgDevice(const char * message);
 
 #define STK_ThrowInvalidArgMsgIf(expr, message)                                    STK_ThrowGenericCond( !(expr), message, handle_invalid_arg)
 #define STK_ThrowInvalidArgIf(expr)                                                STK_ThrowInvalidArgMsgIf(expr, "")
-
-#else
-// FIXME: unsupported indirect call to function on HIP-Clang
-#define STK_ThrowAssert(expr)
-#define STK_ThrowAssertMsg(expr,message)
-
-#define STK_ThrowErrorMsgIf(expr, message)
-#define STK_ThrowErrorIf(expr)
-#define STK_ThrowErrorMsg(message)
-
-#define STK_ThrowInvalidArgMsgIf(expr, message)
-#define STK_ThrowInvalidArgIf(expr)
-#endif
 
 #if ((defined(__CUDA_ARCH__) && (__CUDA_ARCH__ > 0)) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__))
 #define STK_NGP_ThrowRequireMsg(expr, message)               \

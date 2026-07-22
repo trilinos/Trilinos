@@ -1,48 +1,14 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file  example_02.cpp
-    \brief Shows how to solve a linear-quadratic parabolic control problem 
+    \brief Shows how to solve a linear-quadratic parabolic control problem
            with bound constraints.
 */
 
@@ -52,9 +18,8 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -83,18 +48,18 @@ private:
   Real dt_;
 
   ROL::Ptr<const vector> getVector( const V& x ) {
-    
-    return dynamic_cast<const SV&>(x).getVector(); 
+
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
   ROL::Ptr<vector> getVector( V& x ) {
-    
-    return dynamic_cast<SV&>(x).getVector();  
+
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
 
-  Objective_PoissonControl(std::vector<Real> &u0, Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1) 
+  Objective_PoissonControl(std::vector<Real> &u0, Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1)
     : u0_(u0), alpha_(alpha), nx_(nx), nt_(nt), T_(T) {
     dx_ = 1.0/((Real)nx-1.0);
     dt_ = T/((Real)nt-1);
@@ -122,7 +87,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -151,7 +116,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -187,7 +152,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -221,7 +186,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -259,7 +224,7 @@ public:
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
 
     // SOLVE STATE EQUATION
@@ -300,7 +265,7 @@ public:
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
     ROL::Ptr<vector> gp = getVector(g);
 
@@ -319,7 +284,7 @@ public:
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> vp = getVector(v);
     ROL::Ptr<vector> hvp = getVector(hv);
 
@@ -345,9 +310,9 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
 
-  typedef typename vector::size_type uint;
+  typedef typename vector::size_type luint;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -364,8 +329,8 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    uint nx     = 100;   // Set spatial discretization.
-    uint nt     = 300;   // Set temporal discretization.
+    luint nx     = 100;   // Set spatial discretization.
+    luint nt     = 300;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-2; // Set penalty parameter.
     vector u0(nx,0.0); // Set initial conditions
@@ -375,7 +340,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(nt, 0.0);
     ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(nt, 0.0);
 
-    for (uint i=0; i<nt; i++) {
+    for (luint i=0; i<nt; i++) {
       (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
@@ -420,7 +385,7 @@ int main(int argc, char *argv[]) {
     // Output control to file.
     std::ofstream file;
     file.open("control_PDAS.txt");
-    for ( uint i = 0; i < nt; i++ ) {
+    for ( luint i = 0; i < nt; i++ ) {
       file << (*x_ptr)[i] << "\n";
     }
     file.close();
@@ -439,11 +404,11 @@ int main(int argc, char *argv[]) {
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
-    for ( uint i = 0; i < nt; i++ ) {
+    for ( luint i = 0; i < nt; i++ ) {
       file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
-   
+
     ROL::Ptr<V> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);

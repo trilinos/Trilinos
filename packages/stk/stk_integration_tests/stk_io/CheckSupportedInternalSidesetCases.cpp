@@ -59,7 +59,7 @@ bool is_sideset_case_supported(const std::string& input_file_name, stk::mesh::Bu
 
 void test_supported_sideset_cases_with_aura_option(stk::mesh::BulkData::AutomaticAuraOption auraOption)
 {
-    std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "none");
+    std::string exodusFileName = stk::unit_test_util::get_option("-i", "none");
 
     if(exodusFileName=="none")
     {

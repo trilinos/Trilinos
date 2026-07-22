@@ -68,58 +68,60 @@ struct Entity
     entity_value_type m_value;
 
     KOKKOS_FUNCTION
-    Entity() : m_value(InvalidEntity) {}
+    constexpr Entity() : m_value(InvalidEntity) {}
 
     KOKKOS_FUNCTION
-    Entity(Entity_t value) : m_value(value) {}
+    constexpr Entity(Entity_t value) : m_value(value) {}
 
     KOKKOS_FUNCTION
-    explicit Entity(entity_value_type value) : m_value(value) {}
+    explicit constexpr Entity(entity_value_type value) : m_value(value) {}
 
     KOKKOS_FUNCTION
-    Entity operator=(entity_value_type val) { m_value = val; return *this;}
+    constexpr Entity operator=(entity_value_type val) { m_value = val; return *this;}
 
-    /** \brief local_offset is this entity's offset into all local entities of the same rank.
+    /** \brief local_offset is this entity's offset into all local entities.
      * An entity's local_offset will generally remain unchanged through mesh-modification cycles,
-     * which means that the set of local_offsets may not be compact or contiguous if some
+     * meaning that the set of local_offsets may not be compact or contiguous if some
      * entities have been deleted. (local_offsets for deleted entities are no longer valid.)
      * Thus, local_offset is not suitable for use as an equation index for linear-system operations.
-     * See local_id() below.
+     * See BulkData::local_id().
      */
     KOKKOS_FUNCTION
-    entity_value_type local_offset() const { return m_value; }
+    constexpr entity_value_type local_offset() const { return m_value; }
 
     KOKKOS_FUNCTION
-    bool is_local_offset_valid() const { return local_offset() > 0; }
+    constexpr bool is_local_offset_valid() const { return local_offset() > 0; }
 
     /** This setter should only be called by the BulkData class when creating entities.
      * Erroneous calls will lead to undefined (and probably disastrous) behavior.
      */
     KOKKOS_FUNCTION
-    void set_local_offset(size_t localOffset) {
+    constexpr void set_local_offset(size_t localOffset) {
         m_value = static_cast<entity_value_type>(localOffset);
     }
 
     KOKKOS_FUNCTION
-    bool operator==(Entity entity) const { return m_value == entity.m_value; }
+    constexpr bool operator==(Entity entity) const { return m_value == entity.m_value; }
 
     KOKKOS_FUNCTION
-    bool operator==(entity_value_type val) const { return m_value == val; }
+    constexpr bool operator==(entity_value_type val) const { return m_value == val; }
 
     KOKKOS_FUNCTION
-    bool operator!=(Entity entity) const { return m_value != entity.m_value; }
+    constexpr bool operator!=(Entity entity) const { return m_value != entity.m_value; }
 
     KOKKOS_FUNCTION
-    bool operator!=(entity_value_type val) const { return m_value != val; }
+    constexpr bool operator!=(entity_value_type val) const { return m_value != val; }
 
     KOKKOS_FUNCTION
-    bool operator<(Entity entity) const { return m_value < entity.m_value; }
+    constexpr bool operator<(Entity entity) const { return m_value < entity.m_value; }
 
+    KOKKOS_FUNCTION
+    constexpr bool operator>(Entity entity) const { return m_value > entity.m_value; }
 };
 
 std::ostream & operator << ( std::ostream & , const Entity & );
 
-inline
+constexpr 
 size_t hash_value( Entity entity) {
 //        try to use std::hash
     return entity.local_offset();

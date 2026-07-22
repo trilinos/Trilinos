@@ -66,6 +66,7 @@ stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_se
 
 } // namespace impl
 
+int get_max_name_length(const stk::mesh::MetaData& meta);
 
 size_t get_entities(OutputParams &params,
                     const stk::mesh::Part &part,

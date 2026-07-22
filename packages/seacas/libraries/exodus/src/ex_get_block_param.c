@@ -113,7 +113,7 @@ int ex_get_block_param(int exoid, ex_block *block)
   }
 
   /* inquire values of some dimensions */
-  if ((status = nc_inq_dimid(exoid, dnument, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnument, &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate number of entities in %s  %" PRId64 " in file id %d",
              ex_name_of_object(block->type), block->id, exoid);
@@ -122,7 +122,7 @@ int ex_get_block_param(int exoid, ex_block *block)
   }
 
   size_t len;
-  if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &len)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of %ss in block  %" PRId64 " in file id %d",
              ex_name_of_object(block->type), block->id, exoid);
@@ -131,12 +131,12 @@ int ex_get_block_param(int exoid, ex_block *block)
   }
   block->num_entry = len;
 
-  if ((status = nc_inq_dimid(exoid, dnumnod, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumnod, &dimid)) != EX_NOERR) {
     /* undefined => no node entries per element */
     len = 0;
   }
   else {
-    if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &len)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of nodes/entity in %s  %" PRId64 " in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
@@ -150,12 +150,12 @@ int ex_get_block_param(int exoid, ex_block *block)
     block->num_edges_per_entry = 0;
   }
   else {
-    if ((status = nc_inq_dimid(exoid, dnumedg, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, dnumedg, &dimid)) != EX_NOERR) {
       /* undefined => no edge entries per element */
       len = 0;
     }
     else {
-      if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &len)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get number of edges/entry in %s  %" PRId64 " in file id %d",
                  ex_name_of_object(block->type), block->id, exoid);
@@ -170,12 +170,12 @@ int ex_get_block_param(int exoid, ex_block *block)
     block->num_faces_per_entry = 0;
   }
   else {
-    if ((status = nc_inq_dimid(exoid, dnumfac, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, dnumfac, &dimid)) != EX_NOERR) {
       /* undefined => no face entries per element */
       len = 0;
     }
     else {
-      if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &len)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get number of faces/entity in %s  %" PRId64 " in file id %d",
                  ex_name_of_object(block->type), block->id, exoid);
@@ -186,12 +186,12 @@ int ex_get_block_param(int exoid, ex_block *block)
     block->num_faces_per_entry = len;
   }
 
-  if ((status = nc_inq_dimid(exoid, dnumatt, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumatt, &dimid)) != EX_NOERR) {
     /* dimension is undefined */
     block->num_attribute = 0;
   }
   else {
-    if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &len)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of attributes in %s  %" PRId64 " in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
@@ -218,7 +218,7 @@ int ex_get_block_param(int exoid, ex_block *block)
 
   if (vblkcon) {
     /* look up connectivity array for this element block id */
-    if ((status = nc_inq_varid(exoid, vblkcon, &connid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, vblkcon, &connid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate connectivity array for %s  %" PRId64 " in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
@@ -226,7 +226,7 @@ int ex_get_block_param(int exoid, ex_block *block)
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_attlen(exoid, connid, ablknam, &len)) != NC_NOERR) {
+    if ((status = nc_inq_attlen(exoid, connid, ablknam, &len)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s  %" PRId64 " type in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -246,7 +246,7 @@ int ex_get_block_param(int exoid, ex_block *block)
 
       /* get the element type name */
     }
-    if ((status = nc_get_att_text(exoid, connid, ablknam, block->topology)) != NC_NOERR) {
+    if ((status = nc_get_att_text(exoid, connid, ablknam, block->topology)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s  %" PRId64 " type in file id %d",
                ex_name_of_object(block->type), block->id, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);

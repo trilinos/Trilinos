@@ -44,7 +44,6 @@ class StkMeshCreator
           m_metaDataPtr(m_bulkDataPtr->mesh_meta_data_ptr()),
           m_autodecompMethod(autodecompMethod)
     {
-      m_metaDataPtr->use_simple_fields();
       declare_stk_vert_field();
       load_mesh(fname);
     }

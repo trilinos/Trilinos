@@ -35,6 +35,8 @@
 #ifndef stk_mesh_CreateFaces_hpp
 #define stk_mesh_CreateFaces_hpp
 
+#include <stk_util/stk_config.h>
+
 namespace stk {
   namespace mesh {
 
@@ -42,14 +44,6 @@ namespace stk {
     class Selector;
     class Part;
     
-    namespace experimental {
-    void create_faces( BulkData & mesh );
-    void create_faces( BulkData & mesh, const Selector & element_selector);
-    void create_faces( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_faces );
-    void create_faces( BulkData & mesh, bool connect_faces_to_edges);
-    void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges);
-    }
-
     /** Create faces for all elements in "element_selector" and attach them to
          * existing elements.
          *

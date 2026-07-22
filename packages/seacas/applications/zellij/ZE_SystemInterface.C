@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 2021-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -28,67 +28,67 @@ void SystemInterface::enroll_options()
 {
   options_.usage("[options] -lattice <lattice_definition_file>");
 
-  options_.enroll("lattice", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("lattice", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Name of file to read lattice definition from. [required]", "");
 
-  options_.enroll("output", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("output", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Name of output file to create. Default is `zellij-out.e`", "zellij-out.e",
                   nullptr, true);
 
-  options_.enroll("rcb", Ioss::GetLongOption::NoValue,
+  options_.enroll("rcb", Ioss::GetLongOption::OptType::NoValue,
                   "Use recursive coordinate bisection method to decompose the input lattice for "
                   "parallel output.",
                   nullptr);
   options_.enroll(
-      "rib", Ioss::GetLongOption::NoValue,
+      "rib", Ioss::GetLongOption::OptType::NoValue,
       "Use recursive inertial bisection method to decompose the input lattice for parallel output.",
       nullptr);
 
-  options_.enroll("hsfc", Ioss::GetLongOption::NoValue,
+  options_.enroll("hsfc", Ioss::GetLongOption::OptType::NoValue,
                   "Use hilbert space-filling curve method to decompose the input lattice for "
                   "parallel output. [default]",
                   nullptr);
 
-  options_.enroll("linear", Ioss::GetLongOption::NoValue,
+  options_.enroll("linear", Ioss::GetLongOption::OptType::NoValue,
                   "Use the linear method to decompose the input lattice for parallel output.\n"
                   "\t\tElements in order first n/p to proc 0, next to proc 1.",
                   nullptr);
 
-  options_.enroll("cyclic", Ioss::GetLongOption::NoValue,
+  options_.enroll("cyclic", Ioss::GetLongOption::OptType::NoValue,
                   "Use the cyclic method to decompose the input lattice for parallel output.\n"
                   "\t\tElements handed out to id % proc_count",
                   nullptr);
 
-  options_.enroll("random", Ioss::GetLongOption::NoValue,
+  options_.enroll("random", Ioss::GetLongOption::OptType::NoValue,
                   "Use the random method to decompose the input lattice for parallel output.\n"
                   "\t\tElements assigned randomly to processors in a way that preserves balance\n"
                   "\t\t(do *not* use for a real run)",
                   nullptr, nullptr, true);
 
-  options_.enroll("ranks", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("ranks", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Number of ranks to decompose mesh/lattice across", "1");
 
-  options_.enroll("start_rank", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("start_rank", Ioss::GetLongOption::OptType::MandatoryValue,
                   "In partial output mode, start outputting decomposed files at this rank", "0");
 
-  options_.enroll("rank_count", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("rank_count", Ioss::GetLongOption::OptType::MandatoryValue,
                   "In partial output or subcycle modes, output this number of ranks", "0");
 
-  options_.enroll("subcycle", Ioss::GetLongOption::NoValue,
+  options_.enroll("subcycle", Ioss::GetLongOption::OptType::NoValue,
                   "Process cells in groups of '-rank_count'.  Helps minimize open files,\n"
                   "\t\tbut is faster than only having a single file open.",
                   nullptr);
 
-  options_.enroll("offset", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("offset", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Comma-separated x,y,z offset for coordinates of the output mesh.\n"
                   "\t\tThe output coordinates will be xyz_out = xyz * scale + offset_xyz",
                   nullptr);
 
-  options_.enroll("scale", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("scale", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Scale the output mesh coordinates by the specified value", "1");
 
   options_.enroll(
-      "minimize_open_files", Ioss::GetLongOption::OptionalValue,
+      "minimize_open_files", Ioss::GetLongOption::OptType::OptionalValue,
       "Close files after accessing them to avoid issues with too many open files.\n"
       "\t\tIf argument is 'output' then close output, if 'unit' then close unit cells;\n"
       "\t\tif 'all' or no argument close all.\n"
@@ -96,10 +96,10 @@ void SystemInterface::enroll_options()
       "indicating this issue.",
       nullptr, "all", true);
 
-  options_.enroll("ignore_sidesets", Ioss::GetLongOption::NoValue,
+  options_.enroll("ignore_sidesets", Ioss::GetLongOption::OptType::NoValue,
                   "Do not copy any sidesets in the unit cells to the output file.", nullptr);
 
-  options_.enroll("generate_sidesets", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("generate_sidesets", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Which surfaces on the output mesh should have sidesets generated,\n"
                   "\t\t Valid options are:\n"
                   "\t\t 'x' or 'i' for surface on minimum X coordinate, default name = `min_i`\n"
@@ -112,7 +112,7 @@ void SystemInterface::enroll_options()
                   "");
 
   options_.enroll(
-      "sideset_names", Ioss::GetLongOption::MandatoryValue,
+      "sideset_names", Ioss::GetLongOption::OptType::MandatoryValue,
       "Specify names for one or more of the generated sidesets.\n"
       "\t\t Form is `axis:name,axis:name,...`\n"
       "\t\t where 'axis' is one of 'ijkIJKxyzXYZ', and 'name' is the name of the sideset.\n"
@@ -121,62 +121,64 @@ void SystemInterface::enroll_options()
       "max X face 'right'.",
       "", nullptr, true);
 
-  options_.enroll("netcdf3", Ioss::GetLongOption::NoValue,
+  options_.enroll("netcdf3", Ioss::GetLongOption::OptType::NoValue,
                   "Output database will be a netcdf3 "
                   "native classical netcdf file format (32-bit only)",
                   nullptr);
 
-  options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
+  options_.enroll("netcdf4", Ioss::GetLongOption::OptType::NoValue,
                   "Output database will be a netcdf4 "
                   "hdf5-based file instead of the "
                   "classical netcdf file format (default)",
                   nullptr);
 
-  options_.enroll("netcdf5", Ioss::GetLongOption::NoValue,
+  options_.enroll("netcdf5", Ioss::GetLongOption::OptType::NoValue,
                   "Output database will be a netcdf5 (CDF5) "
                   "file instead of the classical netcdf file format",
                   nullptr, nullptr, true);
 
-  options_.enroll("32-bit", Ioss::GetLongOption::NoValue,
+  options_.enroll("32-bit", Ioss::GetLongOption::OptType::NoValue,
                   "True if forcing the use of 32-bit integers for the output file", nullptr);
 
-  options_.enroll("64-bit", Ioss::GetLongOption::NoValue,
+  options_.enroll("64-bit", Ioss::GetLongOption::OptType::NoValue,
                   "True if forcing the use of 64-bit integers for the output file (default)",
                   nullptr, nullptr, true);
 
-  options_.enroll("zlib", Ioss::GetLongOption::NoValue,
+  options_.enroll("zlib", Ioss::GetLongOption::OptType::NoValue,
                   "Use the Zlib / libz compression method if compression is enabled "
                   "(default) [exodus only].",
                   nullptr);
 
-  options_.enroll("szip", Ioss::GetLongOption::NoValue,
+  options_.enroll("szip", Ioss::GetLongOption::OptType::NoValue,
                   "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
 
-  options_.enroll("compress", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("compress", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Specify the hdf5 zlib compression level [0..9] or szip [even, 4..32] to be used "
                   "on the output file.",
                   nullptr, nullptr, true);
 
-  options_.enroll("separate_cells", Ioss::GetLongOption::NoValue,
+  options_.enroll("separate_cells", Ioss::GetLongOption::OptType::NoValue,
                   "Do not equivalence the nodes between adjacent unit cells.", nullptr);
 
   options_.enroll(
-      "repeat", Ioss::GetLongOption::MandatoryValue,
+      "repeat", Ioss::GetLongOption::OptType::MandatoryValue,
       "Each lattice entry will be used the specified number of times as will\n"
       "\t\teach row in the lattice (for debugging). `-repeat 2` would double the lattice.",
       "1");
 
   options_.enroll(
-      "skip", Ioss::GetLongOption::MandatoryValue,
+      "skip", Ioss::GetLongOption::OptType::MandatoryValue,
       "Skip the specified number of lattice entries and rows. For example, -skip 1\n"
       "\t\twould read every other entry on the row and every other row. (for debugging)",
       "1");
 
-  options_.enroll("help", Ioss::GetLongOption::NoValue, "Print this summary and exit", nullptr);
+  options_.enroll("help", Ioss::GetLongOption::OptType::NoValue, "Print this summary and exit",
+                  nullptr);
 
-  options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
+  options_.enroll("version", Ioss::GetLongOption::OptType::NoValue, "Print version and exit",
+                  nullptr);
 
-  options_.enroll("debug", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("debug", Ioss::GetLongOption::OptType::MandatoryValue,
                   "debug level (values are or'd)\n"
                   "\t\t   1 = Exodus Verbose mode.\n"
                   "\t\t   2 = Memory and time stamp information.\n"
@@ -188,8 +190,8 @@ void SystemInterface::enroll_options()
                   "\t\t 128 = Verbose sideset generation information.",
                   "0");
 
-  options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
-                  nullptr);
+  options_.enroll("copyright", Ioss::GetLongOption::OptType::NoValue,
+                  "Show copyright and license data.", nullptr);
 }
 
 bool SystemInterface::parse_options(int argc, char **argv)
@@ -205,7 +207,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
       fmt::print("\n\tCan also set options via ZELLIJ_OPTIONS environment variable.\n"
                  "\n\tDocumentation: "
                  "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#zellij\n"
-                 "\n\t->->-> Send email to gdsjaar@sandia.gov for zellij support.<-<-<-\n");
+                 "\n\t->->-> Send email to sierra-help@sandia.gov for zellij support.<-<-<-\n");
     }
     exit(EXIT_SUCCESS);
   }

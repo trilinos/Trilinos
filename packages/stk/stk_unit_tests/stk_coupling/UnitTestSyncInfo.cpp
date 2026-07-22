@@ -347,6 +347,7 @@ TEST_F(TestSyncInfo, exchange_multi_way)
   setup_sync_info(myColor);
 
   stk::coupling::SplitComms splitComms(commWorld, myColor);
+  splitComms.set_free_comms_in_destructor(true);
 
   using ColorToSyncInfoMap = stk::coupling::SyncInfo::ColorToSyncInfoMap;
 

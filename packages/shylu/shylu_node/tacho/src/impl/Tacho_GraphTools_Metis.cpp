@@ -1,27 +1,19 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 /// \file Tacho_GraphTools_Metis.cpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho_Util.hpp"
 
-#if defined(TACHO_HAVE_METIS)
+#if defined(TACHO_HAVE_METIS) || defined(TACHO_HAVE_TRILINOS_SS)
 #include "Tacho_GraphTools_Metis.hpp"
 
 namespace Tacho {
@@ -47,8 +39,15 @@ GraphTools_Metis::GraphTools_Metis(const Graph &g) {
   for (ordinal_type i = 0; i < static_cast<ordinal_type>(_adjncy.extent(0)); ++i)
     _adjncy(i) = g_col_idx(i);
 
+#if defined(TACHO_HAVE_METIS)
+  _algo = 2;
   METIS_SetDefaultOptions(_options);
   _options[METIS_OPTION_NUMBERING] = 0;
+#elif defined(TACHO_HAVE_TRILINOS_SS)
+  _algo = 1;
+#else
+  _algo = 0;
+#endif
 
   _perm_t = idx_t_array(do_not_initialize_tag("idx_t_perm"), _nvts);
   _peri_t = idx_t_array(do_not_initialize_tag("idx_t_peri"), _nvts);
@@ -60,7 +59,12 @@ GraphTools_Metis::GraphTools_Metis(const Graph &g) {
 GraphTools_Metis::~GraphTools_Metis() {}
 
 void GraphTools_Metis::setVerbose(const bool verbose) { _verbose = verbose; }
-void GraphTools_Metis::setOption(const int id, const idx_t value) { _options[id] = value; }
+void GraphTools_Metis::setOption(const int id, const idx_t value) {
+#if defined(TACHO_HAVE_METIS)
+  _options[id] = value;
+#endif
+}
+void GraphTools_Metis::setAlgorithm(const int algo) { _algo = algo; }
 
 ///
 /// reorder by amd
@@ -89,13 +93,12 @@ void GraphTools_Metis::reorder(const ordinal_type verbose) {
   Kokkos::Timer timer;
   double t_metis = 0;
 
-  int algo = 2;
-  if (algo == 0) {
+  if (_algo == 0) {
     for (ordinal_type i = 0; i < _nvts; ++i) {
       _perm(i) = i;
       _peri(i) = i;
     }
-  } else if (algo == 1) {
+  } else if (_algo == 1) {
     int ierr = 0;
     double amd_info[TRILINOS_AMD_INFO];
 
@@ -108,8 +111,10 @@ void GraphTools_Metis::reorder(const ordinal_type verbose) {
       _peri(_perm(i)) = i;
     }
 
-    TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in trilinos_amd");
+    // ierr != TRILINOS_AMD_OK && ierr != TRILINOS_AMD_OK_BUT_JUMBLED
+    TACHO_TEST_FOR_EXCEPTION(ierr < TRILINOS_AMD_OK, std::runtime_error, "Failed in trilinos_amd");
   } else {
+#if defined(TACHO_HAVE_METIS)
     int ierr = 0;
 
     idx_t *xadj = (idx_t *)_xadj.data();
@@ -129,12 +134,23 @@ void GraphTools_Metis::reorder(const ordinal_type verbose) {
     }
 
     TACHO_TEST_FOR_EXCEPTION(ierr != METIS_OK, std::runtime_error, "Failed in METIS_NodeND");
+#else
+    TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "METIS is not enabled");
+#endif
   }
   _is_ordered = true;
 
   if (verbose) {
-    printf("Summary: GraphTools (Metis)\n");
-    printf("===========================\n");
+    if (_algo == 0) {
+      printf("Summary: GraphTools (Natural)\n");
+      printf("=============================\n");
+    } else if (_algo == 1) {
+      printf("Summary: GraphTools (AMD)\n");
+      printf("=========================\n");
+    } else {
+      printf("Summary: GraphTools (Metis)\n");
+      printf("===========================\n");
+    }
 
     switch (verbose) {
     case 1: {

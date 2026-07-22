@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef MINIEM_MAXWELLANALYTICSOLUTION_IMPL_HPP
 #define MINIEM_MAXWELLANALYTICSOLUTION_IMPL_HPP
 
@@ -7,7 +17,7 @@
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 #include "Panzer_Traits.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "Kokkos_MathematicalConstants.hpp"
 #include "Kokkos_MathematicalFunctions.hpp"
 

@@ -38,32 +38,28 @@ namespace Details {
 ///
 /// \warning This class only works for the four types supported by
 ///   LAPACK.  Using any other type will result in a run-time error.
-template<class MatrixType,
-         const bool stub = ! LapackSupportsScalar<typename MatrixType::scalar_type>::value>
-class TriDiSolver :
-    public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                   typename MatrixType::local_ordinal_type,
-                                   typename MatrixType::global_ordinal_type,
-                                   typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{};
+template <class MatrixType,
+          const bool stub = !LapackSupportsScalar<typename MatrixType::scalar_type>::value>
+class TriDiSolver : public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                   typename MatrixType::local_ordinal_type,
+                                                   typename MatrixType::global_ordinal_type,
+                                                   typename MatrixType::node_type>,
+                    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                       typename MatrixType::local_ordinal_type,
+                                                                                       typename MatrixType::global_ordinal_type,
+                                                                                       typename MatrixType::node_type> > {};
 
 //! Partial specialization for stub=false (the default).
-template<class MatrixType>
-class TriDiSolver<MatrixType, false> :
-    public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                   typename MatrixType::local_ordinal_type,
-                                   typename MatrixType::global_ordinal_type,
-                                   typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType>
+class TriDiSolver<MatrixType, false> : public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                                      typename MatrixType::local_ordinal_type,
+                                                                      typename MatrixType::global_ordinal_type,
+                                                                      typename MatrixType::node_type>,
+                                       virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                                          typename MatrixType::local_ordinal_type,
+                                                                                                          typename MatrixType::global_ordinal_type,
+                                                                                                          typename MatrixType::node_type> > {
+ public:
   //! \name Public typedefs
   //@{
 
@@ -106,44 +102,43 @@ public:
   /// \brief Constructor.
   ///
   /// \param matrix [in] The original input matrix.
-  TriDiSolver (const Teuchos::RCP<const row_matrix_type>& matrix);
+  TriDiSolver(const Teuchos::RCP<const row_matrix_type>& matrix);
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~TriDiSolver ();
+  virtual ~TriDiSolver();
 
   //@}
   //! Implementation of Tpetra::Operator
   //@{
 
-
   /// \brief The domain Map of this operator.
   ///
   /// The domain Map describes the distribution of valid input vectors
   /// X to the apply() method.
-  Teuchos::RCP<const map_type> getDomainMap () const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   /// \brief The range Map of this operator.
   ///
   /// The range Map describes the distribution of valid output vectors
   /// Y to the apply() method.
-  Teuchos::RCP<const map_type> getRangeMap () const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   /// \brief Apply the preconditioner to X, putting the result in Y.
   ///
   /// If the result of applying this preconditioner to a vector X is
-  /// \f$M^{-1} \cdot X$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
+  /// \f$M^{-1} \cdot X\f$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
   /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //@}
 
   //! Set the solvers's parameters.
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   /// \brief Set up the graph structure of this preconditioner.
   ///
@@ -154,10 +149,10 @@ public:
   /// Thus, initialize() corresponds to the "symbolic factorization"
   /// step of a sparse factorization, whether or not the specific
   /// preconditioner actually does a sparse factorization.
-  void initialize ();
+  void initialize();
 
   //! True if the preconditioner has been successfully initialized, else false.
-  bool isInitialized () const;
+  bool isInitialized() const;
 
   /// \brief Set up the numerical values in this preconditioner.
   ///
@@ -168,22 +163,22 @@ public:
   /// Thus, compute() corresponds to the "numeric factorization"
   /// step of a sparse factorization, whether or not the specific
   /// preconditioner actually does a sparse factorization.
-  void compute ();
+  void compute();
 
   //! True if the preconditioner has been successfully computed, else false.
-  bool isComputed () const;
+  bool isComputed() const;
 
   //! The input matrix given to the constructor.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
   //! Change the matrix to precondition.
-  void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  void setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! The number of calls to initialize().
-  int getNumInitialize () const;
+  int getNumInitialize() const;
 
   //! The number of calls to compute().
-  int getNumCompute () const;
+  int getNumCompute() const;
 
   //! The number of calls to apply().
   int getNumApply() const;
@@ -202,23 +197,22 @@ public:
   //@{
 
   //! A one-line description of this object.
-  std::string description () const;
+  std::string description() const;
 
   //! Print the object with some verbosity level to the given FancyOStream.
   void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
   //@}
-private:
-
+ private:
   //! Implementation of describe() for "local" (per process) data.
   void
-  describeLocal (Teuchos::FancyOStream& out,
-                 const Teuchos::EVerbosityLevel verbLevel) const;
+  describeLocal(Teuchos::FancyOStream& out,
+                const Teuchos::EVerbosityLevel verbLevel) const;
 
   //! Reset stored data.
-  void reset ();
+  void reset();
 
   /// \brief Extract the local tridi matrix from the local sparse matrix.
   ///
@@ -228,8 +222,8 @@ private:
   ///   (If A is already "local," then this need not necessarily
   ///   be the result of a LocalFilter.)
   static void
-  extract (Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_tridi,
-           const row_matrix_type& A_local);
+  extract(Teuchos::SerialTriDiMatrix<int, scalar_type>& A_local_tridi,
+          const row_matrix_type& A_local);
 
   /// \brief Factor the local tridi matrix A in place.
   ///
@@ -241,20 +235,23 @@ private:
   ///
   /// Call this after calling extract().
   static void
-  factor (Teuchos::SerialTriDiMatrix<int, scalar_type>& A,
-          const Teuchos::ArrayView<int>& ipiv);
+  factor(Teuchos::SerialTriDiMatrix<int, scalar_type>& A,
+         const Teuchos::ArrayView<int>& ipiv);
 
   //! Specialization of Tpetra::MultiVector used in implementation.
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> MV;
+                              global_ordinal_type, node_type>
+      MV;
 
   //! Specialization of Tpetra::Import used in implementation.
   typedef Tpetra::Import<local_ordinal_type,
-                         global_ordinal_type, node_type> import_type;
+                         global_ordinal_type, node_type>
+      import_type;
 
   //! Specialization of Tpetra::Export used in implementation.
   typedef Tpetra::Export<local_ordinal_type,
-                         global_ordinal_type, node_type> export_type;
+                         global_ordinal_type, node_type>
+      export_type;
 
   //! Specialization of Teuchos::ScalarTraits used in implementation.
   typedef Teuchos::ScalarTraits<scalar_type> STS;
@@ -268,11 +265,11 @@ private:
   /// \param X [in] Subset permutation of the input X of apply().
   /// \param Y [in] Subset permutation of the input/output Y of apply().
   void
-  applyImpl (const MV& X,
-             MV& Y,
-             const Teuchos::ETransp mode,
-             const scalar_type alpha,
-             const scalar_type beta) const;
+  applyImpl(const MV& X,
+            MV& Y,
+            const Teuchos::ETransp mode,
+            const scalar_type alpha,
+            const scalar_type beta) const;
 
   //! The (original) input matrix.
   Teuchos::RCP<const row_matrix_type> A_;
@@ -311,20 +308,17 @@ private:
   bool isComputed_;
 };
 
-
 //! Partial specialization for stub=true.
-template<class MatrixType>
-class TriDiSolver<MatrixType, true> :
-    public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                   typename MatrixType::local_ordinal_type,
-                                   typename MatrixType::global_ordinal_type,
-                                   typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType>
+class TriDiSolver<MatrixType, true> : public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                                     typename MatrixType::local_ordinal_type,
+                                                                     typename MatrixType::global_ordinal_type,
+                                                                     typename MatrixType::node_type>,
+                                      virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                                         typename MatrixType::local_ordinal_type,
+                                                                                                         typename MatrixType::global_ordinal_type,
+                                                                                                         typename MatrixType::node_type> > {
+ public:
   //! \name Public typedefs
   //@{
 
@@ -363,10 +357,10 @@ public:
   /// \brief Constructor.
   ///
   /// \param matrix [in] The original input matrix.
-  TriDiSolver (const Teuchos::RCP<const row_matrix_type>& matrix);
+  TriDiSolver(const Teuchos::RCP<const row_matrix_type>& matrix);
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~TriDiSolver ();
+  virtual ~TriDiSolver();
 
   //@}
   //! Implementation of Tpetra::Operator
@@ -376,30 +370,30 @@ public:
   ///
   /// The domain Map describes the distribution of valid input vectors
   /// X to the apply() method.
-  Teuchos::RCP<const map_type> getDomainMap () const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   /// \brief The range Map of this operator.
   ///
   /// The range Map describes the distribution of valid output vectors
   /// Y to the apply() method.
-  Teuchos::RCP<const map_type> getRangeMap () const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   /// \brief Apply the preconditioner to X, putting the result in Y.
   ///
   /// If the result of applying this preconditioner to a vector X is
-  /// \f$M^{-1} \cdot X$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
+  /// \f$M^{-1} \cdot X\f$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
   /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //@}
 
   //! Set the solvers's parameters.
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   /// \brief Set up the graph structure of this preconditioner.
   ///
@@ -410,10 +404,10 @@ public:
   /// Thus, initialize() corresponds to the "symbolic factorization"
   /// step of a sparse factorization, whether or not the specific
   /// preconditioner actually does a sparse factorization.
-  void initialize ();
+  void initialize();
 
   //! True if the preconditioner has been successfully initialized, else false.
-  bool isInitialized () const;
+  bool isInitialized() const;
 
   /// \brief Set up the numerical values in this preconditioner.
   ///
@@ -424,22 +418,22 @@ public:
   /// Thus, compute() corresponds to the "numeric factorization"
   /// step of a sparse factorization, whether or not the specific
   /// preconditioner actually does a sparse factorization.
-  void compute ();
+  void compute();
 
   //! True if the preconditioner has been successfully computed, else false.
-  bool isComputed () const;
+  bool isComputed() const;
 
   //! The input matrix given to the constructor.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
   //! Change the matrix to precondition.
-  void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  void setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! The number of calls to initialize().
-  int getNumInitialize () const;
+  int getNumInitialize() const;
 
   //! The number of calls to compute().
-  int getNumCompute () const;
+  int getNumCompute() const;
 
   //! The number of calls to apply().
   int getNumApply() const;
@@ -458,26 +452,27 @@ public:
   //@{
 
   //! A one-line description of this object.
-  std::string description () const;
+  std::string description() const;
 
   //! Print the object with some verbosity level to the given FancyOStream.
   void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
 
   void
-  describeLocal (Teuchos::FancyOStream& out,
-                      const Teuchos::EVerbosityLevel verbLevel) const;
+  describeLocal(Teuchos::FancyOStream& out,
+                const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
-private:
+ private:
   //! Specialization of Tpetra::MultiVector used in implementation.
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                              global_ordinal_type, node_type> MV;
+                              global_ordinal_type, node_type>
+      MV;
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_TRIDISOLVER_DECL_HPP
+#endif  // IFPACK2_DETAILS_TRIDISOLVER_DECL_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,6 +9,7 @@
 #include "el_check_monot.h" // for check_monot
 #include "el_elm.h"         // for HEXSHELL, NN_SIDE, etc
 #include "exodusII.h"       // for ex_inquire_int, etc
+#include "fmt/format.h"
 #include "fmt/ostream.h"
 #include "nem_spread.h"        // for NemSpread, second, etc
 #include "netcdf.h"            // for nc_set_fill, NC_NOFILL
@@ -271,6 +272,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
       exit(1);
     }
   }
+  mesh_exoid += selected_change_set;
 
   auto max_name_length = ex_inquire_int(mesh_exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(mesh_exoid, max_name_length);
@@ -847,8 +849,7 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, std::vector<INT> &num_
 
     if (globals.Num_Side_Set > 0) {
       for (int i = 0; i < globals.Num_Side_Set; i++) {
-        fmt::print("{:6d}{:11d}  {:12}\n", i, Side_Set_Ids[i],
-                   fmt::group_digits(num_elem_in_ssets[i]));
+        fmt::print("{}\t{}\t\t{}\n", i, Side_Set_Ids[i], fmt::group_digits(num_elem_in_ssets[i]));
       }
     }
 

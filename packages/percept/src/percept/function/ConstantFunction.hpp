@@ -25,14 +25,14 @@
                        unsigned integration_order = 0) : Function(name, domain_dimensions, codomain_dimensions, integration_order), m_value(value) {}
 
       using Function::operator();
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
+      virtual void operator()(MDArray& /*domain*/, MDArray& codomain, double /*time_value_optional*/=0.0) override
       {
         // set all values (regardless of rank of codomain) to m_value
-        codomain.initialize(m_value);
+        Kokkos::deep_copy(codomain, m_value);
       }
 
-      double& getValue() { return m_value; }
-      void setValue(double& v) { m_value = v; }
+      double& getValue() override { return m_value; }
+      void setValue(double& v) override { m_value = v; }
 
     };
 
@@ -47,13 +47,13 @@
                           unsigned integration_order = 0) : Function(name, domain_dimensions, codomain_dimensions, integration_order), m_value(value) {}
 
       using Function::operator();
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
+      virtual void operator()(MDArray& /*domain*/, MDArray& codomain, double /*time_value_optional*/=0.0) override
       {
         if (codomain.rank() <= 0)
           {
             throw std::runtime_error("ConstantFunctionVec::operator() codomain rank is <= 0");
           }
-        int stride = codomain.dimension(codomain.rank()-1);
+        int stride = codomain.extent_int(codomain.rank()-1);
         if (stride <= 0)
           {
             throw std::runtime_error("ConstantFunctionVec::operator() codomain stride is <= 0");
@@ -74,8 +74,8 @@
           }
       }
 
-      std::vector<double>& getValue() { return m_value; }
-      void setValue(std::vector<double>& v) { m_value = v; }
+      std::vector<double>& getValue() override { return m_value; }
+      void setValue(std::vector<double>& v) override { m_value = v; }
 
     };
 

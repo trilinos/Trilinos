@@ -55,6 +55,14 @@ AuxMetaData::create(stk::mesh::MetaData & stk_meta)
   return *aux_meta;
 }
 
+AuxMetaData & 
+AuxMetaData::get_or_create(stk::mesh::MetaData & stk_meta)
+{
+  if (AuxMetaData::has(stk_meta)) return AuxMetaData::get(stk_meta);
+
+  return AuxMetaData::create(stk_meta);
+}
+
 AuxMetaData::AuxMetaData(stk::mesh::MetaData & stk_meta)
   : my_meta(stk_meta),
     is_fmwk(false),
@@ -319,14 +327,43 @@ AuxMetaData::declare_field(
 }
 
 FieldRef
-AuxMetaData::register_field(
-    const std::string & fld_name,
-    const FieldType & field_type,
-    const stk::mesh::EntityRank entity_rank,
-    const unsigned num_states,
+AuxMetaData::register_stk_field(
+    const std::string & fieldName,
+    const FieldType & fieldType,
+    const stk::mesh::EntityRank entityRank,
+    const unsigned numStates,
     const unsigned dimension,
-    const stk::mesh::Part & part,
-    const void * value_type_init)
+    const stk::mesh::Selector & selector)
+{
+  double * initValue = nullptr;
+  if (fieldType.name() == FieldType::VECTOR_2D.name())
+  {
+    auto & field = my_meta.declare_field<double>(entityRank, fieldName, numStates);
+    stk::mesh::put_field_on_mesh(field, selector, fieldType.dimension(), dimension, initValue);
+    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_2D);
+    return FieldRef(field);
+  }
+  else if (fieldType.name() == FieldType::VECTOR_3D.name())
+  {
+    auto & field = my_meta.declare_field<double>(entityRank, fieldName, numStates);
+    stk::mesh::put_field_on_mesh(field, selector, fieldType.dimension(), dimension, initValue);
+    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_3D);
+    return FieldRef(field);
+  }
+
+  FieldRef field = declare_field(fieldName, fieldType, entityRank, numStates);
+  stk::mesh::put_field_on_mesh(field.field(), selector, fieldType.dimension(), dimension, initValue);
+  return field;
+}
+
+FieldRef
+AuxMetaData::register_field(
+    const std::string & fieldName,
+    const FieldType & fieldType,
+    const stk::mesh::EntityRank entityRank,
+    const unsigned numStates,
+    const unsigned dimension,
+    const stk::mesh::Part & part)
 {
   // don't rely on induction of non-ranked superset parts
   // Note that we are only checking nodal fields here, but this could also be a problem if we are counting on a non-ranked superset part to be induced on faces or edges (unlikely?).
@@ -334,27 +371,10 @@ AuxMetaData::register_field(
 
   if (is_fmwk)
   {
-    return FieldRef(fmwk_register_field(fld_name, field_type.name(), field_type.type_info(), field_type.dimension(), entity_rank, num_states, dimension, part, value_type_init));
+    return FieldRef(fmwk_register_field(fieldName, fieldType.name(), fieldType.type_info(), fieldType.dimension(), entityRank, numStates, dimension, part, nullptr));
   }
 
-  if (field_type.name() == FieldType::VECTOR_2D.name())
-  {
-    auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
-    stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
-    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_2D);
-    return FieldRef(field);
-  }
-  else if (field_type.name() == FieldType::VECTOR_3D.name())
-  {
-    auto & field = my_meta.declare_field<double>(entity_rank, fld_name, num_states);
-    stk::mesh::put_field_on_mesh(field, part, field_type.dimension(), dimension, nullptr);
-    stk::io::set_field_output_type(field, stk::io::FieldOutputType::VECTOR_3D);
-    return FieldRef(field);
-  }
-
-  FieldRef field = declare_field(fld_name, field_type, entity_rank, num_states);
-  stk::mesh::put_field_on_mesh(field.field(), part, field_type.dimension(), dimension, value_type_init);
-  return field;
+  return register_stk_field(fieldName, fieldType, entityRank, numStates, dimension, part);
 }
 
 void

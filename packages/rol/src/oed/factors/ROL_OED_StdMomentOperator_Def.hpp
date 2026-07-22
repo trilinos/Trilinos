@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_OED_STD_COVARIANCE_OPERATOR_DEF_HPP
@@ -64,29 +30,33 @@ void StdMomentOperator<Real>::build(const Vector<Real> &p) {
   startTimer("build");
   if (!isBuilt_) {
     const Real zero(0), one(1);
+    //const Real zero(0), one(1), half(0.5);
     const int nsamples = Xdata_[0].numRows();
     const int nfactors = Xdata_[0].numCols();
     M_.putScalar(zero);
-    LA::Matrix<Real> X(nsamples,nfactors);
-    LA::Matrix<Real> M0(nfactors,nfactors);
-    LA::Matrix<Real> Mtmp(nfactors,nfactors);
+    LA::Matrix<Real> X(nsamples,nfactors), SX(nsamples,nfactors);
+    LA::Matrix<Real> M0(nfactors,nfactors), Mtmp(nfactors,nfactors);
     Real wt(0);
     for (int k = 0; k < nobs_; ++k) {
       X = Xdata_[k];
+      SX = Sdata_[k];
       for (int i = 0; i < nsamples; ++i) {
-        wt = std::sqrt(get(p,i)*getNoise(i));
+        wt = get(p,i);
         for (int j = 0; j < nfactors; ++j) X(i,j) *= wt;
       }
-      M0.putScalar(zero);
-      blas_->SYRK(Teuchos::UPPER_TRI,Teuchos::TRANS,nfactors,nsamples,
-                  one,X.values(),nsamples,zero,M0.values(),nfactors);
-      Mtmp += M0;
+      // Compute M0 = p(SX)*X = pX*SX via M0 = 0 M0 + 1/2 (pX)*(SX) + 1/2 (SX)*(pX)
+      //blas_->SYR2K('U','T',nfactors,nsamples,
+      //             half,X.values(),nsamples,SX.values(),nsamples,zero,M0.values(),nfactors);
+      blas_->GEMM(Teuchos::TRANS,Teuchos::NO_TRANS,nfactors,nfactors,nsamples,
+                  one,X.values(),nsamples,SX.values(),nsamples,zero,M0.values(),nfactors);
+      // Compute Mtmp = Mtmp + M0
+      blas_->AXPY(nfactors*nfactors,one,M0.values(),1,Mtmp.values(),1);
     }
     sumAll(p,Mtmp.values(),M_.values(),nfactors*nfactors);
     if (isPset_) blas_->AXPY(nfactors*nfactors,one,P_.values(),1,M_.values(),1);
     isBuilt_      = true;
     isFactorized_ = false;
-    useSVD_       = false;
+    useSVD_       = alwaysUseSVD_;
   }
   stopTimer("build");
 }
@@ -110,13 +80,15 @@ void StdMomentOperator<Real>::factorize(const Vector<Real> &p) {
         //   << "  > 0: if INFO = i, the leading minor of order i is not positive definite";
         //throw Exception::NotImplemented(ss.str());
       }
-      if (useSVD_) {
+      if (useSVD_ || alwaysUseSVD_) {
         Minv_.assign(M_);
         int lwork = -1;
-        std::vector<Real> work(1), rwork(5*nfactors);
-        lapack_->GESVD('A','A',nfactors,nfactors,Minv_.values(),nfactors,
-                       &sval_[0],U_.values(),nfactors,V_.values(),nfactors,
-                       &work[0],lwork,&rwork[0],&info);
+        std::vector<Real> work(1); //, rwork(5*nfactors);
+        //lapack_->GESVD('A','A',nfactors,nfactors,Minv_.values(),nfactors,
+        //               &sval_[0],U_.values(),nfactors,V_.values(),nfactors,
+        //               &work[0],lwork,&rwork[0],&info);
+        lapack_->SYEV('V','U',nfactors,Minv_.values(),nfactors,
+                       &sval_[0],&work[0],lwork,&info);
         if (info != 0) {
           std::stringstream ss;
           ss << ">>> OED::StdMomentOperator::factorize : "
@@ -129,9 +101,11 @@ void StdMomentOperator<Real>::factorize(const Vector<Real> &p) {
         }
         lwork = work[0];
         work.resize(lwork); work.assign(lwork,static_cast<Real>(0));
-        lapack_->GESVD('A','A',nfactors,nfactors,Minv_.values(),nfactors,
-                       &sval_[0],U_.values(),nfactors,V_.values(),nfactors,
-                       &work[0],lwork,&rwork[0],&info);
+        //lapack_->GESVD('A','A',nfactors,nfactors,Minv_.values(),nfactors,
+        //               &sval_[0],U_.values(),nfactors,V_.values(),nfactors,
+        //               &work[0],lwork,&rwork[0],&info);
+        lapack_->SYEV('V','U',nfactors,Minv_.values(),nfactors,
+                       &sval_[0],&work[0],lwork,&info);
         if (info != 0) {
           std::stringstream ss;
           ss << ">>> OED::StdMomentOperator::factorize : "
@@ -173,15 +147,22 @@ const std::vector<Real>& StdMomentOperator<Real>::getConstData(const Vector<Real
 
 template<typename Real>
 StdMomentOperator<Real>::StdMomentOperator(RegressionType regType,
-                  bool homNoise,
-                  const Ptr<Noise<Real>> &noise)
-  : MomentOperator<Real>(regType,homNoise,noise),
+                  const Ptr<Noise<Real>> &noise,
+                  bool alwaysUseSVD, Real SVDtol)
+  : MomentOperator<Real>(regType,noise),
     lapack_(makePtr<LAPACK<int,Real>>()),
-    blas_(makePtr<Teuchos::BLAS<int,Real>>()),
+    blas_(makePtr<BLAS<int,Real>>()),
     isBuilt_(false), isFactorized_(false), isSet_(false),
-    isFullSet_(false), useSVD_(false), isPset_(false) {
+    isFullSet_(false), useSVD_(false), isPset_(false),
+    alwaysUseSVD_(alwaysUseSVD), SVDtol_(SVDtol) {
   ProfiledClass<Real,std::string>::rename("OED::StdMomentOperator");
 }
+
+template<typename Real>
+StdMomentOperator<Real>::StdMomentOperator(std::string regType,
+                  const Ptr<Noise<Real>> &noise,
+                  bool alwaysUseSVD, Real SVDtol)
+  : StdMomentOperator<Real>(StringToRegressionType(regType),noise,alwaysUseSVD,SVDtol) {}
 
 template<typename Real>
 Ptr<MomentOperator<Real>> StdMomentOperator<Real>::clone() const {
@@ -189,7 +170,9 @@ Ptr<MomentOperator<Real>> StdMomentOperator<Real>::clone() const {
   bool hom;
   Ptr<Noise<Real>> noise;
   MomentOperator<Real>::getRegressionInfo(type,hom,noise);
-  return makePtr<StdMomentOperator<Real>>(type,hom,noise);
+  auto M = makePtr<StdMomentOperator<Real>>(type,noise,alwaysUseSVD_,SVDtol_);
+  if (isPset_) M->setPerturbation(MomentOperator<Real>::getPerturbation());
+  return M;
 }
 
 template<typename Real>
@@ -217,7 +200,7 @@ void StdMomentOperator<Real>::applyInverse(Vector<Real> &Mx,
     const int nfactors = M_.numRows();
     int info;
 
-    if (!useSVD_) {
+    if (!useSVD_ && !alwaysUseSVD_) {
       // Solve triangular systems
       lapack_->POTRS('U',nfactors,1,Minv_.values(),nfactors,
                      &Mxdata[0],nfactors,&info);
@@ -245,13 +228,15 @@ void StdMomentOperator<Real>::applyInverse(Vector<Real> &Mx,
     else {
       const Real zero(0), one(1);
       std::vector<Real> Ux(nfactors);
-      blas_->GEMV(Teuchos::TRANS,nfactors,nfactors,one,U_.values(),nfactors,
+      //blas_->GEMV('T',nfactors,nfactors,one,U_.values(),nfactors,
+      //            &xdata[0],1,zero,&Ux[0],1);
+      blas_->GEMV(Teuchos::TRANS,nfactors,nfactors,one,Minv_.values(),nfactors,
                   &xdata[0],1,zero,&Ux[0],1);
       Real maxSV(-1);
       for (int i = 0; i < nfactors; ++i) {
         maxSV = (maxSV < sval_[i] ? sval_[i] : maxSV);
       }
-      const Real tol = ROL_EPSILON<Real>()*static_cast<Real>(nfactors) * maxSV;
+      const Real tol = SVDtol_ * maxSV; // * static_cast<Real>(nfactors);
       for (int i = 0; i < nfactors; ++i) {
         if (sval_[i] > tol) {
           Ux[i] /= sval_[i];
@@ -260,7 +245,9 @@ void StdMomentOperator<Real>::applyInverse(Vector<Real> &Mx,
           Ux[i] = zero;
         }
       }
-      blas_->GEMV(Teuchos::TRANS,nfactors,nfactors,one,V_.values(),nfactors,
+      //blas_->GEMV('T',nfactors,nfactors,one,V_.values(),nfactors,
+      //            &Ux[0],1,zero,&Mxdata[0],1);
+      blas_->GEMV(Teuchos::NO_TRANS,nfactors,nfactors,one,Minv_.values(),nfactors,
                   &Ux[0],1,zero,&Mxdata[0],1);
     }
   }
@@ -313,8 +300,8 @@ void StdMomentOperator<Real>::applyDeriv(Vector<Real> &Mc,
     for (int k = 0; k < nobs_; ++k) {
       blas_->GEMV(Teuchos::NO_TRANS,M,N,one,Xdata_[k].values(),M,
                   &cdata[0],1,zero,&Xctmp[0],1);
-      for (int i = 0; i < M; ++i) Xctmp[i] *= get(p,i)*getNoise(i);
-      blas_->GEMV(Teuchos::TRANS,M,N,one,Xdata_[k].values(),M,
+      for (int i = 0; i < M; ++i) Xctmp[i] *= get(p,i);
+      blas_->GEMV(Teuchos::TRANS,M,N,one,Sdata_[k].values(),M,
                   &Xctmp[0],1,zero,&mMctmp[0],1);
       for (int i = 0; i < N; ++i) mMcdata[i] += mMctmp[i];
     }
@@ -344,11 +331,10 @@ void StdMomentOperator<Real>::applySampleMatrices(Vector<Real> &uXv, const Vecto
     for (int k = 0; k < nobs_; ++k) {
       blas_->GEMV(Teuchos::NO_TRANS,M,N,one,Xdata_[k].values(),M,
                   &udata[0],1,zero,&Xutmp[0],1);
-      blas_->GEMV(Teuchos::NO_TRANS,M,N,one,Xdata_[k].values(),M,
+      blas_->GEMV(Teuchos::NO_TRANS,M,N,one,Sdata_[k].values(),M,
                   &vdata[0],1,zero,&Xvtmp[0],1);
       for (int i = 0; i < M; ++i) Xudata[i] += Xutmp[i]*Xvtmp[i];
     }
-    for (int i = 0; i < M; ++i) Xudata[i] *= getNoise(i);
   }
   else {
     std::stringstream ss;
@@ -363,47 +349,48 @@ template<typename Real>
 void StdMomentOperator<Real>::setFactors(const Ptr<Factors<Real>> &factors) {
   startTimer("setFactors");
   MomentOperator<Real>::setFactors(factors);
-  int nrows = factors->numMySamples(), ncols = factors->numFactors();
+  const int nrows = factors->numMySamples();
+  const int ncols = factors->numFactors();
+  nobs_ = factors->numObservations();
   initialize(ncols);
-  Ptr<Vector<Real>> obs = factors->createObservationVector(true);
-  nobs_ = obs->dimension();
+  Ptr<Vector<Real>> ek;
+  auto obs  = factors->createObservationVector(false);
+  auto dobs = factors->createObservationVector(true);
+  auto par1 = factors->createParameterVector(true);
+  auto par2 = factors->createParameterVector(true);
   Xdata_.resize(nobs_);
-  Xpred_.shape(nrows,ncols);
-  if (nobs_ == 1) {
-    Xdata_[0].shape(nrows,ncols);
+  Sdata_.resize(nobs_);
+  for (int k = 0; k < nobs_; ++k) {
+    Xdata_[k].shape(nrows,ncols);
+    Sdata_[k].shape(nrows,ncols);
     for (int i = 0; i < nrows; ++i) {
-      const std::vector<Real> &xdata = getConstData(*factors->get(i));
-      for (int j = 0; j < ncols; ++j) Xdata_[0](i,j) = xdata[j];
-    }
-    Xpred_ = Xdata_[0];
-  }
-  else {
-    Ptr<Vector<Real>> c = obs->clone();
-    factors->getPredictionVector(*c);
-    const std::vector<Real> &cdata = getConstData(*c);
-    for (int k = 0; k < nobs_; ++k) {
-      Xdata_[k].shape(nrows,ncols);
-      factors->setPredictionVector(*obs->basis(k));
-      for (int i = 0; i < nrows; ++i) {
-        const std::vector<Real> &xdata = getConstData(*factors->get(i));
-        for (int j = 0; j < ncols; ++j) Xdata_[k](i,j) = xdata[j];
+      par1->zero(); par2->zero(); dobs->zero();
+      // Compute i-th factor
+      ek = dobs->basis(k);
+      factors->applyAdjoint(*par1,*ek,i);
+      auto xdata = getConstData(par1->dual());
+      // Compute adjoint of i-th factor scaled by noise
+      ek = obs->basis(k);
+      applyNoise(*dobs,*ek,i);
+      factors->applyAdjoint(*par2,*dobs,i);
+      auto sdata = getConstData(*par2);
+      // Fill member data
+      for (int j = 0; j < ncols; ++j) {
+        Xdata_[k](i,j) = xdata[j];
+	Sdata_[k](i,j) = sdata[j];
       }
-      blas_->AXPY(ncols*nrows,cdata[k],Xdata_[k].values(),1,Xpred_.values(),1);
-      //Xpred_ += cdata[k]*Xdata_[k];
     }
-    factors->setPredictionVector(*c);
   }
   if (isPset_) {
     P_.shape(ncols,ncols);
-    Ptr<Vector<Real>> ei  = factors->createParameterVector();
-    Ptr<Vector<Real>> Pei = factors->createParameterVector();
+    auto Pei = factors->createParameterVector();
     for (int i = 0; i < ncols; ++i) {
       Pei->zero();
-      ei->set(*Pei->basis(i));
+      auto ei = Pei->basis(i);
       applyPerturbation(*Pei,*ei);
       const std::vector<Real> &Pei_data = getConstData(*Pei);
       // Build upper triangle of perturbation
-      for (int j = 0; j <= i; ++j) P_(j,i) = Pei_data[j];
+      for (int j = 0; j < ncols; ++j) P_(j,i) = Pei_data[j];
     }
   }
   isSet_ = true;
@@ -424,8 +411,19 @@ Real StdMomentOperator<Real>::logDeterminant(const Vector<Real> &z) {
     build(z);
     factorize(z);
     const int nfactors = M_.numRows();
-    for (int j = 0; j < nfactors; ++j) {
-      val += std::log(!useSVD_ ? Minv_(j,j) : sval_[j]);
+    if (useSVD_) {
+      Real maxSV(-1);
+      for (int i = 0; i < nfactors; ++i)
+        maxSV = (maxSV < sval_[i] ? sval_[i] : maxSV);
+      const Real tol = SVDtol_ * maxSV; // * static_cast<Real>(nfactors);
+      for (int j = 0; j < nfactors; ++j) {
+        if (sval_[j] >= tol) val += std::log(sval_[j]);
+      }
+    }
+    else {
+      for (int j = 0; j < nfactors; ++j) {
+        val += std::log(Minv_(j,j));
+      }
     }
   }
   else {

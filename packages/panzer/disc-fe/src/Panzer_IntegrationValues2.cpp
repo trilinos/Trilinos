@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Panzer_IntegrationValues2.hpp"
@@ -117,7 +85,7 @@ correctVirtualNormals(PHX::MDField<Scalar,Cell,IP,Dim> normals,
 
     // Find the face and local face ids for the given virtual cell
     // Note that virtual cells only connect to the owned cells through a single face
-    int face, virtual_lidx;
+    int face = -1, virtual_lidx = -1;
     for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++){
       // Faces that exist have positive indexes
       face = face_connectivity.subcellForCell(virtual_cell, local_face_id);
@@ -185,7 +153,7 @@ correctVirtualRotationMatrices(PHX::MDField<Scalar,Cell,IP,Dim,Dim> rotation_mat
 
     // Find the face and local face ids for the given virtual cell
     // Note that virtual cells only connect to the owned cells through a single face
-    int face, virtual_lidx;
+    int face = -1, virtual_lidx = -1;
     for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++){
       // Faces that exist have positive indexes
       face = face_connectivity.subcellForCell(virtual_cell, local_face_id);
@@ -994,7 +962,7 @@ getJacobian(const bool cache,
     auto const_ref_coord = getCubaturePointsRef(false,force);
     auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(const_ref_coord);
     auto node_coord = PHX::getNonConstDynRankViewFromConstMDField(getNodeCoordinates());
-    
+
     const auto cell_range = std::make_pair(0,num_evaluate_cells_);
     auto s_ref_coord  = Kokkos::subview(ref_coord,     cell_range,Kokkos::ALL(),Kokkos::ALL());
     auto s_node_coord = Kokkos::subview(node_coord,    cell_range,Kokkos::ALL(),Kokkos::ALL());
@@ -1008,7 +976,7 @@ getJacobian(const bool cache,
     auto const_ref_coord = getUniformCubaturePointsRef(false,force,false);
     auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(const_ref_coord);
     auto node_coord = PHX::getNonConstDynRankViewFromConstMDField(getNodeCoordinates());
-    
+
     const auto cell_range = std::make_pair(0,num_evaluate_cells_);
     auto s_node_coord = Kokkos::subview(node_coord,    cell_range,Kokkos::ALL(),Kokkos::ALL());
     auto s_jac        = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1671,7 +1639,7 @@ getCubaturePoints(const bool cache,
 
     Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
     cell_tools.mapToPhysicalFrame(s_coord, s_ref_coord, s_node_coord, *(int_rule->topology));
-  
+
   } else {
 
     // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
@@ -1753,7 +1721,7 @@ getCubaturePointsRef(const bool cache,
     const int order = int_rule->getOrder();
 
     // Scratch space for storing the points for each side of the cell
-    auto side_cub_points = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_points_on_face,cell_dim);
+    auto side_cub_points2 = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_points_on_face,cell_dim);
 
     Intrepid2::DefaultCubatureFactory cubature_factory;
 
@@ -1765,9 +1733,9 @@ getCubaturePointsRef(const bool cache,
       // Get the cubature for the side
       if(cell_dim==1){
         // In 1D the surface point is either on the left side of the cell, or the right side
-        auto side_cub_points_host = Kokkos::create_mirror_view(side_cub_points.get_view());
+        auto side_cub_points_host = Kokkos::create_mirror_view(side_cub_points2.get_view());
         side_cub_points_host(0,0) = (side==0)? -1. : 1.;
-        Kokkos::deep_copy(side_cub_points.get_view(),side_cub_points_host);
+        Kokkos::deep_copy(side_cub_points2.get_view(),side_cub_points_host);
       } else {
 
         // Get the face topology from the cell topology
@@ -1782,7 +1750,7 @@ getCubaturePointsRef(const bool cache,
         ic->getCubature(tmp_side_cub_points, tmp_side_cub_weights);
 
         // Convert from reference face points to reference cell points
-        cell_tools.mapToReferenceSubcell(side_cub_points.get_view(), tmp_side_cub_points, subcell_dim, side, cell_topology);
+        cell_tools.mapToReferenceSubcell(side_cub_points2.get_view(), tmp_side_cub_points, subcell_dim, side, cell_topology);
       }
 
       PHX::Device::execution_space().fence();
@@ -1790,7 +1758,7 @@ getCubaturePointsRef(const bool cache,
       // Copy from the side allocation to the surface allocation
       Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_points_on_face, num_space_dim});
       Kokkos::parallel_for("copy values",policy,KOKKOS_LAMBDA (const int cell,const int point, const int dim) {
-        aux(cell,point_offset + point,dim) = side_cub_points(point,dim);
+        aux(cell,point_offset + point,dim) = side_cub_points2(point,dim);
       });
       PHX::Device::execution_space().fence();
     }
@@ -1802,11 +1770,11 @@ getCubaturePointsRef(const bool cache,
                                 "ERROR: 0-D quadrature rule infrastructure does not exist!!! Will not be able to do "
                                  << "non-natural integration rules.");
 
-    auto cub_points = getUniformCubaturePointsRef(false,force,false);
+    auto cub_points2 = getUniformCubaturePointsRef(false,force,false);
 
     Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_ip,num_space_dim});
     Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int & cell, const int & ip, const int & dim){
-      aux(cell,ip,dim) = cub_points(ip,dim);
+      aux(cell,ip,dim) = cub_points2(ip,dim);
     });
   }
 

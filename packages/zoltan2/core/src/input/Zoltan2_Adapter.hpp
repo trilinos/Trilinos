@@ -1,46 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file Zoltan2_BaseAdapter.hpp
@@ -50,7 +14,6 @@
 #ifndef _ZOLTAN2_ADAPTER_HPP_
 #define _ZOLTAN2_ADAPTER_HPP_
 
-#include "Kokkos_StaticCrsGraph.hpp"
 #include <Kokkos_Core.hpp>
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
@@ -79,7 +42,7 @@ enum BaseAdapterType {
     Adapters provide access from Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
-    Tpetra and Epetra objects and C-language pointers to arrays.
+    Tpetra objects and C-language pointers to arrays.
 
  */
 
@@ -116,34 +79,34 @@ public:
   using device_t = typename node_t::device_type;
 
   using ConstIdsDeviceView = Kokkos::View<const gno_t *, device_t>;
-  using ConstIdsHostView = typename ConstIdsDeviceView::HostMirror;
+  using ConstIdsHostView = typename ConstIdsDeviceView::host_mirror_type;
 
   using IdsDeviceView = Kokkos::View<gno_t *, device_t>;
-  using IdsHostView = typename IdsDeviceView::HostMirror;
+  using IdsHostView = typename IdsDeviceView::host_mirror_type;
 
   using ConstOffsetsDeviceView = Kokkos::View<const offset_t *, device_t>;
-  using ConstOffsetsHostView = typename ConstOffsetsDeviceView::HostMirror;
+  using ConstOffsetsHostView = typename ConstOffsetsDeviceView::host_mirror_type;
 
   using OffsetsDeviceView = Kokkos::View<offset_t *, device_t>;
-  using OffsetsHostView = typename OffsetsDeviceView::HostMirror;
+  using OffsetsHostView = typename OffsetsDeviceView::host_mirror_type;
 
   using ConstScalarsDeviceView = Kokkos::View<const scalar_t *, device_t>;
-  using ConstScalarsHostView = typename ConstScalarsDeviceView::HostMirror;
+  using ConstScalarsHostView = typename ConstScalarsDeviceView::host_mirror_type;
 
   using ScalarsDeviceView = Kokkos::View<scalar_t *, device_t>;
-  using ScalarsHostView = typename ScalarsDeviceView::HostMirror;
+  using ScalarsHostView = typename ScalarsDeviceView::host_mirror_type;
 
   using ConstWeightsDeviceView1D = Kokkos::View<const scalar_t *, device_t>;
-  using ConstWeightsHostView1D = typename ConstWeightsDeviceView1D::HostMirror;
+  using ConstWeightsHostView1D = typename ConstWeightsDeviceView1D::host_mirror_type;
 
   using WeightsDeviceView1D = Kokkos::View<scalar_t *, device_t>;
-  using WeightsHostView1D = typename WeightsDeviceView1D::HostMirror;
+  using WeightsHostView1D = typename WeightsDeviceView1D::host_mirror_type;
 
   using ConstWeightsDeviceView = Kokkos::View<const scalar_t **, device_t>;
-  using ConstWeightsHostView = typename ConstWeightsDeviceView::HostMirror;
+  using ConstWeightsHostView = typename ConstWeightsDeviceView::host_mirror_type;
 
   using WeightsDeviceView = Kokkos::View<scalar_t **, device_t>;
-  using WeightsHostView = typename WeightsDeviceView::HostMirror;
+  using WeightsHostView = typename WeightsDeviceView::host_mirror_type;
 
   /*! \brief Returns the type of adapter.
    */
@@ -346,7 +309,7 @@ public:
 
   // Coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
   using CoordsDeviceView = Kokkos::View<scalar_t **, Kokkos::LayoutLeft, device_t>;
-  using CoordsHostView = typename CoordsDeviceView::HostMirror;
+  using CoordsHostView = typename CoordsDeviceView::host_mirror_type;
 
 public:
   virtual void getCoordinatesView(const scalar_t *&coords, int &stride,

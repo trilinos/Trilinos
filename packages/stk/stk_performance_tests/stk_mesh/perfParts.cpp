@@ -1,17 +1,18 @@
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_util/diag/StringUtil.hpp>
+#include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/PerformanceTester.hpp>
 
 namespace
 {
 
-class GetPartsByNamePerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class GetPartsByNamePerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
   GetPartsByNamePerformance(stk::mesh::BulkData &bulk)
-    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    : stk::unit_test_util::PerformanceTester(bulk.parallel()),
       bulkData(bulk)
   {
   }
@@ -19,7 +20,12 @@ public:
 protected:
   virtual void run_algorithm_to_time()
   {
-    const unsigned numParts = 1e6;
+    unsigned numParts = 1e6;
+    std::string perfCheck = stk::unit_test_util::get_option("-perf_check", "PERF_CHECK");
+    if (perfCheck == "NO_PERF_CHECK") {
+      numParts = 1000;
+    }
+
     for(unsigned i=0; i<numParts; i++)
     {
       const std::string name = "part_" + sierra::to_string(i);
@@ -36,7 +42,7 @@ protected:
   stk::mesh::BulkData &bulkData;
 };
 
-class GetPartsByName : public stk::unit_test_util::simple_fields::MeshFixture
+class GetPartsByName : public stk::unit_test_util::MeshFixture
 {
 protected:
   void run_get_parts_perf_test()

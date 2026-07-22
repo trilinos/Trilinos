@@ -26,7 +26,7 @@
           
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
           
-\cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual), "sd" (steepest descent).}
+\cbb{emin: iterative method}{string}{"cg"}{Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual).}
           
 \cbb{emin: num iterations}{int}{2}{Number of iterations to minimize initial prolongator energy in energy-minimization.}
           
@@ -37,4 +37,8 @@
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
           
 \cbb{emin: use filtered matrix}{bool}{true}{Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
+          
+\cbb{emin: constraint type}{string}{nullspace}{Type of constraint to enforce. Valid values are "nullspace" and "maxwell".}
+          
+\cbb{emin: least squares solver type}{string}{direct}{Type of solver to use for least squares problem. Valid values are "direct" and "Belos". "Belos" only works for nullspace constraints.}
           

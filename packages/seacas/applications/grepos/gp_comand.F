@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2023 National Technology & Engineering Solutions
+C Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -196,18 +196,18 @@ C...  Initialize Material, NodeSet, SideSet status
 C     --      0 = same
 C     --      - = delete
 C     --      n = combine with entity n
-        do 10 i=1, nelblk
+        do i=1, nelblk
           ielbst(i) = 0
- 10     continue
-        do 20 i=1, numnps
+        end do
+        do i=1, numnps
           inpsst(i) = 0
- 20     continue
-        do 30 i=1, numess
+        end do
+        do i=1, numess
           iessst(i) = 0
- 30     continue
-        do 40 i=1, nsteps
+        end do
+        do i=1, nsteps
           itimst(i) = 0
- 40     continue
+        end do
         first = .false.
       end if
 C...Initialize transformation variables
@@ -240,9 +240,9 @@ C...Initialize transformation variables
 
       ROT3D  = .FALSE.
       CALL INIREA (3*3, 0.0, ROTMAT)
-      DO 100 I = 1, 3
+      DO I = 1, 3
         ROTMAT(I,I) = 1.0
- 100  CONTINUE
+      END DO
 
       CALL MINMAX (NUMNP, XN, XMIN, XMAX)
       ROTCEN(1) = XMIN
@@ -270,7 +270,7 @@ C     --Read command line
       INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
       if (numfld .gt. maxfld) then
          write (string, 1) numfld, maxfld
- 1       format('There were ',i3, ' words entered on the command line,'
+ 1       format('There were ',i3, ' words entered on the command line,',
      $          ' but only ',i3,' are allowed.')
          CALL PRTERR ('WARNING', STRING(:LENSTR(STRING)))
          CALL PRTERR ('CMDSPEC',
@@ -437,7 +437,7 @@ C=======================================================================
         VERB = ' '
 C=======================================================================
       ELSE IF (VERB .EQ. 'EXPLODE') THEN
-        DO 170 IBLK = 1, NELBLK
+        DO IBLK = 1, NELBLK
           WRITE (CTEMP, 10010) 'Offset for Material ', idelb(iblk),' > '
 10010     FORMAT (1X, A, I10, A)
           CALL SQZSTR (CTEMP, LSTR)
@@ -456,7 +456,7 @@ C=======================================================================
      &        CTEMP, 0.0, ZEXPL(IBLK), *160)
           END IF
  160      CONTINUE
- 170    CONTINUE
+        END DO
         MODBLK = 1
         VERB = ' '
 
@@ -612,7 +612,7 @@ C ... Setup the scale and echo to the user
      *        IDBLK, DOALLB, ASCALE, ATRSCL, .TRUE., .TRUE.)
 
           ELSE IF (MATSTR(WORD, 'BLOCK', 1)) THEN
-            DO 220 IBLK = 1, NELBLK
+            DO IBLK = 1, NELBLK
               CALL INTSTR (1, 0, IDELB(IBLK), WORD, LW)
               WRITE (CTEMP, 10020)
      $          'Scale factor for Material ', WORD(:LW),'> '
@@ -631,7 +631,7 @@ C ... Setup the scale and echo to the user
      &            CTEMP, 0.0, ZEXPL(IBLK), *210)
               END IF
  210          CONTINUE
- 220        CONTINUE
+            END DO
             MODBLK = 2
             VERB = ' '
           ELSE
@@ -697,7 +697,7 @@ C=======================================================================
      *          'Z allowed for 3D database only')
             END IF
           ELSE IF (MATSTR(WORD, 'BLOCK', 1)) THEN
-            DO 260 IBLK = 1, NELBLK
+            DO IBLK = 1, NELBLK
               CALL INTSTR (1, 0, IDELB(IBLK), WORD, LW)
               WRITE (CTEMP, 10030)
      $          'Random factor for Material ', WORD(:LW),'> '
@@ -716,12 +716,12 @@ C=======================================================================
      &            CTEMP, 0.0, ZEXPL(IBLK), *250)
               END IF
  250          CONTINUE
- 260        CONTINUE
+            END DO
             MODBLK = 3
             VERB = ' '
           ELSE IF (MATSTR(WORD,'NODESETS',3) .OR.
      $        MATSTR(WORD,'NSETS',   3) ) THEN
-            DO 265 IBLK = 1, NUMNPS
+            DO IBLK = 1, NUMNPS
               CALL INTSTR (1, 0, IDNPS(IBLK), WORD, LW)
               WRITE (CTEMP, 10030)
      $          'Random factors (x y z) for Nodeset ', WORD(:LW),'> '
@@ -739,7 +739,7 @@ C=======================================================================
      &            CTEMP, 0.0, ZEXPL(IBLK), *255)
               END IF
  255          CONTINUE
- 265        CONTINUE
+            END DO
             MODBLK = 4
             VERB = ' '
           ELSE
@@ -797,9 +797,9 @@ C=======================================================================
           IF (MATSTR (WORD, 'RESET', 1)) THEN
             ROT3D = .FALSE.
             CALL INIREA (3*3, 0.0, ROTMAT)
-            DO 310 I = 1, 3
+            DO I = 1, 3
               ROTMAT(I,I) = 1.0
- 310        CONTINUE
+            END DO
           ELSE IF (NDIM .EQ. 3 .AND.
      *        ((WORD .EQ. 'X') .OR. (WORD .EQ. 'Y')
      &        .OR. (WORD .EQ. 'Z')) ) THEN
@@ -970,13 +970,15 @@ C=======================================================================
           IF (NUMESS .EQ. 0) THEN
             CALL PRTERR ('CMDSPEC', 'No side sets to list')
           ELSE
-            CALL SHOWFL ('S',NUMESS,IDESS,IA(KNESS),IA(KNDSS),SSNAME)
+            CALL SHOWFL ('S',NUMESS,IDESS,IA(KNESS),IA(KNDSS),SSNAME,
+     $            IESSST)
           END IF
         ELSE IF (LISTYP .EQ. 'NSETS' .OR. LISTYP .EQ. 'NODESETS') THEN
           IF (NUMNPS .EQ. 0) THEN
             CALL PRTERR ('CMDSPEC', 'No node sets to list')
           ELSE
-            CALL SHOWFL ('N', NUMNPS, IDNPS, IA(KNNNS), IA(1), NSNAME)
+            CALL SHOWFL ('N', NUMNPS, IDNPS, IA(KNNNS), IA(1), NSNAME,
+     $            INPSST)
           END IF
         ELSE IF (LISTYP .EQ.'VARS' .OR. LISTYP .EQ.'VARIABLE') THEN
           CALL DBPINI ('TISV', NDBIN, TITLE, NDIM, NUMNP, NUMEL,
@@ -984,7 +986,7 @@ C=======================================================================
      *      NVARGL, NVARNP, NVAREL, NVARNS, NVARSS, ' ')
         ELSE IF (LISTYP .EQ.'BLOCKS' .OR. LISTYP .EQ.'MATERIAL') THEN
           CALL DBPELB ('N', NELBLK, IDELB, NUMELB, NUMLNK, NUMATR,
-     &      BLKTYP, EBNAME, ATNAME, IDUM, IDUM, IDUM, IDUM)
+     &      BLKTYP, EBNAME, ATNAME, IDUM, IDUM, IDUM, IDUM, IELBST)
         ELSE IF (LISTYP .EQ. 'COMMANDS') THEN
           CALL SHOCMD ('COMMANDS', CMDTBL)
         ELSE IF (LISTYP .EQ. 'QA' .OR. LISTYP .EQ. 'INFORMAT') THEN
@@ -995,7 +997,7 @@ C=======================================================================
           if (nsteps .eq. 0) then
             CALL PRTERR ('CMDSPEC', 'No timesteps on database')
           else
-            do 324 itim = 1, nsteps
+            do itim = 1, nsteps
               if (itimst(itim) .eq. 0) then
                 STRA = '  Active'
               else
@@ -1003,7 +1005,7 @@ C=======================================================================
               end if
               write (*, 10060) itim, times(itim), stra
 10060         FORMAT( 'Step ', i6, ', Time = ', 1pe12.5,1x, A)
- 324        continue
+            end do
           end if
         ELSE IF (LISTYP .EQ. 'NAMES') THEN
           WRITE (*, 10070) 'Global:   ', (NAMEGV(I), I=1,NVARGL)
@@ -1664,7 +1666,7 @@ C         --Scan numeric range
 
 C         --Store the range selected
 
-            DO 332 I = IRNG(1), IRNG(2), IRNG(3)
+            DO I = IRNG(1), IRNG(2), IRNG(3)
               IF (MATSTR(WORD,'MATERIALS',1) .OR.
      &          MATSTR(WORD, 'BLOCKS',1)) THEN
                 CALL DELID ('M', IDELB, IELBST, NELBLK, I, .TRUE.)
@@ -1686,7 +1688,7 @@ C         --Store the range selected
                 CALL PRTERR ('CMDERR', '"' // WORD(:LENSTR(WORD))
      &            // '" is an invalid or nonunique DELETE option')
               END IF
- 332        CONTINUE
+            END DO
 
             GOTO 330
           END IF

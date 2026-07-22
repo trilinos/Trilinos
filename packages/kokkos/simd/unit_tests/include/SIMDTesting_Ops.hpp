@@ -1,69 +1,113 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_SIMD_TESTING_OPS_HPP
 #define KOKKOS_SIMD_TESTING_OPS_HPP
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.simd;
+#else
+#include <Kokkos_Core.hpp>
 #include <Kokkos_SIMD.hpp>
+#endif
+
+#include <cmath>
 
 class plus {
  public:
-  template <class T>
-  auto on_host(T const& a, T const& b) const {
+  template <class T, class U>
+  auto on_host(T const& a, U const& b) const {
     return a + b;
   }
-  template <class T>
-  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U const& b) const {
     return a + b;
+  }
+};
+
+class plus_eq {
+ public:
+  template <class T, class U>
+  auto on_host(T&& a, U&& b) const {
+    return a += b;
+  }
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T&& a, U&& b) const {
+    return a += b;
   }
 };
 
 class minus {
  public:
-  template <class T>
-  auto on_host(T const& a, T const& b) const {
+  template <class T, class U>
+  auto on_host(T const& a, U const& b) const {
     return a - b;
   }
-  template <class T>
-  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U const& b) const {
     return a - b;
+  }
+};
+
+class minus_eq {
+ public:
+  template <class T, class U>
+  auto on_host(T&& a, U&& b) const {
+    return a -= b;
+  }
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T&& a, U&& b) const {
+    return a -= b;
   }
 };
 
 class multiplies {
  public:
-  template <class T>
-  auto on_host(T const& a, T const& b) const {
+  template <class T, class U>
+  auto on_host(T const& a, U const& b) const {
     return a * b;
   }
-  template <class T>
-  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U const& b) const {
     return a * b;
+  }
+};
+
+class multiplies_eq {
+ public:
+  template <class T, class U>
+  auto on_host(T&& a, U&& b) const {
+    return a *= b;
+  }
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T&& a, U&& b) const {
+    return a *= b;
   }
 };
 
 class divides {
  public:
-  template <class T>
-  auto on_host(T const& a, T const& b) const {
+  template <class T, class U>
+  auto on_host(T const& a, U const& b) const {
     return a / b;
   }
-  template <class T>
-  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U const& b) const {
     return a / b;
+  }
+};
+
+class divides_eq {
+ public:
+  template <class T, class U>
+  auto on_host(T&& a, U&& b) const {
+    return a /= b;
+  }
+  template <class T, class U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T&& a, U&& b) const {
+    return a /= b;
   }
 };
 
@@ -81,7 +125,13 @@ class absolutes {
   auto on_host(T const& a) const {
     if constexpr (std::is_signed_v<typename T::value_type>) {
 #if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+#ifdef KOKKOS_ENABLE_DEPRECATION_WARNINGS
+      KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH()
+#endif
       return Kokkos::Experimental::abs(a);
+#ifdef KOKKOS_ENABLE_DEPRECATION_WARNINGS
+      KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
+#endif
 #else
       return Kokkos::abs(a);
 #endif
@@ -197,6 +247,18 @@ class shift_right {
   }
 };
 
+class shift_right_eq {
+ public:
+  template <typename T, typename U>
+  auto on_host(T&& a, U&& b) const {
+    return a >>= b;
+  }
+  template <typename T, typename U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T&& a, U&& b) const {
+    return a >>= b;
+  }
+};
+
 class shift_left {
  public:
   template <typename T, typename U>
@@ -209,164 +271,656 @@ class shift_left {
   }
 };
 
-class cbrt_op {
+class shift_left_eq {
  public:
-  template <typename T>
-  auto on_host(T const& a) const {
-#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
-    return Kokkos::Experimental::cbrt(a);
-#else
-    return Kokkos::cbrt(a);
-#endif
+  template <typename T, typename U>
+  auto on_host(T&& a, U&& b) const {
+    return a <<= b;
   }
-  template <typename T>
-  auto on_host_serial(T const& a) const {
-    return Kokkos::cbrt(a);
+  template <typename T, typename U>
+  KOKKOS_INLINE_FUNCTION auto on_device(T&& a, U&& b) const {
+    return a <<= b;
   }
 };
 
-class exp_op {
+class bitwise_not {
  public:
   template <typename T>
   auto on_host(T const& a) const {
-#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
-    return Kokkos::Experimental::exp(a);
-#else
-    return Kokkos::exp(a);
-#endif
+    return ~a;
   }
-  template <typename T>
-  auto on_host_serial(T const& a) const {
-    return Kokkos::exp(a);
-  }
-};
-
-class log_op {
- public:
-  template <typename T>
-  auto on_host(T const& a) const {
-#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
-    return Kokkos::Experimental::log(a);
-#else
-    return Kokkos::log(a);
-#endif
-  }
-  template <typename T>
-  auto on_host_serial(T const& a) const {
-    return Kokkos::log(a);
-  }
-};
-
-class hmin {
- public:
-  template <typename T>
-  auto on_host(T const& a) const {
-    return Kokkos::Experimental::hmin(a);
-  }
-  template <typename T>
-  auto on_host_serial(T const& a) const {
-    using DataType = typename T::value_type::value_type;
-
-    auto const& v = a.impl_get_value();
-    auto const& m = a.impl_get_mask();
-    auto result   = Kokkos::reduction_identity<DataType>::min();
-    for (std::size_t i = 0; i < v.size(); ++i) {
-      if (m[i]) result = Kokkos::min(result, v[i]);
-    }
-    return result;
-  }
-
   template <typename T>
   KOKKOS_INLINE_FUNCTION auto on_device(T const& a) const {
-    return Kokkos::Experimental::hmin(a);
-  }
-  template <typename T>
-  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a) const {
-    using DataType = typename T::value_type::value_type;
-
-    auto const& v = a.impl_get_value();
-    auto const& m = a.impl_get_mask();
-    auto result   = Kokkos::reduction_identity<DataType>::min();
-    for (std::size_t i = 0; i < v.size(); ++i) {
-      if (m[i]) result = Kokkos::min(result, v[i]);
-    }
-    return result;
+    return ~a;
   }
 };
 
-class hmax {
+class bitwise_and {
  public:
   template <typename T>
-  auto on_host(T const& a) const {
-    return Kokkos::Experimental::hmax(a);
+  auto on_host(T const& a, T const& b) const {
+    return a & b;
   }
   template <typename T>
-  auto on_host_serial(T const& a) const {
-    using DataType = typename T::value_type::value_type;
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a & b;
+  }
+};
 
-    auto const& v = a.impl_get_value();
-    auto const& m = a.impl_get_mask();
-    auto result   = Kokkos::reduction_identity<DataType>::max();
-    for (std::size_t i = 0; i < v.size(); ++i) {
-      if (m[i]) result = Kokkos::max(result, v[i]);
+class bitwise_and_eq {
+ public:
+  template <typename T>
+  auto on_host(T& a, T const& b) const {
+    return a &= b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T& a, T const& b) const {
+    return a &= b;
+  }
+};
+
+class bitwise_or {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a | b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a | b;
+  }
+};
+
+class bitwise_or_eq {
+ public:
+  template <typename T>
+  auto on_host(T& a, T const& b) const {
+    return a |= b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T& a, T const& b) const {
+    return a |= b;
+  }
+};
+
+class bitwise_xor {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a ^ b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a ^ b;
+  }
+};
+
+class bitwise_xor_eq {
+ public:
+  template <typename T>
+  auto on_host(T& a, T const& b) const {
+    return a ^= b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T& a, T const& b) const {
+    return a ^= b;
+  }
+};
+
+class minimum {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+    if constexpr (std::is_arithmetic_v<T>) {
+      return Kokkos::min(a, b);
+    } else {
+#ifdef KOKKOS_ENABLE_DEPRECATION_WARNINGS
+      KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH()
+#endif
+      return Kokkos::Experimental::min(a, b);
+#ifdef KOKKOS_ENABLE_DEPRECATION_WARNINGS
+      KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
+#endif
+    }
+#else
+    return Kokkos::min(a, b);
+#endif
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return Kokkos::min(a, b);
+  }
+
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION T operator()(T const& a, T const& b) const {
+    return Kokkos::min(a, b);
+  }
+};
+
+class maximum {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+    if constexpr (std::is_arithmetic_v<T>) {
+      return Kokkos::max(a, b);
+    } else {
+#ifdef KOKKOS_ENABLE_DEPRECATION_WARNINGS
+      KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH()
+#endif
+      return Kokkos::Experimental::max(a, b);
+#ifdef KOKKOS_ENABLE_DEPRECATION_WARNINGS
+      KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
+#endif
+    }
+#else
+    return Kokkos::max(a, b);
+#endif
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return Kokkos::max(a, b);
+  }
+
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION T operator()(T const& a, T const& b) const {
+    return Kokkos::max(a, b);
+  }
+};
+
+class reduce_min {
+ public:
+  template <typename T, typename U, typename MaskType>
+  auto on_host(T const& a, U, MaskType) const {
+    return Kokkos::Experimental::reduce_min(a);
+  }
+  template <typename T, typename U, typename MaskType>
+  auto on_host_serial(T const& a, U, MaskType) const {
+    auto result = Kokkos::reduction_identity<U>::min();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < a.size(); ++i) {
+      result = Kokkos::min(result, a[i]);
     }
     return result;
   }
 
-  template <typename T>
-  KOKKOS_INLINE_FUNCTION auto on_device(T const& a) const {
-    return Kokkos::Experimental::hmax(a);
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U, MaskType) const {
+    return Kokkos::Experimental::reduce_min(a);
   }
-  template <typename T>
-  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a) const {
-    using DataType = typename T::value_type::value_type;
-
-    auto const& v = a.impl_get_value();
-    auto const& m = a.impl_get_mask();
-    auto result   = Kokkos::reduction_identity<DataType>::max();
-    for (std::size_t i = 0; i < v.size(); ++i) {
-      if (m[i]) result = Kokkos::max(result, v[i]);
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a, U, MaskType) const {
+    auto result = Kokkos::reduction_identity<U>::min();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < a.size(); ++i) {
+      result = Kokkos::min(result, a[i]);
     }
     return result;
   }
 };
 
+class reduce_max {
+ public:
+  template <typename T, typename U, typename MaskType>
+  auto on_host(T const& a, U, MaskType) const {
+    return Kokkos::Experimental::reduce_max(a);
+  }
+  template <typename T, typename U, typename MaskType>
+  auto on_host_serial(T const& a, U, MaskType) const {
+    auto result = Kokkos::reduction_identity<U>::max();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < a.size(); ++i) {
+      result = Kokkos::max(result, a[i]);
+    }
+    return result;
+  }
+
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U, MaskType) const {
+    return Kokkos::Experimental::reduce_max(a);
+  }
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a, U, MaskType) const {
+    auto result = Kokkos::reduction_identity<U>::max();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < a.size(); ++i) {
+      result = Kokkos::max(result, a[i]);
+    }
+    return result;
+  }
+};
+
+template <typename BinaryOperation = std::plus<>>
 class reduce {
  public:
-  template <typename T>
-  auto on_host(T const& a) const {
-    using DataType = typename T::value_type::value_type;
-    return Kokkos::Experimental::reduce(a, DataType(0), std::plus<>());
+  template <typename T, typename U, typename MaskType>
+  auto on_host(T const& a, U, MaskType) const {
+    return Kokkos::Experimental::reduce(a, BinaryOperation());
   }
-  template <typename T>
-  auto on_host_serial(T const& a) const {
-    using DataType = typename T::value_type::value_type;
-
-    auto const& v = a.impl_get_value();
-    auto const& m = a.impl_get_mask();
-    auto result   = Kokkos::reduction_identity<DataType>::sum();
-    for (std::size_t i = 0; i < v.size(); ++i) {
-      if (m[i]) result += v[i];
+  template <typename T, typename U, typename MaskType>
+  auto on_host_serial(T const& a, U, MaskType) const {
+    U result = a[0];
+    for (Kokkos::Experimental::Impl::simd_size_t i = 1; i < a.size(); ++i) {
+      result = BinaryOperation()(result, a[i]);
     }
     return result;
   }
 
-  template <typename T>
-  KOKKOS_INLINE_FUNCTION auto on_device(T const& a) const {
-    using DataType = typename T::value_type::value_type;
-    return Kokkos::Experimental::reduce(a, DataType(0), std::plus<>());
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U, MaskType) const {
+    return Kokkos::Experimental::reduce(a, BinaryOperation());
   }
-  template <typename T>
-  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a) const {
-    using DataType = typename T::value_type::value_type;
-
-    auto const& v = a.impl_get_value();
-    auto const& m = a.impl_get_mask();
-    auto result   = Kokkos::reduction_identity<DataType>::sum();
-    for (std::size_t i = 0; i < v.size(); ++i) {
-      if (m[i]) result += v[i];
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a, U, MaskType) const {
+    U result = a[0];
+    for (Kokkos::Experimental::Impl::simd_size_t i = 1; i < a.size(); ++i) {
+      if constexpr (std::is_same_v<BinaryOperation, std::plus<>>) {
+        result = result + a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::multiplies<>>) {
+        result = result * a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::bit_and<>>) {
+        result = result & a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::bit_or<>>) {
+        result = result | a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::bit_xor<>>) {
+        result = result ^ a[i];
+      } else {
+        result = BinaryOperation()(result, a[i]);
+      }
     }
     return result;
+  }
+};
+
+class masked_reduce_min {
+ public:
+  template <typename T, typename U, typename MaskType>
+  auto on_host(T const& a, U, MaskType mask) const {
+    return Kokkos::Experimental::reduce_min(a, mask);
+  }
+  template <typename T, typename U, typename MaskType>
+  auto on_host_serial(T const& a, U, MaskType mask) const {
+    if (Kokkos::Experimental::none_of(mask))
+      return Kokkos::reduction_identity<U>::min();
+
+    auto result = Kokkos::reduction_identity<U>::min();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if (mask[i]) result = Kokkos::min(result, a[i]);
+    }
+    return result;
+  }
+
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U, MaskType mask) const {
+    return Kokkos::Experimental::reduce_min(a, mask);
+  }
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a, U,
+                                               MaskType mask) const {
+    if (Kokkos::Experimental::none_of(mask))
+      return Kokkos::reduction_identity<U>::min();
+
+    auto result = Kokkos::reduction_identity<U>::min();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if (mask[i]) result = Kokkos::min(result, a[i]);
+    }
+    return result;
+  }
+};
+
+class masked_reduce_max {
+ public:
+  template <typename T, typename U, typename MaskType>
+  auto on_host(T const& a, U, MaskType mask) const {
+    return Kokkos::Experimental::reduce_max(a, mask);
+  }
+  template <typename T, typename U, typename MaskType>
+  auto on_host_serial(T const& a, U, MaskType mask) const {
+    if (Kokkos::Experimental::none_of(mask))
+      return Kokkos::reduction_identity<U>::max();
+
+    auto result = Kokkos::reduction_identity<U>::max();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if (mask[i]) result = Kokkos::max(result, a[i]);
+    }
+    return result;
+  }
+
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U, MaskType mask) const {
+    return Kokkos::Experimental::reduce_max(a, mask);
+  }
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a, U,
+                                               MaskType mask) const {
+    if (Kokkos::Experimental::none_of(mask))
+      return Kokkos::reduction_identity<U>::max();
+
+    auto result = Kokkos::reduction_identity<U>::max();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if (mask[i]) result = Kokkos::max(result, a[i]);
+    }
+    return result;
+  }
+};
+
+template <typename BinaryOperation = std::plus<>>
+class masked_reduce {
+ public:
+  template <typename T, typename U, typename MaskType>
+  auto on_host(T const& a, U const& identity, MaskType mask) const {
+    return Kokkos::Experimental::reduce(a, mask, BinaryOperation(), identity);
+  }
+  template <typename T, typename U, typename MaskType>
+  auto on_host_serial(T const& a, U const& identity, MaskType mask) const {
+    if (Kokkos::Experimental::none_of(mask)) return identity;
+
+    U result = Kokkos::Experimental::Impl::Identity<U, BinaryOperation>();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if (mask[i]) result = BinaryOperation()(result, a[i]);
+    }
+    return result;
+  }
+
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U const& identity,
+                                        MaskType mask) const {
+    return Kokkos::Experimental::reduce(a, mask, BinaryOperation(), identity);
+  }
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a, U const& identity,
+                                               MaskType mask) const {
+    if (Kokkos::Experimental::none_of(mask)) return identity;
+
+    U result = Kokkos::Experimental::Impl::Identity<U, BinaryOperation>();
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if constexpr (std::is_same_v<BinaryOperation, std::plus<>>) {
+        if (mask[i]) result = result + a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::multiplies<>>) {
+        if (mask[i]) result = result * a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::bit_and<>>) {
+        if (mask[i]) result = result & a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::bit_or<>>) {
+        if (mask[i]) result = result | a[i];
+      } else if constexpr (std::is_same_v<BinaryOperation, std::bit_xor<>>) {
+        if (mask[i]) result = result ^ a[i];
+      } else {
+        if (mask[i]) result = BinaryOperation()(result, a[i]);
+      }
+    }
+    return result;
+  }
+};
+
+class masked_reduce_default_params {
+ public:
+  template <typename T, typename U, typename MaskType>
+  auto on_host(T const& a, U, MaskType mask) const {
+    return Kokkos::Experimental::reduce(a, mask);
+  }
+  template <typename T, typename U, typename MaskType>
+  auto on_host_serial(T const& a, U, MaskType mask) const {
+    U result = Kokkos::Experimental::Impl::Identity<U, std::plus<>>();
+
+    if (Kokkos::Experimental::none_of(mask)) return result;
+
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if (mask[i]) result = result + a[i];
+    }
+    return result;
+  }
+
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, U, MaskType mask) const {
+    return Kokkos::Experimental::reduce(a, mask);
+  }
+  template <typename T, typename U, typename MaskType>
+  KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a, U,
+                                               MaskType mask) const {
+    U result = Kokkos::Experimental::Impl::Identity<U, std::plus<>>();
+
+    if (Kokkos::Experimental::none_of(mask)) return result;
+
+    for (Kokkos::Experimental::Impl::simd_size_t i = 0; i < T::size(); ++i) {
+      if (mask[i]) result = result + a[i];
+    }
+    return result;
+  }
+};
+
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+#define KOKKOS_IMPL_SIMD_UNARY_TEST_OP(FUNC)                         \
+  class FUNC##_op {                                                  \
+   public:                                                           \
+    template <typename T>                                            \
+    auto on_host(T const& a) const {                                 \
+      return Kokkos::Experimental::FUNC(a);                          \
+    }                                                                \
+    template <typename T>                                            \
+    auto on_host_serial(T const& a) const {                          \
+      return Kokkos::FUNC(a);                                        \
+    }                                                                \
+    template <typename T>                                            \
+    KOKKOS_INLINE_FUNCTION auto on_device(T const& a) const {        \
+      return Kokkos::FUNC(a);                                        \
+    }                                                                \
+    template <typename T>                                            \
+    KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a) const { \
+      return Kokkos::FUNC(a);                                        \
+    }                                                                \
+  };
+
+#define KOKKOS_IMPL_SIMD_BINARY_TEST_OP(FUNC)                             \
+  class FUNC##_op {                                                       \
+   public:                                                                \
+    template <typename T>                                                 \
+    auto on_host(T const& a, T const& b) const {                          \
+      if constexpr (std::is_arithmetic_v<T>) {                            \
+        return Kokkos::FUNC(a, b);                                        \
+      } else {                                                            \
+        return Kokkos::Experimental::FUNC(a, b);                          \
+      }                                                                   \
+    }                                                                     \
+    template <typename T>                                                 \
+    KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const { \
+      return Kokkos::FUNC(a, b);                                          \
+    }                                                                     \
+  };
+
+#define KOKKOS_IMPL_SIMD_TERNARY_TEST_OP(FUNC)                    \
+  class FUNC##_op {                                               \
+   public:                                                        \
+    template <typename T>                                         \
+    auto on_host(T const& a, T const& b, T const& c) const {      \
+      if constexpr (std::is_arithmetic_v<T>) {                    \
+        return Kokkos::FUNC(a, b, c);                             \
+      } else {                                                    \
+        return Kokkos::Experimental::FUNC(a, b, c);               \
+      }                                                           \
+    }                                                             \
+    template <typename T>                                         \
+    KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b, \
+                                          T const& c) const {     \
+      return Kokkos::FUNC(a, b, c);                               \
+    }                                                             \
+  };
+#else
+#define KOKKOS_IMPL_SIMD_UNARY_TEST_OP(FUNC)                         \
+  class FUNC##_op {                                                  \
+   public:                                                           \
+    template <typename T>                                            \
+    auto on_host(T const& a) const {                                 \
+      return Kokkos::FUNC(a);                                        \
+    }                                                                \
+    template <typename T>                                            \
+    auto on_host_serial(T const& a) const {                          \
+      return Kokkos::FUNC(a);                                        \
+    }                                                                \
+    template <typename T>                                            \
+    KOKKOS_INLINE_FUNCTION auto on_device(T const& a) const {        \
+      return Kokkos::FUNC(a);                                        \
+    }                                                                \
+    template <typename T>                                            \
+    KOKKOS_INLINE_FUNCTION auto on_device_serial(T const& a) const { \
+      return Kokkos::FUNC(a);                                        \
+    }                                                                \
+  };
+
+#define KOKKOS_IMPL_SIMD_BINARY_TEST_OP(FUNC)                             \
+  class FUNC##_op {                                                       \
+   public:                                                                \
+    template <typename T>                                                 \
+    auto on_host(T const& a, T const& b) const {                          \
+      return Kokkos::FUNC(a, b);                                          \
+    }                                                                     \
+    template <typename T>                                                 \
+    KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const { \
+      return Kokkos::FUNC(a, b);                                          \
+    }                                                                     \
+  };
+
+#define KOKKOS_IMPL_SIMD_TERNARY_TEST_OP(FUNC)                    \
+  class FUNC##_op {                                               \
+   public:                                                        \
+    template <typename T>                                         \
+    auto on_host(T const& a, T const& b, T const& c) const {      \
+      return Kokkos::FUNC(a, b, c);                               \
+    }                                                             \
+    template <typename T>                                         \
+    KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b, \
+                                          T const& c) const {     \
+      return Kokkos::FUNC(a, b, c);                               \
+    }                                                             \
+  };
+#endif
+
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_PUSH()
+#endif
+
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(abs)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(exp)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(exp2)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(log)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(log10)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(log2)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(sqrt)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(cbrt)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(sin)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(cos)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(tan)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(asin)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(acos)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(atan)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(sinh)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(cosh)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(tanh)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(asinh)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(acosh)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(atanh)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(erf)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(erfc)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(tgamma)
+KOKKOS_IMPL_SIMD_UNARY_TEST_OP(lgamma)
+
+KOKKOS_IMPL_SIMD_BINARY_TEST_OP(pow)
+KOKKOS_IMPL_SIMD_BINARY_TEST_OP(hypot)
+KOKKOS_IMPL_SIMD_BINARY_TEST_OP(atan2)
+KOKKOS_IMPL_SIMD_BINARY_TEST_OP(copysign)
+
+KOKKOS_IMPL_SIMD_TERNARY_TEST_OP(fma)
+
+class ternary_hypot_op {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b, T const& c) const {
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+    if constexpr (std::is_arithmetic_v<T>) {
+      return Kokkos::hypot(a, b, c);
+    } else {
+      return Kokkos::Experimental::hypot(a, b, c);
+    }
+#else
+    return Kokkos::hypot(a, b, c);
+#endif
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b,
+                                        T const& c) const {
+    return Kokkos::hypot(a, b, c);
+  }
+};
+
+#if defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+KOKKOS_IMPL_DISABLE_DEPRECATED_WARNINGS_POP()
+#endif
+
+class equal {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a == b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a == b;
+  }
+};
+
+class not_equal {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a != b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a != b;
+  }
+};
+
+class less_than {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a < b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a < b;
+  }
+};
+
+class less_equal {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a <= b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a <= b;
+  }
+};
+
+class greater_than {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a > b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a > b;
+  }
+};
+
+class greater_equal {
+ public:
+  template <typename T>
+  auto on_host(T const& a, T const& b) const {
+    return a >= b;
+  }
+  template <typename T>
+  KOKKOS_INLINE_FUNCTION auto on_device(T const& a, T const& b) const {
+    return a >= b;
   }
 };
 

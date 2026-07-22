@@ -95,15 +95,15 @@ void field_compute_MAC(
   const stk::mesh::MetaData &metadata,
   stk::mesh::Field<double> * X,
   stk::mesh::Field<double> * Y,
-  Intrepid::FieldContainer<double> & mac_values)
+  Kokkos::View<double**, Kokkos::HostSpace> & mac_values)
 {
   const unsigned field_size = Y->max_size();
 
   const unsigned nDim = metadata.spatial_dimension();
   const unsigned nVecs = field_size / nDim;
 
-  Intrepid::FieldContainer<double> inner_product_x(nVecs);
-  Intrepid::FieldContainer<double> inner_product_y(nVecs);
+  Kokkos::View<double*, Kokkos::HostSpace> inner_product_x("inner_product_x",nVecs);
+  Kokkos::View<double*, Kokkos::HostSpace> inner_product_y("inner_product_x",nVecs);
 
   stk::mesh::Selector select_used = metadata.locally_owned_part();
 
@@ -147,9 +147,9 @@ void field_compute_MAC(
     }
   }
 
-  MPI_Allreduce(MPI_IN_PLACE, &*(mac_values.getData()), mac_values.size(), MPI_DOUBLE, MPI_SUM, bulkdata.parallel());
-  MPI_Allreduce(MPI_IN_PLACE, &*(inner_product_x.getData()), inner_product_x.size(), MPI_DOUBLE, MPI_SUM, bulkdata.parallel());
-  MPI_Allreduce(MPI_IN_PLACE, &*(inner_product_y.getData()), inner_product_y.size(), MPI_DOUBLE, MPI_SUM, bulkdata.parallel());
+  MPI_Allreduce(MPI_IN_PLACE, &*(mac_values.data()), mac_values.size(), MPI_DOUBLE, MPI_SUM, bulkdata.parallel());
+  MPI_Allreduce(MPI_IN_PLACE, &*(inner_product_x.data()), inner_product_x.size(), MPI_DOUBLE, MPI_SUM, bulkdata.parallel());
+  MPI_Allreduce(MPI_IN_PLACE, &*(inner_product_y.data()), inner_product_y.size(), MPI_DOUBLE, MPI_SUM, bulkdata.parallel());
 
   for (unsigned m=0; m<nVecs; m++) {
     for (unsigned n=0; n<nVecs; n++) {

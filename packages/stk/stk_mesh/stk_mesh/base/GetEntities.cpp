@@ -36,8 +36,9 @@
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkData.hpp"   // for EntityLess, BulkData
+#include "stk_mesh/base/BulkData.hpp"   // for  BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityLess.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 
@@ -151,26 +152,22 @@ void get_entities( const BulkData& bulk,
                    std::vector< Entity> & entities ,
                    bool sortByGlobalId )
 {
-  const BucketVector& buckets = bulk.get_buckets(rank, selector);
-
-  size_t count = 0;
-  for (const Bucket* bptr : buckets) {
-    count += bptr->size();
-  }
-
-  entities.clear();
-  entities.reserve(count);
-
-  for (const Bucket* bptr : buckets) {
-    entities.insert(entities.end(), bptr->begin(), bptr->end());
-  }
+  bulk.get_entities(rank, selector, entities);
 
   if (entities.size() > 0 && sortByGlobalId) {
-    std::sort(entities.begin(), entities.end(), EntityLess(bulk));
+    const bool useFastLess = rank != stk::topology::FACE_RANK;
+    if (useFastLess) {
+      auto fastEntityLess = [&bulk](const Entity lhs, const Entity rhs)->bool
+                            {return (bulk.entity_key(lhs) < bulk.entity_key(rhs));};
+      std::sort(entities.begin(), entities.end(), fastEntityLess);
+    }
+    else {
+      std::sort(entities.begin(), entities.end(), EntityLess(bulk));
+    }
   }
 }
 
-std::vector<Entity> get_entities(const BulkData& bulk,
+[[nodiscard]] std::vector<Entity> get_entities(const BulkData& bulk,
                                  const EntityRank rank,
                                  const Selector & selector,
                                  bool sortByGlobalId)

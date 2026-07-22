@@ -43,7 +43,6 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_BUILT_IN_SIERRA
     <include>$(stk_transfer-root-inc)
   : usage-requirements
     <include>$(stk_transfer-root-inc)
@@ -61,7 +60,7 @@ local installed-end-user-files =
 # Note that if the --install-developer-files option is passed to bjam these will also
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
-  stk_transfer
+  stk_transfer_lib
   stk_transfer_integration_tests
   stk_transfer_doc_tests
   stk_transfer_utest
@@ -122,7 +121,7 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : stk_transfer
+  : stk_transfer_lib
   : <location>$(install-root)/stk/stk_transfer/lib
   ;
 
@@ -138,14 +137,14 @@ local xml-files =
 
 # This is currently a header-only library, so it must not use the lib rule.
 # If sources are added to this library change this target to use the lib rule instead.
-#alias stk_transfer
+#alias stk_transfer_lib
 #  : # No sources defined for header-only libraries.
 #  : # No build requirements
 #  : # No default build
 #  : <include>$(stk_transfer-root-inc)
 #  ;
 
-lib stk_transfer
+lib stk_transfer_lib
   :
     [ ifdevbuild
       [ glob 
@@ -159,7 +158,7 @@ lib stk_transfer
     /sierra/stk_middle_mesh//stk_middle_mesh
   :
     [ ifuserbuild
-        <file>$(stk_transfer-root)/lib/libstk_transfer.a
+        <file>$(stk_transfer-root)/lib/libstk_transfer_lib.a
     ]
     [ ifdevbuild
         # Any parameters within this 'ifdevbuild' block apply to development
@@ -175,7 +174,7 @@ lib stk_transfer_test_lib
         $(stk_transfer-root)/../stk_unit_tests/stk_transfer/fixtures/*.cpp 
       ]
     ]
-    stk_transfer
+    stk_transfer_lib
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_unit_test_utils//stk_transfer_fixtures
   :
@@ -197,7 +196,7 @@ exe stk_transfer_integration_tests
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_mesh//stk_mesh_base
-    stk_transfer
+    stk_transfer_lib
   : <tag>@sierra-exec-tag
     <include>$(stk_transfer-root-inc)
   ;
@@ -208,9 +207,9 @@ exe stk_transfer_doc_tests
       $(stk_transfer-root)/../stk_doc_tests/stk_transfer/*.cpp 
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_transfer_util//stk_transfer_util_base
+    /sierra/stk_transfer_util//stk_transfer_util
     /sierra/stk_coupling//stk_coupling
-    stk_transfer
+    stk_transfer_lib
   : <tag>@sierra-exec-tag
     <include>$(stk_transfer-root-inc)
   ;
@@ -221,9 +220,10 @@ exe stk_transfer_utest
       $(stk_transfer-root)/../stk_unit_tests/stk_transfer/*.cpp 
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_transfer
+    stk_transfer_lib
     stk_transfer_test_lib
     /sierra/stk_unit_test_utils//stk_transfer_fixtures
+    /sierra/stk_coupling//stk_coupling
   : <tag>@sierra-exec-tag
     <include>$(stk_transfer-root-inc)
   ;

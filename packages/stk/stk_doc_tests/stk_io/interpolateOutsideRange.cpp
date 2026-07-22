@@ -67,7 +67,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
     //+ with times 1.0 and 2.0.
     //+ The value of the field at each node is equal to the 'time'
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
 
     const std::string generatedFileName = "generated:8x8x8|nodeset:xyz";
     stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
@@ -115,7 +114,6 @@ TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
     //+ The field values from 1.0 to 2.0 will be interpolated
     //+
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(ic_name, stk::io::READ_MESH);
     stkIo.create_input_mesh();
 
@@ -144,10 +142,11 @@ TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
       if (time >= 2.0)
         expected_value = 2.0;
 
+      auto temperatureData = temperature.data();
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
-        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-          const double *fieldData = stk::mesh::field_data(temperature, node);
-          EXPECT_DOUBLE_EQ(expected_value, *fieldData);
+        [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+          auto nodeTemperatureData = temperatureData.entity_values(node);
+          EXPECT_DOUBLE_EQ(expected_value, nodeTemperatureData());
       });
     }
     //-END

@@ -1,19 +1,16 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   gemv
-  SOURCES
-    gemv.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  SOURCES gemv.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  )
+)
 
 TRIBITS_ADD_EXECUTABLE(
   gemm
-  SOURCES
-    gemm.cpp
+  SOURCES gemm.cpp
   COMM serial mpi
-  )
+)
 
 TRIBITS_ADD_TEST(
   gemm

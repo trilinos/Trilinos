@@ -119,7 +119,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
     if (lib == Xpetra::UseTpetra) {
       typedef Tpetra::CrsMatrix<SC, LO, GO, NO> tCrsMatrix;
-      RCP<const tCrsMatrix> tA = Utilities::Op2TpetraCrs(A);
+      RCP<const tCrsMatrix> tA = toTpetra(A);
       TEUCHOS_TEST_FOR_EXCEPTION(tA.is_null(), MueLu::Exceptions::RuntimeError,
                                  "A is not a Tpetra CrsMatrix");
 
@@ -135,32 +135,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
         }
       }
       tm = Teuchos::null;
-    }
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      typedef Epetra_CrsMatrix eCrsMatrix;
-      RCP<const eCrsMatrix> eA = Utilities::Op2EpetraCrs(A);
-      TEUCHOS_TEST_FOR_EXCEPTION(eA.is_null(), MueLu::Exceptions::RuntimeError,
-                                 "A is not a Epetra CrsMatrix");
-
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra/Epetra")));
-
-      for (int i = 0; i < loops; i++) {
-        for (LocalOrdinal row = 0; row < numRows; row++) {
-          int numEntries;
-          double *eValues;
-          int *eIndices;
-
-          eA->ExtractMyRowView(row, numEntries, eValues, eIndices);
-
-          validation += numEntries;
-        }
-      }
-      tm = Teuchos::null;
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
-                                 "Epetra is not available");
-#endif
     }
     std::cout << "validation = " << validation << std::endl;
   }

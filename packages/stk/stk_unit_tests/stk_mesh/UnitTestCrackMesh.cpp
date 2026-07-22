@@ -63,7 +63,7 @@ TEST ( UnitTestCrackMesh , VerifyDestroy2D )
 
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-      stk::mesh::fixtures::simple_fields::QuadFixture fixture( pm , nx , ny );
+      stk::mesh::fixtures::QuadFixture fixture( pm , nx , ny );
       fixture.m_meta.commit();
       fixture.generate_mesh();
 
@@ -94,7 +94,7 @@ TEST ( UnitTestCrackMesh , VerifyDestroy3D )
   for ( unsigned iz = 0 ; iz < nz ; ++iz ) {
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-        stk::mesh::fixtures::simple_fields::HexFixture fixture( pm , nx , ny , nz );
+        stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
         fixture.m_meta.commit();
         fixture.generate_mesh();
 
@@ -121,7 +121,7 @@ TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   // if all (incl ghosted) copies get updated.
 
   // Make the hex fixture
-  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
   fixture.m_meta.commit();
   fixture.generate_mesh();
 

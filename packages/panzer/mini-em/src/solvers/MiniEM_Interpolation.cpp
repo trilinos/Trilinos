@@ -1,3 +1,14 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "MiniEM_Interpolation.hpp"
 #include "Panzer_Interpolation.hpp"
 
@@ -77,8 +88,10 @@ request(const Teko::RequestMesg & rm) {
       build();
     }
     return interp_;
-  } else
+  } else {
     TEUCHOS_ASSERT(false);
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  }
 }
 
 void

@@ -4,32 +4,7 @@
     <Parameter name="complex" type="bool" value="false"/>
     <ParameterList name="SuperLU_MT">
       
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="equilibration">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="Equil" type="bool" value="true"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="NATURAL ordering">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="ColPerm" type="string" value="NATURAL"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="MMD_ATA ordering">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="ColPerm" type="string" value="MMD_ATA"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="MMD_AT_PLUS_A ordering">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="ColPerm" type="string" value="MMD_AT_PLUS_A"/>
-	  </ParameterList>
-	</ParameterList>
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run0 - equilibrate">
 	  <Parameter name="Scalar" type="string" value="float"/>

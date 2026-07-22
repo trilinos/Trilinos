@@ -26,6 +26,9 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~TpetraOperator() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;

@@ -297,7 +297,8 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   if( same_symbolic_ ) data_.options.Fact = SLU::SamePattern_SameRowPerm;
 
   int info = 0;
-  if ( this->root_ ){
+  int info2 = 0; // for Equil
+  if ( this->root_ ) {
 
 #ifdef HAVE_AMESOS2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( data_.A.ncol != as<int>(this->globalNumCols_),
@@ -309,109 +310,123 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 #endif
 
     if( data_.options.Equil == SLU::YES ){
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::RCP< Teuchos::Time > Amesos2SLU_EQL = Teuchos::TimeMonitor::getNewCounter ("Time to scale matrix");
+    Teuchos::TimeMonitor equilTimer(*Amesos2SLU_EQL);
+#endif
+
       magnitude_type rowcnd, colcnd, amax;
-      int info2 = 0;
 
       // calculate row and column scalings
       function_map::gsequ(&(data_.A), data_.R.data(),
                           data_.C.data(), &rowcnd, &colcnd,
                           &amax, &info2);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (info2 < 0, std::runtime_error,
-         "SuperLU's gsequ function returned with status " << info2 << " < 0."
-         "  This means that argument " << (-info2) << " given to the function"
-         " had an illegal value.");
-      if (info2 > 0) {
-        if (info2 <= data_.A.nrow) {
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (true, std::runtime_error, "SuperLU's gsequ function returned with "
-             "info = " << info2 << " > 0, and info <= A.nrow = " << data_.A.nrow
-             << ".  This means that row " << info2 << " of A is exactly zero.");
-        }
-        else if (info2 > data_.A.ncol) {
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (true, std::runtime_error, "SuperLU's gsequ function returned with "
-             "info = " << info2 << " > 0, and info > A.ncol = " << data_.A.ncol
-             << ".  This means that column " << (info2 - data_.A.nrow) << " of "
-             "A is exactly zero.");
-        }
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (true, std::runtime_error, "SuperLU's gsequ function returned "
-             "with info = " << info2 << " > 0, but its value is not in the "
-             "range permitted by the documentation.  This should never happen "
-             "(it appears to be SuperLU's fault).");
-        }
+
+      if (info2 == 0) {
+        // apply row and column scalings if necessary
+        function_map::laqgs(&(data_.A), data_.R.data(),
+                            data_.C.data(), rowcnd, colcnd,
+                            amax, &(data_.equed));
+
+        // check what types of equilibration was actually done
+        data_.rowequ = (data_.equed == 'R') || (data_.equed == 'B');
+        data_.colequ = (data_.equed == 'C') || (data_.equed == 'B');
       }
-
-      // apply row and column scalings if necessary
-      function_map::laqgs(&(data_.A), data_.R.data(),
-                          data_.C.data(), rowcnd, colcnd,
-                          amax, &(data_.equed));
-
-      // check what types of equilibration was actually done
-      data_.rowequ = (data_.equed == 'R') || (data_.equed == 'B');
-      data_.colequ = (data_.equed == 'C') || (data_.equed == 'B');
     }
 
-    // Apply the column permutation computed in preOrdering.  Place the
-    // column-permuted matrix in AC
-    SLU::sp_preorder(&(data_.options), &(data_.A), data_.perm_c.data(),
-                     data_.etree.data(), &(data_.AC));
+    if (info2 == 0) {
+      // Apply the column permutation computed in preOrdering.  Place the
+      // column-permuted matrix in AC
+      SLU::sp_preorder(&(data_.options), &(data_.A), data_.perm_c.data(),
+                       data_.etree.data(), &(data_.AC));
 
-    { // Do factorization
+      { // Do factorization
 #ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+        Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
-      std::cout << "Superlu:: Before numeric factorization" << std::endl;
-      std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
-      std::cout << "rowind_ : " << rowind_.toString() << std::endl;
-      std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+        std::cout << "Superlu:: Before numeric factorization" << std::endl;
+        std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
+        std::cout << "rowind_ : " << rowind_.toString() << std::endl;
+        std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
 
-      if(ILU_Flag_==false) {
-        function_map::gstrf(&(data_.options), &(data_.AC),
-            data_.relax, data_.panel_size, data_.etree.data(),
-            NULL, 0, data_.perm_c.data(), data_.perm_r.data(),
-            &(data_.L), &(data_.U), 
+        if(ILU_Flag_==false) {
+          function_map::gstrf(&(data_.options), &(data_.AC),
+              data_.relax, data_.panel_size, data_.etree.data(),
+              NULL, 0, data_.perm_c.data(), data_.perm_r.data(),
+              &(data_.L), &(data_.U), 
 #ifdef HAVE_AMESOS2_SUPERLU5_API
-            &(data_.lu), 
+              &(data_.lu), 
 #endif
-            &(data_.stat), &info);
-      }
-      else {
-        function_map::gsitrf(&(data_.options), &(data_.AC),
-            data_.relax, data_.panel_size, data_.etree.data(),
-            NULL, 0, data_.perm_c.data(), data_.perm_r.data(),
-            &(data_.L), &(data_.U), 
+              &(data_.stat), &info);
+        }
+        else {
+          function_map::gsitrf(&(data_.options), &(data_.AC),
+              data_.relax, data_.panel_size, data_.etree.data(),
+              NULL, 0, data_.perm_c.data(), data_.perm_r.data(),
+              &(data_.L), &(data_.U), 
 #ifdef HAVE_AMESOS2_SUPERLU5_API
-            &(data_.lu), 
+              &(data_.lu), 
 #endif
-            &(data_.stat), &info);
-      }
-
-      if (data_.options.ConditionNumber == SLU::YES) {
-        char norm[1];
-        if (data_.options.Trans == SLU::NOTRANS) {
-            *(unsigned char *)norm = '1';
-        } else {
-            *(unsigned char *)norm = 'I';
+              &(data_.stat), &info);
         }
 
-        data_.anorm = function_map::langs(norm, &(data_.A));
-        function_map::gscon(norm, &(data_.L), &(data_.U),
-                            data_.anorm, &(data_.rcond),
-                            &(data_.stat), &info);
+        if (data_.options.ConditionNumber == SLU::YES) {
+          char norm[1];
+          if (data_.options.Trans == SLU::NOTRANS) {
+            *(unsigned char *)norm = '1';
+          } else {
+            *(unsigned char *)norm = 'I';
+          }
+
+          data_.anorm = function_map::langs(norm, &(data_.A));
+          function_map::gscon(norm, &(data_.L), &(data_.U),
+                              data_.anorm, &(data_.rcond),
+                              &(data_.stat), &info);
+        }
+      }
+      // Cleanup. AC data will be alloc'd again for next factorization (if at all)
+      SLU::Destroy_CompCol_Permuted( &(data_.AC) );
+
+      // Set the number of non-zero values in the L and U factors
+      this->setNnzLU( as<size_t>(((SLU::SCformat*)data_.L.Store)->nnz +
+                                 ((SLU::NCformat*)data_.U.Store)->nnz) );
+    } // end of if (info2 == 0)
+  } // end of if (this->root)
+
+  if( data_.options.Equil == SLU::YES ) { // error check for Equil
+    /* All processes should have the same error code */
+    Teuchos::broadcast(*(this->getComm()), 0, &info2);
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (info2 < 0, std::runtime_error,
+       "SuperLU's gsequ function returned with status " << info2 << " < 0."
+       "  This means that argument " << (-info2) << " given to the function"
+       " had an illegal value.");
+    if (info2 > 0) {
+      if (info2 <= data_.A.nrow) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, "SuperLU's gsequ function returned with "
+           "info = " << info2 << " > 0, and info <= A.nrow = " << data_.A.nrow
+           << ".  This means that row " << info2 << " of A is exactly zero.");
+      }
+      else if (info2 > data_.A.ncol) {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, "SuperLU's gsequ function returned with "
+           "info = " << info2 << " > 0, and info > A.ncol = " << data_.A.ncol
+           << ".  This means that column " << (info2 - data_.A.nrow) << " of "
+           "A is exactly zero.");
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::runtime_error, "SuperLU's gsequ function returned "
+           "with info = " << info2 << " > 0, but its value is not in the "
+           "range permitted by the documentation.  This should never happen "
+           "(it appears to be SuperLU's fault).");
       }
     }
-    // Cleanup. AC data will be alloc'd again for next factorization (if at all)
-    SLU::Destroy_CompCol_Permuted( &(data_.AC) );
-
-    // Set the number of non-zero values in the L and U factors
-    this->setNnzLU( as<size_t>(((SLU::SCformat*)data_.L.Store)->nnz +
-                               ((SLU::NCformat*)data_.U.Store)->nnz) );
   }
 
   /* All processes should have the same error code */
@@ -464,11 +479,6 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::RCP< Teuchos::Time > Amesos2SolveTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Amesos2");
-    Teuchos::TimeMonitor solveTimer(*Amesos2SolveTimer_);
-#endif
-
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
@@ -477,7 +487,6 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
 
     // In general we may want to write directly to the x space without a copy.
@@ -991,6 +1000,23 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
+Superlu<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                      const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " SuperLU current parameters:" << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > Trans        = " << data_.options.Trans << std::endl;
+  out << "  > IterRefine   = " << data_.options.IterRefine << std::endl;
+  out << "  > ColPerm      = " << data_.options.ColPerm << std::endl;
+  out << "  > Equil        = " << data_.options.Equil << std::endl;
+  out << "  > SymmetricMode   = " << data_.options.SymmetricMode << std::endl;
+  out << "  > ConditionNumber = " << data_.options.ConditionNumber << std::endl;
+  out << "  > DiagPivotThresh = " << data_.options.DiagPivotThresh << std::endl;
+  out << std::endl;
+}
+
+template <class Matrix, class Vector>
+void
 Superlu<Matrix,Vector>::triangular_solve_factor()
 {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
@@ -1021,11 +1047,11 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
     using STM = Teuchos::ScalarTraits<magnitude_type>;
     const magnitude_type eps = STM::eps ();
 
-    SCformat *Lstore = (SCformat*)(data_.L.Store);
-    int nsuper = 1 + Lstore->nsuper;
-    int *nb = Lstore->sup_to_col;
+    SCformat *Lstore2 = (SCformat*)(data_.L.Store);
+    int nsuperL = 1 + Lstore2->nsuper;
+    int *nb = Lstore2->sup_to_col;
     int max_cols = 0;
-    for (int i = 0; i < nsuper; i++) {
+    for (int i = 0; i < nsuperL; i++) {
       if (nb[i+1] - nb[i] > max_cols) {
         max_cols = nb[i+1] - nb[i];
       }

@@ -235,8 +235,16 @@ void SolutionHistory<Scalar>::initWorkingState()
         "Can not initialize working state without a current state!\n");
 
     // If workingState_ has a valid pointer, we are still working on it,
-    // i.e., step failed and trying again, so do not initialize it.
-    if (getWorkingState(false) != Teuchos::null) return;
+    // i.e., step failed and trying again.  There are a couple options:
+    //   1. Reuse the workingState as it might be a good guess.  This
+    //      could help with performance.  This was the initial implementation.
+    //   2. Reset the workingState to the last time step.  This could
+    //      be more robust in the case of the workingState failing with nans.
+    //      This is the current implementation.
+    if (getWorkingState(false) != Teuchos::null) {
+      Thyra::V_V(getWorkingState()->getX().ptr(), *(getCurrentState()->getX()));
+      return;
+    }
 
     Teuchos::RCP<SolutionState<Scalar> > newState;
     if (getNumStates() < storageLimit_) {

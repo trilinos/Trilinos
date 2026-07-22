@@ -45,6 +45,7 @@
 #include <vector>                       // for vector
 #include <unordered_map>
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
+#include "stk_mesh/base/EntityCommListInfo.hpp"
 #include "stk_mesh/base/Ghosting.hpp"
 #include "stk_mesh/base/HashEntityAndEntityKey.hpp"
 #include "stk_util/util/MCSR.hpp"
@@ -80,6 +81,8 @@ public:
   std::pair<int,bool> insert( const EntityKey & key, const EntityCommInfo & val, int owner );
   bool erase( const EntityKey & key, const EntityCommInfo & val );
   bool erase( const EntityKey & key, const Ghosting & ghost );
+  bool erase( const EntityKey & key, unsigned ghostID );
+  bool erase(unsigned entityCommIndex, const EntityKey& key, unsigned ghostID);
   bool comm_clear_ghosting(const EntityKey & key );
   bool comm_clear(const EntityKey & key );
 
@@ -90,6 +93,11 @@ public:
 
   size_t num_comm_keys() const { return m_comm_map.size(); }
   size_t bucket_count() const { return m_comm_map.bucket_count(); }
+
+  const EntityCommListInfoVector& comm_list() const { return m_entity_comm_list; }
+        EntityCommListInfoVector& comm_list()       { return m_entity_comm_list; }
+
+  PairIterEntityCommListInfo comm_list_for_rank(EntityRank rank) const;
 
 private:
   bool cached_find(const EntityKey& key) const;
@@ -102,6 +110,7 @@ private:
   mutable CommMapChangeListener* m_comm_map_change_listener;
   stk::util::MCSR<EntityCommInfo> m_entityCommInfo;
   std::vector<int> m_removedEntityCommIndices;
+  EntityCommListInfoVector m_entity_comm_list;
 };
 
 //----------------------------------------------------------------------
@@ -137,29 +146,6 @@ PairIterEntityComm ghost_info_range(PairIterEntityComm commInfo, unsigned ghosti
 
   return PairIterEntityComm( ghostBegin , end );
 }
-
-void pack_entity_info(const BulkData& mesh,
-                      CommBuffer& buf,
-                      const Entity entity,
-                      bool onlyPackDownwardRelations = false);
-
-void unpack_entity_info(
-  CommBuffer     & buf,
-  const BulkData & mesh ,
-  EntityKey      & key ,
-  int            & owner ,
-  PartVector     & parts ,
-  std::vector<Relation> & relations );
-
-void pack_sideset_info(BulkData& mesh, CommBuffer & buf, const Entity entity);
-
-void unpack_sideset_info(CommBuffer & buf, BulkData & mesh, const Entity entity);
-
-/** \brief  Pack an entity's field values into a buffer */
-void pack_field_values(const BulkData& mesh, CommBuffer & , Entity );
-
-/** \brief  Unpack an entity's field values from a buffer */
-bool unpack_field_values(const BulkData& mesh, CommBuffer & , Entity , std::ostream & error_msg );
 
 } // namespace mesh
 } // namespace stk

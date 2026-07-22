@@ -194,13 +194,12 @@ TEST(StkIo, EmptyLocalBlock_beam2)
                                 1,0,0,  1,1,0, 1,2,0,
                                 0,3,0};
 
-  stk::unit_test_util::simple_fields::setup_text_mesh(*bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coords));
+  stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
 
   stk::io::write_mesh("shellq4_beam.g", *bulk, stk::io::WRITE_RESTART);
   stk::parallel_machine_barrier(MPI_COMM_WORLD);
 
   stk::io::StkMeshIoBroker ioBroker(MPI_COMM_SELF);
-  ioBroker.use_simple_fields();
   ioBroker.set_mesh_builder(std::make_shared<stk::mesh::MeshBuilder>());
   std::string pllFileName = "shellq4_beam.g.2." + std::to_string(stk::parallel_machine_rank(MPI_COMM_WORLD));
 

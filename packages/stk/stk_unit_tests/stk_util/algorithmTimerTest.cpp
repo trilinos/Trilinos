@@ -7,9 +7,9 @@
 
 TEST(RunTimer, runs)
 {
-    const size_t numWork = stk::unit_test_util::simple_fields::get_command_line_option<size_t>("-work", 10000);
-    const double tolerance = stk::unit_test_util::simple_fields::get_command_line_option<double>("-tol", 1e-6);
-    const size_t minRuns = stk::unit_test_util::simple_fields::get_command_line_option<double>("-min", 10000);
+    const size_t numWork = stk::unit_test_util::get_command_line_option<size_t>("-work", 10000);
+    const double tolerance = stk::unit_test_util::get_command_line_option<double>("-tol", 1e-6);
+    const size_t minRuns = stk::unit_test_util::get_command_line_option<double>("-min", 10000);
     ASSERT_TRUE(tolerance > 0);
 
     stk::ParallelMachine comm = MPI_COMM_WORLD;

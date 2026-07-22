@@ -31,22 +31,22 @@ class Percept_API_KLSolver : public RFGen::API_KLSolver
 
   ~Percept_API_KLSolver() {}
 
-  unsigned getSpatialDim() const;
+  unsigned getSpatialDim() const override;
 
   void computeLocalIntgDataSizes(
     int &localNumElem,
-    int &localMaxIntgPts);
+    int &localMaxIntgPts) override;
 
   void computeLocalIntgData(
     shards::Array<double,shards::NaturalOrder,RFGen::Cell,RFGen::Point,RFGen::Dim> &localIntgPtCoords,
-    shards::Array<double,shards::NaturalOrder,RFGen::Cell,RFGen::Point> &localVolumeWeights);
+    shards::Array<double,shards::NaturalOrder,RFGen::Cell,RFGen::Point> &localVolumeWeights) override;
 
-  MPI_Comm getParallelComm() const;
+  MPI_Comm getParallelComm() const override;
 
   void setKLSolution(
     const int &numTerms,
     const shards::Array<double,shards::NaturalOrder,RFGen::Eigen> &eigenValues,
-    const shards::Array<double,shards::NaturalOrder,RFGen::Eigen,RFGen::Cell> &eigenVectors);
+    const shards::Array<double,shards::NaturalOrder,RFGen::Eigen,RFGen::Cell> &eigenVectors) override;
 
  private:
   const stk::mesh::BulkData & m_mesh;

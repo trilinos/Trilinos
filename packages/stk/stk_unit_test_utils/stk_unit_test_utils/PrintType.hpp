@@ -31,6 +31,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <stk_util/stk_config.h>
 #include <iostream>
 #ifdef __GNUG__
 #include <cstdlib>
@@ -57,15 +58,5 @@ void print_type(T& t)
   std::cout << typeid(t).name() << std::endl;
 #endif
 }
-
-namespace simple_fields {
-
-template <typename T>
-void print_type(T& t)
-{
-  stk::unit_test_util::print_type(t);
-}
-
-} // namespace simple_fields
 
 } }

@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 // This test is in response to bug documented in:
 // https://software.sandia.gov/bugzilla/show_bug.cgi?id=5978
@@ -89,91 +55,92 @@
 // @mhoemme: any kind of assert?  Does that make sense?  I'd like to remove all the
 // @mhoemme: warnings.
 
-namespace { // anonymous
+namespace {  // anonymous
 
 using std::endl;
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::Comm;
 using Teuchos::Array;
 using Teuchos::ArrayRCP;
+using Teuchos::Comm;
 using Teuchos::OrdinalTraits;
-using Tpetra::Map;
+using Teuchos::RCP;
+using Teuchos::rcp;
 using Tpetra::CrsMatrix;
+using Tpetra::Map;
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug5978, SC, LO, GO, NT)
-{
-  typedef Map<LO,GO,NT> MapType;
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug5978, SC, LO, GO, NT) {
+  typedef Map<LO, GO, NT> MapType;
   typedef CrsMatrix<SC, LO, GO, NT> MatrixType;
 
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  const int numProc = comm->getSize ();
-  const int myRank = comm->getRank ();
+  const int numProc          = comm->getSize();
+  const int myRank           = comm->getRank();
 
   if (numProc != 2) {
     out << "This test must be run with exactly 2 MPI processes, but you ran "
         << "it with " << numProc << " process" << (numProc != 1 ? "es" : "")
         << "." << endl;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::runtime_error, "This test must be run with exactly "
-      "2 MPI processes, but you ran it with " << numProc << " process"
-      << (numProc != 1 ? "es" : "") << ".");
+        true, std::runtime_error,
+        "This test must be run with exactly "
+        "2 MPI processes, but you ran it with "
+            << numProc << " process"
+            << (numProc != 1 ? "es" : "") << ".");
   }
   out << "Proc " << myRank << ": Running test" << endl;
-  comm->barrier ();
+  comm->barrier();
 
   Array<GO> rowGIDs, colGIDs;
   if (myRank == 0) {
-    rowGIDs.push_back (0);
-    rowGIDs.push_back (1);
-    colGIDs.push_back (0);
-    colGIDs.push_back (1);
+    rowGIDs.push_back(0);
+    rowGIDs.push_back(1);
+    colGIDs.push_back(0);
+    colGIDs.push_back(1);
   }
 
   out << "Proc " << myRank << ": Creating row and column Maps" << endl;
-  comm->barrier ();
+  comm->barrier();
 
-  const GO INVALID = OrdinalTraits<GO>::invalid ();
+  const GO INVALID = OrdinalTraits<GO>::invalid();
   RCP<const MapType> rowMap =
-    rcp (new MapType (INVALID, rowGIDs (), 0, comm));
+      rcp(new MapType(INVALID, rowGIDs(), 0, comm));
   RCP<const MapType> colMap =
-    rcp (new MapType (INVALID, colGIDs (), 0, comm));
+      rcp(new MapType(INVALID, colGIDs(), 0, comm));
 
   out << "Proc " << myRank << ": Creating matrix" << endl;
-  comm->barrier ();
+  comm->barrier();
 
-  ArrayRCP<size_t> count (rowGIDs.size ());
+  ArrayRCP<size_t> count(rowGIDs.size());
 
   // mfh 16 Jan 2014: The explicit cast will hopefully prevent gcc
   // 4.3.3 from confusing the non-template method assign(size_type,
   // const T&) from the template method assign(Iter, Iter).
-  count.assign (rowGIDs.size (), static_cast<size_t> (1));
-  MatrixType A (rowMap, colMap, count ());
+  count.assign(rowGIDs.size(), static_cast<size_t>(1));
+  MatrixType A(rowMap, colMap, count());
 
   out << "Proc " << myRank << ": Filling matrix" << endl;
-  comm->barrier ();
+  comm->barrier();
 
-  Array<LO> column (1);
-  Array<SC> entry (1, 7);
-  for (int i = 0; i < int (rowGIDs.size ()); ++i) {
+  Array<LO> column(1);
+  Array<SC> entry(1, 7);
+  for (int i = 0; i < int(rowGIDs.size()); ++i) {
     column[0] = i;
-    A.insertLocalValues (i, column (), entry ());
+    A.insertLocalValues(i, column(), entry());
   }
 
   out << "Proc " << myRank << ": Calling fillComplete" << endl;
-  comm->barrier ();
+  comm->barrier();
 
-  A.fillComplete (colMap, rowMap);
+  A.fillComplete(colMap, rowMap);
 
-  comm->barrier ();
+  comm->barrier();
   out << "Proc " << myRank << ": Done with test" << endl;
 }
 
-#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT ) \
+#define UNIT_TEST_GROUP_SC_LO_GO_NO(SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, Bug5978, SC, LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_SC_LO_GO_NO)
 
-} // namespace (anonymous)
+}  // namespace

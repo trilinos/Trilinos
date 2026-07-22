@@ -1,43 +1,13 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
-/*! \file 
+/*! \file
 
    How we communicate (Send, ISend).
    How / whether a Distributor is initialized.
@@ -70,9 +40,13 @@ namespace Details {
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on these values in your code.
 enum EDistributorSendType {
-  DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
-  DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
-  DISTRIBUTOR_ALLTOALL // Use MPI_Alltoall
+  DISTRIBUTOR_ISEND,    // Use MPI_Isend (Teuchos::isend)
+  DISTRIBUTOR_SEND,     // Use MPI_Send (Teuchos::send)
+  DISTRIBUTOR_ALLTOALL  // Use MPI_Alltoall
+#if defined(HAVE_TPETRA_MPI)
+  ,
+  DISTRIBUTOR_IALLTOFEWV
+#endif
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   ,
   DISTRIBUTOR_MPIADVANCE_ALLTOALL,
@@ -85,19 +59,35 @@ enum EDistributorSendType {
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on this function in your code.
 std::string
-DistributorSendTypeEnumToString (EDistributorSendType sendType);
+DistributorSendTypeEnumToString(EDistributorSendType sendType);
+
+/// \brief Convert a string to an EDistributorSendType. Throw on error.
+EDistributorSendType
+DistributorSendTypeStringToEnum(const std::string_view s);
+
+/// \brief Valid string values for Distributor's "Send type" parameter.
+Teuchos::Array<std::string> distributorSendTypes();
+
+/// \brief Valid enum values of distributor send types.
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums();
+
+/// \brief Valid string values of distributor send types.
+Teuchos::Array<std::string> distributorSendTypes();
+
+/// \brief Return the provided argument. Throw if it's not a valid send type.
+const std::string& validSendTypeOrThrow(const std::string& s);
 
 /// \brief Enum indicating how and whether a Distributor was initialized.
 ///
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on these values in your code.
 enum EDistributorHowInitialized {
-  DISTRIBUTOR_NOT_INITIALIZED, // Not initialized yet
-  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS, // By createFromSends
-  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS, // By createFromRecvs
-  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS, // By createFromSendsAndRecvs
-  DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
-  DISTRIBUTOR_INITIALIZED_BY_COPY, // By copy constructor
+  DISTRIBUTOR_NOT_INITIALIZED,                           // Not initialized yet
+  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS,          // By createFromSends
+  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS,          // By createFromRecvs
+  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS,  // By createFromSendsAndRecvs
+  DISTRIBUTOR_INITIALIZED_BY_REVERSE,                    // By createReverseDistributor
+  DISTRIBUTOR_INITIALIZED_BY_COPY,                       // By copy constructor
 };
 
 /// \brief Convert an EDistributorHowInitialized enum value to a string.
@@ -105,7 +95,7 @@ enum EDistributorHowInitialized {
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on this function in your code.
 std::string
-DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
+DistributorHowInitializedEnumToString(EDistributorHowInitialized how);
 
 /// Instances of DistributorPlan take the following parameters that
 /// control communication and debug output:
@@ -120,7 +110,10 @@ DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 class DistributorPlan : public Teuchos::ParameterListAcceptorDefaultBase {
   static constexpr int DEFAULT_MPI_TAG = 0;
 
-public:
+ public:
+  using IndexView     = std::vector<size_t>;
+  using SubViewLimits = std::pair<IndexView, IndexView>;
+
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);
 
@@ -151,11 +144,24 @@ public:
   Teuchos::ArrayView<const size_t> getIndicesTo() const { return indicesTo_; }
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
 
-private:
+  SubViewLimits getImportViewLimits(size_t numPackets) const;
+  SubViewLimits getImportViewLimits(const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) const;
+  SubViewLimits getExportViewLimits(size_t numPackets) const;
+  SubViewLimits getExportViewLimits(const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID) const;
 
+#if defined(HAVE_TPETRA_MPI)
+  const std::vector<int> getRoots() const {
+    return roots_;
+  }
+#endif
+ private:
   // after the plan has been created we have the info we need to initialize the MPI advance communicator
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   void initializeMpiAdvance();
+#endif
+
+#if defined(HAVE_TPETRA_MPI)
+  void maybeInitializeRoots();
 #endif
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -167,7 +173,7 @@ private:
   /// This method computes numReceives_, lengthsFrom_, procsFrom_,
   /// totalReceiveLength_, indicesFrom_, and startsFrom_.
   ///
-  /// \note This method currently ignores the sendType_ 
+  /// \note This method currently ignores the sendType_
   ///   parameter, and always uses ireceive() /
   ///   send() for communication of the process IDs from which our
   ///   process is receiving and their corresponding receive packet
@@ -276,9 +282,18 @@ private:
   /// reverse Distributor, this is assigned to the reverse
   /// Distributor's indicesTo_.
   Teuchos::Array<size_t> indicesFrom_;
+
+#if defined(HAVE_TPETRA_MPI)
+  /// \brief The roots for the Ialltofewv communication mode.
+  ///
+  /// This is the same on all ranks, and this contains any rank that
+  /// is importing data.
+  std::vector<int> roots_;
+
+#endif
 };
 
-}
-}
+}  // namespace Details
+}  // namespace Tpetra
 
 #endif

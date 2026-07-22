@@ -70,12 +70,12 @@ int ex_put_map(int exoid, const void_int *elem_map)
   /* inquire id's of previously defined dimensions  */
 
   /* determine number of elements. Return if zero... */
-  if (nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_ELEM, &numelemdim) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* put netcdf file into define mode  */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -89,7 +89,7 @@ int ex_put_map(int exoid, const void_int *elem_map)
     map_int_type = NC_INT64;
   }
 
-  if ((status = nc_def_var(exoid, VAR_MAP, map_int_type, 1, dims, &mapid)) != NC_NOERR) {
+  if ((status = nc_def_var(exoid, VAR_MAP, map_int_type, 1, dims, &mapid)) != EX_NOERR) {
     if (status == NC_ENAMEINUSE) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: element map already exists in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -104,7 +104,7 @@ int ex_put_map(int exoid, const void_int *elem_map)
   exi_compress_variable(exoid, mapid, 1);
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -118,7 +118,7 @@ int ex_put_map(int exoid, const void_int *elem_map)
     status = nc_put_var_int(exoid, mapid, elem_map);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store element map in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

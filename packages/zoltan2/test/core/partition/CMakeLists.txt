@@ -713,22 +713,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 ##########################################
-
-IF (NOT Tpetra_ENABLE_CUDA)
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-IF (Tpetra_INST_INT_INT)
-
-# Exercises the Epetra path for the XpetraMultiVector
-# interfacing with the Multijagged algorithm.
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    mj_epetra
-    SOURCES mj_epetra.cpp
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-)
-
-ENDIF()
-ENDIF()
-ENDIF()
-

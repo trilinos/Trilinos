@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "stk_balance/balance.hpp"
 #include "stk_balance/internal/DetectAndFixMechanisms.hpp"
 #include "stk_balance/internal/Zoltan2ParallelGraph.hpp"
@@ -14,7 +15,20 @@
 namespace
 {
 
-class MechanismMesh2x2 : public stk::unit_test_util::simple_fields::MeshFixture
+void clean_up_output(std::string & filename)
+{
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    unsigned numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    unlink(filename.c_str());
+    for (unsigned i = 0; i < numProcs; i++) {
+      std::string suffix = "." + std::to_string(numProcs) + "." + std::to_string(i);
+      std::string output_filename = filename + suffix;
+      unlink(output_filename.c_str());
+    }
+  }  
+}
+
+class MechanismMesh2x2 : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_mechanistic_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -50,13 +64,18 @@ TEST_F(MechanismMesh2x2, detection_with_aura)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
     setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::io::write_mesh("before_junk.g", get_bulk());
+    std::string beforeFilename = "before_junk.g";
+    stk::io::write_mesh(beforeFilename, get_bulk());
     stk::balance::GraphCreationSettings graphSettings;
     if(graphSettings.shouldFixMechanisms())
     {
       EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
     }
-    stk::io::write_mesh("after_junk.g", get_bulk());
+    std::string afterFilename = "after_junk.g";
+    stk::io::write_mesh(afterFilename, get_bulk());
+
+    clean_up_output(beforeFilename);
+    clean_up_output(afterFilename);
   }
 }
 
@@ -65,12 +84,15 @@ TEST_F(MechanismMesh2x2, detection_without_aura)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
     setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::io::write_mesh("junk.g", get_bulk());
+    std::string filename = "junk.g";
+    stk::io::write_mesh(filename, get_bulk());
     stk::balance::GraphCreationSettings graphSettings;
     if(graphSettings.shouldFixMechanisms())
     {
       EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
     }
+
+    clean_up_output(filename);
   }
 }
 
@@ -110,12 +132,15 @@ TEST_F(MechanismMesh2x2, move_components)
 
     EXPECT_TRUE(get_bulk().is_valid(element) && get_bulk().bucket(element).owned());
 
-    stk::io::write_mesh("junk.g", get_bulk());
+    std::string filename = "junk.g";
+    stk::io::write_mesh(filename, get_bulk());
+
+    clean_up_output(filename);
   }
 }
 
 
-class LotsOfComponentsMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class LotsOfComponentsMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_mechanistic_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -148,13 +173,18 @@ TEST_F(LotsOfComponentsMesh, detection_with_aura)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
     setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::io::write_mesh("before_junk.g", get_bulk());
+    std::string beforeFilename = "before_junk.g";
+    stk::io::write_mesh(beforeFilename, get_bulk());
     stk::balance::GraphCreationSettings graphSettings;
     if(graphSettings.shouldFixMechanisms())
     {
       EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
     }
-    stk::io::write_mesh("after_junk.g", get_bulk());
+    std::string afterFilename = "after_junk.g";
+    stk::io::write_mesh(afterFilename, get_bulk());
+
+    clean_up_output(beforeFilename);
+    clean_up_output(afterFilename);
   }
 }
 
@@ -163,17 +193,20 @@ TEST_F(LotsOfComponentsMesh, detection_without_aura)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
     setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::io::write_mesh("junk.g", get_bulk());
+    std::string filename = "junk.g";
+    stk::io::write_mesh(filename, get_bulk());
     stk::balance::GraphCreationSettings graphSettings;
     if(graphSettings.shouldFixMechanisms())
     {
       EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
     }
+
+    clean_up_output(filename);
   }
 }
 
 
-class GlobalMeshWithMechanism : public stk::unit_test_util::simple_fields::MeshFixture
+class GlobalMeshWithMechanism : public stk::unit_test_util::MeshFixture
 {
 protected:
   void setup_mechanistic_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -204,12 +237,15 @@ TEST_F(GlobalMeshWithMechanism, detection_with_aura)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
     setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::io::write_mesh("junk.g", get_bulk());
+    std::string filename = "junk.g";
+    stk::io::write_mesh(filename, get_bulk());
     stk::balance::GraphCreationSettings graphSettings;
     if(graphSettings.shouldFixMechanisms())
     {
       EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
     }
+
+    clean_up_output(filename);
   }
 }
 
@@ -218,20 +254,23 @@ TEST_F(GlobalMeshWithMechanism, detection_without_aura)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
     setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::io::write_mesh("junk.g", get_bulk());
+    std::string filename = "junk.g";
+    stk::io::write_mesh(filename, get_bulk());
     stk::balance::GraphCreationSettings graphSettings;
     if(graphSettings.shouldFixMechanisms())
     {
       EXPECT_TRUE(stk::balance::internal::detectAndFixMechanisms(graphSettings, get_bulk()));
     }
+
+    clean_up_output(filename);
   }
 }
 
-class MeshTest : public stk::unit_test_util::simple_fields::MeshFixture {};
+class MeshTest : public stk::unit_test_util::MeshFixture {};
 
 TEST_F(MeshTest, forExodusFile)
 {
-  std::string filename = stk::unit_test_util::simple_fields::get_option("-i", "generated:1x1x100");
+  std::string filename = stk::unit_test_util::get_option("-i", "generated:1x1x100");
   setup_mesh(filename, stk::mesh::BulkData::AUTO_AURA);
 
   stk::balance::GraphCreationSettings graphSettings;
@@ -240,7 +279,10 @@ TEST_F(MeshTest, forExodusFile)
   if(foundMechanisms && get_bulk().parallel_rank()==0)
     std::cerr << "Found and fixed mechanisms\n";
 
-  stk::io::write_mesh("junk.g", get_bulk());
+  std::string meshfile = "junk.g";
+  stk::io::write_mesh(meshfile, get_bulk());
+
+  clean_up_output(meshfile);
 }
 
 

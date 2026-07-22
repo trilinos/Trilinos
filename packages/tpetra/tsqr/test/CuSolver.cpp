@@ -1,41 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //          Kokkos: Node API and Parallel Node Kernels
-//              Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2008 NTESS and the Kokkos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #include "Tsqr_Impl_CuBlas.hpp"
 #include "Tsqr_Impl_CuSolver.hpp"
@@ -46,131 +16,123 @@
 #include <iostream>
 #include <type_traits>
 
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
-template<class RealType>
-void
-verifyReal (std::ostream& out, bool& success)
-{
+template <class RealType>
+void verifyReal(std::ostream& out, bool& success) {
+  using std::endl;
+  using TSQR::Impl::CudaValue;
   using TSQR::Impl::CuSolver;
   using TSQR::Impl::CuSolverHandle;
   using TSQR::Impl::getCuSolverHandleSingleton;
-  using TSQR::Impl::CudaValue;
-  using std::endl;
 
-  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton ();
-  TEST_ASSERT( s.get () != nullptr );
+  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton();
+  TEST_ASSERT(s.get() != nullptr);
 
-  Kokkos::View<int, Kokkos::CudaSpace> info ("info");
-  CuSolver<RealType> solver (s, info.data ());
+  Kokkos::View<int, Kokkos::CudaSpace> info("info");
+  CuSolver<RealType> solver(s, info.data());
 
   using IST = typename CudaValue<RealType>::type;
-  static_assert (std::is_same<RealType, IST>::value,
-                 "CudaValue::type is wrong.");
-  const RealType x (666.0);
+  static_assert(std::is_same<RealType, IST>::value,
+                "CudaValue::type is wrong.");
+  const RealType x(666.0);
   out << "Original x: " << x << ": Converted x: "
-      << CudaValue<RealType>::makeValue (x) << endl;
+      << CudaValue<RealType>::makeValue(x) << endl;
 
   using TSQR::Impl::CuBlasHandle;
   using TSQR::Impl::getCuBlasHandleSingleton;
-  std::shared_ptr<CuBlasHandle> b = getCuBlasHandleSingleton ();
-  TEST_ASSERT( b.get () != nullptr );
+  std::shared_ptr<CuBlasHandle> b = getCuBlasHandleSingleton();
+  TEST_ASSERT(b.get() != nullptr);
 
   using TSQR::Impl::CuBlas;
-  CuBlas<RealType> blas1 (b);
+  CuBlas<RealType> blas1(b);
   CuBlas<RealType> blas2;
 
   // Trivial test with 1x1 matrices, just to make sure that cuBLAS
   // actually works.
   using matrix_type =
-    Kokkos::View<RealType**, Kokkos::LayoutLeft, Kokkos::CudaSpace>;
-  matrix_type A ("A", 1, 1);
-  matrix_type B ("B", 1, 1);
-  matrix_type C ("C", 1, 1);
-  const RealType alpha (1.0);
-  const RealType beta (1.0);
+      Kokkos::View<RealType**, Kokkos::LayoutLeft, Kokkos::CudaSpace>;
+  matrix_type A("A", 1, 1);
+  matrix_type B("B", 1, 1);
+  matrix_type C("C", 1, 1);
+  const RealType alpha(1.0);
+  const RealType beta(1.0);
 
-  Kokkos::deep_copy (A, RealType (3.0));
-  Kokkos::deep_copy (B, RealType (4.0));
-  Kokkos::deep_copy (C, RealType (-5.0));
-  const RealType C_expected_1 (7.0);
-  blas1.gemm ('N', 'N', 1, 1, 1, alpha, A.data (), A.stride (1),
-              B.data (), B.stride (1), beta, C.data (), C.stride (1));
-  auto C_h = Kokkos::create_mirror_view (Kokkos::HostSpace (), C);
-  Kokkos::deep_copy (C_h, C);
-  TEST_EQUALITY_CONST( C_h(0,0), C_expected_1 );
+  Kokkos::deep_copy(A, RealType(3.0));
+  Kokkos::deep_copy(B, RealType(4.0));
+  Kokkos::deep_copy(C, RealType(-5.0));
+  const RealType C_expected_1(7.0);
+  blas1.gemm('N', 'N', 1, 1, 1, alpha, A.data(), A.stride(1),
+             B.data(), B.stride(1), beta, C.data(), C.stride(1));
+  auto C_h = Kokkos::create_mirror_view(Kokkos::HostSpace(), C);
+  Kokkos::deep_copy(C_h, C);
+  TEST_EQUALITY_CONST(C_h(0, 0), C_expected_1);
 
-  Kokkos::deep_copy (A, RealType (6.0));
-  Kokkos::deep_copy (B, RealType (6.0));
-  Kokkos::deep_copy (C, RealType (-5.0));
-  const RealType C_expected_2 (31.0);
-  blas2.gemm ('N', 'N', 1, 1, 1, alpha, A.data (), A.stride (1),
-              B.data (), B.stride (1), beta, C.data (), C.stride (1));
-  Kokkos::deep_copy (C_h, C);
-  TEST_EQUALITY_CONST( C_h(0,0), C_expected_2 );
+  Kokkos::deep_copy(A, RealType(6.0));
+  Kokkos::deep_copy(B, RealType(6.0));
+  Kokkos::deep_copy(C, RealType(-5.0));
+  const RealType C_expected_2(31.0);
+  blas2.gemm('N', 'N', 1, 1, 1, alpha, A.data(), A.stride(1),
+             B.data(), B.stride(1), beta, C.data(), C.stride(1));
+  Kokkos::deep_copy(C_h, C);
+  TEST_EQUALITY_CONST(C_h(0, 0), C_expected_2);
 }
 
 #ifdef HAVE_TPETRATSQR_COMPLEX
-template<class ComplexType>
-void
-verifyComplex (std::ostream& out, bool& success)
-{
+template <class ComplexType>
+void verifyComplex(std::ostream& out, bool& success) {
+  using std::endl;
+  using TSQR::Impl::CudaValue;
   using TSQR::Impl::CuSolver;
   using TSQR::Impl::CuSolverHandle;
   using TSQR::Impl::getCuSolverHandleSingleton;
-  using TSQR::Impl::CudaValue;
-  using std::endl;
 
-  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton ();
-  TEST_ASSERT( s.get () != nullptr );
+  std::shared_ptr<CuSolverHandle> s = getCuSolverHandleSingleton();
+  TEST_ASSERT(s.get() != nullptr);
 
-  Kokkos::View<int, Kokkos::CudaSpace> info ("info");
-  CuSolver<ComplexType> solver (s, info.data ());
+  Kokkos::View<int, Kokkos::CudaSpace> info("info");
+  CuSolver<ComplexType> solver(s, info.data());
 
   using IST = typename CudaValue<ComplexType>::type;
 
   using expected_z_IST = cuDoubleComplex;
   using expected_c_IST = cuFloatComplex;
   constexpr bool is_z =
-    std::is_same<ComplexType, std::complex<double>>::value;
+      std::is_same<ComplexType, std::complex<double>>::value;
   using expected_IST = typename std::conditional<
-    is_z,
-    expected_z_IST,
-    expected_c_IST>::type;
-  static_assert (std::is_same<expected_IST, IST>::value,
-                 "CudaValue::type is wrong.");
-  const ComplexType x (666.0, 418.0);
-  const IST x_out = CudaValue<ComplexType>::makeValue (x);
+      is_z,
+      expected_z_IST,
+      expected_c_IST>::type;
+  static_assert(std::is_same<expected_IST, IST>::value,
+                "CudaValue::type is wrong.");
+  const ComplexType x(666.0, 418.0);
+  const IST x_out = CudaValue<ComplexType>::makeValue(x);
   out << "Original x: " << x << ": Converted x: ("
       << x_out.x << "," << x_out.y << ")" << endl;
 
   using TSQR::Impl::CuBlas;
   using TSQR::Impl::CuBlasHandle;
   using TSQR::Impl::getCuBlasHandleSingleton;
-  std::shared_ptr<CuBlasHandle> b = getCuBlasHandleSingleton ();
-  TEST_ASSERT( b.get () != nullptr );
+  std::shared_ptr<CuBlasHandle> b = getCuBlasHandleSingleton();
+  TEST_ASSERT(b.get() != nullptr);
 
-  CuBlas<ComplexType> blas (b);
+  CuBlas<ComplexType> blas(b);
 }
-#endif // HAVE_TPETRATSQR_COMPLEX
+#endif  // HAVE_TPETRATSQR_COMPLEX
 
-void
-verify (std::ostream& out, bool& success)
-{
-  verifyReal<double> (out, success);
-  verifyReal<float> (out, success);
+void verify(std::ostream& out, bool& success) {
+  verifyReal<double>(out, success);
+  verifyReal<float>(out, success);
 
 #ifdef HAVE_TPETRATSQR_COMPLEX
-  verifyComplex<std::complex<double>> (out, success);
-  verifyComplex<std::complex<float>> (out, success);
-#endif // HAVE_TPETRATSQR_COMPLEX
+  verifyComplex<std::complex<double>>(out, success);
+  verifyComplex<std::complex<float>>(out, success);
+#endif  // HAVE_TPETRATSQR_COMPLEX
 }
 
-} // namespace (anonymous)
+}  // namespace
 
-int
-main (int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
   using std::cout;
   using std::endl;
 
@@ -178,16 +140,15 @@ main (int argc, char *argv[])
 
   bool success = true;
   try {
-    Kokkos::ScopeGuard kokkosScope (argc, argv);
-    verify (cout, success);
+    Kokkos::ScopeGuard kokkosScope(argc, argv);
+    verify(cout, success);
     // The Trilinos test framework expects a message like this.
     if (success) {
       cout << "\nEnd Result: TEST PASSED" << endl;
-    }
-    else {
+    } else {
       cout << "\nEnd Result: TEST FAILED" << endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
-  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

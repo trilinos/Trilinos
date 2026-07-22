@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #pragma once
 #ifndef ROL_VALIDATEFUNCTIONDEF_HPP
 #define ROL_VALIDATEFUNCTIONDEF_HPP
@@ -6,7 +15,6 @@ namespace ROL {
 
 namespace details { 
 
-using namespace std;
 
 template<typename Real>
 ValidateFunction<Real>::ValidateFunction( const int order,

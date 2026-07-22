@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef __Panzer_STK_Interface_hpp__
@@ -226,8 +194,18 @@ public:
    void beginModification();
 
    /** Take the bulk data manager out of modification mode.
+
+       @param find_and_set_shared_nodes_in_stk (bool) If set to true,
+       this performs a geometric search to figure out which nodes are
+       shared entities and marks them as shared in stk. This is very
+       inefficient and communication intensive. Set this to false for
+       exodus as the sharing is already known. Must be true for inline
+       meshes. We should fix the inline mesh factories to mark sharing
+       at node construction time to eliminate the need for searching
+       for shared nodes. Defaults to true to maintain backwards
+       compatibility.
      */
-   void endModification();
+   void endModification(const bool find_and_set_shared_nodes_in_stk=true);
 
    /** Add a node to the mesh with a specific set of coordinates to the mesh.
      *
@@ -487,6 +465,13 @@ public:
    */
   void
   setupExodusFile(const std::string& filename,
+                  const bool append = false,
+                  const bool append_after_restart_time = false,
+                  const double restart_time = 0.0);
+
+  void
+  setupExodusFile(const std::string& filename,
+                  const std::vector<Ioss::Property>& ioss_properties,
                   const bool append = false,
                   const bool append_after_restart_time = false,
                   const double restart_time = 0.0);
@@ -1438,7 +1423,7 @@ protected:
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
-   bool useBBoxSearch_ = false;  // TODO swap this to change default periodic BC search (see also PeriodicBC_Parser.cpp)
+   bool useBBoxSearch_ = true;
 
    Teuchos::RCP<stk::mesh::MetaData> metaData_;
    Teuchos::RCP<stk::mesh::BulkData> bulkData_;

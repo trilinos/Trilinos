@@ -53,23 +53,24 @@ void local_coarse_search(
     std::vector<std::pair<DomainBoxType, DomainIdentType>> const & domain,
     std::vector<std::pair<RangeBoxType, RangeIdentType>> const & range,
     SearchMethod method,
-    std::vector<std::pair<DomainIdentType, RangeIdentType>> & intersections)
+    std::vector<std::pair<DomainIdentType, RangeIdentType>> & intersections,
+    bool sortSearchResults = false)
 {
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX
-      local_coarse_search_arborx(domain, range, intersections);
+      local_coarse_search_arborx(domain, range, intersections, sortSearchResults);
 #else
       STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX. Please use KDTREE or MORTON_LBVH.");
 #endif
       break;
     }
     case KDTREE: {
-      local_coarse_search_kdtree_driver(domain, range, intersections);
+      local_coarse_search_kdtree_driver(domain, range, intersections, sortSearchResults);
       break;
     }
     case MORTON_LBVH: {
-      local_coarse_search_morton_lbvh(domain, range, intersections);
+      local_coarse_search_morton_lbvh(domain, range, intersections, sortSearchResults);
       break;
     }
     default: {
@@ -79,19 +80,24 @@ void local_coarse_search(
 
 }
 
-template <typename DomainBoxType, typename DomainIdentType, typename RangeBoxType, typename RangeIdentType,
-          typename ExecutionSpace>
-void local_coarse_search(
-    Kokkos::View<BoxIdent<DomainBoxType, DomainIdentType>*, ExecutionSpace> const & domain,
-    Kokkos::View<BoxIdent<RangeBoxType, RangeIdentType>*, ExecutionSpace> const & range,
+
+template <typename DomainView, typename RangeView, typename ResultView, typename ExecutionSpace = typename DomainView::execution_space>
+std::shared_ptr<SearchData>
+ local_coarse_search(
+    DomainView const & domain,
+    RangeView const & range,
     SearchMethod method,
-    Kokkos::View<IdentIntersection<DomainIdentType, RangeIdentType>*, ExecutionSpace> & intersections,
-    ExecutionSpace const& execSpace = ExecutionSpace{})
+    ResultView & intersections,
+    ExecutionSpace const& execSpace = ExecutionSpace{},
+    bool sortSearchResults = false,
+    std::shared_ptr<SearchData> searchData = nullptr)
 {
+  check_coarse_search_types_local<DomainView, RangeView, ResultView, ExecutionSpace>();
+
   switch (method) {
     case ARBORX: {
 #ifdef STK_HAS_ARBORX
-      local_coarse_search_arborx(domain, range, intersections, execSpace);
+      local_coarse_search_arborx(domain, range, intersections, execSpace, sortSearchResults);
 #else
       STK_ThrowErrorMsg("STK(stk_search) was not configured with ARBORX. Please use KDTREE or MORTON_LBVH.");
 #endif
@@ -102,7 +108,7 @@ void local_coarse_search(
       break;
     }
     case MORTON_LBVH: {
-      local_coarse_search_morton_lbvh(domain, range, intersections, execSpace);
+      searchData = local_coarse_search_morton_lbvh(domain, range, intersections, execSpace, sortSearchResults, searchData);
       break;
     }
     default: {
@@ -110,6 +116,7 @@ void local_coarse_search(
     }
   }
 
+  return searchData;
 }
 
 }

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_IAMAX_IMPL_HPP_
 #define KOKKOSBLAS1_IAMAX_IMPL_HPP_
 
@@ -29,8 +16,7 @@ namespace Impl {
 /// \tparam XV 1-D input View
 /// \tparam MagType Magnitude type
 /// \tparam SizeType Index type.  Use int (32 bits) if possible.
-template <class RV, class XV, class MagType,
-          class SizeType = typename XV::size_type>
+template <class RV, class XV, class MagType, class SizeType = typename XV::size_type>
 struct V_Iamax_Functor {
   using size_type   = SizeType;
   using mag_type    = MagType;
@@ -47,8 +33,7 @@ struct V_Iamax_Functor {
     static_assert(Kokkos::is_view<XV>::value,
                   "KokkosBlas::Impl::V_Iamax_Functor: "
                   "X is not a Kokkos::View.");
-    static_assert(std::is_same<typename RV::value_type,
-                               typename RV::non_const_value_type>::value,
+    static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
                   "KokkosBlas::Impl::V_Iamax_Functor: R is const.  "
                   "It must be nonconst, because it is an output argument "
                   "(we have to be able to write to its entries).");
@@ -57,19 +42,15 @@ struct V_Iamax_Functor {
                   "RV must have rank 0 and XV must have rank 1.");
   }
 
-  KOKKOS_INLINE_FUNCTION void operator()(const size_type i,
-                                         value_type& lmaxloc) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const size_type i, value_type& lmaxloc) const {
     mag_type val    = IPT::norm(m_x(i - 1));
     mag_type maxval = IPT::norm(m_x(lmaxloc - 1));
     if (val > maxval) lmaxloc = i;
   }
 
-  KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
-    update = Kokkos::reduction_identity<typename RV::value_type>::max() + 1;
-  }
+  KOKKOS_INLINE_FUNCTION void init(value_type& update) const { update = 1; }
 
-  KOKKOS_INLINE_FUNCTION void join(value_type& update,
-                                   const value_type& source) const {
+  KOKKOS_INLINE_FUNCTION void join(value_type& update, const value_type& source) const {
     mag_type source_val = IPT::norm(m_x(source - 1));
     mag_type update_val = IPT::norm(m_x(update - 1));
     if (update_val < source_val) update = source;
@@ -81,7 +62,7 @@ struct V_Iamax_Functor {
 ///   View) X, and store the result in the 0-D View r.
 template <class execution_space, class RV, class XV, class SizeType>
 void V_Iamax_Invoke(const execution_space& space, const RV& r, const XV& X) {
-  using AT       = Kokkos::ArithTraits<typename XV::non_const_value_type>;
+  using AT       = KokkosKernels::ArithTraits<typename XV::non_const_value_type>;
   using mag_type = typename AT::mag_type;
 
   const SizeType numRows = static_cast<SizeType>(X.extent(0));
@@ -107,8 +88,7 @@ void MV_Iamax_Invoke(const execution_space& space, const RV& r, const XMV& X) {
   for (size_t i = 0; i < X.extent(1); i++) {
     auto ri = Kokkos::subview(r, i);
     auto Xi = Kokkos::subview(X, Kokkos::ALL(), i);
-    V_Iamax_Invoke<execution_space, decltype(ri), decltype(Xi), SizeType>(
-        space, ri, Xi);
+    V_Iamax_Invoke<execution_space, decltype(ri), decltype(Xi), SizeType>(space, ri, Xi);
   }
 }
 

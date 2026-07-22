@@ -1,44 +1,11 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Mesh.hpp"
@@ -237,7 +204,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeJac_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [&] (const int& qp) {
       for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
         for (int i=0; i < 3; ++i) {
           for (int j=0; j < 3; ++j) {
@@ -253,7 +220,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeInvJac_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [&] (const int& qp) {
       inv_jac_(cell,qp,0,0) = jac_(cell,qp,1,1) * jac_(cell,qp,2,2) - jac_(cell,qp,1,2) * jac_(cell,qp,2,1);
       inv_jac_(cell,qp,1,1) = jac_(cell,qp,2,2) * jac_(cell,qp,0,0) - jac_(cell,qp,2,0) * jac_(cell,qp,0,2);
       inv_jac_(cell,qp,2,2) = jac_(cell,qp,0,0) * jac_(cell,qp,1,1) - jac_(cell,qp,0,1) * jac_(cell,qp,1,0);
@@ -279,7 +246,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeCoords_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,qp_.extent(0)), [&] (const int& qp) {
       for (int basis=0; basis < static_cast<int>(basis_.extent(1)); ++basis) {
         qp_coords_(cell,qp,0) += basis_(qp,basis) * coords_(cell,basis,0);
         qp_coords_(cell,qp,1) += basis_(qp,basis) * coords_(cell,basis,1);
@@ -293,7 +260,7 @@ KOKKOS_INLINE_FUNCTION
 void Mesh::operator() (const ComputeGradBasisReal_Tag& , const team_t& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis_real_.extent(1)), [=] (const int& qp) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis_real_.extent(1)), [&] (const int& qp) {
       const int num_basis = static_cast<int>(grad_basis_real_.extent(2)); 
       for (int basis=0; basis < num_basis; ++basis)
         for (int dim1=0; dim1 < 3; ++dim1)

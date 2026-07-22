@@ -42,7 +42,7 @@ ShiftedLaplacianOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA =
-      Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(A);
+      toTpetra(A);
   return tpA->getDomainMap();
 }
 
@@ -63,7 +63,7 @@ ShiftedLaplacianOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     return Xpetra::toTpetraNonZero(tpbA->getRangeMap());
 
   RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpA =
-      Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(A);
+      toTpetra(A);
   return tpA->getRangeMap();
 }
 

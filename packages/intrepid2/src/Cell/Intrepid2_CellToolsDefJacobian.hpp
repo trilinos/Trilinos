@@ -45,29 +45,29 @@ namespace Intrepid2 {
       const worksetCellType  _worksetCells;
       const basisGradType    _basisGrads;
       const int              _startCell;
-      const int              _endCell;
 
       KOKKOS_INLINE_FUNCTION
       F_setJacobian( jacobianViewType jacobian_,
                      worksetCellType  worksetCells_,
                      basisGradType    basisGrads_,
-                     const int        startCell_,
-                     const int        endCell_)
+                     const int        startCell_)
         : _jacobian(jacobian_), _worksetCells(worksetCells_), _basisGrads(basisGrads_),
-          _startCell(startCell_), _endCell(endCell_) {}
+          _startCell(startCell_) {}
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type cell,
                       const ordinal_type point) const {
         
-        const ordinal_type dim = _jacobian.extent(2); // dim2 and dim3 should match
+        const ordinal_type phys_dim = _jacobian.extent(2); // dim2 and dim3 should match
         
         const ordinal_type gradRank = rank(_basisGrads);
+        const ordinal_type ref_dim = _basisGrads.extent_int(gradRank-1);
+
         if ( gradRank == 3)
         {
           const ordinal_type cardinality = _basisGrads.extent(0);
-          for (ordinal_type i=0;i<dim;++i)
-            for (ordinal_type j=0;j<dim;++j) {
+          for (ordinal_type i=0;i<phys_dim;++i)
+            for (ordinal_type j=0;j<ref_dim;++j) {
               _jacobian(cell, point, i, j) = 0;
               for (ordinal_type bf=0;bf<cardinality;++bf)
                 _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(bf, point, j);
@@ -76,8 +76,8 @@ namespace Intrepid2 {
         else
         {
           const ordinal_type cardinality = _basisGrads.extent(1);
-          for (ordinal_type i=0;i<dim;++i)
-          for (ordinal_type j=0;j<dim;++j) {
+          for (ordinal_type i=0;i<phys_dim;++i)
+          for (ordinal_type j=0;j<ref_dim;++j) {
             _jacobian(cell, point, i, j) = 0;
             for (ordinal_type bf=0;bf<cardinality;++bf)
               _jacobian(cell, point, i, j) += _worksetCells(cell+_startCell, bf, i) * _basisGrads(cell, bf, point, j);
@@ -85,7 +85,10 @@ namespace Intrepid2 {
         }
       }
     };
+
   }
+
+
 
   template<typename DeviceType>
   template<class PointScalar>
@@ -104,19 +107,19 @@ namespace Intrepid2 {
     if ( cellVaries && pointVaries )
     {
       auto data = jacobian.getUnderlyingView4();
-      auto detData = getMatchingViewWithLabel(data, "Jacobian det data", data.extent_int(0), data.extent_int(1));
+      auto detData = Impl::createMatchingDynRankView(data, "Jacobian det data", data.extent_int(0), data.extent_int(1));
       return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
     else if (cellVaries || pointVaries)
     {
       auto data = jacobian.getUnderlyingView3();
-      auto detData = getMatchingViewWithLabel(data, "Jacobian det data", data.extent_int(0));
+      auto detData = Impl::createMatchingDynRankView(data, "Jacobian det data", data.extent_int(0));
       return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
     else
     {
       auto data = jacobian.getUnderlyingView1();
-      auto detData = getMatchingViewWithLabel(data, "Jacobian det data", 1);
+      auto detData = Impl::createMatchingDynRankView(data, "Jacobian det data", 1);
       return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
   }
@@ -132,25 +135,25 @@ namespace Intrepid2 {
     if ( jacDataRank == 4 )
     {
       auto jacData = jacobian.getUnderlyingView4();
-      auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2),jacData.extent(3));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2),jacData.extent(3));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 3)
     {
       auto jacData = jacobian.getUnderlyingView3();
-      auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 2)
     {
       auto jacData = jacobian.getUnderlyingView2();
-      auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 1)
     {
       auto jacData = jacobian.getUnderlyingView1();
-      auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else
@@ -773,21 +776,25 @@ namespace Intrepid2 {
                const BasisGradientsType gradients, const int startCell, const int endCell)
   {
     constexpr bool is_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(jacobian)::memory_space>::accessible;
     static_assert(is_accessible, "CellTools<DeviceType>::setJacobian(..): output view's memory space is not compatible with DeviceType");
 
     using FunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType> ;
     
     // resolve the -1 default argument for endCell into the true end cell index
-    int endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
+    // In some cases, endCell may be smaller than worksetCell.extent(0).
+    // This can occur when cells are split across worksets and the final
+    // workset is not completely filled with valid cells.
+    ordinal_type endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
     
     using range_policy_type = Kokkos::MDRangePolicy
       < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
-                              { jacobian.extent(0), jacobian.extent(1) } );
-    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell, endCellResolved) );
+                              { std::min(jacobian.extent_int(0), endCellResolved-startCell), jacobian.extent_int(1) } );
+    Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell) );
   }
+
 
   template<typename DeviceType>
   template<typename JacobianViewType,
@@ -802,9 +809,9 @@ namespace Intrepid2 {
                const Teuchos::RCP<HGradBasisType> basis,
                const int startCell, const int endCell) {
     constexpr bool are_accessible =
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(jacobian)::memory_space>::accessible &&
-        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        Kokkos::SpaceAccessibility<MemSpaceType,
         typename decltype(points)::memory_space>::accessible;
     static_assert(are_accessible, "CellTools<DeviceType>::setJacobian(..): input/output views' memory spaces are not compatible with DeviceType");
 
@@ -812,8 +819,6 @@ namespace Intrepid2 {
     CellTools_setJacobianArgs(jacobian, points, worksetCell, basis->getBaseCellTopology(), startCell, endCell);
     //static_assert(std::is_same( pointValueType, decltype(basis->getDummyOutputValue()) ));
 #endif
-    const auto cellTopo = basis->getBaseCellTopology();
-    const ordinal_type spaceDim = cellTopo.getDimension();
     const ordinal_type numCells = jacobian.extent(0);
     
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
@@ -821,31 +826,23 @@ namespace Intrepid2 {
     const ordinal_type numPoints = (pointRank == 2 ? points.extent(0) : points.extent(1));
     const ordinal_type basisCardinality = basis->getCardinality();
     
-    // the following does not work for RCP; its * operator returns reference not the object
-    //typedef typename decltype(*basis)::output_value_type gradValueType;
-    //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),DeviceType> gradViewType;
-
-    auto vcprop = Kokkos::common_view_alloc_prop(points);
-    using GradViewType = Kokkos::DynRankView<typename decltype(vcprop)::value_type,DeviceType>;
+    using GradViewType = Kokkos::DynRankView<typename decltype(points)::value_type,DeviceType>;
 
     GradViewType grads;
 
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = GradViewType(Kokkos::view_alloc("CellTools::setJacobian::grads", vcprop),basisCardinality, numPoints, spaceDim);
+      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, basis->getDomainDimension());
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
       break;
     }
     case 3: { 
-      // For CVFEM
-      grads = GradViewType(Kokkos::view_alloc("CellTools::setJacobian::grads", vcprop), numCells, basisCardinality, numPoints, spaceDim);
-      for (ordinal_type cell=0;cell<numCells;++cell) 
-        basis->getValues(Kokkos::subview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
-                         Kokkos::subview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
-                         OPERATOR_GRAD);
+      // For CVFEM or map to reference frames for point inclusion
+      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, basis->getDomainDimension());
+      getHGradValues<OPERATOR_GRAD>(grads,points,basis.get());
       break;
     }
     }

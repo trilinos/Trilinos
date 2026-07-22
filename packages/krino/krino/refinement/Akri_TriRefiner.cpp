@@ -12,6 +12,7 @@
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <Akri_QualityMetric.hpp>
+#include <Akri_RefinerUtils.hpp>
 
 namespace krino {
 namespace TriRefiner {
@@ -50,36 +51,29 @@ unsigned num_new_child_elements_tri3(const int caseId)
   }
 }
 
-static std::array<stk::math::Vector3d,6> calculate_refined_tri_coordinates(const std::array<stk::math::Vector3d,3> & parentElementNodeCoords, const std::array<unsigned,6> & permutedParentNodeOrdinals)
-{
-  std::array<stk::math::Vector3d,6> refinedTriNodeCoords;
-  refinedTriNodeCoords[0] = parentElementNodeCoords[permutedParentNodeOrdinals[0]];
-  refinedTriNodeCoords[1] = parentElementNodeCoords[permutedParentNodeOrdinals[1]];
-  refinedTriNodeCoords[2] = parentElementNodeCoords[permutedParentNodeOrdinals[2]];
-  refinedTriNodeCoords[3] = 0.5*(refinedTriNodeCoords[0]+refinedTriNodeCoords[1]);
-  refinedTriNodeCoords[4] = 0.5*(refinedTriNodeCoords[1]+refinedTriNodeCoords[2]);
-  refinedTriNodeCoords[5] = 0.5*(refinedTriNodeCoords[2]+refinedTriNodeCoords[0]);
-  return refinedTriNodeCoords;
-}
-
 template<size_t NUMPARENTNODES, size_t NUMCHILDNODES>
-static double compute_quality_of_child_elem(const QualityMetric & qualityMetric, const std::array<stk::math::Vector3d,NUMPARENTNODES> & parentNodeCoords, const std::array<int,NUMCHILDNODES> & childElemNodeIndices, std::vector<stk::math::Vector3d> & prealllocatedScratchElemNodeCoords)
+static double compute_quality_of_child_elem(const QualityMetric & qualityMetric,
+    const std::array<stk::math::Vector3d,NUMPARENTNODES> & parentNodeCoords,
+    const std::array<unsigned,6> & permutedParentNodeOrdinals,
+    const std::array<int,NUMCHILDNODES> & childElemNodeIndices,
+    std::vector<stk::math::Vector3d> & prealllocatedScratchElemNodeCoords)
 {
   for (size_t i=0; i<NUMCHILDNODES; ++i)
-    prealllocatedScratchElemNodeCoords[i] = parentNodeCoords[childElemNodeIndices[i]];
-  return qualityMetric.get_element_quality_metric(prealllocatedScratchElemNodeCoords);
+    prealllocatedScratchElemNodeCoords[i] = parentNodeCoords[permutedParentNodeOrdinals[childElemNodeIndices[i]]];
+  return qualityMetric.get_element_quality_metric(2, prealllocatedScratchElemNodeCoords);
 }
 
 template<size_t NUMPARENTNODES, size_t NUMCHILDNODES, size_t NUMCHILDRENINCONFIGURATION>
 double compute_quality_of_child_element_configuration(const QualityMetric & qualityMetric,
     const std::array<stk::math::Vector3d,NUMPARENTNODES> & parentNodeCoords,
+    const std::array<unsigned,6> & permutedParentNodeOrdinals,
     const std::array<std::array<int,NUMCHILDNODES>,NUMCHILDRENINCONFIGURATION> & elementConfigurations,
     std::vector<stk::math::Vector3d> & prealllocatedScratchElemNodeCoords)
 {
   double worstQuality = qualityMetric.get_best_value_for_metric();
   for (auto && elementConfiguration : elementConfigurations)
   {
-    const double elementQuality = compute_quality_of_child_elem(qualityMetric, parentNodeCoords, elementConfiguration, prealllocatedScratchElemNodeCoords);
+    const double elementQuality = compute_quality_of_child_elem(qualityMetric, parentNodeCoords, permutedParentNodeOrdinals,elementConfiguration, prealllocatedScratchElemNodeCoords);
     if (qualityMetric.is_first_quality_metric_better_than_second(worstQuality, elementQuality))
       worstQuality = elementQuality;
   }
@@ -89,6 +83,7 @@ double compute_quality_of_child_element_configuration(const QualityMetric & qual
 template<size_t NUMPARENTNODES, size_t NUMCHILDNODES, size_t NUMCHILDRENINCONFIGURATION>
 double compute_quality_of_child_element_configuration_terminating_early_if_below_threshold(const QualityMetric & qualityMetric,
     const std::array<stk::math::Vector3d,NUMPARENTNODES> & parentNodeCoords,
+    const std::array<unsigned,6> & permutedParentNodeOrdinals,
     const std::array<std::array<int,NUMCHILDNODES>,NUMCHILDRENINCONFIGURATION> & elementConfigurations,
     std::vector<stk::math::Vector3d> & prealllocatedScratchElemNodeCoords,
     const double qualityThreshold)
@@ -96,7 +91,7 @@ double compute_quality_of_child_element_configuration_terminating_early_if_below
   double worstQuality = qualityMetric.get_best_value_for_metric();
   for (auto && elementConfiguration : elementConfigurations)
   {
-    const double elementQuality = compute_quality_of_child_elem(qualityMetric, parentNodeCoords, elementConfiguration, prealllocatedScratchElemNodeCoords);
+    const double elementQuality = compute_quality_of_child_elem(qualityMetric, parentNodeCoords, permutedParentNodeOrdinals, elementConfiguration, prealllocatedScratchElemNodeCoords);
     if (qualityMetric.is_first_quality_metric_better_than_second(worstQuality, elementQuality))
     {
       worstQuality = elementQuality;
@@ -107,17 +102,15 @@ double compute_quality_of_child_element_configuration_terminating_early_if_below
   return worstQuality;
 }
 
-static int which_configuration_of_child_tri_elements_is_best(const std::array<stk::math::Vector3d,3> & parentElementNodeCoords,
+static int which_configuration_of_child_tri_elements_is_best(const std::array<stk::math::Vector3d,6> & parentElementNodeCoords,
     const std::array<int,3> & elementNodeScore,
     const std::array<unsigned,6> & permutedParentNodeOrdinals,
     const std::array<std::array<std::array<int,3>,2>,2> & configs)
 {
-  const auto refinedTriNodeCoords = calculate_refined_tri_coordinates(parentElementNodeCoords, permutedParentNodeOrdinals);
-
   const ScaledJacobianQualityMetric qualityMetric;
   std::vector<stk::math::Vector3d> prealllocatedScratchTriNodeCoords(3);
-  const double qual0 = compute_quality_of_child_element_configuration(qualityMetric, refinedTriNodeCoords, configs[0], prealllocatedScratchTriNodeCoords);
-  const double qual1 = compute_quality_of_child_element_configuration_terminating_early_if_below_threshold(qualityMetric, refinedTriNodeCoords, configs[1], prealllocatedScratchTriNodeCoords, qual0);
+  const double qual0 = compute_quality_of_child_element_configuration(qualityMetric, parentElementNodeCoords, permutedParentNodeOrdinals, configs[0], prealllocatedScratchTriNodeCoords);
+  const double qual1 = compute_quality_of_child_element_configuration_terminating_early_if_below_threshold(qualityMetric, parentElementNodeCoords, permutedParentNodeOrdinals, configs[1], prealllocatedScratchTriNodeCoords, qual0);
 
   if (qualityMetric.is_first_quality_metric_better_than_second(qual0, qual1))
     return 0;
@@ -144,28 +137,7 @@ static std::array<unsigned,3> permutation_side_ordinals_tri3(const unsigned case
   return permutation;
 }
 
-template<class CHILDDESCRIPTION, size_t NUMREFINEDPARENTNODES, size_t NUMNODES, size_t NUMSIDES, size_t NUMCHILDELEMENTS>
-static void append_child_elements(const std::array<unsigned,NUMREFINEDPARENTNODES> & permutedParentNodeOrdinals,
-    const std::array<unsigned,NUMSIDES> & permutedParentSideOrdinals,
-    const std::array<std::array<int,NUMNODES>,NUMCHILDELEMENTS> & childElementNodeIndices,
-    const std::array<std::array<int,NUMSIDES>,NUMCHILDELEMENTS> & childElementSideIndices,
-    std::vector<CHILDDESCRIPTION> & childElemDescs)
-{
-  const size_t oldSize = childElemDescs.size();
-  childElemDescs.resize(oldSize + NUMCHILDELEMENTS);
-  for (size_t i=0; i<NUMCHILDELEMENTS; ++i)
-  {
-    for (size_t iNode=0; iNode<NUMNODES; ++iNode)
-      childElemDescs[oldSize + i].nodeIds[iNode] = permutedParentNodeOrdinals[childElementNodeIndices[i][iNode]];
-    for (size_t iSide=0; iSide<NUMSIDES; ++iSide)
-    {
-      const int childElementSideId = childElementSideIndices[i][iSide];
-      childElemDescs[oldSize + i].sideIds[iSide] = (childElementSideId<0) ? -1 : permutedParentSideOrdinals[childElementSideId];
-    }
-  }
-}
-
-std::vector<TriDescription> refinement_child_nodes_and_sides_tri3(const unsigned caseId, const std::array<stk::math::Vector3d,3> & elementNodeCoords, const std::array<int,3> & elementNodeScore)
+std::vector<TriDescription> refinement_child_nodes_and_sides_tri3(const unsigned caseId, const std::array<stk::math::Vector3d,6> & elementNodeCoords, const std::array<int,3> & elementNodeScore)
 {
   std::vector<TriDescription> childElemNodes;
 

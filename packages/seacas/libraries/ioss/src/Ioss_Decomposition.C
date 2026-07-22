@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,9 +12,12 @@
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Sort.h"
 #include "Ioss_Utils.h"
+#include "tokenize.h"
 #include <algorithm>
 #include <cassert>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <numeric>
 
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -80,12 +83,9 @@ namespace {
     }
 
     if (!check_valid_decomp_method(method)) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Invalid decomposition method specified: '{}'\n"
-                 "       Valid methods: {}\n",
-                 method, fmt::join(Ioss::valid_decomp_methods(), ", "));
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Invalid decomposition method specified: '{}'\n"
+                             "       Valid methods: {}\n",
+                             method, fmt::join(Ioss::valid_decomp_methods(), ", ")));
     }
     return method;
   }
@@ -297,6 +297,38 @@ namespace Ioss {
       Utils::check_set_bool_property(props, "ENABLE_TRACING", m_showProgress);
     }
 
+    // Difficult to specify an integer vector through the IOSS_PROPERTIES environment variable,
+    // so if a string, parse into integer ids or if a single int, use it as is.
+    if (props.exists("DECOMP_OMITTED_BLOCK_IDS")) {
+      auto property = props.get("DECOMP_OMITTED_BLOCK_IDS");
+      if (property.get_type() == Ioss::Property::STRING) {
+        std::string id_string = property.get_string();
+        auto        omit_str  = Ioss::tokenize(id_string, ",");
+        for (const auto &str : omit_str) {
+          auto id = std::stoi(str);
+          m_omittedBlocks.push_back(id);
+        }
+      }
+      else if (property.get_type() == Ioss::Property::INTEGER) {
+        m_omittedBlocks.push_back(property.get_int());
+      }
+      else if (property.get_type() == Ioss::Property::VEC_INTEGER) {
+        std::vector<int> blocks = property.get_vec_int();
+        m_omittedBlocks.resize(blocks.size());
+        std::copy(blocks.begin(), blocks.end(), m_omittedBlocks.begin());
+      }
+      else {
+        IOSS_ERROR(fmt::format("ERROR: Unrecognized type for `DECOMP_OMITTED_BLOCK_IDS` property.  "
+                               "Should be VEC_INTEGER. Ignored.\n"));
+      }
+    }
+    if (props.exists("DECOMP_OMITTED_BLOCK_NAMES")) {
+      auto name_string = props.get("DECOMP_OMITTED_BLOCK_NAMES").get_string();
+      auto names       = Ioss::tokenize(name_string, ",");
+      for (const auto &name : names) {
+        m_omittedBlockNames.push_back(name);
+      }
+    }
     if (props.exists("PARMETIS_COMMON_NODE_COUNT") &&
         props.get("PARMETIS_COMMON_NODE_COUNT").get_int() > 0) {
       m_commonNodeCount = props.get("PARMETIS_COMMON_NODE_COUNT").get_int();
@@ -307,6 +339,19 @@ namespace Ioss {
       // which the lines will grow, or the value "ALL" for all surfaces in the model.
       m_lineDecomp  = true;
       m_decompExtra = props.get("LINE_DECOMPOSITION").get_string();
+    }
+  }
+
+  template IOSS_EXPORT void
+  Decomposition<int>::set_block_omissions(const Ioss::NameList &omissions);
+  template IOSS_EXPORT void
+  Decomposition<int64_t>::set_block_omissions(const Ioss::NameList &omissions);
+
+  template <typename INT>
+  void Decomposition<INT>::set_block_omissions(const Ioss::NameList &omissions)
+  {
+    for (const auto &name : omissions) {
+      m_omittedBlockNames.push_back(name);
     }
   }
 
@@ -427,9 +472,9 @@ namespace Ioss {
                  m_method, fmt::group_digits(m_globalElementCount), m_processorCount);
 
       if (!m_decompExtra.empty()) {
-	fmt::print(Ioss::OUTPUT(), "\tDecomposition extra data: '{}'.\n", m_decompExtra);
+        fmt::print(Ioss::OUTPUT(), "\tDecomposition extra data: '{}'.\n", m_decompExtra);
       }
-      
+
       if ((size_t)m_processorCount > m_globalElementCount) {
         fmt::print(Ioss::WarnOut(),
                    "Decomposing {} elements across {} mpi ranks will "
@@ -725,12 +770,9 @@ namespace Ioss {
       }
 
       if (scale < 1.0) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: Processor {} scaling factor is {} which is not allowed.\n"
-                   "\tIt must be >= 1.0. Scaling values is not possible.",
-                   label, scale);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: Processor {} scaling factor is {} which is not allowed.\n"
+                               "\tIt must be >= 1.0. Scaling values is not possible.",
+                               label, scale));
       }
 
       // Do the scaling (integer division...)
@@ -749,12 +791,10 @@ namespace Ioss {
       }
     }
     else if (max_proc >= m_processorCount) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: The element processor {} '{}' specifies a processor of {} which\n"
-                 "\tis not valid for a decomposition on {} processors.",
-                 label, m_decompExtra, max_proc, m_processorCount);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(
+          fmt::format("ERROR: The element processor {} '{}' specifies a processor of {} which\n"
+                      "\tis not valid for a decomposition on {} processors.",
+                      label, m_decompExtra, max_proc, m_processorCount));
     }
 
     // Finally... Do the decomposition...
@@ -907,15 +947,12 @@ namespace Ioss {
       if (m_globalElementCount >= INT_MAX || m_globalNodeCount >= INT_MAX ||
           m_pointer[m_elementCount] >= INT_MAX) {
         // Can't narrow...
-        std::ostringstream errmsg;
-        fmt::print(
-            errmsg,
+        IOSS_ERROR(fmt::format(
             "ERROR: The metis/parmetis libraries being used with this application only support\n"
             "       32-bit integers, but the mesh being decomposed requires 64-bit integers.\n"
             "       You must either choose a different, non-metis decomposition method, or\n"
             "       rebuild your metis/parmetis libraries with 64-bit integer support.\n"
-            "       Contact gdsjaar@sandia.gov for more details.\n");
-        IOSS_ERROR(errmsg);
+            "       Contact sierra-help@sandia.gov for more details.\n"));
       }
       else {
         // Should be able to narrow...
@@ -1022,10 +1059,8 @@ namespace Ioss {
       fmt::print(Ioss::DebugOut(), "Edge Cuts = {}\n", edge_cuts);
 #endif
       if (rc != METIS_OK) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay "
-                           "decomposition\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: Problem during call to ParMETIS_V3_PartMeshKWay "
+                               "decomposition\n"));
       }
     }
     else if (m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM") {
@@ -1036,10 +1071,8 @@ namespace Ioss {
                                         &dual_xadj, &dual_adjacency, &m_comm);
 
       if (rc != METIS_OK) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: Problem during call to ParMETIS_V3_Mesh2Dual graph conversion\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("ERROR: Problem during call to ParMETIS_V3_Mesh2Dual graph conversion\n"));
       }
 
       if (sizeof(double) == sizeof(real_t)) {
@@ -1063,10 +1096,8 @@ namespace Ioss {
       METIS_Free(dual_adjacency);
 
       if (rc != METIS_OK) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: Problem during call to ParMETIS_V3_PartGeomKWay decomposition\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("ERROR: Problem during call to ParMETIS_V3_PartGeomKWay decomposition\n"));
       }
     }
     else if (m_method == "METIS_SFC") {
@@ -1081,9 +1112,8 @@ namespace Ioss {
       }
 
       if (rc != METIS_OK) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("ERROR: Problem during call to ParMETIS_V3_PartGeom decomposition\n"));
       }
     }
     m_centroids.clear();
@@ -1105,15 +1135,16 @@ namespace Ioss {
 
     int lib_global_id_type_size = Zoltan_get_global_id_type(nullptr);
     if (lib_global_id_type_size != sizeof(ZOLTAN_ID_TYPE)) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: The compile-time ZOLTAN_ID_TYPE size ({}) does not match the run-time "
-                 "ZOLTAN_ID_TYPE size ({}). There is an error in the build/link procedure for this "
-                 "application.\n",
-                 sizeof(ZOLTAN_ID_TYPE), lib_global_id_type_size);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: The compile-time ZOLTAN_ID_TYPE size ({}) does not match the run-time "
+          "ZOLTAN_ID_TYPE size ({}). There is an error in the build/link procedure for this "
+          "application.\n",
+          sizeof(ZOLTAN_ID_TYPE), lib_global_id_type_size));
     }
 
+    if (!m_omittedBlocks.empty()) {
+      zz.Set_Param("OBJ_WEIGHT_DIM", "1");
+    }
     zz.Set_Param("NUM_GID_ENTRIES", std::to_string(num_global));
     zz.Set_Param("NUM_LID_ENTRIES", "0");
     zz.Set_Param("LB_METHOD", m_method);
@@ -1140,9 +1171,7 @@ namespace Ioss {
                              export_global_ids, export_local_ids, export_procs, export_to_part);
 
     if (rc != ZOLTAN_OK) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Problem during call to Zoltan LB_Partition.\n");
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Problem during call to Zoltan LB_Partition.\n"));
     }
     show_progress("\tZoltan lb_partition finished");
 
@@ -1165,9 +1194,8 @@ namespace Ioss {
 
     if (num_global == 1) {
       if (num_export > 0 && export_procs == nullptr) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("ERROR: Internal error in zoltan_decompose.  export_procs is null.\n"));
       }
 
       std::vector<std::pair<int, int>> export_map;
@@ -1192,9 +1220,8 @@ namespace Ioss {
     }
     else {
       if (num_export > 0 && export_procs == nullptr) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: Internal error in zoltan_decompose.  export_procs is null.\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("ERROR: Internal error in zoltan_decompose.  export_procs is null.\n"));
       }
       std::vector<std::pair<int, int64_t>> export_map;
       export_map.reserve(num_export);

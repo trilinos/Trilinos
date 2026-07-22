@@ -1,20 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS1_SWAP_HPP_
 #define KOKKOSBLAS1_SWAP_HPP_
@@ -42,44 +27,32 @@ namespace KokkosBlas {
 template <class execution_space, class XVector, class YVector>
 void swap(execution_space const& space, XVector const& x, YVector const& y) {
   // Assert properties of XVector
-  static_assert(Kokkos::is_view<XVector>::value,
-                "KokkosBlas::swap: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::swap: XVector must be a Kokkos::View.");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::swap: "
                 "Input vector x must have rank 1.");
-  static_assert(std::is_same_v<typename XVector::value_type,
-                               typename XVector::non_const_value_type>,
+  static_assert(std::is_same_v<typename XVector::value_type, typename XVector::non_const_value_type>,
                 "KokkosBlas::swap: XVector must store non const values.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename XVector::memory_space>::accessible,
-      "swap: execution_space cannot access data in XVector");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
+                "swap: execution_space cannot access data in XVector");
 
   // Assert properties of YVector, could probably use a function for this as
   // XVector and YVector are required to have identical properties...
-  static_assert(Kokkos::is_view<YVector>::value,
-                "KokkosBlas::swap: YVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YVector>::value, "KokkosBlas::swap: YVector must be a Kokkos::View.");
   static_assert(YVector::rank == 1,
                 "KokkosBlas::swap: "
                 "Input vector y must have rank 1.");
-  static_assert(std::is_same_v<typename YVector::value_type,
-                               typename YVector::non_const_value_type>,
+  static_assert(std::is_same_v<typename YVector::value_type, typename YVector::non_const_value_type>,
                 "KokkosBlas::swap: YVector must store non const values.");
-  static_assert(
-      Kokkos::SpaceAccessibility<execution_space,
-                                 typename YVector::memory_space>::accessible,
-      "swap: execution_space cannot access data in YVector");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename YVector::memory_space>::accessible,
+                "swap: execution_space cannot access data in YVector");
 
   using XVector_Internal = Kokkos::View<
-      typename XVector::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-      Kokkos::Device<execution_space, typename XVector::memory_space>,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      typename XVector::non_const_value_type*, typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+      Kokkos::Device<execution_space, typename XVector::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
   using YVector_Internal = Kokkos::View<
-      typename YVector::non_const_value_type*,
-      typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
-      Kokkos::Device<execution_space, typename YVector::memory_space>,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
+      typename YVector::non_const_value_type*, typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
+      Kokkos::Device<execution_space, typename YVector::memory_space>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   XVector_Internal X(x);
   YVector_Internal Y(y);
@@ -92,8 +65,7 @@ void swap(execution_space const& space, XVector const& x, YVector const& y) {
   Kokkos::Profiling::pushRegion("KokkosBlas::swap");
   // If X.extent(0) == 0, do nothing
   if (X.extent(0) != 0) {
-    Impl::Swap<execution_space, XVector_Internal, YVector_Internal>::swap(space,
-                                                                          X, Y);
+    Impl::Swap<execution_space, XVector_Internal, YVector_Internal>::swap(space, X, Y);
   }
   Kokkos::Profiling::popRegion();
 }
@@ -111,8 +83,7 @@ void swap(execution_space const& space, XVector const& x, YVector const& y) {
 /// executed on the default stream of the execution_space associted with x.
 template <class XVector, class YVector>
 void swap(const XVector& x, const YVector& y) {
-  const typename XVector::execution_space space =
-      typename XVector::execution_space();
+  const typename XVector::execution_space space = typename XVector::execution_space();
   swap(space, x, y);
 }
 

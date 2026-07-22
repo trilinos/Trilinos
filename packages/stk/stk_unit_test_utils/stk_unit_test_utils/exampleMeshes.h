@@ -1,6 +1,7 @@
 #ifndef EXAMPLEMESHES_H_
 #define EXAMPLEMESHES_H_
 
+#include "stk_util/stk_config.h"
 #include <generated/Iogn_DashSurfaceMesh.h>
 #include <vector>
 
@@ -102,23 +103,6 @@ Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes)
     return Iogn::ExodusData(coordinates, elementBlockConnectivity, globalNumberOfElementsInBlock, localNumberOfElementsInBlock,
             blockTopologicalData, globalNumberOfNodes, globalIdsOfLocalElements, globalIdsOfLocalNodes);
 }
-
-namespace simple_fields {
-
-inline void fillDataForUnitCube(std::vector<double> &coordinates) {
-  unitTestUtils::exampleMeshes::fillDataForUnitCube(coordinates);
-}
-
-inline void fillDataForRectangloid(std::vector<double> &coordinates) {
-  unitTestUtils::exampleMeshes::fillDataForRectangloid(coordinates);
-}
-
-inline
-Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes) {
-  return unitTestUtils::exampleMeshes::createExodusDataForDisconnectedHex8s(numberOfHexes);
-}
-
-} // namespace simple_fields
 
 }
 }

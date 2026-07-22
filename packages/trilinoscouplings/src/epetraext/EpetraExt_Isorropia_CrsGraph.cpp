@@ -1,29 +1,10 @@
 // @HEADER
-// ***********************************************************************
-// 
-//     EpetraExt: Epetra Extended - Linear Algebra Services Package
-//                 Copyright (2001) Sandia Corporation
-// 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
-// ***********************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <EpetraExt_Isorropia_CrsGraph.h>
@@ -46,6 +27,14 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  const Epetra_BlockMap & OldMap = orig.RowMap();
+  if(OldMap.GlobalIndicesLongLong()) {
+    // There is nothing we can do since Isorropia does not support Epetra 64-bit integers, just create a copy of the original graph.
+    NewGraph_ = Teuchos::rcp( new Epetra_CrsGraph( orig ) );
+  } 
+  else
+#endif
   if (orig.NumGlobalRows() == 0)
   {
     // If there is nothing to do, just create a copy of the original empty graph.

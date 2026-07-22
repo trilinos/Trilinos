@@ -41,6 +41,7 @@ namespace Amesos2 {
     , in_grid_(false)
     , force_symbfact_(false)
     , is_contiguous_(true)
+    , debug_level_(0)
   {
     using Teuchos::Comm;
     // It's OK to depend on MpiComm explicitly here, because
@@ -55,19 +56,17 @@ namespace Amesos2 {
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
     typedef global_ordinal_type GO;
-    typedef Tpetra::Map<local_ordinal_type, GO, node_type> map_type;
 
     ////////////////////////////////////////////
     // Set up the SuperLU_DIST processor grid //
     ////////////////////////////////////////////
 
     RCP<const Comm<int> > comm = this->getComm ();
-    const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
+    myRank = comm->getRank ();
+    numProcs = comm->getSize ();
 
     SLUD::int_t nprow, npcol;
     get_default_grid_size (numProcs, nprow, npcol);
-
     {
       // FIXME (mfh 16 Dec 2014) getComm() just returns
       // matrixA_->getComm(), so it's not clear why we need to ask for
@@ -189,6 +188,8 @@ namespace Amesos2 {
     const GO indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
     superlu_rowmap_ =
       rcp (new map_type (this->globalNumRows_, myNumRows, indexBase, comm));
+    superlu_contig_rowmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, comm));
+    superlu_contig_colmap_ = Teuchos::rcp (new map_type (0, 0, indexBase, comm));
 
     //////////////////////////////////
     // Do some other initialization //
@@ -357,6 +358,11 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::preOrdering_impl()
   {
+    if (debug_level_ > 0 && myRank == 0) {
+      std::cout << " * Superludist::preOrdering ( size(int_t)= " << sizeof(SLUD::int_t)
+                << ", size(info_t) = * " << sizeof(SLUD::info_t) 
+                << ", size(perm_t) = " << sizeof(SLUD::perm_int_t) << ") * " <<std::endl;
+    }
     if (data_.options.RowPerm == SLUD::NOROWPERM) {
       SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
       for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
@@ -414,6 +420,9 @@ namespace Amesos2 {
   Superludist<Matrix,Vector>::symbolicFactorization_impl()
   {
     // loadA_impl();                    // Refresh matrix values
+    if (debug_level_ > 0 && myRank == 0) {
+      std::cout << " * Superludist::symbolicFactorization * " << std::endl;
+    }
     if (!force_symbfact_) {
        if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
           // defer to numerical factorization because row permutation requires the matrix values
@@ -462,6 +471,9 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::numericFactorization_impl(){
     using Teuchos::as;
+    if (debug_level_ > 0 && myRank == 0) {
+      std::cout << " * Superludist::numericFactorization * " << std::endl;
+    }
 
     // loadA_impl();                    // Refresh the matrix values
     SLUD::SuperMatrix GA;      /* Global A in NC format */
@@ -469,7 +481,7 @@ namespace Amesos2 {
 
     if( in_grid_ ) {
       if( data_.options.Equil == SLUD::YES ) {
-        SLUD::int_t info = 0;
+        SLUD::info_t info = 0;
 
         // Compute scaling
         data_.R.resize(this->globalNumRows_);
@@ -620,7 +632,7 @@ namespace Amesos2 {
     // this processor in the SuperLU_DIST processor grid.
     const size_t local_len_rhs = superlu_rowmap_->getLocalNumElements();
     const global_size_type nrhs = X->getGlobalNumVectors();
-    const global_ordinal_type first_global_row_b = superlu_rowmap_->getMinGlobalIndex();
+    const global_ordinal_type first_global_row_b = superlu_contig_rowmap_->getMinGlobalIndex();
 
     // make sure our multivector storage is sized appropriately
     bvals_.resize(nrhs * local_len_rhs);
@@ -858,6 +870,9 @@ namespace Amesos2 {
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
+    if( parameterList->isParameter("DebugLevel") ){
+      debug_level_ = parameterList->get<int>("DebugLevel");
+    }
   }
 
 
@@ -939,6 +954,7 @@ namespace Amesos2 {
                                                     pl.getRawPtr());
 
       pl->set("IsContiguous", true, "Whether GIDs contiguous");
+      pl->set("DebugLevel", 0, "Message levels for debuging");
 
       valid_params = pl;
     }
@@ -982,6 +998,8 @@ namespace Amesos2 {
     using Teuchos::as;
 
     using SLUD::int_t;
+    const int nprow = data_.grid.nprow;
+    const int npcol = data_.grid.npcol;
 
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
@@ -993,54 +1011,107 @@ namespace Amesos2 {
       data_.A.Store = NULL;
     }
 
-    Teuchos::RCP<const MatrixAdapter<Matrix> > redist_mat
-      = this->matrixA_->get(ptrInArg(*superlu_rowmap_));
-
-    int_t l_nnz, l_rows, g_rows, g_cols, fst_global_row;
-    l_nnz  = as<int_t>(redist_mat->getLocalNNZ());
-    l_rows = as<int_t>(redist_mat->getLocalNumRows());
-    g_rows = as<int_t>(redist_mat->getGlobalNumRows());
-    g_cols = g_rows;            // we deal with square matrices
-    fst_global_row = as<int_t>(superlu_rowmap_->getMinGlobalIndex());
-
-    Kokkos::resize(nzvals_view_, l_nnz);
-    Kokkos::resize(colind_view_, l_nnz);
-    Kokkos::resize(rowptr_view_, l_rows + 1);
+    // is_contiguous : input is contiguous
     int_t nnz_ret = 0;
-    {
+    int_t l_nnz, l_rows, g_rows, g_cols, fst_global_row;
+    if (!is_contiguous_ && numProcs == nprow*npcol) {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
+      // reinex GIDs
+      superlu_rowmap_ = this->matrixA_->getRowMap(); // use original map to redistribute vectors in solve
+      Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex(superlu_contig_rowmap_, superlu_contig_colmap_, current_phase);
+      l_nnz  = as<int_t>(contig_mat->getLocalNNZ());
+      l_rows = as<int_t>(contig_mat->getLocalNumRows());
+      g_rows = as<int_t>(contig_mat->getGlobalNumRows());
+      g_cols = g_rows;            // we deal with square matrices
+      fst_global_row = as<int_t>(superlu_contig_rowmap_->getMinGlobalIndex());
 
+      // fill arrays
+      if (current_phase == PREORDERING)
+      {
+        Kokkos::resize(nzvals_temp_, l_nnz);
+        Kokkos::resize(nzvals_view_, l_nnz);
+        Kokkos::resize(colind_view_, l_nnz);
+        Kokkos::resize(rowptr_view_, l_rows + 1);
+      }
       Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
         host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
-                                         redist_mat.ptr(),
-                                         nzvals_view_, colind_view_, rowptr_view_,
+                                         contig_mat.ptr(),
+                                         nzvals_temp_, colind_view_, rowptr_view_,
                                          nnz_ret,
-                                         ptrInArg(*superlu_rowmap_),
-                                         ROOTED,
-                                         ARBITRARY);
-  }
+                                         ptrInArg(*(contig_mat->getRowMap())),
+                                         DISTRIBUTED_NO_OVERLAP,
+                                         SORTED_INDICES);
+      Kokkos::deep_copy(nzvals_view_, nzvals_temp_);
+    } else {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+#endif
+      Teuchos::RCP<const MatrixAdapter<Matrix> > redist_mat
+        = this->matrixA_->get(ptrInArg(*superlu_rowmap_));
+
+      // same as A's target
+      superlu_contig_rowmap_ = superlu_rowmap_;
+
+      l_nnz  = as<int_t>(redist_mat->getLocalNNZ());
+      l_rows = as<int_t>(redist_mat->getLocalNumRows());
+      g_rows = as<int_t>(redist_mat->getGlobalNumRows());
+      g_cols = g_rows;            // we deal with square matrices
+      fst_global_row = as<int_t>(superlu_rowmap_->getMinGlobalIndex());
+
+      Kokkos::resize(nzvals_view_, l_nnz);
+      Kokkos::resize(colind_view_, l_nnz);
+      Kokkos::resize(rowptr_view_, l_rows + 1);
+      {
+        Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
+          host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
+                                           redist_mat.ptr(),
+                                           nzvals_view_, colind_view_, rowptr_view_,
+                                           nnz_ret,
+                                           ptrInArg(*superlu_rowmap_),
+                                           ROOTED,
+                                           ARBITRARY);
+      }
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != l_nnz,
                         std::runtime_error,
-                        "Did not get the expected number of non-zero vals");
+                        "Did not get the expected number of non-zero vals ("
+                        +std::to_string(nnz_ret)+" vs "+std::to_string(l_nnz)+")");
 
-  // Get the SLU data type for this type of matrix
-  SLUD::Dtype_t dtype = type_map::dtype;
+    // Get the SLU data type for this type of matrix
+    SLUD::Dtype_t dtype = type_map::dtype;
 
-  if( in_grid_ ){
-    function_map::create_CompRowLoc_Matrix(&(data_.A),
-                                           g_rows, g_cols,
-                                           l_nnz, l_rows, fst_global_row,
-                                           nzvals_view_.data(),
-                                           colind_view_.data(),
-                                           rowptr_view_.data(),
-                                           SLUD::SLU_NR_loc,
-                                           dtype, SLUD::SLU_GE);
-  }
+    if( in_grid_ ){
+      function_map::create_CompRowLoc_Matrix(&(data_.A),
+                                             g_rows, g_cols,
+                                             l_nnz, l_rows, fst_global_row,
+                                             nzvals_view_.data(),
+                                             colind_view_.data(),
+                                             rowptr_view_.data(),
+                                             SLUD::SLU_NR_loc,
+                                             dtype, SLUD::SLU_GE);
+    }
 
-  return true;
+    return true;
+}
+
+
+template <class Matrix, class Vector>
+void
+Superludist<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " SuperLU_DIST current parameters:" << std::endl;
+  out << "  > Equil = " << data_.options.Equil << std::endl;
+  out << "  > RowPerm = " << data_.options.RowPerm << std::endl;
+  out << "  > ColPerm = " << data_.options.ColPerm << std::endl;
+  out << "  > ReplaceTinyPivot = " << data_.options.ReplaceTinyPivot << std::endl;
+  out << "  > LargeDiag_MC64-Options = " << data_.largediag_mc64_job << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > DebugLevel   = " << debug_level_ << std::endl;
+  out << std::endl;
 }
 
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,10 +10,8 @@
 #include "gen_struc/Iogs_GeneratedMesh.h"
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <iosfwd>
 #include <numeric>
 #include <string>
 #include <tokenize.h> // for tokenize
@@ -55,15 +53,13 @@ namespace Iogs {
   void GeneratedMesh::initialize()
   {
     if (processorCount > numZ) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: ({})\n"
-                 "       The number of mesh intervals in the Z direction ({})\n"
-                 "       must be at least as large as the number of processors ({}).\n"
-                 "       The current parameters do not meet that requirement. Execution will "
-                 "terminate.\n",
-                 __func__, numZ, processorCount);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(
+          fmt::format("ERROR: ({})\n"
+                      "       The number of mesh intervals in the Z direction ({})\n"
+                      "       must be at least as large as the number of processors ({}).\n"
+                      "       The current parameters do not meet that requirement. Execution will "
+                      "terminate.\n",
+                      __func__, numZ, processorCount));
     }
 
     if (processorCount > 1) {
@@ -120,13 +116,10 @@ namespace Iogs {
     // specified later in the option list, you may not get the
     // desired bounding box.
     if (numX == 0 || numY == 0 || numZ == 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: ({})\n"
-                 "       All interval counts must be greater than 0.\n"
-                 "       numX = {}, numY = {}, numZ = {}\n",
-                 __func__, numX, numY, numZ);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: ({})\n"
+                             "       All interval counts must be greater than 0.\n"
+                             "       numX = {}, numY = {}, numZ = {}\n",
+                             __func__, numX, numY, numZ));
     }
 
     double x_range = xmax - xmin;
@@ -175,9 +168,7 @@ namespace Iogs {
           case 'z': add_sideset(MZ); break;
           case 'Z': add_sideset(PZ); break;
           default:
-            std::ostringstream errmsg;
-            fmt::print(errmsg, "ERROR: Unrecognized sideset location option '{}'.", opt);
-            IOSS_ERROR(errmsg);
+            IOSS_ERROR(fmt::format("ERROR: Unrecognized sideset location option '{}'.", opt));
           }
         }
       }
@@ -313,7 +304,7 @@ namespace Iogs {
         fmt::print(Ioss::OUTPUT(), "\tRotation Matrix: \n\t");
         for (const auto &elem : rotmat) {
           for (double jj : elem) {
-            fmt::print(Ioss::OUTPUT(), "{:14.e}\t", jj);
+            fmt::print(Ioss::OUTPUT(), fmt::runtime("{:14.e}\t"), jj);
           }
           fmt::print(Ioss::OUTPUT(), "\n\t");
         }

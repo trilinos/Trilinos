@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TEUCHOS_FINITE_AUTOMATON_HPP
 #define TEUCHOS_FINITE_AUTOMATON_HPP
 
@@ -24,7 +33,7 @@ extern template struct Table<int>;
 struct FiniteAutomaton {
   Table<int> table;
   std::vector<int> accepted_tokens;
-  bool is_deterministic;
+  bool is_deterministic = false;
   FiniteAutomaton() {}
   FiniteAutomaton(int nsymbols_init, bool is_deterministic_init, int nstates_reserve);
   void swap(FiniteAutomaton& other);

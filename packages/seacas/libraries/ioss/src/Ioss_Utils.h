@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -35,16 +35,26 @@ namespace Ioss {
   enum class ElementShape : unsigned int;
 } // namespace Ioss
 
-[[noreturn]] inline void IOSS_ERROR(const std::ostringstream &errmsg)
+[[noreturn]] inline void IOSS_ERROR(const std::string &errmsg) { throw std::runtime_error(errmsg); }
+
+[[noreturn]] inline void IOSS_ERROR(const std::ostringstream &errmsg) { IOSS_ERROR(errmsg.str()); }
+
+[[noreturn]] inline void IOSS_ABORT(const std::string &errmsg)
 {
-  throw std::runtime_error((errmsg).str());
+  std::cerr << "ERROR: " << errmsg << "\n";
+#if defined(SEACAS_HAVE_MPI)
+  int parallelSize = 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &parallelSize); // CHECK: ALLOW MPI_COMM_WORLD
+  if (parallelSize > 1) {
+    MPI_Abort(MPI_COMM_WORLD, 1); // CHECK: ALLOW MPI_COMM_WORLD
+    // MPI_Abort should not return, but if it does, we throw the exception...
+    // This helps quiet the compiler also.
+  }
+#endif
+  exit(EXIT_FAILURE);
 }
 
-#ifdef NDEBUG
-#define IOSS_ASSERT_USED(x) (void)x
-#else
-#define IOSS_ASSERT_USED(x)
-#endif
+[[noreturn]] inline void IOSS_ABORT(const std::ostringstream &errmsg) { IOSS_ABORT(errmsg.str()); }
 
 // We have been relying on the assumption that calling `.data()` on an empty vector
 // will return `nullptr`.  However, according to cppreference (based on the standard):
@@ -135,12 +145,14 @@ namespace Ioss {
 
     static void copyright(std::ostream &out, const std::string &year_range);
 
+    IOSS_NODISCARD static bool check_valid_change_set_name(const std::string  &cs_name,
+                                                           const Ioss::Region &region,
+                                                           int                 rank = 0);
+
     static void check_dynamic_cast(const void *ptr)
     {
       if (ptr == nullptr) {
-        std::ostringstream errmsg;
-        errmsg << "INTERNAL ERROR: Invalid dynamic cast returned nullptr\n";
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR("INTERNAL ERROR: Invalid dynamic cast returned nullptr\n");
       }
     }
 
@@ -255,7 +267,7 @@ namespace Ioss {
      * fmt::print("{:{}d}", number, number_width(number,false))
      * ```
      */
-    IOSS_NODISCARD inline static int number_width(const size_t number, bool use_commas = false)
+    IOSS_NODISCARD static constexpr int number_width(const size_t number, bool use_commas = false)
     {
       if (number == 0) {
         return 1;
@@ -267,7 +279,7 @@ namespace Ioss {
       return width;
     }
 
-    IOSS_NODISCARD inline static int power_2(int count)
+    IOSS_NODISCARD static constexpr int power_2(int count)
     {
       // Return the power of two which is equal to or greater than `count`
       // count = 15 -> returns 16
@@ -478,7 +490,7 @@ namespace Ioss {
                            std::vector<Ioss::Field> &fields);
 
     static int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
-                             const std::string &inout);
+                             std::string_view inout);
 
     static void calculate_sideblock_membership(IntVector &face_is_member, const SideBlock *sb,
                                                size_t int_byte_size, const void *element,
@@ -501,6 +513,9 @@ namespace Ioss {
      *  \returns The offset.
      */
     IOSS_NODISCARD static int64_t get_side_offset(const Ioss::SideBlock *sb);
+
+    IOSS_NODISCARD static int64_t get_side_offset(const Ioss::ElementTopology *parent_topo,
+                                                  const Ioss::ElementTopology *side_topo);
 
     IOSS_NODISCARD static unsigned int hash(const std::string &name);
 

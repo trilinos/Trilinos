@@ -67,7 +67,7 @@ using stk::mesh::BucketIterator;
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
 using stk::mesh::BucketVector;
-using stk::mesh::fixtures::simple_fields::RingFixture;
+using stk::mesh::fixtures::RingFixture;
 
 class UnitTestStkMeshBulkModification {
 public:

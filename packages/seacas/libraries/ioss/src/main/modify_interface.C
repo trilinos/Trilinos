@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,7 +7,7 @@
  */
 
 #include <cstdlib> // for exit, EXIT_SUCCESS, getenv
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for char_traits, string
@@ -22,9 +22,10 @@ void Modify::Interface::enroll_options()
 {
   options_.usage("[options] basename");
 
-  options_.enroll("help", Ioss::GetLongOption::NoValue, "Print this summary and exit", nullptr);
+  options_.enroll("help", Ioss::GetLongOption::OptType::NoValue, "Print this summary and exit",
+                  nullptr);
 
-  options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
+  options_.enroll("db_type", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Database Type: generated"
 #if defined(SEACAS_HAVE_PAMGEN)
                   ", pamgen"
@@ -40,20 +41,21 @@ void Modify::Interface::enroll_options()
 #endif
                   ".",
                   "unknown");
-  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue, "(alias for db_type)", nullptr,
-                  nullptr, true);
+  options_.enroll("in_type", Ioss::GetLongOption::OptType::MandatoryValue, "(alias for db_type)",
+                  nullptr, nullptr, true);
 
-  options_.enroll("allow_modifications", Ioss::GetLongOption::NoValue,
+  options_.enroll("allow_modifications", Ioss::GetLongOption::OptType::NoValue,
                   "By default, io_modify will only allow creation of new assemblies.\n"
                   "\t\tIf this option is specified, then can modify assemblies that already exist "
                   "in database.\n"
                   "\t\tThis will cause the database to be rewritten. Without this option, it is "
                   "updated in place.",
                   nullptr, nullptr, true);
-  options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
-
-  options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
+  options_.enroll("version", Ioss::GetLongOption::OptType::NoValue, "Print version and exit",
                   nullptr);
+
+  options_.enroll("copyright", Ioss::GetLongOption::OptType::NoValue,
+                  "Show copyright and license data.", nullptr);
 }
 
 bool Modify::Interface::parse_options(int argc, char **argv)
@@ -80,7 +82,7 @@ bool Modify::Interface::parse_options(int argc, char **argv)
     fmt::print(stderr,
                "\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-modify\n\n");
-    fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+    fmt::print(stderr, "\t->->-> Send email to sierra-help@sandia.gov for {} support.<-<-<-\n",
                options_.program_name());
     exit(EXIT_SUCCESS);
   }

@@ -18,7 +18,7 @@
 namespace MueLu {
 
 /*!
-  @class RegionRFactory class
+  @class RegionRFactory
   @brief Factory that builds a restriction operator for region multigrid
 */
 

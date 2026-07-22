@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,11 +18,11 @@
 #include <string> // for string
 
 namespace SEAMS {
-  init arith_0_fncts[] = {
+  const init arith_0_fncts[] = {
       {"seconds", do_time, "seconds()", "Seconds since epoch (useful for srand())."},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_d arith_fncts[] = {
+  const init_d arith_fncts[] = {
       {"abs", do_fabs, "abs(x)", "Absolute value of x. |x|."},
       {"acos", do_acos, "acos(x)", "Inverse cosine of x, returns radians."},
       {"acosd", do_acosd, "acosd(x)", "Inverse cosine of x, returns degrees."},
@@ -68,12 +68,12 @@ namespace SEAMS {
        "Convert temperature x from degrees C to degrees F (100C -> 212F)"},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_a arith_a_fncts[] = {
+  const init_a arith_a_fncts[] = {
       {"rows", do_rows, "rows(array)", "Returns the number of rows in the array. "},
       {"cols", do_cols, "cols(array)", "Returns the number of columns in the array. "},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_dd arith_dd_fncts[] = {
+  const init_dd arith_dd_fncts[] = {
       {"atan2", do_atan2, "atan2(y,x)", "Inverse tangent of y/x, returns radians."},
       {"atan2d", do_atan2d, "atan2d(y,x)", "Inverse tangent of y/x, returns degrees."},
       {"dim", do_dim, "dim(x,y)", "x - min(x,y)"},
@@ -94,7 +94,7 @@ namespace SEAMS {
       {"sign", do_sign, "sign(x,y)", "x * sgn(y)"},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_dddd arith_dddd_fncts[] = {
+  const init_dddd arith_dddd_fncts[] = {
       {"Vangle", do_angle, "Vangle(x1,y1,x2,y2)",
        "Angle (radians) between vector x1_i+y1_j and x2_i+y2_j."},
       {"Vangled", do_angled, "Vangled(x1,y1,x2,y2)",
@@ -102,37 +102,41 @@ namespace SEAMS {
       {"dist", do_dist, "dist(x1,y1, x2,y2)", "sqrt((x1-x2)^2 + (y1-y2)^2)"},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_cc arith_cc_fncts[] = {{"word_count", do_word_count, "word_count(svar,del)",
-                               "Number of words in svar. Words are separated by one or more of the "
-                               "characters\n\t\t\tin the "
-                               "string variable 'del'."},
-                              {nullptr, nullptr, nullptr, nullptr}};
+  const init_cc arith_cc_fncts[] = {
+      {"word_count", do_word_count, "word_count(svar,del)",
+       "Number of words in svar. Words are separated by one or more of the "
+       "characters\n\t\t\tin the "
+       "string variable 'del'."},
+      {nullptr, nullptr, nullptr, nullptr}};
 
-  init_ccc arith_ccc_fncts[] = {
+  const init_ccc arith_ccc_fncts[] = {
       {"find_word", do_find_word, "find_word(w,s,d)",
        "Find the 1-based index of word 'w' in variable 's'. Words are separated "
        "by one or more of the\n\t\t\tcharacters in the "
        "string variable 'd'. Returns 0 if not found."},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_c arith_c_fncts[] = {{"strtod", do_strtod, "strtod(svar)",
-                             "Returns a double-precision floating-point number "
-                             "equal to the value represented by the\n\t\t\tcharacter "
-                             "string pointed to by svar."},
-                            {nullptr, nullptr, nullptr, nullptr}};
+  const init_c arith_c_fncts[] = {{"strtod", do_strtod, "strtod(svar)",
+                                   "Returns a double-precision floating-point number "
+                                   "equal to the value represented by the\n\t\t\tcharacter "
+                                   "string pointed to by svar."},
+                                  {nullptr, nullptr, nullptr, nullptr}};
 
-  init_cd arith_cd_fncts[] = {{"option", do_option, "option(?,?)", "Internal"},
-                              {nullptr, nullptr, nullptr, nullptr}};
+  const init_cd arith_cd_fncts[] = {{"option", do_option, "option(?,?)", "Internal"},
+                                    {nullptr, nullptr, nullptr, nullptr}};
 
-  init_ddd arith_ddd_fncts[] = {
+  const init_ddd arith_ddd_fncts[] = {
       {"julday", do_julday, "julday(mm, dd, yy)", "Julian day corresponding to mm/dd/yy. "},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  init_dddddd arith_dddddd_fncts[] = {{"juldayhms", do_juldayhms, "juldayhms(m,d,y,h,m,s)",
-                                       "Julian day corresponding to m/d/y at h:m:s "},
-                                      {nullptr, nullptr, nullptr, nullptr}};
+  const init_dddddd arith_dddddd_fncts[] = {{"juldayhms", do_juldayhms, "juldayhms(m,d,y,h,m,s)",
+                                             "Julian day corresponding to m/d/y at h:m:s "},
+                                            {nullptr, nullptr, nullptr, nullptr}};
 
-  str_init string_fncts[] = {
+  const str_init string_fncts[] = {
+      {"use_legacy_output_format", do_use_legacy_output_format, "use_legacy_output_format()",
+       "Use the output format of `%.10g` which was the default before the full-precision output "
+       "became the default."},
       {"DUMP", do_dumpsym, "DUMP()",
        "Output a list of all user-defined variables and their value."},
       {"DUMP_JSON", do_dumpsym_json, "DUMP_JSON()",
@@ -154,7 +158,7 @@ namespace SEAMS {
        "Return the version string (See also _VERSION variable)"},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  str_c_init string_c_fncts[] = {
+  const str_c_init string_c_fncts[] = {
       {"DUMP", do_dumpsym1, "DUMP(str)",
        "Output a list of all defined variables and their value if name contains 'str'."},
       {"DUMP_FUNC", do_dumpfunc1, "DUMP_FUNC(str)",
@@ -209,13 +213,9 @@ namespace SEAMS {
        "systems:\n\t\t\t'si', 'cgs', 'cgs-ev', 'shock', 'swap', "
        "'ft-lbf-s', 'ft-lbm-s', 'in-lbf-s'"},
       {"delete", do_delete, "delete(var_name)", "Delete the variable with name 'var_name'."},
-      {"if", do_str_if, "if(x)",
+      {"_if", do_str_if, "if(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"If", do_str_if, "If(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"elseif", do_str_elseif, "elseif(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"Elseif", do_str_elseif, "Elseif(x)",
+      {"_elseif", do_str_elseif, "elseif(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
       {"_ifdef", do_str_if, "ifdef(x)",
        "Handles the if statements. x can be any valid expression; "
@@ -227,22 +227,30 @@ namespace SEAMS {
       {"exodus_meta", do_exodus_meta, "exodus_meta(filename)",
        "Creates several variables and arrays related to the exodus metadata in the specified "
        "file. "},
+      {"exodus_query_change_sets", do_exodus_query_change_sets,
+       "exodus_query_change_sets(filename)",
+       "Open the file and determine whether there are any change sets on the file."
+       "It will define the `ex_change_set_count`, and `ex_change_set_names` variables."},
 #endif
       {nullptr, nullptr, nullptr, nullptr}};
 
-  str_d_init string_d_fncts[] = {
+  const str_cd_init string_cd_fncts[] = {
+#if defined(EXODUS_SUPPORT)
+      {"exodus_meta", do_exodus_meta_cd, "exodus_meta(filename, cs_index)",
+       "Creates several variables and arrays related to the exodus metadata in the `cs_indexth` "
+       "change set in file. "},
+#endif
+      {nullptr, nullptr, nullptr, nullptr}};
+
+  const str_d_init string_d_fncts[] = {
       {"IO", do_intout, "IO(x)", "Convert x to an integer and then to a string. "},
       {"to_string", do_tostring, "to_string(x)",
        "Returns a string representation of the numerical variable x. The variable x is unchanged."},
       {"tostring", do_tostring, "tostring(x)",
        "Returns a string representation of the numerical variable x. The variable x is unchanged."},
-      {"if", do_if, "if(x)",
+      {"_if", do_if, "if(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"If", do_if, "If(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"elseif", do_elseif, "elseif(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"Elseif", do_elseif, "Elseif(x)",
+      {"_elseif", do_elseif, "elseif(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
       {"_ifdef", do_if, "ifdef(x)",
        "Handles the if statements. x can be any valid expression; "
@@ -266,13 +274,18 @@ namespace SEAMS {
        "Switch statement. A case used in a containing switch statement."},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  str_dcc_init string_dcc_fncts[] = {
+  const str_dc_init string_dc_fncts[] = {
+      {"format", do_format, "format(variable, output_format)",
+       "Print `variable` using the format specified in `output_format`"},
+      {nullptr, nullptr, nullptr, nullptr}};
+
+  const str_dcc_init string_dcc_fncts[] = {
       {"get_word", do_get_word, "get_word(n,svar,del)",
        "Returns a string containing the nth word of svar. The words are separated by one or more "
        "\n\t\t\tcharacters in the string variable del "},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  str_ccc_init string_ccc_fncts[] = {
+  const str_ccc_init string_ccc_fncts[] = {
       {"extract", do_extract, "extract(s, b, e)",
        "Return substring [b,e). 'b' is included; 'e' is not. If 'b' not found, return empty; If "
        "'e' not found,\n\t\t\treturn rest of string. If 'b' empty, start at beginning; if 'e' "
@@ -284,22 +297,22 @@ namespace SEAMS {
 #endif
       {nullptr, nullptr, nullptr, nullptr}};
 
-  str_cc_init string_cc_fncts[] = {
+  const str_cc_init string_cc_fncts[] = {
 #if defined(EXODUS_SUPPORT)
       {"exodus_info", do_exodus_info, "exodus_info(filename, prefix)",
        "Parses the info records that begin with 'prefix' extracted from the exodus file 'ex_fn'"},
 #endif
       {nullptr, nullptr, nullptr, nullptr}};
 
-  str_a_init string_a_fncts[] = {
+  const str_a_init string_a_fncts[] = {
       {"print_array", do_print_array, "print_array(array)", "Prints the data in the array."},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  array_c_init array_c_fncts[] = {{"csv_array", do_csv_array1, "csv_array(filename)",
-                                   "Create a 2D array from the data in a csv file."},
-                                  {nullptr, nullptr, nullptr, nullptr}};
+  const array_c_init array_c_fncts[] = {{"csv_array", do_csv_array1, "csv_array(filename)",
+                                         "Create a 2D array from the data in a csv file."},
+                                        {nullptr, nullptr, nullptr, nullptr}};
 
-  array_cd_init array_cd_fncts[] = {
+  const array_cd_init array_cd_fncts[] = {
       {"csv_array", do_csv_array, "csv_array(filename, [skip])",
        "Create a 2D array from the data in a csv file optionally skipping rows."
        " If skip is integer\n\t\t\tskip that many rows; if skip is a character, skip lines "
@@ -307,7 +320,7 @@ namespace SEAMS {
        "that character"},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  array_cc_init array_cc_fncts[] = {
+  const array_cc_init array_cc_fncts[] = {
       {"csv_array", do_csv_array2, "csv_array(filename, [skip])",
        "Create a 2D array from the data in a csv file optionally skipping rows."
        " If skip is integer skip that many rows; if skip is a character, skip lines beginning with "
@@ -323,31 +336,31 @@ namespace SEAMS {
        "string variable delim. Order is xx, yy, zz, xy, yz, xz."},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  array_ddd_init array_ddd_fncts[] = {
+  const array_ddd_init array_ddd_fncts[] = {
       {"linear_array", do_linear_array, "linear_array(init, final, count)",
        "Create a 1D array of 'count' rows. Values linearly spaced from 'init' to 'final'."},
       {"make_array", do_make_array_init, "make_array(rows, cols, init=0)",
        "Create a 2D array of size 'rows' by 'cols' initialized to 'init'. 0 if not specified."},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  array_dd_init array_dd_fncts[] = {
+  const array_dd_init array_dd_fncts[] = {
       {"make_array", do_make_array, "make_array(rows, cols)",
        "Create a 2D array of size 'rows' by 'cols' initialized to zero."},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  array_d_init array_d_fncts[] = {
+  const array_d_init array_d_fncts[] = {
       {"identity", do_identity, "identity(size)",
        "Create a 2D identity array with 'size' rows and columns. Diagonal = 1.0"},
       {nullptr, nullptr, nullptr, nullptr}};
 
-  array_a_init array_a_fncts[] = {
+  const array_a_init array_a_fncts[] = {
       {"transpose", do_transpose, "transpose(array)", "Return the transpose of input array"},
       {"principal_stress", do_principal, "principal_stress(array)",
        "Calculate principal stresses of symmetric 3x3 stress tensor (array)."},
       {nullptr, nullptr, nullptr, nullptr}};
 
   // clang-format off
-  var_init variables[] = {
+  const var_init variables[] = {
       {"DEG",  57.29577951308232087680},  /* 180/pi, degrees per radian */
       {"RAD",   0.01745329251994329576},  /* pi/180, radians per degree */
       {"E",     2.71828182845904523536},  /* e, base of natural log     */
@@ -363,9 +376,9 @@ namespace SEAMS {
   };
   // clang-format on
 
-  svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
-                            {"_UNITS_SYSTEM", "none"},
-                            {nullptr, nullptr}};
+  const svar_init svariables[] = {{"_FORMAT", ""}, /* Default output format if full-precision */
+                                  {"_UNITS_SYSTEM", "none"},
+                                  {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"
    *     Since it can be changed by user on command line, we
    *     initialize is differently than the other string variables.
@@ -401,6 +414,8 @@ namespace SEAMS {
     internal_init_table(string_fncts,       strfnct,        SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_c_fncts,     strfnct_c,      SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_d_fncts,     strfnct_d,      SYMBOL_TYPE::STRING_FUNCTION);
+    internal_init_table(string_cd_fncts,    strfnct_cd,     SYMBOL_TYPE::STRING_FUNCTION);
+    internal_init_table(string_dc_fncts,    strfnct_dc,     SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_dcc_fncts,   strfnct_dcc,    SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_ccc_fncts,   strfnct_ccc,    SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_cc_fncts,    strfnct_cc,     SYMBOL_TYPE::STRING_FUNCTION);

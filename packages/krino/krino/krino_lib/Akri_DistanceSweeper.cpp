@@ -76,7 +76,7 @@ void get_nodes_ready_to_update(const AuxMetaData & aux_meta, const stk::mesh::Bu
   }
 }
 
-void get_neighbor_nodes_ready_to_update(const AuxMetaData & aux_meta,
+void get_neighbor_nodes_ready_to_update(const AuxMetaData & /*aux_meta*/,
     const stk::mesh::BulkData& mesh,
     const FieldRef distance_field,
     const double signed_narrow_band,

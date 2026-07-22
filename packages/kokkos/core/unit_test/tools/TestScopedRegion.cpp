@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Profiling_ScopedRegion.hpp>
 
@@ -31,7 +18,7 @@ void test_push_region(char const *label) { test_region_stack.push(label); }
 
 void test_pop_region() { test_region_stack.pop(); }
 
-TEST(defaultdevicetype, scoped_profile_region) {
+TEST(kokkosp, scoped_profile_region) {
   Kokkos::Tools::Experimental::set_push_region_callback(test_push_region);
   Kokkos::Tools::Experimental::set_pop_region_callback(test_pop_region);
 
@@ -63,10 +50,10 @@ TEST(defaultdevicetype, scoped_profile_region) {
 }
 
 using Kokkos::Profiling::ScopedRegion;
-static_assert(!std::is_default_constructible<ScopedRegion>::value);
-static_assert(!std::is_copy_constructible<ScopedRegion>::value);
-static_assert(!std::is_move_constructible<ScopedRegion>::value);
-static_assert(!std::is_copy_assignable<ScopedRegion>::value);
-static_assert(!std::is_move_assignable<ScopedRegion>::value);
+static_assert(!std::is_default_constructible_v<ScopedRegion>);
+static_assert(!std::is_copy_constructible_v<ScopedRegion>);
+static_assert(!std::is_move_constructible_v<ScopedRegion>);
+static_assert(!std::is_copy_assignable_v<ScopedRegion>);
+static_assert(!std::is_move_assignable_v<ScopedRegion>);
 
 }  // namespace

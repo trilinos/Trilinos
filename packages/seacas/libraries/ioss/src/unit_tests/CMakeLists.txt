@@ -14,6 +14,17 @@ TRIBITS_ADD_EXECUTABLE(
  SOURCES unitMain.C UnitTestElementBlockBatchRead.C
 )
 
+TRIBITS_ADD_EXECUTABLE(
+ Utst_dynamictopology
+ SOURCES unitMain.C UnitTestDynamicTopology.C
+)
+
+TRIBITS_ADD_TEST(
+        Utst_dynamictopology
+        NAME Utst_dynamictopology
+        NUM_MPI_PROCS 1
+)
+
 TRIBITS_ADD_TEST(
         Utst_blockbatchread
         NAME Utst_blockbatchread

@@ -55,7 +55,6 @@ TEST(stkMeshHowTo, useAdvancedFields)
   stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
   builder.set_spatial_dimension(spatialDimension);
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
   typedef stk::mesh::Field<double> DoubleField;
@@ -100,9 +99,13 @@ TEST(stkMeshHowTo, useAdvancedFields)
   EXPECT_EQ(tensorExtent1PerTet, numCopies);
   EXPECT_EQ(tensorExtent1PerHex, numCopies);
 
-  double* tensorData = stk::mesh::field_data(tensorField, hexElem);
-  for (int i = 0; i < tensorScalarsPerHex; ++i) {
-    EXPECT_EQ(initialTensorValue[i], tensorData[i]);
+  auto tensorFieldData = tensorField.data();
+  auto tensorDataValue = tensorFieldData.entity_values(hexElem);
+  for (stk::mesh::CopyIdx copy : tensorDataValue.copies()) {
+    for (stk::mesh::ComponentIdx i : tensorDataValue.components()) {
+      EXPECT_EQ(initialTensorValue[static_cast<int>(i) + static_cast<int>(copy)*numTensorValues],
+                tensorDataValue(copy, i));
+    }
   }
 
   const int vectorScalarsPerTet = stk::mesh::field_scalars_per_entity(variableSizeField, tetElem);
@@ -120,14 +123,21 @@ TEST(stkMeshHowTo, useAdvancedFields)
   EXPECT_EQ(vectorExtent1PerTet, 1);
   EXPECT_EQ(vectorExtent1PerHex, numCopies);
 
-  double* vectorTetData = stk::mesh::field_data(variableSizeField, tetElem);
-  for (int i = 0; i < vectorScalarsPerTet; ++i) {
-    EXPECT_EQ(initialVectorValue[i], vectorTetData[i]);
+  auto variableSizeFieldData = variableSizeField.data();
+  auto vectorTetData = variableSizeFieldData.entity_values(tetElem);
+  for (stk::mesh::CopyIdx copy : vectorTetData.copies()) {
+    for (stk::mesh::ComponentIdx i : vectorTetData.components()) {
+      EXPECT_EQ(initialVectorValue[static_cast<int>(i) + static_cast<int>(copy)*numVectorValues],
+                vectorTetData(copy, i));
+    }
   }
 
-  double* vectorHexData = stk::mesh::field_data(variableSizeField, hexElem);
-  for (int i = 0; i < vectorScalarsPerHex; ++i) {
-    EXPECT_EQ(initialVectorValue[i], vectorHexData[i]);
+  auto vectorHexData = variableSizeFieldData.entity_values(hexElem);
+  for (stk::mesh::CopyIdx copy : vectorHexData.copies()) {
+    for (stk::mesh::ComponentIdx i : vectorHexData.components()) {
+      EXPECT_EQ(initialVectorValue[static_cast<int>(i) + static_cast<int>(copy)*numVectorValues],
+                vectorHexData(copy, i));
+    }
   }
 }
 //ENDUseAdvancedFields

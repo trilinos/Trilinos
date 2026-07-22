@@ -1,80 +1,29 @@
 <ParameterList name="test_params">
   <!-- Any of the test driver's command-line parameters may also be specified here -->
   <!-- Put to the dir of matrices: wathen120, G2_circuit, hvdc2, amesos2_test_mat0, amesos2_test_mat4, power0 -->
-  <Parameter name="filedir" type="string" value="/home/jdbooth/workspace/matrices/mtx/" />
   <Parameter name="verbosity" type="int" value="3" />
 
-  <!-- Wathen120 is a bad performance matrix that is symm with nice supernodes -->
-  <ParameterList name="wathen120.mtx">
-    <ParameterList name="Basker">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<!-- What is defaultrun ? -->
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="run-p1-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-         </ParameterList>  
-	<ParameterList name="run-p2-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-p4-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>
-	<ParameterList name="run-p8-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>      
+  <ParameterList name="arc130.mtx">
+    <ParameterList name="ShyLUBasker">
+      <!-- Test Kokkos objects -->
+      <ParameterList name="kokkos">
+        <ParameterList name="run-int-longlong-p1-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="1" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
       </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run-int-int-p1-default">
 	  <Parameter name="Scalar" type="string" value="double"/>
@@ -82,11 +31,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -100,29 +45,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -136,11 +59,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -148,17 +67,14 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
+
 	<ParameterList name="run-int-long-p1-default">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -172,11 +88,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -190,11 +102,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -208,11 +116,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -220,94 +124,78 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
+
+        <ParameterList name="run-int-longlong-p1-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="1" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p2-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="2" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p4-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="4" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p8-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="8" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
-  </ParameterList> <!-- end wathen120 -->
+    </ParameterList> <!-- end ShyLUBasker -->
+  </ParameterList> <!-- end arc130.mtx -->
 
-
-  <!-- Asic_680ks is a key matrix with medium performance first btf blk small -->
-  <ParameterList name="asic_680ks.mtx">
-    <ParameterList name="Basker">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<!-- What is defaultrun ? -->
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="run-p1-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-         </ParameterList>  
-	<ParameterList name="run-p2-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-p4-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>
-	<ParameterList name="run-p8-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>      
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+  <ParameterList name="young1c.mtx">
+    <ParameterList name="ShyLUBasker">
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run-int-int-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -316,16 +204,12 @@
 	   </ParameterList>
 	</ParameterList>
 	<ParameterList name="run-int-int-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -334,16 +218,12 @@
 	   </ParameterList>
 	</ParameterList>
 	<ParameterList name="run-int-int-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -352,16 +232,12 @@
 	   </ParameterList>
 	</ParameterList>
 	<ParameterList name="run-int-int-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -369,237 +245,14 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList>
 	</ParameterList>
-	<ParameterList name="run-int-long-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-      </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
-  </ParameterList> <!-- end asic680ks -->
 
-  <!-- G2 Very bad matrix sym large supernodes -->
-  <ParameterList name="G2_circuit.mtx">
-    <ParameterList name="Basker">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<!-- What is defaultrun ? -->
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="run-p1-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-         </ParameterList>  
-	<ParameterList name="run-p2-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-p4-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>
-	<ParameterList name="run-p8-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>      
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
-      <ParameterList name="tpetra">
-	<ParameterList name="run-int-int-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
 	<ParameterList name="run-int-long-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -608,16 +261,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
 	<ParameterList name="run-int-long-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -626,16 +275,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
 	<ParameterList name="run-int-long-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -644,16 +289,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
 	<ParameterList name="run-int-long-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -661,506 +302,71 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
-      </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
-  </ParameterList> <!-- end G2_circuit -->
 
-  <!-- Private Large Power Simulation Matrix, good very btf matrix -->
-  <ParameterList name="power0.mtx">
-    <ParameterList name="Basker">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<!-- What is defaultrun ? -->
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="run-p1-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-         </ParameterList>  
-	<ParameterList name="run-p2-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-p4-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>
-	<ParameterList name="run-p8-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>      
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
-      <ParameterList name="tpetra">
-	<ParameterList name="run-int-int-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-long-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
+        <ParameterList name="run-int-longlong-p1-default">
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="1" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p2-default">
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="2" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p4-default">
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="4" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p8-default">
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="8" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
-  </ParameterList> <!-- end power0 -->
-
-  <!-- hvdc2, interesting matrix with need for pivoting -->
-  <ParameterList name="hvdc2.mtx">
-    <ParameterList name="Basker">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<!-- What is defaultrun ? -->
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="run-p1-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-         </ParameterList>  
-	<ParameterList name="run-p2-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-p4-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>
-	<ParameterList name="run-p8-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>      
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
-      <ParameterList name="tpetra">
-	<ParameterList name="run-int-int-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-int-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-int-long-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-	<ParameterList name="run-int-long-p8-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="8" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList> <!-- end solver_run_params -->
-	</ParameterList> <!-- end run-int-long-p#-default -->
-      </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
-  </ParameterList> <!-- end hvdc2 -->
+    </ParameterList> <!-- end ShyLUBasker -->
+  </ParameterList> <!-- end young1c.mtx -->
 
   <!-- amesos_test_mat1 has good tests (limit to 4 threads) -->
   <ParameterList name="amesos2_test_mat1.mtx">
-    <ParameterList name="Basker">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<!-- What is defaultrun ? -->
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="run-p1-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-         </ParameterList>  
-	<ParameterList name="run-p2-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-p4-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+    <ParameterList name="ShyLUBasker">
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run-int-int-p1-default">
 	  <Parameter name="Scalar" type="string" value="double"/>
@@ -1168,11 +374,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1186,11 +388,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1204,11 +402,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1223,11 +417,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1241,11 +431,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1259,11 +445,7 @@
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1271,78 +453,65 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
+
+        <ParameterList name="run-int-longlong-p1-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="1" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p2-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="2" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p4-default">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="4" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end amesos2_test_mat1 -->
 
   <!-- amesos2_test_mat4 has good tests (limit to 4 threads) -->
   <ParameterList name="amesos2_test_mat4.mtx">
-    <ParameterList name="Basker">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<!-- What is defaultrun ? -->
-      	<Parameter name="defaultrun" type="bool" value="true"/>
-	<ParameterList name="run-p1-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-         </ParameterList>  
-	<ParameterList name="run-p2-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-	</ParameterList>
-	<ParameterList name="run-p4-default">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
-	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
-	    <Parameter name="transpose" type="bool" value="false" />
-	    <Parameter name="pivot"    type="bool"   value="false" />
-	    <Parameter name="pivot_tol" type="double" value=".001" />
-	    <Parameter name="symmetric" type="bool" value="false" />
-	    <Parameter name="realloc" type="bool" value="false"/>
-	   </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+    <ParameterList name="ShyLUBasker">
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run-int-int-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1351,16 +520,12 @@
 	   </ParameterList>
 	</ParameterList>
 	<ParameterList name="run-int-int-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1369,16 +534,12 @@
 	   </ParameterList>
 	</ParameterList>
 	<ParameterList name="run-int-int-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1388,16 +549,12 @@
 	</ParameterList>
 
 	<ParameterList name="run-int-long-p1-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="1" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1406,16 +563,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
 	<ParameterList name="run-int-long-p2-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="2" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1424,16 +577,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
 	<ParameterList name="run-int-long-p4-default">
-	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="num_threads"  type="int" value="4" />
-	    <Parameter name="matching" type="bool" value="true" />
-	    <Parameter name="matching_type" type="int" value="0" />
 	    <Parameter name="btf"   type="bool" value="true" />
-	    <Parameter name="amd_btf" type="bool" value="true" />
-	    <Parameter name="amd_dom" type="bool" value="true" />
 	    <Parameter name="transpose" type="bool" value="false" />
 	    <Parameter name="pivot"    type="bool"   value="false" />
 	    <Parameter name="pivot_tol" type="double" value=".001" />
@@ -1441,8 +590,50 @@
 	    <Parameter name="realloc" type="bool" value="false"/>
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
+
+        <ParameterList name="run-int-longlong-p1-default">
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="1" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p2-default">
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="2" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
+        <ParameterList name="run-int-longlong-p4-default">
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+          <ParameterList name="solver_run_params">
+            <Parameter name="num_threads"  type="int" value="4" />
+            <Parameter name="btf"   type="bool" value="true" />
+            <Parameter name="transpose" type="bool" value="false" />
+            <Parameter name="pivot"    type="bool"   value="false" />
+            <Parameter name="pivot_tol" type="double" value=".001" />
+            <Parameter name="symmetric" type="bool" value="false" />
+            <Parameter name="realloc" type="bool" value="false"/>
+           </ParameterList> <!-- end solver_run_params -->
+        </ParameterList> <!-- end run-int-longlong-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end amesos2_test_mat4 -->
- <!-- TO BE CONT... -->
 </ParameterList> <!-- end test_parms -->

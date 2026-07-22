@@ -14,8 +14,6 @@
 
   namespace percept {
 
-    using namespace std;
-
     template<typename STD_Set, typename Key > bool contains(STD_Set& set, Key key) { return set.find(key) != set.end(); }
 
     Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks(),
@@ -53,7 +51,7 @@
     color(percept::PerceptMesh& eMesh, unsigned * elementType,  stk::mesh::PartVector* fromParts, stk::mesh::FieldBase *element_color_field)
     {
       const unsigned MAX_COLORS=1000;
-      vector< ColorerNodeSetType > node_colors(MAX_COLORS+1);
+      std::vector< ColorerNodeSetType > node_colors(MAX_COLORS+1);
       ColorerElementSetType all_elements;
 
       stk::mesh::Selector selector(eMesh.get_fem_meta_data()->universal_part());
@@ -79,7 +77,7 @@
       if (m_noColoring)
         num_max_colors = 1;
 
-      m_element_colors = vector< ColorerSetType > (num_max_colors+1);
+      m_element_colors = std::vector< ColorerSetType > (num_max_colors+1);
 
       for (unsigned icolor = 0; icolor < num_max_colors; icolor++)
         {

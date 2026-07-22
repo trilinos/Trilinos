@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef MINIEM_RANDOM_FORCING_IMPL_HPP
 #define MINIEM_RANDOM_FORCING_IMPL_HPP
 
@@ -11,7 +21,7 @@
 #include "Panzer_Traits.hpp"
 #include "Kokkos_Random.hpp"
 #include "MiniEM_Sacado_Kokkos_Random.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 
 namespace mini_em {
@@ -64,7 +74,7 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
 
   // double time = workset.time;
 
-  using IST = typename Kokkos::ArithTraits<ScalarT>::val_type;
+  using IST = typename KokkosKernels::ArithTraits<ScalarT>::val_type;
 
   const IST max = static_cast<IST>(rangeMin_);
   const IST min = static_cast<IST>(rangeMax_);

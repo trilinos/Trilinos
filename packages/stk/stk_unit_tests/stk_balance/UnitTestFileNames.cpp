@@ -33,10 +33,10 @@
 
 #include "gtest/gtest.h"
 #include "stk_unit_test_utils/MeshFixture.hpp"
-#include "stk_balance/setup/FileValidator.hpp"
+#include "stk_io/FileValidator.hpp"
 #include "stk_balance/setup/Parser.hpp"
 
-class InputSanity : public stk::unit_test_util::simple_fields::MeshFixture
+class InputSanity : public stk::unit_test_util::MeshFixture
 {
 public:
   InputSanity()
@@ -44,7 +44,7 @@ public:
   { }
 
 protected:
-  stk::balance::FileValidator validator;
+  stk::io::FileValidator validator;
 };
 
 TEST_F(InputSanity, verifyThrowIfInputFileEqualsOutputFile)
@@ -79,16 +79,16 @@ TEST_F(InputSanity, verifyThrowIfInputFileEqualsDotSlashOutputFile)
 
 TEST(BalanceOutputFile, checkOutputFileFromInputFileWithoutPath)
 {
-  EXPECT_EQ(stk::balance::construct_output_file_name("/home/code/results", "input.e"), "/home/code/results/input.e");
+  EXPECT_EQ(stk::io::construct_output_file_name("/home/code/results", "input.e"), "/home/code/results/input.e");
 }
 
 TEST(BalanceOutputFile, checkOutputFileFromInputFileAndOutputFileWithExtraBackslash)
 {
-  EXPECT_EQ(stk::balance::construct_output_file_name("/home/code/results/", "input.e"), "/home/code/results//input.e");
+  EXPECT_EQ(stk::io::construct_output_file_name("/home/code/results/", "input.e"), "/home/code/results//input.e");
 }
 
 TEST(BalanceOutputFile, checkOutputFileFromInputFileWithPath)
 {
-  EXPECT_EQ(stk::balance::construct_output_file_name("/home/code/results", "/another/directory/input.e"), "/home/code/results/input.e");
+  EXPECT_EQ(stk::io::construct_output_file_name("/home/code/results", "/another/directory/input.e"), "/home/code/results/input.e");
 }
 

@@ -461,14 +461,12 @@ WARN_LOGFILE           =
 
 INPUT                  = ../src \
                          ../src-lapack \
-                         ../src-epetra \
                          ../src-thyra \
                          ../src-petsc \
                          ../src-belos \
                          ../src-loca/src \
                          ../src-loca/src-lapack \
-                         ../src-loca/src-thyra \
-                         ../src-loca/src-epetra
+                         ../src-loca/src-thyra
 
 # If the value of the INPUT tag contains directories, you can use the
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
@@ -1018,7 +1016,6 @@ INCLUDE_FILE_PATTERNS  =
 # instead of the = operator.
 
 PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS \
-             HAVE_NOX_EPETRAEXT \
              HAVE_NOX_STRATIMIKOS \
                          @WITH_PRERELEASE_SUBST@
 

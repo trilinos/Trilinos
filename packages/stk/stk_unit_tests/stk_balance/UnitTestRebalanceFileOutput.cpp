@@ -33,7 +33,7 @@
 //
 
 #include "MeshFixtureRebalance.hpp"
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_balance/rebalance.hpp>
 #include <vector>
@@ -45,18 +45,6 @@ using stk::unit_test_util::build_mesh;
 class RebalanceFileOutput : public MeshFixtureRebalance
 {
 public:
-  void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb")
-  {
-    m_balanceSettings.set_is_rebalancing(true);
-    m_balanceSettings.set_output_filename(get_output_file_name());
-    m_balanceSettings.set_num_input_processors(stk::parallel_machine_size(get_comm()));
-    m_balanceSettings.set_num_output_processors(numFinalProcs);
-    m_balanceSettings.setDecompMethod(decompMethod);
-
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-    stk::balance::rebalance(m_ioBroker, m_balanceSettings);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
-  }
 };
 
 std::vector<std::pair<stk::mesh::EntityId, int>> getSharingInfo(stk::mesh::BulkData& bulkData)
@@ -111,6 +99,18 @@ TEST_F(RebalanceFileOutput, CheckSharingInformation)
                                     nodeSharingInfo);
 
   verify_node_sharing_info(nodeSharingInfo, outputFilename);
+
+  clean_up_temporary_files();
+    
+  if (get_parallel_rank() == 0) {
+    for (int i = 0; i < get_parallel_size(); ++i) {
+      std::string suffix = "." + std::to_string(get_parallel_size()) + "." + std::to_string(i);
+      std::string filename = outputFilename + suffix;
+      std::string inputFilename = get_input_file_name() + suffix;
+      unlink(filename.c_str());
+      unlink(inputFilename.c_str());
+    }
+  }
 }
 
 }

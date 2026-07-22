@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,11 +6,11 @@
 #pragma once
 
 #include "exo_entity.h"
-#include <iostream>
+#include "util.h"
 
 #include <string>
 
-template <typename INT> class ExoII_Read;
+template <typename INT> class Exo_Read;
 
 template <typename INT> class Exo_Block : public Exo_Entity
 {
@@ -49,5 +49,5 @@ private:
   int64_t          offset_{0};
   std::vector<INT> conn{}; // Array; holds a matrix, num_elmts by num_nodes_per_elmt.
 
-  friend class ExoII_Read<INT>;
+  friend class Exo_Read<INT>;
 };

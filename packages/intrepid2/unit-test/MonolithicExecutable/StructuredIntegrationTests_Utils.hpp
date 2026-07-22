@@ -26,6 +26,8 @@
 #include "HCURLStructuredAssembly.hpp"
 #include "HVOLStandardAssembly.hpp"
 #include "HVOLStructuredAssembly.hpp"
+#include "VectorWeightedGRADGRADStandardAssembly.hpp"
+#include "VectorWeightedGRADGRADStructuredAssembly.hpp"
 
 template< typename PointScalar, int spaceDim, typename DeviceType >
 inline
@@ -65,10 +67,12 @@ CellGeometry<PointScalar, spaceDim, DeviceType> getMesh(AlgorithmChoice algorith
   return uniformTensorGeometry; // this line should be unreachable; included to avoid compiler warnings from nvcc
 }
 
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2 = spaceDim>  // spaceDim and spaceDim2 should agree on value (differ on type)
 Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationChoice formulation,
-                                        Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                        double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+                                                                   Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                                                   double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
+                                                                   Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight1 = Teuchos::null,
+                                                                   Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -82,15 +86,19 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationCh
       return performStandardQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStandardQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case VectorWeightedPoisson:
+      return performStandardQuadratureVectorWeightedGRADGRAD<Scalar,BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported formulation");
   }
 }
 
-template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType, unsigned long spaceDim2 = spaceDim> // spaceDim and spaceDim2 should agree on value (differ on type)
 Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(FormulationChoice formulation,
-                                          Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
-                                          double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+                                                                     Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                                                     double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount,
+                                                                     Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight1 = Teuchos::null,
+                                                                     Teuchos::RCP< Kokkos::Array<PointScalar,spaceDim2> > vectorWeight2 = Teuchos::null)
 {
   switch (formulation)
   {
@@ -104,6 +112,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(Formulation
       return performStructuredQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStructuredQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    case VectorWeightedPoisson:
+      return performStructuredQuadratureVectorWeightedGRADGRAD<Scalar,BasisFamily>(geometry, polyOrder, worksetSize, vectorWeight1, vectorWeight2, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     default:
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported formulation");
   }

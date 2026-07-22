@@ -16,6 +16,7 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"

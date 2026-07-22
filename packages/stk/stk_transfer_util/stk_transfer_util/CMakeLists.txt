@@ -35,39 +35,56 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB HEADERS_SPMD CONFIGURE_DEPENDS spmd/*.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+FILE(GLOB SOURCES_SPMD CONFIGURE_DEPENDS spmd/*.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
   TRIBITS_ADD_LIBRARY(stk_transfer_util
-    NOINSTALLHEADERS ${HEADERS}
-    SOURCES ${SOURCES}
+    NOINSTALLHEADERS ${HEADERS} ${HEADERS_SPMD}
+    SOURCES ${SOURCES} ${SOURCES_SPMD}
   )
-else()
-  add_library(stk_transfer_util ${SOURCES})
-  target_link_libraries(stk_transfer_util PUBLIC stk_transfer)
-  target_link_libraries(stk_transfer_util PUBLIC stk_search_util)
-  target_link_libraries(stk_transfer_util PUBLIC stk_util_env)
 
-  if(USE_SIERRA_BLAS_LAPACK)
-    target_link_libraries(stk_transfer_util PUBLIC sierra_blas_lapack)
+  if (TPL_LAPACK_LIBRARIES)
+    message("STKTransferUtil: TPL_LAPACK_LIBRARIES already set, don't need to find_package.")
+    target_link_libraries(stk_transfer_util PUBLIC ${TPL_LAPACK_LIBRARIES})
   else()
     find_package(LAPACK REQUIRED)
-    target_link_libraries(stk_transfer_util PUBLIC LAPACK::LAPACK)
+    if (TARGET LAPACK::LAPACK)
+      target_link_libraries(stk_transfer_util PUBLIC LAPACK::LAPACK)
+    else()
+      target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
+    endif()
+  endif()
+else()
+  add_library(stk_transfer_util ${SOURCES} ${SOURCES_SPMD})
+  target_link_libraries(stk_transfer_util PUBLIC stk_transfer_lib)
+  target_link_libraries(stk_transfer_util PUBLIC stk_search_util)
+  target_link_libraries(stk_transfer_util PUBLIC stk_io)
+  target_link_libraries(stk_transfer_util PUBLIC stk_util_env)
+  target_link_libraries(stk_transfer_util PUBLIC stk_util_command_line)
+
+  find_package(LAPACK REQUIRED)
+  target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
+
+  find_package(BLAS REQUIRED)
+  if (TARGET BLAS::BLAS)
+    target_link_libraries(stk_transfer_util PUBLIC BLAS::BLAS)
+  else()
+    target_link_libraries(stk_transfer_util PUBLIC ${BLAS_LIBRARIES})
   endif()
 
   target_include_directories(stk_transfer_util PUBLIC
    $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_transfer_util>
    $<INSTALL_INTERFACE:include>
   )
+  INSTALL(TARGETS stk_transfer_util EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_transfer_util)
-    
-if(NOT HAVE_STK_Trilinos)
-  INSTALL(TARGETS stk_transfer_util DESTINATION ${STK_INSTALL_LIBDIR})
-endif()
-
+INSTALL(FILES ${HEADERS_SPMD} DESTINATION
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_transfer_util/spmd)

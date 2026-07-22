@@ -32,10 +32,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES mesh_clone/*.cpp mesh_tools/*.cpp block_extractor/*.cpp)
-LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/UnitTestExtractBlocks.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS mesh_clone/*.cpp mesh_tools/*.cpp block_extractor/*.cpp)
+FILE(GLOB PMESH_SOURCES CONFIGURE_DEPENDS pmesh_lib/*.cpp)
 
 if(HAVE_STK_Trilinos)
+  LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/block_extractor/UnitTestExtractBlocks.cpp)
+
   TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_tools)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_tools_unit_tests
@@ -47,13 +49,44 @@ if(HAVE_STK_Trilinos)
     NOEXEPREFIX
   )
 else()
-  add_executable(stk_tools_unit_tests ${SOURCES})
-  target_link_libraries(stk_tools_unit_tests PUBLIC stk_tools_lib)
-  target_link_libraries(stk_tools_unit_tests PUBLIC stk_unit_main)
+  add_executable(stk_tools_utest ${SOURCES})
+  target_link_libraries(stk_tools_utest PUBLIC stk_tools_lib)
+  target_link_libraries(stk_tools_utest PUBLIC stk_unit_main)
 
-  target_include_directories(stk_tools_unit_tests PUBLIC
+  target_include_directories(stk_tools_utest PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
   )
+
+  FOREACH(NUMPROCS 1 2 3 4)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_tools_utest_np${NUMPROCS}" 
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_tools_utest)
+    set_property(TEST "stk_tools_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
+  INSTALL(TARGETS stk_tools_utest DESTINATION ${STK_INSTALL_BINDIR})
+
+  add_executable(stk_tools_pmesh_unit_tester ${PMESH_SOURCES})
+  target_link_libraries(stk_tools_pmesh_unit_tester PUBLIC stk_pmesh_lib)
+  target_link_libraries(stk_tools_pmesh_unit_tester PUBLIC stk_unit_main)
+  target_link_libraries(stk_tools_pmesh_unit_tester PUBLIC GTest::gtest)
+
+  target_include_directories(stk_tools_pmesh_unit_tester PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  FOREACH(NUMPROCS 1)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pmesh_np${NUMPROCS})
+    add_test(NAME "stk_tools_pmesh_unit_tester_np${NUMPROCS}" 
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/pmesh_np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_tools_pmesh_unit_tester)
+    set_property(TEST "stk_tools_pmesh_unit_tester_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
+  INSTALL(TARGETS stk_tools_pmesh_unit_tester DESTINATION ${STK_INSTALL_BINDIR})
+
 endif()
 

@@ -2876,9 +2876,9 @@ namespace Experimental {
     for(int i=0; i<blockSize_; i++)
     {
       if(theta_[i] < 0)
-        ritzShifts_[i] = -abs(ritzShifts_[i]);
+        ritzShifts_[i] = -std::abs(ritzShifts_[i]);
       else
-        ritzShifts_[i] = abs(ritzShifts_[i]);
+        ritzShifts_[i] = std::abs(ritzShifts_[i]);
     }
   }
 

@@ -96,7 +96,7 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
   }
 
   /* inquire previously defined variables  */
-  if ((status = nc_inq_varid(exoid, vvarname, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vvarname, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variables names stored in file id %d",
              ex_name_of_object(obj_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -105,7 +105,7 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
 
   /* read the variable names */
   status = exi_get_names(exoid, varid, num_vars, var_names, obj_type, __func__);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
   EX_FUNC_LEAVE(EX_NOERR);

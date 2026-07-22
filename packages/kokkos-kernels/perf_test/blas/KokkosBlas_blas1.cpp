@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <KokkosBlas.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -40,8 +27,7 @@ RCP<Time> getTimer(const std::string& timerName) {
   return timer;
 }
 
-bool benchmarkKokkos(std::ostream& out, const int lclNumRows,
-                     const int numTrials) {
+bool benchmarkKokkos(std::ostream& out, const int lclNumRows, const int numTrials) {
   using std::endl;
   typedef Kokkos::View<double*, Kokkos::LayoutLeft> vector_type;
 
@@ -85,8 +71,8 @@ bool benchmarkKokkos(std::ostream& out, const int lclNumRows,
   if (numTrials > 0) {
     const double expectedResult = static_cast<double>(lclNumRows) * -1.0;
     if (dotResults[0] != expectedResult) {
-      out << "Kokkos dot product result is wrong!  Expected " << expectedResult
-          << " but got " << dotResults[0] << " instead." << endl;
+      out << "Kokkos dot product result is wrong!  Expected " << expectedResult << " but got " << dotResults[0]
+          << " instead." << endl;
       return false;
     } else {
       return true;
@@ -95,8 +81,7 @@ bool benchmarkKokkos(std::ostream& out, const int lclNumRows,
   return true;
 }
 
-bool benchmarkRaw(std::ostream& out, const int lclNumRows,
-                  const int numTrials) {
+bool benchmarkRaw(std::ostream& out, const int lclNumRows, const int numTrials) {
   using std::endl;
   RCP<Time> vecCreateTimer = getTimer("Raw: Vector: Create");
   RCP<Time> vecFillTimer   = getTimer("Raw: Vector: Fill");
@@ -161,8 +146,8 @@ bool benchmarkRaw(std::ostream& out, const int lclNumRows,
   } else {        // numTrials > 0
     const double expectedResult = static_cast<double>(lclNumRows) * -1.0;
     if (dotResults[0] != expectedResult) {
-      out << "Raw dot product result is wrong!  Expected " << expectedResult
-          << " but got " << dotResults[0] << " instead." << endl;
+      out << "Raw dot product result is wrong!  Expected " << expectedResult << " but got " << dotResults[0]
+          << " instead." << endl;
       return false;
     } else {
       return true;
@@ -197,25 +182,19 @@ int main(int argc, char* argv[]) {
   cmdp.setOption("lclNumRows", &lclNumRows,
                  "Number of global indices "
                  "owned by each process");
-  cmdp.setOption("numTrials", &numTrials,
-                 "Number of timing loop iterations for each event to time");
-  cmdp.setOption("runKokkos", "noKokkos", &runKokkos,
-                 "Whether to run the Kokkos benchmark");
-  cmdp.setOption("runRaw", "noRaw", &runRaw,
-                 "Whether to run the raw benchmark");
-  const CommandLineProcessor::EParseCommandLineReturn parseResult =
-      cmdp.parse(argc, argv);
+  cmdp.setOption("numTrials", &numTrials, "Number of timing loop iterations for each event to time");
+  cmdp.setOption("runKokkos", "noKokkos", &runKokkos, "Whether to run the Kokkos benchmark");
+  cmdp.setOption("runRaw", "noRaw", &runRaw, "Whether to run the raw benchmark");
+  const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse(argc, argv);
   if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
     // The user specified --help at the command line to print help
     // with command-line arguments.  We printed help already, so quit
     // with a happy return code.
     return EXIT_SUCCESS;
   } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
-        std::invalid_argument, "Failed to parse command-line arguments.");
-    TEUCHOS_TEST_FOR_EXCEPTION(lclNumRows < 0, std::invalid_argument,
-                               "lclNumRows must be nonnegative.");
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, std::invalid_argument,
+                               "Failed to parse command-line arguments.");
+    TEUCHOS_TEST_FOR_EXCEPTION(lclNumRows < 0, std::invalid_argument, "lclNumRows must be nonnegative.");
   }
 
   if (myRank == 0) {

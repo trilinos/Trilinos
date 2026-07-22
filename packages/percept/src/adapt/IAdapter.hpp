@@ -85,10 +85,10 @@
 
       virtual void
       refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
-                                              vector<NeededEntityType>& needed_entity_ranks, const CellTopologyData * const bucket_topo_data) = 0;
+                                              vector<NeededEntityType>& needed_entity_ranks, const CellTopologyData * const bucket_topo_data) override = 0;
 
       //// allow for overload to modify marks
-      virtual void modify_marks(stk::mesh::Entity element, stk::mesh::EntityRank needed_entity_rank, std::vector<bool>& markInfoVec, bool elem_is_marked) {
+      virtual void modify_marks(stk::mesh::Entity /*element*/, stk::mesh::EntityRank /*needed_entity_rank*/, std::vector<bool>& /*markInfoVec*/, bool /*elem_is_marked*/) {
         // does nothing
       }
 

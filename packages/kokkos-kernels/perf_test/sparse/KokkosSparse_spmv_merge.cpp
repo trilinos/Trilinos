@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -33,11 +20,10 @@
 #include "KokkosKernels_IOUtils.hpp"
 
 template <class matrix_type>
-matrix_type generate_unbalanced_matrix(
-    const typename matrix_type::ordinal_type numRows,
-    const typename matrix_type::ordinal_type numEntries,
-    const typename matrix_type::ordinal_type numLongRows,
-    const typename matrix_type::ordinal_type numLongEntries) {
+matrix_type generate_unbalanced_matrix(const typename matrix_type::ordinal_type numRows,
+                                       const typename matrix_type::ordinal_type numEntries,
+                                       const typename matrix_type::ordinal_type numLongRows,
+                                       const typename matrix_type::ordinal_type numLongEntries) {
   using Scalar = typename matrix_type::value_type;
   using lno_t  = typename matrix_type::ordinal_type;
 
@@ -52,25 +38,22 @@ matrix_type generate_unbalanced_matrix(
 
   // Randomly pick the length of the rows using a normal distribution
   std::mt19937 rand_generator(42);  // Seed with 42 for reproducibility
-  std::normal_distribution<Scalar> row_dist{
-      static_cast<Scalar>(numEntries),
-      static_cast<Scalar>(std::sqrt(numEntries))};
+  std::normal_distribution<Scalar> row_dist{static_cast<Scalar>(numEntries),
+                                            static_cast<Scalar>(std::sqrt(numEntries))};
 
   std::vector<lno_t> permutation(numRows - numLongRows);
   std::vector<lno_t> row_map_vec(numRows + 1);
   row_map_vec[0] = 0;
   for (lno_t rowIdx = 0; rowIdx < numRows - numLongRows; ++rowIdx) {
-    row_map_vec[rowIdx + 1] =
-        row_map_vec[rowIdx] + static_cast<lno_t>(row_dist(rand_generator));
+    row_map_vec[rowIdx + 1] = row_map_vec[rowIdx] + static_cast<lno_t>(row_dist(rand_generator));
 
     // also filling the permutation vector that will be used to construct long
     // rows
     permutation[rowIdx] = rowIdx;
   }
 
-  std::normal_distribution<Scalar> long_row_dist{
-      static_cast<Scalar>(numLongEntries),
-      static_cast<Scalar>(numLongEntries / 2)};
+  std::normal_distribution<Scalar> long_row_dist{static_cast<Scalar>(numLongEntries),
+                                                 static_cast<Scalar>(numLongEntries / 2)};
   lno_t rand_number;
   for (lno_t rowIdx = numRows - numLongRows; rowIdx < numRows; ++rowIdx) {
     rand_number             = static_cast<lno_t>(long_row_dist(rand_generator));
@@ -81,17 +64,14 @@ matrix_type generate_unbalanced_matrix(
   std::vector<lno_t> colind_vec(row_map_vec[numRows]);
   // We loop over the first part of the matrix and assume that the bandwidth is
   // 0.01*numRows i.e. highly concentrated around digaonal
-  std::normal_distribution<Scalar> entry_dist{
-      static_cast<Scalar>(0.0), static_cast<Scalar>(numRows / 100)};
+  std::normal_distribution<Scalar> entry_dist{static_cast<Scalar>(0.0), static_cast<Scalar>(numRows / 100)};
   for (lno_t rowIdx = 0; rowIdx < numRows - numLongRows; ++rowIdx) {
     const lno_t rowLength = row_map_vec[rowIdx + 1] - row_map_vec[rowIdx];
     // Making the stencil symmetric because it looks a bit more like a regular
     // discretization
     for (lno_t entryIdx = 0; entryIdx < (rowLength / 2); ++entryIdx) {
-      colind_vec[row_map_vec[rowIdx] + entryIdx] =
-          rowIdx - static_cast<lno_t>(entry_dist(rand_generator));
-      colind_vec[row_map_vec[rowIdx + 1] - entryIdx - 1] =
-          rowIdx + static_cast<lno_t>(entry_dist(rand_generator));
+      colind_vec[row_map_vec[rowIdx] + entryIdx]         = rowIdx - static_cast<lno_t>(entry_dist(rand_generator));
+      colind_vec[row_map_vec[rowIdx + 1] - entryIdx - 1] = rowIdx + static_cast<lno_t>(entry_dist(rand_generator));
     }
     // Add diagonal entry if row length is an odd number
     if ((rowLength % 2) == 1) {
@@ -114,18 +94,16 @@ matrix_type generate_unbalanced_matrix(
   values_type values("values", numNNZ);
 
   // Copy row map values to view
-  typename row_map_type::HostMirror row_map_h =
-      Kokkos::create_mirror_view(row_map);
-  row_map_h(0) = 0;
+  typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
+  row_map_h(0)                                      = 0;
   for (lno_t rowIdx = 0; rowIdx < numRows; ++rowIdx) {
     row_map_h(rowIdx + 1) = row_map_vec[rowIdx + 1];
   }
   Kokkos::deep_copy(row_map, row_map_h);
 
   // Copy column indices to view
-  typename row_map_type::HostMirror entries_h =
-      Kokkos::create_mirror_view(entries);
-  entries_h(0) = 0;
+  typename row_map_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
+  entries_h(0)                                      = 0;
   for (lno_t entryIdx = 0; entryIdx < numNNZ; ++entryIdx) {
     entries_h(entryIdx) = colind_vec[entryIdx];
   }
@@ -134,14 +112,11 @@ matrix_type generate_unbalanced_matrix(
   // Fill the values view with 1.0
   Kokkos::deep_copy(values, 1.0);
 
-  matrix_type unbalanced_matrix("unbalanced matrix", numRows, numRows, numNNZ,
-                                values, row_map, entries);
+  matrix_type unbalanced_matrix("unbalanced matrix", numRows, numRows, numNNZ, values, row_map, entries);
 
   std::cout << std::endl;
   std::cout << "Matrix statistics:" << std::endl
-            << "  - average nnz per row: "
-            << row_map_vec[numRows - numLongRows] / (numRows - numLongRows)
-            << std::endl;
+            << "  - average nnz per row: " << row_map_vec[numRows - numLongRows] / (numRows - numLongRows) << std::endl;
 
   return unbalanced_matrix;
 }
@@ -154,8 +129,7 @@ void print_help() {
   printf(
       "  --compare       : Compare the performance of the merge algo with the "
       "default algo.\n");
-  printf(
-      "  -l [LOOP]       : How many spmv to run to aggregate average time. \n");
+  printf("  -l [LOOP]       : How many spmv to run to aggregate average time. \n");
   printf("  -numRows        : Number of rows the matrix will contain.\n");
   printf("  -numEntries     : Number of entries per row.\n");
   printf(
@@ -167,8 +141,8 @@ void print_help() {
 }
 
 int main(int argc, char** argv) {
-  using Scalar = default_scalar;
-  using lno_t  = default_lno_t;
+  using Scalar = KokkosKernels::default_scalar;
+  using lno_t  = KokkosKernels::default_lno_t;
 
   bool compare         = false;
   lno_t loop           = 100;
@@ -234,19 +208,14 @@ int main(int argc, char** argv) {
   {
     // Note that we template the matrix with entries=lno_t and offsets=lno_t
     // so that TPLs can be used
-    using matrix_type =
-        KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace,
-                                void, lno_t>;
+    using matrix_type = KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace, void, lno_t>;
     using values_type = typename matrix_type::values_type::non_const_type;
-    using handle_type =
-        KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type,
-                                 values_type, values_type>;
-    const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+    using handle_type = KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, values_type, values_type>;
+    const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
     const Scalar alpha  = SC_ONE + SC_ONE;
     const Scalar beta   = alpha + SC_ONE;
 
-    matrix_type test_matrix = generate_unbalanced_matrix<matrix_type>(
-        numRows, numEntries, numLongRows, numLongEntries);
+    matrix_type test_matrix = generate_unbalanced_matrix<matrix_type>(numRows, numEntries, numLongRows, numLongEntries);
 
     values_type y("right hand side", test_matrix.numRows());
     values_type x("left hand side", test_matrix.numCols());
@@ -269,8 +238,8 @@ int main(int argc, char** argv) {
       if (time < min_time) min_time = time;
     }
 
-    std::cout << "KK Merge alg  ---  min: " << min_time << " max: " << max_time
-              << " avg: " << avg_time / loop << std::endl;
+    std::cout << "KK Merge alg  ---  min: " << min_time << " max: " << max_time << " avg: " << avg_time / loop
+              << std::endl;
 
     // Run the cusparse default algorithm and native kokkos-kernels algorithm
     // then output timings for comparison
@@ -292,8 +261,7 @@ int main(int argc, char** argv) {
         if (time < min_time) min_time = time;
       }
 
-      std::cout << "Default alg   ---  min: " << min_time
-                << " max: " << max_time << " avg: " << avg_time / loop
+      std::cout << "Default alg   ---  min: " << min_time << " max: " << max_time << " avg: " << avg_time / loop
                 << std::endl;
 
       handle_type handleNative(KokkosSparse::SPMV_NATIVE);
@@ -312,8 +280,7 @@ int main(int argc, char** argv) {
         if (time < min_time) min_time = time;
       }
 
-      std::cout << "KK Native alg ---  min: " << min_time
-                << " max: " << max_time << " avg: " << avg_time / loop
+      std::cout << "KK Native alg ---  min: " << min_time << " max: " << max_time << " avg: " << avg_time / loop
                 << std::endl;
     }
   }

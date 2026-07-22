@@ -34,7 +34,6 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t, NULL
-#include <string.h>                     // for memcpy
 #include <unistd.h>                     // for unlink
 #include <iostream>                     // for operator<<, etc
 #include <map>                          // for map, etc
@@ -74,7 +73,6 @@ void testSubMesh(stk::unit_test_util::BulkDataTester &oldBulkData, stk::mesh::Se
 {
   const stk::mesh::MetaData &oldMetaData = oldBulkData.mesh_meta_data();
   stk::mesh::MetaData newMetaData;
-  newMetaData.use_simple_fields();
   stk::unit_test_util::BulkDataTester newBulkData(newMetaData, MPI_COMM_SELF);
 
   stk::tools::copy_mesh(oldBulkData, select, newBulkData);
@@ -131,7 +129,6 @@ TEST(CloningParallelMesh, destinationHasMpiCommSelf_destinationHasAuraEntities)
     std::string exodusFileName = "generated:1x1x4|sideset:xXyYzZ|nodeset:xXyYzZ";
     const int spatialDim = 3;
     stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stkMeshMetaData.use_simple_fields();
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
 
     stk::io::StkMeshIoBroker exodusFileReader(comm);

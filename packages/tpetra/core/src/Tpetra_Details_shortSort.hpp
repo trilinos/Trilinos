@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 #ifndef TPETRA_DETAILS_SHORTSORT_HPP
 #define TPETRA_DETAILS_SHORTSORT_HPP
@@ -61,8 +27,8 @@ namespace Details {
 
 // Make sure that the macro defined below wasn't defined somewhere else.
 #ifdef TPETRA_DETAILS_SWAP_KEYSANDVALUES
-#  error "The TPETRA_DETAILS_SWAP_KEYSANDVALUES macro is already defined."
-#endif // TPETRA_DETAILS_SWAP_KEYSANDVALUES
+#error "The TPETRA_DETAILS_SWAP_KEYSANDVALUES macro is already defined."
+#endif  // TPETRA_DETAILS_SWAP_KEYSANDVALUES
 
 /// \brief Macro that swaps the i and j entries of keys and values, if
 ///   keys[i] > keys[j] (i.e., if keys[i] and keys[j] are out of order).
@@ -84,20 +50,20 @@ namespace Details {
 /// <li> \c KeyType: Type of each entry of \c keys </li>
 /// <li> \c ValueType: Type of each entry of \c values </li>
 /// </ul>
-#define TPETRA_DETAILS_SWAP_KEYSANDVALUES( i, j )  \
-  if (keys[i] > keys[j]) { \
-    const KeyType tmpKey (keys[i]); \
-    keys[i] = keys[j]; \
-    keys[j] = tmpKey; \
-    const ValueType tmpVal (values[i]); \
-    values[i] = values[j]; \
-    values[j] = tmpVal; \
+#define TPETRA_DETAILS_SWAP_KEYSANDVALUES(i, j) \
+  if (keys[i] > keys[j]) {                      \
+    const KeyType tmpKey(keys[i]);              \
+    keys[i] = keys[j];                          \
+    keys[j] = tmpKey;                           \
+    const ValueType tmpVal(values[i]);          \
+    values[i] = values[j];                      \
+    values[j] = tmpVal;                         \
   }
 
 // Make sure that the macro defined below wasn't defined somewhere else.
 #ifdef TPETRA_DETAILS_SWAP_KEYS
-#  error "The TPETRA_DETAILS_SWAP_KEYS macro is already defined."
-#endif // TPETRA_DETAILS_SWAP_KEYSANDVALUES
+#error "The TPETRA_DETAILS_SWAP_KEYS macro is already defined."
+#endif  // TPETRA_DETAILS_SWAP_KEYSANDVALUES
 
 /// \brief Macro that swaps the i and j entries of keys, if keys[i] >
 ///   keys[j] (i.e., if keys[i] and keys[j] are out of order).
@@ -116,11 +82,11 @@ namespace Details {
 /// <li> \c keys: Array of keys; each entry has type \c KeyType </li>
 /// <li> \c KeyType: Type of each entry of \c keys </li>
 /// </ul>
-#define TPETRA_DETAILS_SWAP_KEYS( i, j )  \
-  if (keys[i] > keys[j]) { \
-    const KeyType tmpKey (keys[i]); \
-    keys[i] = keys[j]; \
-    keys[j] = tmpKey; \
+#define TPETRA_DETAILS_SWAP_KEYS(i, j) \
+  if (keys[i] > keys[j]) {             \
+    const KeyType tmpKey(keys[i]);     \
+    keys[i] = keys[j];                 \
+    keys[j] = tmpKey;                  \
   }
 
 /// \brief Sort keys and values jointly, by keys, for arrays of length 2.
@@ -133,10 +99,9 @@ namespace Details {
 ///   sorts this \c keys array, and applies the same permutation to
 ///   the \c values array.
 /// \param values [in/out] Length 2 array of values.
-template<class KeyType, class ValueType>
+template <class KeyType, class ValueType>
 KOKKOS_FUNCTION void
-shortSortKeysAndValues_2 (KeyType keys[2], ValueType values[2])
-{
+shortSortKeysAndValues_2(KeyType keys[2], ValueType values[2]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  For 2 entries, the sorting network is
   // nearly trivial.
@@ -149,10 +114,9 @@ shortSortKeysAndValues_2 (KeyType keys[2], ValueType values[2])
 ///   assignable
 ///
 /// \param keys [in/out] Length-2 array of keys to sort.
-template<class KeyType>
+template <class KeyType>
 KOKKOS_FUNCTION void
-shortSortKeys_2 (KeyType keys[2])
-{
+shortSortKeys_2(KeyType keys[2]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  For 2 entries, the sorting network is
   // nearly trivial.
@@ -169,10 +133,9 @@ shortSortKeys_2 (KeyType keys[2])
 ///   sorts this \c keys array, and applies the same permutation to
 ///   the \c values array.
 /// \param values [in/out] Length 3 array of values.
-template<class KeyType, class ValueType>
+template <class KeyType, class ValueType>
 KOKKOS_FUNCTION void
-shortSortKeysAndValues_3 (KeyType keys[3], ValueType values[3])
-{
+shortSortKeysAndValues_3(KeyType keys[3], ValueType values[3]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  To make the network, I used the generator
   // at
@@ -191,10 +154,9 @@ shortSortKeysAndValues_3 (KeyType keys[3], ValueType values[3])
 ///   assignable
 ///
 /// \param keys [in/out] Length-3 array of keys to sort.
-template<class KeyType>
+template <class KeyType>
 KOKKOS_FUNCTION void
-shortSortKeys_3 (KeyType keys[3])
-{
+shortSortKeys_3(KeyType keys[3]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  To make the network, I used the generator
   // at
@@ -217,10 +179,9 @@ shortSortKeys_3 (KeyType keys[3])
 ///   sorts this \c keys array, and applies the same permutation to
 ///   the \c values array.
 /// \param values [in/out] Length 4 array of values.
-template<class KeyType, class ValueType>
+template <class KeyType, class ValueType>
 KOKKOS_FUNCTION void
-shortSortKeysAndValues_4 (KeyType keys[4], ValueType values[4])
-{
+shortSortKeysAndValues_4(KeyType keys[4], ValueType values[4]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  To make the network, I used the generator
   // at
@@ -241,10 +202,9 @@ shortSortKeysAndValues_4 (KeyType keys[4], ValueType values[4])
 ///   assignable
 ///
 /// \param keys [in/out] Length-4 array of keys to sort.
-template<class KeyType>
+template <class KeyType>
 KOKKOS_FUNCTION void
-shortSortKeys_4 (KeyType keys[4])
-{
+shortSortKeys_4(KeyType keys[4]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  To make the network, I used the generator
   // at
@@ -269,10 +229,9 @@ shortSortKeys_4 (KeyType keys[4])
 ///   sorts this \c keys array, and applies the same permutation to
 ///   the \c values array.
 /// \param values [in/out] Length 8 array of values.
-template<class KeyType, class ValueType>
+template <class KeyType, class ValueType>
 KOKKOS_FUNCTION void
-shortSortKeysAndValues_8 (KeyType keys[8], ValueType values[8])
-{
+shortSortKeysAndValues_8(KeyType keys[8], ValueType values[8]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  To make the network, I used the generator
   // at
@@ -307,10 +266,9 @@ shortSortKeysAndValues_8 (KeyType keys[8], ValueType values[8])
 ///   assignable
 ///
 /// \param keys [in/out] Length-8 array of keys to sort.
-template<class KeyType>
+template <class KeyType>
 KOKKOS_FUNCTION void
-shortSortKeys_8 (KeyType keys[8])
-{
+shortSortKeys_8(KeyType keys[8]) {
   // Since this function takes a constant number of entries, I use a
   // sorting network here.  To make the network, I used the generator
   // at
@@ -344,21 +302,20 @@ shortSortKeys_8 (KeyType keys[8])
 ///
 /// mfh 28 Nov 2016, 17 Dec 2016: I adapted this function from
 /// sh_sort2 in Tpetra_Util.hpp (in this directory).
-template<class KeyType, class ValueType, class IndexType>
+template <class KeyType, class ValueType, class IndexType>
 KOKKOS_FUNCTION void
-shellSortKeysAndValues (KeyType keys[],
-                        ValueType values[],
-                        const IndexType n)
-{
-  static_assert (std::is_integral<IndexType>::value,
-                 "IndexType must be a signed integer type.");
-  static_assert (std::is_signed<IndexType>::value,
-                 "IndexType must be a signed integer type.  "
-                 "This implementation does a count-down loop, "
-                 "and may thus loop forever "
-                 "if one attempts to use it with unsigned IndexType.");
+shellSortKeysAndValues(KeyType keys[],
+                       ValueType values[],
+                       const IndexType n) {
+  static_assert(std::is_integral<IndexType>::value,
+                "IndexType must be a signed integer type.");
+  static_assert(std::is_signed<IndexType>::value,
+                "IndexType must be a signed integer type.  "
+                "This implementation does a count-down loop, "
+                "and may thus loop forever "
+                "if one attempts to use it with unsigned IndexType.");
   constexpr IndexType ZERO = 0;
-  IndexType midpoint = n / static_cast<IndexType> (2);
+  IndexType midpoint       = n / static_cast<IndexType>(2);
 
   while (midpoint > ZERO) {
     // Avoid names like "max" in case they collide with macros.
@@ -369,12 +326,12 @@ shellSortKeysAndValues (KeyType keys[],
         if (keys[k + midpoint] >= keys[k]) {
           break;
         }
-        const KeyType tmpKey = keys[k + midpoint];
-        keys[k + midpoint] = keys[k];
-        keys[k] = tmpKey;
+        const KeyType tmpKey   = keys[k + midpoint];
+        keys[k + midpoint]     = keys[k];
+        keys[k]                = tmpKey;
         const ValueType tmpVal = values[k + midpoint];
-        values[k + midpoint] = values[k];
-        values[k] = tmpVal;
+        values[k + midpoint]   = values[k];
+        values[k]              = tmpVal;
       }
     }
     midpoint = midpoint / 2;
@@ -385,19 +342,18 @@ shellSortKeysAndValues (KeyType keys[],
 ///
 /// \param keys [in/out] Input array of keys to sort.
 /// \param n [in] Length of the input array \c keys.
-template<class KeyType, class IndexType>
+template <class KeyType, class IndexType>
 KOKKOS_FUNCTION void
-shellSortKeys (KeyType keys[], const IndexType n)
-{
-  static_assert (std::is_integral<IndexType>::value,
-                 "IndexType must be a signed integer type.");
-  static_assert (std::is_signed<IndexType>::value,
-                 "IndexType must be a signed integer type.  "
-                 "This implementation does a count-down loop, "
-                 "and may thus loop forever "
-                 "if one attempts to use it with unsigned IndexType.");
+shellSortKeys(KeyType keys[], const IndexType n) {
+  static_assert(std::is_integral<IndexType>::value,
+                "IndexType must be a signed integer type.");
+  static_assert(std::is_signed<IndexType>::value,
+                "IndexType must be a signed integer type.  "
+                "This implementation does a count-down loop, "
+                "and may thus loop forever "
+                "if one attempts to use it with unsigned IndexType.");
   constexpr IndexType ZERO = 0;
-  IndexType midpoint = n / static_cast<IndexType> (2);
+  IndexType midpoint       = n / static_cast<IndexType>(2);
 
   while (midpoint > ZERO) {
     // Avoid names like "max" in case they collide with macros.
@@ -409,48 +365,41 @@ shellSortKeys (KeyType keys[], const IndexType n)
           break;
         }
         const KeyType tmpKey = keys[k + midpoint];
-        keys[k + midpoint] = keys[k];
-        keys[k] = tmpKey;
+        keys[k + midpoint]   = keys[k];
+        keys[k]              = tmpKey;
       }
     }
     midpoint = midpoint / 2;
   }
 }
 
-template<typename KeyType, typename ValueType, typename IndexType>
+template <typename KeyType, typename ValueType, typename IndexType>
 KOKKOS_FUNCTION void
-shellSortKeysAndValues2(KeyType* keys, ValueType* values, IndexType n)
-{
+shellSortKeysAndValues2(KeyType* keys, ValueType* values, IndexType n) {
   IndexType ngaps = 10;
-  //Use Ciura's gap choices
+  // Use Ciura's gap choices
   IndexType gaps[] = {3548, 1577, 701, 301, 132, 57, 23, 10, 4, 1};
-  for(IndexType gapIndex = 0; gapIndex < ngaps; gapIndex++)
-  {
+  for (IndexType gapIndex = 0; gapIndex < ngaps; gapIndex++) {
     auto gap = gaps[gapIndex];
-    if(n < gap)
+    if (n < gap)
       continue;
-    //insertion sort the array {keys[0*gap], keys[1*gap], keys[2*gap], ...}
-    for(IndexType gapOffset = 0; gapOffset < gap; gapOffset++)
-    {
-      for(IndexType i = gap + gapOffset; i < n; i += gap)
-      {
-        //avoid extra swaps: scan for the final position of keys[i]
-        if(keys[i - gap] > keys[i])
-        {
+    // insertion sort the array {keys[0*gap], keys[1*gap], keys[2*gap], ...}
+    for (IndexType gapOffset = 0; gapOffset < gap; gapOffset++) {
+      for (IndexType i = gap + gapOffset; i < n; i += gap) {
+        // avoid extra swaps: scan for the final position of keys[i]
+        if (keys[i - gap] > keys[i]) {
           IndexType finalPos = i - gap;
-          while(finalPos - gap >= 0 && keys[finalPos - gap] > keys[i])
-          {
+          while (finalPos - gap >= 0 && keys[finalPos - gap] > keys[i]) {
             finalPos -= gap;
           }
-          //save keys/values [i], then shift up all keys/values between finalPos and i-gap (inclusive)
+          // save keys/values [i], then shift up all keys/values between finalPos and i-gap (inclusive)
           auto tempKey = keys[i];
           auto tempVal = values[i];
-          for(IndexType j = i - gap; j >= finalPos; j -= gap)
-          {
-            keys[j + gap] = keys[j];
+          for (IndexType j = i - gap; j >= finalPos; j -= gap) {
+            keys[j + gap]   = keys[j];
             values[j + gap] = values[j];
           }
-          keys[finalPos] = tempKey;
+          keys[finalPos]   = tempKey;
           values[finalPos] = tempVal;
         }
       }
@@ -459,7 +408,7 @@ shellSortKeysAndValues2(KeyType* keys, ValueType* values, IndexType n)
 #undef SHELL_SWAP
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_SHORTSORT_HPP
+#endif  // TPETRA_DETAILS_SHORTSORT_HPP

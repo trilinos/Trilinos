@@ -62,8 +62,8 @@
 namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
-namespace stk { namespace mesh { namespace fixtures { namespace simple_fields { class BoxFixture; } } } }
-namespace stk { namespace mesh { namespace fixtures { namespace simple_fields { class RingFixture; } } } }
+namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
+namespace stk { namespace mesh { namespace fixtures { class RingFixture; } } }
 
 namespace stk
 {
@@ -85,8 +85,8 @@ using stk::mesh::EntityId;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
-using stk::mesh::fixtures::simple_fields::RingFixture;
-using stk::mesh::fixtures::simple_fields::BoxFixture;
+using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::BoxFixture;
 
 namespace
 {
@@ -105,7 +105,6 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta, pm);
 
   stk::mesh::EntityVector elems;
@@ -131,7 +130,7 @@ void check_sideset_orientation(const stk::mesh::BulkData& bulk,
                                const stk::mesh::EntityId expectedId,
                                const stk::mesh::ConnectivityOrdinal expectedOrdinal)
 {
-  stk::mesh::SideSet sideSet = *sidesets[0];
+  stk::mesh::SideSet& sideSet = *sidesets[0];
   stk::mesh::SideSetEntry sideSetEntry;
   if (sideSet.size() > 0) {
     sideSetEntry = sideSet[0];
@@ -145,7 +144,7 @@ TEST(CEO, change_entity_owner_2ElemWithSideset) {
   const int pRank = stk::parallel_machine_rank(pm);
   const int pSize = stk::parallel_machine_size(pm);
 
-  if(pSize != 2) return;
+  if(pSize != 2) { GTEST_SKIP(); }
 
   const std::string outputMeshName = "2ElemWithSideset.e";
   const stk::mesh::EntityId expectedId = 2;
@@ -155,10 +154,8 @@ TEST(CEO, change_entity_owner_2ElemWithSideset) {
   builder.set_spatial_dimension(3);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::BulkData& bulk = *bulkPtr;
-  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  meta.use_simple_fields();
 
-  stk::unit_test_util::simple_fields::create_AB_mesh_with_sideset_and_field(bulk, stk::unit_test_util::LEFT, stk::unit_test_util::DECREASING, "dummyField");
+  stk::unit_test_util::create_AB_mesh_with_sideset_and_field(bulk, stk::unit_test_util::LEFT, stk::unit_test_util::DECREASING, "dummyField");
 
   if (pRank == 0)
   {
@@ -189,7 +186,7 @@ TEST(CEO, change_entity_owner_2ElemWithSideset) {
   }
 }
 
-void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AutomaticAuraOption /*autoAuraOption*/)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   int psize = stk::parallel_machine_size(communicator);
@@ -210,8 +207,6 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
     builder.set_entity_rank_names(rankNames);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
     stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
-    stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
-    stkMeshMetaData.use_simple_fields();
 
     const std::string generatedMeshSpecification = "generated:1x1x6";
 
@@ -243,7 +238,7 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
     if (prank==2)
     {
       stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
-      stk::mesh::Entity constraint = stkMeshBulkData.declare_constraint(1);
+      stk::mesh::Entity constraint = stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, 1, stk::mesh::ConstPartVector{});
       stkMeshBulkData.declare_relation(constraint,node1,0);
     }
     stk::mesh::fixup_ghosted_to_shared_nodes(stkMeshBulkData);
@@ -311,17 +306,17 @@ TEST(CEO,moveElem_fieldDataOfNodes)
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
     stk::mesh::BulkData& bulk = *bulkPtr;
     stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-    meta.use_simple_fields();
     auto &field1 = meta.declare_field<int>(stk::topology::NODE_RANK, "field1");
     stk::mesh::put_field_on_entire_mesh(field1);
     stk::io::fill_mesh("generated:1x1x2", bulk);
 
     stk::mesh::EntityVector sharedNodes;
     stk::mesh::get_selected_entities(meta.globally_shared_part(), bulk.buckets(stk::topology::NODE_RANK), sharedNodes);
+    auto field1Data = field1.data<stk::mesh::ReadWrite>();
     for(stk::mesh::Entity node : sharedNodes)
     {
-      int *data = stk::mesh::field_data(field1, node);
-      *data = stk::parallel_machine_rank(comm);
+      auto data = field1Data.entity_values(node);
+      data(0_comp) = stk::parallel_machine_rank(comm);
     }
 
     stk::mesh::EntityProcVec thingsToChange;
@@ -339,19 +334,20 @@ TEST(CEO,moveElem_fieldDataOfNodes)
     {
       for(stk::mesh::Entity node : sharedNodes)
       {
-        int *data = stk::mesh::field_data(field1, node);
-        EXPECT_EQ(0, *data);
+        auto data = field1Data.entity_values(node);
+        EXPECT_EQ(0, data(0_comp));
       }
     }
 
     bulk.change_entity_owner(thingsToChange);
 
+    field1Data = field1.data<stk::mesh::ReadWrite>();
     if(stk::parallel_machine_rank(comm) == 0)
     {
       for(stk::mesh::Entity node : sharedNodes)
       {
-        int *data = stk::mesh::field_data(field1, node);
-        EXPECT_EQ(0, *data);
+        auto data = field1Data.entity_values(node);
+        EXPECT_EQ(0, data(0_comp));
       }
     }
   }

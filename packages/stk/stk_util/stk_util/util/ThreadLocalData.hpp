@@ -44,6 +44,7 @@
 #ifndef STK_THREAD_LOCAL_DATA_H
 #define STK_THREAD_LOCAL_DATA_H
 
+#include <stk_util/stk_config.h>
 #include <iostream>
 #include <vector>
 #include <limits>
@@ -54,13 +55,12 @@
 
 namespace stk {
 
-template<class dataType> class ThreadLocalData {
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Dec 2025
+template<class dataType> class STK_DEPRECATED ThreadLocalData {
 
  public:
 
    std::size_t concurrency() const {
-//     using execution_space = Kokkos::DefaultHostExecutionSpace;
-//     return execution_space().concurrency();
 #if defined( _OPENMP )
     return omp_get_max_threads();
 #else
@@ -69,8 +69,6 @@ template<class dataType> class ThreadLocalData {
   }
 
   std::size_t hardware_thread_id() const {
-//    using execution_space = Kokkos::DefaultHostExecutionSpace;
-//    return execution_space::hardware_thread_id();
 #if defined( _OPENMP )
     return omp_get_thread_num();
 #else
@@ -107,6 +105,7 @@ template<class dataType> class ThreadLocalData {
  private:
   std::vector<dataType> m_threadScratchDataVector;
 };
+#endif
 
 }
 

@@ -57,10 +57,6 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   Adapters/Stratimikos_FROSch_decl.hpp
   Adapters/Stratimikos_FROSch_def.hpp
-  Adapters/Thyra_FROSchFactory_decl.hpp
-  Adapters/Thyra_FROSchFactory_def.hpp
-  Adapters/Thyra_FROSchLinearOp_decl.hpp
-  Adapters/Thyra_FROSchLinearOp_def.hpp
   Adapters/FROSch_TpetraPreconditioner_decl.hpp
   Adapters/FROSch_TpetraPreconditioner_def.hpp
   CoarseSpaces/FROSch_CoarseSpace_decl.hpp
@@ -121,14 +117,8 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
-  SolverInterfaces/FROSch_AmesosSolverEpetra_decl.hpp
-  SolverInterfaces/FROSch_AmesosSolverEpetra_def.hpp
-  SolverInterfaces/FROSch_Amesos2SolverEpetra_decl.hpp
-  SolverInterfaces/FROSch_Amesos2SolverEpetra_def.hpp
   SolverInterfaces/FROSch_Amesos2SolverTpetra_decl.hpp
   SolverInterfaces/FROSch_Amesos2SolverTpetra_def.hpp
-  SolverInterfaces/FROSch_BelosSolverEpetra_decl.hpp
-  SolverInterfaces/FROSch_BelosSolverEpetra_def.hpp
   SolverInterfaces/FROSch_BelosSolverTpetra_decl.hpp
   SolverInterfaces/FROSch_BelosSolverTpetra_def.hpp
   SolverInterfaces/FROSch_FROSchPreconditioner_decl.hpp
@@ -141,10 +131,6 @@ APPEND_SET(HEADERS
   SolverInterfaces/FROSch_Solver_def.hpp
   SolverInterfaces/FROSch_SolverFactory_decl.hpp
   SolverInterfaces/FROSch_SolverFactory_def.hpp
-  SolverInterfaces/FROSch_ThyraPreconditioner_decl.hpp
-  SolverInterfaces/FROSch_ThyraPreconditioner_def.hpp
-  SolverInterfaces/FROSch_ThyraSolver_decl.hpp
-  SolverInterfaces/FROSch_ThyraSolver_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
   Tools/FROSch_Output.h
@@ -155,6 +141,20 @@ APPEND_SET(HEADERS
   Tools/FROSch_Tools_def.hpp
   Tools/FROSch_Types.h
 )
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thyra)
+IF (${PACKAGE_NAME}_ENABLE_Thyra)
+  APPEND_SET(HEADERS
+    Adapters/Thyra_FROSchFactory_decl.hpp
+    Adapters/Thyra_FROSchFactory_def.hpp
+    Adapters/Thyra_FROSchLinearOp_decl.hpp
+    Adapters/Thyra_FROSchLinearOp_def.hpp
+    SolverInterfaces/FROSch_ThyraPreconditioner_decl.hpp
+    SolverInterfaces/FROSch_ThyraPreconditioner_def.hpp
+    SolverInterfaces/FROSch_ThyraSolver_decl.hpp
+    SolverInterfaces/FROSch_ThyraSolver_def.hpp
+  )
+ENDIF()
 
 # Set sources
 

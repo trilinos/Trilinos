@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -20,7 +20,6 @@
 #include <vector>  // for vector
 
 #include <assert.h>
-#include <fmt/ostream.h>
 
 #include "Ioss_ElementPermutation.h"
 #include "Ioss_ElementTopology.h"
@@ -81,7 +80,7 @@ namespace Iotm {
 
     bool operator!=(const TopologyMapEntry &rhs) const { return !(*this == rhs); }
 
-    int num_sides() const
+    int num_face_sides() const
     {
       if (topology->is_shell()) {
         // Only interested in face boundaries, not edges
@@ -92,6 +91,8 @@ namespace Iotm {
 
       return topology->number_boundaries();
     }
+
+    int num_sides() const { return sideTopologies.size(); }
 
     // Side references are one-based
     bool valid_side(unsigned side) const
@@ -584,7 +585,8 @@ namespace Iotm {
 
       if (!entry.initialized) {
         entry.set_valid_spatial_dimensions({false, false, false, true});
-        entry.set_side_topologies({tri_3_factory(), tri_3_factory()});
+        entry.set_side_topologies({tri_3_factory(), tri_3_factory(), line_2_factory(),
+                                   line_2_factory(), line_2_factory()});
         entry.initialized = true;
       }
 
@@ -597,7 +599,8 @@ namespace Iotm {
 
       if (!entry.initialized) {
         entry.set_valid_spatial_dimensions({false, false, false, true});
-        entry.set_side_topologies({tri_4_factory(), tri_4_factory()});
+        entry.set_side_topologies({tri_4_factory(), tri_4_factory(), line_2_factory(),
+                                   line_2_factory(), line_2_factory()});
         entry.initialized = true;
       }
 
@@ -610,7 +613,8 @@ namespace Iotm {
 
       if (!entry.initialized) {
         entry.set_valid_spatial_dimensions({false, false, false, true});
-        entry.set_side_topologies({tri_6_factory(), tri_6_factory()});
+        entry.set_side_topologies({tri_6_factory(), tri_6_factory(), line_3_factory(),
+                                   line_3_factory(), line_3_factory()});
         entry.initialized = true;
       }
 
@@ -628,7 +632,8 @@ namespace Iotm {
 
       if (!entry.initialized) {
         entry.set_valid_spatial_dimensions({false, false, false, true});
-        entry.set_side_topologies({quad_4_factory(), quad_4_factory()});
+        entry.set_side_topologies({quad_4_factory(), quad_4_factory(), line_2_factory(),
+                                   line_2_factory(), line_2_factory(), line_2_factory()});
         entry.initialized = true;
       }
 
@@ -641,7 +646,8 @@ namespace Iotm {
 
       if (!entry.initialized) {
         entry.set_valid_spatial_dimensions({false, false, false, true});
-        entry.set_side_topologies({quad_8_factory(), quad_8_factory()});
+        entry.set_side_topologies({quad_8_factory(), quad_8_factory(), line_3_factory(),
+                                   line_3_factory(), line_3_factory(), line_3_factory()});
         entry.initialized = true;
       }
 
@@ -654,7 +660,8 @@ namespace Iotm {
 
       if (!entry.initialized) {
         entry.set_valid_spatial_dimensions({false, false, false, true});
-        entry.set_side_topologies({quad_9_factory(), quad_9_factory()});
+        entry.set_side_topologies({quad_9_factory(), quad_9_factory(), line_3_factory(),
+                                   line_3_factory(), line_3_factory(), line_3_factory()});
         entry.initialized = true;
       }
 
@@ -904,15 +911,14 @@ namespace Iotm {
       for (int side = 1; side <= numSides; side++) {
         if (topology->boundary_type(side) != sideTopologies_[side - 1]->topology) {
           std::ostringstream errmsg;
-          fmt::print(errmsg,
-                     "ERROR: For element topology: {} on side: {}, expected topology: {} does not "
-                     "match topology: {}",
-                     topology->name(), side, topology->boundary_type(side)->name(),
-                     sideTopologies_[side - 1]->topology->name());
+          // Would be nice to use fmt:: here, but we need to avoid using fmt includes in public
+          // headers...
+          errmsg << "ERROR: For element topology: " << topology->name() << " on side: " << side
+                 << ", expected topology: " << topology->boundary_type(side)->name()
+                 << " does not match topology: " << sideTopologies_[side - 1]->topology->name();
           IOSS_ERROR(errmsg);
         }
       }
-
       sideTopologies = sideTopologies_;
     }
 

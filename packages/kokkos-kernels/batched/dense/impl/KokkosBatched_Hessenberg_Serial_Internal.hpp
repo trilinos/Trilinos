@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_HESSENBERG_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_HESSENBERG_SERIAL_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_HESSENBERG_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_HESSENBERG_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -34,8 +21,7 @@ struct SerialHessenbergInternal {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m,  // m = NumRows(A)
                                            const int n,  // n = NumCols(A)
-                                           /* */ ValueType *A, const int as0,
-                                           const int as1,
+                                           /* */ ValueType *A, const int as0, const int as1,
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *w) {
     typedef ValueType value_type;
@@ -76,25 +62,22 @@ struct SerialHessenbergInternal {
 
         // perform householder transformation
         const int m_A22_b = m_A22 - 1;
-        SerialLeftHouseholderInternal::invoke(m_A22_b, A21_part2x1.AT,
-                                              A21_part2x1.AB, as0, tau);
+        SerialLeftHouseholderInternal::invoke(m_A22_b, A21_part2x1.AT, A21_part2x1.AB, as0, tau);
 
         // partition A22 into 2x1
         A22_part2x1.partWithAT(A_part3x3.A22, m_A22, 1);
 
         // left apply householder to partitioned A22
-        SerialApplyLeftHouseholderInternal::invoke(
-            m_A22_b, n_A22, tau, A21_part2x1.AB, as0, A22_part2x1.AT, as1,
-            A22_part2x1.AB, as0, as1, w);
+        SerialApplyLeftHouseholderInternal::invoke(m_A22_b, n_A22, tau, A21_part2x1.AB, as0, A22_part2x1.AT, as1,
+                                                   A22_part2x1.AB, as0, as1, w);
 
         // partition A*2 column into 1x2
         A2_part1x2.partWithAL(A_part3x3.A02, n_A22, 1);
 
         // right apply householder to A*2 colums
         const int n_A22_r = n_A22 - 1;
-        SerialApplyRightHouseholderInternal::invoke(
-            m, n_A22_r, tau, A21_part2x1.AB, as0, A2_part1x2.AL, as0,
-            A2_part1x2.AR, as0, as1, w);
+        SerialApplyRightHouseholderInternal::invoke(m, n_A22_r, tau, A21_part2x1.AB, as0, A2_part1x2.AL, as0,
+                                                    A2_part1x2.AR, as0, as1, w);
       }
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);

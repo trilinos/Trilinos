@@ -1,0 +1,36 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#include "TrilinosCouplings_config.h"
+
+#if defined(HAVE_TRILINOSCOUPLINGS_EXPLICIT_INSTANTIATION)
+
+#include "Tpetra_ConfigDefs.hpp"
+#include "TrilinosCouplings_ETIHelperMacros.h"
+#include "TrilinosCouplings_@CLASS_NAME@_decl.hpp"
+#include "TrilinosCouplings_@CLASS_NAME@_def.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+
+namespace TrilinosCouplings {
+
+#if defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@SC_MACRO_NAME@) && defined (HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) @SC_MACRO_EXPR@
+
+// Need this for the mangling of the Node typedef.
+TRILINOSCOUPLINGS_ETI_MANGLING_TYPEDEFS()
+
+TRILINOSCOUPLINGS_@CLASS_MACRO_NAME@_INSTANT( @SC_MANGLED_NAME@, @LO_MANGLED_NAME@, @GO_MANGLED_NAME@, @NT_MANGLED_NAME@ )
+
+#else
+#warning "We don't have the @NT_MACRO_NAME@ node."
+
+#endif
+
+}
+
+#endif // HAVE_TRILINOSCOUPLINGS_EXPLICIT_INSTANTIATION

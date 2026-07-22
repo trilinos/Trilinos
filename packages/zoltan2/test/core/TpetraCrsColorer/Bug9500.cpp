@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #include "Tpetra_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -49,7 +57,7 @@ public:
     JBlock->fillComplete();
 
     // Fill JBlock with random numbers for a better test.
-    using IST = typename Kokkos::ArithTraits<zscalar_t>::val_type;
+    using IST = typename KokkosKernels::ArithTraits<zscalar_t>::val_type;
     using pool_type = 
           Kokkos::Random_XorShift64_Pool<execution_space_t>;
     pool_type rand_pool(static_cast<uint64_t>(me));

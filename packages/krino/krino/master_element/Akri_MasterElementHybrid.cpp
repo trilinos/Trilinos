@@ -13,7 +13,6 @@
 #include <stk_mesh/base/MetaData.hpp> // for get_cell_topology
 #include <Akri_MasterElementCalc.hpp>
 
-#include <Teuchos_RCP.hpp>
 #include <Kokkos_DynRankView.hpp>
 #include <Intrepid2_Cubature.hpp>
 #include <Intrepid2_DefaultCubatureFactory.hpp>
@@ -55,18 +54,39 @@ static std::unique_ptr<Basis> get_basis_for_topology(stk::topology t)
   }
 }
 
-MasterElementHybrid::MasterElementHybrid(stk::topology topology)
-: m_topology(topology)
+static stk::topology working_topology(const stk::topology topology)
 {
-  m_Basis = get_basis_for_topology(topology);
+  if (!topology.is_shell())
+    return topology;
+  switch(topology())
+  {
+  case stk::topology::SHELL_SIDE_BEAM_2:
+    return stk::topology::LINE_2;
+  case stk::topology::SHELL_SIDE_BEAM_3:
+    return stk::topology::LINE_3;
+  case stk::topology::SHELL_TRI_3:
+  case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+      return stk::topology::TRIANGLE_3;
+  case stk::topology::SHELL_TRI_6:
+  case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+      return stk::topology::TRIANGLE_6;
+  default:
+      throw std::runtime_error("Shell topology not found in working_topology_for_processing_sides(): " + topology.name());
+  }
+}
+
+MasterElementHybrid::MasterElementHybrid(stk::topology topology)
+: m_topology(working_topology(topology))
+{
+  m_Basis = get_basis_for_topology(m_topology);
   using PointType = double;
   using WeightType = double;
   using ExecutionSpace = Kokkos::DefaultHostExecutionSpace;
-  auto intrepid2Cubature = Intrepid2::DefaultCubatureFactory().create<ExecutionSpace, PointType, WeightType>(stk::mesh::get_cell_topology(topology), 2*m_Basis->degree());
+  auto intrepid2Cubature = Intrepid2::DefaultCubatureFactory().create<ExecutionSpace, PointType, WeightType>(stk::mesh::get_cell_topology(m_topology), 2*m_Basis->degree());
 
   m_numIntgPts = intrepid2Cubature->getNumPoints();
 
-  m_numNodes = topology.num_nodes();
+  m_numNodes = m_topology.num_nodes();
   m_numElemDims  = intrepid2Cubature->getDimension();
 
   // Allocate reference data
@@ -132,7 +152,7 @@ MasterElementHybrid::shape_fcn_deriv(
 
 void
 MasterElementHybrid::interpolate_point(
-    const int  npar_coord,
+    const int  /*npar_coord*/,
     const double * par_coord,      // (npar_coord)
     const int  ncomp_field,
     const double * field,          // (ncomp_field,num_nodes)

@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2022, 2023, 2025 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -11,7 +11,6 @@ set -o pipefail
 
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
-
 function usage {
 USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
    echo ""
@@ -20,6 +19,7 @@ USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
    echo "    --device         device             x11"
    echo "    --input          cmd_file           -none-"
    echo "    --hardcopy       met_filename       db basename"
+   echo "    --change_set     cs_#               1 if change_sets in file"
    echo "    --basename       base_filename      db basename"
    echo "      (Used for basename of .ray, .csv, .neu files)"
    echo "    --ps_option      num|list|help      7"
@@ -30,7 +30,8 @@ USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
    echo "      (show database filename below plot)"
    echo "    --help           (Prints this message)"
    echo "    "
-   echo "  Contact: gdsjaar@sandia.gov"
+   echo "  Contact: sierra-help@sandia.gov"
+   echo "           https://github.com/sandialabs/seacas/issues"
    echo "  Documentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#blot"
    echo "  "
     show_device
@@ -76,6 +77,7 @@ function abspath() {
             FOR011=`echo "$(pwd)/$1"`
         fi
     fi
+    return 0
 }
 
 codename=blot
@@ -94,7 +96,6 @@ else
 fi
 sep=@SEPARATOR@
 
-# Text color variables
 # Text color variables
 if [[ $TERM == *"xterm"* ]] || [[ $TERM == "screen" ]]; then
     txtund=$(tput sgr 0 1)    # Underline
@@ -124,7 +125,8 @@ fi
 echo " "
 echo "=============================================================="
 echo "| Sandia Engineering Analysis Access procedure for: ${codename}"
-echo "| Send email to gdsjaar@sandia.gov for help"
+echo "| sierra-help@sandia.gov or "
+echo "|   https://github.com/sandialabs/seacas/issues for help"
 echo "=============================================================="
 
 aprepro="false"
@@ -135,56 +137,59 @@ export EXT04=NO
 
 GETOPT=${ACCESS_BIN}/getopt.seacas
 
-TEMP=`${GETOPT} -o aoidhbps -a --long nomap:,ps_option:,device:,input:,hardcopy:,basename:,aprepro,help,show_filename -n 'blot' -- "$@"`
+TEMP=`${GETOPT} -o acoidhbps -a --long nomap:,ps_option:,device:,input:,hardcopy:,basename:,change_set:,aprepro,help,show_filename -n 'blot' -- "$@"`
 
 if [ $? != 0 ] ; then usage ; exit 1 ; fi
 
 ps_option=${ps_option:-""}
 nomap_option=${nomap_option:-""}
 caption=${caption:-""}
+cs_option=${cs_option:-""}
 
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
 while true ; do
-	case "$1" in
-	    -h|--help)
-	      usage ; shift ;;
-	    -i|--input)
-	      export FOR007="$2" ; shift 2
-	      export EXT04="YES"
-	      if [ ! -e "${FOR007}" ]
-	      then
-		echo "${txtred}ERROR: Input file '$FOR007' does not exist.${txtrst}"
+        case "$1" in
+            -h|--help)
+              usage ; shift ;;
+            -i|--input)
+              export FOR007="$2" ; shift 2
+              export EXT04="YES"
+              if [ ! -e "${FOR007}" ]
+              then
+                echo "${txtred}ERROR: Input file '$FOR007' does not exist.${txtrst}"
                 usage
-	      fi
-	      ;;
-	   -p|--ps_option)
-	     ps_option="$2" ; shift 2
+              fi
+              ;;
+           -p|--ps_option)
+             ps_option="$2" ; shift 2
              if [ "${ps_option}" == "list" ] || [ "${ps_option}" == "help" ]
-	     then
+             then
                 show_ps_option
-	        exit 0
+                exit 0
              fi
-	     ;;
+             ;;
            -d|--device)
              device="$2" ; shift 2
             if [ "${device}" == "list" ] || [ "${device}" == "help" ]
-	    then
+            then
                show_device
-	       exit 0
+               exit 0
             fi
-	    ;;
+            ;;
            -b|--basename|--hardcopy)
               filename="$2" ; shift 2 ;;
+           -c|--change_set)
+              cs_option="-change_set $2" ; shift 2 ;;
            --nomap)
               nomap_option="-nomap $2" ; shift 2 ;;
            -a|--aprepro)
-	      aprepro="true" ; shift ;;
+              aprepro="true" ; shift ;;
            -s|--show_filename)
-	      caption="--show_filename" ; shift ;;
-	    --) shift ; break ;;
-	    *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
-	esac
+              caption="--show_filename" ; shift ;;
+            --) shift ; break ;;
+            *) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
+        esac
 done
 
 if [ $# -eq 0 ] ; then
@@ -193,10 +198,10 @@ if [ $# -eq 0 ] ; then
 else
     if [ -e "$1" ]
     then
-	export FOR011=$1
+        export FOR011=$1
     else
         echo "${txtred}ERROR: Exodus database '$1' does not exist.${txtrst}"
-	usage
+        usage
     fi
     shift
 fi
@@ -223,8 +228,6 @@ fi
 if [ ! -x "${ACCESS_BIN}/${codename}${sep}${device}" ]
 then
    echo "${txtred}ERROR: ${ACCESS_BIN}/${codename}${sep}${device} does not exist.${txtrst}"
-   echo "    Contact gdsjaar@sandia.gov if you need this device;"
-   echo "    otherwise use one of the supported devices:"
    show_device
    exit 1
 fi
@@ -233,7 +236,7 @@ fi
 abspath ${FOR011}
 
 # Run the code
-if ${ACCESS_BIN}/${codename}${sep}${device} ${ps_option} ${nomap_option} ${caption} -basename ${filename} ${FOR011}
+if ${ACCESS_BIN}/${codename}${sep}${device} ${ps_option} ${nomap_option} ${caption} ${cs_option} -basename ${filename} ${FOR011}
 then
   echo "${txtgrn}BLOT Successful Execution${txtrst}"
 fi

@@ -54,7 +54,7 @@ TEST(StkIo, meshRead_hex_noAura)
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 10;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 80);
+  int ELEMS_PER_DIM = stk::unit_test_util::get_command_line_option("--ne", 80);
   std::string elems = std::to_string(ELEMS_PER_DIM);
   std::string meshSpec = "generated:"+elems+"x"+elems+"x"+elems;
 
@@ -75,7 +75,6 @@ TEST(StkIo, meshRead_hex_noAura)
       std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                           .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
                                                           .create();
-      bulkPtr->mesh_meta_data().use_simple_fields();
       stk::io::fill_mesh(meshSpec, *bulkPtr);
     }
 
@@ -90,7 +89,7 @@ TEST(StkIo, meshRead_hex_shells_sidesets_aura)
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 10;
-  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 80);
+  int ELEMS_PER_DIM = stk::unit_test_util::get_command_line_option("--ne", 80);
   std::string elems = std::to_string(ELEMS_PER_DIM);
   std::string meshSpec = "generated:"+elems+"x"+elems+"x"+elems+"|shell:xyzXYZ|sideset:xyzXYZ";
 
@@ -110,7 +109,6 @@ TEST(StkIo, meshRead_hex_shells_sidesets_aura)
     for(unsigned i=0; i<NUM_ITERS; ++i) {
       std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                           .create();
-      bulkPtr->mesh_meta_data().use_simple_fields();
       stk::io::fill_mesh(meshSpec, *bulkPtr);
     }
 

@@ -1,31 +1,12 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -33,11 +14,17 @@
 #include "Sacado.hpp"
 #include "Fad_CommTests.hpp"
 
+Sacado::Random<double> rnd;
+
 typedef int Ordinal;
 typedef Sacado::Fad::DFad<double> Fad_DFadType;
 typedef Sacado::Fad::SLFad<double,10> Fad_SLFadType;
 typedef Sacado::Fad::SFad<double,5> Fad_SFadType;
 
+FAD_KOKKOS_COMM_TESTS_HIP(Fad_SLFadType, Fad_SLFad)
+FAD_KOKKOS_COMM_TESTS_HIP(Fad_SFadType, Fad_SFad)
+
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 typedef Sacado::CacheFad::DFad<double> CacheFad_DFadType;
 typedef Sacado::CacheFad::SLFad<double,10> CacheFad_SLFadType;
 typedef Sacado::CacheFad::SFad<double,5> CacheFad_SFadType;
@@ -49,11 +36,7 @@ typedef Sacado::ELRFad::SFad<double,5> ELRFad_SFadType;
 typedef Sacado::ELRCacheFad::DFad<double> ELRCacheFad_DFadType;
 typedef Sacado::ELRCacheFad::SLFad<double,10> ELRCacheFad_SLFadType;
 typedef Sacado::ELRCacheFad::SFad<double,5> ELRCacheFad_SFadType;
-Sacado::Random<double> rnd;
 
-
-FAD_KOKKOS_COMM_TESTS_HIP(Fad_SLFadType, Fad_SLFad)
-FAD_KOKKOS_COMM_TESTS_HIP(Fad_SFadType, Fad_SFad)
 
 FAD_KOKKOS_COMM_TESTS_HIP(CacheFad_SLFadType, CacheFad_SLFad)
 FAD_KOKKOS_COMM_TESTS_HIP(CacheFad_SFadType, CacheFad_SFad)
@@ -63,6 +46,7 @@ FAD_KOKKOS_COMM_TESTS_HIP(ELRFad_SFadType, ELRFad_SFad)
 
 FAD_KOKKOS_COMM_TESTS_HIP(ELRCacheFad_SLFadType, ELRCacheFad_SLFad)
 FAD_KOKKOS_COMM_TESTS_HIP(ELRCacheFad_SFadType, ELRCacheFad_SFad)
+#endif
 
 
 int main( int argc, char* argv[] ) {

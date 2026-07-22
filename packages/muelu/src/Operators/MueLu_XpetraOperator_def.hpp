@@ -11,8 +11,18 @@
 #define MUELU_XPETRAOPERATOR_DEF_HPP
 
 #include "MueLu_XpetraOperator_decl.hpp"
+#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    XpetraOperator(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H)
+  : Hierarchy_(H) {}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    ~XpetraOperator() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
@@ -43,26 +53,28 @@ void XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           Scalar /* beta */) const {
   TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS, std::logic_error, "MueLu::XpetraOperator does not support applying the adjoint operator");
   try {
-#ifdef HAVE_MUELU_DEBUG
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
-    RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
+    if (Behavior::debug()) {
+      using Matrix  = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+      RCP<Matrix> A = Hierarchy_->GetLevel(0)->template Get<RCP<Matrix> >("A");
 
-    // X is supposed to live in the range map of the operator (const rhs = B)
-    RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Xop =
-        Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A->getRangeMap(), X.getNumVectors());
-    RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Yop =
-        Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A->getDomainMap(), Y.getNumVectors());
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRangeMap()->isSameAs(*(Xop->getMap())) == false, std::logic_error,
-                               "MueLu::XpetraOperator::apply: map of X is incompatible with range map of A");
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getDomainMap()->isSameAs(*(Yop->getMap())) == false, std::logic_error,
-                               "MueLu::XpetraOperator::apply: map of Y is incompatible with domain map of A");
-#endif
+      // X is supposed to live in the range map of the operator (const rhs = B)
+      TEUCHOS_TEST_FOR_EXCEPTION(A->getRangeMap()->isSameAs(*(X.getMap())) == false, std::logic_error,
+                                 "MueLu::XpetraOperator::apply: map of X is incompatible with range map of A");
+      TEUCHOS_TEST_FOR_EXCEPTION(A->getDomainMap()->isSameAs(*(Y.getMap())) == false, std::logic_error,
+                                 "MueLu::XpetraOperator::apply: map of Y is incompatible with domain map of A");
+    }
     Hierarchy_->Iterate(X, Y, 1, true);
   } catch (std::exception& e) {
     // FIXME add message and rethrow
     std::cerr << "Caught an exception in MueLu::XpetraOperator::apply():" << std::endl
               << e.what() << std::endl;
   }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    hasTransposeApply() const {
+  return false;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -73,6 +85,12 @@ void XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using STS = Teuchos::ScalarTraits<Scalar>;
   R.update(STS::one(), B, STS::zero());
   this->apply(X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+XpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetHierarchy() const {
+  return Hierarchy_;
 }
 
 }  // namespace MueLu

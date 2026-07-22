@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 #
@@ -1041,7 +1041,7 @@ def getDistHelpTopicStr(helpTopicVal):
     if helpTopicHelpStr:
       helpTopicStr += helpTopicHelpStr
     else:
-      # Invalid help topic so return nonthing and help error handler deal!
+      # Invalid help topic so return nothing and help error handler deal!
       return ""
   return helpTopicStr
 

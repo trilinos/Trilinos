@@ -89,7 +89,7 @@ void LowPrecisionFactory<double, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, matrixKey);
 
   if ((A->getRowMap()->lib() == Xpetra::UseTpetra) && std::is_same<Scalar, double>::value) {
-    auto tpA        = rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(A)->getCrsMatrix(), true)->getTpetra_CrsMatrix();
+    auto tpA        = toTpetra(A);
     auto tpLowA     = tpA->template convert<HalfScalar>();
     auto tpLowOpA   = rcp(new Tpetra::CrsMatrixMultiplyOp<Scalar, HalfScalar, LocalOrdinal, GlobalOrdinal, Node>(tpLowA));
     auto xpTpLowOpA = rcp(new TpetraOperator(tpLowOpA));
@@ -136,7 +136,7 @@ void LowPrecisionFactory<std::complex<double>, LocalOrdinal, GlobalOrdinal, Node
   RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, matrixKey);
 
   if ((A->getRowMap()->lib() == Xpetra::UseTpetra) && std::is_same<Scalar, std::complex<double> >::value) {
-    auto tpA        = rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(A)->getCrsMatrix(), true)->getTpetra_CrsMatrix();
+    auto tpA        = toTpetra(A);
     auto tpLowA     = tpA->template convert<HalfScalar>();
     auto tpLowOpA   = rcp(new Tpetra::CrsMatrixMultiplyOp<Scalar, HalfScalar, LocalOrdinal, GlobalOrdinal, Node>(tpLowA));
     auto xpTpLowOpA = rcp(new TpetraOperator(tpLowOpA));

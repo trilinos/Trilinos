@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2024 National Technology & Engineering Solutions
+ * Copyright(C) 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,12 +20,10 @@
 #include "Ioss_Region.h"
 #include "Ioss_SmartAssert.h"
 
+#include <fmt/color.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
-#if !defined __NVCC__
-#include <fmt/color.h>
-#endif
 
 #if !defined(NO_ZOLTAN_SUPPORT)
 #include <zoltan.h>     // for Zoltan_Initialize
@@ -128,10 +126,13 @@ namespace {
     }
     return chains;
   }
+} // namespace
 
-  void output_histogram(const std::vector<size_t> &proc_work, size_t avg_work, size_t median)
+namespace Ioss {
+  void DecompUtils::output_histogram(const std::vector<size_t> &proc_work, double avg_work,
+                                     size_t median)
   {
-    fmt::print("Work-per-processor Histogram\n");
+    fmt::print("Work-per-processor Histogram:\n");
     std::array<size_t, 16> histogram{};
 
     auto wmin = *std::min_element(proc_work.begin(), proc_work.end());
@@ -159,7 +160,7 @@ namespace {
     auto hist_max = *std::max_element(histogram.begin(), histogram.end());
     for (size_t i = 0; i < hist_size; i++) {
       int         max_star = 50;
-      int         star_cnt = ((double)histogram[i] / hist_max * max_star);
+      int         star_cnt = (static_cast<double>(histogram[i]) / hist_max * max_star);
       std::string stars(star_cnt, '*');
       for (int j = 9; j < star_cnt;) {
         stars[j] = '|';
@@ -186,9 +187,7 @@ namespace {
     }
     fmt::print("\n");
   }
-} // namespace
 
-namespace Ioss {
   template IOSS_EXPORT void
   DecompUtils::decompose_zoltan(const Ioss::Region &region, int ranks, const std::string &method,
                                 std::vector<int> &elem_to_proc, const std::vector<float> &weights,
@@ -337,9 +336,9 @@ namespace Ioss {
   }
 
   template <typename INT>
-  int DecompUtils::line_decompose(Region &region, size_t num_ranks, const std::string &method,
-                                  const std::string &surface_list,
-                                  std::vector<int> &element_to_proc, INT dummy)
+  void DecompUtils::line_decompose(Region &region, size_t num_ranks, const std::string &method,
+                                   const std::string &surface_list,
+                                   std::vector<int> &element_to_proc, INT dummy)
   {
 
     Ioss::chain_t<INT> element_chains =
@@ -359,20 +358,18 @@ namespace Ioss {
 
     // Make sure all elements on a chain are on the same processor rank...
     line_decomp_modify(element_chains, element_to_proc, num_ranks);
-
-    return 1;
   }
 
-  template IOSS_EXPORT int DecompUtils::line_decompose(Region &region, size_t num_ranks,
-                                                       const std::string &method,
-                                                       const std::string &surface_list,
-                                                       std::vector<int>  &element_to_proc,
-                                                       int                dummy);
-  template IOSS_EXPORT int DecompUtils::line_decompose(Region &region, size_t num_ranks,
-                                                       const std::string &method,
-                                                       const std::string &surface_list,
-                                                       std::vector<int>  &element_to_proc,
-                                                       int64_t            dummy);
+  template IOSS_EXPORT void DecompUtils::line_decompose(Region &region, size_t num_ranks,
+                                                        const std::string &method,
+                                                        const std::string &surface_list,
+                                                        std::vector<int>  &element_to_proc,
+                                                        int                dummy);
+  template IOSS_EXPORT void DecompUtils::line_decompose(Region &region, size_t num_ranks,
+                                                        const std::string &method,
+                                                        const std::string &surface_list,
+                                                        std::vector<int>  &element_to_proc,
+                                                        int64_t            dummy);
 
   template <typename INT>
   std::vector<float> DecompUtils::line_decomp_weights(const Ioss::chain_t<INT> &element_chains,
@@ -465,71 +462,81 @@ namespace Ioss {
   DecompUtils::line_decomp_modify(const Ioss::chain_t<int64_t> &element_chains,
                                   std::vector<int> &elem_to_proc, int proc_count);
 
-  void DecompUtils::output_decomposition_statistics(const std::vector<int> &elem_to_proc,
-                                                    int proc_count)
+  std::vector<size_t> DecompUtils::get_work_per_rank(const std::vector<int> &elem_to_proc,
+                                                     int                     proc_count)
   {
-    // Output histogram of elements / rank...
-    std::vector<size_t> elem_per_rank(proc_count);
+    std::vector<size_t> work_per_rank(proc_count);
     for (int proc : elem_to_proc) {
-      elem_per_rank[proc]++;
+      work_per_rank[proc]++;
     }
+    return work_per_rank;
+  }
 
-    size_t number_elements = elem_to_proc.size();
+  std::pair<double, size_t>
+  DecompUtils::output_decomposition_statistics(const std::vector<size_t> work_per_rank)
+  {
+    size_t total_work = std::accumulate(work_per_rank.begin(), work_per_rank.end(), size_t(0));
+    size_t proc_count = work_per_rank.size();
     size_t proc_width = Ioss::Utils::number_width(proc_count, false);
-    size_t work_width = Ioss::Utils::number_width(number_elements, true);
+    size_t work_width = Ioss::Utils::number_width(total_work, true);
 
-    auto   min_work = *std::min_element(elem_per_rank.begin(), elem_per_rank.end());
-    auto   max_work = *std::max_element(elem_per_rank.begin(), elem_per_rank.end());
+    auto   min_work = *std::min_element(work_per_rank.begin(), work_per_rank.end());
+    auto   max_work = *std::max_element(work_per_rank.begin(), work_per_rank.end());
+    double avg_work = 0.0;
     size_t median   = 0;
     {
-      auto pw_copy(elem_per_rank);
+      auto pw_copy(work_per_rank);
       std::nth_element(pw_copy.begin(), pw_copy.begin() + pw_copy.size() / 2, pw_copy.end());
       median = pw_copy[pw_copy.size() / 2];
-      fmt::print("\nElements per processor:\n\tMinimum = {}, Maximum = {}, Median = {}, Ratio = "
+      fmt::print("\nWork per processor:\n\tMinimum = {}, Maximum = {}, Median = {}, Ratio = "
                  "{:.3}\n\n",
                  fmt::group_digits(min_work), fmt::group_digits(max_work),
-                 fmt::group_digits(median), (double)(max_work) / min_work);
+                 fmt::group_digits(median), static_cast<double>(max_work) / min_work);
     }
     if (min_work == max_work) {
       fmt::print("Work on all processors is {}\n\n", fmt::group_digits(min_work));
     }
     else {
       int max_star = 40;
-      int min_star = max_star * ((double)min_work / (double)(max_work));
+      int min_star = max_star * (static_cast<double>(min_work) / static_cast<double>(max_work));
       min_star     = std::max(1, min_star);
       int delta    = max_star - min_star;
 
-      double avg_work = (double)number_elements / (double)proc_count;
-      for (size_t i = 0; i < elem_per_rank.size(); i++) {
+      avg_work = static_cast<double>(total_work) / static_cast<double>(proc_count);
+      for (size_t i = 0; i < work_per_rank.size(); i++) {
         int star_cnt =
-            (double)(elem_per_rank[i] - min_work) / (max_work - min_work) * delta + min_star;
+            static_cast<double>(work_per_rank[i] - min_work) / (max_work - min_work) * delta +
+            min_star;
         std::string stars(star_cnt, '*');
-        std::string format = "\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n";
-        if (elem_per_rank[i] == max_work) {
-          fmt::print(
+        auto tmp = fmt::format(fmt::runtime("\tProcessor {:{}}, work = {:{}}  ({:.2f})\t{}\n"), i,
+                               proc_width, fmt::group_digits(work_per_rank[i]), work_width,
+                               work_per_rank[i] / avg_work, stars);
+
 #if !defined __NVCC__
-              fg(fmt::color::red),
-#endif
-              format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
-              (double)elem_per_rank[i] / avg_work, stars);
+        if (work_per_rank[i] == max_work) {
+          fmt::print("{}", fmt::styled(tmp, fmt::fg(fmt::color::red)));
         }
-        else if (elem_per_rank[i] == min_work) {
-          fmt::print(
-#if !defined __NVCC__
-              fg(fmt::color::green),
-#endif
-              format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
-              elem_per_rank[i] / avg_work, stars);
+        else if (work_per_rank[i] == min_work) {
+          fmt::print("{}", fmt::styled(tmp, fmt::fg(fmt::color::green)));
         }
         else {
-          fmt::print(format, i, proc_width, fmt::group_digits(elem_per_rank[i]), work_width,
-                     elem_per_rank[i] / avg_work, stars);
+          fmt::print("{}", tmp);
         }
+#else
+        fmt::print("{}", tmp);
+#endif
       }
-
-      // Output Histogram...
-      output_histogram(elem_per_rank, (size_t)avg_work, median);
     }
+
+    // Imbalance penalty -- max work / avg work.  If perfect balance, then all processors would have
+    // "avg_work" work to do. With current decomposition, every processor has to wait until
+    // "max_work" is done.  Penalty = max_work / avg_work.
+    fmt::print("\nImbalance Penalty:\n\tMaximum Work = {}, Average Work = {}, Penalty (max/avg) "
+               "= {:.2f}\n\n",
+               fmt::group_digits(max_work), fmt::group_digits(static_cast<size_t>(avg_work)),
+               static_cast<double>(max_work) / avg_work);
+
+    return std::make_pair(avg_work, median);
   }
 
   template <typename INT>

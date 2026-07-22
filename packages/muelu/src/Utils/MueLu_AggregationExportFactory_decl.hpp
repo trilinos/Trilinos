@@ -34,7 +34,7 @@ namespace MueLu {
 class Level;
 
 /*!
-  @class AggregationExportFactory class.
+  @class AggregationExportFactory
   @brief Factory to export aggregation info or visualize aggregates using VTK
 
   Note, that some routines only work for 1 dof per node.
@@ -79,17 +79,10 @@ class AggregationExportFactory : public TwoLevelFactoryBase, public Visualizatio
   //@{
 
   //! Constructor.
-  AggregationExportFactory()
-    : doFineGraphEdges_(false)
-    , doCoarseGraphEdges_(false)
-    , numNodes_(0)
-    , numAggs_(0)
-    , dims_(0)
-    , myRank_(-1)
-    , aggsOffset_(0) {}
+  AggregationExportFactory();
 
   //! Destructor.
-  virtual ~AggregationExportFactory() {}
+  virtual ~AggregationExportFactory();
   //@}
 
   RCP<const ParameterList> GetValidParameterList() const;
@@ -130,9 +123,13 @@ class AggregationExportFactory : public TwoLevelFactoryBase, public Visualizatio
   // Data that the different styles need to have available when building geometry
   mutable Teuchos::RCP<CoordinateMultiVector> coords_;        // fine local coordinates
   mutable Teuchos::RCP<CoordinateMultiVector> coordsCoarse_;  // coarse local coordinates
-  mutable Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId_;
+  mutable Teuchos::RCP<LocalOrdinalMultiVector> vertex2AggId_;
+  mutable Teuchos::RCP<MultiVector> qualities_;
+  mutable Teuchos::RCP<MultiVector> material_;
   mutable Teuchos::ArrayRCP<LocalOrdinal> aggSizes_;
   mutable std::vector<bool> isRoot_;
+  mutable bool doAggQuality_;
+  mutable bool doMaterial_;
   mutable bool doFineGraphEdges_;
   mutable bool doCoarseGraphEdges_;
   mutable int numNodes_;

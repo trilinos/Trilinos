@@ -39,7 +39,7 @@ class VariableContainer : public BaseClass {
   // Motivated by Teuchos_any.hpp
   class DataBase {
    public:
-    virtual ~DataBase() {}
+    virtual ~DataBase()                        = default;
     virtual const std::type_info& type() const = 0;
     virtual std::string typeName() const       = 0;
   };

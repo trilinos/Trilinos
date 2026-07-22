@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef STOKHOS_CRSMATRIX_HPP
@@ -46,7 +14,7 @@
 #include <iomanip>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
+#include "KokkosSparse_StaticCrsGraph.hpp"
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_MatrixMarket.hpp"
@@ -83,12 +51,13 @@ public:
   typedef ValueType value_type;
   typedef Kokkos::View< value_type[], Layout, execution_space > values_type;
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE // Don't remove this until Kokkos has removed the deprecated code path probably around September 2018
-  typedef Kokkos::StaticCrsGraph< int , Layout, execution_space , int > graph_type;
+  typedef KokkosSparse::StaticCrsGraph< int , Layout, execution_space , int > graph_type;
 #else
-  typedef Kokkos::StaticCrsGraph< int , Layout, execution_space , void, int > graph_type;
+  typedef KokkosSparse::StaticCrsGraph< int , Layout, execution_space , void, int > graph_type;
 #endif
 
-  typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
+  typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> host_mirror_type;
+  typedef host_mirror_type HostMirror;
 
   values_type values;
   graph_type graph;
@@ -663,9 +632,9 @@ void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
 namespace Kokkos {
 
 template <typename ValueType, typename Layout, typename Device>
-typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror
+typename Stokhos::CrsMatrix<ValueType,Device,Layout>::host_mirror_type
 create_mirror(const Stokhos::CrsMatrix<ValueType,Device,Layout>& A) {
-  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror mirror_A;
+  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::host_mirror_type mirror_A;
   mirror_A.values = Kokkos::create_mirror(A.values);
   mirror_A.graph = Kokkos::create_mirror(A.graph); // this deep copies
   mirror_A.dev_config = A.dev_config;
@@ -673,9 +642,9 @@ create_mirror(const Stokhos::CrsMatrix<ValueType,Device,Layout>& A) {
 }
 
 template <typename ValueType, typename Layout, typename Device>
-typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror
+typename Stokhos::CrsMatrix<ValueType,Device,Layout>::host_mirror_type
 create_mirror_view(const Stokhos::CrsMatrix<ValueType,Device,Layout>& A) {
-  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::HostMirror mirror_A;
+  typename Stokhos::CrsMatrix<ValueType,Device,Layout>::host_mirror_type mirror_A;
   mirror_A.values = Kokkos::create_mirror_view(A.values);
   mirror_A.graph = Kokkos::create_mirror(A.graph); // this deep copies
   mirror_A.dev_config = A.dev_config;
@@ -711,7 +680,7 @@ public:
     file.precision(16);
     file.setf(std::ios::scientific);
 
-    typename matrix_type::HostMirror hA = Kokkos::create_mirror_view(A);
+    typename matrix_type::host_mirror_type hA = Kokkos::create_mirror_view(A);
     Kokkos::deep_copy(hA, A);
 
     const size_type nRow = hA.graph.row_map.extent(0) - 1 ;

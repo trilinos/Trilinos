@@ -53,10 +53,24 @@ public:
   virtual       void* field_data(const Mesh_ID & id, const unsigned field_index)       = 0;
   virtual std::string field_name(const unsigned field_index) const = 0;
   virtual unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const = 0;
+
+  virtual int num_components(const Mesh_ID & id, const unsigned field_index) const = 0;
+  virtual int component_stride(const Mesh_ID & id, const unsigned field_index) const = 0;
+  virtual int num_bytes(const Mesh_ID & id, const unsigned field_index) const = 0;
+  virtual int bytes_per_scalar(const Mesh_ID & id, const unsigned field_index) const = 0;
+  virtual int scalar_byte_stride(const Mesh_ID & id, const unsigned field_index) const = 0;
+
   virtual unsigned num_fields() const = 0;
   virtual ParallelMachine comm() const = 0;
+
+  virtual void begin_search() const {}
+  virtual void end_search() const {}
+
   virtual void begin_transfer() const {}
   virtual void end_transfer() const {}
+
+  virtual void acquire_field_data() const {}
+  virtual void release_field_data() const {}
 
   virtual DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const = 0;
 

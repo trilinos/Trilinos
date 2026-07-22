@@ -51,7 +51,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector
 #include "stk_topology/topology.hpp"    // for topology, etc
 
-class ParallelHowTo : public stk::unit_test_util::simple_fields::MeshFixture {};
+class ParallelHowTo : public stk::unit_test_util::MeshFixture {};
 
 //BEGINCommuniateFieldData
 TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
@@ -64,17 +64,21 @@ TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
 
   stk::io::fill_mesh("generated:8x8x8", get_bulk());
 
+  auto fieldData = field.data<stk::mesh::ReadWrite>();
+
   stk::mesh::Selector notOwned = !get_meta().locally_owned_part();
   stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, notOwned,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      *stk::mesh::field_data(field, node) = -1.2345;
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+      auto entityValues = fieldData.entity_values(node);
+      entityValues() = -1.2345;
     });
 
   stk::mesh::communicate_field_data(get_bulk(), {&field});
 
   stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, notOwned,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      EXPECT_EQ(initialValue, *stk::mesh::field_data(field, node));
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+      auto entityValues = fieldData.entity_values(node);
+      EXPECT_EQ(initialValue, entityValues());
     });
 }
 //ENDCommuniateFieldData
@@ -84,9 +88,11 @@ void expect_nodal_field_has_value(const stk::mesh::Selector& selector,
                                   const stk::mesh::Field<double> &field,
                                   const double value)
 {
+  auto fieldData = field.data();
   stk::mesh::for_each_entity_run(field.get_mesh(), stk::topology::NODE_RANK, selector,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
-      EXPECT_EQ(value, *stk::mesh::field_data(field, node));
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
+      auto entityValues = fieldData.entity_values(node);
+      EXPECT_EQ(value, entityValues());
     });
 }
 

@@ -1,9 +1,0 @@
-.DS_Store
-Makefile
-TAGS
-config.log
-config.status
-*~
-build
-dist
-*.err

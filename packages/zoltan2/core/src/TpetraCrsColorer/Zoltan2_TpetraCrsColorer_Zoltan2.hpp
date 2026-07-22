@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #pragma once
 
 #include "Teuchos_ArrayRCP.hpp"
@@ -22,7 +31,7 @@ public:
   using node_t = typename matrix_t::node_type;
   using device_t = typename node_t::device_type;
   using list_of_colors_t = Kokkos::View<int *, device_t>;
-  using list_of_colors_host_t = typename list_of_colors_t::HostMirror;
+  using list_of_colors_host_t = typename list_of_colors_t::host_mirror_type;
   using SC = typename matrix_t::scalar_type;
   using LO = typename matrix_t::local_ordinal_type;
   using GO = typename matrix_t::global_ordinal_type;
@@ -145,7 +154,7 @@ public:
   typedef typename matrix_t::node_type node_t;
   typedef typename node_t::device_type device_t;
   typedef Kokkos::View<int *, device_t> list_of_colors_t;
-  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
+  typedef typename list_of_colors_t::host_mirror_type list_of_colors_host_t;
 
   // Constructor
   Zoltan2CrsColorer(const Teuchos::RCP<matrix_t> &matrix_)

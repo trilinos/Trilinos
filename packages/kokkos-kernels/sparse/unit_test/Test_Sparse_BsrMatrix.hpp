@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-//#include "KokkosKernels_ETIHelperMacros.h"
+// #include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <stdexcept>
@@ -51,18 +38,14 @@ using std::endl;
 // \param nnz [out] The number of stored entries in the matrix.
 // \param whichMatrix [in] The index of the matrix to create.
 template <typename sparseMat_t>
-void makeSparseMatrix(
-    typename sparseMat_t::StaticCrsGraphType::row_map_type::non_const_type &ptr,
-    typename sparseMat_t::StaticCrsGraphType::entries_type::non_const_type &ind,
-    typename sparseMat_t::values_type::non_const_type &val,
-    typename sparseMat_t::ordinal_type &numRows,
-    typename sparseMat_t::ordinal_type &numCols,
-    typename sparseMat_t::size_type &nnz, const int whichMatrix,
-    typename sparseMat_t::ordinal_type &blockDim) {
-  typedef typename sparseMat_t::StaticCrsGraphType::row_map_type::non_const_type
-      ptr_type;
-  typedef typename sparseMat_t::StaticCrsGraphType::entries_type::non_const_type
-      ind_type;
+void makeSparseMatrix(typename sparseMat_t::StaticCrsGraphType::row_map_type::non_const_type &ptr,
+                      typename sparseMat_t::StaticCrsGraphType::entries_type::non_const_type &ind,
+                      typename sparseMat_t::values_type::non_const_type &val,
+                      typename sparseMat_t::ordinal_type &numRows, typename sparseMat_t::ordinal_type &numCols,
+                      typename sparseMat_t::size_type &nnz, const int whichMatrix,
+                      typename sparseMat_t::ordinal_type &blockDim) {
+  typedef typename sparseMat_t::StaticCrsGraphType::row_map_type::non_const_type ptr_type;
+  typedef typename sparseMat_t::StaticCrsGraphType::entries_type::non_const_type ind_type;
   typedef typename sparseMat_t::values_type::non_const_type val_type;
   typedef typename sparseMat_t::ordinal_type lno_t;
   typedef typename sparseMat_t::size_type size_type;
@@ -79,10 +62,8 @@ void makeSparseMatrix(
     blockDim = 1;
 
     const size_type ptrRaw[] = {0, 4, 8, 10, 12, 14, 16, 20, 24};
-    const lno_t indRaw[]     = {0, 1, 4, 5, 0, 1, 4, 5, 2, 3, 2, 3,
-                            4, 5, 4, 5, 2, 3, 6, 7, 2, 3, 6, 7};
-    const scalar_t valRaw[]  = {.1, 1, 4,  5,  -.1, -1, -4, -5, 2,  3,  -2, -3,
-                               4,  5, -4, -5, 2,   3,  6,  7,  -2, -3, -6, -7};
+    const lno_t indRaw[]     = {0, 1, 4, 5, 0, 1, 4, 5, 2, 3, 2, 3, 4, 5, 4, 5, 2, 3, 6, 7, 2, 3, 6, 7};
+    const scalar_t valRaw[]  = {.1, 1, 4, 5, -.1, -1, -4, -5, 2, 3, -2, -3, 4, 5, -4, -5, 2, 3, 6, 7, -2, -3, -6, -7};
 
     // Create the output Views.
     ptr = ptr_type("ptr", numRows + 1);
@@ -90,9 +71,9 @@ void makeSparseMatrix(
     val = val_type("val", nnz);
 
     // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-    typename ptr_type::HostMirror::const_type ptrIn(ptrRaw, numRows + 1);
-    typename ind_type::HostMirror::const_type indIn(indRaw, nnz);
-    typename val_type::HostMirror::const_type valIn(valRaw, nnz);
+    typename ptr_type::host_mirror_type::const_type ptrIn(ptrRaw, numRows + 1);
+    typename ind_type::host_mirror_type::const_type indIn(indRaw, nnz);
+    typename val_type::host_mirror_type::const_type valIn(valRaw, nnz);
 
     Kokkos::deep_copy(ptr, ptrIn);
     Kokkos::deep_copy(ind, indIn);
@@ -108,8 +89,7 @@ void makeSparseMatrix(
     const size_type ptrRaw[] = {0, 2, 3, 4, 6};
     const lno_t indRaw[]     = {0, 2, 1, 2, 1, 3};
     // Numerical values stored in BSR format
-    const scalar_t valRaw[] = {.1, 1, -.1, -1, 4, 5, -4, -5, 2, 3, -2, -3,
-                               4,  5, -4,  -5, 2, 3, -2, -3, 6, 7, -6, -7};
+    const scalar_t valRaw[] = {.1, 1, -.1, -1, 4, 5, -4, -5, 2, 3, -2, -3, 4, 5, -4, -5, 2, 3, -2, -3, 6, 7, -6, -7};
 
     // Create the output Views.
     ptr = ptr_type("ptr", numRows + 1);
@@ -117,9 +97,9 @@ void makeSparseMatrix(
     val = val_type("val", nnz);
 
     // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-    typename ptr_type::HostMirror::const_type ptrIn(ptrRaw, numRows + 1);
-    typename ind_type::HostMirror::const_type indIn(indRaw, numBlocks);
-    typename val_type::HostMirror::const_type valIn(valRaw, nnz);
+    typename ptr_type::host_mirror_type::const_type ptrIn(ptrRaw, numRows + 1);
+    typename ind_type::host_mirror_type::const_type indIn(indRaw, numBlocks);
+    typename val_type::host_mirror_type::const_type valIn(valRaw, nnz);
 
     Kokkos::deep_copy(ptr, ptrIn);
     Kokkos::deep_copy(ind, indIn);
@@ -128,8 +108,7 @@ void makeSparseMatrix(
 
   else {  // whichMatrix != 0
     std::ostringstream os;
-    os << "Invalid whichMatrix value " << whichMatrix
-       << ".  Valid value(s) include " << 0 << ".";
+    os << "Invalid whichMatrix value " << whichMatrix << ".  Valid value(s) include " << 0 << ".";
     throw std::invalid_argument(os.str());
   }
 }
@@ -153,8 +132,7 @@ crsMat_t makeCrsMatrix_BlockStructure() {
   lno_t blockDim;
 
   const int whichMatrix = 0;
-  makeSparseMatrix<crsMat_t>(ptr, ind, val, numRows, numCols, nnz, whichMatrix,
-                             blockDim);
+  makeSparseMatrix<crsMat_t>(ptr, ind, val, numRows, numCols, nnz, whichMatrix, blockDim);
   return crsMat_t("A", numRows, numCols, nnz, val, ptr, ind);
 }
 
@@ -176,8 +154,7 @@ blkcrsMat_t makeBsrMatrix() {
   lno_t blockDim;
 
   const int whichMatrix = 1;
-  makeSparseMatrix<blkcrsMat_t>(ptr, ind, val, numRows, numCols, nnz,
-                                whichMatrix, blockDim);
+  makeSparseMatrix<blkcrsMat_t>(ptr, ind, val, numRows, numCols, nnz, whichMatrix, blockDim);
   blkcrsMat_t resMat("blk", numRows, numCols, nnz, val, ptr, ind, blockDim);
   return resMat;
 }
@@ -192,8 +169,7 @@ struct TestFunctor {
   ResultsType d_results;
 
   // Constructor
-  TestFunctor(MatrixType &A_, ResultsType &d_results_)
-      : A(A_), d_results(d_results_) {}
+  TestFunctor(MatrixType &A_, ResultsType &d_results_) : A(A_), d_results(d_results_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int /*rid*/) const {
@@ -213,16 +189,14 @@ struct TestFunctor {
             auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
             for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-              // std::cout << "check0: " << ( entry == row_ptr[lcol] );
-              // std::cout << "check1: " << ( entry == view_blk(lrow,lcol) );
-              check0 = check0 && (entry == row_ptr[lcol]);
-              check1 = check1 && (entry == view_blk(lrow, lcol));
+              check0 &= (entry == row_ptr[lcol]);
+              check1 &= (entry == view_blk(lrow, lcol));
             }  // end local col in row
           }    // end local row in blk
         }      // end blk
       }
-      d_results(0) = check0;
-      d_results(1) = check1;
+      d_results(0) &= check0;
+      d_results(1) &= check1;
 
       // Test BsrRowViewConst
       {
@@ -234,28 +208,25 @@ struct TestFunctor {
             auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
             for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-              check2     = check2 && (entry == row_ptr[lcol]);
-              check3     = check3 && (entry == view_blk(lrow, lcol));
+              check2 &= (entry == row_ptr[lcol]);
+              check3 &= (entry == view_blk(lrow, lcol));
             }  // end local col in row
           }    // end local row in blk
         }      // end blk
       }
-      d_results(0) = check0;
-      d_results(1) = check1;
-      d_results(2) = check2;
-      d_results(3) = check3;
+      d_results(2) &= check2;
+      d_results(3) &= check3;
     }  // end for blk rows
 
     // Test sumIntoValues
     {
-      check0                = true;
-      check1                = true;
-      check2                = true;
-      const lno_t ncols     = 1;
-      const lno_t cols[]    = {3};
-      const lno_t browi     = 3;
-      const scalar_t vals[] = {
-          10, 11, 20, 22};  // represents a single block: [10 11; 20 22]
+      check0                  = true;
+      check1                  = true;
+      check2                  = true;
+      const lno_t ncols       = 1;
+      const lno_t cols[]      = {3};
+      const lno_t browi       = 3;
+      const scalar_t vals[]   = {10, 11, 20, 22};  // represents a single block: [10 11; 20 22]
       const scalar_t result[] = {16, 18, 14, 15};
 
       // This block will be summed into the existing block [6 7; -6 -7]
@@ -268,14 +239,14 @@ struct TestFunctor {
         auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
         for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
           auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-          check0     = check0 && (entry == row_ptr[lcol]);
-          check1     = check1 && (entry == view_blk(lrow, lcol));
-          check2     = check2 && (entry == result[lrow * A.blockDim() + lcol]);
+          check0 &= (entry == row_ptr[lcol]);
+          check1 &= (entry == view_blk(lrow, lcol));
+          check2 &= (entry == result[lrow * A.blockDim() + lcol]);
         }  // end local col in row
       }    // end local row in blk
-      d_results(4) = check0;
-      d_results(5) = check1;
-      d_results(6) = check2;
+      d_results(4) &= check0;
+      d_results(5) &= check1;
+      d_results(6) &= check2;
     }
 
     // Test replaceValues
@@ -286,8 +257,7 @@ struct TestFunctor {
       const lno_t ncols            = 1;
       const lno_t cols[]           = {3};
       const lno_t browi            = 3;
-      const scalar_t valsreplace[] = {
-          -10, -11, -20, -22};  // represents a single block: [-10 -11; -20 -22]
+      const scalar_t valsreplace[] = {-10, -11, -20, -22};  // represents a single block: [-10 -11; -20 -22]
 
       // The existing block to be replaced was: [6 7; -6 -7]
       A.replaceValues(browi, cols, ncols, valsreplace);
@@ -299,45 +269,112 @@ struct TestFunctor {
         auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
         for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
           auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-          check0     = check0 && (entry == row_ptr[lcol]);
-          check1     = check1 && (entry == view_blk(lrow, lcol));
-          check2 = check2 && (entry == valsreplace[lrow * A.blockDim() + lcol]);
+          check0 &= (entry == row_ptr[lcol]);
+          check1 &= (entry == view_blk(lrow, lcol));
+          check2 &= (entry == valsreplace[lrow * A.blockDim() + lcol]);
         }  // end local col in row
       }    // end local row in blk
-      d_results(7) = check0;
-      d_results(8) = check1;
-      d_results(9) = check2;
+      d_results(7) &= check0;
+      d_results(8) &= check1;
+      d_results(9) &= check2;
     }
-
   }  // end operator()(i)
 };   // end TestFunctor
+
+template <class BsrMatrixType, class ResultsType>
+struct TestConvFunctor {
+  typedef typename BsrMatrixType::value_type scalar_t;
+  typedef typename BsrMatrixType::ordinal_type lno_t;
+  typedef typename BsrMatrixType::size_type size_type;
+
+  // Members
+  BsrMatrixType A_;
+  BsrMatrixType A_bsr_conv_;
+  ResultsType d_results_;
+
+  // Constructor
+  TestConvFunctor(BsrMatrixType &A, ResultsType &d_results) : A_(A), d_results_(d_results) {
+    auto A_crs  = A_.convertToCrs();
+    A_bsr_conv_ = BsrMatrixType(A_crs, A_.blockDim());
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int /*rid*/) const {
+    // Test 1: Converting to Crs and then back to Bsr should give us an indentical bsr
+    bool check0    = true;
+    bool check1    = true;
+    bool check2    = true;
+    bool check3    = true;
+    bool check4    = true;
+    bool check5    = true;
+    bool check6    = true;
+    int result_idx = 0;
+
+    check0 = A_bsr_conv_.numRows() == A_.numRows();
+    check1 = A_bsr_conv_.numCols() == A_.numCols();
+    check2 = A_bsr_conv_.blockDim() == A_.blockDim();
+    check3 = A_bsr_conv_.nnz() == A_.nnz();
+
+    const auto blockRowMap1  = A_.graph.row_map;
+    const auto blockEntries1 = A_.graph.entries;
+    const auto blockValues1  = A_.values;
+
+    const auto blockRowMap2  = A_.graph.row_map;
+    const auto blockEntries2 = A_.graph.entries;
+    const auto blockValues2  = A_.values;
+
+    for (lno_t i = 0; i < A_.numRows() + 1; ++i) {
+      check4 &= (blockRowMap1(i) == blockRowMap2(i));
+    }
+
+    for (size_type i = 0; i < A_.nnz(); ++i) {
+      check5 &= (blockEntries1(i) == blockEntries2(i));
+      check6 &= (blockValues1(i) == blockValues2(i));
+    }
+
+    d_results_(result_idx++) = check0;
+    d_results_(result_idx++) = check1;
+    d_results_(result_idx++) = check2;
+    d_results_(result_idx++) = check3;
+    d_results_(result_idx++) = check4;
+    d_results_(result_idx++) = check5;
+    d_results_(result_idx++) = check6;
+  }  // end operator()(i)
+};   // end TestConvFunctor
 
 }  // namespace Test_Bsr
 
 // Create a CrsMatrix and BsrMatrix and test member functions.
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void testBsrMatrix() {
   using namespace Test_Bsr;
 
-  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>
-      crs_matrix_type;
-  typedef KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device, void,
-                                                size_type>
-      bsr_matrix_type;
+  typedef KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> crs_matrix_type;
+  typedef KokkosSparse::Experimental::BsrMatrix<scalar_t, lno_t, device, void, size_type> bsr_matrix_type;
 
   crs_matrix_type crsA = makeCrsMatrix_BlockStructure<crs_matrix_type>();
   bsr_matrix_type A    = makeBsrMatrix<bsr_matrix_type>();
 
-  const int num_entries = 10;
+  static constexpr int num_entries = 10;
   typedef Kokkos::View<bool[num_entries], device> result_view_type;
   result_view_type d_results("d_results");
+  Kokkos::deep_copy(d_results, true);
   auto h_results = Kokkos::create_mirror_view(d_results);
+  Test_Bsr::TestFunctor<bsr_matrix_type, result_view_type> functor(A, d_results);
 
-  Kokkos::parallel_for(
-      "KokkosSparse::Test_Bsr::BsrMatrix",
-      Kokkos::RangePolicy<typename device::execution_space>(0, 1),
-      Test_Bsr::TestFunctor<bsr_matrix_type, result_view_type>(A, d_results));
+  Kokkos::parallel_for("KokkosSparse::Test_Bsr::BsrMatrix", Kokkos::RangePolicy<typename device::execution_space>(0, 1),
+                       functor);
+
+  Kokkos::deep_copy(h_results, d_results);
+
+  for (decltype(h_results.extent(0)) i = 0; i < h_results.extent(0); ++i) {
+    EXPECT_EQ(h_results[i], true);
+  }
+
+  Kokkos::deep_copy(d_results, true);
+  Test_Bsr::TestConvFunctor<bsr_matrix_type, result_view_type> conv_functor(A, d_results);
+  Kokkos::parallel_for("KokkosSparse::Test_Bsr::BsrMatrix", Kokkos::RangePolicy<typename device::execution_space>(0, 1),
+                       conv_functor);
 
   Kokkos::deep_copy(h_results, d_results);
 
@@ -346,10 +383,9 @@ void testBsrMatrix() {
   }
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)           \
-  TEST_F(TestCategory,                                                        \
-         sparse##_##bsrmatrix##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    testBsrMatrix<SCALAR, ORDINAL, OFFSET, DEVICE>();                         \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                         \
+  TEST_F(TestCategory, sparse##_##bsrmatrix##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    testBsrMatrix<SCALAR, ORDINAL, OFFSET, DEVICE>();                                       \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

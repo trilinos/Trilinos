@@ -1,23 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_TEST_SCATTER_VIEW_HPP
 #define KOKKOS_TEST_SCATTER_VIEW_HPP
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.scatter_view;
+#else
 #include <Kokkos_ScatterView.hpp>
+#endif
 #include <Kokkos_Timer.hpp>
 
 namespace Perf {
@@ -25,8 +17,8 @@ namespace Perf {
 template <typename ExecSpace, typename Layout, typename Duplication,
           typename Contribution>
 void test_scatter_view(int m, int n) {
-  Kokkos::View<double * [3], Layout, ExecSpace> original_view("original_view",
-                                                              n);
+  Kokkos::View<double* [3], Layout, ExecSpace> original_view("original_view",
+                                                             n);
   {
     auto scatter_view = Kokkos::Experimental::create_scatter_view<
         Kokkos::Experimental::ScatterSum, Duplication, Contribution>(
@@ -40,8 +32,8 @@ void test_scatter_view(int m, int n) {
       {
         auto num_threads = unique_token.size();
         std::cout << "num_threads " << num_threads << '\n';
-        Kokkos::View<double* * [3], Layout, ExecSpace>
-            hand_coded_duplicate_view("hand_coded_duplicate", num_threads, n);
+        Kokkos::View<double** [3], Layout, ExecSpace> hand_coded_duplicate_view(
+            "hand_coded_duplicate", num_threads, n);
         auto f2 = KOKKOS_LAMBDA(int i) {
           auto thread_id = unique_token.acquire();
           for (int j = 0; j < 10; ++j) {

@@ -1,44 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file  example_01.cpp
@@ -75,14 +41,13 @@
 //#pragma GCC diagnostic ignored "-Wshadow"
 //#pragma GCC diagnostic ignored "-Wundef"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-
+#include "ROL_ParameterList.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_CArrayVector.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_StatusTest.hpp"
+#include "ROL_Problem.hpp"
+#include "ROL_Solver.hpp"
 
 //#pragma GCC diagnostic pop
 
@@ -465,6 +430,14 @@ private:
 
       ehv.scale(DT2_(0.5), ev);
     }
+
+    void precond (ROL::Vector<DT2_> &       hv,
+                  const ROL::Vector<DT2_> & v,
+                  const ROL::Vector<DT2_> & x,
+                  DT2_ &                    tol) override
+    {
+      invHessVec(hv,v,x,tol);
+    }
   };
 
   /******************************************************************************/
@@ -633,10 +606,10 @@ private:
   /******************************************************************************/
 
 private:
-  const std::string                                    _parfile;
-  const ROL::Ptr<ROL::ParameterList>           _parlist;
+  const std::string                                _parfile;
+  const ROL::Ptr<ROL::ParameterList>               _parlist;
 
-  const ROL::Ptr<VectorWrapper<DT_, dim_>>         _lower,  _upper;
+  const ROL::Ptr<VectorWrapper<DT_, dim_>>         _lower, _upper;
   const ROL::Ptr<VectorWrapper<DT_, dim_>>         _x;
 
   const ROL::Ptr<ROL::BoundConstraint<DT_>>        _bnd;
@@ -648,8 +621,8 @@ private:
   std::vector<ROL::Ptr<ROL::BoundConstraint<DT_>>> _ibnd;
 
   const ROL::Ptr<MyObjective<DT_, dim_>>           _obj;
-  ROL::Ptr<ROL::OptimizationProblem<DT_>>          _problem;
-  ROL::Ptr<ROL::OptimizationSolver<DT_>>           _solver;
+  ROL::Ptr<ROL::Problem<DT_>>                      _problem;
+  ROL::Ptr<ROL::Solver<DT_>>                       _solver;
 
   DT_ _A_i_up[6];
   DT_ _A_i_lo[6];
@@ -691,8 +664,14 @@ public:
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_A(_A_j_lo);
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_F(_F_n);
 
-    _problem = ROL::makePtr<ROL::OptimizationProblem<DT_>>(_obj, _x, _bnd, _icon, _imul, _ibnd);
-    _solver = ROL::makePtr<ROL::OptimizationSolver<DT_>>(* _problem, * _parlist);
+    _problem = ROL::makePtr<ROL::Problem<DT_>>(_obj, _x);
+    _problem->addBoundConstraint(_bnd);
+    _problem->addConstraint("Inequality Constraint 0", _icon[0], _imul[0], _ibnd[0]);
+    _problem->addConstraint("Inequality Constraint 1", _icon[1], _imul[1], _ibnd[1]);
+    _problem->addConstraint("Inequality Constraint 2", _icon[2], _imul[2], _ibnd[2]);
+    _problem->addConstraint("Inequality Constraint 3", _icon[3], _imul[3], _ibnd[3]);
+    _problem->finalize(false,true,std::cout);
+    _solver = ROL::makePtr<ROL::Solver<DT_>>(_problem, * _parlist);
     _x->zero();
   }
 
@@ -750,8 +729,9 @@ public:
   {
     _x->wrap(x);
     for (auto& it : _imul) it->zero();
-    _solver->reset();
-    _problem->reset();
+    _problem->edit();
+    _problem->finalize(false,true,std::cout);
+    _solver = ROL::makePtr<ROL::Solver<DT_>>(_problem, * _parlist);
     _solver->solve(outStream);
 
     return _x->data();
@@ -780,7 +760,7 @@ public:
     set_node<Node::j>(A_j, lambda_j_lo, lambda_j_up);
     set_flux(F);
 
-    _problem->check(outStream);
+    _problem->check(true,outStream);
   }
 
   void checkConstraints(DT_ sol[3])
@@ -821,7 +801,7 @@ public:
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -867,21 +847,22 @@ int main(int argc, char *argv[]) {
       // start from zero solution
       DataType y[] = {0.0, 0.0, 0.0};
       sp.solve(y);
-      std::cout << "y = [" << y[0] << ", " << y[1] << ", " << y[2] << "]" << std::endl;
+      std::cout << std::setprecision(16) << "y = [" << y[0] << ", " << y[1] << ", " << y[2] << "]" << std::endl;
       // solve one more time
       DataType z[] = {0.0, 0.0, 0.0};
       sp.solve(z);
-      std::cout << "z = [" << z[0] << ", " << z[1] << ", " << z[2] << "]" << std::endl;
+      std::cout << std::setprecision(16) << "z = [" << z[0] << ", " << z[1] << ", " << z[2] << "]" << std::endl;
       // perform checks
+      DataType tol = std::sqrt(ROL::ROL_EPSILON<DataType>()); // * xnorm;
       ROL::CArrayVector<DataType> xx(&x[0],dim), yy(&y[0],dim), zz(&z[0],dim);
       xx.axpy(static_cast<DataType>(-1), yy);
-      if (xx.norm() > std::sqrt(ROL::ROL_EPSILON<DataType>())) {
-        *outStream << "\n\nxx.norm() = " << xx.norm() << "\n"; 
+      if (xx.norm() > tol) {
+        *outStream << std::endl << "xx.norm() = " << xx.norm() << std::endl;
         errorFlag = 1000;
       }
       yy.axpy(static_cast<DataType>(-1), zz);
-      if (yy.norm() > ROL::ROL_EPSILON<DataType>()) {
-        *outStream << "\n\nyy.norm() = " << yy.norm() << "\n"; 
+      if (yy.norm() > tol) {
+        *outStream << std::endl << "yy.norm() = " << yy.norm() << std::endl;
         errorFlag = 1000;
       }
     }

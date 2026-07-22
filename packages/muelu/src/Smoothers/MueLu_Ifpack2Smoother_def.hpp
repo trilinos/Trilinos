@@ -11,8 +11,7 @@
 #define MUELU_IFPACK2SMOOTHER_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-
-#if defined(HAVE_MUELU_IFPACK2)
+#include "Xpetra_TpetraRowMatrix.hpp"
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -44,7 +43,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
 #include "MueLu_IntrepidPCoarsenFactory_def.hpp"
 #include "Intrepid2_Basis.hpp"
@@ -57,6 +56,11 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap)
   : type_(type)
   , overlap_(overlap) {
+  if (!type_.empty()) {
+    // Transform string to "ABCDE" notation
+    std::transform(type_.begin(), type_.end(), type_.begin(), ::toupper);
+  }
+
   typedef Tpetra::RowMatrix<SC, LO, GO, NO> tRowMatrix;
   bool isSupported = Ifpack2::Factory::isSupported<tRowMatrix>(type_) || (type_ == "LINESMOOTHING_TRIDI_RELAXATION" ||
                                                                           type_ == "LINESMOOTHING_TRIDI RELAXATION" ||
@@ -246,7 +250,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     SetupChebyshev(currentLevel);
 
   else if (type_ == "TOPOLOGICAL") {
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
     SetupTopological(currentLevel);
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "'TOPOLOGICAL' smoother choice requires Intrepid2");
@@ -278,7 +282,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Le
     bool isTRowMatrix = true;
     RCP<const tRowMatrix> tA;
     try {
-      tA = Utilities::Op2NonConstTpetraRow(A_);
+      tA = Xpetra::toTpetraRowMatrix(A_);
     } catch (Exceptions::BadCast&) {
       isTRowMatrix = false;
     }
@@ -370,9 +374,9 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Le
 
     RCP<const tRowMatrix> tA;
     if (isBlockedMatrix == true)
-      tA = Utilities::Op2NonConstTpetraRow(merged2Mat);
+      tA = Xpetra::toTpetraRowMatrix(merged2Mat);
     else
-      tA = Utilities::Op2NonConstTpetraRow(A_);
+      tA = Xpetra::toTpetraRowMatrix(A_);
 
     prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
@@ -420,7 +424,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupAggregate(
   paramList.set("partitioner: overlap", 0);
   paramList.set("partitioner: local parts", (int)aggregates->GetNumAggregates());
 
-  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Xpetra::toTpetraRowMatrix(A_);
 
   type_ = "BLOCKRELAXATION";
   prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
@@ -429,7 +433,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupAggregate(
   prec_->compute();
 }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupTopological(Level& currentLevel) {
   /*
@@ -498,7 +502,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupTopologica
   paramList.set("partitioner: overlap", 1);
   paramList.set("partitioner: local parts", int(seeds[dimension].size()));
 
-  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Xpetra::toTpetraRowMatrix(A_);
 
   type_ = "BLOCKRELAXATION";
   prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
@@ -593,7 +597,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupLineSmooth
     type_ = "RELAXATION";
   }
 
-  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Xpetra::toTpetraRowMatrix(A_);
 
   prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
   SetPrecParameters();
@@ -609,7 +613,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupBlockRelax
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
   if (this->IsSetup() == true) {
@@ -661,7 +665,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshev(
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
 
@@ -723,7 +727,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHiptmair(L
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
   if (this->IsSetup() == true) {
@@ -764,8 +768,8 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHiptmair(L
   RCP<Operator> NodeMatrix = currentLevel.Get<RCP<Operator>>("NodeMatrix");
   RCP<Operator> D0         = currentLevel.Get<RCP<Operator>>("D0");
 
-  RCP<tRowMatrix> tNodeMatrix = Utilities::Op2NonConstTpetraRow(NodeMatrix);
-  RCP<tRowMatrix> tD0         = Utilities::Op2NonConstTpetraRow(D0);
+  RCP<tRowMatrix> tNodeMatrix = Xpetra::toTpetraRowMatrix(NodeMatrix);
+  RCP<tRowMatrix> tD0         = Xpetra::toTpetraRowMatrix(D0);
 
   Teuchos::ParameterList newlist;
   newlist.set("P", tD0);
@@ -903,7 +907,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Le
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
   if (this->IsSetup() == true) {
@@ -940,14 +944,13 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
   //        initial value at the end but there is no way right now to get
   //        the current value of the "zero starting solution" in ifpack2.
   //        It's not really an issue, as prec_  can only be used by this method.
-  Teuchos::ParameterList paramList;
-  bool supportInitialGuess            = false;
-  const Teuchos::ParameterList params = this->GetParameterList();
+  bool supportInitialGuess = false;
 
   if (prec_->supportsZeroStartingSolution()) {
     prec_->setZeroStartingSolution(InitialGuessIsZero);
     supportInitialGuess = true;
   } else if (type_ == "SCHWARZ") {
+    Teuchos::ParameterList paramList;
     paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
     // Because additive Schwarz has "delta" semantics, it's sufficient to
     // toggle only the zero initial guess flag, and not pass in already
@@ -965,11 +968,11 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
 
   // Apply
   if (InitialGuessIsZero || supportInitialGuess) {
-    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = Utilities::MV2NonConstTpetraMV(X);
-    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = Utilities::MV2TpetraMV(B);
+    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = toTpetra(X);
+    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = toTpetra(B);
     prec_->apply(tpB, tpX);
   } else {
-    typedef Teuchos::ScalarTraits<Scalar> TST;
+    using TST = Teuchos::ScalarTraits<Scalar>;
 
     RCP<MultiVector> Residual;
     {
@@ -980,8 +983,8 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
 
     RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
-    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = Utilities::MV2NonConstTpetraMV(*Correction);
-    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = Utilities::MV2TpetraMV(*Residual);
+    Tpetra::MultiVector<SC, LO, GO, NO>& tpX       = toTpetra(*Correction);
+    const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = toTpetra(*Residual);
 
     prec_->apply(tpB, tpX);
 
@@ -1059,5 +1062,4 @@ size_t Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmooth
 
 }  // namespace MueLu
 
-#endif  // HAVE_MUELU_IFPACK2
 #endif  // MUELU_IFPACK2SMOOTHER_DEF_HPP

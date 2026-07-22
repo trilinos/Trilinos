@@ -112,7 +112,7 @@ namespace percept {
         }
     }
 
-    virtual void special_processing(const std::string& step, void *data)
+    virtual void special_processing(const std::string& step, void */*data*/)
     {
       if (step == "tea_pre_refine")
         {
@@ -387,7 +387,7 @@ namespace percept {
       return did_change;
     }
 
-    int64_t enforce_boundary_layer_refine_pattern(int iter, int refine_or_unrefine)
+    int64_t enforce_boundary_layer_refine_pattern(int /*iter*/, int refine_or_unrefine)
     {
       PerceptMesh& eMesh = Base::m_eMesh;
       stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();

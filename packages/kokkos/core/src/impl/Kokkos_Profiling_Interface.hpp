@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSP_INTERFACE_HPP
 #define KOKKOSP_INTERFACE_HPP
@@ -30,7 +17,7 @@ namespace Kokkos {
 namespace Tools {
 namespace Experimental {
 
-constexpr const uint32_t NumReservedDeviceIDs = 1;
+inline constexpr const uint32_t NumReservedDeviceIDs = 1;
 
 enum SpecialSynchronizationCases : int {
   GlobalDeviceSynchronization     = 1,
@@ -42,7 +29,7 @@ enum struct DeviceType {
   OpenMP,
   Cuda,
   HIP,
-  OpenMPTarget,
+  OpenMPTarget,  // removed
   HPX,
   Threads,
   SYCL,
@@ -56,10 +43,10 @@ struct ExecutionSpaceIdentifier {
   uint32_t instance_id;
 };
 
-constexpr const uint32_t num_type_bits     = 8;
-constexpr const uint32_t num_device_bits   = 7;
-constexpr const uint32_t num_instance_bits = 17;
-constexpr const uint32_t num_avail_bits    = sizeof(uint32_t) * CHAR_BIT;
+inline constexpr const uint32_t num_type_bits     = 8;
+inline constexpr const uint32_t num_device_bits   = 7;
+inline constexpr const uint32_t num_instance_bits = 17;
+inline constexpr const uint32_t num_avail_bits    = sizeof(uint32_t) * CHAR_BIT;
 
 inline DeviceType devicetype_from_uint32t(const uint32_t in) {
   switch (in) {
@@ -67,7 +54,7 @@ inline DeviceType devicetype_from_uint32t(const uint32_t in) {
     case 1: return DeviceType::OpenMP;
     case 2: return DeviceType::Cuda;
     case 3: return DeviceType::HIP;
-    case 4: return DeviceType::OpenMPTarget;
+    case 4: return DeviceType::OpenMPTarget;  // removed
     case 5: return DeviceType::HPX;
     case 6: return DeviceType::Threads;
     case 7: return DeviceType::SYCL;
@@ -100,6 +87,15 @@ inline uint32_t device_id(ExecutionSpace const& space) noexcept {
          (DeviceTypeTraits<ExecutionSpace>::device_id(space)
           << num_instance_bits) +
          space.impl_instance_id();
+}
+
+inline uint32_t int_for_synchronization_reason(
+    Kokkos::Tools::Experimental::SpecialSynchronizationCases reason) {
+  switch (reason) {
+    case GlobalDeviceSynchronization: return 0;
+    case DeepCopyResourceSynchronization: return 0x00ffffff;
+  }
+  return 0;
 }
 }  // namespace Experimental
 }  // namespace Tools

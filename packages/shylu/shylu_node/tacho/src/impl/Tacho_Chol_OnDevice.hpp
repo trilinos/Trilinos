@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_CHOL_ON_DEVICE_HPP__
 #define __TACHO_CHOL_ON_DEVICE_HPP__
@@ -32,7 +24,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0) {
-      Lapack<value_type>::potrf(ArgUplo::param, m, A.data(), A.stride_1(), &r_val);
+      Lapack<value_type>::potrf(ArgUplo::param, m, A.data(), A.stride(1), &r_val);
     }
     return r_val;
   }
@@ -49,7 +41,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
       int *devInfo = (int *)W.data();
       value_type *workspace = W.data() + 1;
       int lwork = W.span() - 1;
-      r_val = Lapack<value_type>::potrf(handle, ArgUplo::cublas_param, m, A.data(), A.stride_1(), workspace, lwork,
+      r_val = Lapack<value_type>::potrf(handle, ArgUplo::cublas_param, m, A.data(), A.stride(1), workspace, lwork,
                                         devInfo);
     }
     return r_val;
@@ -62,7 +54,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0)
-      r_val = Lapack<value_type>::potrf_buffersize(handle, ArgUplo::cublas_param, m, A.data(), A.stride_1(), lwork);
+      r_val = Lapack<value_type>::potrf_buffersize(handle, ArgUplo::cublas_param, m, A.data(), A.stride(1), lwork);
     return r_val;
   }
 #endif
@@ -76,7 +68,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
     int r_val(0);
     if (m > 0) {
       int *devInfo = (int *)W.data();
-      r_val = Lapack<value_type>::potrf(handle, ArgUplo::rocblas_param, m, A.data(), A.stride_1(), devInfo);
+      r_val = Lapack<value_type>::potrf(handle, ArgUplo::rocblas_param, m, A.data(), A.stride(1), devInfo);
     }
     return r_val;
   }
@@ -108,8 +100,9 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
         int lwork;
         r_val = cusolver_buffer_size(member, A, &lwork);
         r_val = lwork + 1;
-      } else
+      } else {
         r_val = cusolver_invoke(member, A, W);
+      }
     }
 #endif
 

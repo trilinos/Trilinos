@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_HESSENBERG_QR_WITH_SHIFT_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_HESSENBERG_QR_WITH_SHIFT_SERIAL_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_HESSENBERG_QR_WITH_SHIFT_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_HESSENBERG_QR_WITH_SHIFT_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -32,12 +19,11 @@ namespace KokkosBatched {
 ///
 struct SerialHessenbergQR_WithShiftInternal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(
-      const int mbeg, const int mend, const int morg,
-      /* */ ValueType *HH, const int hs0, const int hs1, const ValueType shift,
-      /* */ Kokkos::pair<ValueType, ValueType> *GG, const bool request_schur) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const int mbeg, const int mend, const int morg,
+                                           /* */ ValueType *HH, const int hs0, const int hs1, const ValueType shift,
+                                           /* */ Kokkos::pair<ValueType, ValueType> *GG, const bool request_schur) {
     typedef ValueType value_type;
-    // typedef Kokkos::ArithTraits<value_type> ats;
+    // typedef KokkosKernels::ArithTraits<value_type> ats;
 
     const int hs = hs0 + hs1;
     const value_type zero(0), one(1);
@@ -79,13 +65,11 @@ struct SerialHessenbergQR_WithShiftInternal {
       // apply G' from left
       G.second     = -G.second;  // transpose G
       const int nn = m;
-      SerialApplyLeftGivensInternal::invoke(G, nn + (morg - mend), h11, hs1,
-                                            h21, hs1);
+      SerialApplyLeftGivensInternal::invoke(G, nn + (morg - mend), h11, hs1, h21, hs1);
 
       // apply (G')' from right
       const int mm = m < 3 ? m : 3;
-      SerialApplyRightGivensInternal::invoke(G, mm + mbeg, h11 - mbeg_mult_hs0,
-                                             hs0, h12 - mbeg_mult_hs0, hs0);
+      SerialApplyRightGivensInternal::invoke(G, mm + mbeg, h11 - mbeg_mult_hs0, hs0, h12 - mbeg_mult_hs0, hs0);
     }
 
     /// 1. chase the bulge
@@ -112,13 +96,11 @@ struct SerialHessenbergQR_WithShiftInternal {
       G.second = -G.second;  // transpose G
 
       const int nn = m - m_htl;
-      SerialApplyLeftGivensInternal::invoke(
-          G, nn + (morg - mend), H_part3x3.A11, hs1, H_part3x3.A21, hs1);
+      SerialApplyLeftGivensInternal::invoke(G, nn + (morg - mend), H_part3x3.A11, hs1, H_part3x3.A21, hs1);
 
       const int mtmp = m_htl + 3, mm = mtmp < m ? mtmp : m;
-      SerialApplyRightGivensInternal::invoke(
-          G, mm + mbeg, H_part3x3.A01 - mbeg_mult_hs0, hs0,
-          H_part3x3.A02 - mbeg_mult_hs0, hs0);
+      SerialApplyRightGivensInternal::invoke(G, mm + mbeg, H_part3x3.A01 - mbeg_mult_hs0, hs0,
+                                             H_part3x3.A02 - mbeg_mult_hs0, hs0);
       /// -----------------------------------------------------
       H_part2x2.mergeToATL(H_part3x3);
     }
@@ -126,13 +108,10 @@ struct SerialHessenbergQR_WithShiftInternal {
   }
 
   template <typename ValueType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const int mbeg, const int mend,
-                                                const int morg,
-                                                /* */ ValueType *HH,
-                                                const int hs0, const int hs1,
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const int mbeg, const int mend, const int morg,
+                                                /* */ ValueType *HH, const int hs0, const int hs1,
                                                 const ValueType shift) {
-    return invoke(mbeg, mend, morg, HH, hs0, hs1, shift,
-                  (Kokkos::pair<ValueType, ValueType> *)NULL, false);
+    return invoke(mbeg, mend, morg, HH, hs0, hs1, shift, (Kokkos::pair<ValueType, ValueType> *)NULL, false);
   }
 };
 

@@ -75,7 +75,6 @@ TEST(stkMeshHowTo, generateNewEntities)
   builder.set_spatial_dimension(spatialDimension);
   builder.set_entity_rank_names(stk::mesh::entity_rank_names());
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
   stk::mesh::Part &hexPart = metaData.declare_part_with_topology("hexElementPart", stk::topology::HEX_8);
@@ -97,6 +96,9 @@ TEST(stkMeshHowTo, generateNewEntities)
   requests[stk::topology::ELEMENT_RANK] = num_elems_requested;
   std::vector<stk::mesh::Entity> requested_entities;
 
+#ifdef _OPENMP
+#pragma omp critical
+#endif
   mesh.generate_new_entities(requests, requested_entities);
 
   // Set topologies of new entities with rank > stk::topology::NODE_RANK.
@@ -122,6 +124,9 @@ TEST(stkMeshHowTo, generateNewEntities)
   // Not setting topologies of new entities with rank > stk::topology::NODE_RANK causes throw
   mesh.modification_begin();
   std::vector<stk::mesh::Entity> more_requested_entities;
+#ifdef _OPENMP
+#pragma omp critical
+#endif
   mesh.generate_new_entities(requests, more_requested_entities);
 #ifdef NDEBUG
   mesh.modification_end();

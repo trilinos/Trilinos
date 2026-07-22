@@ -122,7 +122,7 @@ public:
 
   //whether an entity's membership in this part is required to be the same on each processor that shares/ghosts the entity.
   bool entity_membership_is_parallel_consistent() const { return m_entity_membership_is_parallel_consistent; }
-  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_entity_membership_is_parallel_consistent = trueOrFalse; }
+  void entity_membership_is_parallel_consistent(bool trueOrFalse);
 
   int64_t id() const { return m_id; }
 
@@ -161,6 +161,7 @@ private:
 
   CSet & get_attributes() { return m_attribute; }
 
+  void set_name(const std::string& newName);
   void set_primary_entity_rank( EntityRank entity_rank );
 
   void set_topology( stk::topology topo )
@@ -194,7 +195,7 @@ private:
   bool remove_attribute( const T *);
 
   MetaData* const   m_mesh_meta_data;
-  const std::string m_name;
+  std::string m_name;
   EntityRank        m_entity_rank;
   stk::topology     m_topology;
   int64_t           m_id;
@@ -215,8 +216,6 @@ private:
   friend class ::stk::mesh::impl::PartRepository;
   friend class ::stk::mesh::MetaData;
   friend CSet & impl::get_attributes(stk::mesh::Part & part);
-
-#ifndef DOXYGEN_COMPILE
 
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods on PartRepository.
@@ -244,8 +243,6 @@ private:
   Part();
   Part( const Part & );
   Part & operator = ( const Part & );
-
-#endif /* DOXYGEN_COMPILE */
 };
 
 template<class T>

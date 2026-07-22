@@ -108,7 +108,6 @@ struct EnvData
   bool                  m_inputFileRequired;
   bool                  m_checkSubCycle;
   bool                  m_checkSmRegion;
-  bool                  m_isZapotec;
 
   MPI_Comm		m_worldComm;
 

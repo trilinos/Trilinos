@@ -32,8 +32,9 @@ namespace stk
     class MeshTransfer
     {
     public:
-      MeshTransfer() : 
-	src_mesh(),
+      MeshTransfer(stk::ParallelMachine comm_in) : 
+    comm(comm_in),
+    src_mesh(),
 	dst_mesh(),
 	target_mesh(),
 	dst_entity(),
@@ -56,6 +57,7 @@ namespace stk
     private:
       void process_options();
 
+      stk::ParallelMachine comm;
       std::string src_mesh, dst_mesh, target_mesh;
       std::string dst_entity;
       double coarse_search_expansion_factor;

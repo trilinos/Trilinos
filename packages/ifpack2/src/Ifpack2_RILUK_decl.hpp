@@ -1,52 +1,17 @@
-/*@HEADER
-// ***********************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-//@HEADER
-*/
+// Copyright 2009 NTESS and the Ifpack2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 /// \file Ifpack2_RILUK_decl.hpp
 /// \brief Declaration of RILUK interface
 
 #ifndef IFPACK2_CRSRILUK_DECL_HPP
 #define IFPACK2_CRSRILUK_DECL_HPP
-
-#include "KokkosSparse_spiluk.hpp"
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
@@ -59,7 +24,7 @@
 #include <type_traits>
 
 namespace Teuchos {
-  class ParameterList; // forward declaration
+class ParameterList;  // forward declaration
 }
 
 namespace Ifpack2 {
@@ -242,17 +207,15 @@ example, getApplyTime() returns the number of seconds spent in all
 apply() calls.  For an average time per apply() call, divide by
 getNumApply(), the total number of calls to apply().
 */
-template<class MatrixType>
-class RILUK:
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
+template <class MatrixType>
+class RILUK : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                     typename MatrixType::local_ordinal_type,
+                                                     typename MatrixType::global_ordinal_type,
+                                                     typename MatrixType::node_type>,
+              virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                 typename MatrixType::local_ordinal_type,
+                                                                                 typename MatrixType::global_ordinal_type,
+                                                                                 typename MatrixType::node_type> > {
  public:
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
@@ -279,8 +242,8 @@ class RILUK:
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> row_matrix_type;
-
+                            node_type>
+      row_matrix_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::RILUK: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.");
 
@@ -288,22 +251,27 @@ class RILUK:
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> crs_matrix_type;
+                            node_type>
+      crs_matrix_type;
 
   //! Scalar type stored in Kokkos::Views (CrsMatrix and MultiVector)
   typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
 
-  template <class NewMatrixType> friend class RILUK;
+  template <class NewMatrixType>
+  friend class RILUK;
 
   typedef typename crs_matrix_type::global_inds_host_view_type global_inds_host_view_type;
   typedef typename crs_matrix_type::local_inds_host_view_type local_inds_host_view_type;
   typedef typename crs_matrix_type::values_host_view_type values_host_view_type;
 
-
   typedef typename crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
   typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
 
+  //! Tpetra::MultiVector specialization used for containing coordinates
+  typedef Tpetra::MultiVector<magnitude_type, local_ordinal_type,
+                              global_ordinal_type, node_type>
+      coord_type;
 
   //@}
   //! \name Implementation of Kokkos Kernels ILU(k).
@@ -316,15 +284,18 @@ class RILUK:
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-    <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
-    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+                                                                    HandleExecSpace, TemporaryMemorySpace, PersistentMemorySpace>
+      kk_handle_type;
   typedef Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type>, kk_handle_type> iluk_graph_type;
+  typedef Kokkos::View<magnitude_type**, Kokkos::LayoutLeft, device_type> coors_view_t;
+  typedef Kokkos::View<local_ordinal_type*, Kokkos::LayoutLeft, device_type> perm_view_t;
 
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
-  RILUK (const Teuchos::RCP<const row_matrix_type>& A_in);
+  /// \param A_in_coordinates [in] Optional coordinates for the input matrix (for load balancing).
+  RILUK(const Teuchos::RCP<const row_matrix_type>& A_in, const Teuchos::RCP<const coord_type>& A_in_coordinates = Teuchos::null);
 
   /// \brief Constructor that takes a Tpetra::CrsMatrix.
   ///
@@ -333,16 +304,17 @@ class RILUK:
   /// a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
-  RILUK (const Teuchos::RCP<const crs_matrix_type>& A_in);
+  /// \param A_in_coordinates [in] Optional coordinates for the input matrix (for load balancing).
+  RILUK(const Teuchos::RCP<const crs_matrix_type>& A_in, const Teuchos::RCP<const coord_type>& A_in_coordinates = Teuchos::null);
 
  private:
   /// \brief Copy constructor: declared private but not defined, so
   ///   that calling it is syntactically forbidden.
-  RILUK (const RILUK<MatrixType> & src);
+  RILUK(const RILUK<MatrixType>& src);
 
  public:
   //! Destructor (declared virtual for memory safety).
-  virtual ~RILUK ();
+  virtual ~RILUK();
 
   /// Set parameters for the incomplete factorization.
   ///
@@ -352,10 +324,10 @@ class RILUK:
   ///   - "fact: relative threshold" (magnitude_type)
   ///   - "fact: relax value" (magnitude_type)
   ///   - "fact: iluk overalloc" (double)
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize by computing the symbolic incomplete factorization.
-  void initialize ();
+  void initialize();
 
   /// \brief Compute the (numeric) incomplete factorization.
   ///
@@ -365,47 +337,45 @@ class RILUK:
   /// - Value for the a priori diagonal threshold values.
   ///
   /// initialize() must be called first, before this method may be called.
-  void compute ();
+  void compute();
 
   //! Whether initialize() has been called on this object.
-  bool isInitialized () const {
+  bool isInitialized() const {
     return isInitialized_;
   }
   //! Whether compute() has been called on this object.
-  bool isComputed () const {
+  bool isComputed() const {
     return isComputed_;
   }
 
   //! Number of successful initialize() calls for this object.
-  int getNumInitialize () const {
+  int getNumInitialize() const {
     return numInitialize_;
   }
   //! Number of successful compute() calls for this object.
-  int getNumCompute () const {
+  int getNumCompute() const {
     return numCompute_;
   }
   //! Number of successful apply() calls for this object.
-  int getNumApply () const {
+  int getNumApply() const {
     return numApply_;
   }
 
   //! Total time in seconds taken by all successful initialize() calls for this object.
-  double getInitializeTime () const {
+  double getInitializeTime() const {
     return initializeTime_;
   }
   //! Total time in seconds taken by all successful compute() calls for this object.
-  double getComputeTime () const {
+  double getComputeTime() const {
     return computeTime_;
   }
   //! Total time in seconds taken by all successful apply() calls for this object.
-  double getApplyTime () const {
+  double getApplyTime() const {
     return applyTime_;
   }
 
   //! Get a rough estimate of cost per iteration
   size_t getNodeSmootherComplexity() const;
-
-
 
   //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
@@ -433,26 +403,32 @@ class RILUK:
   /// The new matrix A need not necessarily have the same Maps or even
   /// the same communicator as the original matrix.
   virtual void
-  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
+
+  /// \brief Set the matrix rows' coordinates.
+  ///
+  /// \param A_coordinates [in] Pointer to the coordinates multivector.
+  void
+  setCoord(const Teuchos::RCP<const coord_type>& A_coordinates);
 
   //@}
   //! @name Implementation of Teuchos::Describable interface
   //@{
 
   //! A one-line description of this object.
-  std::string description () const;
+  std::string description() const;
 
   //@}
   //! \name Implementation of Tpetra::Operator
   //@{
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getDomainMap () const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
+  getDomainMap() const;
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
-  getRangeMap () const;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> >
+  getRangeMap() const;
 
   /// \brief Apply the (inverse of the) incomplete factorization to X, resulting in Y.
   ///
@@ -484,14 +460,14 @@ class RILUK:
   ///
   /// \param beta [in] Scaling factor for the initial value of Y.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
   //@}
 
-private:
+ private:
   /// \brief Apply the incomplete factorization (as a product) to X, resulting in Y.
   ///
   /// Given an incomplete factorization is \f$A \approx LDU\f$, this
@@ -514,60 +490,66 @@ private:
   ///   incomplete factorization.  Otherwise, don't apply the
   ///   transpose.
   void
-  multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            const Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
-public:
+  multiply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+           Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+           const Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
+ public:
   //! Get the input matrix.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
+
+  //! Get the coordinates associated with the input matrix's rows.
+  Teuchos::RCP<const coord_type> getCoord() const;
 
   // Attribute access functions
 
   //! Get RILU(k) relaxation parameter
-  magnitude_type getRelaxValue () const { return RelaxValue_; }
+  magnitude_type getRelaxValue() const { return RelaxValue_; }
 
   //! Get absolute threshold value
-  magnitude_type getAbsoluteThreshold () const { return Athresh_; }
+  magnitude_type getAbsoluteThreshold() const { return Athresh_; }
 
   //! Get relative threshold value
-  magnitude_type getRelativeThreshold () const {return Rthresh_;}
+  magnitude_type getRelativeThreshold() const { return Rthresh_; }
 
   //! Get level of fill (the "k" in ILU(k)).
-  int getLevelOfFill () const { return LevelOfFill_; }
+  int getLevelOfFill() const { return LevelOfFill_; }
 
   //! Get overlap mode type
-  Tpetra::CombineMode getOverlapMode () {
+  Tpetra::CombineMode getOverlapMode() {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Ifpack2::RILUK::SetOverlapMode: "
-      "RILUK no longer implements overlap on its own.  "
-      "Use RILUK with AdditiveSchwarz if you want overlap.");
+        true, std::logic_error,
+        "Ifpack2::RILUK::SetOverlapMode: "
+        "RILUK no longer implements overlap on its own.  "
+        "Use RILUK with AdditiveSchwarz if you want overlap.");
   }
 
   //! Returns the number of nonzero entries in the global graph.
-  Tpetra::global_size_t getGlobalNumEntries () const {
-    return getL ().getGlobalNumEntries () + getU ().getGlobalNumEntries ();
+  Tpetra::global_size_t getGlobalNumEntries() const {
+    return getL().getGlobalNumEntries() + getU().getGlobalNumEntries();
   }
 
   //! Return the Ifpack2::IlukGraph associated with this factored matrix.
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
                                                    global_ordinal_type,
-                                                   node_type>, kk_handle_type> > getGraph () const {
+                                                   node_type>,
+                                  kk_handle_type> >
+  getGraph() const {
     return Graph_;
   }
 
   //! Return the L factor of the ILU factorization.
-  const crs_matrix_type& getL () const;
+  const crs_matrix_type& getL() const;
 
   //! Return the diagonal entries of the ILU factorization.
-  const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>&
-  getD () const;
+  const Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>&
+  getD() const;
 
   //! Return the U factor of the ILU factorization.
-  const crs_matrix_type& getU () const;
+  const crs_matrix_type& getU() const;
 
   //! Return the input matrix A as a Tpetra::CrsMatrix, if possible; else throws.
-  Teuchos::RCP<const crs_matrix_type> getCrsMatrix () const;
+  Teuchos::RCP<const crs_matrix_type> getCrsMatrix() const;
 
   /// \brief Return A, wrapped in a LocalFilter, if necessary.
   ///
@@ -575,57 +557,61 @@ public:
   /// its communicator only has one process, then we don't need to
   /// wrap it, so we just return A.
   static Teuchos::RCP<const row_matrix_type>
-  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+  makeLocalFilter(const Teuchos::RCP<const row_matrix_type>& A);
 
-private:
-  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
+ private:
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
-  void allocateSolvers ();
-  void allocate_L_and_U ();
-  static void checkOrderingConsistency (const row_matrix_type& A);
-  void initAllValues (const row_matrix_type& A);
+  void allocateSolvers();
+  void allocate_L_and_U();
+  static void checkOrderingConsistency(const row_matrix_type& A);
+  void initAllValues(const row_matrix_type& A);
 
   void compute_serial();
   void compute_kkspiluk();
 // Workaround Cuda limitation of KOKKOS_LAMBDA in private/protected member functions
 #ifdef KOKKOS_ENABLE_CUDA
-public:
+ public:
 #endif
   void compute_kkspiluk_stream();
 #ifdef KOKKOS_ENABLE_CUDA
-private:
+ private:
 #endif
 
-protected:
-  typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> vec_type;
+ protected:
+  typedef Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> vec_type;
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;
 
+  //! Coordinates associated with rows of the input matrix
+  //! (only used for RCB distribution into streams in RILUK)
+  Teuchos::RCP<const coord_type> A_coordinates_;
+
   //! The ILU(k) graph.
   Teuchos::RCP<iluk_graph_type> Graph_;
-  std::vector< Teuchos::RCP<iluk_graph_type> > Graph_v_;
+  std::vector<Teuchos::RCP<iluk_graph_type> > Graph_v_;
   /// \brief The matrix whos numbers are used to to compute ILU(k). The graph
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
   Teuchos::RCP<const crs_matrix_type> A_local_crs_;
   Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
-  std::vector<local_matrix_device_type> A_local_diagblks;
-  std::vector< lno_row_view_t > A_local_diagblks_rowmap_v_;
-  std::vector< lno_nonzero_view_t > A_local_diagblks_entries_v_;
-  std::vector< scalar_nonzero_view_t > A_local_diagblks_values_v_;
+  std::vector<local_matrix_device_type> A_local_diagblks_v_;
+  std::vector<lno_row_view_t> A_local_diagblks_rowmap_v_;
+  std::vector<lno_nonzero_view_t> A_local_diagblks_entries_v_;
+  std::vector<scalar_nonzero_view_t> A_local_diagblks_values_v_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
-  std::vector< Teuchos::RCP<crs_matrix_type> > L_v_;
+  std::vector<Teuchos::RCP<crs_matrix_type> > L_v_;
   //! Sparse triangular solver for L
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > L_solver_;
   //! The U (upper triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> U_;
-  std::vector< Teuchos::RCP<crs_matrix_type> > U_v_;
+  std::vector<Teuchos::RCP<crs_matrix_type> > U_v_;
   //! Sparse triangular solver for U
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > U_solver_;
 
@@ -654,16 +640,23 @@ protected:
   //! Optional KokkosKernels implementation.
   bool isKokkosKernelsSpiluk_;
   Teuchos::RCP<kk_handle_type> KernelHandle_;
-  std::vector< Teuchos::RCP<kk_handle_type> > KernelHandle_v_;
+  std::vector<Teuchos::RCP<kk_handle_type> > KernelHandle_v_;
   bool isKokkosKernelsStream_;
   int num_streams_;
   std::vector<execution_space> exec_space_instances_;
   bool hasStreamReordered_;
+  bool hasStreamsWithRCB_;
   std::vector<typename lno_nonzero_view_t::non_const_type> perm_v_;
   std::vector<typename lno_nonzero_view_t::non_const_type> reverse_perm_v_;
   mutable std::unique_ptr<MV> Y_tmp_;
   mutable std::unique_ptr<MV> reordered_x_;
   mutable std::unique_ptr<MV> reordered_y_;
+  perm_view_t perm_rcb_;
+#if KOKKOS_VERSION >= 50100
+  perm_view_t reverse_perm_rcb_;
+  std::vector<local_ordinal_type> partition_sizes_rcb_;
+#endif
+  coors_view_t coors_rcb_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with
@@ -673,15 +666,15 @@ protected:
 // pass in a parameter to keep a host copy of the graph.  With the new
 // (Kokkos refactor) version of Tpetra, this problem has gone away.
 namespace detail {
-  template<class MatrixType, class NodeType>
-  struct setLocalSolveParams{
-    static Teuchos::RCP<Teuchos::ParameterList>
-    setParams (const Teuchos::RCP<Teuchos::ParameterList>& param) {
-      return param;
-    }
-  };
-} // namespace detail
+template <class MatrixType, class NodeType>
+struct setLocalSolveParams {
+  static Teuchos::RCP<Teuchos::ParameterList>
+  setParams(const Teuchos::RCP<Teuchos::ParameterList>& param) {
+    return param;
+  }
+};
+}  // namespace detail
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif /* IFPACK2_CRSRILUK_DECL_HPP */

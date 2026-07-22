@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,7 +11,7 @@
 #include <cctype>        // for tolower
 #include <copyright.h>
 #include <cstddef> // for size_t
-#include <cstdlib> // for exit, strtol, EXIT_SUCCESS, etc
+#include <cstdlib> // for exit, EXIT_SUCCESS, etc
 #include <fmt/format.h>
 #include <term_width.h>
 #include <utility> // for pair, make_pair
@@ -48,13 +48,20 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("element_status_variable", GetLongOption::MandatoryValue,
                   "Name to use as element existence status variable;\n"
                   "\t\tmust not exist on input files. If NONE, then not created.\n"
+                  "\t\tWill only be output if mesh topology changes between parts.\n"
                   "\t\tDefault = elem_status",
                   "elem_status");
 
   options_.enroll("nodal_status_variable", GetLongOption::MandatoryValue,
                   "Name to use as nodal status variable;\n\t\tmust not exist on input files.\n"
+                  "\t\tWill only be output if mesh topology changes between parts.\n"
                   "\t\tIf NONE, then not created. Default = node_status",
-                  "node_status", nullptr, true);
+                  "node_status");
+
+  options_.enroll("force_status_variable", GetLongOption::NoValue,
+                  "Output the node and element status variables even if they are not needed\n"
+                  "\t\tdue to no changes in mesh topology",
+                  nullptr, nullptr, true);
 
   options_.enroll("netcdf4", GetLongOption::NoValue,
                   "Create output database using the HDF5-based "
@@ -65,18 +72,27 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
 
-  options_.enroll(
-      "zlib", GetLongOption::NoValue,
-      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
-      nullptr);
+  options_.enroll("zlib", GetLongOption::NoValue,
+                  "Use the Zlib / libz compression method if compression is enabled (default) "
+                  "[exodus only, enables netcdf-4].",
+                  nullptr);
 
   options_.enroll("szip", GetLongOption::NoValue,
                   "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
+  options_.enroll("zstd", GetLongOption::NoValue,
+                  "Use Zstd compression. [exodus only, enables netcdf-4, experimental]", nullptr);
+  options_.enroll("bzip2", GetLongOption::NoValue,
+                  "Use Bzip2 compression. [exodus only, enables netcdf-4, experimental]", nullptr);
 
-  options_.enroll(
-      "compress", GetLongOption::MandatoryValue,
-      "Specify the hdf5 (netcdf4) compression level [0..9] to be used on the output file.", nullptr,
-      nullptr, true);
+  options_.enroll("compress", GetLongOption::MandatoryValue,
+                  "Specify the compression level to be used.  Values depend on algorithm:\n"
+                  "\t\tzlib/bzip2:  0..9\t\tszip:  even, 4..32\t\tzstd:  -131072..22",
+                  nullptr);
+
+  options_.enroll("quantize_nsd", GetLongOption::MandatoryValue,
+                  "Use the lossy quantize compression method.\n"
+                  "\t\tValue specifies number of digits to retain (1..15) [exodus only]",
+                  nullptr, nullptr, true);
 
   options_.enroll("sort_times", GetLongOption::NoValue,
                   "Sort the input files on the minimum timestep time in the file.\n"
@@ -98,23 +114,36 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("gvar", GetLongOption::MandatoryValue,
                   "Comma-separated list of global variables to be joined or ALL or NONE.", nullptr);
 
-  options_.enroll("evar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
-                  "\t\tVariables can be limited to certain blocks by appending a\n"
-                  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
-                  nullptr);
+  options_.enroll(
+      "evar", GetLongOption::MandatoryValue,
+      "Comma-separated list of element variables to be joined or ALL or NONE.\n"
+      "\t\tVariables can be limited to certain blocks by appending a\n"
+      "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
-  options_.enroll("nvar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of nodal variables to be joined or ALL or NONE.", nullptr);
+  options_.enroll(
+      "nvar", GetLongOption::MandatoryValue,
+      "Comma-separated list of nodal variables to be joined or ALL, NONE, OMIT.\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
-  options_.enroll("nsetvar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of nodeset variables to be joined or ALL or NONE.",
-                  nullptr);
+  options_.enroll(
+      "nsetvar", GetLongOption::MandatoryValue,
+      "Comma-separated list of nodeset variables to be joined or ALL, NONE, OMIT.\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
-  options_.enroll("ssetvar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of sideset variables to be joined or ALL or NONE.", nullptr,
-                  nullptr, true);
+  options_.enroll(
+      "ssetvar", GetLongOption::MandatoryValue,
+      "Comma-separated list of sideset variables to be joined or ALL, NONE, OMIT.\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
+  options_.enroll("use_all_times", GetLongOption::NoValue,
+                  "All times on all databases will be used.\n"
+                  "\t\tThe output database may have non-monotonically increasing times.",
+                  nullptr, nullptr, true);
   options_.enroll(
       "interpart_minimum_time_delta", GetLongOption::MandatoryValue,
       "If the time delta between the maximum time on one\n\t\tdatabase and the minimum time on "
@@ -161,7 +190,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     fmt::print("\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
                "\n\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#conjoin\n"
-               "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
+               "\n\t->->-> Send email to sierra-help@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -175,7 +204,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("alive_value");
     if (temp != nullptr) {
-      int value = strtol(temp, nullptr, 10);
+      int value = std::stoi(temp);
       if (value == 1 || value == 0) {
         aliveValue_ = value;
       }
@@ -235,24 +264,70 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  useNetcdf4_        = options_.retrieve("netcdf4") != nullptr;
-  sortTimes_         = options_.retrieve("sort_times") != nullptr;
-  ints64Bit_         = options_.retrieve("64-bit") != nullptr;
-  ignoreCoordinates_ = options_.retrieve("ignore_coordinate_check") != nullptr;
-  omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
-  omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
+  useNetcdf4_          = options_.retrieve("netcdf4") != nullptr;
+  sortTimes_           = options_.retrieve("sort_times") != nullptr;
+  ints64Bit_           = options_.retrieve("64-bit") != nullptr;
+  ignoreCoordinates_   = options_.retrieve("ignore_coordinate_check") != nullptr;
+  omitNodesets_        = options_.retrieve("omit_nodesets") != nullptr;
+  omitSidesets_        = options_.retrieve("omit_sidesets") != nullptr;
+  useAllTimes_         = options_.retrieve("use_all_times") != nullptr;
+  forceStatusVariable_ = options_.retrieve("force_status_variable") != nullptr;
 
-  if (options_.retrieve("szip") != nullptr) {
-    szip_ = true;
-    zlib_ = false;
-  }
   zlib_ = (options_.retrieve("zlib") != nullptr);
+  szip_ = (options_.retrieve("szip") != nullptr);
+  zstd_ = (options_.retrieve("zstd") != nullptr);
+  bz2_  = (options_.retrieve("bzip2") != nullptr);
 
-  if (szip_ && zlib_) {
-    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+  if (szip_ + zlib_ + zstd_ + bz2_ > 1) {
+    fmt::print(stderr,
+               "ERROR: Only one of 'szip' or 'zlib' or 'zstd' or 'bzip2' can be specified.\n");
   }
 
-  compressionLevel_ = options_.get_option_value("compress", compressionLevel_);
+  {
+    const char *temp = options_.retrieve("compress");
+    if (temp != nullptr) {
+      compressionLevel_ = std::stoi(temp);
+      if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
+        zlib_ = true;
+      }
+
+      if (zlib_ || bz2_) {
+        if (compressionLevel_ < 0 || compressionLevel_ > 9) {
+          fmt::print(stderr,
+                     "ERROR: Bad compression level {}, valid value is between 0 and 9 inclusive "
+                     "for gzip/zlib/bzip2 compression.\n",
+                     compressionLevel_);
+          return false;
+        }
+      }
+      else if (szip_) {
+        if (compressionLevel_ % 2 != 0) {
+          fmt::print(
+              stderr,
+              "ERROR: Bad compression level {}. Must be an even value for szip compression.\n",
+              compressionLevel_);
+          return false;
+        }
+        if (compressionLevel_ < 4 || compressionLevel_ > 32) {
+          fmt::print(stderr,
+                     "ERROR: Bad compression level {}, valid value is between 4 and 32 inclusive "
+                     "for szip compression.\n",
+                     compressionLevel_);
+          return false;
+        }
+      }
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("quantize_nsd");
+    if (temp != nullptr) {
+      quantizeNSD_ = std::stoi(temp);
+      if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
+        zlib_ = true;
+      }
+    }
+  }
 
   if (options_.retrieve("copyright") != nullptr) {
     fmt::print("{}", copyright("2009-2021"));
@@ -312,10 +387,12 @@ namespace {
       // "sigxx" should be written only for blocks with id 1, 10, and
       // 100.  "sigxx" would indicate that the variable should be
       // written for all blocks.
-      auto I = var_list.begin();
-      while (I != var_list.end()) {
-        StringVector name_id  = SLIB::tokenize(*I, ":");
+      for (const auto &var : var_list) {
+        StringVector name_id  = SLIB::tokenize(var, ":");
         std::string  var_name = LowerCase(name_id[0]);
+        if (var_name == "omit") {
+          var_name = "!omit"; // So sorts at front of list...
+        }
         if (name_id.size() == 1) {
           (*variable_list).emplace_back(var_name, 0);
         }
@@ -326,7 +403,6 @@ namespace {
             (*variable_list).emplace_back(var_name, id);
           }
         }
-        ++I;
       }
       // Sort the list...
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);

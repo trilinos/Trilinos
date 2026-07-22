@@ -16,6 +16,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <percept/uq/Percept_API_KLSolver.hpp>
 
@@ -54,9 +55,7 @@ void setupPL(Teuchos::ParameterList &pl, const int maxNev)
 
 int main(int argc,  char **argv)
 {
-  stk::ParallelMachine comm(stk::parallel_machine_init(&argc, &argv));
-
-  Kokkos::initialize(argc, argv);
+  stk::ParallelMachine comm(stk::initialize(&argc, &argv));
 
   int proc_rank = stk::parallel_machine_rank(comm);
 
@@ -143,60 +142,60 @@ int main(int argc,  char **argv)
     }
   }
 
-  stk::io::StkMeshIoBroker mesh_data(comm);
-  mesh_data.use_simple_fields();
+  {
+    stk::io::StkMeshIoBroker mesh_data(comm);
 
-  mesh_data.add_mesh_database(input_mesh, "exodus", stk::io::READ_MESH);
-  mesh_data.create_input_mesh();
+    mesh_data.add_mesh_database(input_mesh, "exodus", stk::io::READ_MESH);
+    mesh_data.create_input_mesh();
 
-  stk::mesh::Field<double> & phi =  mesh_data.meta_data().declare_field<double>(stk::topology::ELEMENT_RANK, "phi");
-  stk::mesh::put_field_on_mesh(phi, mesh_data.meta_data().universal_part(), maxNev, nullptr);
+    stk::mesh::Field<double> & phi =  mesh_data.meta_data().declare_field<double>(stk::topology::ELEMENT_RANK, "phi");
+    stk::mesh::put_field_on_mesh(phi, mesh_data.meta_data().universal_part(), maxNev, nullptr);
 
-  mesh_data.populate_bulk_data();
+    mesh_data.populate_bulk_data();
+
+    std::vector<double> lambda(maxNev);
+
+    Teuchos::RCP<RFGen::API_KLSolver> api_klSolver = 
+      Teuchos::rcp(new Percept_API_KLSolver(mesh_data.bulk_data(), phi, lambda));
+
+    const int spatialDim = mesh_data.meta_data().spatial_dimension();
+    Teuchos::RCP<RFGen::CovarianceFunction> covarFunc = 
+      RFGen::buildCovarianceFunction(covariance_type, spatialDim, covarLengthScale);
+
+    const bool useMatrixFree = true;
+
+    Teuchos::ParameterList MyPL;
+    setupPL(MyPL, maxNev);
+
+    if (block_size > 0) {
+      MyPL.set( "Block Size", block_size );
+    }
+
+    if (num_blocks > 0) {
+      MyPL.set( "Num Blocks", num_blocks );
+    }
   
-  std::vector<double> lambda(maxNev);
-  
-  Teuchos::RCP<RFGen::API_KLSolver> api_klSolver = 
-    Teuchos::rcp(new Percept_API_KLSolver(mesh_data.bulk_data(), phi, lambda));
-  
-  const int spatialDim = mesh_data.meta_data().spatial_dimension();
-  Teuchos::RCP<RFGen::CovarianceFunction> covarFunc = 
-    RFGen::buildCovarianceFunction(covariance_type, spatialDim, covarLengthScale);
-  
-  const bool useMatrixFree = true;
+    Teuchos::RCP<RFGen::KLSolver> klsolver = 
+      buildKLSolver(api_klSolver, covarFunc, MyPL, useMatrixFree);
+    
+    klsolver->solve(maxNev);
 
-  Teuchos::ParameterList MyPL;
-  setupPL(MyPL, maxNev);
+    const size_t result_output_index = mesh_data.create_output_mesh(output_file, stk::io::WRITE_RESULTS);
 
-  if (block_size > 0) {
-    MyPL.set( "Block Size", block_size );
+    mesh_data.add_field(result_output_index, phi);
+    for (int i=0; i<maxNev; i++) {
+      mesh_data.add_global(result_output_index, "lambda_" + std::to_string(i+1), Ioss::Field::REAL);
+    }
+
+    mesh_data.begin_output_step(result_output_index, 1.0);
+    mesh_data.write_defined_output_fields(result_output_index);
+    for (int i=0; i<maxNev; i++) {
+      mesh_data.write_global(result_output_index, "lambda_" + std::to_string(i+1), lambda[i]);
+    }
+    mesh_data.end_output_step(result_output_index);
   }
-  
-  if (num_blocks > 0) {
-    MyPL.set( "Num Blocks", num_blocks );
-  }
-  
-  Teuchos::RCP<RFGen::KLSolver> klsolver = 
-    buildKLSolver(api_klSolver, covarFunc, MyPL, useMatrixFree);
-  
-  klsolver->solve(maxNev);
 
-  const size_t result_output_index = mesh_data.create_output_mesh(output_file, stk::io::WRITE_RESULTS);
-
-  mesh_data.add_field(result_output_index, phi);
-  for (int i=0; i<maxNev; i++) {
-    mesh_data.add_global(result_output_index, "lambda_" + std::to_string(i+1), Ioss::Field::REAL);
-  }
-
-  mesh_data.begin_output_step(result_output_index, 1.0);
-  mesh_data.write_defined_output_fields(result_output_index);
-  for (int i=0; i<maxNev; i++) {
-    mesh_data.write_global(result_output_index, "lambda_" + std::to_string(i+1), lambda[i]);
-  }
-  mesh_data.end_output_step(result_output_index);
-
-  Kokkos::finalize();
-  stk::parallel_machine_finalize();
+  stk::finalize();
 
   return 0;
 }

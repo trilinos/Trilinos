@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -1204,7 +1204,7 @@ C>       READ SIDE SET NODE LIST COUNT
         IDEXO4 = IDEXO
         CALL EXGSSC4 (IDEXO4, IDESS, INCNT, IERR4)
         IERR = IERR4
-        
+
         END
 
         SUBROUTINE EXGCSSC (IDEXO, INCNT, IERR)

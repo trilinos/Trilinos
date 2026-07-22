@@ -1,22 +1,14 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 // This file is largely duplicating TestRange.hpp but it applies
 // Kokkos::Experimental require at every place where a parallel
@@ -47,7 +39,7 @@ struct TestRangeRequire {
         N(N_) {}
 
   void test_for() {
-    typename view_type::HostMirror host_flags =
+    typename view_type::host_mirror_type host_flags =
         Kokkos::create_mirror_view(m_flags);
 
     Kokkos::parallel_for(
@@ -55,34 +47,11 @@ struct TestRangeRequire {
             Kokkos::RangePolicy<ExecSpace, ScheduleType>(0, N), Property()),
         *this);
 
-    {
-      using ThisType = TestRangeRequire<ExecSpace, ScheduleType, Property>;
-      std::string label("parallel_for");
-      Kokkos::Impl::ParallelConstructName<ThisType, void> pcn(label);
-      ASSERT_EQ(pcn.get(), label);
-      std::string empty_label("");
-      Kokkos::Impl::ParallelConstructName<ThisType, void> empty_pcn(
-          empty_label);
-      ASSERT_EQ(empty_pcn.get(), typeid(ThisType).name());
-    }
-
     Kokkos::parallel_for(
         Kokkos::Experimental::require(
             Kokkos::RangePolicy<ExecSpace, ScheduleType, VerifyInitTag>(0, N),
             Property()),
         *this);
-
-    {
-      using ThisType = TestRangeRequire<ExecSpace, ScheduleType, Property>;
-      std::string label("parallel_for");
-      Kokkos::Impl::ParallelConstructName<ThisType, VerifyInitTag> pcn(label);
-      ASSERT_EQ(pcn.get(), label);
-      std::string empty_label("");
-      Kokkos::Impl::ParallelConstructName<ThisType, VerifyInitTag> empty_pcn(
-          empty_label);
-      ASSERT_EQ(empty_pcn.get(), std::string(typeid(ThisType).name()) + "/" +
-                                     typeid(VerifyInitTag).name());
-    }
 
     Kokkos::deep_copy(host_flags, m_flags);
 
@@ -214,7 +183,6 @@ struct TestRangeRequire {
   //----------------------------------------
 
   void test_dynamic_policy() {
-#if defined(KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA)
     auto const N_no_implicit_capture = N;
     using policy_t =
         Kokkos::RangePolicy<ExecSpace, Kokkos::Schedule<Kokkos::Dynamic> >;
@@ -300,7 +268,6 @@ struct TestRangeRequire {
         //}
       }
     }
-#endif
   }
 };
 
@@ -384,7 +351,6 @@ TEST(TEST_CATEGORY, range_reduce_require) {
   }
 }
 
-#ifndef KOKKOS_ENABLE_OPENMPTARGET
 TEST(TEST_CATEGORY, range_dynamic_policy_require) {
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
     !defined(KOKKOS_ENABLE_SYCL)
@@ -409,6 +375,5 @@ TEST(TEST_CATEGORY, range_dynamic_policy_require) {
   }
 #endif
 }
-#endif
 
 }  // namespace Test

@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -25,6 +25,7 @@
 #include <exodusII.h>
 #include <fmt/chrono.h>
 #include <fmt/color.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <open_file_limit.h>
@@ -793,7 +794,7 @@ template <typename INT> void Grid::output_node_map(const Cell &cell, INT /*dummy
   auto count = cell.added_node_count(Mode::PROCESSOR, m_equivalenceNodes);
 
   if (parallel_size() == 1) {
-    auto             gid = cell.m_globalNodeIdOffset + 1;
+    INT              gid = cell.m_globalNodeIdOffset + 1;
     std::vector<INT> map(count);
     std::iota(map.begin(), map.end(), gid);
     int exoid = output_region(rank)->get_database()->get_file_pointer();
@@ -852,7 +853,7 @@ template <typename INT> void Grid::output_element_map(Cell &cell, INT /*dummy*/)
       auto *block = cell.region()->get_element_block(output_element_block->name());
       if (block != nullptr) {
 
-        auto             gid = cell.m_globalElementIdOffset[block->name()] + 1 + global_id_offset;
+        INT              gid = cell.m_globalElementIdOffset[block->name()] + 1 + global_id_offset;
         auto             element_count = block->entity_count();
         std::vector<INT> map(element_count);
 
@@ -998,7 +999,7 @@ namespace {
     for (int rank = start_rank; rank < start_rank + rank_count; rank++) {
       for (auto &blk : output_element_blocks) {
         auto *block = new Ioss::ElementBlock(*blk.second);
-        block->property_update("entity_count", element_block_elem_count[rank][block->name()]);
+        block->reset_entity_count(element_block_elem_count[rank][block->name()]);
         block->property_update("global_entity_count", global_block_element_count[block->name()]);
         grid.output_region(rank)->property_add(
             Ioss::Property("global_element_count", (int64_t)global_element_count));

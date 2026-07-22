@@ -36,12 +36,25 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_FactoryManager.hpp"
 
-#include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Level.hpp"
 
 // Galeri
 #include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraMatrixTypes.hpp>
+#include <Galeri_MatrixTraits.hpp>
+#include <Galeri_XpetraUtils.hpp>
+
+namespace Galeri {
+namespace Xpetra {
+template <class LocalOrdinal, class GlobalOrdinal, class Map>
+RCP<Map> CreateMap(const std::string& mapType, const Teuchos::RCP<const Teuchos::Comm<int>>& comm, Teuchos::ParameterList& list);
+
+#ifdef HAVE_GALERI_XPETRA
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> CreateMap(::Xpetra::UnderlyingLib lib, const std::string& mapType, const Teuchos::RCP<const Teuchos::Comm<int>>& comm, Teuchos::ParameterList& list);
+#endif
+}  // namespace Xpetra
+}  // namespace Galeri
 
 #include "MueLu_NoFactory.hpp"
 
@@ -72,8 +85,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::rcp_implicit_cast;
 using Teuchos::rcpFromRef;
 
-#include <MueLu_TestHelpers_Common_kokkos.hpp>
-
 namespace TestHelpers_kokkos {
 
 using Xpetra::global_size_t;
@@ -85,7 +96,7 @@ class Parameters {
  public:
   static Xpetra::Parameters xpetraParameters;
 
-  inline static RCP<const Teuchos::Comm<int> > getDefaultComm() {
+  inline static RCP<const Teuchos::Comm<int>> getDefaultComm() {
     return Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
   }
 
@@ -108,8 +119,8 @@ class TestFactory {
 
   // Create a map containing a specified number of local elements per process.
   static const RCP<const Map> BuildMap(LO numElementsPerProc) {
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
-    const global_size_t INVALID         = Teuchos::OrdinalTraits<global_size_t>::invalid();
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    const global_size_t INVALID        = Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     return MapFactory::Build(TestHelpers_kokkos::Parameters::getLib(), INVALID, numElementsPerProc, 0, comm);
 
@@ -117,7 +128,7 @@ class TestFactory {
 
   // Create a matrix as specified by parameter list options
   static RCP<Matrix> BuildMatrix(ParameterList& matrixList, Xpetra::UnderlyingLib lib) {
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
     if (lib == Xpetra::NotSpecified)
       lib = TestHelpers_kokkos::Parameters::getLib();
@@ -142,11 +153,217 @@ class TestFactory {
     }
 
     RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, 0, comm);
-    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
         Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixType, map, matrixList);
     RCP<Matrix> Op = Pr->BuildMatrix();
 
     return Op;
+  }
+
+  static std::tuple<RCP<Matrix>, RCP<RealValuedMultiVector>, RCP<MultiVector>, int> BuildMatrixCoordsNullspace(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers_kokkos::Parameters::getLib();
+
+    std::string matrixType = matrixList.get("matrixType", "Laplace1D");
+    int DofsPerNode        = 1;
+    std::string mapType;
+    if (matrixType == "Laplace1D") {
+      mapType = "Cartesian1D";
+    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" || matrixType == "Cross2D") {
+      mapType = "Cartesian2D";
+    } else if (matrixType == "Elasticity2D") {
+      DofsPerNode = 2;
+      mapType     = "Cartesian2D";
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D") {
+      mapType = "Cartesian3D";
+    } else if (matrixType == "Elasticity3D") {
+      DofsPerNode = 3;
+      mapType     = "Cartesian3D";
+    } else {
+      std::string msg = matrixType + " is unsupported (in unit testing)";
+      throw(MueLu::Exceptions::RuntimeError(msg));
+    }
+
+    RCP<const Map> map;
+    RCP<const Map> coords_map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, mapType, comm, matrixList);
+    if (DofsPerNode == 1)
+      map = coords_map;
+    else
+      map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords_map, DofsPerNode);  // expand map
+
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixType, map, matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
+
+    if (DofsPerNode > 1)
+      Op->SetFixedBlockSize(DofsPerNode);
+
+    RCP<MultiVector> Nullspace = Pr->BuildNullspace();
+    RCP<RealValuedMultiVector> Coords;
+    if ((matrixType != "Elasticity2D") && (matrixType != "Elasticity3D"))
+      Coords = Pr->BuildCoords();
+    else {
+      if (matrixType == "Elasticity2D") {
+        Coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("2D", coords_map, matrixList);
+      } else if (matrixType == "Elasticity3D") {
+        Coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("3D", coords_map, matrixList);
+      }
+    }
+
+    TEUCHOS_ASSERT(Nullspace->getMap()->isSameAs(*Op->getDomainMap()));
+    if (DofsPerNode == 1) {
+      TEUCHOS_ASSERT(Coords->getMap()->isSameAs(*Op->getDomainMap()));
+    } else {
+      TEUCHOS_ASSERT(Coords->getMap()->getGlobalNumElements() * DofsPerNode == Op->getDomainMap()->getGlobalNumElements());
+    }
+
+    return std::make_tuple(Op, Coords, Nullspace, DofsPerNode);
+  }  // BuildMatrixCoordsNullspace()
+
+  static typename Matrix::local_matrix_host_type buildLocal2x2Host(Scalar a00, Scalar a01, Scalar a10, Scalar a11, const bool keepZeros) {
+    using local_matrix_type = typename Matrix::local_matrix_host_type;
+    using local_graph_type  = typename CrsGraph::local_graph_device_type::host_mirror_type;
+    using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
+    using entries_type      = typename local_graph_type::entries_type::non_const_type;
+    using values_type       = typename local_matrix_type::values_type::non_const_type;
+
+    using TST = Teuchos::ScalarTraits<Scalar>;
+    size_t nnz;
+    if (keepZeros)
+      nnz = 4;
+    else
+      nnz = (TST::magnitude(a00) > TST::eps()) + (TST::magnitude(a01) > TST::eps()) + (TST::magnitude(a10) > TST::eps()) + (TST::magnitude(a11) > TST::eps());
+
+    auto rowptr  = rowptr_type("rowptr", 3);
+    auto entries = entries_type("entries", nnz);
+    auto values  = values_type("entries", nnz);
+    {
+      auto rowptr_h  = Kokkos::create_mirror_view(rowptr);
+      auto entries_h = Kokkos::create_mirror_view(entries);
+      auto values_h  = Kokkos::create_mirror_view(values);
+
+      size_t k = 0;
+
+      rowptr_h(0) = k;
+      if (keepZeros || TST::magnitude(a00) > TST::eps()) {
+        entries_h(k) = 0;
+        values_h(k)  = a00;
+        ++k;
+      }
+      if (keepZeros || TST::magnitude(a01) > TST::eps()) {
+        entries_h(k) = 1;
+        values_h(k)  = a01;
+        ++k;
+      }
+
+      rowptr_h(1) = k;
+      if (keepZeros || TST::magnitude(a10) > TST::eps()) {
+        entries_h(k) = 0;
+        values_h(k)  = a10;
+        ++k;
+      }
+
+      if (keepZeros || TST::magnitude(a11) > TST::eps()) {
+        entries_h(k) = 1;
+        values_h(k)  = a11;
+        ++k;
+      }
+      rowptr_h(2) = k;
+
+      Kokkos::deep_copy(rowptr, rowptr_h);
+      Kokkos::deep_copy(entries, entries_h);
+      Kokkos::deep_copy(values, values_h);
+    }
+    auto lclA = local_matrix_type("A", 2, 2, nnz, values, rowptr, entries);
+    return lclA;
+  }
+
+  static std::string localMatToString(typename Matrix::local_matrix_host_type& mat) {
+    std::stringstream s;
+    typename Matrix::local_ordinal_type numCols = mat.numCols();
+    for (typename Matrix::local_ordinal_type row_id = 0; row_id < mat.numRows(); ++row_id) {
+      auto row = mat.row(row_id);
+      for (typename Matrix::local_ordinal_type col_id = 0; col_id < numCols; ++col_id) {
+        bool found = false;
+        for (typename Matrix::local_ordinal_type colPtr = 0; colPtr < row.length; ++colPtr) {
+          if (row.colidx(colPtr) == col_id) {
+            s << row.value(colPtr) << " ";
+            found = true;
+          }
+        }
+        if (not found)
+          s << 0.0 << " ";
+      }
+      s << "\n";
+    }
+    return s.str();
+  }
+
+  static typename Matrix::local_matrix_device_type buildLocal2x2(Scalar a00, Scalar a01, Scalar a10, Scalar a11) {
+    using local_matrix_type = typename Matrix::local_matrix_device_type;
+    using local_graph_type  = typename CrsGraph::local_graph_device_type;
+    using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
+    using entries_type      = typename local_graph_type::entries_type::non_const_type;
+    using values_type       = typename local_matrix_type::values_type::non_const_type;
+
+    using TST  = Teuchos::ScalarTraits<Scalar>;
+    size_t nnz = (TST::magnitude(a00) > TST::eps()) + (TST::magnitude(a01) > TST::eps()) + (TST::magnitude(a10) > TST::eps()) + (TST::magnitude(a11) > TST::eps());
+
+    auto rowptr  = rowptr_type("rowptr", 3);
+    auto entries = entries_type("entries", nnz);
+    auto values  = values_type("entries", nnz);
+    {
+      auto rowptr_h  = Kokkos::create_mirror_view(rowptr);
+      auto entries_h = Kokkos::create_mirror_view(entries);
+      auto values_h  = Kokkos::create_mirror_view(values);
+
+      size_t k = 0;
+
+      rowptr_h(0) = k;
+      if (TST::magnitude(a00) > TST::eps()) {
+        entries_h(k) = 0;
+        values_h(k)  = a00;
+        ++k;
+      }
+      if (TST::magnitude(a01) > TST::eps()) {
+        entries_h(k) = 1;
+        values_h(k)  = a01;
+        ++k;
+      }
+
+      rowptr_h(1) = k;
+      if (TST::magnitude(a10) > TST::eps()) {
+        entries_h(k) = 0;
+        values_h(k)  = a10;
+        ++k;
+      }
+
+      if (TST::magnitude(a11) > TST::eps()) {
+        entries_h(k) = 1;
+        values_h(k)  = a11;
+        ++k;
+      }
+      rowptr_h(2) = k;
+
+      Kokkos::deep_copy(rowptr, rowptr_h);
+      Kokkos::deep_copy(entries, entries_h);
+      Kokkos::deep_copy(values, values_h);
+    }
+    auto lclA = local_matrix_type("A", 2, 2, nnz, values, rowptr, entries);
+    return lclA;
+  }
+
+  static RCP<Matrix> build2x2(Xpetra::UnderlyingLib lib, Scalar a00, Scalar a01, Scalar a10, Scalar a11) {
+    auto lclA = buildLocal2x2(a00, a01, a10, a11);
+
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers_kokkos::Parameters::getLib();
+    RCP<const Map> map = MapFactory::Build(lib, 2 * comm->getSize(), 0, comm);
+
+    return MatrixFactory::Build(lclA, map, map);
   }
 
   // Create a 1D Poisson matrix with the specified number of rows
@@ -172,12 +389,71 @@ class TestFactory {
     return BuildMatrix(matrixList, lib);
   }
 
+  // Create a 2D Elasticity matrix with the specified number of rows, as well as the respective coordinate and nullspace vector
+  // nx: global number of rows
+  // ny: global number of rows
+  static RCP<Matrix> Build2DElasticity(GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {  // global_size_t
+
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers_kokkos::Parameters::getLib();
+
+    RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+
+    if (ny == -1) ny = nx;
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian2D", comm, galeriList);
+    map                = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
+
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+
+    return A;
+  }  // Build2DElasticity()
+
+  // Create a 3D Elasticity matrix with the specified number of rows and mesh stretch
+  // nx: global number of rows
+  // ny: global number of rows
+  // nz: global number of rows
+  static RCP<Matrix> Build3DElasticity(GO nx, GO ny = -1, GO nz = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {  // global_size_t
+
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers_kokkos::Parameters::getLib();
+
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+
+    if (ny == -1) ny = nx;
+    if (nz == -1) nz = nx;
+
+    ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    galeriList.set("nz", nz);
+
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian3D", comm, galeriList);
+    map                = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 3);  // expand map for 3 DOFs per node
+
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity3D", map, galeriList);
+
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(3);
+
+    return A;
+  }  // Build3DElasticity()
+
   // Create a tridiagonal matrix (stencil = [b,a,c]) with the specified number of rows
   static RCP<Matrix> BuildTridiag(RCP<const Map> rowMap, SC a, SC b, SC c, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {
     if (lib == Xpetra::NotSpecified)
       lib = TestHelpers_kokkos::Parameters::getLib();
 
-    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
 
     RCP<Matrix> mtx = MatrixFactory::Build(rowMap, 3);
 
@@ -294,10 +570,10 @@ class TestFactory {
                       Array<LO>& lNodesPerDir, Array<GO>& meshData,
                       const std::string meshLayout = "Global Lexicographic") {
     // Get MPI infos
-    Xpetra::UnderlyingLib lib           = TestHelpers_kokkos::Parameters::getLib();
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
-    LO numRanks                         = comm->getSize();
-    LO myRank                           = comm->getRank();
+    Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    LO numRanks                        = comm->getSize();
+    LO myRank                          = comm->getRank();
 
     meshData.resize(10 * numRanks);
 
@@ -464,7 +740,7 @@ class TestFactory {
     ///////////////////////////////////////
     RCP<RealValuedMultiVector> Coordinates = RealValuedMultiVectorFactory::Build(coordMap,
                                                                                  numDimensions);
-    Array<ArrayRCP<real_type> > myCoords(numDimensions);
+    Array<ArrayRCP<real_type>> myCoords(numDimensions);
     for (int dim = 0; dim < numDimensions; ++dim) {
       myCoords[dim] = Coordinates->getDataNonConst(dim);
     }
@@ -520,17 +796,64 @@ class TestFactory {
   }
 
 #if 0
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-      static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
-        Teuchos::ParameterList  ifpackList;
-        ifpackList.set("relaxation: type", type);
-        ifpackList.set("relaxation: sweeps", (LO) sweeps);
-        ifpackList.set("relaxation: damping factor", (SC) 1.0);
-        return rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+#endif
+
+  // Create a matrix as specified by parameter list options
+  static RCP<Matrix> BuildBlockMatrixAsPoint(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) {
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    GO GO_INVALID                      = Teuchos::OrdinalTraits<GO>::invalid();
+    RCP<Matrix> Op;
+
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers_kokkos::Parameters::getLib();
+
+    // Make the base graph
+    RCP<Matrix> old_matrix        = TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList, lib);
+    RCP<const CrsGraph> old_graph = old_matrix->getCrsGraph();
+    RCP<const Map> old_rowmap     = old_graph->getRowMap();
+    RCP<const Map> old_colmap     = old_graph->getColMap();
+    int blocksize                 = 3;
+
+    // Block Map
+    LO orig_num_rows = (LO)old_graph->getRowMap()->getLocalNumElements();
+    Teuchos::Array<GlobalOrdinal> owned_rows(blocksize * orig_num_rows);
+    for (LO i = 0; i < orig_num_rows; i++) {
+      GO old_gid = old_rowmap->getGlobalElement(i);
+      for (int j = 0; j < blocksize; j++) {
+        owned_rows[i * blocksize + j] = old_gid * blocksize + j;
       }
-#endif
-#endif
-};  // class TestFactory
+    }
+    RCP<Map> new_map = Xpetra::MapFactory<LO, GO, NO>::Build(lib, GO_INVALID, owned_rows(), 0, comm);
+    if (new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: Map constructor failed");
+
+    // Block Graph / Matrix
+    RCP<CrsMatrix> new_matrix = Xpetra::CrsMatrixFactory<SC, LO, GO, NO>::Build(new_map, blocksize * old_graph->getLocalMaxNumRowEntries());
+    if (new_matrix.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: Matrix constructor failed");
+    for (LO i = 0; i < orig_num_rows; i++) {
+      Teuchos::ArrayView<const LO> old_indices;
+      Teuchos::ArrayView<const SC> old_values;
+      Teuchos::Array<GO> new_indices(1);
+      Teuchos::Array<SC> new_values(1);
+      old_matrix->getLocalRowView(i, old_indices, old_values);
+      for (int ii = 0; ii < blocksize; ii++) {
+        GO GRID = new_map->getGlobalElement(i * blocksize + ii);
+        for (LO j = 0; j < (LO)old_indices.size(); j++) {
+          for (int jj = 0; jj < blocksize; jj++) {
+            new_indices[0] = old_colmap->getGlobalElement(old_indices[j]) * blocksize + jj;
+            new_values[0]  = old_values[j] * (SC)((ii == jj && i == old_indices[j]) ? blocksize * blocksize : 1);
+            new_matrix->insertGlobalValues(GRID, new_indices(), new_values);
+          }
+        }
+      }
+    }
+    new_matrix->fillComplete();
+    Op = rcp(new CrsMatrixWrap(new_matrix));
+    if (new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: CrsMatrixWrap constructor failed");
+    Op->SetFixedBlockSize(blocksize);
+
+    return Op;
+  }  // BuildBlockMatrixAsPoint()
+};   // class TestFactory
 
 // Helper class which has some Tpetra specific code inside
 // We put this into an extra helper class as we need partial specializations and
@@ -547,7 +870,7 @@ class TpetraTestFactory {
  public:
   // Create a matrix as specified by parameter list options
   static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) {
-    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
     RCP<Matrix> Op;
 
     if (lib == Xpetra::NotSpecified)
@@ -559,14 +882,14 @@ class TpetraTestFactory {
     // Thanks for the code, Travis!
 
     // Make the graph
-    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > FirstMatrix = TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList, lib);
-    RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > Graph       = FirstMatrix->getCrsGraph();
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> FirstMatrix = TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList, lib);
+    RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> Graph       = FirstMatrix->getCrsGraph();
 
-    int blocksize                                                                = 3;
-    RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(Graph);
-    RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TTGraph      = TGraph->getTpetra_CrsGraph();
+    int blocksize                                                               = 3;
+    RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>> TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(Graph);
+    RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> TTGraph      = TGraph->getTpetra_CrsGraph();
 
-    RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bcrsmatrix = rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*TTGraph, blocksize));
+    RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> bcrsmatrix = rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*TTGraph, blocksize));
 
     const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshRowMap = *bcrsmatrix->getRowMap();
     const Scalar zero                                                = Teuchos::ScalarTraits<Scalar>::zero();
@@ -587,8 +910,8 @@ class TpetraTestFactory {
       bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
     }
 
-    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
-    Op                                                                      = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
+    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
+    Op                                                                     = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
 
     return Op;
   }  // BuildBlockMatrix()
@@ -600,51 +923,6 @@ class TpetraTestFactory {
 
 // TAW: 3/14/2016: If both Epetra and Tpetra are enabled we need partial specializations
 //                 on GO=int/long long as well as NO=EpetraNode to disable BuildBlockMatrix
-#ifdef HAVE_MUELU_EPETRA
-// partial specializations (GO=int not enabled with Tpetra)
-#if !defined(HAVE_TPETRA_INST_INT_INT)
-template <class Scalar, class LocalOrdinal, class Node>
-class TpetraTestFactory<Scalar, LocalOrdinal, int, Node> {
-  typedef int GlobalOrdinal;
-#include "MueLu_UseShortNames.hpp"
- public:
-  static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-
- private:
-  TpetraTestFactory() {}  // static class
-};                        // class TpetraTestFactory
-#endif
-
-// partial specializations (GO=long long not enabled with Tpetra)
-#if !defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-template <class Scalar, class LocalOrdinal, class Node>
-class TpetraTestFactory<Scalar, LocalOrdinal, long long, Node> {
-  typedef long long GlobalOrdinal;
-#include "MueLu_UseShortNames.hpp"
- public:
-  static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-
- private:
-  TpetraTestFactory() {}  // static class
-};                        // class TpetraTestFactory
-#endif
-
-// partial specializations (NO=EpetraNode not enabled with Tpetra)
-#if ((defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_OPENMP))) || \
-     (!defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_SERIAL))))
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-class TpetraTestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> {
-  typedef Xpetra::EpetraNode Node;
-#include "MueLu_UseShortNames.hpp"
- public:
-  static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-
- private:
-  TpetraTestFactory() {}  // static class
-};                        // class TpetraTestFactory
-#endif
-#endif  // endif HAVE_MUELU_EPETRA
 
 //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
 ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string& filter);
@@ -654,20 +932,12 @@ ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string&
 }  // namespace MueLuTests
 
 // Macro to skip a test when UnderlyingLib==Epetra or Tpetra
-#define MUELU_TEST_ONLY_FOR(UnderlyingLib)                                                                                               \
-  if (TestHelpers_kokkos::Parameters::getLib() != UnderlyingLib) {                                                                       \
-    out << "Skipping test for " << ((TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) ? "Epetra" : "Tpetra") << std::endl; \
-    return;                                                                                                                              \
+#define MUELU_TEST_ONLY_FOR(UnderlyingLib)                         \
+  if (TestHelpers_kokkos::Parameters::getLib() != UnderlyingLib) { \
+    out << "Skipping test for "                                    \
+        << "Tpetra" << std::endl;                                  \
+    return;                                                        \
   }
-
-// Macro to skip a test when Epetra is used with Ordinal != int
-#define MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal) \
-  if (!(TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))))
-
-// Macro to skip a test when Epetra is used with Scalar != double or Ordinal != int
-#define MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal)                                               \
-  if (!(TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double"))) \
-  MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal)
 
 //! Namespace for MueLu test classes
 namespace MueLuTests {

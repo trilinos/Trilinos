@@ -94,7 +94,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   /* inquire id of previously defined dimension (number of objects) */
   status = exi_get_dimension(exoid, exi_dim_num_objects(obj_type), ex_name_of_object(obj_type),
                              &num_obj, &dimid, __func__);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     EX_FUNC_LEAVE(status);
   }
 
@@ -119,7 +119,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_varid(exoid, name, &propid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, name, &propid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property array id in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -128,7 +128,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
     /* compare stored attribute name with passed property name   */
     memset(tmpstr, 0, MAX_STR_LENGTH + 1);
-    if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != NC_NOERR) {
+    if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -144,7 +144,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   if (!found) {
 
     /* put netcdf file into define mode  */
-    if ((status = nc_redef(exoid)) != NC_NOERR) {
+    if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -180,7 +180,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
       int_type = NC_INT64;
     }
 
-    if ((status = nc_def_var(exoid, name, int_type, 1, dims, &propid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, name, int_type, 1, dims, &propid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to create property array variable in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -190,7 +190,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
     /*   store property name as attribute of property array variable */
     if ((status = nc_put_att_text(exoid, propid, ATT_PROP_NAME, strlen(prop_name) + 1,
-                                  prop_name)) != NC_NOERR) {
+                                  prop_name)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store property name %s in file id %d",
                prop_name, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -199,7 +199,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
 
     /* leave define mode  */
 
-    if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+    if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -214,7 +214,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
     status = nc_put_var_int(exoid, propid, values);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store property values in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

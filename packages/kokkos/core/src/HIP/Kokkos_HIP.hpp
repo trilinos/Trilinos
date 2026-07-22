@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HIP_HPP
 #define KOKKOS_HIP_HPP
@@ -47,9 +34,27 @@ class HIP {
 
   using scratch_memory_space = ScratchMemorySpace<HIP>;
 
+  KOKKOS_DEFAULTED_FUNCTION HIP(const HIP&) = default;
+  KOKKOS_FUNCTION HIP(HIP&& other) : HIP(static_cast<const HIP&>(other)) {}
+  KOKKOS_DEFAULTED_FUNCTION HIP& operator=(const HIP&) = default;
+  KOKKOS_FUNCTION HIP& operator=(HIP&& other) {
+    return *this = static_cast<const HIP&>(other);
+  }
+  ~HIP();
   HIP();
-  HIP(hipStream_t stream,
-      Impl::ManageStream manage_stream = Impl::ManageStream::no);
+
+  explicit HIP(hipStream_t stream) : HIP(stream, Impl::ManageStream::no) {}
+
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+  template <typename T = void>
+  KOKKOS_DEPRECATED_WITH_COMMENT(
+      "HIP execution space should be constructed explicitly.")
+  HIP(hipStream_t stream)
+      : HIP(stream) {}
+#endif
+
+  HIP(hipStream_t stream, Impl::ManageStream manage_stream);
+
   KOKKOS_DEPRECATED HIP(hipStream_t stream, bool manage_stream);
 
   //@}
@@ -93,8 +98,6 @@ class HIP {
   static hipDeviceProp_t const& hip_device_prop();
 
   static void impl_initialize(InitializationSettings const&);
-
-  static int impl_is_initialized();
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
   KOKKOS_DEPRECATED static size_type detect_device_count() {

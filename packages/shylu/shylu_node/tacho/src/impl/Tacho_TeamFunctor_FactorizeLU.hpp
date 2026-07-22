@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_TEAMFUNCTOR_FACTORIZE_LU_HPP__
 #define __TACHO_TEAMFUNCTOR_FACTORIZE_LU_HPP__
@@ -42,6 +34,9 @@ public:
   using value_type_array = typename supernode_info_type::value_type_array;
   using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
+  using arith_traits = ArithTraits<value_type>;
+  using mag_type = typename arith_traits::mag_type;
+
 private:
   supernode_info_type _info;
   ordinal_type_array _compute_mode, _level_sids;
@@ -52,6 +47,7 @@ private:
   size_type_array _buf_ptr;
   value_type_array _buf;
 
+  mag_type _tol;
   int *_rval;
 
 public:
@@ -62,7 +58,8 @@ public:
   TeamFunctor_FactorizeLU(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                           const ordinal_type_array &level_sids, const ordinal_type_array &piv,
                           const value_type_array buf, int *rval)
-      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _piv(piv), _buf(buf), _rval(rval) {}
+      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _piv(piv), _buf(buf),
+        _tol(0.0), _rval(rval) {}
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
     _pbeg = pbeg;
@@ -70,6 +67,7 @@ public:
   }
 
   inline void setBufferPtr(const size_type_array &buf_ptr) { _buf_ptr = buf_ptr; }
+  inline void setDiagPertubationTol(const mag_type tol) { _tol = tol; }
 
   ///
   /// Main functions
@@ -86,7 +84,10 @@ public:
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
 
-      err = LU<LU_AlgoType>::invoke(member, AT, P);
+      if (_tol > 0.0)
+        err = LU<LU_AlgoType>::invoke(member, _tol, AT, P);
+      else
+        err = LU<LU_AlgoType>::invoke(member, AT, P);
       member.team_barrier();
       if (err != 0) {
         Kokkos::atomic_add(_rval, 1);
@@ -125,7 +126,10 @@ public:
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
 
-      err = LU<LU_AlgoType>::invoke(member, AT, P);
+      if (_tol > 0.0)
+        err = LU<LU_AlgoType>::invoke(member, _tol, AT, P);
+      else
+        err = LU<LU_AlgoType>::invoke(member, AT, P);
       member.team_barrier();
       if (err != 0) {
         Kokkos::atomic_add(_rval, 1);
@@ -186,7 +190,10 @@ public:
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
 
-      err = LU<LU_AlgoType>::invoke(member, AT, P);
+      if (_tol > 0.0)
+        err = LU<LU_AlgoType>::invoke(member, _tol, AT, P);
+      else
+        err = LU<LU_AlgoType>::invoke(member, AT, P);
       member.team_barrier();
       if (err != 0) {
         Kokkos::atomic_add(_rval, 1);
@@ -263,8 +270,8 @@ public:
             Kokkos::TeamThreadRange(member, srcsize),
             [&, srcsize, src,
              tgt](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-              const value_type *__restrict__ ss = src + j * srcsize;
-              /* */ value_type *__restrict__ tt = tgt + j * srcsize;
+              const value_type *KOKKOS_RESTRICT ss = src + j * srcsize;
+              /* */ value_type *KOKKOS_RESTRICT tt = tgt + j * srcsize;
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize),
                                    [&](const ordinal_type &i) { Kokkos::atomic_add(&tt[i], ss[i]); });
             });

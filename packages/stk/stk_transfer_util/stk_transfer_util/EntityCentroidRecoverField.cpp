@@ -26,8 +26,8 @@ namespace stk {
 namespace transfer {
 
 EntityCentroidLinearRecoverField::EntityCentroidLinearRecoverField(RecoverField::RecoveryType recType,
-                                                                   const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                                                   const stk::mesh::FieldBase& recNodeVar, int nSampEntity,
+                                                                   const std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>>& recVars,
+                                                                   const std::shared_ptr<stk::search::CachedFieldDataBase>& recNodeVar, int nSampEntity,
                                                                    stk::mesh::Entity entity, FieldTransform transform)
   : RecoverField(recType, nSampEntity)
   , m_recoverVars(recVars)
@@ -37,7 +37,7 @@ EntityCentroidLinearRecoverField::EntityCentroidLinearRecoverField(RecoverField:
   m_totalVarComponents = 0;
 
   for(auto const& var : recVars) {
-    m_totalVarComponents += stk::mesh::field_scalars_per_entity(*var, entity);
+    m_totalVarComponents += stk::mesh::field_scalars_per_entity(*var->m_field, entity);
   }
 }
 
@@ -54,17 +54,20 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
 
   std::vector<stk::mesh::Entity>::const_iterator entityEnd = patch.end(), entityBeg = patch.begin(), entityIter;
 
-  int rhsCount = 0;
-  for(auto& var : m_recoverVars) {
+  stk::search::CachedEntityFieldData entityFieldData;
 
+  for(auto& var : m_recoverVars) {
+    auto field = var->m_field;
     int nCompField = 0;
     for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter) {
-      int scalarsPerEntity = stk::mesh::field_scalars_per_entity(*var, *entityIter);
+      var->populate_entity_data(*entityIter, entityFieldData);
+
+      int scalarsPerEntity = entityFieldData.numComponents * entityFieldData.numCopies;
       if (nCompField == 0) {
         nCompField = scalarsPerEntity;
       }
       else {
-        STK_ThrowRequireMsg(scalarsPerEntity == nCompField, "Error in EntityCentroidLinear, field "<<var->name()
+        STK_ThrowRequireMsg(scalarsPerEntity == nCompField, "Error in EntityCentroidLinear, field "<<field->name()
                                    <<" has two different sizes ("<<scalarsPerEntity<<" and "<<nCompField
                                    <<") within the patch.");
       }
@@ -72,32 +75,40 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
 
     STK_ThrowRequireMsg(nCompField != 0, "Variable to interpolate has zero intrinsic_length."
                                           << " It is like a vector of length zero."
-                                          << " Field name:" << var->name());
+                                          << " Field name:" << field->name());
 
     STK_ThrowRequireMsg(nCompField == m_totalVarComponents,
                     "Number of field values found: " << nCompField
                                                      << " is incompatible with expected value: " << m_totalVarComponents);
 
-    for(int nfi = 0; nfi < nCompField; nfi++) {
-      int entityCount;
-      for(entityCount = 0, entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
-        stk::mesh::Entity entity = *entityIter;
-        double* entityData = (double*)stk::mesh::field_data(*var, entity);
-        double data = 0.0;
-        if(nullptr != entityData) {
-          data = m_transform(entityData[nfi]);
-        }
 
-        fieldSample[rhsCount * nSampPatch + entityCount] = data;
+    int entityCount = 0;
+    for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
+      stk::mesh::Entity entity = *entityIter;
+      var->populate_entity_data(entity, entityFieldData);
+      const double* entityData = entityFieldData.constPointer;
+
+      double data = 0.0;
+      int entityFieldCopyComponent = 0;
+
+      if(nullptr == entityData) {
+        for(int copy = 0; copy < entityFieldData.numCopies; copy++) {
+          for(int component = 0; component < entityFieldData.numComponents; component++) {
+            fieldSample[entityFieldCopyComponent * nSampPatch + entityCount] = data;
+            entityFieldCopyComponent++;
+          }
+        }
+      } else {
+        for(int copy = 0; copy < entityFieldData.numCopies; copy++) {
+          for(int component = 0; component < entityFieldData.numComponents; component++) {
+            data = m_transform(entityData[component*entityFieldData.componentStride + copy*entityFieldData.copyStride]);
+            fieldSample[entityFieldCopyComponent * nSampPatch + entityCount] = data;
+            entityFieldCopyComponent++;
+          }
+        }
       }
-      ++rhsCount;
     }
   }
-
-  STK_ThrowRequireMsg(rhsCount == m_totalVarComponents, "Internal memory allocation error."
-                                                 << "Expected to find " << m_totalVarComponents << " number of data values, but"
-                                                 << " found " << rhsCount << " number instead."
-                                                 << " Probable internal programming error. ");
 
   STK_ThrowRequireMsg(m_recoveryType == RecoverField::TRILINEAR,
                   "The only recover type supported by the EntityCentroidLinear"
@@ -112,20 +123,19 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
                                               << RecoverField::TRILINEAR
                                               << " The recovery type found was: " << m_recoveryType);
 
-  const int ndim = m_nodeVar.mesh_meta_data().spatial_dimension();
+  const unsigned ndim = m_nodeVar->m_field->mesh_meta_data().spatial_dimension();
 
   int sampCount = 0;
 
-  std::vector<double> centroid;
   for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++sampCount) {
     stk::mesh::Entity entity = *entityIter;
 
-    centroid.clear();
-    stk::search::compute_entity_centroid(entity, m_nodeVar, centroid);
+    m_scratchSpace.clear();
+    stk::search::determine_centroid(ndim, entity, m_nodeVar, m_scratchSpace);
 
-    double x = centroid[0];
-    double y = 1 < ndim ? centroid[1] : 0;
-    double z = 2 < ndim ? centroid[2] : 0;
+    double x = m_scratchSpace[0];
+    double y = 1 < ndim ? m_scratchSpace[1] : 0;
+    double z = 2 < ndim ? m_scratchSpace[2] : 0;
 
     evaluate_trilinear_basis(x, y, z, basisSample + sampCount, nSampPatch);
   }
@@ -137,8 +147,8 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
 }
 
 EntityCentroidQuadraticRecoverField::EntityCentroidQuadraticRecoverField(stk::transfer::RecoverField::RecoveryType recType,
-                                                                     const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                                                     const stk::mesh::FieldBase& recNodeVar, int nsampElem,
+                                                                     const std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>>& recVars,
+                                                                     const std::shared_ptr<stk::search::CachedFieldDataBase>& recNodeVar, int nsampElem,
                                                                      stk::mesh::Entity entity, FieldTransform transform)
   : RecoverField(recType, nsampElem)
   , m_recoverVars(recVars)
@@ -148,14 +158,14 @@ EntityCentroidQuadraticRecoverField::EntityCentroidQuadraticRecoverField(stk::tr
   m_totalVarComponents = 0;
 
   for(auto const& v_i : recVars) {
-    m_totalVarComponents += stk::mesh::field_scalars_per_entity(*v_i, entity);
+    m_totalVarComponents += stk::mesh::field_scalars_per_entity(*v_i->m_field, entity);
   }
 }
 
 EntityCentroidQuadraticRecoverField::~EntityCentroidQuadraticRecoverField() {}
 
 void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::mesh::Entity>& patch, int nSampPatch,
-                                                     double* fieldSample, double* basisSample) const
+                                                       double* fieldSample, double* basisSample) const
 {
   // Function meant for piecewise linear variables with sampling at centroid of mesh entity
   STK_ThrowRequireMsg(m_nSampleElements == 1, "The EntityCentroidQuadratic method only works with piecewise"
@@ -165,18 +175,21 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
 
   std::vector<stk::mesh::Entity>::const_iterator entityEnd = patch.end(), entityBeg = patch.begin(), entityIter;
 
-  int rhsCount = 0;
-  for(auto& var : m_recoverVars) {
+  stk::search::CachedEntityFieldData entityFieldData;
 
+  for(auto& var : m_recoverVars) {
+    auto field = var->m_field;
     int nCompField = 0;
     for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter) {
-      int scalarsPerEntity = stk::mesh::field_scalars_per_entity(*var, *entityIter);
+      var->populate_entity_data(*entityIter, entityFieldData);
+
+      int scalarsPerEntity = entityFieldData.numComponents * entityFieldData.numCopies;
       if(nCompField == 0) {
         nCompField = scalarsPerEntity;
       }
       else {
         STK_ThrowRequireMsg(scalarsPerEntity == nCompField, "Error in EntityCentroidQuadratic, field "
-                                                             << var->name() << " has two different sizes ("
+                                                             << field->name() << " has two different sizes ("
                                                              << scalarsPerEntity << " and " << nCompField
                                                              << ") within the patch.");
       }
@@ -184,32 +197,39 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
 
     STK_ThrowRequireMsg(nCompField != 0, "Variable to interpolate has zero intrinsic_length."
                                           << " It is like a vector of length zero."
-                                          << " Field name:" << var->name());
+                                          << " Field name:" << field->name());
 
     STK_ThrowRequireMsg(nCompField == m_totalVarComponents,
                     "Number of field values found: " << nCompField
                                                      << " is incompatible with expected value: " << m_totalVarComponents);
 
-    for(int nfi = 0; nfi < nCompField; nfi++) {
-      int entityCount;
-      for(entityCount = 0, entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
-        stk::mesh::Entity entity = *entityIter;
-        double* entityData = (double*)stk::mesh::field_data(*var, entity);
-        double data = 0.0;
-        if(nullptr != entityData) {
-          data = m_transform(entityData[nfi]);
-        }
+    int entityCount = 0;
+    for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
+      stk::mesh::Entity entity = *entityIter;
+      var->populate_entity_data(entity, entityFieldData);
+      const double* entityData = entityFieldData.constPointer;
 
-        fieldSample[rhsCount * nSampPatch + entityCount] = data;
+      double data = 0.0;
+      int entityFieldCopyComponent = 0;
+
+      if(nullptr == entityData) {
+        for(int copy = 0; copy < entityFieldData.numCopies; copy++) {
+          for(int component = 0; component < entityFieldData.numComponents; component++) {
+            fieldSample[entityFieldCopyComponent * nSampPatch + entityCount] = data;
+            entityFieldCopyComponent++;
+          }
+        }
+      } else {
+        for(int copy = 0; copy < entityFieldData.numCopies; copy++) {
+          for(int component = 0; component < entityFieldData.numComponents; component++) {
+            data = m_transform(entityData[component*entityFieldData.componentStride + copy*entityFieldData.copyStride]);
+            fieldSample[entityFieldCopyComponent * nSampPatch + entityCount] = data;
+            entityFieldCopyComponent++;
+          }
+        }
       }
-      ++rhsCount;
     }
   }
-
-  STK_ThrowRequireMsg(rhsCount == m_totalVarComponents, "Internal memory allocation error."
-                                                 << "Expected to find " << m_totalVarComponents << " number of data values, but"
-                                                 << " found " << rhsCount << " number instead."
-                                                 << " Probable internal programming error. ");
 
   STK_ThrowRequireMsg(m_recoveryType == RecoverField::TRIQUADRATIC,
                   "The only recover type supported by the EntityCentroidQuadratic"
@@ -225,20 +245,19 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
                       << "stk::transfer::RecoverField::TRIQUADRATIC now appears to be enumeration number "
                       << RecoverField::TRIQUADRATIC << " The recovery type found was: " << m_recoveryType);
 
-  const int ndim = m_nodeVar.mesh_meta_data().spatial_dimension();
+  const int ndim = m_nodeVar->m_field->mesh_meta_data().spatial_dimension();
 
   int sampCount = 0;
 
-  std::vector<double> centroid;
   for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++sampCount) {
     stk::mesh::Entity entity = *entityIter;
 
-    centroid.clear();
-    stk::search::compute_entity_centroid(entity, m_nodeVar, centroid);
+    m_scratchSpace.clear();
+    stk::search::determine_centroid(ndim, entity, m_nodeVar, m_scratchSpace);
 
-    double x = centroid[0];
-    double y = 1 < ndim ? centroid[1] : 0;
-    double z = 2 < ndim ? centroid[2] : 0;
+    double x = m_scratchSpace[0];
+    double y = 1 < ndim ? m_scratchSpace[1] : 0;
+    double z = 2 < ndim ? m_scratchSpace[2] : 0;
 
     evaluate_triquadratic_basis(x, y, z, basisSample + sampCount, nSampPatch);
   }
@@ -250,9 +269,9 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
 }
 
 EntityCentroidCubicRecoverField::EntityCentroidCubicRecoverField(stk::transfer::RecoverField::RecoveryType recType,
-                                                                     const std::vector<const stk::mesh::FieldBase*>& recVars,
-                                                                     const stk::mesh::FieldBase& recNodeVar, int nsampElem,
-                                                                     stk::mesh::Entity entity, FieldTransform transform)
+                                                                 const std::vector<std::shared_ptr<stk::search::CachedFieldDataBase>>& recVars,
+                                                                 const std::shared_ptr<stk::search::CachedFieldDataBase>& recNodeVar, int nsampElem,
+                                                                 stk::mesh::Entity entity, FieldTransform transform)
   : RecoverField(recType, nsampElem)
   , m_recoverVars(recVars)
   , m_nodeVar(recNodeVar)
@@ -261,14 +280,14 @@ EntityCentroidCubicRecoverField::EntityCentroidCubicRecoverField(stk::transfer::
   m_totalVarComponents = 0;
 
   for(auto const& v_i : recVars) {
-    m_totalVarComponents += stk::mesh::field_scalars_per_entity(*v_i, entity);
+    m_totalVarComponents += stk::mesh::field_scalars_per_entity(*v_i->m_field, entity);
   }
 }
 
 EntityCentroidCubicRecoverField::~EntityCentroidCubicRecoverField() {}
 
 void EntityCentroidCubicRecoverField::sample_patch(const std::vector<stk::mesh::Entity>& patch, int nSampPatch,
-                                                     double* fieldSample, double* basisSample) const
+                                                   double* fieldSample, double* basisSample) const
 {
   // Function meant for piecewise linear variables with sampling at centroid of mesh entity
   STK_ThrowRequireMsg(m_nSampleElements == 1, "The EntityCentroidCubic method only works with piecewise"
@@ -278,18 +297,21 @@ void EntityCentroidCubicRecoverField::sample_patch(const std::vector<stk::mesh::
 
   std::vector<stk::mesh::Entity>::const_iterator entityEnd = patch.end(), entityBeg = patch.begin(), entityIter;
 
-  int rhsCount = 0;
-  for(auto& var : m_recoverVars) {
+  stk::search::CachedEntityFieldData entityFieldData;
 
+  for(auto& var : m_recoverVars) {
+    auto field = var->m_field;
     int nCompField = 0;
     for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter) {
-      int scalarsPerEntity = stk::mesh::field_scalars_per_entity(*var, *entityIter);
+      var->populate_entity_data(*entityIter, entityFieldData);
+
+      int scalarsPerEntity = entityFieldData.numComponents * entityFieldData.numCopies;
       if(nCompField == 0) {
         nCompField = scalarsPerEntity;
       }
       else {
         STK_ThrowRequireMsg(scalarsPerEntity == nCompField, "Error in EntityCentroidCubic, field "
-                                                             << var->name() << " has two different sizes ("
+                                                             << field->name() << " has two different sizes ("
                                                              << scalarsPerEntity << " and " << nCompField
                                                              << ") within the patch.");
       }
@@ -303,26 +325,33 @@ void EntityCentroidCubicRecoverField::sample_patch(const std::vector<stk::mesh::
                     "Number of field values found: " << nCompField
                                                      << " is incompatible with expected value: " << m_totalVarComponents);
 
-    for(int nfi = 0; nfi < nCompField; nfi++) {
-      int entityCount;
-      for(entityCount = 0, entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
-        stk::mesh::Entity entity = *entityIter;
-        double* entityData = (double*)stk::mesh::field_data(*var, entity);
-        double data = 0.0;
-        if(nullptr != entityData) {
-          data = m_transform(entityData[nfi]);
-        }
+    int entityCount = 0;
+    for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
+      stk::mesh::Entity entity = *entityIter;
+      var->populate_entity_data(entity, entityFieldData);
+      const double* entityData = entityFieldData.constPointer;
 
-        fieldSample[rhsCount * nSampPatch + entityCount] = data;
+      double data = 0.0;
+      int entityFieldCopyComponent = 0;
+
+      if(nullptr == entityData) {
+        for(int copy = 0; copy < entityFieldData.numCopies; copy++) {
+          for(int component = 0; component < entityFieldData.numComponents; component++) {
+            fieldSample[entityFieldCopyComponent * nSampPatch + entityCount] = data;
+            entityFieldCopyComponent++;
+          }
+        }
+      } else {
+        for(int copy = 0; copy < entityFieldData.numCopies; copy++) {
+          for(int component = 0; component < entityFieldData.numComponents; component++) {
+            data = m_transform(entityData[component*entityFieldData.componentStride + copy*entityFieldData.copyStride]);
+            fieldSample[entityFieldCopyComponent * nSampPatch + entityCount] = data;
+            entityFieldCopyComponent++;
+          }
+        }
       }
-      ++rhsCount;
     }
   }
-
-  STK_ThrowRequireMsg(rhsCount == m_totalVarComponents, "Internal memory allocation error."
-                                                 << "Expected to find " << m_totalVarComponents << " number of data values, but"
-                                                 << " found " << rhsCount << " number instead."
-                                                 << " Probable internal programming error. ");
 
   STK_ThrowRequireMsg(m_recoveryType == RecoverField::TRICUBIC,
                   "The only recover type supported by the EntityCentroidCubic"
@@ -338,20 +367,19 @@ void EntityCentroidCubicRecoverField::sample_patch(const std::vector<stk::mesh::
                       << "stk::transfer::RecoverField::TRICUBIC now appears to be enumeration number "
                       << RecoverField::TRICUBIC << " The recovery type found was: " << m_recoveryType);
 
-  const int ndim = m_nodeVar.mesh_meta_data().spatial_dimension();
+  const int ndim = m_nodeVar->m_field->mesh_meta_data().spatial_dimension();
 
   int sampCount = 0;
 
-  std::vector<double> centroid;
   for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++sampCount) {
     stk::mesh::Entity entity = *entityIter;
 
-    centroid.clear();
-    stk::search::compute_entity_centroid(entity, m_nodeVar, centroid);
+    m_scratchSpace.clear();
+    stk::search::determine_centroid(ndim, entity, m_nodeVar, m_scratchSpace);
 
-    double x = centroid[0];
-    double y = 1 < ndim ? centroid[1] : 0;
-    double z = 2 < ndim ? centroid[2] : 0;
+    double x = m_scratchSpace[0];
+    double y = 1 < ndim ? m_scratchSpace[1] : 0;
+    double z = 2 < ndim ? m_scratchSpace[2] : 0;
 
     evaluate_tricubic_basis(x, y, z, basisSample + sampCount, nSampPatch);
   }

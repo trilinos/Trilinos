@@ -1,47 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 /*! \file Zoltan2_AlgMultiJagged.hpp
   \brief Contains the Multi-jagged algorthm.
  */
@@ -597,11 +562,11 @@ private:
   // information, if incomplete_cut_count[x]==0, then no work is done
   // for this part.
   Kokkos::View<mj_part_t *, device_t> device_incomplete_cut_count;
-  typename decltype(device_incomplete_cut_count)::HostMirror
+  typename decltype(device_incomplete_cut_count)::host_mirror_type
     incomplete_cut_count;
 
   // Need a quick accessor for this on host
-  typename decltype (part_xadj)::HostMirror host_part_xadj;
+  typename decltype (part_xadj)::host_mirror_type host_part_xadj;
 
   // local part weights of each thread.
   Kokkos::View<double *, device_t>
@@ -638,7 +603,7 @@ private:
     global_total_part_weight_left_right_closests;
 
   Kokkos::View<mj_part_t*, device_t> device_num_partitioning_in_current_dim;
-  typename decltype(device_num_partitioning_in_current_dim)::HostMirror
+  typename decltype(device_num_partitioning_in_current_dim)::host_mirror_type
     host_num_partitioning_in_current_dim; // for quick access on host
 
   /* \brief helper functio to calculate imbalance.
@@ -2974,7 +2939,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   // concurrentPartCount elements.
   if(this->comm->getSize()  > 1) {
     // We're using explicit host here as Spectrum MPI would fail
-    // with the prior HostMirror UVMSpace to UVMSpace setup.
+    // with the prior host_mirror_type UVMSpace to UVMSpace setup.
     auto host_local_min_max_total =
       Kokkos::create_mirror_view(Kokkos::HostSpace(), local_min_max_total);
     auto host_global_min_max_total =
@@ -3325,7 +3290,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,mj_node_t>::mj_1D_part(
     // now sum up the results of mpi processors.
     if(!bSingleProcess) {
       // We're using explicit host here as Spectrum MPI would fail
-      // with the prior HostMirror UVMSpace to UVMSpace setup.
+      // with the prior host_mirror_type UVMSpace to UVMSpace setup.
       auto host_total_part_weight_left_right_closests =
         Kokkos::create_mirror_view(Kokkos::HostSpace(),
         total_part_weight_left_right_closests);
@@ -3760,7 +3725,7 @@ struct ReduceWeightsFunctor {
       sh_mem_size);
 
     // init the shared array to 0
-    Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
       for(int n = 0; n < value_count_weights; ++n) {
         shared_ptr[n] = 0;
       }
@@ -3774,7 +3739,7 @@ struct ReduceWeightsFunctor {
 
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(teamMember, begin, end),
-      [=] (index_t ii) {
+      [&] (index_t ii) {
 #else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // create the team shared data - each thread gets one of the arrays
     size_t sh_mem_size = sizeof(array_t) * (value_count_weights +
@@ -4543,7 +4508,7 @@ struct ReduceArrayFunctor {
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     // init the shared array to 0
-    Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
       for(int n = 0; n < value_count; ++n) {
         shared_ptr[n] = 0;
       }
@@ -4551,7 +4516,7 @@ struct ReduceArrayFunctor {
     teamMember.team_barrier();
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, begin, end),
-      [=] (index_t ii) {
+      [&] (index_t ii) {
 #else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // select the array for this thread
     Zoltan2_MJArrayType<array_t> array(&shared_ptr[teamMember.team_rank() *
@@ -8542,7 +8507,7 @@ private:
 
   RCP<mj_partBoxVector_t> getGlobalBoxBoundaries() const;
 
-  bool mj_premigrate_to_subset(
+  std::pair<bool, RCP<Tpetra::Distributor>> mj_premigrate_to_subset(
     int used_num_ranks,
     int migration_selection_option,
     RCP<const Environment> mj_env_,
@@ -8720,7 +8685,7 @@ public:
 };
 
 template <typename Adapter>
-bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
+std::pair<bool, RCP<Tpetra::Distributor>> Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   int used_num_ranks,
   int migration_selection_option,
   RCP<const Environment> mj_env_,
@@ -8753,32 +8718,70 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
 
   std::vector<mj_part_t> group_begins(used_num_ranks + 1, 0);
 
-  mj_part_t i_am_sending_to = 0;
+  // construct distributor for premigration
+  RCP<Tpetra::Distributor> distributor = rcp(new Tpetra::Distributor(mj_problemComm_));
+  mj_lno_t num_incoming_gnos = 0;
   bool am_i_a_receiver = false;
+  {
+    mj_part_t i_am_sending_to = 0;
+    int my_group_size = 0;
 
-  for(int i = 0; i < used_num_ranks; ++i) {
-    group_begins[i+ 1]  = group_begins[i] + groupsize;
-    if(worldSize % used_num_ranks > i) group_begins[i+ 1] += 1;
-    if(i == used_num_ranks) group_begins[i+ 1] = worldSize;
-    if(myRank >= group_begins[i] && myRank < group_begins[i + 1]) {
-      i_am_sending_to = group_begins[i];
+    for(int i = 0; i < used_num_ranks; ++i) {
+      group_begins[i+ 1]  = group_begins[i] + groupsize;
+      if(worldSize % used_num_ranks > i) group_begins[i+ 1] += 1;
+      if(i == used_num_ranks) group_begins[i+ 1] = worldSize;
+      if(myRank >= group_begins[i] && myRank < group_begins[i + 1]) {
+        i_am_sending_to = group_begins[i];
+        my_group_size = group_begins[i+1]-group_begins[i];
+      }
+      if(myRank == group_begins[i]) {
+        am_i_a_receiver = true;
+      }
     }
-    if(myRank == group_begins[i]) {
-      am_i_a_receiver = true;
+
+    const int mpiTag = 666;
+    std::vector<int> coordinate_sources;
+    if (am_i_a_receiver) {
+      ArrayRCP<int> num_local_entries_group(my_group_size);
+      Array<RCP<Teuchos::CommRequest<int>>> requests(my_group_size-1);
+      Array<RCP<Teuchos::CommStatus<int>>> statuses(my_group_size-1);
+      num_local_entries_group[0] = num_local_coords_;
+      for (int j = 1; j<my_group_size; ++j)
+        requests[j-1] = Teuchos::ireceive<int, int>(Teuchos::arcpFromArrayView(num_local_entries_group(j, 1)), myRank+j, mpiTag, *mj_problemComm_);
+      Teuchos::waitAll(*mj_problemComm_, requests(), statuses());
+
+      for (int j = 0; j<my_group_size; ++j) {
+        num_incoming_gnos += num_local_entries_group[j];
+      }
+      coordinate_sources.resize(num_incoming_gnos);
+      int n = 0;
+      for (int j = 0; j<my_group_size; ++j) {
+        for (int k = 0; k<num_local_entries_group[j]; ++k) {
+          coordinate_sources[n] = myRank+j;
+          ++n;
+         }
+      }
+    } else {
+      Teuchos::send<int, int>(&num_local_coords_, 1, i_am_sending_to, mpiTag, *mj_problemComm_);
     }
-  }
 
-  ArrayView<const mj_part_t> idView(&(group_begins[0]), used_num_ranks );
-  result_problemComm_ = mj_problemComm_->createSubcommunicator(idView);
+    ArrayView<const mj_part_t> idView(&(group_begins[0]), used_num_ranks );
+    result_problemComm_ = mj_problemComm_->createSubcommunicator(idView);
 
-  Tpetra::Distributor distributor(mj_problemComm_);
-
-  std::vector<mj_part_t>
+    std::vector<mj_part_t>
     coordinate_destinations(num_local_coords_, i_am_sending_to);
 
-  ArrayView<const mj_part_t>
-    destinations(&(coordinate_destinations[0]), num_local_coords_);
-  mj_lno_t num_incoming_gnos = distributor.createFromSends(destinations);
+    ArrayView<const mj_part_t>
+    destinations(coordinate_destinations.data(), coordinate_destinations.size());
+
+    ArrayView<const mj_part_t>
+    sources(coordinate_sources.data(), coordinate_sources.size());
+
+    distributor->createFromSendsAndRecvs(destinations, sources);
+
+    num_incoming_gnos = coordinate_sources.size();
+  }
+
   result_num_local_coords_ = num_incoming_gnos;
   mj_env_->timerStop(MACRO_TIMERS,
     timer_base_string + "PreMigration DistributorPlanCreating");
@@ -8801,7 +8804,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
       Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
       num_incoming_gnos);
 
-    distributor.doPostsAndWaits(sent_gnos, 1, received_gnos);
+    distributor->doPostsAndWaits(sent_gnos, 1, received_gnos);
 
     result_initial_mj_gnos_ = Kokkos::View<mj_gno_t*, device_t>(
       Kokkos::ViewAllocateWithoutInitializing("result_initial_mj_gnos_"),
@@ -8831,7 +8834,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
 
     auto sent_coord = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
 
-    distributor.doPostsAndWaits(sent_coord, 1, received_coord);
+    distributor->doPostsAndWaits(sent_coord, 1, received_coord);
 
     Kokkos::deep_copy(Kokkos::subview(dst_coordinates, Kokkos::ALL, i),
                       received_coord);
@@ -8875,7 +8878,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
       sent_weight[n] = sub_host_src_weights(n);
     }
 
-    distributor.doPostsAndWaits(sent_weight, 1, received_weight);
+    distributor->doPostsAndWaits(sent_weight, 1, received_weight);
 
     // Again we copy by index due to layout
     for(mj_lno_t n = 0; n < num_incoming_gnos; ++n) {
@@ -8896,7 +8899,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
                  Kokkos::ViewAllocateWithoutInitializing("received_owners"),
                  num_incoming_gnos);
 
-    distributor.doPostsAndWaits(sent_owners, 1, received_owners);
+    distributor->doPostsAndWaits(sent_owners, 1, received_owners);
 
     result_actual_owner_rank_ = new int[num_incoming_gnos];
     memcpy(
@@ -8907,7 +8910,7 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
 
   mj_env_->timerStop(MACRO_TIMERS,
     timer_base_string + "PreMigration DistributorMigration");
-  return am_i_a_receiver;
+  return std::make_pair(am_i_a_receiver, distributor);
 }
 
 /*! \brief Multi Jagged  coordinate partitioning algorithm.
@@ -8981,6 +8984,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
       this->min_coord_per_rank_for_premigration;
     bool is_pre_migrated = false;
     bool am_i_in_subset = true;
+    RCP<Tpetra::Distributor> premigration_distributor;
 
     // Note that we need to add testing for migration and should also cover the
     // zoltan case when ZOLTAN2_MJ_ENABLE_ZOLTAN_MIGRATION is defined.
@@ -9011,7 +9015,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         used_num_ranks = 1;
       }
 
-      am_i_in_subset = this->mj_premigrate_to_subset(
+      auto p = this->mj_premigrate_to_subset(
       used_num_ranks,
         migration_selection_option,
         this->mj_env,
@@ -9032,7 +9036,10 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         result_mj_weights,
         result_actual_owner_rank);
 
-       result_initial_mj_gnos_ = result_initial_mj_gnos;
+      am_i_in_subset = p.first;
+      premigration_distributor = p.second;
+
+      result_initial_mj_gnos_ = result_initial_mj_gnos;
      }
 
     Kokkos::View<mj_part_t *, device_t> result_assigned_part_ids;
@@ -9093,13 +9100,9 @@ void Zoltan2_AlgMJ<Adapter>::partition(
     if(is_pre_migrated) {
       this->mj_env->timerStart(MACRO_TIMERS, timer_base_string +
         "PostMigration DistributorPlanCreating");
-      Tpetra::Distributor distributor(this->mj_problemComm);
 
-      ArrayView<const mj_part_t> actual_owner_destinations(
-        result_actual_owner_rank , result_num_local_coords);
-
-      mj_lno_t num_incoming_gnos = distributor.createFromSends(
-        actual_owner_destinations);
+      auto reverse_premigration_distributor = *premigration_distributor->getReverse();
+      mj_lno_t num_incoming_gnos = reverse_premigration_distributor.getTotalReceiveLength();
 
       if(num_incoming_gnos != this->num_local_coords) {
         throw std::logic_error("Zoltan2 - Multijagged Post Migration - "
@@ -9118,7 +9121,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         Kokkos::ViewAllocateWithoutInitializing("received_partids"),
         num_incoming_gnos);
 
-      distributor.doPostsAndWaits(host_result_initial_mj_gnos, 1,
+      reverse_premigration_distributor.doPostsAndWaits(host_result_initial_mj_gnos, 1,
                                   received_gnos);
       {
         Kokkos::View<mj_part_t*, Kokkos::HostSpace> sent_partnos;
@@ -9126,7 +9129,7 @@ void Zoltan2_AlgMJ<Adapter>::partition(
           sent_partnos = Kokkos::View<mj_part_t*, Kokkos::HostSpace>(
                                  partId.getRawPtr(), partId.size()); //unmanaged
         }
-        distributor.doPostsAndWaits(sent_partnos, 1, received_partids);
+        reverse_premigration_distributor.doPostsAndWaits(sent_partnos, 1, received_partids);
       }
 
       partId = arcp(new mj_part_t[this->num_local_coords],

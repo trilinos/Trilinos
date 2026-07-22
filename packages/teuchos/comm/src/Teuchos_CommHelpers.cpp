@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_CommHelpers.hpp"
@@ -249,6 +217,54 @@ scatterImpl (const T sendBuf[],
   // We've built without MPI, so just assume it's a SerialComm and
   // copy the data.
   std::copy (sendBuf, sendBuf + sendCount, recvBuf);
+#endif // HAVE_TEUCHOS_MPI
+}
+
+template<class T>
+void
+scattervImpl (const T sendBuf[],
+              const int sendCounts[],
+              const int displs[],
+              T recvBuf[],
+              const int recvCount,
+              const int root,
+              const Comm<int>& comm)
+{
+#ifdef HAVE_TEUCHOS_MPI
+  using Teuchos::Details::MpiTypeTraits;
+
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) {
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      scatterv<int, T> (sendBuf, sendCounts, displs, recvBuf, recvCount, root, comm);
+    }
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      std::copy (sendBuf, sendBuf + sendCounts[0], recvBuf);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
+    const int err =
+      MPI_Scatterv (const_cast<T*> (sendBuf), sendCounts, displs, rawMpiType,
+                    recvBuf, recvCount, rawMpiType,
+                    root, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Scatter failed with the following error: "
+      << ::Teuchos::Details::getMpiErrorString (err));
+  }
+#else
+  // We've built without MPI, so just assume it's a SerialComm and
+  // copy the data.
+  std::copy (sendBuf, sendBuf + sendCounts[0], recvBuf);
 #endif // HAVE_TEUCHOS_MPI
 }
 
@@ -645,6 +661,8 @@ sendImpl (const Comm<int>& comm,
     }
   }
   else { // It's an MpiComm.  Invoke MPI directly.
+    TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::sendImpl<" << TypeNameTraits<T>::name () << ">");
     MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
@@ -698,6 +716,8 @@ sendImpl (const T sendBuffer[],
     }
   }
   else { // It's an MpiComm.  Invoke MPI directly.
+    TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::sendImpl<" << TypeNameTraits<T>::name () << ">");
     MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
@@ -792,6 +812,9 @@ isendImpl (const ArrayRCP<const T>& sendBuffer,
     }
   }
   else { // It's an MpiComm.  Invoke MPI directly.
+    TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::isendImpl<" << TypeNameTraits<T>::name () << ">");
+
     MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
@@ -973,7 +996,6 @@ isend (const ArrayRCP<const std::complex<float> >& sendBuffer,
 #endif // HAVE_TEUCHOS_COMPLEX
 #endif // if 0
 
-
 // Specialization for Ordinal=int and Packet=double.
 template<>
 void
@@ -1042,6 +1064,20 @@ isend (const ArrayRCP<const double>& sendBuffer,
   return isendImpl<double> (sendBuffer, destRank, tag, comm);
 }
 
+template<>
+void
+gatherv<int, double> (const double sendBuf[],
+                      const int sendCount,
+                      double recvBuf[],
+                      const int recvCounts[],
+                      const int displs[],
+                      const int root,
+                      const Comm<int>& comm)
+{
+  gathervImpl<double> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
+}
+
+
 // Specialization for Ordinal=int and Packet=float.
 template<>
 void
@@ -1108,6 +1144,19 @@ isend (const ArrayRCP<const float>& sendBuffer,
        const Comm<int>& comm)
 {
   return isendImpl<float> (sendBuffer, destRank, tag, comm);
+}
+
+template<>
+void
+gatherv<int,float> (const float sendBuf[],
+                    const int sendCount,
+                    float recvBuf[],
+                    const int recvCounts[],
+                    const int displs[],
+                    const int root,
+                    const Comm<int>& comm)
+{
+  gathervImpl<float> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
 }
 
 
@@ -1521,6 +1570,32 @@ scatter<int, int> (const int sendBuf[],
                    const Comm<int>& comm)
 {
   scatterImpl<int> (sendBuf, sendCount, recvBuf, recvCount, root, comm);
+}
+
+template<>
+void
+scatterv<int, double> (const double sendBuf[],
+                       const int sendCount[],
+                       const int displs[],
+                       double recvBuf[],
+                       const int recvCount,
+                       const int root,
+                       const Comm<int>& comm)
+{
+  scattervImpl<double> (sendBuf, sendCount, displs, recvBuf, recvCount, root, comm);
+}
+
+template<>
+void
+scatterv<int, float> (const float sendBuf[],
+                      const int sendCounts[],
+                      const int displs[],
+                      float recvBuf[],
+                      const int recvCount,
+                      const int root,
+                      const Comm<int>& comm)
+{
+  scattervImpl<float> (sendBuf, sendCounts, displs, recvBuf, recvCount, root, comm);
 }
 
 template<>

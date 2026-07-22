@@ -13,7 +13,7 @@
 
 namespace krino { class FieldRef; }
 namespace stk { namespace mesh { class Bucket; } }
-namespace stk { class topology; }
+namespace stk { struct topology; }
 
 namespace krino {
 

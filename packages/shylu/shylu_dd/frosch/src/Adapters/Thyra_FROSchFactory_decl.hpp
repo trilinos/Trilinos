@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _THYRA_FROSCH_FACTORY_DECL_HPP
 #define _THYRA_FROSCH_FACTORY_DECL_HPP
@@ -48,9 +16,6 @@
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
@@ -70,21 +35,10 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_ThyraUtils.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_EpetraMap.hpp>
-#endif
 
 //Tpetra
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
 #include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#endif
-
-//Epetra
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
-#include <Epetra_config.h>
 #endif
 
 //FROSch
@@ -141,7 +95,7 @@ namespace Thyra {
         using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
         using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
 
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
         using HalfPrecOp                    = Xpetra::TpetraHalfPrecisionOperator<SC,LO,GO,NO>;
         using HalfSC                        = typename HalfPrecOp::HalfScalar;
         using HalfPrecMatrix                = Matrix<HalfSC,LO,GO,NO>;

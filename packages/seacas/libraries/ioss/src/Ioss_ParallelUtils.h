@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,6 +18,7 @@
 #if IOSS_DEBUG_OUTPUT
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #endif
 
 #ifdef SEACAS_HAVE_MPI
@@ -142,7 +143,7 @@ namespace Ioss {
     template <typename T> void broadcast(T &my_value, int root = 0) const;
     template <typename T> void broadcast(std::vector<T> &my_value, int root = 0) const;
 
-    void progress(const std::string &output) const;
+    void progress(std::string_view output) const;
 
   private:
     Ioss_MPI_Comm communicator_{comm_world()};
@@ -312,8 +313,6 @@ namespace Ioss {
   void ParallelUtils::global_array_minmax(IOSS_MAYBE_UNUSED std::vector<T> &local_minmax,
                                           IOSS_MAYBE_UNUSED MinMax          which) const
   {
-    IOSS_PAR_UNUSED(local_minmax);
-    IOSS_PAR_UNUSED(which);
 #ifdef SEACAS_HAVE_MPI
     if (parallel_size() > 1 && !local_minmax.empty()) {
       if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {

@@ -196,12 +196,22 @@ BulkData & Part::mesh_bulk_data() const
     return mesh_meta_data().mesh_bulk_data();
 }
 
+void Part::entity_membership_is_parallel_consistent(bool trueOrFalse)
+{
+  m_entity_membership_is_parallel_consistent = trueOrFalse;
+}
+
 bool Part::contains(const Part& part) const
 {
   if (this == &part) { // same part
     return true;
   }
   return m_subsetsEmpty ? false : stk::mesh::contains(subsets(), part);
+}
+
+void Part::set_name(const std::string& newName)
+{
+  m_name = newName;
 }
 
 void Part::set_primary_entity_rank( EntityRank entity_rank )

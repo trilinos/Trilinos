@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOS_CUDA_VECTORIZATION_HPP
 #define KOKKOS_CUDA_VECTORIZATION_HPP
 
@@ -125,8 +112,8 @@ struct in_place_shfl_op {
 struct in_place_shfl_fn : in_place_shfl_op<in_place_shfl_fn> {
   template <class T>
   __device__ KOKKOS_IMPL_FORCEINLINE T do_shfl_op(unsigned mask, T& val,
-                                                  int lane, int width) const
-      noexcept {
+                                                  int lane,
+                                                  int width) const noexcept {
     (void)mask;
     (void)val;
     (void)lane;
@@ -136,28 +123,28 @@ struct in_place_shfl_fn : in_place_shfl_op<in_place_shfl_fn> {
 };
 template <class... Args>
 __device__ KOKKOS_IMPL_FORCEINLINE void in_place_shfl(Args&&... args) noexcept {
-  in_place_shfl_fn{}((Args &&) args...);
+  in_place_shfl_fn{}((Args&&)args...);
 }
 
 struct in_place_shfl_up_fn : in_place_shfl_op<in_place_shfl_up_fn> {
   template <class T>
   __device__ KOKKOS_IMPL_FORCEINLINE T do_shfl_op(unsigned mask, T& val,
-                                                  int lane, int width) const
-      noexcept {
+                                                  int lane,
+                                                  int width) const noexcept {
     return __shfl_up_sync(mask, val, lane, width);
   }
 };
 template <class... Args>
 __device__ KOKKOS_IMPL_FORCEINLINE void in_place_shfl_up(
     Args&&... args) noexcept {
-  in_place_shfl_up_fn{}((Args &&) args...);
+  in_place_shfl_up_fn{}((Args&&)args...);
 }
 
 struct in_place_shfl_down_fn : in_place_shfl_op<in_place_shfl_down_fn> {
   template <class T>
   __device__ KOKKOS_IMPL_FORCEINLINE T do_shfl_op(unsigned mask, T& val,
-                                                  int lane, int width) const
-      noexcept {
+                                                  int lane,
+                                                  int width) const noexcept {
     (void)mask;
     (void)val;
     (void)lane;
@@ -168,7 +155,7 @@ struct in_place_shfl_down_fn : in_place_shfl_op<in_place_shfl_down_fn> {
 template <class... Args>
 __device__ KOKKOS_IMPL_FORCEINLINE void in_place_shfl_down(
     Args&&... args) noexcept {
-  in_place_shfl_down_fn{}((Args &&) args...);
+  in_place_shfl_down_fn{}((Args&&)args...);
 }
 
 }  // namespace Impl

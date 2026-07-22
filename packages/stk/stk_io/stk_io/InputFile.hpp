@@ -87,10 +87,6 @@ class Part;
                                                stk::mesh::BulkData &bulk, bool useEntityListCache = false);
       void get_global_variable_names(std::vector<std::string> &names);
 
-      void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);
-
-      void build_field_part_associations_from_grouping_entity(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missingFields);
-
       std::shared_ptr<Ioss::Region> get_input_ioss_region()
       {
 	      if (m_region.get() == nullptr && m_database.get() != nullptr) {
@@ -122,7 +118,7 @@ class Part;
           return Ioss::SPLIT_INVALID;
       }
 
-      std::shared_ptr<Ioss::DatabaseIO> get_ioss_input_database()
+      std::shared_ptr<Ioss::DatabaseIO> get_ioss_input_database() const
       {
 	      return m_database;
       }
@@ -138,22 +134,29 @@ class Part;
           return true;
       }
 
+      const std::vector<std::string>& get_multistate_suffixes() const
+      {
+        static std::vector<std::string> emptyVector;
+
+        if(nullptr != m_multiStateSuffixes) {
+          return *m_multiStateSuffixes;
+        }
+
+        return emptyVector;
+      }
+
+      DatabasePurpose get_database_purpose() const { return m_db_purpose; }
+
+      void initialize_input_fields();
+
+      // Query the database for the maximum time. If useCache is true, then it will
+      // return the cached value. The only exception to this is if the database was
+      // opened in APPEND mode where it is possible to open the file for both read
+      // and write with possibly changing max times. In this case, ignore useCache
+      // and always query the database
+      double get_max_time(bool useCache = true);
+
     private:
-      bool process_fields_for_grouping_entity(stk::io::MeshField &mesh_field,
-                                              const stk::mesh::Part &part,
-                                              Ioss::GroupingEntity *io_entity,
-                                              std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields_collector_ptr = nullptr);
-
-      bool build_field_part_associations(stk::io::MeshField &mesh_field,
-					 const stk::mesh::Part &part,
-					 const stk::mesh::EntityRank rank,
-					 Ioss::GroupingEntity *io_entity,
-					 std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields = nullptr);
-
-      void build_field_part_associations_for_part(Ioss::Region *region,
-                                                  const stk::mesh::FieldBase *f,
-                                                  const stk::mesh::Part * part,
-                                                  stk::io::MeshField &mf);
 
       DatabasePurpose m_db_purpose;
       std::shared_ptr<Ioss::DatabaseIO> m_database;
@@ -210,6 +213,7 @@ class Part;
   /** See InputFile::startupTime */
   double m_stopTime;
   /** See InputFile::startupTime */
+  double m_maxTime;
   PeriodType m_periodType;
 
   /*@}*/
@@ -220,6 +224,7 @@ public:
 private:
   bool m_haveCachedEntityList = false;
   std::vector<std::string>* m_multiStateSuffixes = nullptr;
+
 
 private:
   InputFile(const InputFile &);

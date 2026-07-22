@@ -43,7 +43,9 @@
 #include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
 #include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
 #include <stk_unit_test_utils/timer.hpp>
+#ifdef STK_HAS_ARBORX
 #include <ArborX.hpp>
+#endif
 
 namespace {
 
@@ -71,10 +73,9 @@ void run_volume_to_surface_test(const std::string& meshFileName,
     BoxVectorType sideBoxes;
     createBoundingBoxesForEntities(*bulkPtr, stk::topology::FACE_RANK, sideBoxes);
 
-    SearchResults searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      SearchResults searchResults;
       stk::search::coarse_search(elemBoxes, sideBoxes, searchMethod, comm, searchResults, enforceSearchResultSymmetry);
     }
     batchTimer.stop_batch_timer();
@@ -109,10 +110,9 @@ void run_volume_to_surface_test_with_views(const std::string& meshFileName,
     Kokkos::View<BoxIdentProcType *, ExecSpace> sideBoxes = createBoundingBoxesForEntities<BoxIdentProcType>(*bulkPtr,
                                                                                               stk::topology::FACE_RANK);
 
-    Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
       stk::search::coarse_search(elemBoxes, sideBoxes, searchMethod, comm, searchResults,
                                  ExecSpace{}, enforceSearchResultSymmetry);
     }
@@ -211,10 +211,9 @@ void run_volume_to_surface_test_local(const std::string& meshFileName,
     BoxVectorType sideBoxes;
     createBoundingBoxesForEntities(*bulkPtr, stk::topology::FACE_RANK, sideBoxes);
 
-    LocalSearchResults searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      LocalSearchResults searchResults;
       stk::search::local_coarse_search(elemBoxes, sideBoxes, searchMethod, searchResults);
     }
     batchTimer.stop_batch_timer();
@@ -248,10 +247,9 @@ void run_volume_to_surface_test_local_with_views(const std::string& meshFileName
     Kokkos::View<BoxIdentType *, ExecSpace> sideBoxes = createBoundingBoxesForEntities<BoxIdentType>(*bulkPtr,
                                                                                               stk::topology::FACE_RANK);
 
-    Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
-
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
+      Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
       stk::search::local_coarse_search(elemBoxes, sideBoxes, searchMethod, searchResults, ExecSpace{});
     }
     batchTimer.stop_batch_timer();
@@ -329,6 +327,7 @@ TEST(StkSearch_VolumeToSurface, casaMesh_floatBox_local_with_views_ARBORX)
 using ExecSpace = stk::ngp::ExecSpace;
 using MemSpace = stk::ngp::ExecSpace::memory_space;
 
+#ifdef STK_HAS_ARBORX
 inline Kokkos::View<ArborX::Box *, MemSpace>
 createArborXBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
                                      stk::mesh::EntityRank rank)
@@ -345,15 +344,17 @@ createArborXBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
 
   std::vector<double> boxCoordinates(6);
 
+  auto coordsData = coords->data<double>();
+
   for (size_t i = 0; i < entities.size(); ++i) {
     unsigned num_nodes = bulk.num_nodes(entities[i]);
     std::vector<double> coordinates(3*num_nodes,0);
     const stk::mesh::Entity* nodes = bulk.begin_nodes(entities[i]);
     for (unsigned j = 0; j < num_nodes; ++j) {
-      double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
-      coordinates[3*j] = data[0];
-      coordinates[3*j+1] = data[1];
-      coordinates[3*j+2] = data[2];
+      auto data = coordsData.entity_values(nodes[j]);
+      coordinates[3*j] = data(0_comp);
+      coordinates[3*j+1] = data(1_comp);
+      coordinates[3*j+2] = data(2_comp);
     }
     findBoundingBoxCoordinates(coordinates, boxCoordinates);
     ArborX::Point min_point(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2]);
@@ -429,11 +430,10 @@ void distributed_arborx_coarse_search(Kokkos::View<ArborX::Box *, MemSpace> elem
                                       Kokkos::View<ArborX::Box *, MemSpace> sideBoxes,
                                       MPI_Comm comm)
 {
-  std::cerr << "start of distributed raw ArborX test" << std::endl;
+
   ExecSpace execSpace;
 
   ArborX::DistributedTree<MemSpace> tree(comm, execSpace, elemBoxes);
-  std::cerr << "after DistributedTree construction" << std::endl;
 
   const int numQueries = sideBoxes.extent(0);
   Kokkos::View<ArborX::Intersects<ArborX::Box> *, MemSpace> queries(Kokkos::ViewAllocateWithoutInitializing("queries"), numQueries);
@@ -441,25 +441,22 @@ void distributed_arborx_coarse_search(Kokkos::View<ArborX::Box *, MemSpace> elem
   Kokkos::parallel_for("setup_queries", Kokkos::RangePolicy<ExecSpace>(0, numQueries),
                        KOKKOS_LAMBDA(int i) { queries(i) = ArborX::intersects(sideBoxes(i)); });
   Kokkos::fence();
-  std::cerr << "after queries population" << std::endl;
 
   Kokkos::View<ArborX::PairIndexRank *, MemSpace> values("indicesAndRanks", 0);
   Kokkos::View<int *, MemSpace> offsets("offsets", 0);
-  
-  std::cerr << "before tree query" << std::endl;
+
   tree.query(execSpace, queries, values, offsets);
-  std::cerr << "after tree query" << std::endl;
 }
 
 void run_search_test_distributed_arborx(const std::string& meshFileName)
 {
   const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = 5;
+  const unsigned NUM_ITERS = 100;
   stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
   batchTimer.initialize_batch_timer();
 
   for (unsigned j = 0; j < NUM_RUNS; j++) {
-    std::cerr << "batch timer iteration " << j << std::endl;
+
     stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
 
@@ -470,7 +467,6 @@ void run_search_test_distributed_arborx(const std::string& meshFileName)
 
     batchTimer.start_batch_timer();
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
-      std::cerr << "inner iteration " << i << std::endl;
       distributed_arborx_coarse_search(elemBoxes, sideBoxes, MPI_COMM_WORLD);
     }
     batchTimer.stop_batch_timer();
@@ -490,6 +486,7 @@ TEST(StkSearch_VolumeToSurface, casaMesh_floatBox_distributed_rawARBORX) {
 
   run_search_test_distributed_arborx(meshFileName);
 }
+#endif
 
 } // namespace
 

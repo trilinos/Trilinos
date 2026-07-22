@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
     // Cyr and would be Teko operators.
 
     int numElem             = A12->getRangeMap()->getLocalNumElements() + A21->getRangeMap()->getLocalNumElements();
-    RCP<const tMap> fullMap = Utilities::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
+    RCP<const tMap> fullMap = toTpetra(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm));
 
     RCP<tOperator> A;
     if (!binary)
@@ -342,7 +342,7 @@ int main(int argc, char* argv[]) {
 
     // Set the initial guess Dirichlet points to the proper value.
     // This step is pretty important as the preconditioner may return zero at Dirichlet points
-    ArrayRCP<const bool> dirBCs = Utilities::DetectDirichletRows(*MueLu::TpetraCrs_To_XpetraMatrix(rcp_dynamic_cast<tCrsMatrix>(A)));
+    ArrayRCP<const bool> dirBCs = Utilities::DetectDirichletRows(*Xpetra::toXpetra(rcp_dynamic_cast<tCrsMatrix>(A)));
     ArrayRCP<SC> tXdata         = tX->getDataNonConst(0);
     ArrayRCP<const SC> tBdata   = tB->getData(0);
     for (LO i = 0; i < tXdata.size(); i++)

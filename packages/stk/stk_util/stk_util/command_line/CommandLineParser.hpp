@@ -52,15 +52,14 @@ struct CommandLineOption
 class CommandLineParser
 {
 public:
-    enum ParseState { ParseComplete, ParseError, ParseHelpOnly, ParseVersionOnly };
-    CommandLineParser() : CommandLineParser("Options") {}
-    explicit CommandLineParser(const std::string &usagePreamble)
-    : optionsSpec(usagePreamble),
-      parsedOptions(),
-      positionalIndex(0)
-    {
-        add_flag("help,h", "display this help message and exit");
-        add_flag("version,v", "display version information and exit");
+ virtual ~CommandLineParser() = default;
+ enum ParseState { ParseComplete, ParseError, ParseHelpOnly, ParseVersionOnly };
+ CommandLineParser() : CommandLineParser("Options") {}
+ explicit CommandLineParser(const std::string &usagePreamble)
+     : optionsSpec(usagePreamble), parsedOptions(), positionalIndex(0)
+ {
+   add_flag("help,h", "display this help message and exit");
+   add_flag("version,v", "display version information and exit");
     }
 
     void disallow_unrecognized()

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 //Simple Util to help with test
 #ifndef SHYLUBASKER_TEST_UTIL_HPP
 #define SHYLUBASKER_TEST_UTIL_HPP

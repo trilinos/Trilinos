@@ -21,106 +21,102 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
   namespace Impl {
 
-    template<EOperator opType>
+    template<EOperator OpType>
     template<typename OutputViewType,
              typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HCURL_WEDGE_I1_FEM::Serial<opType>::
+    Basis_HCURL_WEDGE_I1_FEM::Serial<OpType>::
     getValues(       OutputViewType output,
                const inputViewType input ) {
-      switch (opType) {
-      case OPERATOR_VALUE: {
+      if constexpr (OpType == OPERATOR_VALUE) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
 
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = (1.0 - z)*(1.0 - y);
-        output.access(0, 1) = x*(1.0 - z);
-        output.access(0, 2) = 0.0;
+        output(0, 0) = (1.0 - z)*(1.0 - y);
+        output(0, 1) = x*(1.0 - z);
+        output(0, 2) = 0.0;
 
-        output.access(1, 0) = y*(z - 1.0);
-        output.access(1, 1) = x*(1.0 - z);
-        output.access(1, 2) = 0.0;
+        output(1, 0) = y*(z - 1.0);
+        output(1, 1) = x*(1.0 - z);
+        output(1, 2) = 0.0;
 
-        output.access(2, 0) = y*(z - 1.0);
-        output.access(2, 1) = (1.0 - x)*(z - 1.0);
-        output.access(2, 2) = 0.0;
+        output(2, 0) = y*(z - 1.0);
+        output(2, 1) = (1.0 - x)*(z - 1.0);
+        output(2, 2) = 0.0;
 
-        output.access(3, 0) = (1.0 - y)*(1.0 + z);
-        output.access(3, 1) = x*(1.0 + z);
-        output.access(3, 2) = 0.0;
+        output(3, 0) = (1.0 - y)*(1.0 + z);
+        output(3, 1) = x*(1.0 + z);
+        output(3, 2) = 0.0;
 
-        output.access(4, 0) =-y*(1.0 + z);
-        output.access(4, 1) = x*(1.0 + z);
-        output.access(4, 2) = 0.0;
+        output(4, 0) =-y*(1.0 + z);
+        output(4, 1) = x*(1.0 + z);
+        output(4, 2) = 0.0;
 
-        output.access(5, 0) = -y*(1.0 + z);
-        output.access(5, 1) = (x - 1.0)*(1.0 + z);
-        output.access(5, 2) = 0.0;
+        output(5, 0) = -y*(1.0 + z);
+        output(5, 1) = (x - 1.0)*(1.0 + z);
+        output(5, 2) = 0.0;
 
-        output.access(6, 0) = 0.0;
-        output.access(6, 1) = 0.0;
-        output.access(6, 2) = (1.0 - x - y);
+        output(6, 0) = 0.0;
+        output(6, 1) = 0.0;
+        output(6, 2) = (1.0 - x - y);
 
-        output.access(7, 0) = 0.0;
-        output.access(7, 1) = 0.0;
-        output.access(7, 2) = x;
+        output(7, 0) = 0.0;
+        output(7, 1) = 0.0;
+        output(7, 2) = x;
 
-        output.access(8, 0) = 0.0;
-        output.access(8, 1) = 0.0;
-        output.access(8, 2) = y;
-        break;
+        output(8, 0) = 0.0;
+        output(8, 1) = 0.0;
+        output(8, 2) = y;
       }
-      case OPERATOR_CURL: {
+      else if constexpr (OpType == OPERATOR_CURL) {
         const auto x = input(0);
         const auto y = input(1);
         const auto z = input(2);
         // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        output.access(0, 0) = x;
-        output.access(0, 1) = (y - 1.0);
-        output.access(0, 2) = 2*(1.0 - z);
+        output(0, 0) = x;
+        output(0, 1) = (y - 1.0);
+        output(0, 2) = 2*(1.0 - z);
 
-        output.access(1, 0) = x;
-        output.access(1, 1) = y;
-        output.access(1, 2) = 2.0*(1.0 - z);
+        output(1, 0) = x;
+        output(1, 1) = y;
+        output(1, 2) = 2.0*(1.0 - z);
 
-        output.access(2, 0) = (x - 1.0);
-        output.access(2, 1) = y;
-        output.access(2, 2) = 2.0*(1.0 - z);
+        output(2, 0) = (x - 1.0);
+        output(2, 1) = y;
+        output(2, 2) = 2.0*(1.0 - z);
 
-        output.access(3, 0) = -x;
-        output.access(3, 1) = (1.0 - y);
-        output.access(3, 2) = 2.0*(1.0 + z);
+        output(3, 0) = -x;
+        output(3, 1) = (1.0 - y);
+        output(3, 2) = 2.0*(1.0 + z);
 
-        output.access(4, 0) = -x;
-        output.access(4, 1) = -y;
-        output.access(4, 2) = 2*(1.0 + z);
+        output(4, 0) = -x;
+        output(4, 1) = -y;
+        output(4, 2) = 2*(1.0 + z);
 
-        output.access(5, 0) = (1.0 - x);
-        output.access(5, 1) = -y;
-        output.access(5, 2) = 2.0*(1.0 + z);
+        output(5, 0) = (1.0 - x);
+        output(5, 1) = -y;
+        output(5, 2) = 2.0*(1.0 + z);
 
-        output.access(6, 0) =-1.0;
-        output.access(6, 1) = 1.0;
-        output.access(6, 2) = 0.0;
+        output(6, 0) =-1.0;
+        output(6, 1) = 1.0;
+        output(6, 2) = 0.0;
 
-        output.access(7, 0) = 0.0;
-        output.access(7, 1) =-1.0;
-        output.access(7, 2) = 0.0;
+        output(7, 0) = 0.0;
+        output(7, 1) =-1.0;
+        output(7, 2) = 0.0;
 
-        output.access(8, 0) = 1.0;
-        output.access(8, 1) = 0.0;
-        output.access(8, 2) = 0.0;
-        break;
+        output(8, 0) = 1.0;
+        output(8, 1) = 0.0;
+        output(8, 2) = 0.0;
       }
-      default: {
-        INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                  opType != OPERATOR_CURL,
+      else {
+        INTREPID2_TEST_FOR_ABORT( OpType != OPERATOR_VALUE &&
+                                  OpType != OPERATOR_CURL,
                                   ">>> ERROR: (Intrepid2::Basis_HCURL_WEDGE_I1_FEM::Serial::getValues) operator is not supported");
 
-      }
       }
     }
 
@@ -197,12 +193,13 @@ namespace Intrepid2 {
   template<typename DT, typename OT, typename PT>
   Basis_HCURL_WEDGE_I1_FEM<DT,OT,PT>::
   Basis_HCURL_WEDGE_I1_FEM()  {
-    this->basisCardinality_  = 9;
-    this->basisDegree_       = 1;
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >() );
-    this->basisType_         = BASIS_FEM_DEFAULT;
-    this->basisCoordinates_  = COORDINATES_CARTESIAN;
-    this->functionSpace_     = FUNCTION_SPACE_HCURL;
+    const ordinal_type spaceDim = 3;
+    this->basisCardinality_     = 9;
+    this->basisDegree_          = 1;
+    this->basisCellTopologyKey_ = shards::Wedge<6>::key;
+    this->basisType_            = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_     = COORDINATES_CARTESIAN;
+    this->functionSpace_        = FUNCTION_SPACE_HCURL;
 
 
     // initialize tags
@@ -240,7 +237,7 @@ namespace Intrepid2 {
     }
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_,spaceDim);
 
     dofCoords(0,0) =  0.5;  dofCoords(0,1) =  0.0;  dofCoords(0,2) = -1.0;
     dofCoords(1,0) =  0.5;  dofCoords(1,1) =  0.5;  dofCoords(1,2) = -1.0;
@@ -257,7 +254,7 @@ namespace Intrepid2 {
 
     // dofCoeffs on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoeffs("dofCoeffsHost", this->basisCardinality_,spaceDim);
 
     // for HCURL_WEDGE_I1 dofCoeffs are the tangents on the hexahedron edges
     dofCoeffs(0,0)  =  0.5;   dofCoeffs(0,1)  =  0.0;   dofCoeffs(0,2)  =  0.0;
@@ -275,5 +272,55 @@ namespace Intrepid2 {
 
   }
 
+  template<typename DT, typename OT, typename PT>
+  void 
+  Basis_HCURL_WEDGE_I1_FEM<DT,OT,PT>::getScratchSpaceSize(       
+                                    ordinal_type& perThreadSpaceSize,
+                              const PointViewType inputPoints,
+                              const EOperator operatorType) const {
+    perThreadSpaceSize = 0;
+  }
+
+  template<typename DT, typename OT, typename PT>
+  KOKKOS_INLINE_FUNCTION
+  void 
+  Basis_HCURL_WEDGE_I1_FEM<DT,OT,PT>::getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim,
+      const ordinal_type subcellOrdinal) const {
+
+      INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
+        ">>> ERROR: (Intrepid2::Basis_HCURL_WEDGE_I1_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
+
+      (void) threadScratchLevel; //avoid unused variable warning
+
+      const int numPoints = inputPoints.extent(0);
+
+      switch(operatorType) {
+        case OPERATOR_VALUE:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HCURL_WEDGE_I1_FEM::Serial<OPERATOR_VALUE>::getValues( output, input);
+          });
+          break;
+        case OPERATOR_CURL:
+          Kokkos::parallel_for (Kokkos::TeamThreadRange (team_member, numPoints), [=] (ordinal_type& pt) {
+            auto       output = Kokkos::subview( outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+            const auto input  = Kokkos::subview( inputPoints,                 pt, Kokkos::ALL() );
+            Impl::Basis_HCURL_WEDGE_I1_FEM::Serial<OPERATOR_CURL>::getValues( output, input);
+          });
+          break;
+        default: {
+          INTREPID2_TEST_FOR_ABORT( true, ">>> ERROR: (Intrepid2::Basis_HCURL_WEDGE_I1_FEM::getValues), Operator Type not supported.");
+        }
+    }
+  }
+  
 }// namespace Intrepid2
+
 #endif

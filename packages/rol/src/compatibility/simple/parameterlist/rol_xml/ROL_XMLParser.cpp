@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "ROL_XMLParser.hpp"
 #include "ROL_TreeBuildingXMLHandler.hpp"
 #include "ROL_XMLParameterListReader.hpp"

@@ -82,7 +82,6 @@ int run(int argc, char *argv[]) {
     using tvector_t      = Tpetra::Vector<ST,LO,GO,NT>;
     using tmultivector_t = Tpetra::MultiVector<ST,LO,GO,NT>;
 
-    using toperator_t  = Tpetra::Operator<ST,LO,GO,NT>;
     // using mtoperator_t = MueLu::TpetraOperator<ST,LO,GO,NT>;
 
     using starray_t = Teuchos::Array<ST>;

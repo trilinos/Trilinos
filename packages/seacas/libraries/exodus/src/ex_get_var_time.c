@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -47,7 +47,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   int         dimid, varid;
   int         status;
   int        *stat_vals = NULL;
-  size_t      numel     = 0;
+  int64_t     numel     = 0;
   size_t      num_obj, i;
   size_t      num_entries_this_obj = 0;
   size_t      start[2], count[2];
@@ -116,7 +116,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   /* first, find out how many objects there are */
   status = exi_get_dimension(exoid, exi_dim_num_objects(var_type), ex_name_of_object(var_type),
                              &num_obj, &dimid, __func__);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     EX_FUNC_LEAVE(status);
   }
 
@@ -124,7 +124,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   /* don't think we need this anymore since the netcdf variable names
      associated with objects don't contain the object ids */
 
-  if ((status = nc_inq_varid(exoid, varobjids, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, varobjids, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids in file id %d",
              ex_name_of_object(var_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -141,11 +141,11 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   }
 
   /* get variable id of status array */
-  if (nc_inq_varid(exoid, varobstat, &varid) == NC_NOERR) {
+  if (nc_inq_varid(exoid, varobstat, &varid) == EX_NOERR) {
     /* if status array exists, use it, otherwise assume, object exists
        to be backward compatible */
 
-    if ((status = nc_get_var_int(exoid, varid, stat_vals)) != NC_NOERR) {
+    if ((status = nc_get_var_int(exoid, varid, stat_vals)) != EX_NOERR) {
       free(stat_vals);
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s status array from file id %d",
                ex_name_of_object(var_type), exoid);
@@ -170,7 +170,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   i = 0;
   if (stat_vals[i] != 0) {
     if ((status = nc_inq_dimid(exoid, exi_dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate number of entries in %zuth %s in file id %d", i,
                ex_name_of_object(var_type), exoid);
@@ -179,7 +179,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of entries in %zuth %s in file id %d", i,
                ex_name_of_object(var_type), exoid);
@@ -194,7 +194,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   while (numel <= id) {
     if (stat_vals[++i] != 0) {
       if ((status = nc_inq_dimid(exoid, exi_dim_num_entries_in_object(var_type, i + 1), &dimid)) !=
-          NC_NOERR) {
+          EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate number of entries in %zuth %s in file id %d", i,
                  ex_name_of_object(var_type), exoid);
@@ -203,7 +203,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
-      if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get number of entries in %zuth %s in file id %d", i,
                  ex_name_of_object(var_type), exoid);
@@ -218,7 +218,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
 
   /* inquire previously defined variable */
   if ((status = nc_inq_varid(exoid, exi_name_var_of_object(var_type, var_index, i + 1), &varid)) !=
-      NC_NOERR) {
+      EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate variable %zu for %dth %s in file id %d", i, var_index,
              ex_name_of_object(var_type), exoid);
@@ -281,7 +281,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
     status = nc_get_vara_double(exoid, varid, start, count, var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s variable values in file id %d",
              ex_name_of_object(var_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

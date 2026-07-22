@@ -38,10 +38,8 @@
 #include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionSmoothers_def.hpp"
 
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
-#endif
 
 using Teuchos::Array;
 using Teuchos::ArrayRCP;
@@ -398,7 +396,7 @@ MakeCompositeDirectSolver(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeCompositeDirectSolver: 1 - Setup")));
 
     // convert matrix to Tpetra
-    RCP<Tpetra_CrsMatrix> tMat = Utilities::Op2NonConstTpetraCrs(compOp);
+    RCP<Tpetra_CrsMatrix> tMat = toTpetra(compOp);
 
     // Amesos2-specific key phrase that denote smoother type
     std::string amesos2SolverName = "KLU2";

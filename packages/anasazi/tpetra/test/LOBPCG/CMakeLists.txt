@@ -1,7 +1,38 @@
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_LOBPCG_test
+  SOURCES cxx_main.cpp
+  ARGS
+    "--verbose"
+    "--verbose --ortho=ICGS"
+  COMM serial mpi
+  )
 
-IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_LOBPCG_auxtest
+  SOURCES cxx_main_auxtest.cpp
+  ARGS
+    "--verbose"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_LOBPCG_solvertest
+  SOURCES cxx_main_solvertest.cpp
+  ARGS
+    "--verbose"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_LOBPCG_simpletest
+  SOURCES cxx_simple.cpp
+  ARGS
+    "--verbose"
+  COMM serial mpi
+  )
+
+IF (Tpetra_INST_COMPLEX_DOUBLE)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_LOBPCG_Complex_test
@@ -17,23 +48,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
     SOURCE_FILES mhd1280b.cua mhd1280b.mtx
     EXEDEPS Tpetra_LOBPCG_Complex_test
     )
-
-
-  # FIXME (mfh 22 Oct 2015) I don't think cxx_main_doublefloat.cpp
-  # actually ever compiled, as long as I've been here.
-
-  # TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  #   Tpetra_LOBPCG_DoubleFloat_test
-  #   SOURCES cxx_main_doublefloat.cpp 
-  #   ARGS 
-  #   COMM serial mpi
-  #   )
-
-  # TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_LOBPCG_DoubleFloatCopyFiles
-  #   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
-  #   SOURCE_FILES bcsstk14.hb
-  #   EXEDEPS Tpetra_LOBPCG_DoubleFloat_test
-  #   )
 
 ENDIF()
 

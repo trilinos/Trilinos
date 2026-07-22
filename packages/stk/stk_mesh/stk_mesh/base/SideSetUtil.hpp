@@ -43,6 +43,8 @@ std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkDa
 
 void toggle_sideset_updaters(stk::mesh::BulkData& bulk, bool flag);
 
+stk::mesh::EntityRank get_sideset_rank(const stk::mesh::SideSet& sset);
+
 }
 }
 

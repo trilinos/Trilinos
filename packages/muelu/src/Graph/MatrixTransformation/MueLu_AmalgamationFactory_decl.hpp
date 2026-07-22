@@ -48,10 +48,10 @@ class AmalgamationFactory : public SingleLevelFactoryBase {
   //@{
 
   //! Constructor
-  AmalgamationFactory() = default;
+  AmalgamationFactory();
 
   //! Destructor
-  virtual ~AmalgamationFactory() = default;
+  virtual ~AmalgamationFactory();
 
   RCP<const ParameterList> GetValidParameterList() const override;
 
@@ -92,6 +92,14 @@ class AmalgamationFactory : public SingleLevelFactoryBase {
    * @param translation (Array<LO>&): array storing local node ids given local dof ids (needed in CoalesceDropFactory)
    */
   static void AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation);
+
+  /*! @brief Method to create merged  map for systems of PDEs.
+   *
+   * @param sourceMap (const StridedMap): source map with dofs which shall be amalgamated to a node map
+   * @param amalgamatedMap (const Map&): amalgamated node based map
+   *
+   */
+  static void AmalgamateMap(RCP<const StridedMap> sourceMap, RCP<const Map>& amalgamatedMap);
 
 };  // class AmalgamationFactory
 

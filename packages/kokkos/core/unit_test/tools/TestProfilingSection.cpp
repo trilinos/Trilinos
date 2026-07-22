@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Profiling_ProfileSection.hpp>
 
@@ -57,7 +44,7 @@ void kokkosp_test_destroy_section(std::uint32_t id) {
 
 }  // namespace
 
-TEST(defaultdevicetype, profiling_section) {
+TEST(kokkosp, profiling_section) {
   Kokkos::Profiling::Experimental::set_create_profile_section_callback(
       kokkosp_test_create_section);
   Kokkos::Profiling::Experimental::set_destroy_profile_section_callback(
@@ -108,8 +95,8 @@ TEST(defaultdevicetype, profiling_section) {
 }
 
 using Kokkos::Profiling::ProfilingSection;
-static_assert(!std::is_default_constructible<ProfilingSection>::value);
-static_assert(!std::is_copy_constructible<ProfilingSection>::value);
-static_assert(!std::is_move_constructible<ProfilingSection>::value);
-static_assert(!std::is_copy_assignable<ProfilingSection>::value);
-static_assert(!std::is_move_assignable<ProfilingSection>::value);
+static_assert(!std::is_default_constructible_v<ProfilingSection>);
+static_assert(!std::is_copy_constructible_v<ProfilingSection>);
+static_assert(!std::is_move_constructible_v<ProfilingSection>);
+static_assert(!std::is_copy_assignable_v<ProfilingSection>);
+static_assert(!std::is_move_assignable_v<ProfilingSection>);

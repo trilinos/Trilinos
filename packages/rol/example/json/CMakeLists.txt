@@ -14,7 +14,7 @@ IF(TPL_ENABLE_JSONCPP)
 
     tribits_include_directories(${JSONCPP_INCLUDE_DIRS})
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ROL_ADD_EXECUTABLE_AND_TEST(
         example_01
         SOURCES example_01.cpp 
         IMPORTEDLIBS jsoncpp
@@ -24,7 +24,7 @@ IF(TPL_ENABLE_JSONCPP)
         ADD_DIR_TO_NAME
     )
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    ROL_COPY_FILES_TO_BINARY_DIR(
 	JsonDataCopy
 	SOURCE_FILES
 	 parameters.json

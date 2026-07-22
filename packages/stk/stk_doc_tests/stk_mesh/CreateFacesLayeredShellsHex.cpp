@@ -34,7 +34,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/SkinBoundary.hpp>  // for create_all_sides
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
@@ -52,9 +52,8 @@ TEST(StkMeshHowTo, CreateFacesLayeredShellsHex)
   // ============================================================
   // INITIALIZATION
   MPI_Comm communicator = MPI_COMM_WORLD;
-  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  if (stk::parallel_machine_size(communicator) != 1) { GTEST_SKIP(); }
   stk::io::StkMeshIoBroker stkIo(communicator);
-  stkIo.use_simple_fields();
 
   // Generate a mesh containing 1 hex part and 12 shell parts
   // Shells are layered 2 deep.
@@ -66,7 +65,7 @@ TEST(StkMeshHowTo, CreateFacesLayeredShellsHex)
   // ============================================================
   //+ EXAMPLE
   //+ Create the faces
-  stk::mesh::create_faces(stkIo.bulk_data());
+  stk::mesh::create_all_sides(stkIo.bulk_data(), stkIo.meta_data().universal_part());
 
   // ==================================================
   // VERIFICATION

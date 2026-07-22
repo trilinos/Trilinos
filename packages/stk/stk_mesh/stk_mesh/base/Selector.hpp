@@ -47,9 +47,6 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class FieldBase; } }
 
-
-
-
 namespace stk { namespace mesh {
 
 // Specify what can be in the expression tree of a selector
@@ -191,6 +188,7 @@ struct SelectorNode
   unsigned left_offset; // for binary op
 };
 
+class Partition;
 } // namespace impl
 
 /**
@@ -201,14 +199,16 @@ class Selector {
 public:
 
   Selector()
-    : m_expr(1) // default Selector is null part (selects nothing)
-    , m_meta(nullptr)
+    : m_expr(1),// default Selector is null part (selects nothing)
+      m_meta(nullptr),
+      m_modCount(0)
   {}
 
   /** \brief  A part that is required */
   Selector(const Part & part)
-    : m_expr(1, impl::SelectorNode(&part))
-    , m_meta(((m_expr[0].part()==InvalidPartOrdinal) ? nullptr : &part.mesh_meta_data()))
+    : m_expr(1, impl::SelectorNode(&part)),
+      m_meta(((m_expr[0].part()==InvalidPartOrdinal) ? nullptr : &part.mesh_meta_data())),
+      m_modCount(0)
   {
     STK_ThrowAssertMsg(m_meta!=nullptr, "constructing Selector with bad part reference, probably from dereferencing a null part pointer.");
   }
@@ -312,6 +312,11 @@ public:
    */
   bool operator()( const Bucket & bucket ) const;
 
+  /** \brief  Is this Partition a subset of the
+   *          set defined by the selector expression.
+   */
+  bool operator()( const impl::Partition & bucket ) const;
+
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.
    */
@@ -325,12 +330,6 @@ public:
 
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
 
-private:
-  bool select_part_impl(Part const& part, impl::SelectorNode const* root) const;
-  bool select_bucket_impl(Bucket const& bucket, impl::SelectorNode const* root) const;
-
-  const BulkData* find_mesh() const;
-
   bool is_null() const {
     if(m_expr.size() > 1) return false;
     if(m_expr.back().m_type == SelectorNodeType::PART  && m_expr.back().part()  == InvalidPartOrdinal) {
@@ -341,10 +340,18 @@ private:
     return false;
   }
 
+private:
+  void update_part_ords() const;
+  bool select_part_impl(Part const& part, impl::SelectorNode const* root) const;
+  bool select_bucket_impl(Bucket const& bucket, impl::SelectorNode const* root) const;
+
+  const BulkData* find_mesh() const;
+
   Selector& add_binary_op(SelectorNodeType::node_type type, const Selector& rhs);
 
-  std::vector<impl::SelectorNode> m_expr;
+  mutable std::vector<impl::SelectorNode> m_expr;
   mutable const MetaData* m_meta;
+  mutable size_t m_modCount;
 };
 
 inline

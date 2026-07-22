@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                     Pamgen Package
+//
+// Copyright 2004 NTESS and the Pamgen contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
+// @HEADER
+
 #include "calc_decomp_cuts.h"
 #include <math.h>
 #include <stdlib.h>
@@ -279,7 +288,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
   base_partition  = new Partition(0,0,0,0,1,nel_tot[0],nel_tot[1],nel_tot[2],inline_decomposition_type,remaining_cuts);
   //Place it in a list sorted by number of elements
-  sorted_partition_list.push_back(base_partition);
+  Psorted_partition_list.push_back(base_partition);
   Partition* biggest;
 
   if(num_processors != (long long)inline_nprocs[0]*inline_nprocs[1]*inline_nprocs[2]){
@@ -324,17 +333,17 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     info_stream << "Number of mesh segments in directions J/Y/THETA \t" << remaining_cuts[1] << "\n";
     info_stream << "Number of mesh segments in directions K/Z/PHI \t" << remaining_cuts[2] << "\n";
 
-    while(sorted_partition_list.size() < num_processors){
+    while(Psorted_partition_list.size() < num_processors){
       //  get first entry in list and the partition object it points to
-      biggest = sorted_partition_list.back();
+      biggest = Psorted_partition_list.back();
       //  remove the entry from the sorted_list
-      sorted_partition_list.pop_back();
+      Psorted_partition_list.pop_back();
       
       //  bisect the partition object and
       //  add the children of the partition object to the sorted list
-      biggest->Processor_Partition(sorted_partition_list,inc_nels);
+      biggest->Processor_Partition(Psorted_partition_list,inc_nels);
       //  re-sort the list
-      std::sort(sorted_partition_list.begin(),sorted_partition_list.end(),part_compare_size);
+      std::sort(Psorted_partition_list.begin(),Psorted_partition_list.end(),part_compare_size);
     }
   }
   else if (inline_decomposition_type == BISECTION){
@@ -385,20 +394,20 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
     base_partition  = new Partition(0,0,0,0,1,nel_tot[0],nel_tot[1],nel_tot[2],inline_decomposition_type,remaining_cuts);
   //Place it in a list sorted by number of elements
-  sorted_partition_list.push_back(base_partition);
+  Psorted_partition_list.push_back(base_partition);
   Partition* biggest;
 
-    while(sorted_partition_list.size() < num_processors){
+    while(Psorted_partition_list.size() < num_processors){
       //  get first entry in list and the partition object it points to
-      biggest = sorted_partition_list.back();
+      biggest = Psorted_partition_list.back();
       //  remove the entry from the sorted_list
-      sorted_partition_list.pop_back();
+      Psorted_partition_list.pop_back();
 
       {
-        biggest->Processor_Partition(sorted_partition_list, inc_nels);
+        biggest->Processor_Partition(Psorted_partition_list, inc_nels);
       }
       //  re-sort the list
-      std::sort(sorted_partition_list.begin(),sorted_partition_list.end(),part_compare_size);//sorted_partition_list.sort();
+      std::sort(Psorted_partition_list.begin(),Psorted_partition_list.end(),part_compare_size);//sorted_partition_list.sort();
     }
   }
   else if(inline_decomposition_type == RANDOM){
@@ -415,14 +424,14 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     return DecomposeSequential(global_el_ids);
   }  
 
-  std::sort(sorted_partition_list.begin(),sorted_partition_list.end(),part_compare_centroid);//sorted_partition_list.sort();
+  std::sort(Psorted_partition_list.begin(),Psorted_partition_list.end(),part_compare_centroid);//sorted_partition_list.sort();
 
 
   //Assign proc id numbers to the centroid sorted list entries
   std::vector < Partition * > :: iterator citer;
   long long proc_cnt = 0;
   Partition *my_part = NULL;
-  for(citer = sorted_partition_list.begin();citer != sorted_partition_list.end();citer ++,proc_cnt++){
+  for(citer = Psorted_partition_list.begin();citer != Psorted_partition_list.end();citer ++,proc_cnt++){
     (*citer)->proc_id = proc_cnt;
     if(proc_cnt == my_rank)my_part = (*citer);
   }

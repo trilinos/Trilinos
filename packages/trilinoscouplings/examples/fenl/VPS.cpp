@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // 2016/09/23
 // Automatic Discontinuity Detection using Spline Extrapolation
 
@@ -282,8 +291,6 @@ int VPS::suggest_new_sample(double* x, double &r, double &err_est)
   }
   else
   {
-    size_t closest_seed;
-    double dst(DBL_MAX);
     get_closest_seed_tree(xmc, closest_seed, dst);
     sample_voronoi_vertex(closest_seed, _xmin, _xmax, _diag, x);
 
@@ -520,8 +527,8 @@ void VPS::initiate_random_number_generator(unsigned long x)
 
   cc = 1.0 / 9007199254740992.0; // inverse of 2^53rd power
   size_t i;
-  size_t qlen = indx = sizeof Q / sizeof Q[0];
-  for (i = 0; i < qlen; i++) Q[i] = 0;
+  size_t lqlen = indx = sizeof Q / sizeof Q[0];
+  for (i = 0; i < lqlen; i++) Q[i] = 0;
 
   c = 0.0;     /* current CSWB */
   zc = 0.0;       /* current SWB `borrow` */
@@ -534,7 +541,7 @@ void VPS::initiate_random_number_generator(unsigned long x)
   unsigned long y = 362436069; /* default seeds */
 
   /* Next, seed each Q[i], one bit at a time, */
-  for (i = 0; i < qlen; i++)
+  for (i = 0; i < lqlen; i++)
   { /* using 9th bit from Cong+Xorshift */
     s = 0.0;
     t = 1.0;
@@ -1542,7 +1549,7 @@ void VPS::plot_graph(std::string file_name, size_t num_points, double* x, size_t
 //#pragma endregion
 }
 
-void VPS::plot_polynomial(std::string file_name, size_t num_basis, double* c, double xmin, double xmax, size_t num_points, double* px, double* py)
+void VPS::plot_polynomial(std::string file_name, size_t num_basis, double* pc, double xmin, double xmax, size_t num_points, double* px, double* py)
 {
 //#pragma region Plot Polynomial:
   std::fstream file(file_name.c_str(), std::ios::out);
@@ -1559,7 +1566,7 @@ void VPS::plot_polynomial(std::string file_name, size_t num_basis, double* c, do
 
     double x = xmin + ipoint * dx;
     double f = 0.0;
-    for (size_t ibasis = 0; ibasis < num_basis; ibasis++) f += c[ibasis] * pow(x, ibasis);
+    for (size_t ibasis = 0; ibasis < num_basis; ibasis++) f += pc[ibasis] * pow(x, ibasis);
     if (f < ymin) ymin = f;
     if (f > ymax) ymax = f;
   }
@@ -1641,11 +1648,11 @@ void VPS::plot_polynomial(std::string file_name, size_t num_basis, double* c, do
 
     double x = xmin + ipoint * dx;
     double f = 0.0;
-    for (size_t ibasis = 0; ibasis < num_basis; ibasis++) f += c[ibasis] * pow(x, ibasis);
+    for (size_t ibasis = 0; ibasis < num_basis; ibasis++) f += pc[ibasis] * pow(x, ibasis);
 
     double xp = x + dx;
     double fp = 0.0;
-    for (size_t ibasis = 0; ibasis < num_basis; ibasis++) fp += c[ibasis] * pow(xp, ibasis);
+    for (size_t ibasis = 0; ibasis < num_basis; ibasis++) fp += pc[ibasis] * pow(xp, ibasis);
 
     file << "newpath" << std::endl;
     file << x * scale_x << " " << f * scale_y << " moveto" << std::endl;
@@ -1675,7 +1682,7 @@ void VPS::plot_polynomial(std::string file_name, size_t num_basis, double* c, do
 //#pragma endregion
 }
 
-void VPS::plot_piecewise_polynomial(std::string file_name, size_t num_pieces, double* pmin, double* pmax, size_t* num_basis, double** c, size_t num_points, double* px, double* py)
+void VPS::plot_piecewise_polynomial(std::string file_name, size_t num_pieces, double* pmin, double* pmax, size_t* num_basis, double** pc, size_t num_points, double* px, double* py)
 {
 //#pragma region Plot Polynomial:
   std::fstream file(file_name.c_str(), std::ios::out);
@@ -1693,7 +1700,7 @@ void VPS::plot_piecewise_polynomial(std::string file_name, size_t num_pieces, do
     {
       double x = pmin[ipiece] + istep * ds;
       double f = 0.0;
-      for (size_t ibasis = 0; ibasis < num_basis[ipiece]; ibasis++) f += c[ipiece][ibasis] * pow(x, ibasis);
+      for (size_t ibasis = 0; ibasis < num_basis[ipiece]; ibasis++) f += pc[ipiece][ibasis] * pow(x, ibasis);
       if (f < ymin) ymin = f;
       if (f > ymax) ymax = f;
     }
@@ -1771,17 +1778,17 @@ void VPS::plot_piecewise_polynomial(std::string file_name, size_t num_pieces, do
 
   for (size_t ipiece = 0; ipiece < num_pieces; ipiece++)
   {
-    size_t num_steps(50);
-    double ds = (pmax[ipiece] - pmin[ipiece]) / num_steps;
-    for (size_t istep = 0; istep < num_steps; istep++)
+    size_t lnum_steps(50);
+    double ds = (pmax[ipiece] - pmin[ipiece]) / lnum_steps;
+    for (size_t istep = 0; istep < lnum_steps; istep++)
     {
       double x = pmin[ipiece] + istep * ds;
       double f = 0.0;
-      for (size_t ibasis = 0; ibasis < num_basis[ipiece]; ibasis++) f += c[ipiece][ibasis] * pow(x, ibasis);
+      for (size_t ibasis = 0; ibasis < num_basis[ipiece]; ibasis++) f += pc[ipiece][ibasis] * pow(x, ibasis);
 
       double xp = x + ds;
       double fp = 0.0;
-      for (size_t ibasis = 0; ibasis < num_basis[ipiece]; ibasis++) fp += c[ipiece][ibasis] * pow(xp, ibasis);
+      for (size_t ibasis = 0; ibasis < num_basis[ipiece]; ibasis++) fp += pc[ipiece][ibasis] * pow(xp, ibasis);
 
       file << "newpath" << std::endl;
       file << x * scale_x << " " << f * scale_y << " moveto" << std::endl;
@@ -1812,7 +1819,7 @@ void VPS::plot_piecewise_polynomial(std::string file_name, size_t num_pieces, do
 //#pragma endregion
 }
 
-void VPS::plot_FourierExpansion(std::string file_name, size_t num_basis, double xmin, double xmax, double* a, double* b, size_t num_points, double* px, double* py, size_t* num_cbasis, double** c)
+void VPS::plot_FourierExpansion(std::string file_name, size_t num_basis, double xmin, double xmax, double* a, double* b, size_t num_points, double* px, double* py, size_t* num_cbasis, double** pc)
 {
 //#pragma region Plot Fourier Expansion:
   std::fstream file(file_name.c_str(), std::ios::out);
@@ -1950,18 +1957,18 @@ void VPS::plot_FourierExpansion(std::string file_name, size_t num_basis, double 
   size_t num_pieces = num_points - 1;
   for (size_t ipiece = 0; ipiece < num_pieces; ipiece++)
   {
-    size_t num_steps(50);
+    size_t lnum_steps(50);
     double pmin = px[ipiece]; double pmax = px[ipiece + 1];
-    double ds = (pmax - pmin) / num_steps;
-    for (size_t istep = 0; istep < num_steps; istep++)
+    double ds = (pmax - pmin) / lnum_steps;
+    for (size_t istep = 0; istep < lnum_steps; istep++)
     {
       double x = pmin + istep * ds;
       double f = 0.0;
-      for (size_t ibasis = 0; ibasis < num_cbasis[ipiece]; ibasis++) f += c[ipiece][ibasis] * pow(x, ibasis);
+      for (size_t ibasis = 0; ibasis < num_cbasis[ipiece]; ibasis++) f += pc[ipiece][ibasis] * pow(x, ibasis);
 
       double xp = x + ds;
       double fp = 0.0;
-      for (size_t ibasis = 0; ibasis < num_cbasis[ipiece]; ibasis++) fp += c[ipiece][ibasis] * pow(xp, ibasis);
+      for (size_t ibasis = 0; ibasis < num_cbasis[ipiece]; ibasis++) fp += pc[ipiece][ibasis] * pow(xp, ibasis);
 
       file << "newpath" << std::endl;
       file << x * scale_x << " " << f * scale_y << " moveto" << std::endl;
@@ -2956,7 +2963,7 @@ int VPS::get_num_seed_neighbors(size_t seed_index, size_t &num_seed_neighbors)
 /////////// Least Square QR Solver Methods           //////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int VPS::LeastSquare_QR(size_t num_data_points, double xmin, double xmax, double* x, double* f, size_t num_basis, double* c)
+int VPS::LeastSquare_QR(size_t num_data_points, double xmin, double xmax, double* x, double* f, size_t num_basis, double* pc)
 {
 //#pragma region Least Square QR graph fit:
   double** A = new double*[num_data_points];
@@ -2967,7 +2974,7 @@ int VPS::LeastSquare_QR(size_t num_data_points, double xmin, double xmax, double
     for (size_t ibasis = 0; ibasis < num_basis; ibasis++) A[idatapoint][ibasis] = pow(x[idatapoint], ibasis);
   }
 
-  LS_QR_Solver(num_data_points, num_basis, A, f, c);
+  LS_QR_Solver(num_data_points, num_basis, A, f, pc);
 
   for (size_t idatapoint = 0; idatapoint < num_data_points; idatapoint++) delete[] A[idatapoint];
   delete[] A;
@@ -3045,7 +3052,7 @@ int VPS::NaturalCubicSplineInterpolation(size_t num_data_points, double* x, doub
 //#pragma endregion
 }
 
-int VPS::FourierExpansion(size_t num_data_points, double xmin, double xmax, double* x, double* f, double** c, size_t num_basis, double* a, double* b)
+int VPS::FourierExpansion(size_t num_data_points, double xmin, double xmax, double* x, double* f, double** pc, size_t num_basis, double* a, double* b)
 {
 //#pragma region Fourier Expansion of a function:
 
@@ -3064,45 +3071,45 @@ int VPS::FourierExpansion(size_t num_data_points, double xmin, double xmax, doub
 
       if (ibasis == 0)
       {
-        a[ibasis] += c[ipiece][0] * (xp - xm);
-        a[ibasis] += c[ipiece][1] * (pow(xp, 2) - pow(xm, 2)) / 2;
-        a[ibasis] += c[ipiece][2] * (pow(xp, 3) - pow(xm, 3)) / 3;
-        a[ibasis] += c[ipiece][3] * (pow(xp, 4) - pow(xm, 4)) / 4;
+        a[ibasis] += pc[ipiece][0] * (xp - xm);
+        a[ibasis] += pc[ipiece][1] * (pow(xp, 2) - pow(xm, 2)) / 2;
+        a[ibasis] += pc[ipiece][2] * (pow(xp, 3) - pow(xm, 3)) / 3;
+        a[ibasis] += pc[ipiece][3] * (pow(xp, 4) - pow(xm, 4)) / 4;
         continue;
       }
 
       double tm = 2.0 * PI * ibasis * xm / P; double tp = 2.0 * PI * ibasis * xp / P;
 
-      a[ibasis] += c[ipiece][0] * P * (sin(tp) - sin(tm)) / (2.0 * PI * ibasis);
+      a[ibasis] += pc[ipiece][0] * P * (sin(tp) - sin(tm)) / (2.0 * PI * ibasis);
 
-      a[ibasis] += c[ipiece][1] * pow(P, 2) * (cos(tp) - cos(tm)) / (4 * pow(PI, 2) * pow(ibasis, 2));
-      a[ibasis] += c[ipiece][1] * P * (xp * sin(tp) - xm * sin(tm)) / (2.0 * PI * ibasis);
+      a[ibasis] += pc[ipiece][1] * pow(P, 2) * (cos(tp) - cos(tm)) / (4 * pow(PI, 2) * pow(ibasis, 2));
+      a[ibasis] += pc[ipiece][1] * P * (xp * sin(tp) - xm * sin(tm)) / (2.0 * PI * ibasis);
 
-      a[ibasis] += c[ipiece][2] * pow(P, 2) * (xp * cos(tp) - xm * cos(tm)) / (2.0 * pow(PI, 2) * pow(ibasis, 2));
-      a[ibasis] -= c[ipiece][2] * pow(P, 3) * (sin(tp) - sin(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
-      a[ibasis] += c[ipiece][2] * P * (pow(xp, 2) * sin(tp) - pow(xm, 2) * sin(tm)) / (2.0 * PI * ibasis);
+      a[ibasis] += pc[ipiece][2] * pow(P, 2) * (xp * cos(tp) - xm * cos(tm)) / (2.0 * pow(PI, 2) * pow(ibasis, 2));
+      a[ibasis] -= pc[ipiece][2] * pow(P, 3) * (sin(tp) - sin(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
+      a[ibasis] += pc[ipiece][2] * P * (pow(xp, 2) * sin(tp) - pow(xm, 2) * sin(tm)) / (2.0 * PI * ibasis);
 
-      a[ibasis] += c[ipiece][3] * P * (pow(xp, 3) * sin(tp) - pow(xm, 3) * sin(tm)) / (2.0 * PI * ibasis);
-      a[ibasis] -= c[ipiece][3] * 3 * pow(P, 3) * (xp * sin(tp) - xm * sin(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
-      a[ibasis] -= c[ipiece][3] * 3 * pow(P, 4) * (cos(tp) - cos(tm)) / (8.0 * pow(PI, 4) * pow(ibasis, 4));
-      a[ibasis] += c[ipiece][3] * 3 * pow(P, 2) * (pow(xp, 2) * cos(tp) - pow(xm, 2) * cos(tm)) / (4.0 * pow(PI, 2) * pow(ibasis, 2));
-
-
-
-      b[ibasis] -= c[ipiece][0] * P * (cos(tp) - cos(tm)) / (2.0 * PI * ibasis);
-
-      b[ibasis] += c[ipiece][1] * pow(P, 2) * (sin(tp) - sin(tm)) / (4 * pow(PI, 2) * pow(ibasis, 2));
-      b[ibasis] -= c[ipiece][1] * P * (xp * cos(tp) - xm * cos(tm)) / (2.0 * PI * ibasis);
+      a[ibasis] += pc[ipiece][3] * P * (pow(xp, 3) * sin(tp) - pow(xm, 3) * sin(tm)) / (2.0 * PI * ibasis);
+      a[ibasis] -= pc[ipiece][3] * 3 * pow(P, 3) * (xp * sin(tp) - xm * sin(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
+      a[ibasis] -= pc[ipiece][3] * 3 * pow(P, 4) * (cos(tp) - cos(tm)) / (8.0 * pow(PI, 4) * pow(ibasis, 4));
+      a[ibasis] += pc[ipiece][3] * 3 * pow(P, 2) * (pow(xp, 2) * cos(tp) - pow(xm, 2) * cos(tm)) / (4.0 * pow(PI, 2) * pow(ibasis, 2));
 
 
-      b[ibasis] += c[ipiece][2] * pow(P, 3) * (cos(tp) - cos(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
-      b[ibasis] -= c[ipiece][2] * P * (pow(xp, 2) * cos(tp) - pow(xm, 2) * cos(tm)) / (2.0 * PI * ibasis);
-      b[ibasis] += c[ipiece][2] * pow(P, 2) * (xp * sin(tp) - xm * sin(tm)) / (2.0 * pow(PI, 2) * pow(ibasis, 2));
 
-      b[ibasis] += c[ipiece][3] * 3 * pow(P, 3) * (xp * cos(tp) - xm * cos(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
-      b[ibasis] -= c[ipiece][3] * P * (pow(xp, 3) * cos(tp) - pow(xm, 3) * cos(tm)) / (2.0 * PI * ibasis);
-      b[ibasis] -= c[ipiece][3] * 3 * pow(P, 4) * (sin(tp) - sin(tm)) / (8.0 * pow(PI, 4) * pow(ibasis, 4));
-      b[ibasis] += c[ipiece][3] * 3 * pow(P, 2) * (pow(xp, 2) * sin(tp) - pow(xm, 2) * sin(tm)) / (4.0 * pow(PI, 2) * pow(ibasis, 2));
+      b[ibasis] -= pc[ipiece][0] * P * (cos(tp) - cos(tm)) / (2.0 * PI * ibasis);
+
+      b[ibasis] += pc[ipiece][1] * pow(P, 2) * (sin(tp) - sin(tm)) / (4 * pow(PI, 2) * pow(ibasis, 2));
+      b[ibasis] -= pc[ipiece][1] * P * (xp * cos(tp) - xm * cos(tm)) / (2.0 * PI * ibasis);
+
+
+      b[ibasis] += pc[ipiece][2] * pow(P, 3) * (cos(tp) - cos(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
+      b[ibasis] -= pc[ipiece][2] * P * (pow(xp, 2) * cos(tp) - pow(xm, 2) * cos(tm)) / (2.0 * PI * ibasis);
+      b[ibasis] += pc[ipiece][2] * pow(P, 2) * (xp * sin(tp) - xm * sin(tm)) / (2.0 * pow(PI, 2) * pow(ibasis, 2));
+
+      b[ibasis] += pc[ipiece][3] * 3 * pow(P, 3) * (xp * cos(tp) - xm * cos(tm)) / (4.0 * pow(PI, 3) * pow(ibasis, 3));
+      b[ibasis] -= pc[ipiece][3] * P * (pow(xp, 3) * cos(tp) - pow(xm, 3) * cos(tm)) / (2.0 * PI * ibasis);
+      b[ibasis] -= pc[ipiece][3] * 3 * pow(P, 4) * (sin(tp) - sin(tm)) / (8.0 * pow(PI, 4) * pow(ibasis, 4));
+      b[ibasis] += pc[ipiece][3] * 3 * pow(P, 2) * (pow(xp, 2) * sin(tp) - pow(xm, 2) * sin(tm)) / (4.0 * pow(PI, 2) * pow(ibasis, 2));
 
     }
     a[ibasis] *= (2.0 / P); b[ibasis] *= (2.0 / P);
@@ -3159,19 +3166,19 @@ int VPS::solve_LU_Doolittle(size_t num_eq, double* LD, double* DD, double* UD, d
 void VPS::LS_QR_Solver(size_t nrow, size_t ncol, double** A, double* b, double* x)
 {
 //#pragma region Least Square QR Solver:
-  double** Q = new double*[nrow];
-  for (size_t irow = 0; irow < nrow; irow++) Q[irow] = new double[ncol];
+  double** lQ = new double*[nrow];
+  for (size_t irow = 0; irow < nrow; irow++) lQ[irow] = new double[ncol];
 
   double** R = new double*[ncol]; // A square matrix
   for (size_t irow = 0; irow < ncol; irow++) R[irow] = new double[ncol];
 
-  QR_Factorization(nrow, ncol, A, Q, R);
+  QR_Factorization(nrow, ncol, A, lQ, R);
 
   double* bmod = new double[ncol];
   for (size_t irow = 0; irow < ncol; irow++)
   {
     bmod[irow] = 0.0;
-    for (size_t icol = 0; icol < nrow; icol++) bmod[irow] += Q[icol][irow] * b[icol];
+    for (size_t icol = 0; icol < nrow; icol++) bmod[irow] += lQ[icol][irow] * b[icol];
   }
 
   // backward solve
@@ -3194,8 +3201,8 @@ void VPS::LS_QR_Solver(size_t nrow, size_t ncol, double** A, double* b, double* 
     jrow--;
   }
 
-  for (size_t irow = 0; irow < nrow; irow++) delete[] Q[irow];
-  delete[] Q;
+  for (size_t irow = 0; irow < nrow; irow++) delete[] lQ[irow];
+  delete[] lQ;
 
   for (size_t irow = 0; irow < ncol; irow++) delete[] R[irow];
   delete[] R;
@@ -3204,7 +3211,7 @@ void VPS::LS_QR_Solver(size_t nrow, size_t ncol, double** A, double* b, double* 
 //#pragma endregion
 }
 
-void VPS::GramSchmidt(size_t nrow, size_t ncol, double** A, double** Q)
+void VPS::GramSchmidt(size_t nrow, size_t ncol, double** A, double** pQ)
 {
 //#pragma region GramSchmidt Process:
 
@@ -3266,7 +3273,7 @@ void VPS::GramSchmidt(size_t nrow, size_t ncol, double** A, double** Q)
     }
   }
 
-  MAT_Transpose(num_basis, nrow, ebasis, Q);
+  MAT_Transpose(num_basis, nrow, ebasis, pQ);
 
   for (size_t ibasis = 0; ibasis < ncol; ibasis++) delete[] ebasis[ibasis];
   delete[] ebasis; delete[] null_basis; delete[] v;
@@ -3304,15 +3311,15 @@ void VPS::orthonormalize_vector(size_t nbasis, size_t ndim, double** e_basis, do
 }
 
 
-void VPS::QR_Factorization(size_t nrow, size_t ncol, double** A, double** Q, double** R)
+void VPS::QR_Factorization(size_t nrow, size_t ncol, double** A, double** pQ, double** R)
 {
 //#pragma region QR Factorization:
   // norw >= ncol (for LS problems)
-  GramSchmidt(nrow, ncol, A, Q);
+  GramSchmidt(nrow, ncol, A, pQ);
   double** QT = new double*[ncol];
   for (size_t irow = 0; irow < ncol; irow++) QT[irow] = new double[nrow];
 
-  MAT_Transpose(nrow, ncol, Q, QT);
+  MAT_Transpose(nrow, ncol, pQ, QT);
 
   MAT_MAT(ncol, nrow, QT, ncol, A, R);
 
@@ -3525,7 +3532,7 @@ int VPS::retrieve_weights_regression(size_t cell_index)
       for (size_t idim = 0; idim < _num_dim; idim++) sum += _p[ibasis][idim];
       if (sum > order) continue;
 
-      for (size_t ifunc = 0; ifunc < _num_functions; ifunc++) _basis_index[cell_index][ifunc][nb] = ibasis;
+      for (size_t lifunc = 0; lifunc < _num_functions; lifunc++) _basis_index[cell_index][lifunc][nb] = ibasis;
       nb++;
     }
 

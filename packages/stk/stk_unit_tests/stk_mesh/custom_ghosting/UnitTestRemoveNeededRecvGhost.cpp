@@ -60,7 +60,6 @@ public:
     builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
     bulk = builder.create();
     meta = &(bulk->mesh_meta_data());
-    meta->use_simple_fields();
     create_2_beams_per_proc();
     custom_ghost_beam1_to_proc1();
   }

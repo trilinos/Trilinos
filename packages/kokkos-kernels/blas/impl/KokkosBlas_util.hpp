@@ -1,39 +1,65 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef KOKKOS_BLAS_UTIL_HPP
-#define KOKKOS_BLAS_UTIL_HPP
+#ifndef KOKKOSBLAS_UTIL_HPP
+#define KOKKOSBLAS_UTIL_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosBlas {
+namespace Impl {
+struct OpID {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    return v;
+  }
+};
+
+struct OpConj {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    using KAT = KokkosKernels::ArithTraits<ValueType>;
+    return KAT::conj(v);
+  }
+};
+
+struct OpReal {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION typename KokkosKernels::ArithTraits<ValueType>::mag_type operator()(ValueType v) const {
+    using KAT = KokkosKernels::ArithTraits<ValueType>;
+    return KAT::real(v);
+  }
+};
+}  // namespace Impl
 
 //////// Tags for BLAS ////////
 
 struct Mode {
   struct Serial {
-    static const char *name() { return "Serial"; }
+    static const char* name() { return "Serial"; }
   };
   struct Team {
-    static const char *name() { return "Team"; }
+    static const char* name() { return "Team"; }
   };
   struct TeamVector {
-    static const char *name() { return "TeamVector"; }
+    static const char* name() { return "TeamVector"; }
   };
 };
+
+template <class T>
+struct is_mode : std::false_type {};
+
+template <>
+struct is_mode<Mode::Serial> : std::true_type {};
+
+template <>
+struct is_mode<Mode::Team> : std::true_type {};
+
+template <>
+struct is_mode<Mode::TeamVector> : std::true_type {};
+
+template <class T>
+static constexpr bool is_mode_v = is_mode<T>::value;
 
 struct Trans {
   struct Transpose {};
@@ -41,29 +67,66 @@ struct Trans {
   struct ConjTranspose {};
 };
 
+template <class T>
+struct is_trans : std::false_type {};
+
+template <>
+struct is_trans<Trans::Transpose> : std::true_type {};
+
+template <>
+struct is_trans<Trans::NoTranspose> : std::true_type {};
+
+template <>
+struct is_trans<Trans::ConjTranspose> : std::true_type {};
+
+template <class T>
+static constexpr bool is_trans_v = is_trans<T>::value;
+
 struct Algo {
   struct Level3 {
     struct Unblocked {
-      static const char *name() { return "Unblocked"; }
+      static const char* name() { return "Unblocked"; }
     };
     struct Blocked {
-      static const char *name() { return "Blocked"; }
+      static const char* name() { return "Blocked"; }
+
+      struct Impl {
+        struct Host {};
+        struct Device {};
+
+        // TODO:: for now hardwire the blocksizes; this should reflect
+        // register blocking (not about team parallelism).
+        // this mb should vary according to
+        // - team policy (smaller) or range policy (bigger)
+        // - space (gpu vs host)
+        // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+        template <typename Where>
+          requires std::is_same_v<Where, Host> || std::is_same_v<Where, Device>
+        constexpr static KOKKOS_INLINE_FUNCTION int mb() {
+          if constexpr (std::is_same_v<Where, Host>) {
+            return 4;
+          } else {
+            return 2;
+          }
+        }
+      };
+
       // TODO:: for now harwire the blocksizes; this should reflect
       // register blocking (not about team parallelism).
       // this mb should vary according to
       // - team policy (smaller) or range policy (bigger)
       // - space (gpu vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-      static constexpr KOKKOS_FUNCTION int mb() {
-        KOKKOS_IF_ON_HOST((return 4;))
-        KOKKOS_IF_ON_DEVICE((return 2;))
+      [[deprecated("Do not use: implementation detail")]] static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
+        KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
       }
     };
     struct MKL {
-      static const char *name() { return "MKL"; }
+      static const char* name() { return "MKL"; }
     };
     struct CompactMKL {
-      static const char *name() { return "CompactMKL"; }
+      static const char* name() { return "CompactMKL"; }
     };
 
     // When this is first developed, unblocked algorithm is a naive
@@ -85,19 +148,46 @@ struct Algo {
   using SolveLU   = Level3;
   using QR        = Level3;
   using UTV       = Level3;
+  using Pttrf     = Level3;
+  using Pttrs     = Level3;
+  using Getrf     = Level3;
+  using Getrs     = Level3;
+  using Gbtrf     = Level3;
+  using Gbtrs     = Level3;
 
   struct Level2 {
     struct Unblocked {};
     struct Blocked {
+      struct Impl {
+        struct Host {};
+        struct Device {};
+
+        // TODO:: for now hardwire the blocksizes; this should reflect
+        // register blocking (not about team parallelism).
+        // this mb should vary according to
+        // - team policy (smaller) or range policy (bigger)
+        // - space (cuda vs host)ß
+        // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
+        template <typename Where>
+          requires std::is_same_v<Where, Host> || std::is_same_v<Where, Device>
+        constexpr static KOKKOS_INLINE_FUNCTION int mb() {
+          if constexpr (std::is_same_v<Where, Host>) {
+            return 4;
+          } else {
+            return 1;
+          }
+        }
+      };  // Impl
+
       // TODO:: for now hardwire the blocksizes; this should reflect
       // register blocking (not about team parallelism).
       // this mb should vary according to
       // - team policy (smaller) or range policy (bigger)
       // - space (cuda vs host)
       // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-      static constexpr KOKKOS_FUNCTION int mb() {
-        KOKKOS_IF_ON_HOST((return 4;))
-        KOKKOS_IF_ON_DEVICE((return 1;))
+      [[deprecated("Do not use: implementation detail")]] static constexpr KOKKOS_FUNCTION int mb() {
+        KOKKOS_IF_ON_HOST((return Impl::mb<Impl::Host>();))
+        KOKKOS_IF_ON_DEVICE((return Impl::mb<Impl::Device>();))
       }
     };
     struct MKL {};
@@ -116,7 +206,28 @@ struct Algo {
   using Gemv   = Level2;
   using Trsv   = Level2;
   using ApplyQ = Level2;
+  using Tbsv   = Level2;
+  using Pbtrf  = Level2;
+  using Pbtrs  = Level2;
 };
+
+template <class T>
+struct is_level2 : std::false_type {};
+
+template <>
+struct is_level2<Algo::Level2::Unblocked> : std::true_type {};
+
+template <>
+struct is_level2<Algo::Level2::Blocked> : std::true_type {};
+
+template <>
+struct is_level2<Algo::Level2::MKL> : std::true_type {};
+
+template <>
+struct is_level2<Algo::Level2::CompactMKL> : std::true_type {};
+
+template <class T>
+static constexpr bool is_level2_v = is_level2<T>::value;
 
 namespace Impl {
 
@@ -133,12 +244,9 @@ namespace Impl {
 // Output params:
 //  * teamsPerReduction: number of teams to use for each reduction
 template <typename ExecSpace, typename size_type>
-void multipleReductionWorkDistribution(size_type length,
-                                       size_type numReductions,
-                                       size_type &teamsPerDot) {
-  constexpr size_type workPerTeam = 4096;  // Amount of work per team
-  size_type appxNumTeams =
-      (length * numReductions) / workPerTeam;  // Estimation for appxNumTeams
+void multipleReductionWorkDistribution(size_type length, size_type numReductions, size_type& teamsPerDot) {
+  constexpr size_type workPerTeam = 4096;                                    // Amount of work per team
+  size_type appxNumTeams          = (length * numReductions) / workPerTeam;  // Estimation for appxNumTeams
 
   // Adjust appxNumTeams in case it is too small or too large
   if (appxNumTeams < 1) appxNumTeams = 1;
@@ -163,10 +271,10 @@ void multipleReductionWorkDistribution(size_type length,
 
 template <class RV>
 struct TakeSqrtFunctor {
-  TakeSqrtFunctor(const RV &r_) : r(r_) {}
+  TakeSqrtFunctor(const RV& r_) : r(r_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(int i) const {
-    r(i) = Kokkos::ArithTraits<typename RV::non_const_value_type>::sqrt(r(i));
+    r(i) = KokkosKernels::ArithTraits<typename RV::non_const_value_type>::sqrt(r(i));
   }
 
   RV r;
@@ -175,4 +283,4 @@ struct TakeSqrtFunctor {
 }  // namespace Impl
 }  // namespace KokkosBlas
 
-#endif
+#endif  // KOKKOSBLAS_UTIL_HPP

@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_LDL_ON_DEVICE_HPP__
 #define __TACHO_LDL_ON_DEVICE_HPP__
@@ -46,7 +38,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
       int *devInfo = (int *)W.data();
       work_value_type *workspace = W.data() + 1;
       int lwork = (W.span() - 1);
-      r_val = Lapack<value_type>::sytrf(handle, CUBLAS_FILL_MODE_LOWER, m, A.data(), A.stride_1(), P.data(), workspace,
+      r_val = Lapack<value_type>::sytrf(handle, CUBLAS_FILL_MODE_LOWER, m, A.data(), A.stride(1), P.data(), workspace,
                                         lwork, devInfo);
     }
     return r_val;
@@ -59,7 +51,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0)
-      r_val = Lapack<value_type>::sytrf_buffersize(handle, m, A.data(), A.stride_1(), lwork);
+      r_val = Lapack<value_type>::sytrf_buffersize(handle, m, A.data(), A.stride(1), lwork);
     return r_val;
   }
 #endif
@@ -74,7 +66,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
     int r_val(0);
     if (m > 0) {
       int *devInfo = (int *)W.data();
-      r_val = Lapack<value_type>::sytrf(handle, rocblas_fill_lower, m, A.data(), A.stride_1(), P.data(), devInfo);
+      r_val = Lapack<value_type>::sytrf(handle, rocblas_fill_lower, m, A.data(), A.stride(1), P.data(), devInfo);
     }
     return r_val;
   }
@@ -135,18 +127,19 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   template <typename ExecSpaceType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeD>
   inline static int device_modify(ExecSpaceType &exec_instance, const ViewTypeA &A, const ViewTypeP &P,
-                                  const ViewTypeD &D) {
+                                  const ViewTypeD &D, const bool conjugate) {
     using exec_space = ExecSpaceType;
     typedef typename ViewTypeA::non_const_value_type value_type;
-    const ordinal_type m = A.extent(0);
+    typedef ArithTraits<value_type> arith_traits;
 
+    const ordinal_type m = A.extent(0);
     int r_val(0);
     if (m > 0) {
-      value_type *__restrict__ Aptr = A.data();
-      ordinal_type *__restrict__ ipiv = P.data();
-      ordinal_type *__restrict__ fpiv = ipiv + m;
-      ordinal_type *__restrict__ perm = fpiv + m;
-      ordinal_type *__restrict__ peri = perm + m;
+      value_type *KOKKOS_RESTRICT Aptr = A.data();
+      ordinal_type *KOKKOS_RESTRICT ipiv = P.data();
+      ordinal_type *KOKKOS_RESTRICT fpiv = ipiv + m;
+      ordinal_type *KOKKOS_RESTRICT perm = fpiv + m;
+      ordinal_type *KOKKOS_RESTRICT peri = perm + m;
 
       const value_type one(1), zero(0);
       Kokkos::RangePolicy<exec_space> range_policy(exec_instance, 0, m);
@@ -165,7 +158,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
                     fpiv[i] = 0;
 
                     D(i, 0) = A(i, i);
-                    D(i, 1) = A(i + 1, i); /// symmetric
+                    D(i, 1) = (conjugate ? arith_traits::conj(A(i + 1, i)) : A(i + 1, i)); /// symmetric
                     A(i, i) = one;
                   }
                 }
@@ -177,8 +170,8 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
                     fpiv[i] = fla_pivot;
                   }
                   if (fla_pivot) {
-                    value_type *__restrict__ src = Aptr + i;
-                    value_type *__restrict__ tgt = src + fla_pivot;
+                    value_type *KOKKOS_RESTRICT src = Aptr + i;
+                    value_type *KOKKOS_RESTRICT tgt = src + fla_pivot;
                     if (j < (i - 1)) {
                       const ordinal_type idx = j * m;
                       swap(src[idx], tgt[idx]);
@@ -229,7 +222,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
   }
 #endif
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeD>
-  inline static int modify(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeD &D) {
+  inline static int modify(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeD &D, bool conjugate) {
     typedef typename ViewTypeA::non_const_value_type value_type;
     typedef typename ViewTypeD::non_const_value_type value_type_d;
 
@@ -255,12 +248,12 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value ||
         std::is_same<memory_space, Kokkos::CudaUVMSpace>::value) {
-      r_val = device_modify(member, A, P, D);
+      r_val = device_modify(member, A, P, D, conjugate);
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
     if (std::is_same<memory_space, Kokkos::HIPSpace>::value) {
-      r_val = device_modify(member, A, P, D);
+      r_val = device_modify(member, A, P, D, conjugate);
     }
 #endif
     return r_val;

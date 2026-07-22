@@ -40,6 +40,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "GraphTypes.hpp"
 
@@ -54,8 +55,6 @@ namespace stk { class CommSparse; }
 namespace stk { namespace mesh {
 namespace impl
 {
-
-static const LocalId INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 
 struct RemoteElementData
 {
@@ -78,7 +77,7 @@ public:
     }
 
 private:
-    int m_other_proc;
+    int m_other_proc = -1;
 };
 
 struct GraphEdgeProc
@@ -97,11 +96,11 @@ struct GraphEdgeProc
     void set_remote_processor_rank(int proc) { m_proc_id = proc; }
 
 private:
-    stk::mesh::EntityId m_localElementId;
-    stk::mesh::EntityId m_remoteElementId;
-    int m_localSide;
-    int m_remoteSide;
-    int m_proc_id;
+    stk::mesh::EntityId m_localElementId = 0;
+    stk::mesh::EntityId m_remoteElementId = 0;
+    int m_localSide = -1;
+    int m_remoteSide = -1;
+    int m_proc_id = -1;
 };
 
 struct ParallelInfo
@@ -109,7 +108,7 @@ struct ParallelInfo
 public:
     ParallelInfo(int proc, int perm, stk::topology other_elem_topology) :
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
-    ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
+    ParallelInfo(int proc, int perm, stk::mesh::EntityId /*chosen_face_id*/, stk::topology other_elem_topology) :
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
     ParallelInfo() :
         m_permutation(INVALID_PERMUTATION), m_remote_element_topology(stk::topology::INVALID_TOPOLOGY), remoteElementData(-1) {}
@@ -149,83 +148,68 @@ std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
 struct SerialElementData
 {
 public:
-    SerialElementData(LocalId elementLocalId, stk::mesh::EntityId elementId, stk::topology elementTopology, unsigned sideIndex, const stk::mesh::EntityVector& sideNodes) :
-        m_elementLocalId(elementLocalId), m_elementIdentifier(elementId), m_elementTopology(elementTopology), m_sideIndex(sideIndex), m_sideNodes(sideNodes) {}
-
     SerialElementData()
     : m_elementLocalId(std::numeric_limits<impl::LocalId>::max()),
-      m_elementIdentifier(stk::mesh::InvalidEntityId),
       m_elementTopology(stk::topology::INVALID_TOPOLOGY),
-      m_sideIndex(std::numeric_limits<unsigned>::max()),
-      m_sideNodes(stk::mesh::EntityVector{}) {}
+      m_sideIndex(std::numeric_limits<unsigned>::max())
+    {}
 
-    stk::mesh::EntityId get_element_identifier() const { return m_elementIdentifier; }
     stk::topology get_element_topology() const { return m_elementTopology; }
-    const stk::mesh::EntityVector& get_side_nodes() const { return m_sideNodes; }
     LocalId get_element_local_id() const { return m_elementLocalId; }
     unsigned get_element_side_index() const { return m_sideIndex; }
     stk::mesh::Permutation get_permutation() const { return m_perm; }
 
-    bool is_parallel_edge() const { return false; }
-    int get_proc_rank_of_neighbor() const { return -1; }
-
-    void clear_side_nodes() { m_sideNodes.clear(); }
-    void resize_side_nodes(size_t n) { m_sideNodes.resize(n); }
-
     void set_element_local_id(LocalId id) { m_elementLocalId = id; }
-    void set_element_identifier(stk::mesh::EntityId id) { m_elementIdentifier = id; }
     void set_element_topology(stk::topology topo) { m_elementTopology = topo; }
     void set_element_side_index(unsigned index) { m_sideIndex = index; }
-    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
     void set_permutation(stk::mesh::Permutation perm) { m_perm = perm; }
 
-    stk::mesh::Entity * side_nodes_begin() { return m_sideNodes.data(); }
-
 private:
-    LocalId m_elementLocalId;
-    stk::mesh::EntityId m_elementIdentifier;
-    stk::topology m_elementTopology;
-    unsigned m_sideIndex;
-    stk::mesh::EntityVector m_sideNodes;
-    stk::mesh::Permutation m_perm;
+    LocalId m_elementLocalId = -1;
+    stk::topology m_elementTopology = stk::topology::INVALID_TOPOLOGY;
+    unsigned m_sideIndex = std::numeric_limits<unsigned>::max();
+    stk::mesh::Permutation m_perm = INVALID_PERMUTATION;
 };
 
 struct ParallelElementData
 {
     ParallelElementData()
     : remoteElementData(),
-      serialElementData()
+      serialElementData(),
+      m_elementIdentifier(stk::mesh::InvalidEntityId)
     {}
 
     bool is_parallel_edge() const { return get_proc_rank_of_neighbor() != -1; }
 
-    stk::mesh::EntityId get_element_identifier() const { return serialElementData.get_element_identifier(); }
+    stk::mesh::EntityId get_element_identifier() const { return m_elementIdentifier; }
     stk::topology get_element_topology() const { return serialElementData.get_element_topology(); }
-    const stk::mesh::EntityVector& get_side_nodes() const { return serialElementData.get_side_nodes(); }
+    const stk::mesh::EntityVector& get_side_nodes() const { return m_sideNodes; }
     LocalId get_element_local_id() const { return serialElementData.get_element_local_id(); }
     unsigned get_element_side_index() const { return serialElementData.get_element_side_index(); }
     stk::mesh::Permutation get_permutation() const { return serialElementData.get_permutation(); }
 
-    void clear_side_nodes() { serialElementData.clear_side_nodes(); }
-    void resize_side_nodes(size_t n) { serialElementData.resize_side_nodes(n); }
+    void clear_side_nodes() { m_sideNodes.clear(); }
+    void resize_side_nodes(size_t n) { m_sideNodes.resize(n); }
     void set_element_local_id(LocalId id) { serialElementData.set_element_local_id(id); }
-    void set_element_identifier(stk::mesh::EntityId id) { serialElementData.set_element_identifier(id); }
+    void set_element_identifier(stk::mesh::EntityId id) { m_elementIdentifier = id; }
     void set_element_topology(stk::topology topo) { serialElementData.set_element_topology(topo); }
     void set_element_side_index(unsigned index) { serialElementData.set_element_side_index(index); }
-    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { serialElementData.set_element_side_nodes(nodes); }
+    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
     void set_permutation(stk::mesh::Permutation perm) { serialElementData.set_permutation(perm); }
 
-    stk::mesh::Entity * side_nodes_begin() { return serialElementData.side_nodes_begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return m_sideNodes.data(); }
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
-    stk::mesh::EntityId m_suggestedFaceId;
+    stk::mesh::EntityId m_suggestedFaceId{0u};
 
 private:
     RemoteElementData remoteElementData;
     SerialElementData serialElementData;
+    stk::mesh::EntityId m_elementIdentifier = 0;
+    stk::mesh::EntityVector m_sideNodes;
 };
 
 struct SharedEdgeInfo
@@ -279,6 +263,13 @@ struct ElementViaSidePair
 {
     stk::mesh::Entity element;
     int side;
+};
+
+struct ConnectedElementInfo
+{
+    stk::mesh::Entity element;
+    int thisSide;
+    int otherSide;
 };
 
 struct IdViaSidePair
@@ -392,10 +383,15 @@ struct GraphEdgeLessByElem1 {
         {
             return a_side2 < b_side2;
         }
-        else
+
+        int a_side1 = a.side1();
+        int b_side1 = b.side1();
+        if(a_side1 == b_side1)
         {
-            return a.side1() < b.side1();
+          return a.elem2() < b.elem2();
         }
+
+        return a_side1 < b_side1;
     }
 };
 
@@ -526,12 +522,27 @@ std::vector<GraphEdgeProc> communicate_killed_entities(stk::ParallelMachine comm
 
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<GraphEdgeProc>& elements_to_comm);
 
-void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
-        stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
-        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
+bool can_add_side_into_exposed_boundary(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, int side_id,
+                                        const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                                        const stk::mesh::Part& activePart);
 
-void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
-        stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id);
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
+        stk::mesh::Entity local_element, int side_id, const stk::mesh::PartVector& parts_for_creating_side,
+        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+        const stk::mesh::Part& activePart, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
+
+int get_number_of_connected_active_elements(const stk::mesh::BulkData& bulkData,
+                                            stk::mesh::Entity localElement,
+                                            int localOrdinal,
+                                            const stk::mesh::Part& activePart,
+                                            const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector);
+
+bool is_exposed_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, int side_id,
+                     const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                     const stk::mesh::Part& activePart);
+
+bool remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
+        stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector);
 
 stk::mesh::ConstPartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
 
@@ -569,6 +580,11 @@ inline bool is_shell_or_beam2(stk::topology top)
     //return top.is_shell() || top == stk::topology::BEAM_2;
 }
 
+inline bool is_shell_face_side(stk::topology elemTopology, unsigned sideIndex)
+{
+  return elemTopology.is_shell() && (sideIndex == 0 || elemTopology.side_topology(sideIndex) == elemTopology.side_topology(0));
+}
+
 struct TopologyChecker
 {
     bool are_both_shells() const
@@ -583,6 +599,159 @@ struct TopologyChecker
 
     stk::topology localTopology;
     stk::topology remoteTopology;
+};
+
+template<typename Key, typename Value>
+struct ComparePairByKey {
+
+  inline bool operator()(const std::pair<Key, Value>& lhs, const std::pair<Key, Value>& rhs) const
+  {
+    return lhs.first < rhs.first;
+  }
+
+  inline bool operator()(const std::pair<Key, Value>& lhs, const Key& rhs) const
+  {
+    return lhs.first < rhs;
+  }
+
+  inline bool operator()(const Key& lhs, const std::pair<Key, Value>& rhs) const
+  {
+    return lhs < rhs.first;
+  }
+
+  inline bool operator()(const Key& lhs, const Key& rhs) const
+  {
+    return lhs < rhs;
+  }
+};
+
+template<typename T>
+class SortedKeyBoolPairVector {
+public:
+  SortedKeyBoolPairVector() = default;
+  ~SortedKeyBoolPairVector() = default;
+
+  bool set_if_not_already_set(const T& key, bool value)
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      m_values.insert(iter, std::make_pair(key, value));
+      return true;
+    }
+
+    return false;
+  }
+
+  bool set(const T& key, bool value)
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      m_values.insert(iter, std::make_pair(key, value));
+    }
+
+    iter->second = value;
+    return true;
+  }
+
+  bool get(const T& key) const
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      return false;
+    }
+
+    return iter->second;
+  }
+
+  void clear()
+  {
+    m_values.clear();
+  }
+
+private:
+  std::vector<std::pair<T, bool>> m_values;
+  ComparePairByKey<T, bool> m_compare;
+};
+
+// Implementation of above using maps ... which is better to use?
+template<typename T>
+class SortedKeyBoolPairMap {
+public:
+  SortedKeyBoolPairMap() = default;
+  ~SortedKeyBoolPairMap() = default;
+
+  bool set_if_not_already_set(const T& key, bool value)
+  {
+    if(m_values.find(key) == m_values.end()) {
+      m_values[key] = value;
+      return true;
+    }
+
+    return false;
+  }
+
+  bool set(const T& key, bool value)
+  {
+    m_values[key] = value;
+    return true;
+  }
+
+  bool get(const T& key)
+  {
+    return m_values[key];
+  }
+
+  void clear()
+  {
+    m_values.clear();
+  }
+private:
+  std::map<T, bool> m_values;
+};
+
+////////////////////////////////////////////////////////////
+
+template<typename T>
+class SortedKeyIntVectorPairVector {
+public:
+  SortedKeyIntVectorPairVector() = default;
+  ~SortedKeyIntVectorPairVector() = default;
+
+  bool add(const T& key, int value)
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      m_values.insert(iter, std::make_pair(key, std::vector<int>{value}));
+      return true;
+    }
+
+    return stk::util::insert_keep_sorted_and_unique(value, iter->second);
+  }
+
+  const std::vector<int>& get(const T& key) const
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      return m_emptyVector;
+    }
+
+    return iter->second;
+  }
+
+  void clear()
+  {
+    m_values.clear();
+  }
+
+private:
+  std::vector<int> m_emptyVector;
+  std::vector<std::pair<T, std::vector<int>>> m_values;
+  ComparePairByKey<T, std::vector<int>> m_compare;
 };
 
 }}} // end namespaces stk mesh

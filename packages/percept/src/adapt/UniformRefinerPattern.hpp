@@ -30,8 +30,6 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
-#include <Intrepid_CellTools.hpp>
-
 #include <percept/Util.hpp>
 #include <percept/PerceptMesh.hpp>
 #include <adapt/NodeRegistry.hpp>
@@ -144,7 +142,7 @@
 
     struct SierraPort {};
 
-    inline int new_sub_entity_nodes_check(PerceptMesh& eMesh, stk::mesh::Entity element, NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity)
+    inline int new_sub_entity_nodes_check(PerceptMesh& /*eMesh*/, stk::mesh::Entity /*element*/, NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity)
     {
       try {
         VERIFY_OP_ON((unsigned)i_entity_rank, <, new_sub_entity_nodes.size(), "new_sub_entity_nodes_check 1");
@@ -159,7 +157,7 @@
       return new_sub_entity_nodes[i_entity_rank][j_ordinal_of_entity][k_ordinal_of_node_on_entity];
     }
 
-    inline int new_sub_entity_nodes_check_perm(PerceptMesh& eMesh, stk::mesh::Entity element, NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity, const unsigned *perm)
+    inline int new_sub_entity_nodes_check_perm(PerceptMesh& /*eMesh*/, stk::mesh::Entity /*element*/, NewSubEntityNodesType& new_sub_entity_nodes, int i_entity_rank, int j_ordinal_of_entity, int k_ordinal_of_node_on_entity, const unsigned *perm)
     {
       VERIFY_OP_ON((unsigned)i_entity_rank, <, new_sub_entity_nodes.size(), "new_sub_entity_nodes_check 1");
       VERIFY_OP_ON((unsigned)j_ordinal_of_entity, < , new_sub_entity_nodes[i_entity_rank].size(), "new_sub_entity_nodes_check 2");
@@ -220,6 +218,8 @@
       static const unsigned topo_key_shellquad8 = shards::ShellQuadrilateral<8>::key;
       static const unsigned topo_key_shellquad9 = shards::ShellQuadrilateral<9>::key;
       static const unsigned topo_key_quad9      = shards::Quadrilateral<9>::key;
+      static const unsigned topo_key_line3      = shards::Line<3>::key;
+      static const unsigned topo_key_shellline3 = shards::ShellLine<3>::key;
       static const unsigned topo_key_wedge15    = shards::Wedge<15>::key;
       static const unsigned topo_key_pyramid13  = shards::Pyramid<13>::key;
       static const unsigned topo_key_pyramid5   = shards::Pyramid<5>::key;
@@ -316,19 +316,16 @@
       /// helpers for interpolating fields, coordinates
       /// ------------------------------------------------------------------------------------------------------------------------
 
-      /// This version uses Intrepid for interpolation
+      /// This version uses Intrepid2 for interpolation
       void prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field);
 
       /// do interpolation for all fields
-      /// This version uses Intrepid
+      /// This version uses Intrepid2
       void prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x);
 
-      void prolongateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
-                            MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val=0.0);
-
-      void prolongateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
+      void prolongateIntrepid2(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
                                MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val=0.0);
 
       stk::mesh::Entity createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid);
@@ -460,21 +457,21 @@
                                                    );
 
       // return the type of element this pattern can refine
-      virtual unsigned getFromTypeKey() { return fromTopoKey; }
-      virtual unsigned getToTypeKey() { return toTopoKey; }
-      virtual const CellTopologyData * getFromTopology() { return shards::getCellTopologyData< FromTopology >(); }
-      virtual const CellTopologyData * getToTopology() { return shards::getCellTopologyData< ToTopology >(); }
+      virtual unsigned getFromTypeKey() override { return fromTopoKey; }
+      virtual unsigned getToTypeKey() override { return toTopoKey; }
+      virtual const CellTopologyData * getFromTopology() override { return shards::getCellTopologyData< FromTopology >(); }
+      virtual const CellTopologyData * getToTopology() override { return shards::getCellTopologyData< ToTopology >(); }
 
-      virtual std::string getFromTopoPartName() {
+      virtual std::string getFromTopoPartName() override {
         shards::CellTopology cell_topo(getFromTopology());
         return cell_topo.getName();
       }
-      virtual std::string getToTopoPartName() {
+      virtual std::string getToTopoPartName() override {
         shards::CellTopology cell_topo(getToTopology());
         return cell_topo.getName();
       }
 
-      virtual std::string getName() { return std::string("UniformRefinerPattern_")+getFromTopoPartName()+"_"+getToTopoPartName(); }
+      virtual std::string getName() override { return std::string("UniformRefinerPattern_")+getFromTopoPartName()+"_"+getToTopoPartName(); }
 
     protected:
       percept::PerceptMesh& m_eMesh;

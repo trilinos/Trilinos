@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -1657,7 +1657,7 @@ C ENVIRONMENT      -COMPUTER-INDEPENDENT, SYSTEM-INDEPENDENT, FORTRAN 77
 C                   All Batch Devices.
 
 C ENTRY CONDITIONS -LOCX,LOCY = real NDC position that the locator is
-C                   initilaized to.
+C                   initialized to.
 
 C CALLS            -
 

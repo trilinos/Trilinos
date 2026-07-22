@@ -38,14 +38,13 @@
 // clang-format off
 #include <Ioss_Field.h>                     // for Field, Field::REDUCTION
 #include <Ioss_PropertyManager.h>           // for PropertyManager
-      // file exists and is readable and will throw an exception if not.
 #include <cstddef>                          // for size_t
 #include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
+#include <stk_io/DynamicTopology.hpp>
 #include <stk_io/Heartbeat.hpp>             // for Heartbeat, HeartbeatType
 #include <stk_io/IossBridge.hpp>            // for STKIORequire, FieldNameTo...
 #include <stk_io/MeshField.hpp>             // for MeshField, MeshField::CLO...
 #include <stk_io/OutputFile.hpp>            // for OutputFile
-#include <stk_mesh/base/BulkData.hpp>       // for BulkData
 #include <stk_mesh/base/Selector.hpp>       // for Selector
 #include <stk_util/parallel/Parallel.hpp>   // for ParallelMachine
 #include <stk_util/util/ParameterList.hpp>  // for Parameter, Type
@@ -73,7 +72,6 @@ namespace stk { namespace mesh { class SidesetUpdater; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 namespace stk { namespace mesh { class BulkData; } }
-
 
 namespace stk {
   namespace io {
@@ -160,7 +158,6 @@ namespace stk {
 
       void set_ghosting_filter(size_t output_file_index, bool hasGhosting);
       void set_adaptivity_filter(size_t output_file_index, bool hasAdaptivity);
-      void set_skin_mesh_flag(size_t output_file_index, bool skinMesh);
 
       void set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks);
       void set_filter_empty_output_assembly_entity_blocks(size_t output_file_index, const bool filterEmptyAssemblyEntityBlocks);
@@ -213,6 +210,11 @@ namespace stk {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
 
+      void set_create_empty_block_for_omitted_block(bool shouldCreateEmptyBlockForOmittedBlock)
+      {
+          m_createEmptyBlockForOmittedBlock = shouldCreateEmptyBlockForOmittedBlock;
+      }
+
       void cache_entity_list_for_transient_steps(bool cacheEntityList)
       {
           m_cacheEntityListForTransientSteps = cacheEntityList;
@@ -250,11 +252,8 @@ namespace stk {
       //    of a multi-state field.
       // Other behavioral differences may be added in the future 
       //    (e.g., dealing with adaptivity...)
-      size_t add_mesh_database(const std::string &filename,
-			       const std::string &type,
-			       DatabasePurpose purpose);
+      size_t add_mesh_database(const std::string &filename, const std::string &type, DatabasePurpose purpose);
 
-      
       size_t add_mesh_database(const std::string &filename,
                                const std::string &type,
                                DatabasePurpose purpose,
@@ -271,8 +270,7 @@ namespace stk {
       // mesh information.  If the mesh type is a generated type, then
       // this parameter contains data used by the generation routines.
       // Optionally prepended by a filetype and a colon.
-      size_t add_mesh_database(std::string filename,
-			       DatabasePurpose purpose);
+      size_t add_mesh_database(std::string filename, DatabasePurpose purpose);
 
       // Set the input Ioss::Region directly instead of letting it be
       // created by StkMeshIoBroker during the create_input_mesh(type,
@@ -289,8 +287,8 @@ namespace stk {
 
       // Get a reference to an existing mesh database so it can be modified
       // Typical modifications deal with
-      // times: tart/stop/offset/scale/cycle/periodlength.
-      InputFile &get_mesh_database(size_t input_file_index);
+      // times: start/stop/offset/scale/cycle/periodlength.
+      InputFile &get_mesh_database(size_t input_file_index) const;
 
       // Remove the specified mesh database from the list of mesh databases.
       // All files associated with the mesh database will be closed and destructors
@@ -327,7 +325,7 @@ namespace stk {
       //
       // NOTE: this function internally calls the two methods
       // 'populate_mesh()' and 'populate_field_data()', declared
-      // below, and does NOT do the delayed field-data allocation
+      // below, and does the delayed field-data allocation
       // optimization.
       void populate_bulk_data();
 
@@ -338,8 +336,8 @@ namespace stk {
       // 'populate_field_data()' method declared below.
       // Note that the above-declared 'populate_bulk_data()' method
       // calls both of these methods.
-      virtual void populate_mesh(bool delay_field_data_allocation = true);
-      bool populate_mesh_elements_and_nodes(bool delay_field_data_allocation);
+      virtual void populate_mesh(bool delayFieldDataAllocation = true);
+      bool populate_mesh_elements_and_nodes(bool delayFieldDataAllocation);
       void populate_mesh_entitysets(bool i_started_modification_cycle);
 
       // Read/generate the field-data for the mesh, including
@@ -372,10 +370,8 @@ namespace stk {
       // on the input database will be put on the vector.  If 'missing'
       // is NULL, then an exception will be thrown if any fields are
       // not found.
-      double read_defined_input_fields(int step,
-				       std::vector<stk::io::MeshField> *missing=nullptr);
-      double read_defined_input_fields_at_step(int step,
-                                       std::vector<stk::io::MeshField> *missing=nullptr);
+      double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missing=nullptr);
+      double read_defined_input_fields_at_step(int step, std::vector<stk::io::MeshField> *missing=nullptr);
       // For all transient input fields defined, read the data at the
       // specified database time 'time' and populate the stk data
       // structures with those values.  
@@ -393,8 +389,7 @@ namespace stk {
       // on the input database will be put on the vector.  If
       // 'missing' is NULL, then an exception will be thrown if any
       // fields are not found.
-      double read_defined_input_fields(double time,
-				       std::vector<stk::io::MeshField> *missing=nullptr);
+      double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missing=nullptr);
 
       bool read_input_field(stk::io::MeshField &mf);
       bool read_input_field(stk::io::MeshField &mf, stk::io::FieldReadStatus &readStatus);
@@ -402,42 +397,20 @@ namespace stk {
       void get_global_variable_names(std::vector<std::string> &names) const;
       size_t get_global_variable_length(const std::string& name) const;
 
-      bool get_global(const std::string &variableName,
-              stk::util::Parameter &param,
-              bool abort_if_not_found=true) const;
-      bool get_global(const std::string &variableName,
-              int &globalVar,
-              bool abort_if_not_found=true) const;
-      bool get_global(const std::string &variableName,
-              double &globalVar,
-              bool abort_if_not_found=true) const;
-      bool get_global(const std::string &variableName,
-              std::vector<double> &globalVar,
-              bool abort_if_not_found=true) const;
-      bool get_global(const std::string &variableName,
-              std::vector<int> &globalVar,
-              bool abort_if_not_found=true) const;
+      bool get_global(const std::string &variableName, stk::util::Parameter &param, bool abort_if_not_found=true) const;
+      bool get_global(const std::string &variableName, int &globalVar, bool abort_if_not_found=true) const;
+      bool get_global(const std::string &variableName, double &globalVar, bool abort_if_not_found=true) const;
+      bool get_global(const std::string &variableName, std::vector<double> &globalVar, bool abort_if_not_found=true) const;
+      bool get_global(const std::string &variableName, std::vector<int> &globalVar, bool abort_if_not_found=true) const;
       bool has_input_global(const std::string &globalVarName) const;
 
       void add_input_field(const stk::io::MeshField &mesh_field);
       void add_input_field(size_t mesh_index, const stk::io::MeshField &mesh_field);
 
       // Create an exodus mesh database with the specified
-      // filename. This function creates the exodus metadata which
-      // is the number and type of element blocks, nodesets, and
-      // sidesets; and then outputs the mesh bulk data such as the
-      // node coordinates, id maps, element connectivity.  When the
-      // function returns, the non-transient portion of the mesh will
-      // have been defined.
-      //
-      // A stk part will have a corresponding exodus entity (element
-      // block, nodeset, sideset) defined if the "is_io_part()" function
-      // returns true.  By default, all parts read from the mesh
-      // database in the create_input_mesh() function will return true
-      // as will all stk parts on which the function
-      // stk::io::put_io_part_attribute() was called.  The function
-      // stk::io::remove_io_part_attribute(part) can be called to omit a
-      // part from being output.
+      // filename. See STK IO documentation tests for demonstrations of
+      // the proper sequence of calls needed to write an exodus database
+      // with transient field-data, etc.
       //
       // \param[in] filename The full pathname to the file which will be
       // created and the mesh data written to. If the file already
@@ -453,25 +426,42 @@ namespace stk {
       // \param[in] type The format of the mesh that will be output.
       // Valid types are "exodus", "catalyst".
       size_t create_output_mesh(const std::string &filename,
-				DatabasePurpose purpose,
-                                char const* type = "exodus", bool openFileImmediately = true);
+				                        DatabasePurpose purpose,
+                                char const* type = "exodus",
+                                bool openFileImmediately = true,
+                                const std::string& modelName = "");
       size_t create_output_mesh(const std::string &filename,
                                 DatabasePurpose purpose,
                                 double time,
-                                char const* type = "exodus", bool openFileImmediately = true);
+                                char const* type = "exodus",
+                                bool openFileImmediately = true,
+                                const std::string& modelName = "");
       size_t create_output_mesh(const std::string &filename,
-				DatabasePurpose purpose,
-				Ioss::PropertyManager &properties,
-                                char const* type = "exodus", bool openFileImmediately = true);
+			                        	DatabasePurpose purpose,
+			                        	Ioss::PropertyManager &properties,
+                                char const* type = "exodus",
+                                bool openFileImmediately = true,
+                                const std::string& modelName = "");
       size_t create_output_mesh(const std::string &filename,
-				DatabasePurpose purpose,
-				Ioss::PropertyManager &properties,
+				                        DatabasePurpose purpose,
+				                        Ioss::PropertyManager &properties,
                                 double time,
-                                char const* type = "exodus", bool openFileImmediately = true);
+                                char const* type = "exodus",
+                                bool openFileImmediately = true,
+                                const std::string& modelName = "");
  
       // Free up memory by removing resouces associated with output files that will no longer be used by the run
       void close_output_mesh(size_t output_file_index);
 
+      void reset_output_mesh_definition(size_t output_file_index);
+      void define_output_mesh(size_t output_file_index);
+      void define_output_fields(size_t output_file_index);
+      const std::vector<stk::io::FieldAndName>& get_defined_output_fields(size_t output_file_index) const;
+
+      // write_output_mesh writes the non-transient portion
+      // of the mesh, including the number and type of element blocks,
+      // nodesets, and sidesets, and then outputs the mesh bulk data such as the
+      // node coordinates, id maps, element connectivity.
       void write_output_mesh(size_t output_file_index);
 
       void add_field(size_t output_file_index, stk::mesh::FieldBase &field);
@@ -481,18 +471,11 @@ namespace stk {
 
       void add_attribute_field(size_t output_file_index, stk::mesh::FieldBase &field, const OutputVariableParams &var);
 
-      void add_user_data(size_t output_file_index,
-                     const std::vector<std::string> &parts,
-                     const std::string &db_name,
-                     stk::io::DataLocation loc);
-      bool has_global(size_t output_file_index,
-                      const std::string &globalVarName) const;
-      void add_global_ref(size_t output_file_index,
-			  const std::string &variableName,
-			  const stk::util::Parameter &param);
-      void add_global(size_t output_file_index,
-		      const std::string &variableName,
-		      const stk::util::Parameter &param);
+      void add_user_data(size_t output_file_index, const std::vector<std::string> &parts,
+                         const std::string &db_name, stk::io::DataLocation loc);
+      bool has_global(size_t output_file_index, const std::string &globalVarName) const;
+      void add_global_ref(size_t output_file_index, const std::string &variableName, const stk::util::Parameter &param);
+      void add_global(size_t output_file_index, const std::string &variableName, const stk::util::Parameter &param);
       template<typename T>
       void add_global(size_t output_file_index,
               const std::string& variableName,
@@ -503,17 +486,11 @@ namespace stk {
         m_outputFiles[output_file_index]->add_global(variableName, value, type);
       }
 
-      void add_global(size_t output_file_index,
-		      const std::string &variableName,
-		      Ioss::Field::BasicType dataType);
-      void add_global(size_t output_file_index,
-		      const std::string &variableName,
-		      const std::string &type,
-		      Ioss::Field::BasicType dataType);
-      void add_global(size_t output_file_index,
-		      const std::string &variableName,
-		      int component_count,
-		      Ioss::Field::BasicType dataType);
+      void add_global(size_t output_file_index, const std::string &variableName, Ioss::Field::BasicType dataType);
+      void add_global(size_t output_file_index, const std::string &variableName,
+		                  const std::string &type, Ioss::Field::BasicType dataType);
+      void add_global(size_t output_file_index, const std::string &variableName,
+		                  int component_count, Ioss::Field::BasicType dataType);
 
       // Add a transient step to the database at time 'time'.
       void begin_output_step(size_t output_file_index, double time);
@@ -554,22 +531,11 @@ namespace stk {
           m_outputFiles[output_file_index]->write_global(globalVarName, p);
       }
 
-      void write_global(size_t output_file_index,
-                        const std::string& variableName,
-                        const stk::util::Parameter& param) const;
-
-      void write_global(size_t output_file_index,
-			const std::string &variableName,
-      double data) const;
-      void write_global(size_t output_file_index,
-			const std::string &variableName,
-      int data) const;
-      void write_global(size_t output_file_index,
-			const std::string &variableName,
-      std::vector<double>& data) const;
-      void write_global(size_t output_file_index,
-			const std::string &variableName,
-      std::vector<int>& data) const;
+      void write_global(size_t output_file_index, const std::string& variableName, const stk::util::Parameter& param) const;
+      void write_global(size_t output_file_index, const std::string &variableName, double data) const;
+      void write_global(size_t output_file_index, const std::string &variableName, int data) const;
+      void write_global(size_t output_file_index, const std::string &variableName, std::vector<double>& data) const;
+      void write_global(size_t output_file_index, const std::string &variableName, std::vector<int>& data) const;
 
       // Add a history or heartbeat output...
       size_t add_heartbeat_output(const std::string &filename,
@@ -605,17 +571,15 @@ namespace stk {
                                 int copies = 1,
                                 Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
-      bool has_heartbeat_global(size_t output_file_index,
-                                const std::string &globalVarName) const;
-      size_t get_heartbeat_global_component_count(size_t output_file_index,
-                                                  const std::string &globalVarName) const;
+      bool has_heartbeat_global(size_t output_file_index, const std::string &globalVarName) const;
+      size_t get_heartbeat_global_component_count(size_t output_file_index, const std::string &globalVarName) const;
       void process_heartbeat_output(size_t index, int step, double time);
 
       void process_heartbeat_output_pre_write(size_t index, int step, double time);
       void process_heartbeat_output_write(size_t index, int step, double time);
       void process_heartbeat_output_post_write(size_t index, int step, double time);
 
-      void use_simple_fields() { m_useSimpleFields = true; }
+      void use_simple_fields();
 
       bool is_meta_data_null() const;
       bool is_bulk_data_null() const;
@@ -646,21 +610,45 @@ namespace stk {
       // as they handle nodal field.  This function specifies how the
       // user application wants the fields output.  
       bool use_nodeset_for_block_nodes_fields(size_t outputIndex) const;
-      void use_nodeset_for_block_nodes_fields(size_t outputIndex,
-					     bool flag);
+      void use_nodeset_for_block_nodes_fields(size_t outputIndex, bool flag);
       bool use_nodeset_for_sideset_nodes_fields(size_t outputIndex) const;
-      void use_nodeset_for_sideset_nodes_fields(size_t outputIndex,
-                                             bool flag);
+      void use_nodeset_for_sideset_nodes_fields(size_t outputIndex, bool flag);
       bool use_nodeset_for_part_nodes_fields(size_t outputIndex) const;
-      void use_nodeset_for_part_nodes_fields(size_t outputIndex,
-                                             bool flag);
+      void use_nodeset_for_part_nodes_fields(size_t outputIndex, bool flag);
       bool check_field_existence_when_creating_nodesets(size_t outputIndex) const;
-      void check_field_existence_when_creating_nodesets(size_t outputIndex,
-                                                        bool flag);
+      void check_field_existence_when_creating_nodesets(size_t outputIndex, bool flag);
       void use_part_id_for_output(size_t output_file_index, bool flag);
       bool use_part_id_for_output(size_t output_file_index) const;
 
+      void set_throw_on_missing_input_fields(bool flag);
+      bool get_throw_on_missing_input_fields() const;
+
+      void set_enable_all_face_sides_shell_topo(bool flag);
+      bool get_enable_all_face_sides_shell_topo() const;
+
       void set_option_to_not_collapse_sequenced_fields();
+      void enable_dynamic_topology(const FileOption fileOption);
+
+      int num_mesh_groups() const;
+      int num_mesh_groups(size_t inputFileIndex) const;
+
+      bool load_mesh_group(const std::string& groupName);
+      bool load_mesh_group(size_t inputFileIndex, const std::string& groupName);
+
+      bool load_mesh_group(const int groupIndex);
+      bool load_mesh_group(size_t inputFileIndex, const int groupIndex);
+
+      std::vector<std::string> mesh_group_names() const;
+      std::vector<std::string> mesh_group_names(size_t inputFileIndex) const;
+
+      void set_automatic_restart(size_t outputFileIndex, bool flag);
+      void set_restart_requested(size_t outputFileIndex, bool flag);
+      void set_cumulative_topology_modification(size_t outputFileIndex, unsigned flag);
+      void reset_topology_modification(size_t outputFileIndex);
+      void set_topology_modification(size_t outputFileIndex, unsigned flag);
+      void sync_topology_modification(size_t outputFileIndex, unsigned modFlag, unsigned cumulativeModFlag);
+      unsigned get_topology_modification(size_t outputFileIndex) const;
+
       int get_num_time_steps() const;
       double get_max_time() const;
       std::vector<double> get_time_steps() const;
@@ -708,20 +696,29 @@ namespace stk {
           m_sidesetFaceCreationBehavior = behavior;
       }
 
-    protected:
       void create_bulk_data();
       void validate_input_file_index(size_t input_file_index) const;
-      void stk_mesh_resolve_node_sharing() { bulk_data().resolve_node_sharing(); }
-      void stk_mesh_modification_end_after_node_sharing_resolution() { bulk_data().modification_end_after_node_sharing_resolution(); }
+      void stk_mesh_resolve_node_sharing();
+      void stk_mesh_modification_end_after_node_sharing_resolution();
     private:
+      StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
+      StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
+
+      void store_attribute_field_ordering();
+      void update_sidesets();
       void create_sideset_observer();
+      void create_dynamic_topology_observer(size_t index, const std::string& modelName = "");
       void create_ioss_region();
       void validate_output_file_index(size_t output_file_index) const;
       void validate_heartbeat_file_index(size_t heartbeat_file_index) const;
       
+      void check_for_missing_input_fields(std::vector<stk::io::MeshField> *missingFields);
+
       void copy_property_manager(const Ioss::PropertyManager &properties);
 
       Ioss::Property property_get(const std::string &property_name) const;
+
+      std::shared_ptr<Ioss::DynamicTopologyObserver> get_ioss_observer(size_t outputFileIndex) const;
 
       // The `m_property_manager` member data contains properties that
       // can be used to set database-specific options in the
@@ -748,32 +745,28 @@ namespace stk {
       std::shared_ptr<stk::mesh::MetaData>  m_metaData;
       std::shared_ptr<stk::mesh::BulkData>  m_bulkData;
 
-
       stk::mesh::Selector m_activeSelector;
       stk::mesh::Selector m_subsetSelector;
       std::shared_ptr<stk::mesh::Selector> m_deprecatedSelector;
 
+      std::vector<std::shared_ptr<impl::Heartbeat> > m_heartbeat;
+
     protected:
       std::vector<std::vector<int>> attributeFieldOrderingByPartOrdinal;
       std::vector<std::shared_ptr<impl::OutputFile> > m_outputFiles;
-    private:
-      std::vector<std::shared_ptr<impl::Heartbeat> > m_heartbeat;
-    protected:
       std::vector<std::shared_ptr<InputFile> > m_inputFiles;
-    private:
-      StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
-      StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
-    void store_attribute_field_ordering();
-    void update_sidesets();
 
-    protected:
       size_t m_activeMeshIndex;
       SideSetFaceCreationBehavior m_sidesetFaceCreationBehavior;
       bool m_autoLoadAttributes;
       bool m_autoLoadDistributionFactorPerNodeSet;
       bool m_enableEdgeIO;
       bool m_cacheEntityListForTransientSteps;
-      bool m_useSimpleFields;
+      bool m_throwOnMissingInputFields{false};
+      bool m_enableAllFaceSidesShellTopo;
+      bool m_createEmptyBlockForOmittedBlock;
+
+      FileOption m_dynamicTopologyFileOption{FileOption::NO_DYNAMIC_TOPOLOGY_FILE_CONTROL};
     };
 
     inline std::shared_ptr<Ioss::Region> StkMeshIoBroker::get_output_ioss_region(size_t output_file_index) const {
@@ -857,11 +850,6 @@ namespace stk {
       m_outputFiles[output_file_index]->has_adaptivity(hasAdaptivity);
     }
 
-    inline void StkMeshIoBroker::set_skin_mesh_flag(size_t output_file_index, bool skinMesh) {
-      validate_output_file_index(output_file_index);
-      m_outputFiles[output_file_index]->is_skin_mesh(skinMesh);
-    }
-
     inline void StkMeshIoBroker::set_filter_empty_output_entity_blocks(size_t output_file_index, const bool filterEmptyEntityBlocks) {
       validate_output_file_index(output_file_index);
       m_outputFiles[output_file_index]->set_filter_empty_entity_blocks(filterEmptyEntityBlocks);
@@ -882,12 +870,12 @@ namespace stk {
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     {
-      set_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto pointerWeWontDelete){}));
+      set_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto /*pointerWeWontDelete*/){}));
     }
 
     inline void StkMeshIoBroker::replace_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     {
-      replace_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto pointerWeWontDelete){}));
+      replace_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto /*pointerWeWontDelete*/){}));
     }
 
     inline void StkMeshIoBroker::define_heartbeat_global(size_t index,

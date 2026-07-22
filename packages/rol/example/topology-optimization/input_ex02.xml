@@ -23,8 +23,8 @@
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
-    <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />
@@ -52,7 +52,7 @@
 
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
-    <Parameter name="Type" type="string" value="Augmented Lagrangian" />
+    <Parameter name="Type" type="string" value="Trust Region" />
     <!-- ===========  LINE SEARCH  =========== -->
     <ParameterList name="Line Search">
       <Parameter name="Function Evaluation Limit"      type="int"    value="20"    />
@@ -92,7 +92,7 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Subproblem Model"                     type="string" value="Kelley-Sachs" />
+      <Parameter name="Subproblem Model"                     type="string" value="Lin-More"     />
       <Parameter name="Initial Radius"                       type="double" value="100.0"        />
       <Parameter name="Maximum Radius"                       type="double" value="5.e8"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />

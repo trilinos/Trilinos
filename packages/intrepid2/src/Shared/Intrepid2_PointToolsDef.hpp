@@ -114,7 +114,7 @@ getLattice(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
     auto hostPoints = Kokkos::create_mirror_view(points);
     shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
     const ordinal_type numPoints = getLatticeSize( line, order, offset );
-    auto linePoints = getMatchingViewWithLabel(hostPoints, "linePoints", numPoints, 1);
+    auto linePoints = Impl::createMatchingDynRankView(hostPoints, "linePoints", numPoints, 1);
     getLatticeLine( linePoints, order, offset, pointType );
     ordinal_type idx=0;
     for (ordinal_type j=0; j<numPoints; ++j) {
@@ -130,7 +130,7 @@ getLattice(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
     auto hostPoints = Kokkos::create_mirror_view(points);
     shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
     const ordinal_type numPoints = getLatticeSize( line, order, offset );
-    auto linePoints = getMatchingViewWithLabel(hostPoints, "linePoints", numPoints, 1);
+    auto linePoints = Impl::createMatchingDynRankView(hostPoints, "linePoints", numPoints, 1);
     getLatticeLine( linePoints, order, offset, pointType );
     ordinal_type idx=0;
     for (ordinal_type k=0; k<numPoints; ++k) {
@@ -390,8 +390,8 @@ getEquispacedLatticePyramid( Kokkos::DynRankView<pointValueType,pointProperties.
     pointValueType z = i * h;
     for (ordinal_type j=offset;j<=order-i-offset;j++) { // y (goes from -(1-z) to 1-z)
       for (ordinal_type k=offset;k<=order-i-offset;k++) { // x (goes from -(1-z) to 1-z)
-        pointsHost(cur,0) = (2 * k * h - 1.) * (1-z);
-        pointsHost(cur,1) = (2 * j * h - 1.) * (1-z);
+        pointsHost(cur,0) = 2. * k * h - (1.-z);
+        pointsHost(cur,1) = 2. * j * h - (1.-z);
         pointsHost(cur,2) = z;
         cur++;
       }

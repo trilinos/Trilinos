@@ -26,14 +26,9 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
-Build (MueLu::AggregateQualityEstimateFactory)
-Build (MueLu::CoarseMapFactory)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-aggregate qualities: good aggregate threshold = 100   [unused]
-aggregate qualities: check symmetry = 0   [unused]
-aggregation: compute aggregate qualities = 1
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -42,6 +37,10 @@ Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Computing Ac (MueLu::RAPFactory)
+RAPFactory: call transfer factory: MueLu::AggregateQualityEstimateFactory
+Build (MueLu::AggregateQualityEstimateFactory)
+aggregate qualities: good aggregate threshold = 100   [unused]
+aggregate qualities: check symmetry = 0   [unused]
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
 Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates
@@ -72,14 +71,9 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
-Build (MueLu::AggregateQualityEstimateFactory)
-Build (MueLu::CoarseMapFactory)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
-aggregate qualities: good aggregate threshold = 100   [unused]
-aggregate qualities: check symmetry = 0   [unused]
-aggregation: compute aggregate qualities = 1
+Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 matrixmatrix: kernel params -> 
@@ -88,6 +82,10 @@ Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
 Computing Ac (MueLu::RAPFactory)
+RAPFactory: call transfer factory: MueLu::AggregateQualityEstimateFactory
+Build (MueLu::AggregateQualityEstimateFactory)
+aggregate qualities: good aggregate threshold = 100   [unused]
+aggregate qualities: check symmetry = 0   [unused]
 RAPFactory: call transfer factory: MueLu::CoordinatesTransferFactory
 Build (MueLu::CoordinatesTransferFactory)
 Transferring coordinates

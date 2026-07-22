@@ -357,8 +357,8 @@ echo "begin testwt-field-metadata" >> test.output
 ${PREFIX} ${BINDIR}/testwt-field-metadata${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
-#${NCDUMP} -d5,5 test-field-metadata.exo | grep @ |sort | ${DIFF} - ${SRCDIR}/testwt-field-metadata.dmp | tee testwt-field-metadata.res
-#ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+${NCDUMP} -d5,5 test-field-metadata.exo | grep @ |sort -bdf | ${DIFF} - ${SRCDIR}/testwt-field-metadata.dmp | tee testwt-field-metadata.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 echo "end testwt-field-metadata, status = $ret_status" >> test.output
 
 # NOTE: netcdf-4 can put attributes in different order, so in that

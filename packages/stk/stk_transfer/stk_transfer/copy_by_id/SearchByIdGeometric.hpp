@@ -47,10 +47,10 @@ class SearchByIdGeometric : public SearchById {
 public:
   SearchByIdGeometric() : m_radius(1.0e-6) {}
   virtual ~SearchByIdGeometric() {}
-  virtual void intialize(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb) {}
+  virtual void intialize(const TransferCopyByIdMeshAdapter & /*mesha*/, const TransferCopyByIdMeshAdapter & /*meshb*/) override {}
   virtual void do_search(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb,
-                         KeyToTargetProcessor & key_to_target_processor);
-  virtual const MeshIDSet & get_remote_keys() const { return m_remote_keys; }
+                         KeyToTargetProcessor & key_to_target_processor) override;
+  virtual const MeshIDSet & get_remote_keys() const override { return m_remote_keys; }
   void set_bounding_box_radius(float radius_in) { m_radius = radius_in; }
   float get_bounding_box_radius() const { return m_radius; }
 

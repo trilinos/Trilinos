@@ -110,6 +110,7 @@
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->

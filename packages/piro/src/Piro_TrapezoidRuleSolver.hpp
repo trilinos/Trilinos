@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //        Piro: Strategy package for embedded analysis capabilitites
-//                  Copyright (2010) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2010 NTESS and the Piro contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef PIRO_TRAPEZOIDRULESOLVER_H
@@ -151,9 +118,39 @@ class TrapezoidRuleSolver
   /** \brief . */
   Teuchos::RCP<Thyra::AdaptiveSolutionManager> getSolutionManager() const;
   /** \brief .*/
-  void disableCalcInitAccel() { calc_init_accel_ = false; }; 
+  void disableCalcInitAccel() { calc_init_accel_ = false; };
   /** \brief .*/
-  void enableCalcInitAccel() { calc_init_accel_ = true; }; 
+  void enableCalcInitAccel() { calc_init_accel_ = true; };
+  /** \brief Start from static equilibrium: solve K x = f (no inertia) once
+      before the time loop, then set v = a = 0. Takes precedence over the
+      initial-acceleration heuristic (calc_init_accel_), whose perturbation
+      parameter 4e6/dt^2 degenerates to a near-static solve anyway when dt
+      is large relative to the structural time scale, yielding a spurious
+      a_init = pert*x_static instead of a physical acceleration. */
+  void enableStaticInitSolve() { static_init_solve_ = true; };
+  /** \brief .*/
+  void disableStaticInitSolve() { static_init_solve_ = false; };
+
+  /** \brief Set the start time of the integration window.
+
+      By default the window (Initial Time, Final Time) is fixed at construction
+      from the "Trapezoid Rule" parameter list. These setters let a driver --
+      e.g. a coupling loop that advances the solver one outer step at a time --
+      retarget the window to successive segments of global simulation time
+      before each evalModel call, mirroring Piro::TempusSolver's
+      setStartTime/setFinalTime. The model then sees true simulation time
+      through InArgs::set_t (a time-dependent boundary condition, body force, or
+      material lookup gets the correct time instead of the fixed window's).
+      The internal time step delta_t = (Final - Initial) / Num Time Steps is
+      recomputed; the dynamics depend only on delta_t, so shifting the window's
+      origin leaves the integration unchanged. */
+  void setStartTime(const Scalar start_time) { t_init = start_time; delta_t = (t_final - t_init) / numTimeSteps; }
+  /** \brief Set the final time of the integration window (recomputes delta_t). */
+  void setFinalTime(const Scalar final_time) { t_final = final_time; delta_t = (t_final - t_init) / numTimeSteps; }
+  /** \brief Start time of the current integration window. */
+  Scalar getStartTime() const { return t_init; }
+  /** \brief Final time of the current integration window. */
+  Scalar getFinalTime() const { return t_final; }
   //@}
 
 
@@ -193,7 +190,8 @@ private:
    int numTimeSteps;
    Scalar t_init, t_final, delta_t;
 
-   mutable bool calc_init_accel_{true}; 
+   mutable bool calc_init_accel_{true};
+   mutable bool static_init_solve_{false};
 };
 
 }

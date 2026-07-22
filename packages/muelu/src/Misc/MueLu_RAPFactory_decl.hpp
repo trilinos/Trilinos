@@ -12,9 +12,7 @@
 
 #include <string>
 
-#include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MatrixUtils_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -22,9 +20,9 @@
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+#include "Xpetra_MatrixUtils_fwd.hpp"
 
 namespace MueLu {
 /*!
@@ -45,7 +43,7 @@ class RAPFactory : public TwoLevelFactoryBase {
 
   RAPFactory();
 
-  virtual ~RAPFactory() {}
+  virtual ~RAPFactory();
 
   //@}
 

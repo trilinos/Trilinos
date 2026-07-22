@@ -268,8 +268,8 @@ NOX::Epetra::DebugTools::writeOperator( std::string baseName, const Epetra_Opera
 //----------------------------------------------------------------------------//
 
 
-NOX::Epetra::TestCompare::TestCompare(std::ostream& os, const NOX::Utils& utils) :
-  NOX::TestCompare( os, utils )
+NOX::Epetra::TestCompare::TestCompare(std::ostream& os_, const NOX::Utils& utils_) :
+  NOX::TestCompare( os_, utils_ )
 {
 }
 

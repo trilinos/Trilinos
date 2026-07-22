@@ -35,6 +35,7 @@
 #include <stddef.h>                     // for NULL
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/FindPermutation.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element, etc
 #include <stk_mesh/base/MetaData.hpp>   // for get_cell_topology, MetaData
@@ -42,7 +43,7 @@
 #include <gtest/gtest.h>
 #include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/SkinBoundary.hpp>  // for create_all_sides
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
@@ -131,7 +132,6 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
     psize(bulk.parallel_size()),
     prank(bulk.parallel_rank())
 {
-  meta.use_simple_fields();
   meta.commit();
 }
 
@@ -465,7 +465,7 @@ int check_permutation_given(stk::mesh::BulkData& mesh, stk::mesh::Entity elem, u
   }
 
   // Indeed, find_permutation computes what was stored!
-  stk::mesh::Permutation perm = mesh.find_permutation(elem_topo, elem_nodes, face_topo, face_nodes.data(), face_ord);
+  stk::mesh::Permutation perm = stk::mesh::find_permutation(mesh, elem_topo, elem_nodes, face_topo, face_nodes.data(), face_ord);
   EXPECT_EQ(perm, claimed_permutation);
   return innermost_hits;
 }
@@ -478,13 +478,13 @@ TEST (stkTopologyFunctions, use_permutations_Hex_2x1x1)
     const size_t NY = 1;
     const size_t NZ = 1;
 
-    stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+    stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
     fixture.m_meta.commit();
     fixture.generate_mesh();
 
     stk::mesh::BulkData &mesh = fixture.m_bulk_data;
-    stk::mesh::create_faces(mesh);
+    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
 
     const std::vector<stk::mesh::Bucket *> &elem_buckets =
         mesh.get_buckets(stk::topology::ELEMENT_RANK, fixture.m_meta.universal_part());
@@ -527,7 +527,6 @@ TEST (stkTopologyFunctions, use_permutations_Hex_2x1x1)
 void test_side_creation(unsigned *gold_side_ids,unsigned local_side_id)
 {
   stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-  stkMeshIoBroker.use_simple_fields();
   std::string name = "generated:1x1x1";
   stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -562,7 +561,6 @@ void test_side_creation(unsigned *gold_side_ids,unsigned local_side_id)
 void test_side_creation_with_permutation(unsigned *gold_side_ids,unsigned local_side_id, stk::mesh::Permutation perm)
 {
   stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-  stkMeshIoBroker.use_simple_fields();
   std::string name = "generated:1x1x1";
   stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -655,7 +653,6 @@ TEST(stkTopologyFunctions, check_permutations_for_Hex_1x1x1)
     };
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     std::string name = "generated:1x1x1";
     stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
@@ -722,7 +719,6 @@ TEST(stkTopologyFunctions, permutation_consistency_check_3d)
     unsigned local_side_id = 1; // nodes 2,4,8,5 are nodes of face 'local_side_id' of a 1x1x1 hex element (generated)
 
     stk::io::StkMeshIoBroker stkMeshIoBroker(MPI_COMM_WORLD);
-    stkMeshIoBroker.use_simple_fields();
     std::string name = "generated:1x1x1";
     stkMeshIoBroker.add_mesh_database(name, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();
@@ -766,7 +762,6 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
     unsigned gold_side_ids[4] = {5,6,8,7};
 
     stk::mesh::MetaData meta(3);
-    meta.use_simple_fields();
     stk::unit_test_util::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
 
     const std::string generatedMeshSpec = "generated:1x1x2";
@@ -845,10 +840,10 @@ TEST(stkTopologyFunctions, permutation_consistency_check_2d)
 
     EXPECT_NO_THROW(mesh.modification_end());
 
-    EXPECT_TRUE(mesh.check_permutation(Quad9, sides[0], 0, perm)) << "for side 0";
-    EXPECT_TRUE(mesh.check_permutation(Quad9, sides[1], 1, perm)) << "for side 1";
-    EXPECT_TRUE(mesh.check_permutation(Quad9, sides[2], 2, perm)) << "for side 2";
-    EXPECT_TRUE(mesh.check_permutation(Quad9, sides[3], 3, perm)) << "for side 3";
+    EXPECT_TRUE(stk::mesh::check_permutation(mesh, Quad9, sides[0], 0, perm)) << "for side 0";
+    EXPECT_TRUE(stk::mesh::check_permutation(mesh, Quad9, sides[1], 1, perm)) << "for side 1";
+    EXPECT_TRUE(stk::mesh::check_permutation(mesh, Quad9, sides[2], 2, perm)) << "for side 2";
+    EXPECT_TRUE(stk::mesh::check_permutation(mesh, Quad9, sides[3], 3, perm)) << "for side 3";
 
     EXPECT_TRUE(stk::mesh::impl::check_permutations_on_all(mesh));
   }
@@ -864,11 +859,11 @@ struct SuperTopologySideData
   std::vector<stk::mesh::Permutation> permPerProc;
 };
 
-class SuperTopologies : public stk::unit_test_util::simple_fields::MeshFixture
+class SuperTopologies : public stk::unit_test_util::MeshFixture
 {
 protected:
   SuperTopologies(int dim)
-    : stk::unit_test_util::simple_fields::MeshFixture(dim)
+    : stk::unit_test_util::MeshFixture(dim)
   {
   }
 
@@ -918,7 +913,7 @@ protected:
     create_sides(superSide, sideParts, s);
   }
 
-  void create_sides(stk::topology superSide, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
+  void create_sides(stk::topology /*superSide*/, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
   {
     get_bulk().modification_begin();
     stk::mesh::Entity side = get_bulk().declare_solo_side(s.sharedFaceId, parts);

@@ -38,6 +38,7 @@
      *
      *  Note: the steps above are now embedded in Stage_2_Mark_TE_Parents, so we only have 2 stages now.
      */
+    typedef std::function<bool(stk::mesh::Entity)> AdapterPredicateFunctor;
     enum PTA_Stage {
       Stage_None,
       Stage_1_Mark_NTE,
@@ -80,7 +81,7 @@
       bool getUseQualityMarking() { return m_useQualityMarking; }
 
       virtual void
-      doBreak(int num_registration_loops)
+      doBreak(int /*num_registration_loops*/)
       {
         EXCEPTWATCH;
         // stk::diag::setEnabledTimerMetricsMask(stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME);

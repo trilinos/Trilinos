@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef _ZOLTAN2_ALGHYBRIDD1_HPP_
 #define _ZOLTAN2_ALGHYBRIDD1_HPP_
 
@@ -283,8 +292,8 @@ class AlgDistance1 : public Algorithm<Adapter>
     //
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                          size_t nVtx,
-			 typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send,
-			 typename Kokkos::View<size_t*, device_type>::HostMirror& verts_to_send_size,
+			 typename Kokkos::View<lno_t*, device_type>::host_mirror_type verts_to_send,
+			 typename Kokkos::View<size_t*, device_type>::host_mirror_type& verts_to_send_size,
                          Teuchos::RCP<femv_t> femv,
 			 const std::unordered_map<lno_t, std::vector<int>>& procs_to_send,
                          gno_t& recv, gno_t& send){ 
@@ -591,7 +600,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       AlltoAllv<gno_t>(*comm, *env, deg_recvbuf(), deg_recvcnts_view, ghost_degrees, deg_send_cnts_view);
       //determine max degree locally and globally
       Kokkos::View<gno_t*, device_type> ghost_degrees_dev("ghost degree view",ghost_degrees.size());
-      typename Kokkos::View<gno_t*, device_type>::HostMirror ghost_degrees_host = Kokkos::create_mirror(ghost_degrees_dev);
+      typename Kokkos::View<gno_t*, device_type>::host_mirror_type ghost_degrees_host = Kokkos::create_mirror(ghost_degrees_dev);
       for(int i = 0; i < ghost_degrees.size(); i++){
 	lno_t lid = mapOwnedPlusGhosts->getLocalElement(deg_sendbuf[i]);
         ghost_degrees_host(lid-nVtx) = ghost_degrees[i];
@@ -611,7 +620,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       if(verbose)std::cout<<comm->getRank()<<": creating Kokkos Views\n"; 
      
       Kokkos::View<offset_t*, device_type> dist_degrees("Owned+Ghost degree view",rand.size());
-      typename Kokkos::View<offset_t*, device_type>::HostMirror dist_degrees_host = Kokkos::create_mirror(dist_degrees);
+      typename Kokkos::View<offset_t*, device_type>::host_mirror_type dist_degrees_host = Kokkos::create_mirror(dist_degrees);
       //set degree counts for ghosts
       for(int i = 0; i < adjs.size(); i++){
         if((size_t)adjs[i] < nVtx) continue;
@@ -623,7 +632,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
       
       Kokkos::View<offset_t*, device_type> dist_offsets("Owned+Ghost Offset view", rand.size()+1);
-      typename Kokkos::View<offset_t*, device_type>::HostMirror dist_offsets_host = Kokkos::create_mirror(dist_offsets);
+      typename Kokkos::View<offset_t*, device_type>::host_mirror_type dist_offsets_host = Kokkos::create_mirror(dist_offsets);
 
       //set offsets and total # of adjacencies
       dist_offsets_host(0) = 0;
@@ -634,7 +643,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
 
       Kokkos::View<lno_t*, device_type> dist_adjs("Owned+Ghost adjacency view", total_adjs);
-      typename Kokkos::View<lno_t*, device_type>::HostMirror dist_adjs_host = Kokkos::create_mirror(dist_adjs);
+      typename Kokkos::View<lno_t*, device_type>::host_mirror_type dist_adjs_host = Kokkos::create_mirror(dist_adjs);
       //now, use the degree view as a counter
       for(Teuchos_Ordinal i = 0; i < rand.size(); i++){
         dist_degrees_host(i) = 0;
@@ -662,20 +671,20 @@ class AlgDistance1 : public Algorithm<Adapter>
       
       //counter in UVM memory for how many vertices need recoloring.
       Kokkos::View<gno_t*, device_type> recoloringSize("Recoloring Queue Size",1);
-      typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
+      typename Kokkos::View<gno_t*, device_type>::host_mirror_type recoloringSize_host = Kokkos::create_mirror(recoloringSize);
       recoloringSize_host(0) = 0;
       Kokkos::deep_copy(recoloringSize, recoloringSize_host);
 
       //device copy of the random tie-breakers
       Kokkos::View<int*,device_type> rand_dev("randVec",rand.size());
-      typename Kokkos::View<int*, device_type>::HostMirror rand_host = Kokkos::create_mirror(rand_dev);
+      typename Kokkos::View<int*, device_type>::host_mirror_type rand_host = Kokkos::create_mirror(rand_dev);
       for(Teuchos_Ordinal i = 0; i < rand.size(); i++){
         rand_host(i) = rand[i];
       }
 
       //device copy of global IDs
       Kokkos::View<gno_t*, device_type> gid_dev("GIDs",gids.size());
-      typename Kokkos::View<gno_t*,device_type>::HostMirror gid_host = Kokkos::create_mirror(gid_dev);
+      typename Kokkos::View<gno_t*,device_type>::host_mirror_type gid_host = Kokkos::create_mirror(gid_dev);
       for(Teuchos_Ordinal i = 0; i < gids.size(); i++){
         gid_host(i) = gids[i];
       }
@@ -708,8 +717,8 @@ class AlgDistance1 : public Algorithm<Adapter>
       //size information for the list of vertices to send. Also includes an atomic copy
       Kokkos::View<size_t*, device_type> verts_to_send_size("verts to send size",1);
       Kokkos::View<size_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic = verts_to_send_size;
-      typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host = create_mirror(verts_to_send_view);
-      typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size_host = create_mirror(verts_to_send_size);
+      typename Kokkos::View<lno_t*, device_type>::host_mirror_type verts_to_send_host = create_mirror(verts_to_send_view);
+      typename Kokkos::View<size_t*,device_type>::host_mirror_type verts_to_send_size_host = create_mirror(verts_to_send_size);
       //initialize the device view with a value of zero
       verts_to_send_size_host(0) = 0;
       deep_copy(verts_to_send_size, verts_to_send_size_host);
@@ -826,7 +835,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       int serial_threshold = this->pl->template get<int>("serial_threshold",0);
       
       Kokkos::View<lno_t*, device_type> verts_to_recolor("verts_to_recolor", boundary_size);
-      typename Kokkos::View<int*, device_type>::HostMirror ghost_colors_host;
+      typename Kokkos::View<int*, device_type>::host_mirror_type ghost_colors_host;
       //while the queue is not empty
       while(recoloringSize_host(0) > 0 || !done){
 	if(recoloringSize_host(0) < serial_threshold) break;

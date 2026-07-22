@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_Diag_WriterParser_h
 #define STK_UTIL_Diag_WriterParser_h
 
+#include "stk_util/stk_config.h"
 #include "stk_util/diag/Option.hpp"  // for OptionMaskParser, OptionMaskParser::Mask
 #include <string>                    // for string
 
@@ -78,8 +79,9 @@ public:
    * @return      a <b>Mask</b> value of the result from parsing the mask
    *        string.
    */
-  Mask parse(const char *mask_string) const;
+  Mask parse(const char *mask_string) const override;
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
   /**
    * @brief Member function <b>parseArg</b> parses the argument and its argument
    * values.
@@ -90,7 +92,8 @@ public:
    * @param arg      a <b>std::string</b> const reference to the argument
    *        values.
    */
-  virtual void parseArg(const std::string &name, const std::string &arg) const;
+  STK_DEPRECATED virtual void parseArg(const std::string &name, const std::string &arg) const override;
+#endif
 };
 
 ///

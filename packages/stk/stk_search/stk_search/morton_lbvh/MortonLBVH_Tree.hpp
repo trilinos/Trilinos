@@ -36,6 +36,8 @@
 #define STK_SEARCH_MORTON_LBVH_MORTONLBVH_TREE_HPP
 
 #include <stk_search/morton_lbvh/MortonLBVH_CommonTypes.hpp>
+#include <stk_search/Box.hpp>
+#include <stk_search/BoxIdent.hpp>
 #include <string>
 #include <iostream>
 #include <ostream>
@@ -46,11 +48,51 @@
 
 namespace stk::search {
 
-template <typename RealType, typename ExecutionSpace>
+template<typename BoxType>
+KOKKOS_INLINE_FUNCTION
+const BoxType& get_box(BoxType& box) { return box; }
+
+template<typename BoxType, typename IdentType>
+KOKKOS_INLINE_FUNCTION
+const BoxType& get_box(BoxIdent<BoxType,IdentType>& boxIdent) { return boxIdent.box; }
+
+template<typename BoxType, typename IdentProcType>
+KOKKOS_INLINE_FUNCTION
+const BoxType& get_box(BoxIdentProc<BoxType,IdentProcType>& boxIdentProc) { return boxIdentProc.box; }
+
+
+template<typename> struct BoxIdentViewTrait {};
+
+template <typename ViewValueType, typename... otherTemplateArgs>
+struct BoxIdentViewTrait<Kokkos::View<ViewValueType*, otherTemplateArgs...>>
+{
+  using InputBoxType = typename ViewValueType::box_type;
+  using ValueType = typename InputBoxType::value_type;
+  using IdentType = typename ViewValueType::ident_type;
+  using ViewType = Kokkos::View<BoxIdent<Box<ValueType>,IdentType>*, otherTemplateArgs...>;
+};
+
+template<typename> struct BoxIdentProcViewTrait {};
+
+template <typename ViewValueType, typename... otherTemplateArgs>
+struct BoxIdentProcViewTrait<Kokkos::View<ViewValueType*, otherTemplateArgs...>>
+{
+  using InputBoxType = typename ViewValueType::box_type;
+  using ValueType = typename InputBoxType::value_type;
+  using IdentProcType = typename ViewValueType::ident_proc_type;
+  using ViewType = Kokkos::View<BoxIdentProc<Box<ValueType>,IdentProcType>*, otherTemplateArgs...>;
+};
+
+
+template <typename ViewType, typename ExecutionSpace>
 struct MortonAabbTree
 {
   using execution_space = ExecutionSpace;
-  using real_type = RealType;
+  using view_type = ViewType;
+  using BoxViewType     = ViewType;
+  using BoxViewType_hmt = typename ViewType::host_mirror_type;
+  using BoxType         = typename BoxViewType::value_type::box_type;
+  using real_type = typename BoxType::value_type;
   using LBVH_types = MortonLbvhTypes<ExecutionSpace>;
   using kokkos_aabb_types = MortonAabbTypes<real_type, ExecutionSpace>;
 
@@ -80,8 +122,8 @@ struct MortonAabbTree
                     real_type min_z, real_type max_z);
 
   KOKKOS_FORCEINLINE_FUNCTION
-  void device_set_box(LocalOrdinal box_idx, real_type min_x, real_type max_x, real_type min_y, real_type max_y,
-                      real_type min_z, real_type max_z) const;
+  void device_set_box(LocalOrdinal box_idx, real_type min_x, real_type min_y, real_type min_z,
+                                            real_type max_x, real_type max_y, real_type max_z) const;
 
   void sync_from_device() const;
   void sync_to_device() const;
@@ -106,8 +148,10 @@ struct MortonAabbTree
   local_ordinal_scl_hmt hm_numInternalNodes;
   local_ordinal_scl_tmt tm_numInternalNodes;
 
-  bboxes_3d_view_t m_minMaxs;
-  bboxes_3d_view_hmt hm_minMaxs;
+  BoxViewType m_minMaxs;
+  BoxViewType_hmt hm_minMaxs;
+  bboxes_3d_view_t m_nodeMinMaxs;
+  bboxes_3d_view_hmt hm_nodeMinMaxs;
 
   local_ordinal_pairs_t m_nodeChildren;
   local_ordinals_t m_nodeParents;
@@ -123,8 +167,8 @@ struct MortonAabbTree
 #endif
 };
 
-template <typename RealType, typename ExecutionSpace>
-MortonAabbTree<RealType, ExecutionSpace>::MortonAabbTree(const std::string &baseName,
+template <typename ViewType, typename ExecutionSpace>
+MortonAabbTree<ViewType, ExecutionSpace>::MortonAabbTree(const std::string &baseName,
                                                          LocalOrdinal numLeaves,
                                                          bool supportHostBoxes)
   : m_baseName(baseName),
@@ -134,8 +178,8 @@ MortonAabbTree<RealType, ExecutionSpace>::MortonAabbTree(const std::string &base
   init(numLeaves);
 }
 
-template <typename RealType, typename ExecutionSpace>
-void MortonAabbTree<RealType, ExecutionSpace>::init(LocalOrdinal numLeaves)
+template <typename ViewType, typename ExecutionSpace>
+void MortonAabbTree<ViewType, ExecutionSpace>::init(LocalOrdinal numLeaves)
 {
   LocalOrdinal numInternalNodes = std::max(numLeaves - 1, 0);
   LocalOrdinal numNodes = numLeaves + numInternalNodes;
@@ -144,7 +188,8 @@ void MortonAabbTree<RealType, ExecutionSpace>::init(LocalOrdinal numLeaves)
   Kokkos::Timer timer0;
   m_numLeaves = no_init<local_ordinal_scl_t>(compound_name(m_baseName, "numLeaves"));
   m_numInternalNodes = no_init<local_ordinal_scl_t>(compound_name(m_baseName, "numInternalNodes"));
-  m_minMaxs = no_init<bboxes_3d_view_t>(compound_name(m_baseName, "minMaxs"), numNodes);
+  m_minMaxs = no_init<ViewType>(compound_name(m_baseName, "minMaxs"), numLeaves);
+  m_nodeMinMaxs = no_init<bboxes_3d_view_t>(compound_name(m_baseName, "nodeMinMaxs"), numInternalNodes);
 
   m_nodeChildren = no_init<local_ordinal_pairs_t>(compound_name(m_baseName, "children"), numNodes);
   m_nodeParents = no_init<local_ordinals_t>(compound_name(m_baseName, "parents"), numNodes);
@@ -176,6 +221,7 @@ void MortonAabbTree<RealType, ExecutionSpace>::init(LocalOrdinal numLeaves)
 
   if (m_supportHostBoxes) {
     hm_minMaxs = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_minMaxs);
+    hm_nodeMinMaxs = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_nodeMinMaxs);
   }
 
 #ifdef DEBUG_MORTON_ACCELERATED_SEARCH
@@ -192,16 +238,18 @@ void MortonAabbTree<RealType, ExecutionSpace>::init(LocalOrdinal numLeaves)
   }
 }
 
-template <typename RealType, typename ExecutionSpace>
-void MortonAabbTree<RealType, ExecutionSpace>::resize(LocalOrdinal numLeaves)
+template <typename ViewType, typename ExecutionSpace>
+void MortonAabbTree<ViewType, ExecutionSpace>::resize(LocalOrdinal numLeaves)
 {
   if ((numLeaves < 0) || (numLeaves == hm_numLeaves())) return;
+  Kokkos::Profiling::pushRegion("MortonAabbTree::resize");
 
   LocalOrdinal numInternalNodes = std::max(numLeaves - 1, 0);
   LocalOrdinal numNodes = numLeaves + numInternalNodes;
 
   // Allocate views.
-  Kokkos::resize(m_minMaxs, numNodes);
+  Kokkos::resize(m_minMaxs, numLeaves);
+  Kokkos::resize(m_nodeMinMaxs, numInternalNodes);
   Kokkos::resize(m_nodeChildren, numNodes);
   Kokkos::resize(m_nodeParents, numNodes);
   Kokkos::resize(m_atomicFlags, numInternalNodes);
@@ -219,6 +267,7 @@ void MortonAabbTree<RealType, ExecutionSpace>::resize(LocalOrdinal numLeaves)
   if (m_supportHostBoxes) {
     // Host mirror views really for debugging
     hm_minMaxs = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_minMaxs);
+    hm_nodeMinMaxs = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_nodeMinMaxs);
   }
 
 #ifdef DEBUG_MORTON_ACCELERATED_SEARCH
@@ -227,46 +276,60 @@ void MortonAabbTree<RealType, ExecutionSpace>::resize(LocalOrdinal numLeaves)
   hm_leafIds = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_leafIds);
   hm_leafCodes = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, m_leafCodes);
 #endif
+  Kokkos::Profiling::popRegion();
 }
 
-template <typename RealType, typename ExecutionSpace>
+template<typename BoxRealType, typename RealType>
 KOKKOS_INLINE_FUNCTION
-void MortonAabbTree<RealType, ExecutionSpace>::host_set_box(LocalOrdinal boxIdx,
+void set_stk_box(Box<BoxRealType>& box, RealType minX, RealType minY, RealType minZ,
+                                     RealType maxX, RealType maxY, RealType maxZ)
+{
+  box.min_corner()[0] = minX;
+  box.min_corner()[1] = minY;
+  box.min_corner()[2] = minZ;
+  box.max_corner()[0] = maxX;
+  box.max_corner()[1] = maxY;
+  box.max_corner()[2] = maxZ;
+}
+
+template <typename ViewType, typename ExecutionSpace>
+KOKKOS_INLINE_FUNCTION
+void MortonAabbTree<ViewType, ExecutionSpace>::host_set_box(LocalOrdinal boxIdx,
                                                             real_type minX, real_type maxX,
                                                             real_type minY, real_type maxY,
                                                             real_type minZ, real_type maxZ)
 {
-  hm_minMaxs(boxIdx, 0) = minX;
-  hm_minMaxs(boxIdx, 1) = minY;
-  hm_minMaxs(boxIdx, 2) = minZ;
-  hm_minMaxs(boxIdx, 3) = maxX;
-  hm_minMaxs(boxIdx, 4) = maxY;
-  hm_minMaxs(boxIdx, 5) = maxZ;
+  hm_minMaxs(boxIdx).box.min_corner()[0] = minX;
+  hm_minMaxs(boxIdx).box.min_corner()[1] = minY;
+  hm_minMaxs(boxIdx).box.min_corner()[2] = minZ;
+  hm_minMaxs(boxIdx).box.max_corner()[0] = maxX;
+  hm_minMaxs(boxIdx).box.max_corner()[1] = maxY;
+  hm_minMaxs(boxIdx).box.max_corner()[2] = maxZ;
 }
 
-template <typename RealType, typename ExecutionSpace>
+template <typename ViewType, typename ExecutionSpace>
 KOKKOS_FORCEINLINE_FUNCTION
-void MortonAabbTree<RealType, ExecutionSpace>::device_set_box(LocalOrdinal boxIdx,
-                                                              real_type minX, real_type maxX,
-                                                              real_type minY, real_type maxY,
-                                                              real_type minZ, real_type maxZ) const
+void MortonAabbTree<ViewType, ExecutionSpace>::device_set_box(LocalOrdinal boxIdx,
+                                                              real_type minX, real_type minY, real_type minZ,
+                                                              real_type maxX, real_type maxY, real_type maxZ) const
 {
-  m_minMaxs(boxIdx, 0) = minX;
-  m_minMaxs(boxIdx, 1) = minY;
-  m_minMaxs(boxIdx, 2) = minZ;
-  m_minMaxs(boxIdx, 3) = maxX;
-  m_minMaxs(boxIdx, 4) = maxY;
-  m_minMaxs(boxIdx, 5) = maxZ;
+  m_minMaxs(boxIdx).box.min_corner()[0] = minX;
+  m_minMaxs(boxIdx).box.min_corner()[1] = minY;
+  m_minMaxs(boxIdx).box.min_corner()[2] = minZ;
+  m_minMaxs(boxIdx).box.max_corner()[0] = maxX;
+  m_minMaxs(boxIdx).box.max_corner()[1] = maxY;
+  m_minMaxs(boxIdx).box.max_corner()[2] = maxZ;
 }
 
-template <typename RealType, typename ExecutionSpace>
-void MortonAabbTree<RealType, ExecutionSpace>::sync_from_device() const
+template <typename ViewType, typename ExecutionSpace>
+void MortonAabbTree<ViewType, ExecutionSpace>::sync_from_device() const
 {
   Kokkos::deep_copy(hm_numLeaves, m_numLeaves);
   Kokkos::deep_copy(hm_numInternalNodes, m_numInternalNodes);
 
   if (m_supportHostBoxes) {
     Kokkos::deep_copy(hm_minMaxs, m_minMaxs);
+    Kokkos::deep_copy(hm_nodeMinMaxs, m_nodeMinMaxs);
   }
 
 #ifdef DEBUG_MORTON_ACCELERATED_SEARCH
@@ -278,14 +341,15 @@ void MortonAabbTree<RealType, ExecutionSpace>::sync_from_device() const
 #endif
 }
 
-template <typename RealType, typename ExecutionSpace>
-void MortonAabbTree<RealType, ExecutionSpace>::sync_to_device() const
+template <typename ViewType, typename ExecutionSpace>
+void MortonAabbTree<ViewType, ExecutionSpace>::sync_to_device() const
 {
   Kokkos::deep_copy(m_numLeaves, hm_numLeaves);
   Kokkos::deep_copy(m_numInternalNodes, hm_numInternalNodes);
 
   if (m_supportHostBoxes) {
     Kokkos::deep_copy(m_minMaxs, hm_minMaxs);
+    Kokkos::deep_copy(m_nodeMinMaxs, hm_nodeMinMaxs);
   }
 
 #ifdef DEBUG_MORTON_ACCELERATED_SEARCH
@@ -297,8 +361,8 @@ void MortonAabbTree<RealType, ExecutionSpace>::sync_to_device() const
 #endif
 }
 
-template <typename RealType, typename ExecutionSpace>
-std::ostream &MortonAabbTree<RealType, ExecutionSpace>::streamit(std::ostream &os) const
+template <typename ViewType, typename ExecutionSpace>
+std::ostream &MortonAabbTree<ViewType, ExecutionSpace>::streamit(std::ostream &os) const
 {
   os << "{MortonAabbTree " << m_baseName << " " << sizeof(morton_code_t)
      << " (" << m_globalMinPt[0] << " " << m_globalMinPt[1] << " " << m_globalMinPt[2]
@@ -317,8 +381,9 @@ std::ostream &MortonAabbTree<RealType, ExecutionSpace>::streamit(std::ostream &o
          << "}" << std::endl;
     }
     for (LocalOrdinal idx = hm_numLeaves(); idx < hm_numLeaves()+hm_numInternalNodes(); ++idx) {
-      os << " {(" << hm_minMaxs(idx, 0) << " " << hm_minMaxs(idx, 1) << " " << hm_minMaxs(idx, 2)
-         << ") (" << hm_minMaxs(idx, 3) << " " << hm_minMaxs(idx, 4) << " " << hm_minMaxs(idx, 5) << ")"
+      LocalOrdinal nodeIdx = idx - hm_numLeaves();
+      os << " {(" << hm_nodeMinMaxs(nodeIdx, 0) << " " << hm_nodeMinMaxs(nodeIdx, 1) << " " << hm_nodeMinMaxs(nodeIdx, 2)
+         << ") (" << hm_nodeMinMaxs(nodeIdx, 3) << " " << hm_nodeMinMaxs(nodeIdx, 4) << " " << hm_nodeMinMaxs(nodeIdx, 5) << ")"
       #ifdef DEBUG_MORTON_ACCELERATED_SEARCH
          << " (" << hm_nodeChildren(idx, 0) << ", " << hm_nodeChildren(idx, 1) << ") " << hm_nodeParents(idx)
       #endif
@@ -329,12 +394,19 @@ std::ostream &MortonAabbTree<RealType, ExecutionSpace>::streamit(std::ostream &o
   return os;
 }
 
-template <typename RealType, typename ExecutionSpace>
-std::ostream &MortonAabbTree<RealType, ExecutionSpace>::streamit(std::ostream &os, size_t idx) const
+template <typename ViewType, typename ExecutionSpace>
+std::ostream &MortonAabbTree<ViewType, ExecutionSpace>::streamit(std::ostream &os, size_t idx) const
 {
   if (m_supportHostBoxes) {
-    os << " {(" << hm_minMaxs(idx, 0) << " " << hm_minMaxs(idx, 1) << " " << hm_minMaxs(idx, 2)
-       << ") (" << hm_minMaxs(idx, 3) << " " << hm_minMaxs(idx, 4) << " " << hm_minMaxs(idx, 5) << ")}";
+    if (idx < hm_numLeaves()) {
+      os << " {(" << hm_minMaxs(idx, 0) << " " << hm_minMaxs(idx, 1) << " " << hm_minMaxs(idx, 2)
+         << ") (" << hm_minMaxs(idx, 3) << " " << hm_minMaxs(idx, 4) << " " << hm_minMaxs(idx, 5) << ")}";
+    }
+    else {
+      size_t nodeIdx = idx - hm_numLeaves();
+      os << " {(" << hm_nodeMinMaxs(nodeIdx, 0) << " " << hm_nodeMinMaxs(nodeIdx, 1) << " " << hm_nodeMinMaxs(nodeIdx, 2)
+         << ") (" << hm_nodeMinMaxs(nodeIdx, 3) << " " << hm_nodeMinMaxs(nodeIdx, 4) << " " << hm_nodeMinMaxs(nodeIdx, 5) << ")}";
+    }
   }
   else {
     os << "MortonAabbTree::streamit(.) m_supportHostBoxes = 0. ";
@@ -343,8 +415,8 @@ std::ostream &MortonAabbTree<RealType, ExecutionSpace>::streamit(std::ostream &o
 }
 
 #ifdef DEBUG_MORTON_ACCELERATED_SEARCH
-template<typename RealType, typename ExecutionSpace>
-void MortonAabbTree<RealType, ExecutionSpace>::dump(const std::string& prefix) const
+template<typename ViewType, typename ExecutionSpace>
+void MortonAabbTree<ViewType, ExecutionSpace>::dump(const std::string& prefix) const
 {
   std::cout << prefix << ": dump, numLeaves=" << hm_numLeaves() << ", numInternalNodes="
             << hm_numInternalNodes() << std::endl;
@@ -379,6 +451,16 @@ void MortonAabbTree<RealType, ExecutionSpace>::dump(const std::string& prefix) c
       of << i;
       for (size_t j = 0; j < 6; ++j) {
         of << " " << std::setprecision(7) << hm_minMaxs(i,j);
+      }
+      of << std::endl;
+    }
+  }
+  {
+    std::ofstream of(prefix+"_nodeMinMaxs.txt");
+    for (size_t i = 0; i < hm_nodeMinMaxs.extent(0); ++i) {
+      of << i;
+      for (size_t j = 0; j < 6; ++j) {
+        of << " " << std::setprecision(7) << hm_nodeMinMaxs(i,j);
       }
       of << std::endl;
     }

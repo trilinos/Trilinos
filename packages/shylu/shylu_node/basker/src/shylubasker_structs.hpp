@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
+//
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef SHYLUBASKER_STRUCTS_HPP
 #define SHYLUBASKER_STRUCTS_HPP
 
@@ -41,12 +50,6 @@ namespace BaskerNS
     {
       //Note,
       //basker thread is always used in a array so not need.
-      //Added for completeness/OpenMP
-      #ifndef BASKER_KOKKOS
-      FREE_INT_1DARRAY(iws);
-      FREE_ENTRY_1DARRAY(ews);
-      C.Finalize();
-      #endif
     }
 
      
@@ -109,7 +112,7 @@ namespace BaskerNS
   //Used to store information about the tree
   template <class Int, class Entry, class Exe_Space >
   struct  basker_tree
-  {  
+  {
     BASKER_INLINE
     basker_tree()
     {
@@ -120,13 +123,12 @@ namespace BaskerNS
     BASKER_INLINE
     ~basker_tree()
     {
-      //Finalize();
+      Finalize();
     }//end ~basker_tree
 
     BASKER_INLINE
     void Finalize()
     {
-      //printf("basker_tree Finalize todo \n");
       if(nroots > 0)
       {
         FREE_INT_1DARRAY(roots);
@@ -228,6 +230,7 @@ namespace BaskerNS
     INT_1DARRAY  rowptr;
     INT_1DARRAY  child;
     INT_1DARRAY  sibling;
+    INT_1DARRAY  leaf_nnz;
   };//end basker_tree
 
 
@@ -258,7 +261,7 @@ namespace BaskerNS
 
     ~basker_symbolic_tree()
     {
-      //Finalize();
+      Finalize();
     }//end ~basker_symbolic_tree
 
     BASKER_INLINE
@@ -479,7 +482,7 @@ namespace BaskerNS
       //printf("zero out col_counts\n");
       BV::init_value(col_counts, col_counts_flg, 0);
     }//end init_col_counts
-	
+
 
     BASKER_INLINE
     void init_WS(Int size)
@@ -743,6 +746,9 @@ namespace BaskerNS
       verbose    = BASKER_FALSE;
       verbose_matrix_out = BASKER_FALSE;
      
+      // Too small for thread-parallel
+      small_matrix = BASKER_FALSE;
+
       //Memory Options
       realloc    = BASKER_FALSE;
 
@@ -754,7 +760,8 @@ namespace BaskerNS
       A_plus_At  = BASKER_FALSE;  //Experimental status
       
       //Transpose Option
-      transpose  = BASKER_FALSE;
+      transpose      = BASKER_FALSE;
+      threaded_solve = BASKER_FALSE;
 
       //Matching Ordering Options
       //Default is on using bottle-neck
@@ -775,13 +782,15 @@ namespace BaskerNS
       use_sequential_diag_facto = BASKER_FALSE;
       // MWM matching before AMD 
       //  0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
-      blk_matching = 1; // if 0, then ND & AMD are applied in symbolic
+      blk_matching = 0; // if 0, then ND & AMD are applied in symbolic
 
       // ND Ordering Options (Should METIS optional?)
       use_metis = true;
       run_nd_on_leaves = false;
       run_amd_on_leaves = false;
       use_nodeNDP = true;
+      // Worker threads for ND
+      worker_threads = false;
 
       // AMD Option
       amd_dom = true;
@@ -799,14 +808,13 @@ namespace BaskerNS
       //BTF Options
       btf_prune_size = (Int)BASKER_BTF_PRUNE_SIZE;
 
-      //Incomplete Factorization Options
-      //incomplete = (Int) BASKER_INCOMPLETE_LVL;
-      incomplete = BASKER_FALSE;
-      incomplete_type = BASKER_INCOMPLETE_LVL;
-      //incomplete_type = BASKER_INCOMPLETE_RLVL_LIMITED;
-      inc_lvl    = BASKER_INC_LVL_VALUE;
-      inc_tol    = BASKER_INC_TOL_VALUE;
+      //Memory allocation Option
       user_fill  = BASKER_FILL_USER;
+
+      // Partial Factorization Option, 0: no, 1: form + factor, 2: only form
+      partial_facto = 0;
+      only_forward_solve = false;
+      only_backward_solve = false;
     }
 
     //Reuse Pattern (Save time if same pattern can be used)
@@ -815,10 +823,14 @@ namespace BaskerNS
     //Operation Options
     BASKER_BOOL verbose; 
     BASKER_BOOL verbose_matrix_out;
+    BASKER_BOOL small_matrix;
 
     //Memory Options
     BASKER_BOOL  realloc;
+
+    //Solve Options
     BASKER_BOOL  transpose;
+    BASKER_BOOL  threaded_solve;
     
     //Symmetric Options
     BASKER_BOOL  symmetric;
@@ -858,6 +870,8 @@ namespace BaskerNS
     BASKER_BOOL run_nd_on_leaves;
     BASKER_BOOL run_amd_on_leaves;
     BASKER_BOOL use_nodeNDP;
+    // Worker threads for ND
+    BASKER_BOOL worker_threads;
 
     //Pivot Options
     BASKER_BOOL  no_pivot;
@@ -869,13 +883,13 @@ namespace BaskerNS
     //BTF Options
     BASKER_INT   btf_prune_size;
   
-    //Incomplete Factorization Options
-    BASKER_BOOL  incomplete;
-    BASKER_INT   incomplete_type;
-    BASKER_INT   inc_lvl;
-    BASKER_MAGNITUDE inc_tol;    //Not Used
+    //Memory allocation Option
     BASKER_MAGNITUDE user_fill;
-    
+
+    // Partial Factorization Option
+    int partial_facto;
+    bool only_forward_solve;
+    bool only_backward_solve;
     /* ---- todo add more ----*/
   }; // end bask_options
 

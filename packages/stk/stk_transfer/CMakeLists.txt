@@ -34,6 +34,8 @@
 
 STK_SUBPACKAGE(Transfer)
 
+message("STKTransfer")
+
 ADD_SUBDIRECTORY(stk_transfer)
 
 STK_SUBPACKAGE_POSTPROCESS()

@@ -46,6 +46,7 @@
     class HasFinalOp
     {
     public:
+      virtual ~HasFinalOp() = default;
       virtual void finalOp(const ValueType& vin, ValueType& vout)=0;
     };
 
@@ -58,32 +59,36 @@
     {
     public:
 
-      /// integrand tells what fields Intrepid should compute, etc.
+      /// integrand tells what fields Intrepid2 should compute, etc.
       /// Note: this function is intended to be used to wrap a Function using CompositeFunction and thus its domain and codomain
       /// are the same as the wrapped function's codomain
       LN_NormOp(Function& integrand) : Function("LN_NormOp",integrand.getCodomainDimensions(), integrand.getCodomainDimensions()) {}
 
-      void operator()(MDArray& integrand_values, MDArray& output_values, double time_value_optional=0.0)
+      void operator()(MDArray& integrand_values, MDArray& output_values, double /*time_value_optional*/=0.0) override
       {
         VERIFY_OP(integrand_values.size(), ==, output_values.size(), "LN_NormOp::operator() bad sizes");
-        for (int i = 0; i < integrand_values.size(); i++)
+        const auto* iv = integrand_values.data();
+        auto* ov = output_values.data();
+        for (size_t i = 0; i < integrand_values.size(); i++)
           {
-            output_values[i] = std::pow(std::fabs(integrand_values[i]), double(std::fabs(Power)) );
+            static constexpr double exponent = double(std::fabs(Power));
+            ov[i] = std::pow(std::fabs(iv[i]), exponent);
           }
       }
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity /*element*/, const MDArray& /*parametric_coords*/, double time_value_optional=0.0) override
       {
         (*this)(domain, codomain, time_value_optional);
       }
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Bucket& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Bucket& /*element*/, const MDArray& /*parametric_coords*/, double time_value_optional=0.0) override
       {
         (*this)(domain, codomain, time_value_optional);
       }
 
-      void finalOp(const std::vector<double>& vin, std::vector<double>& vout)
+      void finalOp(const std::vector<double>& vin, std::vector<double>& vout) override
       {
+        static constexpr double exponent = 1./(double(std::fabs(Power)));
         for (unsigned i = 0; i < vin.size(); i++)
-          vout[i] = std::pow(vin[i], 1./(double(std::fabs(Power))) );
+          vout[i] = std::pow(vin[i], exponent );
       }
     };
 
@@ -95,11 +100,11 @@
       Function& m_integrand;
       std::vector<double> maxVal;
 
-      void operator()(MDArray& coords, MDArray& output_values, double time_value_optional)
+      void operator()(MDArray& coords, MDArray& /*output_values*/, double /*time_value_optional*/) override
       {
         //VERIFY_OP(coords.size(), ==, output_values.size(), "MaxOfNodeValues::operator() bad sizes");
         if (maxVal.size()==0) maxVal.resize(m_integrand.getCodomainDimensions()[0]);
-        MDArray out(maxVal.size());
+        MDArray out("out",maxVal.size());
         m_integrand(coords, out);
 
         for (unsigned i = 0; i < maxVal.size(); i++)
@@ -108,13 +113,13 @@
           }
       }
 
-      void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      void operator()(MDArray& /*in*/, MDArray& /*out*/, const stk::mesh::Entity /*element*/, const MDArray& /*parametric_coords*/, double /*time_value_optional*/=0.0) override
       {
         EXCEPTWATCH;
         throw std::runtime_error("Not implemented");
       }
 
-      void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0)
+      void operator()(MDArray& /*in*/, MDArray& /*out*/, const stk::mesh::Bucket& /*bucket*/, const MDArray& /*parametric_coords*/, double /*time_value_optional*/=0.0) override
       {
         EXCEPTWATCH;
         throw std::runtime_error("Not implemented");
@@ -154,7 +159,7 @@
         VERIFY_OP_ON(m_selector, !=, 0, "logic error 2");
         delete m_selector;
         m_selector = new stk::mesh::Selector;
-        for (int i = 0; i < partNames.dimension(0); i++)
+        for (size_t i = 0; i < partNames.extent_int(0); i++)
           {
             stk::mesh::Part * part = bulkData.mesh_meta_data().get_part(partNames(i));
             if (!part) throw std::runtime_error(std::string("No part named ") +partNames(i));
@@ -224,8 +229,8 @@
         for (unsigned ipart=0; ipart < nparts; ipart++)
           {
             stk::mesh::Part& part = *parts[ipart];
-            bool auto_part = 0 != part.attribute<AutoPart>();
-            if (stk::mesh::is_auto_declared_part(part) || auto_part)
+            bool is_auto_part = 0 != part.attribute<AutoPart>();
+            if (stk::mesh::is_auto_declared_part(part) || is_auto_part)
               continue;
 
             bool in_selector = (*m_selector)(part);

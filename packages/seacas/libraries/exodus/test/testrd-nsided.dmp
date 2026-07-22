@@ -12,7 +12,7 @@ num_node_sets =   2
 num_side_sets =   5
 
 after ex_get_coord, error =   0
-x coords = 
+x coords =
   0.0
   1.0
   1.0
@@ -46,7 +46,7 @@ x coords =
   0.0
  10.0
  10.0
-y coords = 
+y coords =
   0.0
   0.0
   1.0
@@ -80,7 +80,7 @@ y coords =
   0.0
   0.0
  10.0
-z coords = 
+z coords =
   0.0
   0.0
   0.0
@@ -193,13 +193,13 @@ nodal attribute 1 = 'Node_attr_2'
  10.0
 
 after ex_get_id_map, error =   0
-elem_map(0) = 1 
-elem_map(1) = 2 
-elem_map(2) = 3 
-elem_map(3) = 4 
-elem_map(4) = 5 
-elem_map(5) = 6 
-elem_map(6) = 7 
+elem_map(0) = 1
+elem_map(1) = 2
+elem_map(2) = 3
+elem_map(3) = 4
+elem_map(4) = 5
+elem_map(5) = 6
+elem_map(6) = 7
 
 after ex_get_elem_blk_ids, error =   0
 
@@ -222,13 +222,13 @@ after ex_get_entity_count_per_polyhedra, error = 0
 
 after ex_get_conn, error = 0
 connect array for elem block 10
-Element 1, 4 nodes:	  1   2   3   4 
-Element 2, 4 nodes:	  5   6   7   8 
-Element 3, 8 nodes:	  9  10  11  12  13  14  15  16 
-Element 4, 4 nodes:	 17  18  19  20 
-Element 5, 6 nodes:	 21  22  23  24  25  26 
-Element 6, 8 nodes:	 17  18  19  20  27  28  30  29 
-Element 7, 3 nodes:	 31  32  33 
+Element 1, 4 nodes:	  1   2   3   4
+Element 2, 4 nodes:	  5   6   7   8
+Element 3, 8 nodes:	  9  10  11  12  13  14  15  16
+Element 4, 4 nodes:	 17  18  19  20
+Element 5, 6 nodes:	 21  22  23  24  25  26
+Element 6, 8 nodes:	 17  18  19  20  27  28  30  29
+Element 7, 3 nodes:	 31  32  33
 
 after ex_get_node_set_ids, error =   0
 
@@ -236,7 +236,7 @@ after ex_get_names, error =   0
 
 after ex_get_node_set_param, error =   0
 
-node set 20 parameters: 
+node set 20 parameters:
 num_nodes =  5
 name = 'nset_1'
 
@@ -269,7 +269,7 @@ nodeset attribute 0 = 'Nodeset_attribute'
 
 after ex_get_node_set_param, error =   0
 
-node set 21 parameters: 
+node set 21 parameters:
 num_nodes =  3
 name = 'nset_2'
 
@@ -308,16 +308,16 @@ after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0
 after ex_get_concat_node_sets, error =   0
 
 concatenated node set info
-ids = 
+ids =
  20
  21
-num_nodes_per_set = 
+num_nodes_per_set =
   5
   3
-node_ind = 
+node_ind =
   0
   5
-node_list = 
+node_list =
  10
  11
  12
@@ -326,7 +326,7 @@ node_list =
  20
  21
  22
-dist_fact = 
+dist_fact =
 1.000
 2.000
 3.000
@@ -488,37 +488,37 @@ after ex_inquire: EX_INQ_SS_DF_LEN = 8,  error = 0
 
 after ex_get_concat_side_sets, error =   0
 concatenated side set info
-ids = 
+ids =
  30
  31
  32
  33
  34
-num_elem_per_set = 
+num_elem_per_set =
   2
   2
   7
   8
  10
-num_dist_per_set = 
+num_dist_per_set =
   4
   4
   0
   0
   0
-elem_ind = 
+elem_ind =
   0
   2
   4
  11
  19
-dist_ind = 
+dist_ind =
   0
   4
   8
   8
   8
-elem_list = 
+elem_list =
   2
   2
   1
@@ -548,7 +548,7 @@ elem_list =
   7
   7
   7
-side_list = 
+side_list =
   4
   2
   2
@@ -578,7 +578,7 @@ side_list =
   3
   4
   5
-dist_fact = 
+dist_fact =
 30.000
 30.100
 30.200
@@ -589,7 +589,7 @@ dist_fact =
 31.300
 
 after ex_get_qa, error =   0
-QA records = 
+QA records =
  'TESTWT'
  'testwt'
  '07/07/93'
@@ -602,7 +602,7 @@ QA records =
 after ex_inquire, error =   0
 
 after ex_get_info, error =   0
-info records = 
+info records =
  'This is the first information record.'
  ''
  ''

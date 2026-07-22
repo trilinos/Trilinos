@@ -1,0 +1,149 @@
+/*! \page tempus_tutorial_transition_02_03 Transition from Example 2 to Example 3
+ *
+ *  \section tempus_tutorial_transition_02_03_goal Goal
+ *
+ *  The primary goal of \ref example-03 is to move the evolving solution and
+ *  selected time-integration metadata into \ref Tempus::SolutionState while
+ *  preserving the same \ref Thyra::ModelEvaluator-based model, the same
+ *  explicit Forward Euler update, the same simple tabular output, and the same
+ *  regression-testing workflow used in \ref example-02.
+ *
+ *  New concepts introduced are:
+ *
+ *  - \ref Tempus::SolutionState
+ *    - stores the solution together with metadata describing its role in the
+ *      time integration process
+ *  - \ref Tempus::SolutionStateMetaData
+ *    - stores quantities such as time, index, timestep size, and status
+ *  - \ref Tempus::Status
+ *    - represents whether a solution is working, passed, or failed
+ *  - `Tempus::createSolutionStateX()`
+ *    - creates a solution state containing the primary solution vector
+ *
+ *  This is the first step in moving from application-local scalar bookkeeping
+ *  to a \ref Tempus-managed representation of the evolving solution state.
+ *  That organization becomes increasingly important in later examples that
+ *  introduce solution histories, steppers, and integrators.
+ *
+ *  \section tempus_tutorial_transition_02_03_same What stays the same
+ *
+ *  - The van der Pol model is still provided by a \ref Thyra::ModelEvaluator.
+ *  - The timestepper is still Forward Euler.
+ *  - The application still controls the time loop directly.
+ *  - The output table still reports the step index, time, \f$x_0\f$, and \f$x_1\f$.
+ *  - The regression check is still a separate final comparison against gold values.
+ *
+ *  \section tempus_tutorial_transition_02_03_snippets Selected code excerpts
+ *
+ *  The code excerpts below highlight the main changes needed to move from
+ *  separate scalar bookkeeping variables to a \ref Tempus::SolutionState.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_02_03_snippet1 Create the solution state
+ *
+ *  <b>Create a SolutionState.</b> The current solution is now stored in a
+ *  \ref Tempus::SolutionState together with selected metadata.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  int n = 0;
+ *  double time = 0.0;
+ *  bool passed = true;
+ *  RCP<Thyra::VectorBase<double> > x_n =
+ *    model->getNominalValues().get_x()->clone_v();
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  auto solState = Tempus::createSolutionStateX(
+ *                    model->getNominalValues().get_x()->clone_v());
+ *  solState->setIndex   (0);
+ *  solState->setTime    (0.0);
+ *  solState->setTimeStep(0.0);
+ *  solState->setSolutionStatus(Tempus::Status::PASSED);
+ *  @endcode
+ *
+ *  This replaces several scalar bookkeeping variables with a single
+ *  \ref Tempus::SolutionState object.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_02_03_snippet2 Use solution-state metadata
+ *
+ *  <b>Use metadata from the solution state.</b> The loop condition is now
+ *  expressed in terms of the solution state's index, time, and status.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  while (passed && time < finalTime && n < nTimeSteps) {
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  while (solState->getSolutionStatus() == Tempus::Status::PASSED &&
+ *         solState->getTime() < finalTime &&
+ *         solState->getIndex() < nTimeSteps) {
+ *  @endcode
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_02_03_snippet3 Record step outcome
+ *
+ *  <b>Record step success or failure through the solution state.</b> Step
+ *  acceptance and failure are now reflected in the solution status and metadata.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  if ( std::isnan(Thyra::norm(*x_np1)) ) {
+ *    passed = false;
+ *  } else {
+ *    Thyra::V_V(x_n.ptr(), *x_np1);
+ *    n++;
+ *  }
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  if ( std::isnan(Thyra::norm(*x_np1)) ) {
+ *    solState->setSolutionStatus(Tempus::Status::FAILED);
+ *  } else {
+ *    Thyra::V_V(x_n.ptr(), *x_np1);
+ *    solState->setIndex   (index);
+ *    solState->setTime    (time);
+ *    solState->setTimeStep(constDT);
+ *    solState->setSolutionStatus(Tempus::Status::PASSED);
+ *  }
+ *  @endcode
+ *
+ *  In the updated example, the final tutorial success condition is formed
+ *  after the time loop by combining:
+ *  - whether the final `SolutionState` has status `PASSED`, and
+ *  - whether the final solution satisfies the regression test.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \section tempus_tutorial_transition_02_03_compare How to compare the examples
+ *
+ *  A more detailed comparison can be made by diffing:
+ *  - `examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp`
+ *  - `examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp`
+ *
+ *  From the `packages/tempus` directory, a focused comparison of the main
+ *  time-integration logic between these two examples can be generated locally
+ *  in `bash` or `zsh` with:
+ *
+ *  @code{.sh}
+ *  git diff --no-index \
+ *    <(sed -n '76,164p' examples/02_Use_ModelEvaluator/02_Use_ModelEvaluator.cpp) \
+ *    <(sed -n '83,184p' examples/03_Intro_SolutionState/03_Intro_SolutionState.cpp)
+ *  @endcode
+ *
+ *  This ignores leading header lines (e.g., `#include` statements and
+ *  Doxygen comments) and trailing regression-testing lines.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-02.html">← Previous Example</a> |
+ *    <a href="example-03.html">Current Example</a> |
+ *    <a href="example-04.html">Next Example →</a>
+ *  </div>
+ *  \endhtmlonly
+ */

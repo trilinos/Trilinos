@@ -1,43 +1,10 @@
-// ************************************************************************
-//
+// @HEADER
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <iostream>
@@ -45,7 +12,7 @@
 #include <random>
 #include <utility>
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
@@ -60,14 +27,14 @@
 #define CHECK_ASSERT(expr) \
     {bool test = expr; \
     if(not test) { \
-      std::stringstream ss; \
-      ss << myRank << ". FAILED - Assertion failed on line " << __LINE__ << ": " #expr " " << std::endl; \
-      throw std::logic_error(ss.str()); \
+      std::stringstream mss; \
+      mss << myRank << ". FAILED - Assertion failed on line " << __LINE__ << ": " #expr " " << std::endl; \
+      throw std::logic_error(mss.str()); \
     } \
     else if(myRank==0) { \
-      std::stringstream ss; \
-      ss << myRank << ". Assertion passed on line " << __LINE__ << ": " #expr " " << std::endl; \
-      *outStream << ss.str() << std::endl; \
+      std::stringstream mss; \
+      mss << myRank << ". Assertion passed on line " << __LINE__ << ": " #expr " " << std::endl; \
+      *outStream << mss.str() << std::endl; \
     }}
 
 #define CHECK_EQUALITY(expr1,expr2) \
@@ -90,9 +57,9 @@ int main( int argc, char* argv[] )
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
-  int myRank = Teuchos::GlobalMPISession::getRank();
-//  int numProcs = Teuchos::GlobalMPISession::getNProc();
+  ROL::GlobalMPISession mpiSession(&argc, &argv);  
+  int myRank = ROL::GlobalMPISession::getRank();
+//  int numProcs = ROL::GlobalMPISession::getNProc();
 
 //  int iprint     = argc - 1;
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 && myRank==0 );
@@ -126,8 +93,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
 //  using ValidateFunction  = ROL::ValidateFunction<RealT>;
 //  using Bounds            = ROL::Bounds<RealT>;
 //  using PartitionedVector = ROL::PartitionedVector<RealT>;
@@ -276,10 +241,10 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto fv  = state->clone();
     auto lfv  = state->clone();   // local fv
     auto afv  = state->clone();
-    auto jv = state->clone();
+    auto ljv = state->clone();
     auto ajv = state->clone();
     PinTVector<RealT> & pint_v = dynamic_cast<PinTVector<RealT>&>(*v);
-    PinTVector<RealT> & pint_jv = dynamic_cast<PinTVector<RealT>&>(*jv);
+    PinTVector<RealT> & pint_jv = dynamic_cast<PinTVector<RealT>&>(*ljv);
     PinTVector<RealT> & pint_ajv = dynamic_cast<PinTVector<RealT>&>(*ajv);
 
     ROL::RandomizeVector<RealT>(*v);
@@ -287,12 +252,12 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     // state->setScalar(1.1);
     // control->setScalar(1.1);
 
-    double tol = 1e-12;
+    tol = 1e-12;
 
     std::stringstream ss;
 
     // compute jacobian action
-    pint_constraint.applyJacobian_1(*jv,
+    pint_constraint.applyJacobian_1(*ljv,
                                     *v,
                                     *state,
                                     *control,tol);
@@ -318,7 +283,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     int level = 0;
     pint_constraint.invertTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*fv),
-                                           dynamic_cast<const PinTVector<RealT>&>(*jv),
+                                           dynamic_cast<const PinTVector<RealT>&>(*ljv),
                                            dynamic_cast<const PinTVector<RealT>&>(*state),
                                            dynamic_cast<const PinTVector<RealT>&>(*control),
                                            tol,
@@ -332,7 +297,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                                    level);
 
     RealT v_norm   = v->norm();
-    RealT jv_norm  = jv->norm();
+    RealT jv_norm  = ljv->norm();
 
     // check forward time step jacobian
     {
@@ -349,7 +314,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
         *outStream << "Forward block Jacobi subdomain inversion PASSED with proc " 
                    << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
 
-      lfv->axpy(-1.0,*jv);
+      lfv->axpy(-1.0,*ljv);
       RealT lfv_norm  = lfv->norm();
       CHECK_ASSERT(lfv_norm/jv_norm <= 1e-13);
     }

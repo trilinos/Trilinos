@@ -84,14 +84,6 @@ int main(int argc, char *argv[]) {
     if (!verbose)
       frequency = -1;  // reset frequency if test is not verbose
 
-#ifndef HAVE_BELOS_TRIUTILS
-    std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
-    if (MyPID==0) {
-      std::cout << "End Result: TEST FAILED" << std::endl;
-    }
-    return EXIT_FAILURE;
-#endif
-
     // Get the data from the HB file
     int dim=100;
 

@@ -122,7 +122,7 @@ class DataExchangeUnknownPatternNonBlockingCommBuffer : public ManagedCommBuffer
     template <typename Tfunc>
     void complete_receives(Tfunc func)
     {
-      auto func_vector = [&](int rank, std::vector<unsigned char>& buf_vec)
+      auto func_vector = [&](int rank, std::vector<unsigned char>& /*buf_vec*/)
       {
         auto& commBuf = set_recv_buffer_storage(rank);
         func(rank, commBuf);

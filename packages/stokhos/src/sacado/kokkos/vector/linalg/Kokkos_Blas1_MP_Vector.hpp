@@ -1,42 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2009 NTESS and the Stokhos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef KOKKOS_BLAS1_MP_VECTOR_HPP
@@ -68,11 +36,16 @@ typename std::enable_if<
 dot(const Kokkos::View<XD,XP...>& x,
     const Kokkos::View<YD,YP...>& y)
 {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef Kokkos::View<XD,XP...> XVector;
   typedef Kokkos::View<YD,YP...> YVector;
 
   typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
   typename Kokkos::FlatArrayType<YVector>::type y_flat = y;
+#else
+  auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+  auto y_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(y);
+#endif
 
   return dot( x_flat, y_flat );
 }
@@ -90,8 +63,27 @@ dot(const RV& r,
   typedef Kokkos::View<XD,XP...> XVector;
   typedef Kokkos::View<YD,YP...> YVector;
 
-  typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
-  typename Kokkos::FlatArrayType<YVector>::type y_flat = y;
+  auto x_flat = [&x]() -> decltype(auto) {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+    return typename Kokkos::FlatArrayType<XVector>::type(x);
+#else
+    if constexpr (XVector::rank() == 1)
+      return Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+    else
+      return Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(x);
+#endif
+  }();
+  
+  auto y_flat = [&y]() -> decltype(auto) {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+    return typename Kokkos::FlatArrayType<YVector>::type(y);
+#else
+    if constexpr (YVector::rank() == 1)
+      return Stokhos::reinterpret_as_unmanaged_scalar_flat_view(y);
+    else
+      return Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(y);
+#endif
+  }();
 
   dot( r, x_flat, y_flat );
 }
@@ -101,12 +93,16 @@ typename std::enable_if<
   Kokkos::is_view_mp_vector< Kokkos::View<XD,XP...> >::value >::type
 fill(const Kokkos::View<XD,XP...>& x,
      const typename Kokkos::View<XD,XP...>::non_const_value_type& val) {
-  typedef Kokkos::View<XD,XP...> XVector;
-
   // Use the existing fill() implementation if we can
   if (Sacado::is_constant(val)) {
-     typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
-     fill( x_flat, val.coeff(0) );
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  typedef Kokkos::View<XD,XP...> XVector;
+
+  typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
+#else
+    auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+#endif
+    fill( x_flat, val.coeff(0) );
   }
   else {
     Kokkos::deep_copy(x, val);
@@ -123,7 +119,16 @@ nrm2_squared(
 {
   typedef Kokkos::View<XD,XP...> XVector;
 
-  typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
+  auto x_flat = [&x]() -> decltype(auto) {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+    return typename Kokkos::FlatArrayType<XVector>::type(x);
+#else
+    if constexpr (XVector::rank() == 1)
+      return Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+    else
+      return Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(x);
+#endif
+  }();
 
   nrm2_squared( r, x_flat );
 }
@@ -138,7 +143,16 @@ nrm1(
 {
   typedef Kokkos::View<XD,XP...> XVector;
 
-  typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
+  auto x_flat = [&x]() -> decltype(auto) {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+    return typename Kokkos::FlatArrayType<XVector>::type(x);
+#else
+    if constexpr (XVector::rank() == 1)
+      return Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+    else
+      return Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(x);
+#endif
+  }();
 
   nrm1( r, x_flat );
 }
@@ -153,7 +167,16 @@ nrmInf(
 {
   typedef Kokkos::View<XD,XP...> XVector;
 
-  typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
+  auto x_flat = [&x]() -> decltype(auto) {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+    return typename Kokkos::FlatArrayType<XVector>::type(x);
+#else
+    if constexpr (XVector::rank() == 1)
+      return Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+    else
+      return Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(x);
+#endif
+  }();
 
   nrmInf( r, x_flat );
 }
@@ -170,15 +193,21 @@ axpby(const AV& a,
       const BV& b,
       const Kokkos::View<YD,YP...>& y)
 {
-  typedef Kokkos::View<XD,XP...> XVector;
-  typedef Kokkos::View<YD,YP...> YVector;
-
   if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
     Kokkos::Impl::raise_error("axpby not implemented for non-constant a or b");
   }
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  typedef Kokkos::View<XD,XP...> XVector;
+  typedef Kokkos::View<YD,YP...> YVector;
+
   typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
   typename Kokkos::FlatArrayType<YVector>::type y_flat = y;
+#else
+  auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+  auto y_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(y);
+#endif
+
   auto aa = Sacado::Value<AV>::eval(a);
   auto bb = Sacado::Value<BV>::eval(b);
   axpby( aa, x_flat, bb, y_flat );
@@ -195,15 +224,21 @@ scal(const Kokkos::View<RD,RP...>& r,
      const typename Kokkos::View<XD,XP...>::non_const_value_type& a,
      const Kokkos::View<XD,XP...>& x)
 {
-  typedef Kokkos::View<RD,RP...> RVector;
-  typedef Kokkos::View<XD,XP...> XVector;
-
   if (!Sacado::is_constant(a)) {
     Kokkos::Impl::raise_error("scal not implemented for non-constant a");
   }
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  typedef Kokkos::View<RD,RP...> RVector;
+  typedef Kokkos::View<XD,XP...> XVector;
+  
   typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
   typename Kokkos::FlatArrayType<RVector>::type r_flat = r;
+#else
+  auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+  auto r_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(r);
+#endif
+
   scal( r_flat, a.coeff(0), x_flat );
 }
 
@@ -220,13 +255,26 @@ typename std::enable_if<
   Kokkos::is_view_mp_vector< Kokkos::View<YD,YP...> >::value &&
   Kokkos::is_view_mp_vector< Kokkos::View<ZD,ZP...> >::value >::type
 update(
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   const typename Kokkos::View<XD,XP...>::array_type::non_const_value_type& alpha,
+#else
+  const std::remove_const_t<typename Kokkos::View<XD,XP...>::element_type::value_type>& alpha,
+#endif
   const Kokkos::View<XD,XP...>& x,
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   const typename Kokkos::View<YD,YP...>::array_type::non_const_value_type& beta,
+#else
+  const std::remove_const_t<typename Kokkos::View<YD,YP...>::element_type::value_type>& beta,
+#endif
   const Kokkos::View<YD,YP...>& y,
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   const typename Kokkos::View<ZD,ZP...>::array_type::non_const_value_type& gamma,
+#else
+  const std::remove_const_t<typename Kokkos::View<ZD,ZP...>::element_type::value_type>& gamma,
+#endif
   const Kokkos::View<ZD,ZP...>& z)
 {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef Kokkos::View<XD,XP...> XVector;
   typedef Kokkos::View<YD,YP...> YVector;
   typedef Kokkos::View<ZD,ZP...> ZVector;
@@ -234,6 +282,11 @@ update(
   typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
   typename Kokkos::FlatArrayType<YVector>::type y_flat = y;
   typename Kokkos::FlatArrayType<ZVector>::type z_flat = z;
+#else
+  auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+  auto y_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(y);
+  auto z_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(z);
+#endif
 
   update( alpha, x_flat, beta, y_flat, gamma, z_flat);
 
@@ -272,11 +325,17 @@ reciprocal(
   const Kokkos::View<RD,RP...>& r,
   const Kokkos::View<XD,XP...>& x)
 {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef Kokkos::View<RD,RP...> RVector;
   typedef Kokkos::View<XD,XP...> XVector;
 
   typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
   typename Kokkos::FlatArrayType<RVector>::type r_flat = r;
+#else
+  auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(x);
+  auto r_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(r);
+#endif
+
   reciprocal( r_flat, x_flat );
 }
 
@@ -289,12 +348,29 @@ sum(
   const Kokkos::View<RD,RP...>& r,
   const Kokkos::View<XD,XP...>& x)
 {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef Kokkos::View<RD,RP...> RVector;
   typedef Kokkos::View<XD,XP...> XVector;
 
   typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
   typename Kokkos::FlatArrayType<RVector>::type r_flat = r;
   sum( r_flat, x_flat );
+#else
+  if constexpr (Kokkos::View<RD,RP...>::rank() == 0 and Kokkos::View<XD,XP...>::rank() == 1) {
+    auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_view(x);
+    auto r_flat = Stokhos::reinterpret_as_unmanaged_scalar_view(r);
+    sum( r_flat, x_flat );
+  }
+  else {
+    for (size_t i=0; i<r.extent(0); ++i) {
+      auto x_i = Kokkos::subview(x, Kokkos::ALL, i);
+      auto r_i = Kokkos::subview(r, i);
+      auto x_i_flat = Stokhos::reinterpret_as_unmanaged_scalar_view(x_i);
+      auto r_i_flat = Stokhos::reinterpret_as_unmanaged_scalar_view(r_i);
+      sum( r_i_flat, x_i_flat );
+    }
+  }
+#endif
 }
 
 template <typename RD, typename ... RP,
@@ -309,6 +385,7 @@ nrm2w_squared(
   const Kokkos::View<XD,XP...>& x,
   const Kokkos::View<WD,WP...>& w)
 {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef Kokkos::View<RD,RP...> RVector;
   typedef Kokkos::View<XD,XP...> XVector;
   typedef Kokkos::View<WD,WP...> WVector;
@@ -316,6 +393,12 @@ nrm2w_squared(
   typename Kokkos::FlatArrayType<XVector>::type x_flat = x;
   typename Kokkos::FlatArrayType<RVector>::type r_flat = r;
   typename Kokkos::FlatArrayType<WVector>::type w_flat = w;
+#else
+  auto x_flat = Stokhos::reinterpret_as_unmanaged_scalar_view(x);
+  auto r_flat = Stokhos::reinterpret_as_unmanaged_scalar_view(r);
+  auto w_flat = Stokhos::reinterpret_as_unmanaged_scalar_view(w);
+#endif
+
   nrm2w_squared( r_flat, x_flat, w_flat );
 }
 
@@ -337,6 +420,7 @@ mult(
      Kokkos::Impl::raise_error("mult not implemented for non-constant c, ab");
   }
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef Kokkos::View<CD,CP...> CVector;
   typedef Kokkos::View<AD,AP...> AVector;
   typedef Kokkos::View<BD,BP...> BVector;
@@ -344,6 +428,12 @@ mult(
   typename Kokkos::FlatArrayType<CVector>::type C_flat = C;
   typename Kokkos::FlatArrayType<AVector>::type A_flat = A;
   typename Kokkos::FlatArrayType<BVector>::type B_flat = B;
+#else
+  auto C_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(C);
+  auto A_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(A);
+  auto B_flat = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(B);
+#endif
+
   mult( c.coeff(0), C_flat, ab.coeff(0), A_flat, B_flat );
 }
 

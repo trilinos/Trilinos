@@ -1,0 +1,15 @@
+<ParameterList      name="Driver">
+
+  <Parameter        name="skipForComplex"             type="bool"     value="true"/>
+  <Parameter        name="convergence rate"           type="double"   value="0.98"/>
+
+  <ParameterList    name="MueLu">
+    <Parameter      name="max levels"                 type="int"      value="1"/>
+
+    <Parameter      name="coarse: type"               type="string"   value="CHEBYSHEV"/>
+    <ParameterList  name="coarse: params">
+      <Parameter    name="chebyshev: degree"         type="int"      value="2"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

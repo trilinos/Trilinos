@@ -10,20 +10,20 @@ smoother ->
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "distance laplacian": threshold = 0.05, blocksize = 1
-Lumping dropped entries
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0.05, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.05
 aggregation: drop scheme = distance laplacian
+project auxiliary matrices -> 
+ [empty list]
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -49,20 +49,20 @@ smoother ->
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "distance laplacian": threshold = 0.05, blocksize = 1
-Lumping dropped entries
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0.05, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.05
 aggregation: drop scheme = distance laplacian
+project auxiliary matrices -> 
+ [empty list]
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -93,10 +93,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 

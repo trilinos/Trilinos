@@ -38,6 +38,7 @@
 
 #include "Kokkos_Macros.hpp"
 #include <array>
+#include <limits>
 #include <stk_math/StkVector.hpp>
 #include <stk_search/Box.hpp>
 #include <stk_search/Plane.hpp>
@@ -311,8 +312,47 @@ inline bool intersects(Box<T1> const& b, Plane<T2> const& p)
   return intersects(p,b);
 }
 
+//length scale
+template <typename T>
+inline T length_scale(Sphere<T> &s)
+{
+  //return the sphere diameter
+  return 2*s.radius(); 
+}
+
+template <typename T>
+inline T length_scale(Box<T> &b)
+{
+  //return the distance between the min and max corner
+  const auto max_corner = b.max_corner();
+  const auto min_corner = b.min_corner();
+
+  double length = 0;
+  for(int i = 0; i < Box<T>::Dim; i ++)
+  {
+    length += (max_corner[i] - min_corner[i]) * (max_corner[i] - min_corner[i]);
+  }
+  return stk::math::sqrt(length);
+}
+
+template <typename T>
+inline T length_scale(Point<T> &)
+{
+  //point has 0 length scale
+  return static_cast<T>(0);
+}
+
+
+template <typename T>
+inline T length_scale(Plane<T> &)
+{
+  //plane has infinite (numerical limit) length scale
+  return std::numeric_limits<T>::max();
+}
+
+
 template <typename T, typename U>
-inline void scale_by(Point<T> &p, U const& mult_fact, U const& add_fact = 0)
+inline void scale_by(Point<T> & /*p*/, U const& /*mult_fact*/, [[maybe_unused]] U const& add_fact = 0)
 {
 }
 

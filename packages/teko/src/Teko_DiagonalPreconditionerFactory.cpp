@@ -1,58 +1,18 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teko_DiagonalPreconditionerFactory.hpp"
 #include "Teko_DiagonalPreconditionerOp.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "EpetraExt_PointToBlockDiagPermute.h"
 
 #include "Teko_TpetraHelpers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
+#include "TpetraExt_PointToBlockDiagPermute_decl.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -72,34 +32,34 @@ RCP<PreconditionerState> DiagonalPreconditionerFactory::buildPreconditionerState
 LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(
     LinearOp& lo, PreconditionerState& state) const {
   if (diagonalType_ == BlkDiag) {
-    // Sanity check the state
     DiagonalPrecondState& MyState = Teuchos::dyn_cast<DiagonalPrecondState>(state);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(TpetraHelpers::isTpetraLinearOp(lo), std::runtime_error,
-                               "BlkDiag not implemented for Tpetra operators");
+    if (TpetraHelpers::isTpetraLinearOp(lo)) {
+      RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT> > tlo =
+          Teuchos::rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST, LO, GO, NT> >(lo, true);
+      RCP<const Tpetra::Operator<ST, LO, GO, NT> > top = tlo->getConstTpetraOperator();
+      RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > MAT =
+          Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<ST, LO, GO, NT> >(top, true);
 
-    // Get the underlying Epetra_CrsMatrix, if we have one
-    Teuchos::RCP<const Epetra_Operator> eo = Thyra::get_Epetra_Operator(*lo);
-    TEUCHOS_ASSERT(eo != Teuchos::null);
-    Teuchos::RCP<const Epetra_CrsMatrix> MAT =
-        Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(eo);
-    TEUCHOS_ASSERT(MAT != Teuchos::null);
+      RCP<Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT> > BDP;
+      if (MyState.BDP_ == Teuchos::null) {
+        BDP = Teuchos::rcp(new Tpetra::Ext::PointToBlockDiagPermute<ST, LO, GO, NT>(*MAT));
+        BDP->setParameters(List_);
+        BDP->compute();
+        MyState.BDP_ = BDP;
+      } else {
+        BDP = MyState.BDP_;
+      }
 
-    // Create a new EpetraExt_PointToBlockDiagPermute for the state object, if we don't have one
-    Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP;
-    if (MyState.BDP_ == Teuchos::null) {
-      BDP = Teuchos::rcp(new EpetraExt_PointToBlockDiagPermute(*MAT));
-      BDP->SetParameters(List_);
-      BDP->Compute();
-      MyState.BDP_ = BDP;
+      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > Hcrs = BDP->createCrsMatrix();
+      return Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(Hcrs->getRangeMap()),
+          Thyra::tpetraVectorSpace<ST, LO, GO, NT>(Hcrs->getDomainMap()), Hcrs);
     }
 
-    RCP<Epetra_FECrsMatrix> Hcrs = rcp(MyState.BDP_->CreateFECrsMatrix());
-    return Thyra::epetraLinearOp(Hcrs);
-
-    // Build the LinearOp object  (NTS: swapping the range and domain)
-    // LinearOp MyOp = Teuchos::rcp(new
-    // DiagonalPreconditionerOp(MyState.BDP_,lo->domain(),lo->range()));
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                               "DiagonalPreconditionerFactory::buildPreconditionerOperator: "
+                               "BlkDiag requested, but operator is not Tpetra-supported.");
   }
 
   return getInvDiagonalOp(lo, diagonalType_);

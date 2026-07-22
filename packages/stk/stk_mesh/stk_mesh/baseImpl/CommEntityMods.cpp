@@ -171,13 +171,16 @@ void CommEntityMods::unpack()
           .unpack<int>( remote_owned_closure_int);
       remote_owned_closure = ((remote_owned_closure_int==1)?true:false);
 
-      EntityCommListInfo info = find_entity(m_bulkData, m_commList, key);
-      if (ghostId == BulkData::SHARED) {
-        m_sharedMods.emplace_back(EntityParallelState{procNumber, state, info, remote_owned_closure});
-      }
-      else {
-        int remoteProc = (procNumber == m_bulkData.parallel_rank()) ? m_bulkData.parallel_owner_rank(info.entity) : procNumber;
-        m_ghostedMods.emplace_back(EntityParallelState{remoteProc, state, info, remote_owned_closure});
+      EntityCommListInfoVector::const_iterator iter = std::lower_bound(m_commList.begin(), m_commList.end(), key);
+      if (iter != m_commList.end() && iter->key == key) {
+        EntityCommListInfo info = *iter;
+        if (ghostId == BulkData::SHARED) {
+          m_sharedMods.emplace_back(EntityParallelState{procNumber, state, info, remote_owned_closure});
+        }
+        else {
+          int remoteProc = (procNumber == m_bulkData.parallel_rank()) ? m_bulkData.parallel_owner_rank(info.entity) : procNumber;
+          m_ghostedMods.emplace_back(EntityParallelState{remoteProc, state, info, remote_owned_closure});
+        }
       }
     }    
   }

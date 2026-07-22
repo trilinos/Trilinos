@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HALF_FLOATING_POINT_WRAPPER_HPP_
 #define KOKKOS_HALF_FLOATING_POINT_WRAPPER_HPP_
@@ -40,9 +27,15 @@ struct is_bfloat16 : std::false_type {};
 
 // KOKKOS_HALF_IS_FULL_TYPE_ON_ARCH: A macro to select which
 // floating_pointer_wrapper operator paths should be used. For CUDA, let the
-// compiler conditionally select when device ops are used For SYCL, we have a
-// full half type on both host and device
-#if defined(__CUDA_ARCH__) || defined(KOKKOS_ENABLE_SYCL)
+// compiler conditionally select when device ops are used. For SYCL, we have a
+// full half type on both host and device. For HIP, we have a full half type on
+// host and device only for ROCm 6.4 and later.
+#if defined(__CUDA_ARCH__) ||                                 \
+    (defined(KOKKOS_ENABLE_HIP) &&                            \
+     ((HIP_VERSION_MAJOR > 6 ||                               \
+       (HIP_VERSION_MAJOR == 6 && HIP_VERSION_MINOR >= 4)) || \
+      defined(__HIP_DEVICE_COMPILE__))) ||                    \
+    defined(KOKKOS_ENABLE_SYCL)
 #define KOKKOS_HALF_IS_FULL_TYPE_ON_ARCH
 #endif
 
@@ -87,40 +80,38 @@ KOKKOS_INLINE_FUNCTION
 half_t cast_to_half(half_t);
 
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, float>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, float>, T>
     cast_from_half(half_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, bool>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, bool>, T>
     cast_from_half(half_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, double>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, double>, T>
     cast_from_half(half_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, short>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, short>, T>
     cast_from_half(half_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, int>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, int>, T>
     cast_from_half(half_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, long>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, long>, T>
     cast_from_half(half_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, long long>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, long long>, T>
+    cast_from_half(half_t);
+template <class T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, unsigned short>, T>
+    cast_from_half(half_t);
+template <class T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, unsigned int>, T>
+    cast_from_half(half_t);
+template <class T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, unsigned long>, T>
     cast_from_half(half_t);
 template <class T>
 KOKKOS_INLINE_FUNCTION
-    std::enable_if_t<std::is_same<T, unsigned short>::value, T>
-        cast_from_half(half_t);
-template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, unsigned int>::value, T>
-    cast_from_half(half_t);
-template <class T>
-KOKKOS_INLINE_FUNCTION
-    std::enable_if_t<std::is_same<T, unsigned long>::value, T>
-        cast_from_half(half_t);
-template <class T>
-KOKKOS_INLINE_FUNCTION
-    std::enable_if_t<std::is_same<T, unsigned long long>::value, T>
+    std::enable_if_t<std::is_same_v<T, unsigned long long>, T>
         cast_from_half(half_t);
 
 // declare bhalf_t
@@ -157,40 +148,38 @@ KOKKOS_INLINE_FUNCTION
 bhalf_t cast_to_bhalf(bhalf_t val);
 
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, float>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, float>, T>
     cast_from_bhalf(bhalf_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, bool>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, bool>, T>
     cast_from_bhalf(bhalf_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, double>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, double>, T>
     cast_from_bhalf(bhalf_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, short>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, short>, T>
     cast_from_bhalf(bhalf_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, int>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, int>, T>
     cast_from_bhalf(bhalf_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, long>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, long>, T>
     cast_from_bhalf(bhalf_t);
 template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, long long>::value, T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, long long>, T>
+    cast_from_bhalf(bhalf_t);
+template <class T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, unsigned short>, T>
+    cast_from_bhalf(bhalf_t);
+template <class T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, unsigned int>, T>
+    cast_from_bhalf(bhalf_t);
+template <class T>
+KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same_v<T, unsigned long>, T>
     cast_from_bhalf(bhalf_t);
 template <class T>
 KOKKOS_INLINE_FUNCTION
-    std::enable_if_t<std::is_same<T, unsigned short>::value, T>
-        cast_from_bhalf(bhalf_t);
-template <class T>
-KOKKOS_INLINE_FUNCTION std::enable_if_t<std::is_same<T, unsigned int>::value, T>
-    cast_from_bhalf(bhalf_t);
-template <class T>
-KOKKOS_INLINE_FUNCTION
-    std::enable_if_t<std::is_same<T, unsigned long>::value, T>
-        cast_from_bhalf(bhalf_t);
-template <class T>
-KOKKOS_INLINE_FUNCTION
-    std::enable_if_t<std::is_same<T, unsigned long long>::value, T>
+    std::enable_if_t<std::is_same_v<T, unsigned long long>, T>
         cast_from_bhalf(bhalf_t);
 #endif  // KOKKOS_IMPL_BHALF_TYPE_DEFINED
 
@@ -223,6 +212,11 @@ struct BitComparisonWrapper {
 
   template <typename Number>
   KOKKOS_FUNCTION friend bool operator==(BitComparisonWrapper a, Number b) {
+    return static_cast<FloatType>(a) == b;
+  }
+
+  template <typename Number>
+  KOKKOS_FUNCTION friend bool operator==(Number b, BitComparisonWrapper a) {
     return static_cast<FloatType>(a) == b;
   }
 
@@ -289,27 +283,6 @@ class alignas(FloatType) floating_point_wrapper {
   // since Cuda supports half precision initialization via the below constructor
   KOKKOS_FUNCTION
   floating_point_wrapper() : val(0.0F) {}
-
-// Copy constructors
-// Getting "C2580: multiple versions of a defaulted special
-// member function are not allowed" with VS 16.11.3 and CUDA 11.4.2
-#if defined(_WIN32) && defined(KOKKOS_ENABLE_CUDA)
-  KOKKOS_FUNCTION
-  floating_point_wrapper(const floating_point_wrapper& rhs) : val(rhs.val) {}
-
-  KOKKOS_FUNCTION
-  floating_point_wrapper& operator=(const floating_point_wrapper& rhs) {
-    val = rhs.val;
-    return *this;
-  }
-#else
-  KOKKOS_DEFAULTED_FUNCTION
-  floating_point_wrapper(const floating_point_wrapper&) noexcept = default;
-
-  KOKKOS_DEFAULTED_FUNCTION
-  floating_point_wrapper& operator=(const floating_point_wrapper&) noexcept =
-      default;
-#endif
 
   KOKKOS_FUNCTION
   floating_point_wrapper(bit_comparison_type rhs) {
@@ -490,7 +463,7 @@ class alignas(FloatType) floating_point_wrapper {
   // Compound operators: upcast overloads for +=
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator+=(T& lhs, floating_point_wrapper rhs) {
     lhs += static_cast<T>(rhs);
     return lhs;
@@ -526,7 +499,7 @@ class alignas(FloatType) floating_point_wrapper {
   // Compund operators: upcast overloads for -=
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator-=(T& lhs, floating_point_wrapper rhs) {
     lhs -= static_cast<T>(rhs);
     return lhs;
@@ -562,7 +535,7 @@ class alignas(FloatType) floating_point_wrapper {
   // Compund operators: upcast overloads for *=
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator*=(T& lhs, floating_point_wrapper rhs) {
     lhs *= static_cast<T>(rhs);
     return lhs;
@@ -598,7 +571,7 @@ class alignas(FloatType) floating_point_wrapper {
   // Compund operators: upcast overloads for /=
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator/=(T& lhs, floating_point_wrapper rhs) {
     lhs /= static_cast<T>(rhs);
     return lhs;
@@ -636,14 +609,14 @@ class alignas(FloatType) floating_point_wrapper {
   // Binary Arithmetic upcast operators for +
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator+(floating_point_wrapper lhs, T rhs) {
     return T(lhs) + rhs;
   }
 
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator+(T lhs, floating_point_wrapper rhs) {
     return lhs + T(rhs);
   }
@@ -665,14 +638,14 @@ class alignas(FloatType) floating_point_wrapper {
   // Binary Arithmetic upcast operators for -
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator-(floating_point_wrapper lhs, T rhs) {
     return T(lhs) - rhs;
   }
 
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator-(T lhs, floating_point_wrapper rhs) {
     return lhs - T(rhs);
   }
@@ -694,14 +667,14 @@ class alignas(FloatType) floating_point_wrapper {
   // Binary Arithmetic upcast operators for *
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator*(floating_point_wrapper lhs, T rhs) {
     return T(lhs) * rhs;
   }
 
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator*(T lhs, floating_point_wrapper rhs) {
     return lhs * T(rhs);
   }
@@ -723,14 +696,14 @@ class alignas(FloatType) floating_point_wrapper {
   // Binary Arithmetic upcast operators for /
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator/(floating_point_wrapper lhs, T rhs) {
     return T(lhs) / rhs;
   }
 
   template <class T>
   KOKKOS_FUNCTION friend std::enable_if_t<
-      std::is_same<T, float>::value || std::is_same<T, double>::value, T>
+      std::is_same_v<T, float> || std::is_same_v<T, double>, T>
   operator/(T lhs, floating_point_wrapper rhs) {
     return lhs / T(rhs);
   }
@@ -987,13 +960,12 @@ half_t cast_to_half(unsigned long long val) { return half_t(val); }
 // example don't include char
 template <class T>
 KOKKOS_INLINE_FUNCTION std::enable_if_t<
-    std::is_same<T, float>::value || std::is_same<T, bool>::value ||
-        std::is_same<T, double>::value || std::is_same<T, short>::value ||
-        std::is_same<T, unsigned short>::value || std::is_same<T, int>::value ||
-        std::is_same<T, unsigned int>::value || std::is_same<T, long>::value ||
-        std::is_same<T, unsigned long>::value ||
-        std::is_same<T, long long>::value ||
-        std::is_same<T, unsigned long long>::value,
+    std::is_same_v<T, float> || std::is_same_v<T, bool> ||
+        std::is_same_v<T, double> || std::is_same_v<T, short> ||
+        std::is_same_v<T, unsigned short> || std::is_same_v<T, int> ||
+        std::is_same_v<T, unsigned int> || std::is_same_v<T, long> ||
+        std::is_same_v<T, unsigned long> || std::is_same_v<T, long long> ||
+        std::is_same_v<T, unsigned long long>,
     T>
 cast_from_half(half_t val) {
   return T(val);
@@ -1047,13 +1019,12 @@ bhalf_t cast_to_bhalf(unsigned long long val) { return bhalf_t(val); }
 // cast_from_bhalf
 template <class T>
 KOKKOS_INLINE_FUNCTION std::enable_if_t<
-    std::is_same<T, float>::value || std::is_same<T, bool>::value ||
-        std::is_same<T, double>::value || std::is_same<T, short>::value ||
-        std::is_same<T, unsigned short>::value || std::is_same<T, int>::value ||
-        std::is_same<T, unsigned int>::value || std::is_same<T, long>::value ||
-        std::is_same<T, unsigned long>::value ||
-        std::is_same<T, long long>::value ||
-        std::is_same<T, unsigned long long>::value,
+    std::is_same_v<T, float> || std::is_same_v<T, bool> ||
+        std::is_same_v<T, double> || std::is_same_v<T, short> ||
+        std::is_same_v<T, unsigned short> || std::is_same_v<T, int> ||
+        std::is_same_v<T, unsigned int> || std::is_same_v<T, long> ||
+        std::is_same_v<T, unsigned long> || std::is_same_v<T, long long> ||
+        std::is_same_v<T, unsigned long long>,
     T>
 cast_from_bhalf(bhalf_t val) {
   return T(val);

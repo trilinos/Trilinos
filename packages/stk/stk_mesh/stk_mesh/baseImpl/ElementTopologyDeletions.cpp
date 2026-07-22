@@ -1,4 +1,6 @@
 #include <stk_mesh/baseImpl/ElementTopologyDeletions.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk
 {

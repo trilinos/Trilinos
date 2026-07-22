@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <gtest/gtest.h>
 
@@ -115,10 +115,10 @@ void run_imported_surface_to_surface_test(const std::string& boxFileBaseName,
   BoxVectorType toolBoxes = read_boxes_from_file<BoxVectorType>(boxFileBaseName + ".txt_tool", comm);
 
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
-    SearchResults searchResults;
 
     batchTimer.start_batch_timer();
     for (int i = 0; i < numIterations; ++i) {
+      SearchResults searchResults;
       stk::search::coarse_search(diceBoxes, toolBoxes, searchMethod, comm, searchResults, enforceSearchResultSymmetry);
     }
     batchTimer.stop_batch_timer();
@@ -147,7 +147,7 @@ void run_imported_surface_to_surface_test_with_views(const std::string& boxFileB
   BoxVectorType toolBoxesVector = read_boxes_from_file<BoxVectorType>(boxFileBaseName + ".txt_tool", comm);
 
   Kokkos::View<BoxIdentProcType *, ExecSpace> diceBoxes("diceBoxes", diceBoxesVector.size());
-  Kokkos::View<BoxIdentProcType *, ExecSpace> toolBoxes("diceBoxes", toolBoxesVector.size());
+  Kokkos::View<BoxIdentProcType *, ExecSpace> toolBoxes("toolBoxes", toolBoxesVector.size());
   auto diceBoxesHost = Kokkos::create_mirror_view(diceBoxes);
   auto toolBoxesHost = Kokkos::create_mirror_view(toolBoxes);
 
@@ -167,10 +167,9 @@ void run_imported_surface_to_surface_test_with_views(const std::string& boxFileB
   Kokkos::deep_copy(toolBoxes, toolBoxesHost);
 
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
-    Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
-
     batchTimer.start_batch_timer();
     for (int i = 0; i < numIterations; ++i) {
+      Kokkos::View<IdentProcIntersection*, ExecSpace> searchResults;
       stk::search::coarse_search(diceBoxes, toolBoxes, searchMethod, comm, searchResults,
                                  ExecSpace{}, enforceSearchResultSymmetry);
     }
@@ -484,6 +483,7 @@ TEST(StkSearch_SurfaceToSurface, tractorTrailerCrash_floatBox_with_views_ARBORX)
   const int numIterations = 20;
   run_imported_surface_to_surface_test_with_views<FloatBoxIdentProc>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
+
 template <typename BoxVectorType>
 BoxVectorType read_local_boxes_from_file_and_number(const std::string& baseName)
 {
@@ -506,10 +506,38 @@ BoxVectorType read_local_boxes_from_file_and_number(const std::string& baseName)
   for (auto & boxIdent : boxVector) {
     boxIdent.second = id;
     id++;
+  }
+
+  return boxVector;
+}
+
+template <typename BoxVectorType>
+BoxVectorType read_local_boxes_from_file_and_number(const std::string& baseName, MPI_Comm comm)
+{
+  const std::string fileName = get_parallel_filename(baseName, comm);
+  std::ifstream infile(fileName);
+  STK_ThrowRequireMsg(infile.good(), "Unable to open file " + fileName);
+
+  BoxVectorType boxVector;
+  std::string line;
+  while (std::getline(infile, line)) {
+    if (line.size() == 0) continue;
+    if (line[0] == '#') continue;
+    std::istringstream iss(line);
+    boxVector.emplace_back();
+    auto & [box, ident] = boxVector.back();
+    iss >> box;
+  }
+
+  unsigned long id = 0;
+  for (auto & boxIdent : boxVector) {
+    boxIdent.second = id;
+    id++;
   } 
 
   return boxVector;
 }
+
 template<typename BoxVectorType>
 void run_imported_surface_to_surface_test_local(const std::string& boxFileBaseName,
                                                 const int numIterations,
@@ -524,10 +552,10 @@ void run_imported_surface_to_surface_test_local(const std::string& boxFileBaseNa
   BoxVectorType toolBoxes = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_tool");
 
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
-    LocalSearchResults searchResults;
 
     batchTimer.start_batch_timer();
     for (int i = 0; i < numIterations; ++i) {
+      LocalSearchResults searchResults;
       stk::search::local_coarse_search(diceBoxes, toolBoxes, searchMethod, searchResults);
     }
     batchTimer.stop_batch_timer();
@@ -555,7 +583,7 @@ void run_imported_surface_to_surface_test_local_with_views(const std::string& bo
   BoxVectorType toolBoxesVector = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_tool");
 
   Kokkos::View<BoxIdentType *, ExecSpace> diceBoxes("diceBoxes", diceBoxesVector.size());
-  Kokkos::View<BoxIdentType *, ExecSpace> toolBoxes("diceBoxes", toolBoxesVector.size());
+  Kokkos::View<BoxIdentType *, ExecSpace> toolBoxes("toolBoxes", toolBoxesVector.size());
   auto diceBoxesHost = Kokkos::create_mirror_view(diceBoxes);
   auto toolBoxesHost = Kokkos::create_mirror_view(toolBoxes);
 
@@ -575,10 +603,10 @@ void run_imported_surface_to_surface_test_local_with_views(const std::string& bo
   Kokkos::deep_copy(toolBoxes, toolBoxesHost);
 
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
-    Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
 
     batchTimer.start_batch_timer();
     for (int i = 0; i < numIterations; ++i) {
+      Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
       stk::search::local_coarse_search(diceBoxes, toolBoxes, searchMethod, searchResults, ExecSpace{});
     }
     batchTimer.stop_batch_timer();
@@ -587,6 +615,160 @@ void run_imported_surface_to_surface_test_local_with_views(const std::string& bo
   batchTimer.print_batch_timing(numIterations);
 }
 
+template<typename BoxIdentType>
+void run_imported_surface_to_surface_test_pll_local_with_views(const std::string& boxFileBaseName,
+                                                           const int numIterations,
+                                                           stk::search::SearchMethod searchMethod)
+{
+  using BoxType = typename BoxIdentType::box_type;
+  using IdentType = typename BoxIdentType::second_type;
+  using BoxVectorType = typename std::vector<std::pair<BoxType, IdentType>>;
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  BoxVectorType diceBoxesVector = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_dice", comm);
+  BoxVectorType toolBoxesVector = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_tool", comm);
+
+  Kokkos::View<BoxIdentType *, ExecSpace> diceBoxes("diceBoxes", diceBoxesVector.size());
+  Kokkos::View<BoxIdentType *, ExecSpace> toolBoxes("diceBoxes", toolBoxesVector.size());
+  auto diceBoxesHost = Kokkos::create_mirror_view(diceBoxes);
+  auto toolBoxesHost = Kokkos::create_mirror_view(toolBoxes);
+
+  for (unsigned i = 0; i < diceBoxesVector.size(); i++) {
+    auto boxIdentPair = diceBoxesVector[i];
+    BoxIdentType domainBoxIdent{boxIdentPair.first, boxIdentPair.second};
+    diceBoxesHost(i) = domainBoxIdent;
+  }
+
+  for (unsigned i = 0; i < toolBoxesVector.size(); i++) {
+    auto boxIdentPair = toolBoxesVector[i];
+    BoxIdentType rangeBoxIdent{boxIdentPair.first, boxIdentPair.second};
+    toolBoxesHost(i) = rangeBoxIdent;
+  }
+
+  Kokkos::deep_copy(diceBoxes, diceBoxesHost);
+  Kokkos::deep_copy(toolBoxes, toolBoxesHost);
+
+  std::shared_ptr<stk::search::SearchData> searchData;
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+
+    batchTimer.start_batch_timer();
+    for (int i = 0; i < numIterations; ++i) {
+      Kokkos::View<IdentIntersection*, ExecSpace> searchResults;
+      constexpr bool sortResults = false;
+      searchData = stk::search::local_coarse_search(diceBoxes, toolBoxes, searchMethod, searchResults, ExecSpace{}, sortResults, searchData);
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(numIterations);
+}
+
+using MemSpace = stk::ngp::ExecSpace::memory_space;
+
+#ifdef STK_HAS_ARBORX
+template<typename BoxIdentType>
+void run_imported_surface_to_surface_test_local_with_views_rawArborX(const std::string& boxFileBaseName,
+                                                           const int numIterations,
+                                                           stk::search::SearchMethod /*searchMethod*/)
+{
+  using BoxType = typename BoxIdentType::box_type;
+  using IdentType = typename BoxIdentType::second_type;
+  using BoxVectorType = typename std::vector<std::pair<BoxType, IdentType>>;
+  using ExecSpace = Kokkos::DefaultExecutionSpace;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  const unsigned NUM_RUNS = 5;
+  stk::unit_test_util::BatchTimer batchTimer(comm);
+  batchTimer.initialize_batch_timer();
+
+  BoxVectorType diceBoxesVector = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_dice", comm);
+  BoxVectorType toolBoxesVector = read_local_boxes_from_file_and_number<BoxVectorType>(boxFileBaseName + ".txt_tool", comm);
+
+  Kokkos::View<ArborX::Box *, MemSpace> diceBoxes("diceBoxes", diceBoxesVector.size());
+  Kokkos::View<ArborX::Box *, MemSpace> toolBoxes("diceBoxes", toolBoxesVector.size());
+  auto diceBoxesHost = Kokkos::create_mirror_view(diceBoxes);
+  auto toolBoxesHost = Kokkos::create_mirror_view(toolBoxes);
+
+  for (unsigned i = 0; i < diceBoxesVector.size(); i++) {
+    auto boxIdentPair = diceBoxesVector[i];
+    auto stkMinCorner = boxIdentPair.first.min_corner();
+    auto stkMaxCorner = boxIdentPair.first.max_corner();
+    ArborX::Point min_point(stkMinCorner[0], stkMinCorner[1], stkMinCorner[2]);
+    ArborX::Point max_point(stkMaxCorner[0], stkMaxCorner[1], stkMaxCorner[2]);
+    diceBoxesHost(i) = {min_point, max_point};
+  }
+
+  for (unsigned i = 0; i < toolBoxesVector.size(); i++) {
+    auto boxIdentPair = toolBoxesVector[i];
+    auto stkMinCorner = boxIdentPair.first.min_corner();
+    auto stkMaxCorner = boxIdentPair.first.max_corner();
+    ArborX::Point min_point(stkMinCorner[0], stkMinCorner[1], stkMinCorner[2]);
+    ArborX::Point max_point(stkMaxCorner[0], stkMaxCorner[1], stkMaxCorner[2]);
+    toolBoxesHost(i) = {min_point, max_point};
+  }
+
+  Kokkos::deep_copy(diceBoxes, diceBoxesHost);
+  Kokkos::deep_copy(toolBoxes, toolBoxesHost);
+
+  for (unsigned run = 0; run < NUM_RUNS; ++run) {
+    batchTimer.start_batch_timer();
+    ExecSpace execSpace{};
+    for (int iter = 0; iter < numIterations; ++iter) {
+      Kokkos::Profiling::pushRegion("Raw ArborX");
+      Kokkos::View<int *, MemSpace> indices("ArborX::indices", 0);
+      Kokkos::View<int *, MemSpace> offsets("ArborX::offsets", 0);
+
+      ArborX::BVH<MemSpace> bvh{execSpace, toolBoxes};
+      const int numQueries = diceBoxes.extent(0);
+      Kokkos::View<ArborX::Intersects<ArborX::Box> *, MemSpace> queries(Kokkos::ViewAllocateWithoutInitializing("queries"), numQueries);
+
+      Kokkos::parallel_for("setup_queries", Kokkos::RangePolicy<ExecSpace>(0, numQueries),
+                           KOKKOS_LAMBDA(int i) { queries(i) = ArborX::intersects(diceBoxes(i)); });
+      Kokkos::fence();
+      bvh.query(execSpace, queries, indices, offsets);
+      Kokkos::Profiling::popRegion();
+    }
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(numIterations);
+}
+
+TEST(StkSearch_SurfaceToSurface, a001_intent_strong_link_floatBox_local_with_views_rawARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 40) GTEST_SKIP();
+
+  const int numIterations = 20;
+  run_imported_surface_to_surface_test_local_with_views_rawArborX<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+
+TEST(StkSearch_SurfaceToSurface, a001_intent_strong_link_floatBox_local_with_views_ARBORX)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 40) GTEST_SKIP();
+
+  const int numIterations = 20;
+  run_imported_surface_to_surface_test_pll_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::ARBORX);
+}
+#endif // STK_HAS_ARBORX
+
+TEST(StkSearch_SurfaceToSurface, a001_intent_strong_link_floatBox_local_with_views_MORTON_LBVH)
+{
+  std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
+  if (boxFileBaseName == "none-specified") GTEST_SKIP();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 40) GTEST_SKIP();
+
+  const int numIterations = 20;
+  run_imported_surface_to_surface_test_pll_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
+}
 
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_KDTREE)
 {
@@ -608,6 +790,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_MORTON_LBVH)
   run_imported_surface_to_surface_test_local<FloatBoxIdentVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
+#ifdef STK_HAS_ARBORX
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_ARBORX)
 {
   std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
@@ -617,6 +800,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_ARBORX)
   const int numIterations = 4;
   run_imported_surface_to_surface_test_local<FloatBoxIdentVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
+#endif
 
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_MORTON_LBVH)
 {
@@ -628,6 +812,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_MORTON_LBVH)
   run_imported_surface_to_surface_test_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
+#ifdef STK_HAS_ARBORX
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_ARBORX)
 {
   std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
@@ -637,6 +822,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_ARBORX)
   const int numIterations = 4;
   run_imported_surface_to_surface_test_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
+#endif
 
 } // namespace
 

@@ -1,4 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 //
 // Strategies for grouping samples for ensemble propagation
 //
@@ -8,7 +16,7 @@
 #include "Teuchos_Comm.hpp"
 #include "BoxElemFixture.hpp"
 #include "HexElement.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace Kokkos {
 namespace Example {
@@ -114,7 +122,7 @@ public:
     // Compute the maximum and minimum values of the diffusion coefficient
     // over the mesh (which is our measure of anisotropy) for each sample point
     typedef typename CoeffFunctionType::RandomVariableView RV;
-    typedef typename RV::HostMirror HRV;
+    typedef typename RV::host_mirror_type HRV;
     RV rv = m_max_min_functor.m_coeff_function.getRandomVariables();
     HRV hrv = Kokkos::create_mirror_view(rv);
     const Ordinal dim = rv.extent(0);
@@ -125,10 +133,10 @@ public:
       Kokkos::deep_copy( rv, hrv );
 
       Ordinal num_elem = m_max_min_functor.m_elem_node_ids.extent(0);
-      Scalar local_coeff[2] = { 0.0,  Kokkos::ArithTraits<Scalar>::max() };
+      Scalar local_coeff[2] = { 0.0,  KokkosKernels::ArithTraits<Scalar>::max() };
       parallel_reduce( num_elem, m_max_min_functor, local_coeff );
 
-      Scalar coeff[2] = { 0.0,  Kokkos::ArithTraits<Scalar>::max() };
+      Scalar coeff[2] = { 0.0,  KokkosKernels::ArithTraits<Scalar>::max() };
       Teuchos::reduceAll( *m_comm, Teuchos::REDUCE_MAX, 1, &local_coeff[0], &coeff[0] );
       Teuchos::reduceAll( *m_comm, Teuchos::REDUCE_MIN, 1, &local_coeff[1], &coeff[1] );
 
@@ -264,7 +272,7 @@ public:
       // The diffusion coefficient must be positive, so initializing the
       // result to zero is safe
       dst[0] = 0.0;
-      dst[1] = Kokkos::ArithTraits<Scalar>::max();
+      dst[1] = KokkosKernels::ArithTraits<Scalar>::max();
     }
 
   };

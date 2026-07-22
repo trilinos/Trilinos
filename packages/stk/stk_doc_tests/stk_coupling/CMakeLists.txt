@@ -32,7 +32,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_coupling_doc_tests
@@ -50,6 +50,16 @@ else()
   target_link_libraries(stk_coupling_doc_tests stk_util_parallel)
   target_link_libraries(stk_coupling_doc_tests stk_unit_main)
 
-  add_test("stk_coupling_doc_tests" sh -c "mpiexec --np 1 stk_coupling_doc_tests")
+
+  INSTALL(TARGETS stk_coupling_doc_tests DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_coupling_doc_tests_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_coupling_doc_tests)
+    set_property(TEST "stk_coupling_doc_tests_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
 endif()
 

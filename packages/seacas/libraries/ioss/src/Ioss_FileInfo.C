@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,9 +8,10 @@
 #include "Ioss_FileInfo.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Utils.h"
+#include <cstdlib>
 #include <cstring>
+#include <fmt/ostream.h>
 #include <ostream>
-#include <stdlib.h>
 #include <string>
 #include <tokenize.h>
 #include <vector>
@@ -91,8 +92,6 @@ namespace Ioss {
   int FileInfo::parallel_exists(IOSS_MAYBE_UNUSED Ioss_MPI_Comm communicator,
                                 IOSS_MAYBE_UNUSED std::string &where) const
   {
-    IOSS_PAR_UNUSED(communicator);
-    IOSS_PAR_UNUSED(where);
     int sum = exists_ ? 1 : 0;
 
 #ifdef SEACAS_HAVE_MPI
@@ -169,6 +168,42 @@ namespace Ioss {
     return false;
   }
 
+  std::string_view FileInfo::filesystem_type() const
+  {
+#if !defined(__IOSS_WINDOWS__)
+    auto tmp_path = pathname();
+    if (tmp_path.empty()) {
+      char *current_cwd = getcwd(nullptr, 0);
+      tmp_path          = std::string(current_cwd);
+      free(current_cwd);
+    }
+    char *path = ::realpath(tmp_path.c_str(), nullptr);
+    if (path != nullptr) {
+
+      struct statfs stat_fs;
+      // We want to run `statfs` on the path; not the filename since it might not exist.
+      if (statfs(path, &stat_fs) == -1) {
+        free(path);
+        IOSS_ERROR(fmt::format("ERROR: Could not run statfs on '{}'.\n", filename_));
+      }
+      free(path);
+
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+      return stat_fs.f_fstypename;
+#else
+      /* linux statfs defines that 0x6969 is NFS filesystem */
+      if (stat_fs.f_type == 0x0BD00BD0)
+        return "lustre";
+      if (stat_fs.f_type == 0x47504653)
+        return "gpfs";
+      if (stat_fs.f_type == 0x6969)
+        return "nfs";
+#endif
+    }
+#endif
+    return "unknown";
+  }
+
   //: Return TRUE if file is on an NFS filesystem...
   bool FileInfo::is_nfs() const
   {
@@ -186,9 +221,7 @@ namespace Ioss {
       // We want to run `statfs` on the path; not the filename since it might not exist.
       if (statfs(path, &stat_fs) == -1) {
         free(path);
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Could not run statfs on '" << filename_ << "'.\n";
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: Could not run statfs on '{}'.\n", filename_));
       }
       free(path);
 
@@ -346,8 +379,8 @@ namespace Ioss {
 
   void FileInfo::create_path(const std::string &filename)
   {
-    bool               error_found = false;
-    std::ostringstream errmsg;
+    bool        error_found = false;
+    std::string errmsg;
 
     Ioss::FileInfo file      = Ioss::FileInfo(filename);
     std::string    path      = file.pathname();
@@ -365,15 +398,15 @@ namespace Ioss {
         const int mode = 0777; // Users umask will be applied to this.
         if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
 #endif
-          errmsg << "ERROR: Cannot create directory '" << path_root << "': " << std::strerror(errno)
-                 << "\n";
+          errmsg      = fmt::format("ERROR: Cannot create directory '{}': {}\n", path_root,
+                                    std::strerror(errno));
           error_found = true;
           break;
         }
       }
       else if (!S_ISDIR(st.st_mode)) {
-        errno = ENOTDIR;
-        errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+        errno       = ENOTDIR;
+        errmsg      = fmt::format("ERROR: Path '{}' is not a directory.\n", path_root);
         error_found = true;
         break;
       }
@@ -388,7 +421,6 @@ namespace Ioss {
   void FileInfo::create_path(const std::string              &filename,
                              IOSS_MAYBE_UNUSED Ioss_MPI_Comm communicator)
   {
-    IOSS_PAR_UNUSED(communicator);
 #ifdef SEACAS_HAVE_MPI
     int                error_found = 0;
     std::ostringstream errmsg;

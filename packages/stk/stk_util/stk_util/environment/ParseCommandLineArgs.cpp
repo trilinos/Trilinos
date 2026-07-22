@@ -75,6 +75,8 @@ void parse_command_line_args(int argc, const char** argv,
   }
 
   std::vector<bool> argHasBeenUsed(argc, false);
+  std::vector<std::pair<const char*,int>> posArgs;
+  posArgs.reserve(argc);
   for(int i=1; i<argc; ++i) {
     const char* arg = argv[i];
     if (arg == nullptr) {
@@ -83,6 +85,7 @@ void parse_command_line_args(int argc, const char** argv,
 
     const bool isPositionalArg = (arg[0] != '-');
     if (isPositionalArg) {
+      posArgs.push_back(std::make_pair(arg,i));
       continue;
     }
 
@@ -121,22 +124,34 @@ void parse_command_line_args(int argc, const char** argv,
     }
 
     insert_option(option, value, parsedOptions);
-    parsedOptions.set_parsed(optionKey);
+    parsedOptions.set_parsed(option.name);
   }
 
-  if (optionsDesc.get_num_positional_options() > 0) {
+  const int numExpectedPositionalOptions = optionsDesc.get_num_positional_options();
+
+  bool foundRedundantFlagAndPositionalArgs = false;
+  std::string errMsg;
+  if (numExpectedPositionalOptions > 0) {
     int positionalArgIndex = 0;
-    for(int i=1; i<argc; ++i) {
-      const char* arg = argv[i];
-      const bool isPositionalArg = !argHasBeenUsed[i] && (arg[0] != '-');
-      if (isPositionalArg) {
-        const Option& option = optionsDesc.get_positional_option(positionalArgIndex);
-        if (option.position != INVALID_POSITION) {
-          argHasBeenUsed[i] = true;
-          insert_option(option, std::string(argv[i]), parsedOptions);
-          ++positionalArgIndex;
-        }
+
+    for(int posIdx = 0; posIdx < numExpectedPositionalOptions; ++posIdx) {
+      const Option& option = optionsDesc.get_positional_option(posIdx);
+      const bool alreadyParsed = parsedOptions.is_parsed(option.name);
+
+      if (!alreadyParsed && static_cast<unsigned>(positionalArgIndex) < posArgs.size()) {
+        const char* arg = posArgs[positionalArgIndex].first;
+        const int argIdx = posArgs[positionalArgIndex].second;
+
+        insert_option(option, std::string(arg), parsedOptions);
+
+        argHasBeenUsed[argIdx] = true;
+        ++positionalArgIndex;
       }
+    }
+
+    if (static_cast<unsigned>(positionalArgIndex) != posArgs.size()) {
+      foundRedundantFlagAndPositionalArgs = true;
+      errMsg = std::string("parse_command_line_args: Detected that 1 or more arguments was redundantly specified (with both a flag and a positional argument.");
     }
   }
 
@@ -151,6 +166,8 @@ void parse_command_line_args(int argc, const char** argv,
       }
     }
   }
+
+  STK_ThrowErrorMsgIf(foundRedundantFlagAndPositionalArgs, errMsg);
 }
 
 }

@@ -55,7 +55,6 @@ TEST(stkMeshHowTo, useMultistateField)
   builder.set_spatial_dimension(spatialDimension);
   builder.set_entity_rank_names(stk::mesh::entity_rank_names());
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
-  bulkPtr->mesh_meta_data().use_simple_fields();
   stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
   typedef stk::mesh::Field<double> ScalarField;
@@ -73,19 +72,22 @@ TEST(stkMeshHowTo, useMultistateField)
   mesh.modification_end();
 
   EXPECT_EQ(stk::mesh::StateNP1, temperatureFieldStateNp1.state());
-  double* temperatureStateNp1 = stk::mesh::field_data(temperatureFieldStateNp1, node);
-  EXPECT_EQ(initialTemperatureValue, *temperatureStateNp1);
+  auto temperatureFieldStateNp1Data = temperatureFieldStateNp1.data<stk::mesh::ReadWrite>();
+  auto temperatureStateNp1 = temperatureFieldStateNp1Data.entity_values(node);
+  EXPECT_EQ(initialTemperatureValue, temperatureStateNp1());
   double newTemperatureValue = 2.0;
-  *temperatureStateNp1 = newTemperatureValue;
+  temperatureStateNp1() = newTemperatureValue;
 
   ScalarField& temperatureFieldStateN = temperatureFieldStateNp1.field_of_state(stk::mesh::StateN);
-  double* temperatureStateN = stk::mesh::field_data(temperatureFieldStateN, node);
-  EXPECT_EQ(initialTemperatureValue, *temperatureStateN);
+  auto temperatureFieldStateNData = temperatureFieldStateN.data<stk::mesh::ReadWrite>();
+  auto temperatureStateN = temperatureFieldStateNData.entity_values(node);
+  EXPECT_EQ(initialTemperatureValue, temperatureStateN());
 
   mesh.update_field_data_states();
 
-  temperatureStateN = stk::mesh::field_data(temperatureFieldStateN, node);
-  EXPECT_EQ(newTemperatureValue, *temperatureStateN);
+  temperatureFieldStateNData = temperatureFieldStateN.data<stk::mesh::ReadWrite>();
+  temperatureStateN() = temperatureFieldStateNData.entity_values(node)();
+  EXPECT_EQ(newTemperatureValue, temperatureStateN());
 }
 //ENDUseMultistateField
 

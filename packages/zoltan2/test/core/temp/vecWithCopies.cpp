@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 ///  Small test program showing how to take GIDs that may have
 ///  duplicates across processors (e.g., mesh vertices that are copied
 ///  at part boundaries in an element-based decomposition) and assign

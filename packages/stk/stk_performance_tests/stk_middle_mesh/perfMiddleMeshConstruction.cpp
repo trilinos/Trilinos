@@ -42,8 +42,8 @@ TEST(MiddleMesh, StkMeshCreator)
 {
   stk::ParallelMachine commWorld = MPI_COMM_WORLD;
 
-  std::string meshFileName = stk::unit_test_util::simple_fields::get_command_line_option<std::string>("--mesh", "generated:2x1000x1000|sideset:x");
-  std::string surfacePartName = stk::unit_test_util::simple_fields::get_command_line_option<std::string>("--surface", "surface_1");
+  std::string meshFileName = stk::unit_test_util::get_command_line_option<std::string>("--mesh", "generated:2x1000x1000|sideset:x");
+  std::string surfacePartName = stk::unit_test_util::get_command_line_option<std::string>("--surface", "surface_1");
 
   const unsigned NUM_RUNS = 5;
   const int NUM_ITERS = 1;

@@ -32,8 +32,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_MutuallyExclusiveTime.hpp>
-
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -253,9 +251,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
     if (ndims == 2)
-      paramList.set<std::string>("aggregation: output filename", "MPI-Viz-Output-2D-Level%LEVELID-Proc%PROCID");
+      paramList.set<std::string>("aggregation: output filename", "Output/MPI-Viz-Output-2D-Level%LEVELID-Proc%PROCID");
     else if (ndims == 3)
-      paramList.set<std::string>("aggregation: output filename", "MPI-Viz-Output-3D-Level%LEVELID-Proc%PROCID");
+      paramList.set<std::string>("aggregation: output filename", "Output/MPI-Viz-Output-3D-Level%LEVELID-Proc%PROCID");
     int numReruns = 1;
     if (paramList.isParameter("number of reruns"))
       numReruns = paramList.get<int>("number of reruns");
@@ -318,7 +316,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             std::string filename = runList.get<std::string>("filename");
             if (numReruns > 1)
               filename += "_run" + MueLu::toString(rerunCount);
-            filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
+            filename += ".tpetra";
 
             savedOut  = dup(STDOUT_FILENO);
             openedOut = fopen(filename.c_str(), "w");

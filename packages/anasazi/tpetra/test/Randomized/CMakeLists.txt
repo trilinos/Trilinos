@@ -1,4 +1,4 @@
-IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
+IF (Tpetra_INST_COMPLEX_DOUBLE)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Tpetra_Randomized_Complex_test
     SOURCES cxx_main_complex.cpp

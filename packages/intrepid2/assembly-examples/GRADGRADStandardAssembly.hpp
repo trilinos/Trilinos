@@ -145,8 +145,11 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureGRADGRAD(Intre
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
     FunctionSpaceTools::HGRADtransformGRAD(unorientedTransformedGradValues, jacobianInverse, basisGradValues);
+    // we want to exclude orientation application in the core integration timing -- this time gets reported as "Other"
+    fstIntegrateCall->stop();
     OrientationTools<DeviceType>::modifyBasisByOrientation(transformedGradValues, unorientedTransformedGradValues,
                                                            orientationsWorkset, basis.get());
+    fstIntegrateCall->start();
     
     transformIntegrateFlopCount += double(numCellsInWorkset) * double(numFields) * double(numPoints) * double(spaceDim) * (spaceDim - 1) * 2.0; // 2: one multiply, one add per (P,D) entry in the contraction.
     FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);

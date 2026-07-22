@@ -266,7 +266,7 @@ stk::mesh::EntityIdVector DisconnectGroup::get_group_element_ids() const
   }
   return elementIds;
 }
-void DisconnectGroup::pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int proc) const {
+void DisconnectGroup::pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId newNodeId, int /*proc*/) const {
   STK_ThrowRequire(!m_parts.empty());
   stk::mesh::EntityId parentNodeId = m_bulk.identifier(m_node);
 
@@ -290,7 +290,7 @@ void DisconnectGroup::pack_group_info(stk::CommBuffer& procBuffer, stk::mesh::En
   }
 }
 
-void DisconnectGroup::unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int proc) {
+void DisconnectGroup::unpack_group_info(stk::CommBuffer& procBuffer, stk::mesh::EntityId& newNodeId, int /*proc*/) {
   unsigned numParts = 0;
   stk::mesh::PartOrdinal partOrdinal;
   stk::mesh::EntityId parentNodeId;

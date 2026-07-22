@@ -77,7 +77,7 @@ class AlgebraicPermutationStrategy : public BaseClass {
 #include "MueLu_UseShortNames.hpp"
  public:
   /*!
-    @class AlgebraicPermutationStrategy class.
+    @class AlgebraicPermutationStrategy
     @brief Class which defines local permutations of matrix columns.
     */
 

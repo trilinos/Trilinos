@@ -46,10 +46,10 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"
@@ -306,7 +306,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 void separate_and_skin_mesh(
     stk::mesh::MetaData & fem_meta,
     stk::mesh::BulkData & mesh,
-    stk::mesh::Part     & skin_part,
+    stk::mesh::Part     & /*skin_part*/,
     stk::mesh::EntityVector & entities_to_separate
     )
 {
@@ -384,7 +384,7 @@ TEST( skinning_large_cube, skinning_large_cube)
     //create the mesh
 
     start_time = stk::wall_time();
-    stk::mesh::fixtures::simple_fields::HexFixture fixture(pm,NX,NY,NZ);
+    stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
     const EntityRank element_rank = stk::topology::ELEMENT_RANK;
     const EntityRank side_rank = fixture.m_meta.side_rank();
 
@@ -552,7 +552,7 @@ double run_skinning_large_cube_test(bool createEdges, unsigned numRuns, std::vec
   double skinningTime = 0.0;
 
   for (unsigned testRun = 0; testRun < numRuns; ++testRun) {
-    stk::mesh::fixtures::simple_fields::HexFixture fixture(pm,NX,NY,NZ);
+    stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
 
     stk::mesh::MetaData & fem_meta = fixture.m_meta;
 

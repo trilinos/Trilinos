@@ -67,7 +67,11 @@ KOKKOS_INLINE_FUNCTION
 constexpr bool is_gpu() {
 #ifdef STK_ENABLE_GPU
 using execution_space = typename internal::DeduceFunctorExecutionSpace<Func>::execution_space;
+#ifdef KOKKOS_ENABLE_CUDA
   return std::is_same<execution_space, Kokkos::Cuda>::value;
+#elif defined(KOKKOS_ENABLE_HIP)
+  return std::is_same_v<execution_space, Kokkos::HIP>;
+#endif
 #else
   return false;
 #endif

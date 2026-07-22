@@ -13,13 +13,13 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   # Need ROL_TpetraMultiVector.hpp
   TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
 
-  TRIBITS_ADD_EXECUTABLE(
+  ROL_ADD_EXECUTABLE(
     example_01
     SOURCES example_01.cpp
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  ROL_COPY_FILES_TO_BINARY_DIR(
     SemilinearParabolicDataCopy
     SOURCE_FILES
       input_ex01.xml plotresults.m
@@ -28,7 +28,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   )
 
   IF(TPL_ENABLE_MPI)
-    TRIBITS_ADD_EXECUTABLE(
+    ROL_ADD_EXECUTABLE(
       AugmentedSystem
       SOURCES AugmentedSystem.cpp
       ADD_DIR_TO_NAME

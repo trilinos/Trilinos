@@ -22,8 +22,8 @@ namespace Iovs_exodus {
   {
 
   public:
-    CatalystExodusMeshBase(){};
-    virtual ~CatalystExodusMeshBase(){};
+    CatalystExodusMeshBase() {};
+    virtual ~CatalystExodusMeshBase() {};
 
     // Description:
     // Calls the ParaView Catalyst pipeline to run co-processing

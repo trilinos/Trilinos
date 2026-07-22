@@ -1,58 +1,27 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_Print.hpp"
-#include <Phalanx_any.hpp>
+#include <any>
 #include <unordered_map>
 #include <map>
 
 #include "Sacado.hpp"
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
+#endif
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Kokkos_Random.hpp"
 
@@ -108,17 +77,17 @@ namespace phalanx_test {
     P = Kokkos::View<double**,PHX::Device>("P",num_cells,num_ip);
     T = Kokkos::View<double**,PHX::Device>("T",num_cells,num_ip);
 
-    Kokkos::View<double**,PHX::Device>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
-    Kokkos::View<double**,PHX::Device>::HostMirror host_P = Kokkos::create_mirror_view(P);
-    Kokkos::View<double**,PHX::Device>::HostMirror host_T = Kokkos::create_mirror_view(T);
+    Kokkos::View<double**,PHX::Device>::host_mirror_type host_rho = Kokkos::create_mirror_view(rho);
+    Kokkos::View<double**,PHX::Device>::host_mirror_type host_P = Kokkos::create_mirror_view(P);
+    Kokkos::View<double**,PHX::Device>::host_mirror_type host_T = Kokkos::create_mirror_view(T);
 
-    std::unordered_map<std::string,PHX::any> data_container;
+    std::unordered_map<std::string,std::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<double**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
+      std::any_cast<Kokkos::View<double**,PHX::Device> >(data_container["rho"]);
 
-    Kokkos::View<double**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
+    Kokkos::View<double**,PHX::Device>::host_mirror_type host_rhoInAnotherEvaluator = host_rho;
 
     for (int i=0; i< num_cells; i++){
        for (int j=0; j< num_ip; j++){
@@ -201,22 +170,22 @@ namespace phalanx_test {
     T = Kokkos::View<FadType**,PHX::Device>("T",num_cells,num_ip,deriv_dim);
     k = Kokkos::View<FadType*,PHX::Device>("k",1,deriv_dim);
 
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_rho;
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_P;
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_T;
-    Kokkos::View<FadType*,PHX::Device>::HostMirror host_k;
-    host_rho = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_rho",num_cells,num_ip,deriv_dim);
-    host_P = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_P",num_cells,num_ip,deriv_dim);
-    host_T = Kokkos::View<FadType**,PHX::Device>::HostMirror("host_T",num_cells,num_ip,deriv_dim);
-    host_k = Kokkos::View<FadType*,PHX::Device>::HostMirror("host_k",1,deriv_dim);
+    Kokkos::View<FadType**,PHX::Device>::host_mirror_type host_rho;
+    Kokkos::View<FadType**,PHX::Device>::host_mirror_type host_P;
+    Kokkos::View<FadType**,PHX::Device>::host_mirror_type host_T;
+    Kokkos::View<FadType*,PHX::Device>::host_mirror_type host_k;
+    host_rho = Kokkos::View<FadType**,PHX::Device>::host_mirror_type("host_rho",num_cells,num_ip,deriv_dim);
+    host_P = Kokkos::View<FadType**,PHX::Device>::host_mirror_type("host_P",num_cells,num_ip,deriv_dim);
+    host_T = Kokkos::View<FadType**,PHX::Device>::host_mirror_type("host_T",num_cells,num_ip,deriv_dim);
+    host_k = Kokkos::View<FadType*,PHX::Device>::host_mirror_type("host_k",1,deriv_dim);
 
-    std::unordered_map<std::string,PHX::any> data_container;
+    std::unordered_map<std::string,std::any> data_container;
     data_container["rho"] = rho;
 
     Kokkos::View<FadType**,PHX::Device> rhoInAnotherEvaluator =
-      PHX::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
+      std::any_cast<Kokkos::View<FadType**,PHX::Device> >(data_container["rho"]);
 
-    Kokkos::View<FadType**,PHX::Device>::HostMirror host_rhoInAnotherEvaluator = host_rho;
+    Kokkos::View<FadType**,PHX::Device>::host_mirror_type host_rhoInAnotherEvaluator = host_rho;
 
     for (int i=0; i< num_cells; i++){
        for (int j=0; j< num_ip; j++){
@@ -426,7 +395,7 @@ namespace phalanx_test {
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
     typename PHX::Device().fence();
 
-    Kokkos::View<double**,PHX::Device>::HostMirror host_rho = Kokkos::create_mirror_view(rho);
+    Kokkos::View<double**,PHX::Device>::host_mirror_type host_rho = Kokkos::create_mirror_view(rho);
     Kokkos::deep_copy(host_rho,rho);
     typename PHX::Device().fence();
 
@@ -614,6 +583,7 @@ namespace phalanx_test {
 	  TEST_FLOATING_EQUALITY(host_f(i).fastAccessDx(0),3.0,tol);
 	}
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 	Kokkos::parallel_for(num_cells,KOKKOS_LAMBDA (const int i) {
 	    f[i].val() = 3.0;
 	    f[i].fastAccessDx(0) = 4.0;
@@ -624,6 +594,7 @@ namespace phalanx_test {
 	  TEST_FLOATING_EQUALITY(host_f[i].val(),3.0,tol);
 	  TEST_FLOATING_EQUALITY(host_f[i].fastAccessDx(0),4.0,tol);
 	}
+#endif
       }
 
     }
@@ -644,11 +615,13 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      a_[i].val() = static_cast<double>(i);
-      a_[i].fastAccessDx(0) = 1.;
-      b_[i].val() = 1.0;
-      b_[i].fastAccessDx(0) = 1.;
-      c_[i] = a_[i]*b_[i];
+      for (size_t j=0; j < a_.extent(1); ++j) {
+        a_(i,j).val() = static_cast<double>(i + j);
+        a_(i,j).fastAccessDx(0) = 1.;
+        b_(i,j).val() = 1.0;
+        b_(i,j).fastAccessDx(0) = 1.;
+        c_(i,j) = a_(i,j)*b_(i,j);
+      }
     }
   };
 
@@ -670,21 +643,24 @@ namespace phalanx_test {
       TEST_EQUALITY(b.rank(),2);
       TEST_EQUALITY(c.rank(),2);
 
-      Kokkos::parallel_for(a.size(), AssignFad<Kokkos::DynRankView<FadType,PHX::Device>>(a,b,c));
+      Kokkos::parallel_for(a.extent(0), AssignFad<Kokkos::DynRankView<FadType,PHX::Device>>(a,b,c));
       Kokkos::fence();
       auto host_c = Kokkos::create_mirror_view(c);
       Kokkos::deep_copy(host_c,c);
 
       TEST_EQUALITY(c.rank(),2);
       TEST_EQUALITY(Kokkos::dimension_scalar(c),2);
+#if !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
       TEST_EQUALITY(c.impl_map().dimension_scalar(),2);
+#endif
 
-      // verify for bracket access
       double tol = std::numeric_limits<double>::epsilon() * 100.0;
-      for (int i = 0; i < num_cells*num_ip; ++i) {
-      	out << "i=" << i << ",val=" << host_c[i].val() << ",fad=" << host_c[i].fastAccessDx(1) << std::endl;
-      	TEST_FLOATING_EQUALITY(host_c[i].val(),static_cast<double>(i),tol);
-      	TEST_FLOATING_EQUALITY(host_c[i].fastAccessDx(0),static_cast<double>(i+1),tol);
+      for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_ip; ++j) {
+          out << "(" << i << "," << j << ") val=" << host_c(i, j).val() << ",fad=" << host_c(i,j).fastAccessDx(1) << std::endl;
+          TEST_FLOATING_EQUALITY(host_c(i,j).val(),static_cast<double>(i+j),tol);
+          TEST_FLOATING_EQUALITY(host_c(i,j).fastAccessDx(0),static_cast<double>(i+j+1),tol);
+        }
       }
     }
   }
@@ -861,6 +837,8 @@ namespace phalanx_test {
 
 #if defined(KOKKOS_ENABLE_CUDA)
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_HIP)
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
 #else
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
 #endif
@@ -874,13 +852,13 @@ namespace phalanx_test {
     static_assert(std::is_same<scalar_view_layout,DefaultDevLayout>::value,"ERROR: Layout Inconsistency!");
     static_assert(std::is_same<fad_view_layout,DefaultFadLayout>::value,"ERROR: Layout Inconsistency!");
 
-    std::cout << "\n\nscalar_view_layout = " << PHX::print<scalar_view_layout>() << std::endl;
-    std::cout << "scalar_dev_layout  = " << PHX::print<scalar_dev_layout>() << std::endl;
-    std::cout << "DefaultDevLayout   = " << PHX::print<DefaultDevLayout>() << "\n" << std::endl;
+    out << "\n\nscalar_view_layout = " << PHX::print<scalar_view_layout>() << std::endl;
+    out << "scalar_dev_layout  = " << PHX::print<scalar_dev_layout>() << std::endl;
+    out << "DefaultDevLayout   = " << PHX::print<DefaultDevLayout>() << "\n" << std::endl;
 
-    std::cout << "fad_view_layout    = " << PHX::print<fad_view_layout>() << std::endl;
-    std::cout << "fad_dev_layout     = " << PHX::print<fad_dev_layout>() << std::endl;
-    std::cout << "DefaultFadLayout   = " << PHX::print<DefaultFadLayout>() << "\n" << std::endl;
+    out << "fad_view_layout    = " << PHX::print<fad_view_layout>() << std::endl;
+    out << "fad_dev_layout     = " << PHX::print<fad_dev_layout>() << std::endl;
+    out << "DefaultFadLayout   = " << PHX::print<DefaultFadLayout>() << "\n" << std::endl;
 
     // Tests for assignments from static View to DynRankView
     Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);
@@ -978,15 +956,15 @@ namespace phalanx_test {
     {
       Kokkos::View<StdDevAtomic,PHX::Device> values("v");
       Kokkos::parallel_for("offline stdandard deviation",N,KOKKOS_LAMBDA(const int i) {
-        bool success = false;
+        bool success_local = false;
         do {
           StdDevAtomic n_minus_one(values());
           StdDevAtomic n(n_minus_one);
           n.count_ += 1;
           n.mean_ += ( a(i) - n_minus_one.mean_ ) / n.count_;
           n.M2_ += ( a(i) - n_minus_one.mean_ ) * ( a(i) - n.mean_ );
-          success = Kokkos::atomic_compare_exchange_strong(&(values()),n_minus_one,n);
-        } while (!success);
+          success_local = (n_minus_one == Kokkos::atomic_compare_exchange(&(values()),n_minus_one,n));
+        } while (!success_local);
       });
       PHX::Device().fence();
 
@@ -1002,4 +980,102 @@ namespace phalanx_test {
     TEST_FLOATING_EQUALITY(mean,mean_gold,tol);
     TEST_FLOATING_EQUALITY(stddev,stddev_gold,tol);
   }
+
+  struct Inner {
+    Kokkos::Experimental::UniqueToken<Kokkos::DefaultExecutionSpace> token_;
+  };
+
+  struct Outer {
+    Inner inner_;
+  };
+
+  TEUCHOS_UNIT_TEST(kokkos, UniqueToken)
+  {
+    Kokkos::print_configuration(out);
+
+    using ExecutionSpace = PHX::exec_space;
+
+    Kokkos::Experimental::UniqueToken<ExecutionSpace> token;
+
+    out << "\nExecutionSpace.concurrency() = " << ExecutionSpace().concurrency() << std::endl;
+    out << "UniqueToken.size() = " << token.size() << std::endl;
+
+    TEST_EQUALITY(ExecutionSpace().concurrency(), token.size());
+
+    const size_t num_elements = token.size()+10;
+    Outer o;
+
+    Kokkos::View<int*> scratch_space("scratch space",token.size());
+    Kokkos::parallel_for("unique token",num_elements,KOKKOS_LAMBDA(const int cell){
+        Kokkos::Experimental::AcquireUniqueToken lock(o.inner_.token_);
+        const auto t = lock.value();
+	scratch_space(t) = cell;
+	// printf("cell=%d, t=%u, equal=%u\n",cell,t,unsigned(cell == t));
+    });
+  }
+
+  TEUCHOS_UNIT_TEST(kokkos, ReduceCheck)
+  {
+    constexpr int size = 10;
+    double gold_sum = 0.0;
+    Kokkos::View<double*> parts("parts",size);
+    auto parts_host = Kokkos::create_mirror_view(parts);
+    for (int i=0; i < size; ++i) {
+      parts_host(i) = double(i);
+
+      if (i%2 == 0)
+        gold_sum += double(i);
+    }
+    Kokkos::deep_copy(parts,parts_host);
+
+    double sum = 0.0;
+    Kokkos::parallel_reduce("sum",10,KOKKOS_LAMBDA(const int i, double& tmp){
+      if (i%2 == 0)
+        tmp += parts(i);
+      // printf("tmp(%d)=%f \n",i,tmp);
+    },sum);
+    out << "sum = " << sum << std::endl;
+    const double tol = Teuchos::ScalarTraits<double>::eps()*1000.0;
+    TEST_FLOATING_EQUALITY(sum,gold_sum,tol);
+  }
+
+  TEUCHOS_UNIT_TEST(kokkos, ScanCheck)
+  {
+    constexpr int size = 10;
+    Kokkos::View<double*> parts("parts",size);
+    auto parts_host = Kokkos::create_mirror_view(parts);
+    for (int i=0; i < size; ++i)
+      parts_host(i)=double(i);
+    Kokkos::deep_copy(parts,parts_host);
+
+    Kokkos::View<double*> inclusive_scan("inclusive",size);
+    Kokkos::View<double*> exclusive_scan("exclusive",size);
+    double result = 0.0;
+    Kokkos::parallel_scan("sum",10,KOKKOS_LAMBDA(const int i, double& partial_sum, const bool is_final){
+      if (is_final)
+        exclusive_scan(i) = partial_sum;
+
+      partial_sum += parts(i);
+
+      if (is_final)
+        inclusive_scan(i) += partial_sum;
+
+      // printf("partial_sum(%d)=%f, is_final=%d \n",i,partial_sum,int(is_final));
+     },result);
+
+    auto is_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),inclusive_scan);
+    auto es_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),exclusive_scan);
+
+    for (int i=0; i < size; ++i)
+      out << "inclusive_scan(" << i << ") = " << is_host(i) << ", parts(" << i << ") = " << parts_host(i) << std::endl;
+    for (int i=0; i < size; ++i)
+      out << "exclusive_scan(" << i << ") = " << es_host(i) << ", parts(" << i << ") = " << parts_host(i) << std::endl;
+    out << "result (exclusive end) = " << result << std::endl;
+
+    const double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
+    for (int i=0; i < size; ++i) {
+      TEST_FLOATING_EQUALITY(is_host(i)-es_host(i), parts_host(i), tol);
+    }
+  }
+
 }

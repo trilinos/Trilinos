@@ -759,8 +759,8 @@
 
       // return if two nodes are the same by identifier (use_coordinate_compare=false) or by coordinate.
       inline
-      bool match(stk::mesh::Entity node_0, stk::mesh::Entity node_1, bool use_coordinate_compare,
-                 double ave_edge_length, double tol=1.e-5) { return node_0 == node_1; }
+      bool match(stk::mesh::Entity node_0, stk::mesh::Entity node_1, bool /*use_coordinate_compare*/,
+                 double /*ave_edge_length*/, double /*tol*/=1.e-5) { return node_0 == node_1; }
 
       void prolongateElementFields(std::vector<stk::mesh::Entity>& old_owning_elements, stk::mesh::Entity newElement);
       void get_load_factor(std::vector<double>&  load_factor, bool print=false, std::string msg="", bool skipParents=true);
@@ -842,7 +842,7 @@
       create_refined_mesh(PerceptMesh& iMesh, const std::string& out_file, int num_divisions=5, stk::mesh::PartVector *parts=0, bool debug = false);
 
       struct EntitySelectorTrue {
-        bool operator()(stk::mesh::Entity a, stk::mesh::Entity b) { return true; }
+        bool operator()(stk::mesh::Entity /*a*/, stk::mesh::Entity /*b*/) { return true; }
       };
 
       template<class EntitySelector = EntitySelectorTrue>
@@ -923,7 +923,7 @@
       }
 
       static unsigned size1(const stk::mesh::Bucket& bucket) { return bucket.size(); }
-      static unsigned size1(const stk::mesh::Entity element) { return 1; }
+      static unsigned size1(const stk::mesh::Entity /*element*/) { return 1; }
 
       /// \brief Fill the array cellNodes(numCells, numNodesPerCell, nDof) with DOF values from the given Field
       /// The stride of the data (last dimension in cellNodes) is taken to be that of the field's stride; however,
@@ -949,7 +949,7 @@
 #if !STK_PERCEPT_LITE
       static
       void findMinMaxEdgeLength(stk::mesh::BulkData& bulk, const stk::mesh::Bucket &bucket,  stk::mesh::FieldBase& coord_field,
-                                Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
+                                MDArray& elem_min_edge_length, MDArray& elem_max_edge_length);
 #endif
 
       void element_side_nodes( const stk::mesh::Entity elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<stk::mesh::Entity>& side_node_entities );
@@ -1169,9 +1169,8 @@ private:
       bool m_avoid_add_all_mesh_fields_as_input_fields;
     public:
       bool m_markNone;
-    private:
-      bool m_useSimpleFields;
 
+    private:
       void checkStateSpec(const std::string& function, bool cond1=true, bool cond2=true, bool cond3=true);
 
       void checkState(const std::string& function) {
@@ -1227,7 +1226,7 @@ private:
 
     // static
     template<class ArrayType>
-    void PerceptMesh::fillCellNodes(const stk::mesh::BulkData & bulkD, const stk::mesh::Bucket &bucket,
+    void PerceptMesh::fillCellNodes(const stk::mesh::BulkData & /*bulkD*/, const stk::mesh::Bucket &bucket,
                                   //stk::mesh::Field<double>& coord_field,
                                   //CoordinatesFieldType& coord_field,
                                   stk::mesh::FieldBase* field,

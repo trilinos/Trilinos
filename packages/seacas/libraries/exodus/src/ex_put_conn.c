@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,13 +20,13 @@ int ex_int_write_conn(int exoid, ex_entity_id blk_id, const char *type, int var_
   else {
     status = nc_put_var_int(exoid, var_id, var_conn);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to write connectivity array for %s block %" PRId64 " in file id %d",
              type, blk_id, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (status);
+    return status;
   }
   return status;
 }
@@ -86,7 +86,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
       ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate connectivity array for %s %" PRId64 " in file id %d",
                ex_name_of_object(blk_type), blk_id, exoid);
@@ -95,7 +95,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
     }
 
     status = ex_int_write_conn(exoid, blk_id, ex_name_of_object(blk_type), connid, node_conn);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }
   }
@@ -110,7 +110,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
 
     if (elem_edge_conn != NULL) {
       status = nc_inq_dimid(exoid, DIM_NUM_EDG_PER_EL(blk_id_ndx), &nedpereldim);
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: edge connectivity specified but failed to "
                  "locate number of edges/element in block %" PRId64 " in file id %d",
@@ -122,7 +122,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
 
     if (elem_face_conn != NULL) {
       status = nc_inq_dimid(exoid, DIM_NUM_FAC_PER_EL(blk_id_ndx), &nfapereldim);
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: face connectivity specified but failed to "
                  "locate number of faces/element in block %" PRId64 " in file id %d",
@@ -134,7 +134,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
 
     num_ed_per_elem = 0;
     if ((elem_edge_conn != NULL) &&
-        ((status = nc_inq_dimlen(exoid, nedpereldim, &num_ed_per_elem)) != NC_NOERR)) {
+        ((status = nc_inq_dimlen(exoid, nedpereldim, &num_ed_per_elem)) != EX_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of edges/elem in block %" PRId64 " in file id %d",
                blk_id, exoid);
@@ -144,7 +144,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
 
     num_fa_per_elem = 0;
     if ((elem_face_conn != NULL) &&
-        ((status = nc_inq_dimlen(exoid, nfapereldim, &num_fa_per_elem)) != NC_NOERR)) {
+        ((status = nc_inq_dimlen(exoid, nfapereldim, &num_fa_per_elem)) != EX_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of faces/elem in block %" PRId64 " in file id %d",
                blk_id, exoid);
@@ -174,7 +174,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
 
     if (num_ed_per_elem != 0) {
       status = nc_inq_varid(exoid, VAR_ECONN(blk_id_ndx), &connid);
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate connectivity array for "
                  "element edge block %" PRId64 " in file id %d",
@@ -183,14 +183,14 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
         EX_FUNC_LEAVE(EX_FATAL);
       }
       status = ex_int_write_conn(exoid, blk_id, "element edge", connid, elem_edge_conn);
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
 
     if (num_fa_per_elem != 0) {
       status = nc_inq_varid(exoid, VAR_FCONN(blk_id_ndx), &connid);
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate connectivity array for "
                  "element face block %" PRId64 " in file id %d",
@@ -199,7 +199,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
         EX_FUNC_LEAVE(EX_FATAL);
       }
       status = ex_int_write_conn(exoid, blk_id, "element face", connid, elem_face_conn);
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }

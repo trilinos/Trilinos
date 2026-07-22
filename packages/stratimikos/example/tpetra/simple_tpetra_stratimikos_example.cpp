@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//         Stratimikos: Thyra-based strategies for linear solvers
+//
+// Copyright 2006 NTESS and the Stratimikos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"

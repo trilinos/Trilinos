@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_TEAMFUNCTOR_SOLVE_UPPER_CHOL_HPP__
 #define __TACHO_TEAMFUNCTOR_SOLVE_UPPER_CHOL_HPP__
@@ -49,6 +41,7 @@ private:
   ConstUnmanagedViewType<supernode_type_array> _supernodes;
   ConstUnmanagedViewType<ordinal_type_array> _gid_colidx;
 
+  bool _ldl;
   ConstUnmanagedViewType<ordinal_type_array> _compute_mode, _level_sids;
   ordinal_type _pbeg, _pend;
 
@@ -66,7 +59,7 @@ public:
   TeamFunctor_SolveUpperChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                              const ordinal_type_array &level_sids, const value_type_matrix t,
                              const value_type_array buf)
-      : _supernodes(info.supernodes), _gid_colidx(info.gid_colidx), _compute_mode(compute_mode),
+      : _supernodes(info.supernodes), _gid_colidx(info.gid_colidx), _ldl(false), _compute_mode(compute_mode),
         _level_sids(level_sids), _t(t), _nrhs(t.extent(1)), _buf(buf) {}
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
@@ -75,6 +68,7 @@ public:
   }
 
   inline void setBufferPtr(const size_type_array &buf_ptr) { _buf_ptr = buf_ptr; }
+  inline void setIndefiniteFactorization(const bool ldl) { _ldl = ldl; }
 
   ///
   /// Algorithm Variant 0: gemv - trsv
@@ -102,7 +96,11 @@ public:
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        if (_ldl) {
+          Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
+        } else {
+          Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        }
       }
     }
   }
@@ -157,9 +155,14 @@ public:
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+        // solve
+        if (_ldl) {
+          Trmv<Uplo::Upper, Trans::NoTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
+        } else {
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+        }
         member.team_barrier();
-        // copy to t
+        // copy to t (TODO: trmv could be in place, to avoid this copy)
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(member, m * _nrhs),
             [&, m](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
@@ -211,7 +214,11 @@ public:
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AT, b, zero, tT);
+        if (_ldl) {
+          Trmv<Uplo::Upper, Trans::NoTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, b, zero, tT);
+        } else {
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AT, b, zero, tT);
+        }
       }
     }
   }

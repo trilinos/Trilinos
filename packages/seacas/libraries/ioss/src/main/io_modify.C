@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,12 +7,15 @@
 #include "Ionit_Initializer.h"
 #include "Ioss_Assembly.h"
 #include "Ioss_Blob.h"
+#include "Ioss_CodeTypes.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementTopology.h"
 #include "Ioss_FileInfo.h"
+#if !defined(USE_STD_GETLINE)
 #include "Ioss_Getline.h"
+#endif
 #include "Ioss_Glob.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_IOFactory.h"
@@ -20,6 +23,7 @@
 #include "Ioss_NodeSet.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_StructuredBlock.h"
@@ -30,7 +34,6 @@
 #include <cstdlib>
 #include <exception>
 #include <fmt/color.h>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
@@ -47,7 +50,6 @@
 #include "Ioss_EntityType.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_PropertyManager.h"
-#include "Ioss_ScopeGuard.h"
 #include "Ioss_State.h"
 #include "modify_interface.h"
 
@@ -71,7 +73,7 @@ using real = double;
 
 namespace {
   std::string codename;
-  std::string version = "2.07 (2024-04-15)";
+  std::string version = "2.09 (2025-05-08)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -318,7 +320,10 @@ int main(int argc, char *argv[])
   while (true) {
     std::string input;
     if (from_term) {
-      fmt::print(fg(fmt::terminal_color::magenta), "\n");
+#if defined(USE_STD_GETLINE)
+      std::cout << "COMMAND> ";
+      std::getline(std::cin, input);
+#else
       const char *cinput = Ioss::getline_int("COMMAND> ");
       if (cinput && cinput[0] == '\0') {
         break;
@@ -327,6 +332,7 @@ int main(int argc, char *argv[])
         Ioss::gl_histadd(cinput);
       }
       input = cinput;
+#endif
     }
     else {
       std::getline(std::cin, input);
@@ -404,7 +410,8 @@ namespace {
     fmt::print("{:14} cells, {:14} nodes\n", fmt::group_digits(num_cell),
                fmt::group_digits(num_node));
     if (show_property) {
-      Ioss::Utils::info_property(sb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(sb, Ioss::Property::Origin::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -412,7 +419,7 @@ namespace {
   {
     fmt::print("\nRegion (global)\n");
     if (show_property) {
-      Ioss::Utils::info_property(&region, Ioss::Property::ATTRIBUTE,
+      Ioss::Utils::info_property(&region, Ioss::Property::Origin::ATTRIBUTE,
                                  "\tAttributes (Reduction): ", "\t");
     }
   }
@@ -434,7 +441,8 @@ namespace {
     }
     fmt::print("\n");
     if (show_property) {
-      Ioss::Utils::info_property(as, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(as, Ioss::Property::Origin::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -443,7 +451,7 @@ namespace {
     fmt::print("\n{} id: {:6d}, contains: {} item(s).\n", name(blob), id(blob),
                blob->entity_count());
     if (show_property) {
-      Ioss::Utils::info_property(blob, Ioss::Property::ATTRIBUTE,
+      Ioss::Utils::info_property(blob, Ioss::Property::Origin::ATTRIBUTE,
                                  "\tAttributes (Reduction): ", "\t");
     }
   }
@@ -457,7 +465,8 @@ namespace {
     fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14} elements, {:3d} attributes.\n", name(eb),
                id(eb), type, fmt::group_digits(num_elem), num_attrib);
     if (show_property) {
-      Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(eb, Ioss::Property::Origin::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -481,7 +490,8 @@ namespace {
                  fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
     }
     if (show_property) {
-      Ioss::Utils::info_property(ss, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(ss, Ioss::Property::Origin::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -493,7 +503,8 @@ namespace {
     fmt::print("\n{} id: {:6d}, {:8} nodes, {:3d} attributes, {:8} distribution factors.\n",
                name(ns), id(ns), fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
     if (show_property) {
-      Ioss::Utils::info_property(ns, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(ns, Ioss::Property::Origin::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -504,7 +515,8 @@ namespace {
     fmt::print("\n{} {:14} nodes, {:3d} attributes.\n", name(nb), fmt::group_digits(num_nodes),
                num_attrib);
     if (show_property) {
-      Ioss::Utils::info_property(nb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
+      Ioss::Utils::info_property(nb, Ioss::Property::Origin::ATTRIBUTE,
+                                 "\tAttributes (Reduction): ", "\t");
     }
   }
 
@@ -524,6 +536,7 @@ namespace {
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
+    dbi->set_lowercase_database_names(false);
   }
 
   void handle_help(const std::string &topic)
@@ -969,13 +982,9 @@ namespace {
     if (Ioss::Utils::substr_equal(tokens[2], "add")) {
       // Must be at least 6 tokens...
       if (tokens.size() < 6) {
-        fmt::print(stderr,
-#if !defined __NVCC__
-                   fg(fmt::color::red),
-#endif
-                   "ERROR: ATTRIBUTE Command does not have enough tokens to be valid.\n"
-                   "\t\t{}\n",
-                   fmt::join(tokens, " "));
+        fmt::print(stderr, fg(fmt::color::red),
+                   "ERROR: ATTRIBUTE Command does not have enough tokens to be valid.\n");
+        fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
         handle_help("attribute");
         return false;
       }
@@ -1002,7 +1011,7 @@ namespace {
         for (size_t i = 6; i < tokens.size(); i++) {
           value += " " + tokens[i];
         }
-        ge->property_add(Ioss::Property(att_name, value, Ioss::Property::ATTRIBUTE));
+        ge->property_add(Ioss::Property(att_name, value, Ioss::Property::Origin::ATTRIBUTE));
       }
       else if (Ioss::Utils::substr_equal(tokens[4], "double")) {
         std::vector<double> values(value_count);
@@ -1018,7 +1027,7 @@ namespace {
           }
         }
 
-        ge->property_add(Ioss::Property(att_name, values, Ioss::Property::ATTRIBUTE));
+        ge->property_add(Ioss::Property(att_name, values, Ioss::Property::Origin::ATTRIBUTE));
       }
       else if (Ioss::Utils::substr_equal(tokens[4], "integer")) {
         Ioss::IntVector values(value_count);
@@ -1033,7 +1042,7 @@ namespace {
             return false;
           }
         }
-        ge->property_add(Ioss::Property(att_name, values, Ioss::Property::ATTRIBUTE));
+        ge->property_add(Ioss::Property(att_name, values, Ioss::Property::Origin::ATTRIBUTE));
       }
       else {
         fmt::print(stderr, fg(fmt::color::red),
@@ -1058,7 +1067,7 @@ namespace {
         if (ge != nullptr) {
           std::string prefix =
               fmt::format("\n{} id: {:6d}\n\tAttributes (Reduction): ", name(ge), id(ge));
-          Ioss::Utils::info_property(ge, Ioss::Property::ATTRIBUTE, prefix, "\t");
+          Ioss::Utils::info_property(ge, Ioss::Property::Origin::ATTRIBUTE, prefix, "\t");
         }
       }
       return false;
@@ -1091,13 +1100,9 @@ namespace {
 
     // Must be at least 4 tokens...
     if (tokens.size() < 4) {
-      fmt::print(stderr,
-#if !defined __NVCC__
-                 fg(fmt::color::red),
-#endif
-                 "ERROR: RENAME Command does not have enough tokens to be valid.\n"
-                 "\t\t{}\n",
-                 fmt::join(tokens, " "));
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: RENAME Command does not have enough tokens to be valid.\n");
+      fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
       handle_help("rename");
       return false;
     }
@@ -1186,7 +1191,7 @@ namespace {
   {
     const auto type = region.get_database()->get_format();
     if (type != "Exodus") {
-      return std::vector<int>();
+      return {};
     }
     auto node_count = region.get_property("node_count").get_int();
     if (blocks.empty() ||
@@ -1225,13 +1230,9 @@ namespace {
     // TIME   SCALE  {{scale}}
     // TIME   OFFSET {{offset}
     if (tokens.size() < 3) {
-      fmt::print(stderr,
-#if !defined __NVCC__
-                 fg(fmt::color::red),
-#endif
-                 "ERROR: TIME Command does not have enough tokens to be valid.\n"
-                 "\t\t{}\n",
-                 fmt::join(tokens, " "));
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: TIME Command does not have enough tokens to be valid.\n");
+      fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
       handle_help("time");
       return false;
     }
@@ -1264,13 +1265,9 @@ namespace {
     // GEOMETRY   OFFSET {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{offset}} ...
 
     if (tokens.size() < 3) {
-      fmt::print(stderr,
-#if !defined __NVCC__
-                 fg(fmt::color::red),
-#endif
-                 "ERROR: GEOMETRY Command does not have enough tokens to be valid.\n"
-                 "\t\t{}\n",
-                 fmt::join(tokens, " "));
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: GEOMETRY Command does not have enough tokens to be valid.\n");
+      fmt::print(stderr, "\t\t{}\n", fmt::join(tokens, " "));
       handle_help("geometry");
       return false;
     }

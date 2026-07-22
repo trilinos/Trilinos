@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "gtest/gtest.h"
+#include <unistd.h>
 #include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_util/parallel/Parallel.hpp"
 #include "stk_balance/internal/Diagnostics.hpp"
@@ -41,10 +42,10 @@
 #include "stk_balance/rebalance.hpp"
 #include "stk_balance/balance.hpp"
 #include <stk_unit_test_utils/TextMesh.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_unit_test_utils/TextMeshToFile.hpp>
 
-class TestDiagnosticsComputation : public stk::unit_test_util::simple_fields::MeshFixture
+class TestDiagnosticsComputation : public stk::unit_test_util::MeshFixture
 {
 protected:
   TestDiagnosticsComputation()
@@ -53,13 +54,13 @@ protected:
 
   virtual void NGPSetUp() override {
     stk::balance::impl::g_diagnosticsContainer.clear();
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     testing::internal::CaptureStderr();
   }
 
   virtual void NGPTearDown() override {
     stk::balance::impl::g_diagnosticsContainer.clear();
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
     testing::internal::GetCapturedStderr();
   }
 
@@ -95,20 +96,21 @@ protected:
   void fill_multi_criteria_fields(std::vector<const stk::mesh::Field<double>*> & multiCriteriaFields) {
     for (unsigned i = 0; i < multiCriteriaFields.size(); ++i) {
       const stk::mesh::Field<double> & field = *multiCriteriaFields[i];
+      auto fieldData = field.data<stk::mesh::ReadWrite>();
 
       stk::mesh::EntityVector elems;
       stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
 
       for (const stk::mesh::Entity & elem : elems) {
-        double * weight = stk::mesh::field_data(field, elem);
-        *weight = get_bulk().identifier(elem) * (i+1);
+        auto weight = fieldData.entity_values(elem);
+        weight() = get_bulk().identifier(elem) * (i+1);
       }
     }
   }
 
   void build_mesh(const std::string & meshDesc) {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
     MPI_Barrier(get_comm());
   }
 
@@ -116,7 +118,7 @@ protected:
                        stk::io::StkMeshIoBroker & ioBroker) {
     const std::string tempFileName = "tempFile.g";
 
-    stk::unit_test_util::simple_fields::TextMeshToFile tMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::TextMeshToFile tMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
     tMesh.setup_mesh(meshDesc, tempFileName);
     tMesh.write_mesh();
 
@@ -124,6 +126,18 @@ protected:
 
     get_meta().set_coordinate_field_name(balanceSettings.getCoordinateFieldName());
     stk::io::fill_mesh_preexisting(ioBroker, tempFileName, get_bulk());
+  }
+
+  void clean_up_output(std::string & filename)
+  {
+    if (get_parallel_rank() == 0) { 
+      unlink(filename.c_str());
+      for (int i = 0; i < get_parallel_size(); i++) {
+        std::string suffix = "." + std::to_string(get_parallel_size()) + "." + std::to_string(i);
+        std::string output_filename = filename + suffix;
+        unlink(output_filename.c_str());
+      }
+    }
   }
 
   void rebalanceMesh(stk::io::StkMeshIoBroker & ioBroker, const stk::balance::BalanceSettings & balanceSettings)
@@ -136,7 +150,33 @@ protected:
     stk::balance::rebalance(ioBroker, balanceSettings);
 
     stk::balance::DiagnosticsPrinter diagPrinter(get_comm(), balanceSettings.get_num_output_processors());
-    diagPrinter.print(sierra::Env::outputP0());
+    diagPrinter.print(stk::outputP0());
+  }
+
+  void clean_up_rebalance_output(const stk::balance::BalanceSettings & balanceSettings) {
+
+    if (get_parallel_rank() == 0) {
+
+      std::string mesh_filename = "tempFile.g";
+      unsigned numInputProcs = balanceSettings.get_num_input_processors();
+
+      unlink(mesh_filename.c_str()); 
+      for (unsigned i = 0; i < numInputProcs; i++) {
+        std::string suffix = "." + std::to_string(numInputProcs) + "." + std::to_string(i);
+        std::string input_filename = mesh_filename + suffix;
+        unlink(input_filename.c_str());
+      }
+
+      std::string filename = balanceSettings.get_output_filename();
+      unsigned numOutputProcs = balanceSettings.get_num_output_processors();
+
+      unlink(filename.c_str());
+      for (unsigned i = 0; i < numOutputProcs; i++) {
+        std::string suffix = "." + std::to_string(numOutputProcs) + "." + std::to_string(i);
+        std::string output_filename = filename + suffix;
+        unlink(output_filename.c_str());
+      }
+    }
   }
 
   std::string mesh_desc_four_beams() {
@@ -149,7 +189,7 @@ protected:
       0,0,0, 1,0,0, 2,0,0, 3,-1,0, 3,1,0
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_four_shells_in_square() {
@@ -164,7 +204,7 @@ protected:
       0,2,0, 1,2,0, 2,2,0
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_three_hex_in_row() {
@@ -179,7 +219,7 @@ protected:
       3,0,0, 3,1,0, 3,1,1, 3,0,1
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_four_hex_in_square() {
@@ -197,7 +237,7 @@ protected:
       0,1,2, 1,1,2, 2,1,2
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   std::string mesh_desc_hex_pyramid_tet() {
@@ -214,7 +254,7 @@ protected:
       2,0,0, 2,1,0, 2,1,1, 2,0,1
     };
 
-    return stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates);
+    return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates);
   }
 
   template <typename T, typename DT>
@@ -347,6 +387,8 @@ TEST_P(RebalanceNumOutputProcs, ElementCount_Rebalance_HexMesh_GeometricPartitio
   else if (GetParam() == 4) { expectedValues = {1, 1, 1, 0}; }
 
   test_diag_values<stk::balance::ElementCountDiagnostic, unsigned>(expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 TEST_P(RebalanceNumOutputProcs, ElementCount_Rebalance_HexMesh_GraphPartitioner)
@@ -369,6 +411,8 @@ TEST_P(RebalanceNumOutputProcs, ElementCount_Rebalance_HexMesh_GraphPartitioner)
   else if (GetParam() == 4) { expectedValues = {1, 1, 0, 1}; }
 
   test_diag_values<stk::balance::ElementCountDiagnostic, unsigned>(expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 TEST_P(RebalanceNumOutputProcs, ElementCount_Rebalance_HexPyramidTetMesh_GeometricPartitioner)
@@ -391,6 +435,8 @@ TEST_P(RebalanceNumOutputProcs, ElementCount_Rebalance_HexPyramidTetMesh_Geometr
   else if (GetParam() == 4) { expectedValues = {1, 2, 2, 1}; }
 
   test_diag_values<stk::balance::ElementCountDiagnostic, unsigned>(expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 TEST_P(RebalanceNumOutputProcs, ElementCount_Rebalance_HexPyramidTetMesh_GraphPartitioner)
@@ -413,6 +459,8 @@ TEST_P(RebalanceNumOutputProcs, ElementCount_Rebalance_HexPyramidTetMesh_GraphPa
   else if (GetParam() == 4) { expectedValues = {1, 2, 1, 2}; }
 
   test_diag_values<stk::balance::ElementCountDiagnostic, unsigned>(expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 
@@ -519,6 +567,8 @@ TEST_P(RebalanceNumOutputProcs, TotalElementWeight_Rebalance_HexMesh_GeometricPa
   else if (GetParam() == 4) { expectedValues = {1, 1, 1, 0}; }
 
   test_diag_multi_values<stk::balance::TotalElementWeightDiagnostic, unsigned>(0, expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 TEST_P(RebalanceNumOutputProcs, TotalElementWeight_Rebalance_HexMesh_GraphPartitioner)
@@ -541,6 +591,8 @@ TEST_P(RebalanceNumOutputProcs, TotalElementWeight_Rebalance_HexMesh_GraphPartit
   else if (GetParam() == 4) { expectedValues = {1, 1, 0, 1}; }
 
   test_diag_multi_values<stk::balance::TotalElementWeightDiagnostic, unsigned>(0, expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 TEST_P(RebalanceNumOutputProcs, TotalElementWeight_Rebalance_HexPyramidTetMesh_GeometricPartitioner)
@@ -563,6 +615,8 @@ TEST_P(RebalanceNumOutputProcs, TotalElementWeight_Rebalance_HexPyramidTetMesh_G
   else if (GetParam() == 4) { expectedValues = {1, 2, 2, 1}; }
 
   test_diag_multi_values<stk::balance::TotalElementWeightDiagnostic, unsigned>(0, expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 TEST_P(RebalanceNumOutputProcs, TotalElementWeight_Rebalance_HexPyramidTetMesh_GraphPartitioner)
@@ -585,6 +639,8 @@ TEST_P(RebalanceNumOutputProcs, TotalElementWeight_Rebalance_HexPyramidTetMesh_G
   else if (GetParam() == 4) { expectedValues = {1, 2, 1, 2}; }
 
   test_diag_multi_values<stk::balance::TotalElementWeightDiagnostic, unsigned>(0, expectedValues);
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 
@@ -687,6 +743,8 @@ TEST_P(RebalanceNumOutputProcs, TotalElementWeight_MultiCriteria_Rebalance_HexMe
 
     test_diag_multi_values<stk::balance::TotalElementWeightDiagnostic, unsigned>(column, expectedValues);
   }
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 TEST_P(RebalanceNumOutputProcs, TotalElementWeight_MultiCriteria_Rebalance_HexMesh_GraphPartitioner)
@@ -718,6 +776,8 @@ TEST_P(RebalanceNumOutputProcs, TotalElementWeight_MultiCriteria_Rebalance_HexMe
 
     test_diag_multi_values<stk::balance::TotalElementWeightDiagnostic, unsigned>(column, expectedValues);
   }
+
+  clean_up_rebalance_output(balanceSettings);
 }
 
 
@@ -774,7 +834,9 @@ TEST_F(TestDiagnosticsComputation, NodeInterfaceSize_Balance_HexPyramidTetMesh_G
 
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
 
-  stk::io::write_mesh("nodeInterfaceSize_balance_hexPyramidTet_geometric.g", get_bulk());
+  std::string filename = "nodeInterfaceSize_balance_hexPyramidTet_geometric.g";
+
+  stk::io::write_mesh(filename, get_bulk());
 
   std::vector<double> expectedValues;
   if      (get_parallel_size() == 1) { expectedValues = {0.0/12.0}; }
@@ -783,6 +845,8 @@ TEST_F(TestDiagnosticsComputation, NodeInterfaceSize_Balance_HexPyramidTetMesh_G
   else if (get_parallel_size() == 4) { expectedValues = { 4.0/8.0,  6.0/6.0, 4.0/5.0, 4.0/4.0}; }
 
   test_diag_values<stk::balance::RelativeNodeInterfaceSizeDiagnostic, double>(expectedValues);
+
+  clean_up_output(filename);
 }
 
 TEST_F(TestDiagnosticsComputation, NodeInterfaceSize_Balance_HexPyramidTetMesh_GraphPartitioner)
@@ -796,7 +860,8 @@ TEST_F(TestDiagnosticsComputation, NodeInterfaceSize_Balance_HexPyramidTetMesh_G
 
   stk::balance::balanceStkMesh(balanceSettings, get_bulk());
 
-  stk::io::write_mesh("nodeInterfaceSize_balance_hexPyramidTet_graph.g", get_bulk());
+  std::string filename = "nodeInterfaceSize_balance_hexPyramidTet_graph.g";
+  stk::io::write_mesh(filename, get_bulk());
 
   std::vector<double> expectedValues;
   if      (get_parallel_size() == 1) { expectedValues = {0.0/12.0}; }
@@ -805,6 +870,8 @@ TEST_F(TestDiagnosticsComputation, NodeInterfaceSize_Balance_HexPyramidTetMesh_G
   else if (get_parallel_size() == 4) { expectedValues = {4.0/8.0,  6.0/6.0, 4.0/4.0, 4.0/5.0}; }
 
   test_diag_values<stk::balance::RelativeNodeInterfaceSizeDiagnostic, double>(expectedValues);
+
+  clean_up_output(filename);  
 }
 
 TEST_F(TestDiagnosticsComputation, NodeInterfaceSize_Balance_ShellMesh_GeometricPartitioner)

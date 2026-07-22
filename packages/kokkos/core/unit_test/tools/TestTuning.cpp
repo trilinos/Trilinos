@@ -1,23 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // This file tests the primitives of the Tuning system
 
 #include <iostream>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -61,7 +53,7 @@ int main() {
            Kokkos::Tools::Experimental::VariableInfo* info) {
           if (info->type !=
               Kokkos::Tools::Experimental::ValueType::kokkos_value_int64) {
-            throw(std::runtime_error("Tuning Variable has wrong type"));
+            Kokkos::abort("Tuning Variable has wrong type");
           }
         });
     Kokkos::Tools::Experimental::set_declare_input_type_callback(
@@ -69,7 +61,7 @@ int main() {
            Kokkos::Tools::Experimental::VariableInfo* info) {
           if (info->type !=
               Kokkos::Tools::Experimental::ValueType::kokkos_value_int64) {
-            throw(std::runtime_error("Context Variable has wrong type"));
+            Kokkos::abort("Context Variable has wrong type");
           }
         });
     tuningVariableInfo.candidates = allowed_values;
@@ -93,7 +85,7 @@ int main() {
           auto candidate_values = tuning_values[0].metadata->candidates;
           if (context_values[0].value.int_value !=
               expectedContextVariableValue) {
-            throw std::runtime_error(
+            Kokkos::abort(
                 "Context variables not correctly passed to tuning callbacks");
           }
           int tuningVariableSetSize = candidate_values.set.size;
@@ -112,7 +104,7 @@ int main() {
     std::cout << tuningValues[0].value.int_value << ","
               << candidate_value_vector[4] << std::endl;
     if (tuningValues[0].value.int_value != candidate_value_vector[4]) {
-      throw std::runtime_error("Tuning value return is incorrect");
+      Kokkos::abort("Tuning value return is incorrect");
     }
 
     Kokkos::Tools::Experimental::end_context(context);
@@ -145,9 +137,9 @@ int main() {
           std::cout << "Expect " << expectedNumberOfContextVariables
                     << ", have " << num_context_variables << std::endl;
           if (num_context_variables != expectedNumberOfContextVariables) {
-            throw(
-                std::runtime_error("Incorrect number of context variables in "
-                                   "nested tuning contexts"));
+            Kokkos::abort(
+                "Incorrect number of context variables in nested tuning "
+                "contexts");
           }
         });
     Kokkos::Tools::Experimental::set_input_values(outerContext, 1,

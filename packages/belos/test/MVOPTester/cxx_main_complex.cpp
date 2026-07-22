@@ -22,9 +22,7 @@
 #endif
 
 // I/O for Harwell-Boeing files
-#ifdef HAVE_BELOS_TRIUTILS
-#include "Trilinos_Util_iohb.h"
-#endif
+#include "Tpetra_Util_iohb.h"
 
 #include "MyMultiVec.hpp"
 #include "MyOperator.hpp"
@@ -84,22 +82,13 @@ int main(int argc, char *argv[])
       MyOM->setVerbosity( Belos::Warnings );
     }
 
-#ifndef HAVE_BELOS_TRIUTILS
-    std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
-    MyOM->print(Belos::Warnings,"End Result: TEST FAILED\n");
-    return -1;
-#endif
-
     // Get the data from the HB file
     int info;
     int dim,dim2,nnz;
     double *dvals;
     int *colptr,*rowind;
     nnz = -1;
-    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+    info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
     if (info == 0 || nnz < 0) {
       MyOM->stream(Belos::Warnings)
         << "Warning reading '" << filename << "'" << std::endl

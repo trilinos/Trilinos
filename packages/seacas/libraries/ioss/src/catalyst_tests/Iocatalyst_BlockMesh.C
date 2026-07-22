@@ -223,15 +223,16 @@ namespace Iocatalyst {
   {
     BlockConn conn;
     Extent bounds = {extents.i + BLOCK_OFFSET, extents.j + BLOCK_OFFSET, extents.k + BLOCK_OFFSET};
-    Extent e      = getCoordsForID(blockID, bounds);
-    conn[0]       = getPointIDfromCoords(e.i, e.j, e.k);
-    conn[1]       = getPointIDfromCoords(e.i + 1, e.j, e.k);
-    conn[2]       = getPointIDfromCoords(e.i + 1, e.j + 1, e.k);
-    conn[3]       = getPointIDfromCoords(e.i, e.j + 1, e.k);
-    conn[4]       = getPointIDfromCoords(e.i, e.j, e.k + 1);
-    conn[5]       = getPointIDfromCoords(e.i + 1, e.j, e.k + 1);
-    conn[6]       = getPointIDfromCoords(e.i + 1, e.j + 1, e.k + 1);
-    conn[7]       = getPointIDfromCoords(e.i, e.j + 1, e.k + 1);
+
+    Extent e = getCoordsForID(blockID, bounds);
+    conn[0]  = getPointIDfromCoords(e.i, e.j, e.k);
+    conn[1]  = getPointIDfromCoords(e.i + 1, e.j, e.k);
+    conn[2]  = getPointIDfromCoords(e.i + 1, e.j + 1, e.k);
+    conn[3]  = getPointIDfromCoords(e.i, e.j + 1, e.k);
+    conn[4]  = getPointIDfromCoords(e.i, e.j, e.k + 1);
+    conn[5]  = getPointIDfromCoords(e.i + 1, e.j, e.k + 1);
+    conn[6]  = getPointIDfromCoords(e.i + 1, e.j + 1, e.k + 1);
+    conn[7]  = getPointIDfromCoords(e.i, e.j + 1, e.k + 1);
     return conn;
   }
 
@@ -291,24 +292,24 @@ namespace Iocatalyst {
     return (extents.i + offset) * (extents.j + offset) * (extents.k + offset);
   }
 
-  std::map<std::string, double>* BlockMesh::getTransientCellFieldMap()
+  std::map<std::string, double> *BlockMesh::getTransientCellFieldMap()
   {
     return &(this->transientCellFields);
   }
 
-  std::map<std::string, double>* BlockMesh::getTransientPointFieldMap()
+  std::map<std::string, double> *BlockMesh::getTransientPointFieldMap()
   {
     return &(this->transientPointFields);
   }
 
   void BlockMesh::addTransientCellField(std::string f_name, double f_value)
   {
-    this->transientCellFields.insert({ f_name, f_value });
+    this->transientCellFields.insert({f_name, f_value});
   }
 
   void BlockMesh::addTransientPointField(std::string f_name, double f_value)
   {
-    this->transientPointFields.insert({ f_name, f_value });
+    this->transientPointFields.insert({f_name, f_value});
   }
 
 } // namespace Iocatalyst

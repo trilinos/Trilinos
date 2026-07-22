@@ -13,10 +13,8 @@
 #include <stdlib.h>
 #include <iomanip>
 
-// #include <Teuchos_LAPACK.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
-#include <Teuchos_SerialDenseSolver.hpp>
+#include <Tpetra_ConfigDefs.hpp>
+#include <TpetraCore_ETIHelperMacros.h>
 
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -24,6 +22,7 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 #include <Xpetra_IO.hpp>
 
@@ -39,6 +38,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->setEntry("combine: numBlks", ParameterEntry(1));
+  validParamList->setEntry("combine: useMaxLevels", ParameterEntry(false));
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
 
   return validParamList;
@@ -56,15 +56,56 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fi
   return BuildP(fineLevel, coarseLevel);
 }
 
+namespace {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+constructIdentityProlongator(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map) {
+  using local_matrix_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using local_graph_type  = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type;
+  using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
+  using entries_type      = typename local_graph_type::entries_type::non_const_type;
+  using values_type       = typename local_matrix_type::values_type;
+  using local_scalar_type = typename values_type::value_type;
+
+  LocalOrdinal numLocal = map->getLocalNumElements();
+  row_map_type rowptr("rowptr", numLocal + 1);
+  entries_type colind("colind", numLocal);
+  values_type values("values", numLocal);
+
+  Kokkos::parallel_for(
+      "Setup CRS values for identity prolongator",
+      Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>(0, numLocal),
+      KOKKOS_LAMBDA(const LocalOrdinal index) {
+        rowptr(index) = index;
+        colind(index) = index;
+        values(index) = local_scalar_type{1.0};
+        if (index == (numLocal - 1)) {
+          rowptr(numLocal) = numLocal;
+        }
+      });
+
+  auto eye = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, map, 0);
+  eye->setAllValues(rowptr, colind, values);
+  eye->expertStaticFillComplete(map, map);
+  return Teuchos::make_rcp<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(eye);
+}
+}  // namespace
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel,
                                                                         Level& coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
+  RCP<Matrix> A     = Get<RCP<Matrix>>(fineLevel, "A");
+  auto A_blockedCrs = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
+  if (A_blockedCrs != Teuchos::null) {
+    this->BuildPBlocked(fineLevel, coarseLevel);
+    return;
+  }
+
   const ParameterList& pL = GetParameterList();
   const LO nBlks          = as<LO>(pL.get<int>("combine: numBlks"));
-
-  RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
+  const bool useMaxLevels = pL.get<bool>("combine: useMaxLevels");
 
   // Record all matrices that each define a block in block diagonal comboP
   // matrix used for PDE/multiblock interpolation.  Additionally, count
@@ -80,35 +121,68 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
   Teuchos::ArrayRCP<size_t> ColMapRemoteSizePerBlk(nBlks);
   Teuchos::ArrayRCP<size_t> ColMapLocalCumulativePerBlk(nBlks + 1);   // hardwire 0th entry so that it has the value of 0
   Teuchos::ArrayRCP<size_t> ColMapRemoteCumulativePerBlk(nBlks + 1);  // hardwire 0th entry so that it has the value of 0
+
+  bool anyCoarseGridsRemaining = false;
+
+  if (useMaxLevels) {
+    for (int j = 0; j < nBlks; j++) {
+      std::string blockName = "Psubblock" + Teuchos::toString(j);
+      anyCoarseGridsRemaining |= coarseLevel.IsAvailable(blockName, NoFactory::get());
+    };
+
+    int localAnyCoarseGridsRemaining  = anyCoarseGridsRemaining;
+    int globalAnyCoarseGridsRemaining = localAnyCoarseGridsRemaining;
+    Teuchos::reduceAll(*A->getDomainMap()->getComm(), Teuchos::REDUCE_MAX, localAnyCoarseGridsRemaining, Teuchos::ptr(&globalAnyCoarseGridsRemaining));
+
+    anyCoarseGridsRemaining |= globalAnyCoarseGridsRemaining > 0;
+  }
+
+  auto setSubblockProlongator = [&](RCP<Matrix> Psubblock, int j) {
+    arrayOfMatrices[j] = Psubblock;
+    nComboRowMap += Teuchos::as<size_t>((arrayOfMatrices[j])->getRowMap()->getLocalNumElements());
+    DomMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getDomainMap()->getLocalNumElements());
+    ColMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getColMap()->getLocalNumElements());
+    nComboDomMap += DomMapSizePerBlk[j];
+    nComboColMap += ColMapSizePerBlk[j];
+    nnzCombo += Teuchos::as<size_t>((arrayOfMatrices[j])->getLocalNumEntries());
+    TEUCHOS_TEST_FOR_EXCEPTION((arrayOfMatrices[j])->getDomainMap()->getIndexBase() != 0, Exceptions::RuntimeError, "interpolation subblocks must use 0 indexbase");
+
+    // figure out how many empty entries in each column map
+    int tempii = 0;
+    for (int i = 0; i < (int)DomMapSizePerBlk[j]; i++) {
+      if ((arrayOfMatrices[j])->getDomainMap()->getGlobalElement(i) == (arrayOfMatrices[j])->getColMap()->getGlobalElement(tempii)) tempii++;
+    }
+    nTotalNumberLocalColMapEntries += tempii;
+    ColMapLocalSizePerBlk[j]  = tempii;
+    ColMapRemoteSizePerBlk[j] = ColMapSizePerBlk[j] - ColMapLocalSizePerBlk[j];
+  };
+
   for (int j = 0; j < nBlks; j++) {
     std::string blockName = "Psubblock" + Teuchos::toString(j);
     if (coarseLevel.IsAvailable(blockName, NoFactory::get())) {
-      arrayOfMatrices[j] = coarseLevel.Get<RCP<Matrix>>(blockName, NoFactory::get());
-      nComboRowMap += Teuchos::as<size_t>((arrayOfMatrices[j])->getRowMap()->getLocalNumElements());
-      DomMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getDomainMap()->getLocalNumElements());
-      ColMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getColMap()->getLocalNumElements());
-      nComboDomMap += DomMapSizePerBlk[j];
-      nComboColMap += ColMapSizePerBlk[j];
-      nnzCombo += Teuchos::as<size_t>((arrayOfMatrices[j])->getLocalNumEntries());
-      TEUCHOS_TEST_FOR_EXCEPTION((arrayOfMatrices[j])->getDomainMap()->getIndexBase() != 0, Exceptions::RuntimeError, "interpolation subblocks must use 0 indexbase");
-
-      // figure out how many empty entries in each column map
-      int tempii = 0;
-      for (int i = 0; i < (int)DomMapSizePerBlk[j]; i++) {
-        //          if ( (arrayOfMatrices[j])->getDomainMap()->getGlobalElement(i) == (arrayOfMatrices[j])->getColMap()->getGlobalElement(tempii) )  nTotalNumberLocalColMapEntries++;
-        if ((arrayOfMatrices[j])->getDomainMap()->getGlobalElement(i) == (arrayOfMatrices[j])->getColMap()->getGlobalElement(tempii)) tempii++;
-      }
-      nTotalNumberLocalColMapEntries += tempii;
-      ColMapLocalSizePerBlk[j]  = tempii;
-      ColMapRemoteSizePerBlk[j] = ColMapSizePerBlk[j] - ColMapLocalSizePerBlk[j];
+      setSubblockProlongator(coarseLevel.Get<RCP<Matrix>>(blockName, NoFactory::get()), j);
     } else {
-      arrayOfMatrices[j]        = Teuchos::null;
-      ColMapLocalSizePerBlk[j]  = 0;
-      ColMapRemoteSizePerBlk[j] = 0;
+      std::string subblockOpName = "Operatorsubblock" + Teuchos::toString(j);
+      bool hasOperator           = false;
+      if (coarseLevel.IsAvailable(subblockOpName)) {
+        auto A_blk  = coarseLevel.Get<RCP<Operator>>(subblockOpName);
+        hasOperator = A_blk != Teuchos::null;
+      }
+
+      if (useMaxLevels && anyCoarseGridsRemaining && hasOperator) {
+        // Use Psubblock = I
+        auto P_id = constructIdentityProlongator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(coarseLevel.Get<RCP<Operator>>(subblockOpName)->getDomainMap());
+        setSubblockProlongator(P_id, j);
+      } else {
+        arrayOfMatrices[j]        = Teuchos::null;
+        ColMapLocalSizePerBlk[j]  = 0;
+        ColMapRemoteSizePerBlk[j] = 0;
+      }
     }
     ColMapLocalCumulativePerBlk[j + 1]  = ColMapLocalSizePerBlk[j] + ColMapLocalCumulativePerBlk[j];
     ColMapRemoteCumulativePerBlk[j + 1] = ColMapRemoteSizePerBlk[j] + ColMapRemoteCumulativePerBlk[j];
   }
+
   TEUCHOS_TEST_FOR_EXCEPTION(nComboRowMap != A->getRowMap()->getLocalNumElements(), Exceptions::RuntimeError, "sum of subblock rows != #row's Afine");
 
   // build up csr arrays for combo block diagonal P
@@ -224,8 +298,117 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
 
   Teuchos::RCP<Matrix> comboP = Teuchos::rcp(new CrsMatrixWrap(comboPCrs));
 
-  Set(coarseLevel, "P", comboP);
+  if (!restrictionMode_) {
+    Set(coarseLevel, "P", comboP);
+  } else {
+    RCP<Matrix> R = Utilities::Transpose(*comboP, true);
+    Set(coarseLevel, "R", R);
+  }
 }
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    BuildPBlockedImpl(Level& /*fineLevel*/, Level& /*coarseLevel*/, std::false_type) const {
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
+  std::ostringstream oss;
+  oss << "CombinePFactory::BuildPBlocked requires Thyra ETI support for this "
+         "template-parameter combination:\n"
+      << "  Scalar        = " << Teuchos::TypeNameTraits<Scalar>::name() << '\n'
+      << "  LocalOrdinal  = " << Teuchos::TypeNameTraits<LocalOrdinal>::name() << '\n'
+      << "  GlobalOrdinal = " << Teuchos::TypeNameTraits<GlobalOrdinal>::name() << '\n'
+      << "  Node          = " << Teuchos::TypeNameTraits<Node>::name() << '\n'
+      << "If your application provides the necessary Thyra ETIs, specialize "
+         "MueLu::Details::has_build_p_blocked_thyra_eti<Scalar,LocalOrdinal,GlobalOrdinal,Node> "
+         "to std::true_type.";
+
+  TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, oss.str());
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      true, Exceptions::RuntimeError,
+      "CombinePFactory::BuildPBlocked requires Thyra support.");
+#endif
+}
+
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class S,
+          std::enable_if_t<
+              MueLu::Details::has_build_p_blocked_thyra_eti<
+                  S, LocalOrdinal, GlobalOrdinal, Node>::value,
+              int>>
+void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlockedImpl(Level& fineLevel,
+                                                                                   Level& coarseLevel, std::true_type) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(restrictionMode_, Exceptions::RuntimeError, "CombinePFactory::BuildPBlocked does not support restriction mode.");
+  const ParameterList& pL = GetParameterList();
+  const LO nBlks          = as<LO>(pL.get<int>("combine: numBlks"));
+  const bool useMaxLevels = pL.get<bool>("combine: useMaxLevels");
+
+  RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
+
+  bool anyCoarseGridsRemaining = false;
+
+  if (useMaxLevels) {
+    for (int j = 0; j < nBlks; j++) {
+      std::string blockName = "Psubblock" + Teuchos::toString(j);
+      anyCoarseGridsRemaining |= coarseLevel.IsAvailable(blockName, NoFactory::get());
+    };
+
+    int localAnyCoarseGridsRemaining  = anyCoarseGridsRemaining;
+    int globalAnyCoarseGridsRemaining = localAnyCoarseGridsRemaining;
+    Teuchos::reduceAll(*A->getDomainMap()->getComm(), Teuchos::REDUCE_MAX, localAnyCoarseGridsRemaining, Teuchos::ptr(&globalAnyCoarseGridsRemaining));
+
+    anyCoarseGridsRemaining |= globalAnyCoarseGridsRemaining > 0;
+  }
+
+  auto blockProlongator = Teuchos::make_rcp<Thyra::DefaultBlockedLinearOp<Scalar>>();
+  blockProlongator->beginBlockFill(nBlks, nBlks);
+
+  for (int j = 0; j < nBlks; j++) {
+    RCP<Matrix> P_jj;
+
+    std::string blockName = "Psubblock" + Teuchos::toString(j);
+    if (coarseLevel.IsAvailable(blockName, NoFactory::get())) {
+      P_jj = coarseLevel.Get<RCP<Matrix>>(blockName, NoFactory::get());
+    } else if (useMaxLevels && anyCoarseGridsRemaining) {
+      std::string subblockOpName = "Operatorsubblock" + Teuchos::toString(j);
+      P_jj                       = constructIdentityProlongator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fineLevel.Get<RCP<Operator>>(subblockOpName)->getDomainMap());
+    }
+
+    RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tpetra_P_jj = Xpetra::toTpetra(P_jj);
+    auto thyra_P_jj                                                                    = Thyra::createConstLinearOp(tpetra_P_jj);
+    blockProlongator->setBlock(j, j, thyra_P_jj);
+  }
+
+  blockProlongator->endBlockFill();
+
+  Teuchos::RCP<Matrix> blockedProlongatorXpetra = Teuchos::make_rcp<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(blockProlongator, Teuchos::null);
+
+  blockedProlongatorXpetra->fillComplete();
+
+  Set(coarseLevel, "P", blockedProlongatorXpetra);
+}
+#endif
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildPBlocked(Level& fineLevel,
+                                                                               Level& coarseLevel) const {
+  BuildPBlockedImpl(
+      fineLevel, coarseLevel,
+      std::integral_constant<bool,
+                             MueLu::Details::has_build_p_blocked_thyra_eti<Scalar, LocalOrdinal, GlobalOrdinal, Node>::value>{});
+}
+
+#if defined(HAVE_XPETRA_THYRA) && defined(HAVE_MUELU_THYRA)
+#define MUELU_BUILD_P_BLOCKED_THYRA_ETI_SPEC(S, LO, GO, N) \
+  template <>                                              \
+  struct Details::has_build_p_blocked_thyra_eti<S, LO, GO, N> : std::true_type {};
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_BUILD_P_BLOCKED_THYRA_ETI_SPEC)
+
+#undef MUELU_BUILD_P_BLOCKED_THYRA_ETI_SPEC
+#endif
 
 }  // namespace MueLu
 

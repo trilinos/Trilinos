@@ -1,45 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
 
 // Test the case where Tpetra::initialize is called, when neither
 // Kokkos nor MPI have been initialized yet.  Tpetra::initialize must,
@@ -49,43 +15,38 @@
 #include "Tpetra_Core.hpp"
 #include "Kokkos_Core.hpp"
 #ifdef HAVE_TPETRACORE_MPI
-#  include "mpi.h" // need direct MPI calls
-#endif // HAVE_TPETRACORE_MPI
-#include <cstdlib> // EXIT_SUCCESS, EXIT_FAILURE
+#include "mpi.h"    // need direct MPI calls
+#endif              // HAVE_TPETRACORE_MPI
+#include <cstdlib>  // EXIT_SUCCESS, EXIT_FAILURE
 #include <iostream>
 #include <stdexcept>
 
+// Is Kokkos initialized?
+bool kokkosInitialized() {
+  // Kokkos lacks a global is_initialized function.  However,
+  // Kokkos::initialize always initializes the default execution
+  // space, so we can check that.
+  return Kokkos::is_initialized();
+}
 
-  // Is Kokkos initialized?
-  bool kokkosInitialized ()
-  {
-    // Kokkos lacks a global is_initialized function.  However,
-    // Kokkos::initialize always initializes the default execution
-    // space, so we can check that.
-    return Kokkos::is_initialized ();
-  }
-
-int
-main (int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   using std::endl;
-  bool success = true;
-  std::ostream& out = std::cerr; // for unbuffered output, unlike std::cout
+  bool success      = true;
+  std::ostream& out = std::cerr;  // for unbuffered output, unlike std::cout
   std::ostream& err = std::cerr;
 
   out << "About to call Tpetra::initialize" << endl;
   try {
-    Tpetra::initialize (&argc, &argv);
-  }
-  catch (std::exception& e) {
+    Tpetra::initialize(&argc, &argv);
+  } catch (std::exception& e) {
     err << "*** Tpetra::getDefaultComm threw an std::exception: "
-        << e.what () << endl;
+        << e.what() << endl;
     success = false;
     goto EndOfTest;
-  }
-  catch (...) {
+  } catch (...) {
     err << "*** Tpetra::initialize threw an exception not a subclass of "
-      "std::exception" << endl;
+           "std::exception"
+        << endl;
     success = false;
     goto EndOfTest;
   }
@@ -98,7 +59,7 @@ main (int argc, char* argv[])
 #ifdef HAVE_TPETRACORE_MPI
   {
     int mpiIsInitialized = 0;
-    const int mpiErr = MPI_Initialized (&mpiIsInitialized);
+    const int mpiErr     = MPI_Initialized(&mpiIsInitialized);
 
     if (mpiErr != MPI_SUCCESS) {
       err << "*** MPI_Initialized returned err != MPI_SUCCESS" << endl;
@@ -106,26 +67,23 @@ main (int argc, char* argv[])
       // If MPI_Initialized fails, MPI is totally messed up.  The best
       // we can do at this point is stop the program.
       goto EndOfTest;
-    }
-    else {
+    } else {
       if (mpiIsInitialized == 0) {
         err << "*** MPI_Initialized says MPI was not initialized" << endl;
         success = false;
         // If MPI is not initialized, it's safe just to stop the program.
         goto EndOfTest;
-      }
-      else {
+      } else {
         out << "MPI is initialized" << endl;
       }
     }
   }
-#endif // HAVE_TPETRACORE_MPI
+#endif  // HAVE_TPETRACORE_MPI
 
-  if (! kokkosInitialized ()) {
+  if (!kokkosInitialized()) {
     err << "*** Kokkos is not initialized" << endl;
     success = false;
-  }
-  else {
+  } else {
     out << "Kokkos is initialized" << endl;
   }
 
@@ -134,27 +92,26 @@ main (int argc, char* argv[])
     Teuchos::RCP<const Teuchos::Comm<int> > comm;
     bool threw = false;
     try {
-      comm = Tpetra::getDefaultComm ();
-    }
-    catch (std::exception& e) {
+      comm = Tpetra::getDefaultComm();
+    } catch (std::exception& e) {
       err << "*** Tpetra::getDefaultComm throw an std::exception: "
-          << e.what () << endl;
-      threw = true;
+          << e.what() << endl;
+      threw   = true;
       success = false;
-    }
-    catch (...) {
+    } catch (...) {
       err << "*** Tpetra::getDefaultComm throw an exception not a subclass of "
-        "std::exception" << endl;
-      threw = true;
+             "std::exception"
+          << endl;
+      threw   = true;
       success = false;
     }
 
-    if (! threw && comm.is_null ()) {
+    if (!threw && comm.is_null()) {
       err << "*** Tpetra::getDefaultComm returned null (but did not throw an "
-        "exception) after Tpetra was initialized" << endl;
+             "exception) after Tpetra was initialized"
+          << endl;
       success = false;
-    }
-    else {
+    } else {
       out << "Tpetra::getDefaultComm returned nonnull" << endl;
     }
   }
@@ -163,22 +120,21 @@ main (int argc, char* argv[])
     // Must hide this from the label, else the compiler reports an error.
     bool tpetraFinalizeThrew = false;
     try {
-      Tpetra::finalize ();
-    }
-    catch (std::exception& e) {
+      Tpetra::finalize();
+    } catch (std::exception& e) {
       err << "*** Tpetra::finalize threw an std::exception: "
-          << e.what () << endl;
+          << e.what() << endl;
       tpetraFinalizeThrew = true;
-      success = false;
-    }
-    catch (...) {
+      success             = false;
+    } catch (...) {
       err << "*** Tpetra::finalize threw an exception not a subclass of "
-        "std::exception" << endl;
+             "std::exception"
+          << endl;
       tpetraFinalizeThrew = true;
-      success = false;
+      success             = false;
     }
 
-    if (! tpetraFinalizeThrew) {
+    if (!tpetraFinalizeThrew) {
       out << "Tpetra::finalize did not throw an exception" << endl;
     }
   }
@@ -186,7 +142,7 @@ main (int argc, char* argv[])
 #ifdef HAVE_TPETRACORE_MPI
   {
     int mpiIsFinalized = 0;
-    int mpiErr = MPI_Finalized (&mpiIsFinalized);
+    int mpiErr         = MPI_Finalized(&mpiIsFinalized);
 
     if (mpiErr != MPI_SUCCESS) {
       err << "*** MPI_Finalized returned err != MPI_SUCCESS" << endl;
@@ -194,8 +150,7 @@ main (int argc, char* argv[])
       // If MPI_Finalized fails, MPI is totally messed up.  The best
       // we can do at this point is stop the program.
       goto EndOfTest;
-    }
-    else {
+    } else {
       if (mpiIsFinalized == 0) {
         err << "*** MPI_Finalized says MPI was not finalized" << endl;
         success = false;
@@ -204,27 +159,27 @@ main (int argc, char* argv[])
         // that, we can stop the program.  Don't try to check the
         // error code; what would we do at this point if it fails,
         // other than stop the program?
-        (void) MPI_Finalize ();
+        (void)MPI_Finalize();
         goto EndOfTest;
       }
     }
   }
-#endif // HAVE_TPETRACORE_MPI
+#endif  // HAVE_TPETRACORE_MPI
 
   // Kokkos doesn't have an "is_finalized" function.  Some execution
   // spaces (like OpenMP) don't ever shut down (though Kokkos might
   // change the number of OpenMP threads to 1).  Thus, we don't try to
   // test for Kokkos finalization here.
+  // Note: Tpetra::finalize no longer calls Kokkos::finalize directly.
+  // Kokkos::finalize is now called via atexit hook. See issue #15294.
 
- EndOfTest:
+EndOfTest:
 
   if (success) {
     std::cout << "End Result: TEST PASSED" << endl;
     return EXIT_SUCCESS;
-  }
-  else {
+  } else {
     std::cout << "End Result: TEST FAILED" << endl;
     return EXIT_FAILURE;
   }
 }
-

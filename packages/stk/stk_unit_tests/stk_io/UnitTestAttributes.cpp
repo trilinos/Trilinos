@@ -11,7 +11,7 @@ namespace
 using stk::unit_test_util::build_mesh;
 using stk::unit_test_util::build_mesh_no_simple_fields;
 
-class AttributesInFile : public stk::unit_test_util::simple_fields::MeshFixture
+class AttributesInFile : public stk::unit_test_util::MeshFixture
 {
 protected:
     const std::string filename = "fileWithAttr.e";
@@ -31,11 +31,9 @@ protected:
     {
         setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
         stk::io::StkMeshIoBroker stkIo(get_comm());
-        stkIo.use_simple_fields();
         stk::io::fill_mesh_preexisting(stkIo, filename, get_bulk());
 
         stk::io::StkMeshIoBroker outputStkIo(get_comm());
-        outputStkIo.use_simple_fields();
         outputStkIo.set_bulk_data(get_bulk());
         size_t outputFileIndex = outputStkIo.create_output_mesh(outputFilename, stk::io::WRITE_RESULTS);
         outputStkIo.set_attribute_field_ordering_stored_by_part_ordinal(stkIo.get_attribute_field_ordering_stored_by_part_ordinal());

@@ -31,7 +31,9 @@ protected:
 
   void runStructuredTest(const std::string &testName);
 
-  void runUnstructuredTest(const std::string &testName);
+  void
+  runUnstructuredTest(const std::string &testName, bool writeConnectivityRaw = false,
+                      const std::string &nodeBlockName = Iocatalyst::BlockMeshSet::NODE_BLOCK_NAME);
 
   Ioss::DatabaseIO *writeAndGetExodusDatabaseOnRead(const std::string    &testName,
                                                     Ioss::PropertyManager dbProps = {});
@@ -65,8 +67,6 @@ protected:
           void  *data;
           size_t dataSize;
           g->get_field_data(name, &data, &dataSize);
-          ASSERT_GT(dataSize, 0) << "DataSize is not greater than 0 for field " << name
-                                 << std::endl;
           std::byte             *b = static_cast<std::byte *>(data);
           std::vector<std::byte> zcBuffer(b, b + field.get_size());
           EXPECT_EQ(dcBuffer, zcBuffer);

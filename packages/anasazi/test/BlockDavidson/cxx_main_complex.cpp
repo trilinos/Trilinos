@@ -27,14 +27,12 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
 // I/O for Harwell-Boeing files
-#ifdef HAVE_ANASAZI_TRIUTILS
-#include "Trilinos_Util_iohb.h"
-#endif
+#include "Tpetra_Util_iohb.h"
 
 // templated multivector and sparse matrix classes
 #include "MyMultiVec.hpp"
@@ -50,7 +48,7 @@ int main(int argc, char *argv[])
   bool boolret;
   int MyPID;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   MPI_Comm_rank( MPI_COMM_WORLD, &MyPID );
@@ -76,23 +74,12 @@ int main(int argc, char *argv[])
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
   if (debug) verbose = true;
-
-#ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-  if (verbose && MyPID == 0) {
-    cout << "End Result: TEST FAILED" << endl;	
-  }
-  return -1;
-#endif
 
   typedef std::complex<double>                ScalarType;
   typedef ScalarTraits<ScalarType>                   SCT;
@@ -112,14 +99,14 @@ int main(int argc, char *argv[])
   double *dvals;
   int *colptr,*rowind;
   nnz = -1;
-  info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
+  info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
     if (verbose && MyPID == 0) {
       cout << "Error reading '" << filename << "'" << endl
            << "End Result: TEST FAILED" << endl;
     }
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -156,7 +143,7 @@ int main(int argc, char *argv[])
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
            << "End Result: TEST FAILED" << endl;
     }
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -268,7 +255,7 @@ int main(int argc, char *argv[])
     }
   }
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
 

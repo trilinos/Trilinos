@@ -16,4 +16,4 @@ if (MSVC AND NOT
 endif()
 
 tribits_tpl_find_include_dirs_and_libraries( LAPACK
-  REQUIRED_LIBS_NAMES "lapack lapack_win32")
+  REQUIRED_LIBS_NAMES "lapack lapack_win32 openblas")

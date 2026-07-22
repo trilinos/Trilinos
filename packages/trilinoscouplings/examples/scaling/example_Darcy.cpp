@@ -1,31 +1,10 @@
 // @HEADER
-// ************************************************************************
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
 //
-//                           Intrepid Package
-//                 Copyright (2007) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
-//                    Denis Ridzal  (dridzal@sandia.gov),
-//                    Kara Peterson (kjpeter@sandia.gov).
-//
-// ************************************************************************
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /** \file   example_DivLSFEM.cpp
@@ -908,7 +887,7 @@ int main(int argc, char *argv[]) {
       for (int k=0; k<numFacesPerElem; k++){
          int iface=elemToFace(i,k);
          if (faceIsOwned[iface] && !faceDone2(iface)){
-             double vals[4];
+             double vals2[4];
              int rowNum = globalFaceIds[iface];
              int colNum[4];
 
@@ -918,8 +897,8 @@ int main(int argc, char *argv[]) {
               if (indm >= numEdgesPerFace) indm=0;
               if (edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),0) ||
                  edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),1)){
-                 vals[m]=1.0;}
-              else vals[m]=-1.0;
+                 vals2[m]=1.0;}
+              else vals2[m]=-1.0;
 
             // This is a convoluted way to account for edge orientations that
             // may be incorrect on the local processor because the edge is
@@ -933,15 +912,15 @@ int main(int argc, char *argv[]) {
              }
                if (edgeIndex != -1 && edgeIndex < 8){
                  if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
-                   vals[m]=-1.0*vals[m];
+                   vals2[m]=-1.0*vals2[m];
                  }
                  else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
-                   vals[m]=-1.0*vals[m];
+                   vals2[m]=-1.0*vals2[m];
                  }
                }
             } // end loop over face edges
 
-           DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
+           DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals2);
            faceDone2(iface)=1;
 
        } // end if face is owned and face not done
@@ -1449,8 +1428,8 @@ int main(int argc, char *argv[]) {
 
 
    for(int i=0;i<jointVector.MyLength();i++){
-     int id=jointVector.Map().GID(i);
-     jointVectorGIDs[0][i]=id;
+     int id2=jointVector.Map().GID(i);
+     jointVectorGIDs[0][i]=id2;
    }
 // Assemble over multiple processors, if necessary
    StiffG.GlobalAssemble(); StiffG.FillComplete();

@@ -52,4 +52,3 @@ void AD_Final();
 #define nullFunc(x) 0
 
 #endif
-

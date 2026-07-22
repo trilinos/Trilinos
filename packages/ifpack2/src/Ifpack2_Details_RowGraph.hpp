@@ -26,12 +26,11 @@ namespace Details {
 ///
 /// This class exists to facilitate Tpetra interface changes.  See
 /// e.g., GitHub Issue #2630.
-template<class GraphType>
-class RowGraph :
-    virtual public Tpetra::RowGraph<typename GraphType::local_ordinal_type,
-                                    typename GraphType::global_ordinal_type,
-                                    typename GraphType::node_type> {
-public:
+template <class GraphType>
+class RowGraph : virtual public Tpetra::RowGraph<typename GraphType::local_ordinal_type,
+                                                 typename GraphType::global_ordinal_type,
+                                                 typename GraphType::node_type> {
+ public:
   //! \name Typedefs
   //@{
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
@@ -46,7 +45,7 @@ public:
   //@{
 
   //! Destructor (virtual for memory safety of derived classes)
-  virtual ~RowGraph () = default;
+  virtual ~RowGraph() = default;
 
   //@}
   /// \name Work-around implementations of deprecated virtual methods
@@ -54,10 +53,9 @@ public:
   /// These methods exist to smooth the path for fixing GitHub Issue
   /// #2630.  This is why their existence depends on a Tpetra macro.
   //@{
-
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_ROWGRAPH_HPP
+#endif  // IFPACK2_DETAILS_ROWGRAPH_HPP

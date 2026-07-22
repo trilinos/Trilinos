@@ -41,18 +41,46 @@
 namespace stk {
 namespace mesh {
 
-inline NgpMesh & get_updated_ngp_mesh(const BulkData & bulk)
+template<typename NgpMemSpace = NgpMeshDefaultMemSpace>
+inline NgpMeshT<NgpMemSpace> & get_ngp_mesh(const BulkData & bulk)
 {
+  static_assert(std::is_same_v<NgpMeshT<NgpMemSpace>,HostMeshT<NgpMemSpace>> ||
+                Kokkos::SpaceAccessibility<NgpMemSpace,NgpMeshDefaultMemSpace>::accessible,
+                "In a GPU-enabled build, get_ngp_mesh requires a device-accessible memory-space.");
+
+  STK_ThrowRequireMsg(!bulk.in_modifiable_state(), "NgpMesh cannot be updated during a mesh modification.");
+
   NgpMeshBase * ngpMeshBase = impl::get_ngp_mesh(bulk);
 
   if (ngpMeshBase == nullptr) {
-    ngpMeshBase = new NgpMesh(bulk);
+    ngpMeshBase = new NgpMeshT<NgpMemSpace>(bulk);
     impl::set_ngp_mesh(bulk, ngpMeshBase);
   }
-  else {
-    ngpMeshBase->update_mesh();
-  }
-  return dynamic_cast<NgpMesh&>(*ngpMeshBase);
+
+  return dynamic_cast<NgpMeshT<NgpMemSpace>&>(*ngpMeshBase);
+}
+
+
+inline NgpMesh & get_ngp_mesh(const BulkData & bulk)
+{
+  return get_ngp_mesh<NgpMeshDefaultMemSpace>(bulk);
+}
+
+template<typename NgpMemSpace = NgpMeshDefaultMemSpace>
+inline NgpMeshT<NgpMemSpace> & get_updated_ngp_mesh(const BulkData & bulk)
+{
+  NgpMeshT<NgpMemSpace>& ngpMesh = get_ngp_mesh<NgpMemSpace>(bulk);
+  ngpMesh.update();
+
+  return ngpMesh;
+}
+
+
+inline NgpMesh & get_updated_ngp_mesh(const BulkData & bulk)
+{
+  STK_ThrowRequireMsg(!bulk.in_modifiable_state(), "NgpMesh cannot be updated during a mesh modification.");
+
+  return get_updated_ngp_mesh<NgpMeshDefaultMemSpace>(bulk);
 }
 
 }}

@@ -153,7 +153,7 @@ class AveragedNormalField
 
       exchanger.start_nonblocking();
 
-      auto unpacker = [&](int rank, const std::vector<EntityAndLength>& buf)
+      auto unpacker = [&](int /*rank*/, const std::vector<EntityAndLength>& buf)
       {
         for (EntityAndLength entityAndLength : buf)
         {

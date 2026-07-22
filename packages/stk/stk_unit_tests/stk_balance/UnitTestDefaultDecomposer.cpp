@@ -57,6 +57,8 @@ TEST_F(DefaultDecomposer, SubdomainMapping_FinalProcCountNotEvenlyDivisible)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(3);
   test_subdomain_mapping({{0, 2}, {1}});
+
+  clean_up_decomposer();
 }
 
 TEST_F(DefaultDecomposer, SubdomainMapping_SmallerFinalProcCount)
@@ -66,6 +68,8 @@ TEST_F(DefaultDecomposer, SubdomainMapping_SmallerFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(1);
   test_subdomain_mapping({{0}, {}});
+
+  clean_up_decomposer();
 }
 
 TEST_F(DefaultDecomposer, SubdomainMapping_EqualInitialAndFinalProcCount)
@@ -75,6 +79,8 @@ TEST_F(DefaultDecomposer, SubdomainMapping_EqualInitialAndFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(2);
   test_subdomain_mapping({{0}, {1}});
+
+  clean_up_decomposer();
 }
 
 TEST_F(DefaultDecomposer, SubdomainMapping_LargerFinalProcCount)
@@ -84,6 +90,8 @@ TEST_F(DefaultDecomposer, SubdomainMapping_LargerFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(6);
   test_subdomain_mapping({{0, 2, 4}, {1, 3, 5}});
+
+  clean_up_decomposer();
 }
 
 
@@ -94,6 +102,8 @@ TEST_F(DefaultDecomposer, SubdomainDecomposition_LargerFinalProcCount)
   setup_initial_mesh("generated:1x1x6");
   setup_decomposer(4);
   EXPECT_FALSE(is_nested_decomp());
+
+  clean_up_decomposer();
 }
 
 
@@ -108,9 +118,9 @@ public:
     m_balanceSettings.set_num_output_processors(numFinalProcs);
     m_balanceSettings.setDecompMethod(decompMethod);
 
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::rebalance(m_ioBroker, m_balanceSettings);
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
   }
 };
 
@@ -121,6 +131,8 @@ TEST_F(DefaultRebalance, Bar)
   setup_initial_mesh("1x1x8");
   rebalance_mesh(4);
   test_decomposed_mesh_element_distribution({2, 2, 2, 2});
+
+  clean_up_temporary_files();
 }
 
 TEST_F(DefaultRebalance, Plate)
@@ -130,6 +142,8 @@ TEST_F(DefaultRebalance, Plate)
   setup_initial_mesh("1x4x4");
   rebalance_mesh(4);
   test_decomposed_mesh_element_distribution({4, 4, 4, 4});
+
+  clean_up_temporary_files();
 }
 
 TEST_F(DefaultRebalance, Cube)
@@ -139,6 +153,8 @@ TEST_F(DefaultRebalance, Cube)
   setup_initial_mesh("4x4x4");
   rebalance_mesh(8);
   test_decomposed_mesh_element_distribution({8, 8, 8, 8, 8, 8, 8, 8});
+
+  clean_up_temporary_files();
 }
 
 }

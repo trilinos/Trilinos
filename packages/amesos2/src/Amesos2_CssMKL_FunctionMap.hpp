@@ -44,7 +44,7 @@ namespace Amesos2 {
 
   /** \internal
    * 
-   * For Pardiso we bind to the library functions based on the local
+   * For CSS, we bind to the library functions based on the local
    * ordinal type.  If the local ordinal type is bigger than int, then
    * we use pardiso_64 instead.  The void* arrays are interpreted by
    * the function based on the value of mtype and iparm(28) as

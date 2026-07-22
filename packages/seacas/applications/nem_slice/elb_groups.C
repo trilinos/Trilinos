@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -138,17 +138,18 @@ template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_De
  *****************************************************************************/
 template int get_group_info(Machine_Description *machine, Problem_Description *prob,
                             Mesh_Description<int> *mesh, Graph_Description<int> *graph,
-                            int elem2grp[], int nprocg[], int nelemg[], size_t *max_vtx,
+                            std::vector<int> &elem2grp, int nprocg[], int nelemg[], size_t *max_vtx,
                             size_t *max_adj);
 template int get_group_info(Machine_Description *machine, Problem_Description *prob,
                             Mesh_Description<int64_t> *mesh, Graph_Description<int64_t> *graph,
-                            int elem2grp[], int nprocg[], int nelemg[], size_t *max_vtx,
+                            std::vector<int> &elem2grp, int nprocg[], int nelemg[], size_t *max_vtx,
                             size_t *max_adj);
 
 template <typename INT>
 int get_group_info(Machine_Description *machine, Problem_Description *prob,
-                   Mesh_Description<INT> *mesh, Graph_Description<INT> *graph, int elem2grp[],
-                   int nprocg[], int nelemg[], size_t *max_vtx, size_t *max_adj)
+                   Mesh_Description<INT> *mesh, Graph_Description<INT> *graph,
+                   std::vector<int> &elem2grp, int nprocg[], int nelemg[], size_t *max_vtx,
+                   size_t *max_adj)
 {
   int              nproc = 0;
   std::vector<int> nadj_per_grp;
@@ -197,10 +198,10 @@ int get_group_info(Machine_Description *machine, Problem_Description *prob,
    * calculate how many processors to use for each group
    *   using method from the materials group, haven't really checked it
    */
-  if (machine->type == MESH) {
+  if (machine->type == MachineType::MESH) {
     nproc = machine->procs_per_box;
   }
-  else if (machine->type == HCUBE) {
+  else if (machine->type == MachineType::HCUBE) {
     nproc = ilog2i(machine->procs_per_box);
   }
   for (int i = 0; i < prob->num_groups; i++) {

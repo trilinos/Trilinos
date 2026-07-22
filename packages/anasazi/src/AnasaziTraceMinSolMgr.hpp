@@ -36,10 +36,6 @@
 #ifdef TEUCHOS_DEBUG
 #  include <Teuchos_FancyOStream.hpp>
 #endif
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 
 namespace Anasazi {
 namespace Experimental {

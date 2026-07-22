@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_CONTIGUOUS_HPP
@@ -168,7 +148,7 @@ namespace Sacado {
 
 #include "Sacado_Traits.hpp"
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_ViewMapping.hpp"
+#include "View/Kokkos_ViewMapping.hpp"
 
 //----------------------------------------------------------------------------
 
@@ -710,6 +690,12 @@ public:
     { return m_impl_offset.stride_6(); }
   KOKKOS_INLINE_FUNCTION constexpr size_t stride_7() const
     { return m_impl_offset.stride_7(); }
+
+  template< typename iType >
+  KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<std::is_integral_v<iType>,
+                                                    size_t>
+  stride( iType const s ) const
+    { return m_impl_offset.stride(s) ; }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const

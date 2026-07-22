@@ -28,7 +28,7 @@
       : IAdapter(eMesh, bp, proc_rank_field) {}
 
       /// can be overriden
-      virtual void  buildUnrefineList(ElementUnrefineCollection&);
+      virtual void  buildUnrefineList(ElementUnrefineCollection&) override;
 
     public:
 
@@ -47,7 +47,7 @@
 
       virtual void
       refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity element,
-                                              vector<NeededEntityType>& needed_entity_ranks, const CellTopologyData * const bucket_topo_data);
+                                              vector<NeededEntityType>& needed_entity_ranks, const CellTopologyData * const bucket_topo_data) override;
 
 
     };

@@ -37,21 +37,37 @@ ADD_SUBDIRECTORY(kokkos_simd)
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB KOKKOS_SIMD_HEADERS kokkos_simd/*.hpp)
+option(USE_STK_SIMD_NONE "Disable SIMD" OFF)
+
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB KOKKOS_SIMD_HEADERS CONFIGURE_DEPENDS kokkos_simd/*.hpp)
 
 IF(HAVE_STK_Trilinos)
-  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+  
   TRIBITS_INCLUDE_DIRECTORIES(${${PARENT_PACKAGE_NAME}_SOURCE_DIR}/stk_simd)
+
+  TRIBITS_ADD_LIBRARY(
+    stk_simd
+    HEADERONLY
+    HEADERS ${HEADERS}
+    )
+
 ELSE()
   add_library(stk_simd INTERFACE ${HEADERS})
   target_link_libraries(stk_simd INTERFACE stk_math)
   target_link_libraries(stk_simd INTERFACE stk_util_util)
 
+  if(USE_STK_SIMD_NONE)
+    target_compile_definitions(stk_simd INTERFACE USE_STK_SIMD_NONE)
+  endif()
+
   target_include_directories(stk_simd INTERFACE
     $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_simd>
     $<INSTALL_INTERFACE:include>
   )
+  
+  INSTALL(TARGETS stk_simd EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
+
 ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION

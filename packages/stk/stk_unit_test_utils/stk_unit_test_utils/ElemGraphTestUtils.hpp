@@ -51,7 +51,7 @@ public:
     ElementDeathBulkDataTester(stk::mesh::MetaData &mesh_meta_data,
                                MPI_Comm comm,
                                enum stk::mesh::BulkData::AutomaticAuraOption auraOption) :
-      stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auraOption)
+      stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}), comm, auraOption)
     {
     }
 
@@ -168,12 +168,6 @@ inline void test_num_faces_per_element(const stk::mesh::BulkData& bulkData, cons
         test_num_faces_on_this_element(bulkData, element_id, gold_num_faces_per_elem[i]);
     }
 }
-
-namespace simple_fields {
-
-class ElementDeathBulkDataTester : public ElemGraphTestUtils::ElementDeathBulkDataTester {};
-
-} // namespace simple_fields
 
 } // end namespace
 

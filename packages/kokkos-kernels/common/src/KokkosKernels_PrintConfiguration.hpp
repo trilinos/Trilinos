@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
-#define _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
+#ifndef KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
+#define KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
 
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_TplsVersion.hpp"
@@ -37,8 +24,7 @@ inline void print_cublas_version_if_enabled(std::ostream& os) {
 inline void print_cusparse_version_if_enabled(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   os << "  "
-     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: " << cusparse_version_string()
-     << "\n";
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: " << cusparse_version_string() << "\n";
 #else
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_CUSPARSE: no\n";
@@ -48,8 +34,7 @@ inline void print_cusparse_version_if_enabled(std::ostream& os) {
 inline void print_cusolver_version_if_enabled(std::ostream& os) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
   os << "  "
-     << "KOKKOSKERNELS_ENABLE_TPL_CUSOLVER: " << cusolver_version_string()
-     << "\n";
+     << "KOKKOSKERNELS_ENABLE_TPL_CUSOLVER: " << cusolver_version_string() << "\n";
 #else
   os << "  "
      << "KOKKOSKERNELS_ENABLE_TPL_CUSOLVER: no\n";
@@ -156,9 +141,8 @@ inline void print_version(std::ostream& os) {
   // KOKKOSKERNELS_VERSION is used because MAJOR, MINOR and PATCH macros
   // are not available in Kernels
   os << "  "
-     << "KokkosKernels Version: " << KOKKOSKERNELS_VERSION_MAJOR << "."
-     << KOKKOSKERNELS_VERSION_MINOR << "." << KOKKOSKERNELS_VERSION_PATCH
-     << '\n';
+     << "KokkosKernels Version: " << KOKKOSKERNELS_VERSION_MAJOR << "." << KOKKOSKERNELS_VERSION_MINOR << "."
+     << KOKKOSKERNELS_VERSION_PATCH << '\n';
 }
 
 }  // namespace Impl
@@ -171,4 +155,4 @@ inline void print_configuration(std::ostream& os) {
 }
 
 }  // namespace KokkosKernels
-#endif  // _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
+#endif  // KOKKOSKERNELS_PRINT_CONFIGURATION_HPP

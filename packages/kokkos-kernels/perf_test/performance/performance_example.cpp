@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /*
   Notes on performance_demo test
@@ -41,8 +28,8 @@ bool run_example() {
   // set up some user options
   std::string archiveName("performance_example.yaml");  //  name of the archive
   std::string testName = "performance_example";         // name of test
-  std::string hostName;    // optional hostname - auto detected if blank
-  double tolerance = 0.1;  // for residual and times
+  std::string hostName;                                 // optional hostname - auto detected if blank
+  double tolerance = 0.1;                               // for residual and times
 
   using KokkosKernels::Performance;
 
@@ -74,29 +61,17 @@ bool run_example() {
 
   // Print results
   switch (result) {
-    case Performance::Passed:
-      std::cout << "Archiver Passed" << std::endl;
-      break;
-    case Performance::Failed:
-      std::cout << "Archiver Failed" << std::endl;
-      break;
-    case Performance::NewMachine:
-      std::cout << "Archiver Passed. Adding new machine entry." << std::endl;
-      break;
+    case Performance::Passed: std::cout << "Archiver Passed" << std::endl; break;
+    case Performance::Failed: std::cout << "Archiver Failed" << std::endl; break;
+    case Performance::NewMachine: std::cout << "Archiver Passed. Adding new machine entry." << std::endl; break;
     case Performance::NewConfiguration:
-      std::cout << "Archiver Passed. Adding new machine configuration."
-                << std::endl;
+      std::cout << "Archiver Passed. Adding new machine configuration." << std::endl;
       break;
-    case Performance::NewTest:
-      std::cout << "Archiver Passed. Adding new test entry." << std::endl;
-      break;
+    case Performance::NewTest: std::cout << "Archiver Passed. Adding new test entry." << std::endl; break;
     case Performance::NewTestConfiguration:
-      std::cout << "Archiver Passed. Adding new test entry configuration."
-                << std::endl;
+      std::cout << "Archiver Passed. Adding new test entry configuration." << std::endl;
       break;
-    case Performance::UpdatedTest:
-      std::cout << "Archiver Passed. Updating test entry." << std::endl;
-      break;
+    case Performance::UpdatedTest: std::cout << "Archiver Passed. Updating test entry." << std::endl; break;
     default: throw std::logic_error("Unexpected result code."); break;
   }
 

@@ -15,6 +15,7 @@
 
 #include "MueLu_LWGraphBase.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
+#include "MueLu_LWGraph_fwd.hpp"
 
 namespace MueLu {
 
@@ -28,6 +29,9 @@ namespace MueLu {
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 class LWGraph_kokkos : public MueLu::LWGraphBase<LocalOrdinal, GlobalOrdinal, Node, false> {
   using LWGraphBase<LocalOrdinal, GlobalOrdinal, Node, false>::LWGraphBase;
+
+ public:
+  RCP<MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node> > copyToHost();
 };
 
 }  // namespace MueLu

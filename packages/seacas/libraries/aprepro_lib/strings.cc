@@ -1,9 +1,10 @@
-// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
+// clang-format off
 #include "aprepro.h" // for Aprepro
 #include <iostream>  // for cout, ostream, etc
 #include <string>    // for string, operator<<
@@ -15,10 +16,14 @@ int main(int, char **)
 {
   SEAMS::Aprepro aprepro;
 
-  aprepro.ap_options.warning_msg=false;
+  aprepro.ap_options.warning_msg = false;
+  SEAMS::symrec *ptr             = aprepro.getsym("_FORMAT");
+  if (ptr != nullptr) {
+    ptr->value.svar = "%.10g";
+  }
 
   std::vector<std::string> strings = build_strings();
-  bool result = aprepro.parse_strings(strings, "My list of strings");
+  bool                     result  = aprepro.parse_strings(strings, "My list of strings");
   if (result) {
     std::string res_str = aprepro.parsing_results().str();
     std::cout << res_str;
@@ -26,7 +31,7 @@ int main(int, char **)
   aprepro.clear_results();
 }
 
-std::vector<std::string> build_strings() 
+std::vector<std::string> build_strings()
 {
   std::vector<std::string> strings;
 
@@ -61,7 +66,8 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"({pmin = min(0.5, 1.0)}	{nmin = min(-0.5, -1.0)} $ Should be 0.5, -1)");
   strings.emplace_back(R"({pmax = max(0.5, 1.0)}	{nmax = max(-0.5, -1.0)} $ Should be 1.0, -0.5)");
   strings.emplace_back(R"({zero = 0} {sign(0.5, zero) + sign(0.5, -zero)}	$ Should be 0 1)");
-  strings.emplace_back(R"({nonzero = 1} {sign(0.5, nonzero) + sign(0.5, -nonzero)} $ Should be 1 0)");
+  strings.emplace_back(
+      R"({nonzero = 1} {sign(0.5, nonzero) + sign(0.5, -nonzero)} $ Should be 1 0)");
   strings.emplace_back(R"({dim(5.5, 4.5)}	{dim(4.5, 5.5)}	$ Should be 1 0)");
   strings.emplace_back(R"()");
   strings.emplace_back(R"({ifyes = 1} {ifno = 0})");
@@ -109,7 +115,8 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"($ Lines a, b, c, d, 1, 4, 6, 7 should be echoed)");
   strings.emplace_back(R"($ Check line counting -- should be on line 78: )");
   strings.emplace_back(R"( )");
-  strings.emplace_back(R"($ ========================================================================)");
+  strings.emplace_back(
+      R"($ ========================================================================)");
   strings.emplace_back(R"($ Test string if lines)");
   strings.emplace_back(R"({if("Greg")})");
   strings.emplace_back(R"( This line should be echoed ("greg"))");
@@ -125,7 +132,8 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"({endif})");
   strings.emplace_back(R"()");
   strings.emplace_back(R"()");
-  strings.emplace_back(R"($ ========================================================================)");
+  strings.emplace_back(
+      R"($ ========================================================================)");
   strings.emplace_back(R"($ Test if lines)");
   strings.emplace_back(R"({if(sqrt(4) == 2)})");
   strings.emplace_back(R"(  This line should be echoed. (a))");
@@ -176,7 +184,8 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"(  good)");
   strings.emplace_back(R"(  make sure it is still good)");
   strings.emplace_back(R"({endif})");
-  strings.emplace_back(R"($ ========================================================================)");
+  strings.emplace_back(
+      R"($ ========================================================================)");
   strings.emplace_back(R"($ Test switch)");
   strings.emplace_back(R"({switch(PI)})");
   strings.emplace_back(R"(This is in a switch, but prior to any case, it should not run)");
@@ -210,15 +219,24 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"()");
   strings.emplace_back(R"($ Test looping - print sin, cos from 0 to 90 by 5)");
   strings.emplace_back(R"({Loop(19, _angle, 0, 5)})");
-  strings.emplace_back(R"({_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} )");
+  strings.emplace_back(
+      R"({_angle}	{_sa=sind(_angle)}	{_ca=cosd(_angle)} {hypot(_sa, _ca)} )");
   strings.emplace_back(R"({EndLoop})");
   strings.emplace_back(R"()");
   strings.emplace_back(R"($$$$ Test formatting and string concatenation)");
   strings.emplace_back(R"({_SAVE = _FORMAT})");
   strings.emplace_back(R"({loop(20)})");
-  strings.emplace_back(R"({IO(__loop_1+1)} Using the format {_FORMAT = "%." // tostring(__loop_1+1) // "g"},	PI = {PI})");
+  strings.emplace_back(
+      R"({IO(__loop_1+1)} Using the format {_FORMAT = "%." // tostring(__loop_1+1) // "g"},	PI = {PI})");
   strings.emplace_back(R"({endloop})");
   strings.emplace_back(R"(Reset format to default: {_FORMAT = _SAVE})");
+  strings.emplace_back(R"()");
+  strings.emplace_back(
+      R"($$$$ Test formatting using the `format` function.  _FORMAT is not modified)");
+  strings.emplace_back(R"({loop(20)}")");
+  strings.emplace_back(
+      R"({__loop_1+1} Using the format {_f = "%." // tostring(__loop_1+1) // "f"},	PI = {format(PI,_f)})");
+  strings.emplace_back(R"({endloop})");
   strings.emplace_back(R"()");
   strings.emplace_back(R"($$$$ Test string rescanning and executing)");
   strings.emplace_back(R"({ECHO(OFF)})");
@@ -278,9 +296,16 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"({list1 ='51,52,53,54,61,62,63,64'})");
   strings.emplace_back(R"({list2 ='71,72,73,74,81,82,83,84'})");
   strings.emplace_back(R"({loop(8, _i, 1)})");
-  strings.emplace_back(R"(Word {_i} of list1 and list2 are {get_word(_i,list1,',')} and {get_word(_i,list2,',')})");
+  strings.emplace_back(
+      R"(Word {_i} of list1 and list2 are {get_word(_i,list1,',')} and {get_word(_i,list2,',')})");
   strings.emplace_back(R"({endloop})");
   strings.emplace_back(R"()");
+  strings.emplace_back(R"($$$$ Test double brace echo off/on)");
+  strings.emplace_back(R"(Nothing further on line: {{"not echoed"}})");
+  strings.emplace_back(
+      R"(Noecho followed by non-parsing output: {{"not echoed"}}This should be echoed)");
+  strings.emplace_back(
+      R"(Echo, noecho setting variable, then echo that variable: {e="echo"}+{{d="echo"}}+{d})");
   strings.emplace_back(R"($End of test file)");
 
   return strings;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -32,10 +19,10 @@
 #include <KokkosSparse_spmv.hpp>
 #include "KokkosKernels_default_types.hpp"
 
-using Scalar  = default_scalar;
-using Ordinal = default_lno_t;
-using Offset  = default_size_type;
-using KAT     = Kokkos::ArithTraits<Scalar>;
+using Scalar  = KokkosKernels::default_scalar;
+using Ordinal = KokkosKernels::default_lno_t;
+using Offset  = KokkosKernels::default_size_type;
+using KAT     = KokkosKernels::ArithTraits<Scalar>;
 
 struct SPMVBenchmarking {
   // note: CLI currently only allows square matrices to be randomly generated
@@ -54,39 +41,30 @@ struct SPMVBenchmarking {
   // memory layout.
   template <typename Layout>
   void run() {
-    using matrix_type =
-        KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace,
-                                void, Offset>;
-    using mv_type   = Kokkos::View<Scalar**, Layout>;
-    using h_mv_type = typename mv_type::HostMirror;
+    using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset>;
+    using mv_type     = Kokkos::View<Scalar**, Layout>;
+    using h_mv_type   = typename mv_type::host_mirror_type;
 
     srand(17312837);
     matrix_type A;
     if (filename != "") {
       std::cout << "Reading A from file \"" << filename << "\"...\n";
-      A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(
-          filename.c_str());
+      A        = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(filename.c_str());
       num_rows = A.numRows();
       num_cols = A.numCols();
     } else {
       std::cout << "Randomly generating A...\n";
       Offset nnz = 10 * num_rows;
       // note: the help text says the bandwidth is fixed at 0.01 * numRows
-      A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(
-          num_rows, num_cols, nnz, 0, 0.01 * num_rows);
+      A = KokkosSparse::Impl::kk_generate_sparse_matrix<matrix_type>(num_rows, num_cols, nnz, 0, 0.01 * num_rows);
     }
 
-    std::cout << "A is " << A.numRows() << "x" << A.numCols() << ", with "
-              << A.nnz() << " nonzeros\n";
+    std::cout << "A is " << A.numRows() << "x" << A.numCols() << ", with " << A.nnz() << " nonzeros\n";
     std::cout << "Mean nnz/row: " << (double)A.nnz() / A.numRows() << '\n';
     std::cout << "Max nnz/row: "
-              << KokkosSparse::Impl::graph_max_degree<
-                     Kokkos::DefaultExecutionSpace, Ordinal>(A.graph.row_map)
-              << '\n';
-    std::cout << "SpMV mode " << mode << ", " << num_vecs
-              << " vectors, beta = " << beta << ", multivectors are ";
-    std::cout << (std::is_same_v<Layout, Kokkos::LayoutLeft> ? "LayoutLeft"
-                                                             : "LayoutRight");
+              << KokkosSparse::Impl::graph_max_degree<Kokkos::DefaultExecutionSpace, Ordinal>(A.graph.row_map) << '\n';
+    std::cout << "SpMV mode " << mode << ", " << num_vecs << " vectors, beta = " << beta << ", multivectors are ";
+    std::cout << (std::is_same_v<Layout, Kokkos::LayoutLeft> ? "LayoutLeft" : "LayoutRight");
     std::cout << '\n';
 
     bool transpose_like = (mode == 'T') || (mode == 'H');
@@ -116,12 +94,8 @@ struct SPMVBenchmarking {
     // Create handles for both rank-1 and rank-2 cases,
     // even though only 1 will get used below (depending on num_vecs)
 
-    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type,
-                             decltype(x0), decltype(y0)>
-        handle_rank1;
-    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type,
-                             mv_type, mv_type>
-        handle_rank2;
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, decltype(x0), decltype(y0)> handle_rank1;
+    KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, mv_type, mv_type> handle_rank2;
     // Assuming that 1GB is enough to fully clear the L3 cache of a CPU, or the
     // L2 of a GPU. (Some AMD EPYC chips have 768 MB L3)
     Kokkos::View<char*, Kokkos::DefaultExecutionSpace> cacheFlushData;
@@ -156,8 +130,7 @@ struct SPMVBenchmarking {
         // Copy some non-zero data to the view multiple times to flush the
         // cache. (nonzero in case the system has an optimized path for zero
         // pages)
-        for (int rep = 0; rep < 4; rep++)
-          Kokkos::deep_copy(space, cacheFlushData, char(rep + 1));
+        for (int rep = 0; rep < 4; rep++) Kokkos::deep_copy(space, cacheFlushData, char(rep + 1));
       }
       space.fence();
       timer.reset();
@@ -214,7 +187,7 @@ void print_help() {
 int main(int argc, char** argv) {
   SPMVBenchmarking sb;
   char layout;
-  if (std::is_same<default_layout, Kokkos::LayoutLeft>::value)
+  if (std::is_same<KokkosKernels::default_layout, Kokkos::LayoutLeft>::value)
     layout = 'L';
   else
     layout = 'R';

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HIP_SHUFFLE_REDUCE_HPP
 #define KOKKOS_HIP_SHUFFLE_REDUCE_HPP
@@ -100,7 +87,7 @@ template <class FunctorType>
 __device__ inline bool hip_inter_block_shuffle_reduction(
     typename FunctorType::reference_type value,
     typename FunctorType::reference_type neutral, FunctorType const& reducer,
-    HIP::size_type* const m_scratch_space,
+    typename FunctorType::pointer_type const m_scratch_space,
     typename FunctorType::pointer_type const /*result*/,
     HIP::size_type* const m_scratch_flags,
     int const max_active_thread = blockDim.y) {
@@ -115,9 +102,8 @@ __device__ inline bool hip_inter_block_shuffle_reduction(
 
   // One thread in the block writes block result to global scratch_memory
   if (id == 0) {
-    pointer_type global =
-        reinterpret_cast<pointer_type>(m_scratch_space) + blockIdx.x;
-    *global = value;
+    pointer_type global = m_scratch_space + blockIdx.x;
+    *global             = value;
     __threadfence();
   }
 
@@ -140,8 +126,7 @@ __device__ inline bool hip_inter_block_shuffle_reduction(
       last_block = true;
       value      = neutral;
 
-      pointer_type const global =
-          reinterpret_cast<pointer_type>(m_scratch_space);
+      pointer_type const global = m_scratch_space;
 
       // Reduce all global values with splitting work over threads in one warp
       const int step_size = blockDim.x * blockDim.y < warp_size

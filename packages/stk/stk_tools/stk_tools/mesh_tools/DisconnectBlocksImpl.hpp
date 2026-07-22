@@ -49,8 +49,6 @@
 #include <utility>
 #include <vector>
 
-namespace stk { namespace mesh { class BulkData; } }
-
 namespace stk {
 namespace tools {
 namespace impl {
@@ -131,7 +129,7 @@ typedef std::map<ReconnectMapKey, ReconnectNodeInfo> ReconnectMap;
 class NullStream : public std::ostream {
   class NullBuffer : public std::streambuf {
   public:
-    int overflow( int c ) { return c; }
+    int overflow( int c ) override { return c; }
   } m_nb;
 public:
   NullStream() : std::ostream( &m_nb ) {}
@@ -158,7 +156,7 @@ struct InternalFaceInfo
   stk::mesh::Entity elemInSecondBlock;
   stk::mesh::ConnectivityOrdinal faceOrdinalInSecondBlock;
   stk::mesh::Entity internalFace;
-  std::pair<bool, bool> isInBlockPairSideset;
+  std::pair<bool, bool> isDefinedRelativeToBlockPair;
   std::map<std::pair<stk::mesh::Entity,stk::mesh::ConnectivityOrdinal>, stk::mesh::Entity> nodeMap;
 
   InternalFaceInfo(const BlockPair& blockPair_,
@@ -167,43 +165,56 @@ struct InternalFaceInfo
                    const stk::mesh::Entity elemInSecondBlock_,
                    const stk::mesh::ConnectivityOrdinal faceOrdinalInSecondBlock_,
                    const stk::mesh::Entity internalFace_,
-                   const std::pair<bool, bool>& isInBlockPairSideset_)
+                   const std::pair<bool, bool>& isDefinedRelativeToBlockPair_)
   : blockPair(blockPair_)
   , elemInFirstBlock(elemInFirstBlock_)
   , faceOrdinalInFirstBlock(faceOrdinalInFirstBlock_)
   , elemInSecondBlock(elemInSecondBlock_)
   , faceOrdinalInSecondBlock(faceOrdinalInSecondBlock_)
   , internalFace(internalFace_)
-  , isInBlockPairSideset(isInBlockPairSideset_) {}
+  , isDefinedRelativeToBlockPair(isDefinedRelativeToBlockPair_) {}
+
+  InternalFaceInfo(const InternalFaceInfo&) = default;
 
   operator stk::mesh::Entity() const { return internalFace; }
 
-  bool operator<(const InternalFaceInfo &rhs)
+  bool operator<(const InternalFaceInfo &rhs) const
   {
     return internalFace < rhs.internalFace;
   };
 
-  bool operator<(const stk::mesh::Entity &rhs)
+  bool operator<(const stk::mesh::Entity &rhs) const
   {
     return internalFace < rhs;
   };
+  
+  void operator=(const InternalFaceInfo &info)
+  {
+    blockPair = info.blockPair;
+    elemInFirstBlock = info.elemInFirstBlock;
+    faceOrdinalInFirstBlock = info.faceOrdinalInFirstBlock;
+    elemInSecondBlock = info.elemInSecondBlock;
+    faceOrdinalInSecondBlock = info.faceOrdinalInSecondBlock;
+    internalFace = info.internalFace;
+    isDefinedRelativeToBlockPair = info.isDefinedRelativeToBlockPair;
+  };
 
-  bool operator==(const InternalFaceInfo &rhs)
+  bool operator==(const InternalFaceInfo &rhs) const
   {
     return internalFace == rhs.internalFace;
   };
 
-  bool operator==(const stk::mesh::Entity &rhs)
+  bool operator==(const stk::mesh::Entity &rhs) const
   {
     return internalFace == rhs;
   };
 
-  bool operator!=(const InternalFaceInfo &rhs)
+  bool operator!=(const InternalFaceInfo &rhs) const
   {
     return internalFace != rhs.internalFace;
   };
 
-  bool operator!=(const stk::mesh::Entity &rhs)
+  bool operator!=(const stk::mesh::Entity &rhs) const
   {
     return internalFace != rhs;
   };

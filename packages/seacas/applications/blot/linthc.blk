@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -8,7 +8,7 @@ C    See packages/seacas/LICENSE for details
       REAL MSHBND, BLKBND, ELEBND
 C      --      Line thickness specification for lines appearing
 C      --      on mesh plots.  Specification is a real value in the
-C      --      range 0. - 1000., with 0. being the thinest line and
+C      --      range 0. - 1000., with 0. being the thinnest line and
 C      --      1000. being the thickest.
 C      -- MSHBND - Thickness of lines forming the mesh boundary.
 C      -- BLKBND - Thickness of lines forming element block boundaries.

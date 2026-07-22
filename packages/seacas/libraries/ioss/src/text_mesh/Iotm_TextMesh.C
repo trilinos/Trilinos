@@ -879,7 +879,12 @@ namespace Iotm {
     if (nullptr == sideset)
       return;
 
-    SideBlockInfo       info = sideset->get_side_block_info(sideBlockName);
+    SideBlockInfo          info     = sideset->get_side_block_info(sideBlockName);
+    Ioss::ElementTopology *topology = Ioss::ElementTopology::factory(info.elementTopology, true);
+    Ioss::ElementTopology *side_topology = Ioss::ElementTopology::factory(info.sideTopology, true);
+
+    int sideOffset = Ioss::Utils::get_side_offset(topology, side_topology);
+
     std::vector<size_t> localSideIndex =
         sideset->get_sideblock_indices_local_to_proc(info, m_myProcessor);
     elemSides.resize(2 * localSideIndex.size());
@@ -892,7 +897,7 @@ namespace Iotm {
       int                          side         = elemSidePair.second;
 
       elemSides[count++] = elemId;
-      elemSides[count++] = side;
+      elemSides[count++] = side - sideOffset;
     }
   }
 
@@ -938,6 +943,7 @@ namespace Iotm {
 
       for (const std::string &assemblyName : m_data.assemblies.get_part_names()) {
         const AssemblyData *assembly = m_data.assemblies.get_group_data(assemblyName);
+        ThrowRequireMsg(nullptr != assembly, "Could not find assembly with name" << assemblyName);
 
         bool omitAssembly =
             std::binary_search(assemblyOmissions.begin(), assemblyOmissions.end(), assembly->name);

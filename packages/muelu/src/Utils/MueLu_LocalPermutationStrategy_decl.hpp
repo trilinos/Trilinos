@@ -43,7 +43,7 @@ class LocalPermutationStrategy : public BaseClass {
 #include "MueLu_UseShortNames.hpp"
  public:
   /*!
-    @class LocalPermutationStrategy class.
+    @class LocalPermutationStrategy
     @brief Class which defines local permutations of matrix columns which correspond to DOFs of the same node.
     */
 

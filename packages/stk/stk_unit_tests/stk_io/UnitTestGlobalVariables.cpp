@@ -73,7 +73,6 @@ void testGlobalVarOnFile(const std::string &outputFileName, const int stepNumber
                          const std::vector<DataType> goldGlobalVarValue, DataType goldGlobalScale, MPI_Comm comm)
 {
   stk::io::StkMeshIoBroker stkIo(comm);
-  stkIo.use_simple_fields();
   stkIo.add_mesh_database(outputFileName, stk::io::READ_MESH);
   stkIo.create_input_mesh();
   stkIo.populate_bulk_data();
@@ -122,7 +121,6 @@ TEST(GlobalVariablesTest, OneGlobalDouble)
   MPI_Comm communicator = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", 64));
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
@@ -157,7 +155,6 @@ TEST(GlobalVariablesTest, InvalidGlobalRequest)
   MPI_Comm communicator = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -178,7 +175,6 @@ TEST(GlobalVariablesTest, InvalidGlobalRequest)
   {
     double global_value = 0.0;
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(outputFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();
@@ -208,7 +204,6 @@ TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
   MPI_Comm communicator = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -245,7 +240,6 @@ TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
   MPI_Comm communicator = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -282,7 +276,6 @@ TEST(GlobalVariablesTest, OneGlobalDouble10)
   MPI_Comm communicator = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -313,7 +306,6 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
   std::vector<DataType> globalVarValues = {13, 14};
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -370,11 +362,12 @@ void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Field<d
 {
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+  auto fieldData = field0.data<stk::mesh::ReadWrite>();
   for(size_t i=0; i<nodes.size(); i++)
   {
-    double *fieldDataForNode = stk::mesh::field_data(field0, nodes[i]);
-    *fieldDataForNode = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
-    nodalFieldValues.push_back(*fieldDataForNode);
+    auto fieldDataForNode = fieldData.entity_values(nodes[i]);
+    fieldDataForNode() = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
+    nodalFieldValues.push_back(fieldDataForNode());
   }
 }
 
@@ -393,7 +386,6 @@ TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
   }
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -445,7 +437,6 @@ TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
   MPI_Comm communicator = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
@@ -464,7 +455,6 @@ TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
 
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     stkIo.add_mesh_database(restartFileName, stk::io::READ_RESTART);
     stkIo.create_input_mesh();
     stkIo.populate_bulk_data();
@@ -501,7 +491,6 @@ TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
 
   {
     stk::io::StkMeshIoBroker stkIo(communicator);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();

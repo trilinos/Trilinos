@@ -29,8 +29,6 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 
-#include "MueLu_LWGraph.hpp"
-
 #ifdef HAVE_MUELU_ZOLTAN2
 #include "MueLu_Zoltan2GraphAdapter.hpp"
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
@@ -119,10 +117,6 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
   }
 
 #endif
-
-  // Switch to MIS if we're in Epetra (and not file)
-  if (coloringAlgo != "file" && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
-    coloringAlgo = "MIS";
 
   if (coloringAlgo == "file") {
     // Read the CF splitting from disk

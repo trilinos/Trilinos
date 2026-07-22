@@ -32,7 +32,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+
+if(NOT ${PROJECT_NAME}_ENABLE_STKTransferUtil)
+ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/howToUseCoarseSearch.cpp")
+ LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/howToUseFilterCoarseSearch.cpp")
+endif()
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../stk_search_util)
@@ -55,10 +60,21 @@ else()
   target_link_libraries(stk_search_doc_tests stk_util_parallel)
   target_link_libraries(stk_search_doc_tests stk_unit_main)
 
-  add_test(NAME "stk_search_doc_tests" COMMAND stk_search_doc_tests)
+  FOREACH(NUMPROCS 1)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_search_doc_tests_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_search_doc_tests)
+    set_property(TEST "stk_search_doc_tests_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
 endif()
 
-target_include_directories(stk_search_doc_tests PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
+if(TARGET stk_search_doc_tests)
+  target_include_directories(stk_search_doc_tests PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  INSTALL(TARGETS stk_search_doc_tests DESTINATION ${STK_INSTALL_BINDIR})
+endif()

@@ -1,46 +1,10 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //   Zoltan2: A package of combinatorial algorithms for scientific computing
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Erik Boman        (egboman@sandia.gov)
-//                    Siva Rajamanickam (srajama@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file Zoltan2_TpetraRowMatrixAdapter.hpp
@@ -204,13 +168,13 @@ public:
 // The MatrixAdapter Interface
 /////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumRows() const;
+  size_t getLocalNumRows() const override;
 
-  size_t getLocalNumColumns() const;
+  size_t getLocalNumColumns() const override;
 
-  size_t getLocalNumEntries() const;
+  size_t getLocalNumEntries() const override;
 
-  bool CRSViewAvailable() const;
+  bool CRSViewAvailable() const override;
 
   void getRowIDsView(const gno_t *&rowIds) const override;
 
@@ -221,7 +185,7 @@ public:
       typename Base::ConstIdsDeviceView &rowIds) const override;
 
   void getCRSView(ArrayRCP<const offset_t> &offsets,
-                  ArrayRCP<const gno_t> &colIds) const;
+                  ArrayRCP<const gno_t> &colIds) const override;
 
   void getCRSHostView(
       typename Base::ConstOffsetsHostView &offsets,
@@ -233,7 +197,7 @@ public:
 
   void getCRSView(ArrayRCP<const offset_t> &offsets,
                   ArrayRCP<const gno_t> &colIds,
-                  ArrayRCP<const scalar_t> &values) const;
+                  ArrayRCP<const scalar_t> &values) const override;
 
   void getCRSHostView(
       typename Base::ConstOffsetsHostView &offsets,
@@ -245,24 +209,24 @@ public:
       typename Base::ConstIdsDeviceView &colIds,
       typename Base::ConstScalarsDeviceView &values) const override;
 
-  int getNumWeightsPerRow() const;
+  int getNumWeightsPerRow() const override;
 
   void getRowWeightsView(const scalar_t *&weights, int &stride,
-                         int idx = 0) const;
+                         int idx = 0) const override;
 
   void getRowWeightsDeviceView(typename Base::WeightsDeviceView1D &weights,
-                                  int idx = 0) const;
+                                  int idx = 0) const override;
 
   void getRowWeightsDeviceView(
       typename Base::WeightsDeviceView &weights) const override;
 
   void getRowWeightsHostView(typename Base::WeightsHostView1D &weights,
-                                int idx = 0) const;
+                                int idx = 0) const override;
 
   void getRowWeightsHostView(
       typename Base::WeightsHostView &weights) const override;
 
-  bool useNumNonzerosAsRowWeight(int idx) const;
+  bool useNumNonzerosAsRowWeight(int idx) const override;
 
   template <typename Adapter>
   void applyPartitioningSolution(
@@ -341,7 +305,7 @@ TpetraRowMatrixAdapter<User, UserCoord>::TpetraRowMatrixAdapter(
     for (offset_t e = offsHost_(r), i = 0; e < offsHost_(r + 1); e++) {
       colIdsHost_(e) = matrix_->getColMap()->getGlobalElement(localColInds(i++));
     }
-    for (size_t j = 0; j < nnz; j++) {
+    for (size_t j = 0; j < numEntries; j++) {
       valuesHost_(r) = localVals[j];
     }
   }
@@ -437,9 +401,10 @@ void TpetraRowMatrixAdapter<User, UserCoord>::setRowWeightsDevice(
   AssertCondition((idx >= 0) and (idx < nWeightsPerRow_),
                   "Invalid row weight index: " + std::to_string(idx));
 
+  auto rowWeightsDevice = this->rowWeightsDevice_;
     Kokkos::parallel_for(
-      rowWeightsDevice_.extent(0), KOKKOS_CLASS_LAMBDA(const int rowID) {
-        rowWeightsDevice_(rowID, idx) = weights(rowID);
+      rowWeightsDevice.extent(0), KOKKOS_LAMBDA(const int rowID) {
+        rowWeightsDevice(rowID, idx) = weights(rowID);
       });
 
   Kokkos::fence();
@@ -641,9 +606,10 @@ void TpetraRowMatrixAdapter<User, UserCoord>::getRowWeightsDeviceView(
   const auto size = rowWeightsDevice_.extent(0);
   weights = typename Base::WeightsDeviceView1D("weights", size);
 
+  auto rowWeightsDevice = this->rowWeightsDevice_;
   Kokkos::parallel_for(
-      size, KOKKOS_CLASS_LAMBDA(const int id) {
-        weights(id) = rowWeightsDevice_(id, idx);
+      size, KOKKOS_LAMBDA(const int id) {
+        weights(id) = rowWeightsDevice(id, idx);
       });
 
   Kokkos::fence();

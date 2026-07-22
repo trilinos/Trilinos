@@ -1,0 +1,551 @@
+// @HEADER
+// *****************************************************************************
+//           Galeri: Finite Element and Matrix Generation Package
+//
+// Copyright 2006 ETHZ/NTESS and the Galeri contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#ifndef GALERI_ELASTICITY3DPROBLEM_DEF_HPP
+#define GALERI_ELASTICITY3DPROBLEM_DEF_HPP
+
+#include "KokkosBlas3_gemm.hpp"
+
+#include "Galeri_Elasticity3DProblem_decl.hpp"
+#include "Galeri_MultiVectorTraits.hpp"
+#include "Galeri_MatrixTraits.hpp"
+#include "Galeri_XpetraUtils.hpp"
+
+namespace Galeri {
+
+namespace Xpetra {
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::Elasticity3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map)
+  : Problem<Map, Matrix, MultiVector>(list, map) {
+  E  = list.get("E", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(1e9));
+  nu = list.get("nu", Teuchos::as<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>(0.25));
+
+  nx_ = -1;
+  ny_ = -1;
+  nz_ = -1;
+
+  if (list.isParameter("nx")) {
+    if (list.isType<int>("nx"))
+      nx_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+    else
+      nx_ = list.get<GlobalOrdinal>("nx");
+  }
+  if (list.isParameter("ny")) {
+    if (list.isType<int>("ny"))
+      ny_ = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+    else
+      ny_ = list.get<GlobalOrdinal>("ny");
+  }
+  if (list.isParameter("nz")) {
+    if (list.isType<int>("nz"))
+      nz_ = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+    else
+      nz_ = list.get<GlobalOrdinal>("nz");
+  }
+
+  nDim_      = 3;
+  double one = 1.0;
+  stretch.push_back(list.get("stretchx", one));
+  stretch.push_back(list.get("stretchy", one));
+  stretch.push_back(list.get("stretchz", one));
+
+  // NOTE: -1 is because galeri counts points, not elements
+  dims.push_back(nx_ - 1);
+  dims.push_back(ny_ - 1);
+  dims.push_back(nz_ - 1);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0 || nz_ <= 0, std::logic_error, "nx, ny and nz must be positive");
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
+  BuildMesh();
+
+  const size_t numDofPerNode   = 3;
+  const size_t numNodesPerElem = 8;
+  const size_t numDofPerElem   = numNodesPerElem * numDofPerNode;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(elements_[0].size() != numNodesPerElem, std::logic_error, "Incorrect number of element vertices");
+
+  // Material constant
+  SC t = 1;
+
+  // Material matrix
+  RCP<Memory2D> D(new Memory2D);
+  BuildMaterialMatrix(*D);
+
+  // Reference element, and reference Gauss points
+  size_t numRefPoints, numGaussPoints;
+  std::vector<Point> refPoints, gaussPoints;
+  BuildReferencePoints(numRefPoints, refPoints, numGaussPoints, gaussPoints);
+
+  // Evaluate the B matrix for the reference element
+  size_t sDim = 8;
+  size_t bDim = 9;
+  std::vector<Memory2D> Bs(numGaussPoints);
+  std::vector<Memory2D> Ss(numGaussPoints);
+
+  for (size_t j = 0; j < numGaussPoints; j++) {
+    Memory2D& S = Ss[j];
+    S           = Memory2D("S", sDim, nDim_);
+    EvalD(refPoints, gaussPoints[j], S);
+
+    Memory2D& B = Bs[j];
+    B           = Memory2D("B", bDim, numDofPerElem);
+
+    for (size_t k = 0; k < numNodesPerElem; k++) {
+      B(0, numDofPerNode * k + 0) = S(k, 0);
+      B(1, numDofPerNode * k + 0) = S(k, 1);
+      B(2, numDofPerNode * k + 0) = S(k, 2);
+      B(3, numDofPerNode * k + 1) = S(k, 0);
+      B(4, numDofPerNode * k + 1) = S(k, 1);
+      B(5, numDofPerNode * k + 1) = S(k, 2);
+      B(6, numDofPerNode * k + 2) = S(k, 0);
+      B(7, numDofPerNode * k + 2) = S(k, 1);
+      B(8, numDofPerNode * k + 2) = S(k, 2);
+    }
+  }
+
+  // Construct reordering matrix (see 6.2-9 from Cook)
+  Memory2D R("R", D->extent(0), bDim);
+  R(0, 0) = R(1, 4) = R(2, 8) = R(3, 1) = R(3, 3) = R(4, 5) = R(4, 7) = R(5, 2) = R(5, 6) = 1;
+
+  this->A_ = MatrixTraits<Map, Matrix>::Build(this->Map_, numNodesPerElem * 8 * numDofPerElem);
+  this->A_->setObjectLabel(this->getObjectLabel());
+
+  SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
+  Memory2D prevKE("prevKE", numDofPerElem, numDofPerElem), prevElementNodes("prevElementNodes", numNodesPerElem, nDim_);  // cache
+  for (size_t i = 0; i < elements_.size(); i++) {
+    // Select nodes subvector
+    Memory2D elementNodes("elementNodes", numNodesPerElem, nDim_);
+    std::vector<LO>& elemNodes = elements_[i];
+    for (size_t j = 0; j < numNodesPerElem; j++) {
+      elementNodes(j, 0) = nodes_[elemNodes[j]].x;
+      elementNodes(j, 1) = nodes_[elemNodes[j]].y;
+      elementNodes(j, 2) = nodes_[elemNodes[j]].z;
+    }
+
+    // Check if element is a translation of the previous element
+    auto xMove = elementNodes(0, 0) - prevElementNodes(0, 0), yMove = elementNodes(0, 1) - prevElementNodes(0, 1), zMove = elementNodes(0, 2) - prevElementNodes(0, 2);
+    typename KAT::magnitudeType eps = 1e-15;  // coordinate comparison criteria
+    bool recompute                  = false;
+    {
+      size_t j = 0;
+      for (j = 0; j < numNodesPerElem; j++)
+        if (KAT::magnitude(elementNodes(j, 0) - (prevElementNodes(j, 0) + xMove)) > eps ||
+            KAT::magnitude(elementNodes(j, 1) - (prevElementNodes(j, 1) + yMove)) > eps ||
+            KAT::magnitude(elementNodes(j, 2) - (prevElementNodes(j, 2) + zMove)) > eps)
+          break;
+      if (j != numNodesPerElem)
+        recompute = true;
+    }
+
+    Memory2D KE("KE", numDofPerElem, numDofPerElem);
+    Kokkos::View<SC**, Kokkos::HostSpace> KE2("KE2", KE.extent(0), KE.extent(1));
+    if (recompute == false) {
+      // If an element has the same form as previous element, reuse stiffness matrix
+      Kokkos::deep_copy(KE, prevKE);
+
+    } else {
+      // Evaluate new stiffness matrix for the element
+      Memory2D K0("K0", D->extent(0), numDofPerElem);
+      for (size_t j = 0; j < numGaussPoints; j++) {
+        Memory2D& B = Bs[j];
+        Memory2D& S = Ss[j];
+
+        Memory2D JAC("JAC", nDim_, nDim_);
+
+        for (size_t p = 0; p < nDim_; p++)
+          for (size_t q = 0; q < nDim_; q++) {
+            JAC(p, q) = zero;
+
+            for (size_t k = 0; k < numNodesPerElem; k++)
+              JAC(p, q) += S(k, p) * elementNodes(k, q);
+          }
+
+        auto detJ = JAC(0, 0) * JAC(1, 1) * JAC(2, 2) + JAC(2, 0) * JAC(0, 1) * JAC(1, 2) + JAC(0, 2) * JAC(2, 1) * JAC(1, 0) -
+                    JAC(2, 0) * JAC(1, 1) * JAC(0, 2) - JAC(0, 0) * JAC(2, 1) * JAC(1, 2) - JAC(2, 2) * JAC(0, 1) * JAC(1, 0);
+
+        // J2 = inv([JAC zeros(3) zeros(3); zeros(3) JAC zeros(3); zeros(3) zeros(3) JAC])
+        Memory2D J2("J2", nDim_ * nDim_, nDim_ * nDim_);
+        J2(0, 0) = J2(3, 3) = J2(6, 6) = (JAC(2, 2) * JAC(1, 1) - JAC(2, 1) * JAC(1, 2)) / detJ;
+        J2(0, 1) = J2(3, 4) = J2(6, 7) = -(JAC(2, 2) * JAC(0, 1) - JAC(2, 1) * JAC(0, 2)) / detJ;
+        J2(0, 2) = J2(3, 5) = J2(6, 8) = (JAC(1, 2) * JAC(0, 1) - JAC(1, 1) * JAC(0, 2)) / detJ;
+        J2(1, 0) = J2(4, 3) = J2(7, 6) = -(JAC(2, 2) * JAC(1, 0) - JAC(2, 0) * JAC(1, 2)) / detJ;
+        J2(1, 1) = J2(4, 4) = J2(7, 7) = (JAC(2, 2) * JAC(0, 0) - JAC(2, 0) * JAC(0, 2)) / detJ;
+        J2(1, 2) = J2(4, 5) = J2(7, 8) = -(JAC(1, 2) * JAC(0, 0) - JAC(1, 0) * JAC(0, 2)) / detJ;
+        J2(2, 0) = J2(5, 3) = J2(8, 6) = (JAC(2, 1) * JAC(1, 0) - JAC(2, 0) * JAC(1, 1)) / detJ;
+        J2(2, 1) = J2(5, 4) = J2(8, 7) = -(JAC(2, 1) * JAC(0, 0) - JAC(2, 0) * JAC(0, 1)) / detJ;
+        J2(2, 2) = J2(5, 5) = J2(8, 8) = (JAC(1, 1) * JAC(0, 0) - JAC(1, 0) * JAC(0, 1)) / detJ;
+
+        Memory2D B2("B2", J2.extent(0), B.extent(1));
+        KokkosBlas::gemm("N", "N", one, J2, B, zero, B2);
+
+        // KE = KE + t * J2B' * D * J2B * detJ
+        Memory2D J2B("J2B", R.extent(0), B2.extent(1));
+        KokkosBlas::gemm("N", "N", one, R, B2, zero, J2B);
+        KokkosBlas::gemm("N", "N", one, *D, J2B, zero, K0);
+        KokkosBlas::gemm("T", "N", t * detJ, J2B, K0, one, KE);
+      }
+
+      // Cache the matrix and nodes
+      Kokkos::deep_copy(prevKE, KE);
+      Kokkos::deep_copy(prevElementNodes, elementNodes);
+    }
+
+    Teuchos::Array<GO> elemDofs(numDofPerElem);
+    for (size_t j = 0; j < numNodesPerElem; j++) {  // FIXME: this may be inconsistent with the map
+      elemDofs[numDofPerNode * j + 0] = local2Global_[elemNodes[j]] * numDofPerNode;
+      elemDofs[numDofPerNode * j + 1] = elemDofs[numDofPerNode * j + 0] + 1;
+      elemDofs[numDofPerNode * j + 2] = elemDofs[numDofPerNode * j + 0] + 2;
+    }
+
+    // Deal with Dirichlet nodes
+    bool isDirichlet = false;
+    for (size_t j = 0; j < numNodesPerElem; j++)
+      if (dirichlet_[elemNodes[j]])
+        isDirichlet = true;
+
+    if (isDirichlet) {
+      bool keepBCs = this->list_.get("keepBCs", false);
+      if (keepBCs) {
+        // Simple case: keep Dirichlet DOF
+        // We rewrite rows and columns corresponding to Dirichlet DOF with zeros
+        // The diagonal elements corresponding to Dirichlet DOF are set to 1.
+        for (size_t j = 0; j < numNodesPerElem; j++)
+          if (dirichlet_[elemNodes[j]]) {
+            LO j0 = numDofPerNode * j + 0;
+            LO j1 = numDofPerNode * j + 1;
+            LO j2 = numDofPerNode * j + 2;
+
+            for (size_t k = 0; k < numDofPerElem; k++)
+              KE(j0, k) = KE(k, j0) = KE(j1, k) = KE(k, j1) = KE(j2, k) = KE(k, j2) = zero;
+            KE(j0, j0) = KE(j1, j1) = KE(j2, j2) = one;
+          }
+
+      } else {
+        // Complex case: get rid of Dirichlet DOF
+        // The case is complex because if we simply reduce the size of the matrix, it would become inconsistent
+        // with maps. So, instead, we modify values of the boundary cells as if we had an additional cell close
+        // to the boundary.
+        for (int j = 0; j < (int)numNodesPerElem; j++)
+          if (dirichlet_[elemNodes[j]]) {
+            LO j0 = numDofPerNode * j, j1 = j0 + 1, j2 = j0 + 2;
+
+            // NOTE: had to make j & k int instead of size_t so that I can use subtraction without overflowing
+            for (int k = 0; k < (int)numNodesPerElem; k++)
+              if ((j == k) || (std::abs(j - k) < 4 && ((j + k) & 0x1)) || (std::abs(j - k) == 4)) {
+                // Nodes j and k are connected by an edge, or j == k
+                LO k0 = numDofPerNode * k, k1 = k0 + 1, k2 = k0 + 2;
+                SC f = Teuchos::as<SC>(pow(2, Teuchos::as<int>(std::min(dirichlet_[elemNodes[j]], dirichlet_[elemNodes[k]]))));
+
+                KE(j0, k0) *= f;
+                KE(j0, k1) *= f;
+                KE(j0, k2) *= f;
+                KE(j1, k0) *= f;
+                KE(j1, k1) *= f;
+                KE(j1, k2) *= f;
+                KE(j2, k0) *= f;
+                KE(j2, k1) *= f;
+                KE(j2, k2) *= f;
+              }
+          }
+      }
+    }
+
+    if constexpr (!std::is_same_v<SC, impl_scalar_type>)
+      Kokkos::deep_copy(KE2, KE);
+
+    // Insert KE into the global matrix
+    // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format
+    for (size_t j = 0; j < numDofPerElem; j++)
+      if (this->Map_->isNodeGlobalElement(elemDofs[j])) {
+        auto inds = Kokkos::Compat::getConstArrayView(elemDofs);
+        if constexpr (std::is_same_v<SC, impl_scalar_type>) {
+          auto vals = Kokkos::Compat::getArrayView(Kokkos::subview(KE, j, Kokkos::ALL()));
+          this->A_->insertGlobalValues(elemDofs[j], inds, vals);
+        } else {
+          auto vals = Kokkos::Compat::getArrayView(Kokkos::subview(KE2, j, Kokkos::ALL()));
+          this->A_->insertGlobalValues(elemDofs[j], inds, vals);
+        }
+      }
+  }
+  this->A_->fillComplete();
+
+  return this->A_;
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+RCP<typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector>
+Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildCoords() {
+  // FIXME: map here is an extended map, with multiple DOF per node
+  // as we cannot construct a single DOF map in Problem, we repeat the coords
+  this->Coords_ = MultiVectorTraits<Map, RealValuedMultiVector>::Build(this->Map_, nDim_);
+
+  {
+    const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]);
+    const typename KAT::magnitudeType hy = KAT::magnitude(stretch[1]);
+    const typename KAT::magnitudeType hz = KAT::magnitude(stretch[2]);
+    auto nx                              = nx_;
+    auto ny                              = ny_;
+    auto gids                            = this->Map_->getMyGlobalIndicesDevice();
+    auto lclCoords                       = this->Coords_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    Kokkos::parallel_for(
+        "Galeri::Elasticity3DProblem::BuildCoords",
+        Kokkos::RangePolicy<typename Map::node_type::execution_space>(0, gids.extent(0) / 3),
+        KOKKOS_LAMBDA(const LocalOrdinal pp) {
+          // FIXME: we assume that DOF for the same node are label consequently
+          auto p   = 3 * pp;
+          auto ind = gids(p) / 3;
+          size_t i = ind % nx;
+          size_t k = ind / (nx * ny);
+          size_t j = (ind - k * nx * ny) / nx;
+
+          lclCoords(p, 0) = lclCoords(p + 1, 0) = lclCoords(p + 2, 0) = (i + 1) * hx;
+          lclCoords(p, 1) = lclCoords(p + 1, 1) = lclCoords(p + 2, 1) = (j + 1) * hy;
+          lclCoords(p, 2) = lclCoords(p + 1, 2) = lclCoords(p + 2, 2) = (k + 1) * hz;
+        });
+  }
+
+  return this->Coords_;
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+RCP<MultiVector> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildNullspace() {
+  const int numVectors = 6;
+  this->Nullspace_     = MultiVectorTraits<Map, MultiVector>::Build(this->Map_, numVectors);
+
+  if (this->Coords_ == Teuchos::null)
+    BuildCoords();
+
+  // Calculate center
+  auto cx = this->Coords_->getVector(0)->meanValue();
+  auto cy = this->Coords_->getVector(1)->meanValue();
+  auto cz = this->Coords_->getVector(2)->meanValue();
+
+  {
+    auto numDofs = this->Map_->getLocalNumElements();
+
+    auto lclCoords    = this->Coords_->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto lclNullspace = this->Nullspace_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    auto one = KAT::one();
+
+    // NOTE: nullspace local ordering is consistent with that of the matrix
+    // map, as it inherits ordering from coordinates, which is consistent.
+
+    Kokkos::parallel_for(
+        "Galeri::Elasticity3DProblem::BuildNullspace",
+        Kokkos::RangePolicy<typename Map::node_type::execution_space>(0, numDofs / 3),
+        KOKKOS_LAMBDA(const LocalOrdinal ii) {
+          auto i = 3 * ii;
+          // Translations
+          lclNullspace(i, 0)     = one;
+          lclNullspace(i + 1, 1) = one;
+          lclNullspace(i + 2, 2) = one;
+
+          // Rotations
+          // Rotate in Y-Z Plane (around Z axis): [ -y; x]
+          lclNullspace(i, 3)     = -(lclCoords(i, 1) - cy);
+          lclNullspace(i + 1, 3) = (lclCoords(i, 0) - cx);
+
+          // Rotate in Y-Z Plane (around Z axis): [ -z; y]
+          lclNullspace(i + 1, 4) = -(lclCoords(i, 2) - cz);
+          lclNullspace(i + 2, 4) = (lclCoords(i, 1) - cy);
+
+          // Rotate in Y-Z Plane (around Z axis): [ z; -x]
+          lclNullspace(i, 5)     = (lclCoords(i, 2) - cz);
+          lclNullspace(i + 2, 5) = -(lclCoords(i, 0) - cx);
+        });
+  }
+
+  // Equalize norms of all vectors to that of the first one
+  // We do not normalize them as a vector of ones seems nice
+  Teuchos::Array<typename KAT::magnitudeType> norms2(numVectors);
+  this->Nullspace_->norm2(norms2);
+  Teuchos::Array<SC> norms2scalar(numVectors);
+  for (int i = 0; i < numVectors; i++)
+    norms2scalar[i] = norms2[0] / norms2[i];
+  this->Nullspace_->scale(norms2scalar);
+
+  return this->Nullspace_;
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMesh() {
+  const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]),
+                                    hy = KAT::magnitude(stretch[1]),
+                                    hz = KAT::magnitude(stretch[2]);
+
+  GO myPID         = this->Map_->getComm()->getRank();
+  GO const& negOne = -1;
+  GO mx = this->list_.get("mx", negOne), my = this->list_.get("my", negOne), mz = this->list_.get("mz", negOne);
+
+  const GO mxy = mx * my;
+
+  GO startx, starty, startz, endx, endy, endz;
+  Utils::getSubdomainData(dims[0], mx, (myPID % mxy) % mx, startx, endx);
+  Utils::getSubdomainData(dims[1], my, (myPID % mxy) / mx, starty, endy);
+  Utils::getSubdomainData(dims[2], mz, myPID / mxy, startz, endz);
+
+  LO nx = endx - startx, ny = endy - starty, nz = endz - startz;
+
+  // Expand subdomain to do overlap
+  if (startx > 0) {
+    nx++;
+    startx--;
+  }
+  if (starty > 0) {
+    ny++;
+    starty--;
+  }
+  if (startz > 0) {
+    nz++;
+    startz--;
+  }
+  if (startx + nx < dims[0]) {
+    nx++;
+  }
+  if (starty + ny < dims[1]) {
+    ny++;
+  }
+  if (startz + nz < dims[2]) {
+    nz++;
+  }
+
+  nodes_.resize((nx + 1) * (ny + 1) * (nz + 1));
+  dirichlet_.resize((nx + 1) * (ny + 1) * (nz + 1), 0);
+  local2Global_.resize((nx + 1) * (ny + 1) * (nz + 1));
+  elements_.resize(nx * ny * nz);
+
+#define NODE(i, j, k) ((k) * (ny + 1) * (nx + 1) + (j) * (nx + 1) + (i))
+#define CELL(i, j, k) ((k)*ny * nx + (j)*nx + (i))
+  // NOTE: the fact that local ordering here is not consistent with that of
+  // the matrix map does not matter.  The two things that matter are:
+  // local2Global_ assigns to a correct GID, and nodes_ contain correct
+  // coordinates
+  for (int k = 0; k <= nz; k++)
+    for (int j = 0; j <= ny; j++)
+      for (int i = 0; i <= nx; i++) {
+        int ii = startx + i, jj = starty + j, kk = startz + k;
+        int nodeID            = NODE(i, j, k);
+        nodes_[nodeID]        = Point((ii + 1) * hx, (jj + 1) * hy, (kk + 1) * hz);
+        local2Global_[nodeID] = kk * nx_ * ny_ + jj * nx_ + ii;
+
+        if (ii == 0 && (this->DirichletBC_ & DIR_LEFT)) dirichlet_[nodeID]++;
+        if (ii == nx_ && (this->DirichletBC_ & DIR_RIGHT)) dirichlet_[nodeID]++;
+        if (jj == 0 && (this->DirichletBC_ & DIR_FRONT)) dirichlet_[nodeID]++;
+        if (jj == ny_ && (this->DirichletBC_ & DIR_BACK)) dirichlet_[nodeID]++;
+        if (kk == 0 && (this->DirichletBC_ & DIR_BOTTOM)) dirichlet_[nodeID]++;
+        if (kk == nz_ && (this->DirichletBC_ & DIR_TOP)) dirichlet_[nodeID]++;
+      }
+
+  for (int k = 0; k < nz; k++)
+    for (int j = 0; j < ny; j++)
+      for (int i = 0; i < nx; i++) {
+        std::vector<LO>& element = elements_[CELL(i, j, k)];
+        element.resize(8);
+        element[0] = NODE(i, j, k);
+        element[1] = NODE(i + 1, j, k);
+        element[2] = NODE(i + 1, j + 1, k);
+        element[3] = NODE(i, j + 1, k);
+        element[4] = NODE(i, j, k + 1);
+        element[5] = NODE(i + 1, j, k + 1);
+        element[6] = NODE(i + 1, j + 1, k + 1);
+        element[7] = NODE(i, j + 1, k + 1);
+      }
+#undef NODE
+#undef CELL
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMaterialMatrix(Memory2D& D) {
+  D                                                   = Memory2D("Material", 6, 6);
+  typename Teuchos::ScalarTraits<SC>::magnitudeType c = E / (1 + nu) / (1 - 2 * nu);
+  D(0, 0)                                             = c * (1 - nu);
+  D(0, 1)                                             = c * nu;
+  D(0, 2)                                             = c * nu;
+  D(1, 0)                                             = c * nu;
+  D(1, 1)                                             = c * (1 - nu);
+  D(1, 2)                                             = c * nu;
+  D(2, 0)                                             = c * nu;
+  D(2, 1)                                             = c * nu;
+  D(2, 2)                                             = c * (1 - nu);
+  D(3, 3) = D(4, 4) = D(5, 5) = c * (1 - 2 * nu) / 2;
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildReferencePoints(size_t& numRefPoints, std::vector<Point>& refPoints, size_t& numGaussPoints, std::vector<Point>& gaussPoints) {
+  numRefPoints   = 8;
+  numGaussPoints = 8;
+  refPoints.resize(numRefPoints);
+  gaussPoints.resize(numGaussPoints);
+
+  refPoints[0] = Point(-1, -1, -1);
+  refPoints[1] = Point(1, -1, -1);
+  refPoints[2] = Point(1, 1, -1);
+  refPoints[3] = Point(-1, 1, -1);
+  refPoints[4] = Point(-1, -1, 1);
+  refPoints[5] = Point(1, -1, 1);
+  refPoints[6] = Point(1, 1, 1);
+  refPoints[7] = Point(-1, 1, 1);
+
+  // Gauss points (reference)
+  SC sq3         = 1.0 / sqrt(3);
+  gaussPoints[0] = Point(sq3, sq3, sq3);
+  gaussPoints[1] = Point(sq3, -sq3, sq3);
+  gaussPoints[2] = Point(-sq3, sq3, sq3);
+  gaussPoints[3] = Point(-sq3, -sq3, sq3);
+  gaussPoints[4] = Point(sq3, sq3, -sq3);
+  gaussPoints[5] = Point(sq3, -sq3, -sq3);
+  gaussPoints[6] = Point(-sq3, sq3, -sq3);
+  gaussPoints[7] = Point(-sq3, -sq3, -sq3);
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::EvalD(const std::vector<Point>& refPoints, Point& gaussPoint, Memory2D S) {
+  const Scalar one    = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar eight  = one + one + one + one + one + one + one + one;
+  const Scalar eighth = one / eight;
+  for (size_t j = 0; j < refPoints.size(); j++) {
+    // dxi
+    S(j, 0) = refPoints[j].x * (one + refPoints[j].y * gaussPoint.y) * (one + refPoints[j].z * gaussPoint.z) * eighth;
+    // deta
+    S(j, 1) = (one + refPoints[j].x * gaussPoint.x) * refPoints[j].y * (one + refPoints[j].z * gaussPoint.z) * eighth;
+    // dzeta
+    S(j, 2) = (one + refPoints[j].x * gaussPoint.x) * (one + refPoints[j].y * gaussPoint.y) * refPoints[j].z * eighth;
+  }
+}
+
+}  // namespace Xpetra
+
+}  // namespace Galeri
+
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT_TPETRA(S, LO, GO, N) \
+  template class Galeri::Xpetra::Elasticity3DProblem<S, LO, GO, Tpetra::Map<LO, GO, N>, Tpetra::CrsMatrix<S, LO, GO, N>, Tpetra::MultiVector<S, LO, GO, N>>;
+
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT_XPETRA(S, LO, GO, N)                                                                                                  \
+  template class Galeri::Xpetra::Elasticity3DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::CrsMatrixWrap<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>; \
+  template class Galeri::Xpetra::Elasticity3DProblem<S, LO, GO, Xpetra::Map<LO, GO, N>, Xpetra::TpetraCrsMatrix<S, LO, GO, N>, Xpetra::MultiVector<S, LO, GO, N>>;
+
+#ifdef HAVE_GALERI_XPETRA
+
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT(S, LO, GO, N)  \
+  GALERI_ELASTICITY3DPROBLEM_INSTANT_TPETRA(S, LO, GO, N) \
+  GALERI_ELASTICITY3DPROBLEM_INSTANT_XPETRA(S, LO, GO, N)
+
+#else
+
+#define GALERI_ELASTICITY3DPROBLEM_INSTANT(S, LO, GO, N) \
+  GALERI_ELASTICITY3DPROBLEM_INSTANT_TPETRA(S, LO, GO, N)
+
+#endif
+
+#endif

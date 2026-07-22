@@ -1,3 +1,4 @@
+#include "stk_mesh/base/Types.hpp"
 #include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/mesh_entity.hpp"
 
@@ -100,16 +101,17 @@ mesh::FieldPtr<stk::mesh::Entity> ExodusWriter::create_part_verts()
   m_bulkDataOutPtr->modification_end();
 
   const stk::mesh::FieldBase& coordField = *(m_metaDataOutPtr->coordinate_field());
+  auto coordFieldData = coordField.data<double, stk::mesh::ReadWrite>();
   int entityIdx                          = 0;
   for (auto& vert : m_mesh->get_vertices())
     if (vert)
     {
-      double* coords  = static_cast<double*>(stk::mesh::field_data(coordField, entities[entityIdx]));
+      auto coords  = coordFieldData.entity_values(entities[entityIdx]);
       utils::Point pt = vert->get_point_orig(0);
 
-      coords[0]               = pt.x;
-      coords[1]               = pt.y;
-      coords[2]               = pt.z;
+      coords(0_comp)               = pt.x;
+      coords(1_comp)               = pt.y;
+      coords(2_comp)               = pt.z;
       (*stkVerts)(vert, 0, 0) = entities[entityIdx];
 
       entityIdx++;
@@ -201,7 +203,7 @@ void ExodusWriter::copy_field_to_stk_mesh(PartToUse partEnum, FieldOutputAdaptor
       dim = 2;
       meshEntityType = mesh::MeshEntityType::Triangle;
       break;
-    }  
+    }
 
     case PartToUse::Quad:
     {
@@ -212,31 +214,34 @@ void ExodusWriter::copy_field_to_stk_mesh(PartToUse partEnum, FieldOutputAdaptor
       break;
     }
     default:
-      throw std::runtime_error("unhandled enum");   
+      throw std::runtime_error("unhandled enum");
   }
 
 
   std::vector<double> vals(meshField->get_num_comp());
   auto& meshEntities = m_mesh->get_mesh_entities(dim);
   size_t idx = 0;
+  auto stkFieldData = stkField.data<stk::mesh::ReadWrite>();
   for (stk::mesh::Bucket* bucket : m_bulkDataOutPtr->get_buckets(entityRank, *part))
-    for (size_t bucketIdx = 0; bucketIdx < bucket->size(); ++bucketIdx)
+  {
+    auto stkBucketValues = stkFieldData.bucket_values(*bucket);
+
+    for (stk::mesh::EntityIdx bucketIdx = 0; bucketIdx < stkBucketValues.num_entities(); ++bucketIdx)
     {
       while (!meshEntities[idx] || meshEntities[idx]->get_type() != meshEntityType)
         idx++;
 
       stk::middle_mesh::mesh::MeshEntityPtr meshEntity = meshEntities[idx];
-
-      double* stkFieldData = stk::mesh::field_data(stkField, *bucket, bucketIdx);
-      for (int i=0; i < meshField->get_field_shape().count[dim]; ++i)
+      for (stk::mesh::CopyIdx i=0_copy; i < meshField->get_field_shape().count[dim]; ++i)
       {
         meshField->get_data(meshEntity, i, vals);
-        for (int j=0; j < meshField->get_num_comp(); ++j)
-          stkFieldData[i * meshField->get_num_comp() + j] = vals[j];
+        for (stk::mesh::ComponentIdx j=0_comp; j < meshField->get_num_comp(); ++j)
+          stkBucketValues(bucketIdx, i, j) = vals[j];
       }
 
       idx++;
     }
+  }
 }
 
 void ExodusWriter::write_output_stk(const std::string& fname)

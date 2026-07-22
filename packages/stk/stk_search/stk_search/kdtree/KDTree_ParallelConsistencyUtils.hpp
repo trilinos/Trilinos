@@ -123,7 +123,15 @@ ComputeRangeWithGhostsForCoarseSearch(const std::vector<std::pair<DomainObjType,
   }
 
   stk::parallel_data_exchange_t(send_list, recv_list, comm);
+
   rangeGhostIdentifiers.clear();
+  size_t sizeCounter = 0;
+  for (size_t i = 0; i < recv_list.size(); ++i) {
+    sizeCounter += recv_list[i].size();
+  }
+  rangeBoxes.reserve(rangeBoxes.size()+sizeCounter);
+  rangeGhostIdentifiers.reserve(sizeCounter);
+
   for (size_t i = 0; i < recv_list.size(); ++i) {
     for (size_t j = 0; j < recv_list[i].size(); ++j) {
       const BoxIdPair& recvd_boxIdPair = recv_list[i][j];

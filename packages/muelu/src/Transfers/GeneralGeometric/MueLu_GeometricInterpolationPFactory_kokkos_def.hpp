@@ -11,7 +11,7 @@
 #define MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_DEF_HPP
 
 #include "Xpetra_CrsGraph.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -55,7 +55,7 @@ RCP<const ParameterList> GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdi
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+    DeclareInput(Level& fineLevel, Level& /*coarseLevel*/) const {
   const ParameterList& pL = GetParameterList();
 
   Input(fineLevel, "A");
@@ -127,8 +127,8 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     // Construct and launch functor to fill coarse coordinates values
     // function should take a const view really
     coarseCoordinatesBuilderFunctor myCoarseCoordinatesBuilder(geoData,
-                                                               fineCoordinates->getDeviceLocalView(Xpetra::Access::ReadWrite),
-                                                               coarseCoordinates->getDeviceLocalView(Xpetra::Access::OverwriteAll));
+                                                               fineCoordinates->getLocalViewDevice(Tpetra::Access::ReadWrite),
+                                                               coarseCoordinates->getLocalViewDevice(Tpetra::Access::OverwriteAll));
     Kokkos::parallel_for("GeometricInterpolation: build coarse coordinates",
                          Kokkos::RangePolicy<execution_space>(0, geoData->getNumCoarseNodes()),
                          myCoarseCoordinatesBuilder);
@@ -228,12 +228,12 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     if (P_tpetra.is_null()) throw std::runtime_error("BuildConstantP: Matrix factory did not return a Tpetra::BlockCrsMatrix");
     RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
 
-    const LO stride                                 = strideInfo[0] * strideInfo[0];
-    const LO in_stride                              = strideInfo[0];
-    typename CrsMatrix::local_graph_type localGraph = prolongatorGraph->getLocalGraphDevice();
-    auto rowptr                                     = localGraph.row_map;
-    auto indices                                    = localGraph.entries;
-    auto values                                     = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
+    const LO stride                                        = strideInfo[0] * strideInfo[0];
+    const LO in_stride                                     = strideInfo[0];
+    typename CrsMatrix::local_graph_device_type localGraph = prolongatorGraph->getLocalGraphDevice();
+    auto rowptr                                            = localGraph.row_map;
+    auto indices                                           = localGraph.entries;
+    auto values                                            = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
 
     using ISC = typename Tpetra::BlockCrsMatrix<SC, LO, GO, NO>::impl_scalar_type;
     ISC one   = Teuchos::ScalarTraits<ISC>::one();
@@ -261,7 +261,7 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     // Create the prolongator matrix and its associated objects
     RCP<ParameterList> dummyList = rcp(new ParameterList());
     P                            = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
-    RCP<CrsMatrix> PCrs          = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    RCP<CrsMatrix> PCrs          = toCrsMatrix(P);
     PCrs->setAllToScalar(1.0);
     PCrs->fillComplete();
 
@@ -325,7 +325,7 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
 
   RCP<ParameterList> dummyList = rcp(new ParameterList());
   P                            = rcp(new CrsMatrixWrap(prolongatorGraph, dummyList));
-  RCP<CrsMatrix> PCrs          = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> PCrs          = toCrsMatrix(P);
   PCrs->resumeFill();  // The Epetra matrix is considered filled at this point.
 
   LO interpolationNodeIdx = 0, rowIdx = 0;

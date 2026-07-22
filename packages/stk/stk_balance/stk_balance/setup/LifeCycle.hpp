@@ -36,7 +36,7 @@
 
 #include "stk_balance/balanceUtils.hpp"
 #include "stk_balance/setup/Parser.hpp"
-#include "stk_balance/setup/FileValidator.hpp"
+#include "stk_io/FileValidator.hpp"
 
 namespace stk {
 namespace balance {
@@ -79,7 +79,7 @@ private:
   LifeCycleStatus m_exitCode;
   const bool m_isProc0;
 
-  const FileValidator m_validator;
+  const stk::io::FileValidator m_validator;
   StkBalanceSettings m_settings;
   Parser m_parser;
 };

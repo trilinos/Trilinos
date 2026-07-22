@@ -1,25 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 template <class Scalar>
 struct Run<Scalar, UNROLL, STRIDE> {
   static void run(int N, int K, int R, int F, int T, int S, int Ba, int I) {
-    Kokkos::View<Scalar* * [STRIDE], Kokkos::LayoutRight> A("A", N, K);
-    Kokkos::View<Scalar* * [STRIDE], Kokkos::LayoutRight> B("B", N, K);
-    Kokkos::View<Scalar* * [STRIDE], Kokkos::LayoutRight> C("C", N, K);
+    Kokkos::View<Scalar** [STRIDE], Kokkos::LayoutRight> A("A", N, K);
+    Kokkos::View<Scalar** [STRIDE], Kokkos::LayoutRight> B("B", N, K);
+    Kokkos::View<Scalar** [STRIDE], Kokkos::LayoutRight> C("C", N, K);
 
     Kokkos::deep_copy(A, Scalar(1.5));
     Kokkos::deep_copy(B, Scalar(2.5));

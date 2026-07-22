@@ -28,37 +28,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, SetParameterList, Sc
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS) && defined(HAVE_MUELU_AMESOS2)
-
-  RCP<Matrix> A                       = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(99);
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-
-  ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/ParameterListInterpreter/"), std::string(".xml"));
-
-  for (int i = 0; i < fileList.size(); i++) {
-    // Ignore files with "BlockCrs" in their name
-    auto found = fileList[i].find("BlockCrs");
-    if (found != std::string::npos) continue;
-
-    // Ignore files with "Comparison" in their name
-    found = fileList[i].find("Comparison");
-    if (found != std::string::npos) continue;
-
-    out << "Processing file: " << fileList[i] << std::endl;
-    ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
-
-    RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
-    H->GetLevel(0)->Set("A", A);
-
-    mueluFactory.SetupHierarchy(*H);
-
-    // TODO: check no unused parameters
-    // TODO: check results of Iterate()
-  }
-
-#else
   out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2, Amesos, Amesos2)." << std::endl;
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -82,7 +52,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, BlockCrs, Scalar, Lo
       if (found == std::string::npos) continue;
 
       out << "Processing file: " << fileList[i] << std::endl;
-      ParameterListInterpreter mueluFactory("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
+
+      Teuchos::RCP<Teuchos::ParameterList> mueluList = rcp(new Teuchos::ParameterList());
+      Teuchos::updateParametersFromXmlFileAndBroadcast("ParameterList/ParameterListInterpreter/" + fileList[i], mueluList.ptr(), *comm);
+      mueluList->set("use kokkos refactor", false);
+
+      ParameterListInterpreter mueluFactory(*mueluList, comm);
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
       H->GetLevel(0)->Set("A", A);
@@ -121,8 +96,8 @@ MT compare_matrices(RCP<Matrix> &Ap, RCP<Matrix> &Ab) {
   SC one    = Teuchos::ScalarTraits<SC>::one();
   SC zero   = Teuchos::ScalarTraits<SC>::zero();
 
-  RCP<const CRS> Ap_t  = MueLu::Utilities<SC, LO, GO, NO>::Op2TpetraCrs(Ap);
-  auto Ab_t            = MueLu::Utilities<SC, LO, GO, NO>::Op2TpetraBlockCrs(Ab);
+  RCP<const CRS> Ap_t  = toTpetra(Ap);
+  auto Ab_t            = toTpetraBlock(Ab);
   RCP<CRS> Ab_as_point = Tpetra::convertToCrsMatrix<SC, LO, GO, NO>(*Ab_t);
 
   RCP<CRS> diff = rcp(new CRS(Ap_t->getCrsGraph()));
@@ -136,9 +111,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
     Teuchos::ParameterList matrixParams;
     matrixParams.set("matrixType", "Laplace1D");
@@ -149,7 +121,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
     {
       using XCRS = Xpetra::TpetraBlockCrsMatrix<SC, LO, GO, NO>;
 
-      auto tA      = MueLu::Utilities<SC, LO, GO, NO>::Op2TpetraCrs(PointA);
+      auto tA      = toTpetra(PointA);
       auto bA      = Tpetra::convertToBlockCrsMatrix<SC, LO, GO, NO>(*tA, 1);
       RCP<XCRS> AA = rcp(new XCRS(bA));
       BlockA       = rcp(new CrsMatrixWrap(rcp_implicit_cast<CrsMatrix>(AA)));
@@ -168,14 +140,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
 
       out << "Processing file: " << fileList[i] << std::endl;
 
+      Teuchos::RCP<Teuchos::ParameterList> mueluList = rcp(new Teuchos::ParameterList());
+      Teuchos::updateParametersFromXmlFileAndBroadcast("ParameterList/ParameterListInterpreter/" + fileList[i], mueluList.ptr(), *comm);
+      mueluList->set("use kokkos refactor", false);
+
       // Point Hierarchy
-      ParameterListInterpreter mueluFactory1("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
+      ParameterListInterpreter mueluFactory1(*mueluList, comm);
       RCP<Hierarchy> PointH = mueluFactory1.CreateHierarchy();
       PointH->GetLevel(0)->Set("A", PointA);
       mueluFactory1.SetupHierarchy(*PointH);
 
       // Block Hierachy
-      ParameterListInterpreter mueluFactory2("ParameterList/ParameterListInterpreter/" + fileList[i], *comm);
+      ParameterListInterpreter mueluFactory2(*mueluList, comm);
       RCP<Hierarchy> BlockH = mueluFactory2.CreateHierarchy();
       BlockH->GetLevel(0)->Set("A", BlockA);
       mueluFactory2.SetupHierarchy(*BlockH);

@@ -1,27 +1,24 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_ALGORITHMS_UNITTESTS_TEST_SORT_HPP
 #define KOKKOS_ALGORITHMS_UNITTESTS_TEST_SORT_HPP
 
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.dynamic_view;
+import kokkos.random;
+import kokkos.sort;
+#else
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DynamicView.hpp>
 #include <Kokkos_Random.hpp>
 #include <Kokkos_Sort.hpp>
+#endif
+
+#include <algorithm>
 
 namespace Test {
 namespace SortImpl {
@@ -99,6 +96,7 @@ void test_dynamic_view_sort_impl(unsigned int n) {
       Kokkos::Experimental::DynamicView<KeyType*, ExecutionSpace>;
   using KeyViewType = Kokkos::View<KeyType*, ExecutionSpace>;
 
+  // NOLINTNEXTLINE(bugprone-implicit-widening-of-multiplication-result)
   const size_t upper_bound    = 2 * n;
   const size_t min_chunk_size = 1024;
 
@@ -197,7 +195,7 @@ void test_sort_integer_overflow() {
   // array with two extrema in reverse order to expose integer overflow bug in
   // bin calculation
   T a[2]  = {Kokkos::Experimental::finite_max<T>::value,
-            Kokkos::Experimental::finite_min<T>::value};
+             Kokkos::Experimental::finite_min<T>::value};
   auto vd = Kokkos::create_mirror_view_and_copy(
       ExecutionSpace(), Kokkos::View<T[2], Kokkos::HostSpace>(a));
   Kokkos::sort(vd);
@@ -215,10 +213,7 @@ TEST(TEST_CATEGORY, SortUnsignedValueType) {
 
   SortImpl::test_1D_sort_impl<ExecutionSpace, key_type>(N * N * N);
 
-#ifndef KOKKOS_ENABLE_OPENMPTARGET
-  // FIXME_OPENMPTARGET: OpenMPTarget doesn't support DynamicView yet.
   SortImpl::test_dynamic_view_sort_impl<ExecutionSpace, key_type>(N * N);
-#endif
 
   SortImpl::test_issue_4978_impl<ExecutionSpace>();
 }
@@ -229,9 +224,10 @@ TEST(TEST_CATEGORY, SortEmptyView) {
   // does not matter if we use int or something else
   Kokkos::View<int*, ExecutionSpace> v("v", 0);
 
+  // checking that it does not throw
   // TODO check the synchronous behavior of the calls below
-  ASSERT_NO_THROW(Kokkos::sort(ExecutionSpace(), v));
-  ASSERT_NO_THROW(Kokkos::sort(v));
+  Kokkos::sort(ExecutionSpace(), v);
+  Kokkos::sort(v);
 }
 
 }  // namespace Test

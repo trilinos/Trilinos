@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_HPP__
 #define __TACHO_HPP__
@@ -214,7 +206,7 @@ template <> struct ArithTraits<float> {
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &x) { return x; }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type &x) { return 0; }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &x) { return x; }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return FLT_EPSILON; }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return Kokkos::Experimental::epsilon_v<float>; }
   static KOKKOS_FORCEINLINE_FUNCTION void set_real(val_type &x, const mag_type &val) { x = val; }
   static KOKKOS_FORCEINLINE_FUNCTION void set_imag(val_type &x, const mag_type &val) {}
 };
@@ -228,7 +220,7 @@ template <> struct ArithTraits<double> {
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &x) { return x; }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type &x) { return 0; }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &x) { return x; }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return DBL_EPSILON; }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return Kokkos::Experimental::epsilon_v<double>; }
   static KOKKOS_FORCEINLINE_FUNCTION void set_real(val_type &x, const mag_type &val) { x = val; }
   static KOKKOS_FORCEINLINE_FUNCTION void set_imag(val_type &x, const mag_type &val) {}
 };
@@ -242,7 +234,7 @@ template <> struct ArithTraits<std::complex<float>> {
   static inline mag_type real(const val_type &x) { return x.real(); }
   static inline mag_type imag(const val_type &x) { return x.imag(); }
   static inline val_type conj(const val_type &x) { return std::conj(x); }
-  static inline mag_type epsilon() { return FLT_EPSILON; }
+  static inline mag_type epsilon() { return Kokkos::Experimental::epsilon_v<float>; }
   static inline void set_real(val_type &x, const mag_type &val) { x.real(val); }
   static inline void set_imag(val_type &x, const mag_type &val) { x.imag(val); }
 };
@@ -256,7 +248,7 @@ template <> struct ArithTraits<std::complex<double>> {
   static inline mag_type real(const val_type &x) { return x.real(); }
   static inline mag_type imag(const val_type &x) { return x.imag(); }
   static inline val_type conj(const val_type &x) { return std::conj(x); }
-  static inline mag_type epsilon() { return DBL_EPSILON; }
+  static inline mag_type epsilon() { return Kokkos::Experimental::epsilon_v<double>; }
   static inline void set_real(val_type &x, const mag_type &val) { x.real(val); }
   static inline void set_imag(val_type &x, const mag_type &val) { x.imag(val); }
 };
@@ -270,7 +262,7 @@ template <> struct ArithTraits<Kokkos::complex<float>> {
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &x) { return x.real(); }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type &x) { return x.imag(); }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &x) { return Kokkos::conj(x); }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return FLT_EPSILON; }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return Kokkos::Experimental::epsilon_v<float>; }
   static KOKKOS_FORCEINLINE_FUNCTION void set_real(val_type &x, const mag_type &val) { x.real(val); }
   static KOKKOS_FORCEINLINE_FUNCTION void set_imag(val_type &x, const mag_type &val) { x.imag(val); }
 };
@@ -284,7 +276,7 @@ template <> struct ArithTraits<Kokkos::complex<double>> {
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type &x) { return x.real(); }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type &x) { return x.imag(); }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type &x) { return Kokkos::conj(x); }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return DBL_EPSILON; }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon() { return Kokkos::Experimental::epsilon_v<double>; }
   static KOKKOS_FORCEINLINE_FUNCTION void set_real(val_type &x, const mag_type &val) { x.real(val); }
   static KOKKOS_FORCEINLINE_FUNCTION void set_imag(val_type &x, const mag_type &val) { x.imag(val); }
 };

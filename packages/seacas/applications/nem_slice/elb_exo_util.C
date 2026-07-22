@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,12 +15,13 @@
 #include <cstdio>  // for nullptr
 #include <cstdlib> // for malloc, free, calloc
 #include <cstring> // for strlen
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <string>
 #include <vector>
 
 #include "elb.h"      // for Weight_Description, etc
-#include "elb_elem.h" // for get_elem_type, E_Type, etc
+#include "elb_elem.h" // for get_elem_type, ElementType, etc
 #include "elb_err.h"  // for Gen_Error, MAX_ERR_MSG
 #include "elb_exo.h"
 #include "elb_groups.h" // for parse_groups
@@ -56,7 +57,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description *weight, INT 
   }
 
   std::vector<float> values(weight->nvals);
-  if (prob->type == NODAL) {
+  if (prob->type == DecompType::NODAL) {
     size_t tmp_nodes = ex_inquire_int(exoid, EX_INQ_NODES);
     /* check to make sure the sizes agree */
     if ((size_t)weight->nvals != tmp_nodes) {
@@ -142,6 +143,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description *weight, INT 
 
 /*****************************************************************************/
 /*****************************************************************************/
+
 /*****************************************************************************/
 /* Function read_mesh_params() begins:
  *----------------------------------------------------------------------------
@@ -169,6 +171,8 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     Gen_Error(0, "fatal: unable to open ExodusII file for mesh params");
     return 0;
   }
+
+  exoid += problem->selected_change_set;
 
   /* Get the init info */
   ex_init_params exo{};
@@ -233,7 +237,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
       sphere->end[0] = mesh->eb_cnts[cnt];
     }
 
-    if (mesh->eb_type[cnt] == SPHERE && problem->no_sph != 1) {
+    if (mesh->eb_type[cnt] == ElementType::SPHERE && problem->no_sph != 1) {
       sphere->num += mesh->eb_cnts[cnt];
       sphere->adjust[cnt] = 0;
     }
@@ -246,7 +250,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
       sphere->end[cnt]   = sphere->begin[cnt] + mesh->eb_cnts[cnt];
     }
 
-    mesh->max_np_elem = MAX(mesh->max_np_elem, (size_t)nodes_in_elem);
+    mesh->max_np_elem = std::max(mesh->max_np_elem, (size_t)nodes_in_elem);
   }
 
   /* Close the ExodusII file */
@@ -301,6 +305,8 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
     return 0;
   }
 
+  exoid += problem->selected_change_set;
+
   /* Read the coordinates, if desired */
   xptr = yptr = zptr = nullptr;
 
@@ -336,19 +342,19 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
 
     /* find out if this element block is weighted */
     int wgt = -1;
-    if (weight->type & EL_BLK) {
+    if (weight->type & WeightingOptions::EL_BLK) {
       wgt = in_list(mesh->eb_ids[cnt], weight->elemblk);
     }
 
     /* Fill the 2D global connectivity array */
-    if (((problem->type == ELEMENTAL) && (weight->type & EL_BLK)) ||
-        ((problem->type == NODAL) && (weight->type & EL_BLK))) {
+    if (((problem->type == DecompType::ELEMENTAL) && (weight->type & WeightingOptions::EL_BLK)) ||
+        ((problem->type == DecompType::NODAL) && (weight->type & WeightingOptions::EL_BLK))) {
 
       for (int64_t cnt2 = 0; cnt2 < mesh->eb_cnts[cnt]; cnt2++) {
         mesh->elem_type[gelem_cnt] = mesh->eb_type[cnt];
 
         /* while going through the blocks, take care of the weighting */
-        if ((problem->type == ELEMENTAL) && (weight->type & EL_BLK)) {
+        if ((problem->type == DecompType::ELEMENTAL) && (weight->type & WeightingOptions::EL_BLK)) {
           /* is this block weighted */
           if (wgt >= 0) {
             /* check if there is a read value */
@@ -376,7 +382,7 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
           mesh->connect[gelem_cnt][cnt3] = node;
 
           /* deal with the weighting if necessary */
-          if ((problem->type == NODAL) && (weight->type & EL_BLK)) {
+          if ((problem->type == DecompType::NODAL) && (weight->type & EL_BLK)) {
             /* is this block weighted */
             if (wgt >= 0) {
               /* check if I read an exodus file */
@@ -385,7 +391,8 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
                 if (weight->ow_read) {
                   /* check if it has been overwritten already */
                   if (weight->ow[node]) {
-                    weight->vertices[node] = MAX(weight->vertices[node], weight->elemblk_wgt[wgt]);
+                    weight->vertices[node] =
+                        std::max(weight->vertices[node], weight->elemblk_wgt[wgt]);
                   }
                   else {
                     weight->vertices[node] = weight->elemblk_wgt[wgt];
@@ -394,7 +401,7 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
                 }
               }
               else {
-                weight->vertices[node] = MAX(weight->vertices[node], weight->elemblk_wgt[wgt]);
+                weight->vertices[node] = std::max(weight->vertices[node], weight->elemblk_wgt[wgt]);
               }
             }
             else {
@@ -460,7 +467,7 @@ template <typename INT>
 int init_weight_struct(Problem_Description *problem, Mesh_Description<INT> *mesh,
                        Weight_Description *weight)
 {
-  if (problem->type == NODAL) {
+  if (problem->type == DecompType::NODAL) {
     weight->nvals = mesh->num_nodes;
   }
   else {

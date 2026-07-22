@@ -58,7 +58,7 @@
         if (m_edge_breaker) delete m_edge_breaker;
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
       {
         EXCEPTWATCH;
         bp.resize(2);
@@ -75,8 +75,8 @@
           }
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(1);
         needed_entities[0].first = m_eMesh.edge_rank();
@@ -84,14 +84,14 @@
       }
 
       // FIXME - for now, create more than we need (to fix this right we need a change to the Refiner.cpp interface)
-      virtual unsigned getNumNewElemPerElem() { return 4; }
+      virtual unsigned getNumNewElemPerElem() override { return 4; }
 
 
       void
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& /*nodeRegistry*/,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         if (0 && eMesh.check_entity_duplicate(element))
           {
@@ -99,7 +99,6 @@
           }
 
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
-        typedef std::array<int, 3> tri_tuple_type_int;
         static vector<tri_tuple_type> elems(4);
         static vector<tri_tuple_type_local> elems_local(4);
         unsigned num_new_elems=0;

@@ -201,7 +201,5 @@ There are similar modifications to the reading of the nodal coordinates
 and the reading of nodal variables. If interested in those functions, see the viewcvs URL
 listed above.
 
-If there are any questions, contact:
-  Greg Sjaardema
-  gdsjaar@sandia.gov
-  505-844-2701
+If there are any questions, add an issue at
+  https://github.com/sandialabs/seacas/issues

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -52,7 +52,7 @@ namespace Ioss {
 
 namespace Iocgns {
 
-  class IOCGNS_EXPORT ParallelDatabaseIO : public Ioss::DatabaseIO
+  class IOCGNS_EXPORT ParallelDatabaseIO final : public Ioss::DatabaseIO
   {
   public:
     enum class entity_type { NODE, ELEM };
@@ -107,13 +107,14 @@ namespace Iocgns {
     bool end_state_nl(int state, double time) override;
     void flush_database_nl() const override;
 
-    void    handle_structured_blocks();
-    void    handle_unstructured_blocks();
-    size_t  finalize_structured_blocks();
-    int64_t handle_node_ids(void *ids, int64_t num_to_get) const;
-    void    finalize_database() const override;
-    void    get_step_times_nl() override;
-    void    write_adjacency_data();
+    void                handle_structured_blocks();
+    void                handle_unstructured_blocks();
+    size_t              finalize_structured_blocks();
+    int64_t             handle_node_ids(void *ids, int64_t num_to_get) const;
+    void                finalize_database() const override;
+    void                get_step_times_nl() override;
+    std::vector<double> get_db_step_times_nl() override;
+    void                write_adjacency_data();
 
     int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
                                size_t data_size) const override;

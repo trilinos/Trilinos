@@ -1,24 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef KOKKOS_BLAS1_IMPL_RECIPROCAL_HPP_
-#define KOKKOS_BLAS1_IMPL_RECIPROCAL_HPP_
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBLAS1_IMPL_RECIPROCAL_HPP_
+#define KOKKOSBLAS1_IMPL_RECIPROCAL_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -27,18 +14,48 @@ namespace Impl {
 // reciprocal
 //
 
+// clang-format off
+// Work-around for GCC 12/13 internal compiler bug triggered by
+// tree-vectorization on complex types.
+// See https://github.com/kokkos/kokkos-kernels/issues/2091
+#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+// When NVCC is the front-end compiler it does not recognize GCC pragmas and
+// emits warning #1675-D.  Suppress that diagnostic around the GCC-specific
+// pragmas using nv_diag_suppress/nv_diag_default.
+#ifdef __NVCC__
+#define KOKKOSKERNELS_IMPL_GCC_BUG_PUSH_NO_TREE_VECTORIZE \
+  _Pragma("nv_diag_suppress 1675")                        \
+  _Pragma("GCC push_options")                             \
+  _Pragma("GCC optimize(\"no-tree-vectorize\")")          \
+  _Pragma("nv_diag_default 1675")
+#define KOKKOSKERNELS_IMPL_GCC_BUG_POP_NO_TREE_VECTORIZE \
+  _Pragma("nv_diag_suppress 1675")                       \
+  _Pragma("GCC pop_options")                             \
+  _Pragma("nv_diag_default 1675")
+#else
+#define KOKKOSKERNELS_IMPL_GCC_BUG_PUSH_NO_TREE_VECTORIZE \
+  _Pragma("GCC push_options")                             \
+  _Pragma("GCC optimize(\"no-tree-vectorize\")")
+#define KOKKOSKERNELS_IMPL_GCC_BUG_POP_NO_TREE_VECTORIZE \
+  _Pragma("GCC pop_options")
+#endif
+#else
+#define KOKKOSKERNELS_IMPL_GCC_BUG_PUSH_NO_TREE_VECTORIZE
+#define KOKKOSKERNELS_IMPL_GCC_BUG_POP_NO_TREE_VECTORIZE
+#endif
+// clang-format on
+
 // Entry-wise reciprocalolute value / magnitude: R(i,j) = reciprocal(X(i,j)).
 template <class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Reciprocal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
   XMV X_;
 
-  MV_Reciprocal_Functor(const RMV& R, const XMV& X)
-      : numCols(X.extent(1)), R_(R), X_(X) {
+  MV_Reciprocal_Functor(const RMV& R, const XMV& X) : numCols(X.extent(1)), R_(R), X_(X) {
     static_assert(Kokkos::is_view<RMV>::value,
                   "KokkosBlas::Impl::"
                   "MV_Reciprocal_Functor: RMV is not a Kokkos::View.");
@@ -53,6 +70,7 @@ struct MV_Reciprocal_Functor {
                   "MV_Reciprocal_Functor: XMV is not rank 2");
   }
 
+  KOKKOSKERNELS_IMPL_GCC_BUG_PUSH_NO_TREE_VECTORIZE
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -63,13 +81,14 @@ struct MV_Reciprocal_Functor {
     }
   }
 };
+KOKKOSKERNELS_IMPL_GCC_BUG_POP_NO_TREE_VECTORIZE
 
 // Entry-wise, in-place reciprocalolute value / magnitude: R(i,j) =
 // reciprocal(R(i,j)).
 template <class RMV, class SizeType = typename RMV::size_type>
 struct MV_ReciprocalSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -83,6 +102,7 @@ struct MV_ReciprocalSelf_Functor {
                   "MV_Reciprocal_Functor: RMV is not rank 2");
   }
 
+  KOKKOSKERNELS_IMPL_GCC_BUG_PUSH_NO_TREE_VECTORIZE
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -93,13 +113,14 @@ struct MV_ReciprocalSelf_Functor {
     }
   }
 };
+KOKKOSKERNELS_IMPL_GCC_BUG_POP_NO_TREE_VECTORIZE
 
 // Single-vector, entry-wise reciprocalolute value / magnitude: R(i) =
 // reciprocal(X(i)).
 template <class RV, class XV, class SizeType = typename RV::size_type>
 struct V_Reciprocal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XV::non_const_value_type> ATS;
 
   RV R_;
   XV X_;
@@ -128,7 +149,7 @@ struct V_Reciprocal_Functor {
 template <class RV, class SizeType = typename RV::size_type>
 struct V_ReciprocalSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV R_;
 
@@ -148,8 +169,7 @@ struct V_ReciprocalSelf_Functor {
 // Invoke the "generic" (not unrolled) multivector functor that
 // computes entry-wise reciprocalolute value.
 template <class execution_space, class RMV, class XMV, class SizeType>
-void MV_Reciprocal_Generic(const execution_space& space, const RMV& R,
-                           const XMV& X) {
+void MV_Reciprocal_Generic(const execution_space& space, const RMV& R, const XMV& X) {
   static_assert(Kokkos::is_view<RMV>::value,
                 "KokkosBlas::Impl::"
                 "MV_Reciprocal_Generic: RMV is not a Kokkos::View.");
@@ -177,8 +197,7 @@ void MV_Reciprocal_Generic(const execution_space& space, const RMV& R,
 
 // Variant of MV_Reciprocal_Generic for single vectors (1-D Views) R and X.
 template <class execution_space, class RV, class XV, class SizeType>
-void V_Reciprocal_Generic(const execution_space& space, const RV& R,
-                          const XV& X) {
+void V_Reciprocal_Generic(const execution_space& space, const RV& R, const XV& X) {
   static_assert(Kokkos::is_view<RV>::value,
                 "KokkosBlas::Impl::"
                 "V_Reciprocal_Generic: RV is not a Kokkos::View.");
@@ -204,6 +223,9 @@ void V_Reciprocal_Generic(const execution_space& space, const RV& R,
   }
 }
 
+#undef KOKKOSKERNELS_IMPL_GCC_BUG_PUSH_NO_TREE_VECTORIZE
+#undef KOKKOSKERNELS_IMPL_GCC_BUG_POP_NO_TREE_VECTORIZE
+
 }  // namespace Impl
 }  // namespace KokkosBlas
-#endif  // KOKKOS_BLAS1_MV_IMPL_RECIPROCAL_HPP_
+#endif  // KOKKOSBLAS1_IMPL_RECIPROCAL_HPP_

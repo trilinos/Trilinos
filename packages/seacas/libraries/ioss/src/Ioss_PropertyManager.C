@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -35,7 +35,7 @@ void Ioss::PropertyManager::add(const Ioss::Property &new_prop)
  */
 bool Ioss::PropertyManager::exists(const std::string &property_name) const
 {
-  return (m_properties.find(property_name) != m_properties.end());
+  return m_properties.contains(property_name);
 }
 
 /** \brief Get a property object from the property manager.

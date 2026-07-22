@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -26,20 +26,20 @@ int ex_create_group(int parent_id, const char *group_name)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_redef(parent_id)) != NC_NOERR) {
+  if ((status = exi_redef(parent_id, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", parent_id);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_def_grp(parent_id, group_name, &exoid)) != NC_NOERR) {
+  if ((status = nc_def_grp(parent_id, group_name, &exoid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: group create failed for %s in file id %d", group_name,
              parent_id);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = exi_leavedef(parent_id, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(parent_id, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

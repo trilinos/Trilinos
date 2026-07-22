@@ -149,10 +149,6 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-    throw std::invalid_argument("This example only supports Tpetra.");
-  }
-
   ParameterList mueluParams;
   Teuchos::updateParametersFromXmlFile(solverOptionsFile, Teuchos::inoutArg(mueluParams));
 
@@ -197,14 +193,14 @@ int main(int argc, char *argv[]) {
   RCP<ADRXpetraProblem> Pr = ADR::Xpetra::BuildProblem<scalar_type, local_ordinal_type, global_ordinal_type, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), xpetraMap, matrixParameters.GetParameterList());
   RCP<Matrix> xpetraA      = Pr->BuildMatrix();
 
-  RCP<crs_matrix_type> A         = MueLuUtilities::Op2NonConstTpetraCrs(xpetraA);
-  RCP<const driver_map_type> map = MueLuUtilities::Map2TpetraMap(*xpetraMap);
+  RCP<crs_matrix_type> A = toTpetra(xpetraA);
+  RCP<const driver_map_type> toTpetra(xpetraMap);
 
   //
   // Construct a multigrid preconditioner
   //
 
-  RCP<muelu_tpetra_operator_type> M = MueLu::CreateTpetraPreconditioner((RCP<operator_type>)A, mueluParams, Utilities::MV2NonConstTpetraMV(coordinates));
+  RCP<muelu_tpetra_operator_type> M = MueLu::CreateTpetraPreconditioner((RCP<operator_type>)A, mueluParams, toTpetra(coordinates));
 
   RCP<multivector_type> X = rcp(new multivector_type(map, 1));
   RCP<multivector_type> B = rcp(new multivector_type(map, 1));

@@ -28,6 +28,8 @@
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 #include <stdlib.h>
 
+#include <MueLu_KokkosTuningInterface.hpp>
+
 namespace MueLu {
 
 /*!
@@ -63,16 +65,38 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
   std::string label;
   if (hasParamList && paramList.isParameter("hierarchy label")) {
     label = paramList.get<std::string>("hierarchy label");
-    paramList.remove("hierarchy label");
   } else
     label = op->getObjectLabel();
 
+  RCP<Teuchos::Time> tm;
   std::string timerName;
+
+  // Do Kokkos tuning, if requested
+  if (paramList.isSublist("kokkos tuning: muelu parameter mapping") &&
+      paramList.sublist("kokkos tuning: muelu parameter mapping").isParameter("kokkos context id")) {
+    // Time tuning separately
+    if (label != "")
+      timerName = "MueLu tuning time (" + label + ")";
+    else
+      timerName = "MueLu tuning time";
+    tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
+
+    MueLu::KokkosTuningInterface KokkosTuner(op->getMap()->getComm());
+    KokkosTuner.SetParameterList(paramList);
+    KokkosTuner.SetMueLuParameters(paramList);
+    tm->stop();
+    tm->incrementNumCalls();
+    tm = Teuchos::null;
+  }
+
+  // Setup Timer
   if (label != "")
     timerName = "MueLu setup time (" + label + ")";
   else
     timerName = "MueLu setup time";
-  RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+
+  tm = Teuchos::TimeMonitor::getNewTimer(timerName);
   tm->start();
 
   std::string syntaxStr = "parameterlist: syntax";
@@ -81,6 +105,27 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
     std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
     paramList            = *Teuchos::getParametersFromXmlString(paramXML);
   }
+  //  Need to check if Muelu option is inconsistent with user data provided
+  bool Minv_Supplied = false, M_Supplied = false, MinvA_Supplied = false;
+  if (inParamList.isSublist("user data")) {
+    const Teuchos::ParameterList& userList = inParamList.sublist("user data");
+    if (userList.isParameter("M")) M_Supplied = true;
+    if (userList.isParameter("Minv")) Minv_Supplied = true;
+    if (userList.isParameter("MinvA")) Minv_Supplied = true;
+  }
+  if (inParamList.isParameter("aggregation: strength-of-connection: matrix") && (inParamList.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA")) {
+    if (inParamList.isSublist("project auxiliary matrices")) {
+      auto projectList = inParamList.sublist("project auxiliary matrices");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("M") && !M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M as it is listed in the project auxiliary matrices sublist");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("Minv") && (projectList.get("Minv", "") == "NoFactory") && !Minv_Supplied, Exceptions::Incompatible,
+                                 "MueLu_CreateXpetraPreconditioner: Must supply Minv  as NoFactory is listed as supplier of Minv  in the project auxiliary matrices sublist");
+      TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("MinvA") && (projectList.get("MinvA", "") == "NoFactory") && !MinvA_Supplied, Exceptions::Incompatible,
+                                 "MueLu_CreateXpetraPreconditioner: Must supply MinvA as NoFactory is listed as supplier of MinvA in the project auxiliary matrices sublist");
+    } else {  // default behavior if sublist("project auxiliary matrices") not user-supplied requires "M" to be user-supplied.
+      TEUCHOS_TEST_FOR_EXCEPTION(!M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M when 'aggregation: strength-of-connection: matrix'= MinvA and sublist('project auxiliary matrices') not supplied.");
+    }
+  }
+
   mueLuFactory = rcp(new ParameterListInterpreter(paramList, op->getDomainMap()->getComm()));
 
   // Create Hierarchy

@@ -1,23 +1,31 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Tpetra_Map.hpp"
 #include "Kokkos_Core.hpp"
 #include <iostream>
-#include <cstdlib> // EXIT_SUCCESS, EXIT_FAILURE
+#include <cstdlib>  // EXIT_SUCCESS, EXIT_FAILURE
 
 // Test that Map's constructor initializes Kokkos if it is not already
 // initialized.  It must also finalize Kokkos at exit, but the only
 // portable way to test that would be to run Valgrind and ensure no
 // memory leaks.
 
-int
-main (int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   using std::cerr;
   using std::endl;
 
-  if (Kokkos::is_initialized ()) {
+  if (Kokkos::is_initialized()) {
     cerr << "FAILED: Before calling Map's constructor, "
-      "and without having called Kokkos::initialize ourselves, "
-      "Kokkos reports that it has been initialized!" << endl;
+            "and without having called Kokkos::initialize ourselves, "
+            "Kokkos reports that it has been initialized!"
+         << endl;
     return EXIT_FAILURE;
   }
 
@@ -29,10 +37,11 @@ main (int argc, char* argv[])
     // node instances are always at main() scope.
     Tpetra::Map<> map1;
 
-    if (! Kokkos::is_initialized ()) {
+    if (!Kokkos::is_initialized()) {
       cerr << "FAILED: After calling Kokkos::initialize, "
-        "and after calling Map's constructor once, "
-        "Kokkos is still not initialized!" << endl;
+              "and after calling Map's constructor once, "
+              "Kokkos is still not initialized!"
+           << endl;
       return EXIT_FAILURE;
     }
 
@@ -41,30 +50,32 @@ main (int argc, char* argv[])
     // parallel_for to initialize the View.
     try {
       using device_type = Tpetra::Map<>::device_type;
-      Kokkos::View<double*, device_type> testView ("testView", 10);
-    }
-    catch (...) {
+      Kokkos::View<double*, device_type> testView("testView", 10);
+    } catch (...) {
       cerr << "FAILED: After calling Kokkos::initialize, "
-        "and after calling Map's constructor once, "
-        "Kokkos::View creation fails, "
-        "likely because Kokkos is still not initialized!" << endl;
+              "and after calling Map's constructor once, "
+              "Kokkos::View creation fails, "
+              "likely because Kokkos is still not initialized!"
+           << endl;
       return EXIT_FAILURE;
     }
 
     {
-      Tpetra::Map<> map2; // inner scope, so its destructor gets invoked
-      if (! Kokkos::is_initialized ()) {
+      Tpetra::Map<> map2;  // inner scope, so its destructor gets invoked
+      if (!Kokkos::is_initialized()) {
         cerr << "FAILED: After calling Kokkos::initialize, "
-          "and after calling Map's constructor twice, "
-          "Kokkos is still not initialized!" << endl;
+                "and after calling Map's constructor twice, "
+                "Kokkos is still not initialized!"
+             << endl;
         return EXIT_FAILURE;
       }
     }
-    if (! Kokkos::is_initialized ()) {
+    if (!Kokkos::is_initialized()) {
       cerr << "FAILED: After calling Kokkos::initialize, "
-        "after calling Map's constructor twice, "
-        "and after calling Map's destructor once, "
-        "Kokkos is still not initialized!" << endl;
+              "after calling Map's constructor twice, "
+              "and after calling Map's destructor once, "
+              "Kokkos is still not initialized!"
+           << endl;
       return EXIT_FAILURE;
     }
   }
@@ -76,4 +87,3 @@ main (int argc, char* argv[])
   // "FAILED:".
   return EXIT_SUCCESS;
 }
-

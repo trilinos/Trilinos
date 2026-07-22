@@ -55,188 +55,6 @@ protected:
     MeshFixtureNoTest()
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(3),
-      m_entityRankNames(),
-      metaData(nullptr), bulkData()
-    {
-    }
-
-    MeshFixtureNoTest(unsigned spatial_dim)
-    : communicator(MPI_COMM_WORLD),
-      m_spatialDim(spatial_dim),
-      m_entityRankNames(),
-      metaData(nullptr), bulkData()
-    {
-    }
-
-    MeshFixtureNoTest(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
-    : communicator(MPI_COMM_WORLD),
-      m_spatialDim(spatial_dim),
-      m_entityRankNames(entityRankNames),
-      metaData(nullptr), bulkData()
-    {
-    }
-
-    MeshFixtureNoTest(
-        unsigned spatial_dim, stk::mesh::BulkData::AutomaticAuraOption auraOption, MPI_Comm comm = MPI_COMM_WORLD)
-        : communicator(comm), m_spatialDim(spatial_dim), m_entityRankNames(), metaData(nullptr), bulkData()
-    {
-      setup_empty_mesh(auraOption);
-    }
-
-    virtual ~MeshFixtureNoTest()
-    {
-    }
-
-    void set_spatial_dimension(unsigned spatialDim)
-    {
-      m_spatialDim = spatialDim;
-    }
-
-    void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                          unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
-                          unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
-    {
-        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
-    }
-
-    virtual void setup_mesh(const std::string &meshSpecification,
-                            stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                            unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
-                            unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
-    {
-        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
-        stk::io::fill_mesh(meshSpecification, *bulkData);
-    }
-
-    void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification,
-                                       stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                                       unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
-                                       unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
-    {
-        allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
-        stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
-    }
-
-    MPI_Comm get_comm() const
-    {
-        return communicator;
-    }
-
-    void reset_mesh()
-    {
-        bulkData.reset();
-        metaData = nullptr;
-    }
-
-    int get_parallel_rank() const
-    {
-        return stk::parallel_machine_rank(get_comm());
-    }
-
-    int get_parallel_size() const
-    {
-        return stk::parallel_machine_size(get_comm());
-    }
-
-    virtual stk::mesh::MetaData& get_meta()
-    {
-        STK_ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
-        return *metaData;
-    }
-
-    virtual stk::mesh::BulkData& get_bulk()
-    {
-        STK_ThrowRequireMsg(bulkData!=nullptr, "Unit test error. Trying to get bulk data before it has been initialized.");
-        return *bulkData;
-    }
-
-    virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                               unsigned initialBucketCapacity = mesh::get_default_initial_bucket_capacity(),
-                               unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
-    {
-        stk::mesh::MeshBuilder builder(communicator);
-        builder.set_spatial_dimension(m_spatialDim);
-        builder.set_entity_rank_names(m_entityRankNames);
-        builder.set_aura_option(auraOption);
-        builder.set_initial_bucket_capacity(initialBucketCapacity);
-        builder.set_maximum_bucket_capacity(maximumBucketCapacity);
-
-        bulkData = builder.create();
-        metaData = &(bulkData->mesh_meta_data());
-    }
-
-    void set_bulk(std::shared_ptr<stk::mesh::BulkData> inBulkData)
-    {
-        STK_ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
-        bulkData = inBulkData;
-    }
-
-protected:
-    MPI_Comm communicator;
-    unsigned m_spatialDim;
-    std::vector<std::string> m_entityRankNames;
-    stk::mesh::MetaData *metaData = nullptr;
-    std::shared_ptr<stk::mesh::BulkData> bulkData;
-};
-
-class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {
- protected:
-  MeshFixture(){}
-  MeshFixture(unsigned spatial_dim) : MeshFixtureNoTest(spatial_dim) {}
-  MeshFixture(unsigned spatial_dim, const std::vector<std::string>& entityRankNames)
-  : MeshFixtureNoTest(spatial_dim,entityRankNames){}
-
-};
-
-class MeshFixture2D : public MeshFixtureNoTest, public ::ngp_testing::Test {
- protected:
-  MeshFixture2D() : MeshFixtureNoTest(2) {}
-};
-
-class MeshTestFixture : public MeshFixture
-{
-protected:
-    void run_test_on_num_procs(int numProcs, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        if(stk::parallel_machine_size(get_comm()) == numProcs)
-        {
-            run_test(auraOption);
-        }
-    }
-
-    void run_test_on_num_procs_or_less(int numProcs, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        if(stk::parallel_machine_size(get_comm()) <= numProcs)
-        {
-            run_test(auraOption);
-        }
-    }
-
-    virtual void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption) = 0;
-};
-
-inline void delete_mesh(const std::string & baseFileName)
-{
-  const int pSize = stk::parallel_machine_size(MPI_COMM_WORLD);
-  if (pSize == 1) {
-    unlink(baseFileName.c_str());
-  }
-  else {
-    for (int proc = 0; proc < pSize; ++proc) {
-      const std::string fileName = baseFileName + "." + std::to_string(pSize) + "." + std::to_string(proc);
-      unlink(fileName.c_str());
-    }
-  }
-}
-
-namespace simple_fields {
-
-class MeshFixtureNoTest
-{
-protected:
-    MeshFixtureNoTest()
-    : communicator(MPI_COMM_WORLD),
-      m_spatialDim(3),
       m_entityRankNames()
     {
     }
@@ -296,7 +114,7 @@ protected:
                                        unsigned maximumBucketCapacity = mesh::get_default_maximum_bucket_capacity())
     {
         allocate_bulk(auraOption, initialBucketCapacity, maximumBucketCapacity);
-        stk::unit_test_util::simple_fields::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
+        stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(meshSpecification,*bulkData,"cyclic");
     }
 
     MPI_Comm get_comm() const
@@ -345,7 +163,6 @@ protected:
 
         if(nullptr == metaData) {
           metaData = builder.create_meta_data();
-          metaData->use_simple_fields();
         }
 
         if(nullptr == bulkData) {
@@ -440,8 +257,6 @@ inline void delete_mesh(const std::string & baseFileName)
     }
   }
 }
-
-}  // namespace simple_fields
 
 }}
 

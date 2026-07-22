@@ -32,11 +32,11 @@
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stk_mesh/baseImpl/MeshModLogObserver.hpp>
+#include <stk_mesh/baseImpl/PrintEntityState.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/baseImpl/Visitors.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-#include <iostream>
 
 namespace stk {
 namespace mesh {

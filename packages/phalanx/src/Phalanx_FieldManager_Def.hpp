@@ -1,46 +1,12 @@
 // @HEADER
-// ************************************************************************
-//
-//        Phalanx: A Partial Differential Equation Field Evaluation
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 #ifndef PHX_FIELD_MANAGER_DEF_HPP
 #define PHX_FIELD_MANAGER_DEF_HPP
@@ -48,8 +14,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
-#include "Phalanx_any.hpp"
 #include "Phalanx_EvaluationContainer_TemplateBuilder.hpp"
+#include <any>
 #include <sstream>
 
 #include "Phalanx_MDField.hpp"
@@ -80,7 +46,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<DataT,Props...>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -93,7 +59,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::MDField<const DataT,Props...>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -106,7 +72,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<DataT,Rank,Layout>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -119,7 +85,7 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(PHX::Field<const DataT,Rank,Layout>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(f.fieldTag());
 
   f.setFieldData(a);
@@ -132,22 +98,22 @@ inline
 void PHX::FieldManager<Traits>::
 getFieldData(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device>& f)
 {
-  PHX::any a = m_eval_containers.template
+  std::any a = m_eval_containers.template
     getAsObject<EvalT>()->getFieldData(ft);
 
-  // PHX::any object is always the non-const data type.  To
+  // std::any object is always the non-const data type.  To
   // correctly cast the any object to the Kokkos::View, need to
   // pull the const off the scalar type if this MDField has a
   // const scalar type.
   typedef PHX::View<typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_data_type> non_const_view;
   try {
-    non_const_view tmp = PHX::any_cast<non_const_view>(a);
+    non_const_view tmp = std::any_cast<non_const_view>(a);
     f = tmp;
   }
   catch (std::exception& ) {
-    std::cout << "\n\nError in FieldManager::getFieldData()  using PHX::any_cast. Tried to cast a field "
+    std::cout << "\n\nError in FieldManager::getFieldData()  using std::any_cast. Tried to cast a field "
               << "\" to a type of \"" << Teuchos::demangleName(typeid(non_const_view).name())
-              << "\" from a PHX::any object containing a type of \""
+              << "\" from a std::any object containing a type of \""
               << Teuchos::demangleName(a.type().name()) << "\"." << std::endl;
     throw;
   }
@@ -171,7 +137,7 @@ inline
 void PHX::FieldManager<Traits>::
 setUnmanagedField(PHX::Field<DataT,Rank,Layout>& f, const bool cleanup_output)
 {
-  PHX::any any_f(f.get_static_view());
+  std::any any_f(f.get_static_view());
   m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(f.fieldTag(),any_f,
                                                                      cleanup_output);
 }
@@ -191,7 +157,7 @@ setUnmanagedField(const PHX::FieldTag& ft, Kokkos::View<DataT,Layout,PHX::Device
   typedef typename Kokkos::View<DataT,Layout,PHX::Device>::non_const_value_type non_const_value_type;
   static_assert(std::is_same<value_type,non_const_value_type>::value, "FieldManager::setUnmanagedField(FieldTag, View) - DataT must be non-const!");
 
-  PHX::any any_f(f);
+  std::any any_f(f);
   m_eval_containers.template getAsObject<EvalT>()->setUnmanagedField(ft,any_f,cleanup_output);
 }
 

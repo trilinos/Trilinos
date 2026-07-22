@@ -44,35 +44,25 @@ class Test_parse_args(unittest.TestCase):
         self.stderrRedirect = mock.patch('sys.stderr', new_callable=StringIO)
 
         self.m_argv = mock.patch.object(sys, 'argv', ['programName',
-                                                      '--source-repo-url',
-                                                      os.path.join(os.path.sep,
-                                                                   'dev',
-                                                                   'null',
-                                                                   'source_repo'),
-                                                      '--target-repo-url',
-                                                      os.path.join(os.path.sep,
-                                                                   'dev',
-                                                                   'null',
-                                                                   'target_repo'),
                                                       '--target-branch-name', 'real_trash',
                                                       '--pullrequest-build-name',
                                                       'Some_odd_compiler',
                                                       '--genconfig-build-name',
                                                       'Some_odd_compiler_and_options',
                                                       '--pullrequest-number', '4242',
-                                                      '--jenkins-job-number', '2424'])
+                                                      '--jenkins-job-number', '2424',
+                                                      '--source-dir=/some/source/dir',
+                                                      '--build-dir=/some/build/dir'])
 
-        self.default_options = Namespace(source_repo_url='/dev/null/source_repo',
-                                         target_repo_url='/dev/null/target_repo',
-                                         target_branch_name='real_trash',
+        self.default_options = Namespace(target_branch_name='real_trash',
                                          pullrequest_build_name='Some_odd_compiler',
                                          genconfig_build_name='Some_odd_compiler_and_options',
-                                         dashboard_build_name='UNKNOWN',
+                                         dashboard_build_name=None,
                                          pullrequest_number='4242',
                                          jenkins_job_number='2424',
-                                         source_dir='UNKNOWN',
-                                         build_dir='UNKNOWN',
-                                         ctest_driver='UNKNOWN',
+                                         source_dir='/some/source/dir',
+                                         build_dir='/some/build/dir',
+                                         ctest_driver='/some/source/dir/cmake/SimpleTesting/cmake/ctest-driver.cmake',
                                          ctest_drop_site='testing.sandia.gov',
                                          pullrequest_cdash_track='Pull Request',
                                          pullrequest_env_config_file='/dev/null/Trilinos_clone/pr_config/pullrequest.ini',
@@ -80,26 +70,27 @@ class Test_parse_args(unittest.TestCase):
                                          workspace_dir='/dev/null/Trilinos_clone',
                                          filename_packageenables='../packageEnables.cmake',
                                          filename_subprojects='../package_subproject_list.cmake',
+                                         skip_create_packageenables=False,
+                                         skip_run_tests=False,
                                          test_mode='standard',
                                          req_mem_per_core=3.0,
                                          max_cores_allowed=12,
                                          num_concurrent_tests=-1,
+                                         slots_per_gpu=2,
                                          ccache_enable=False,
                                          dry_run=False,
                                          use_explicit_cachefile=False,
                                          extra_configure_args="")
 
         self.default_stdout = dedent('''\
-                | - [R] source-repo-url             : /dev/null/source_repo
-                | - [R] target_repo_url             : /dev/null/target_repo
                 | - [R] target_branch_name          : real_trash
                 | - [R] pullrequest-build-name      : Some_odd_compiler
                 | - [R] genconfig-build-name        : Some_odd_compiler_and_options
                 | - [R] pullrequest-number          : 4242
                 | - [R] jenkins-job-number          : 2424
-                | - [R] source-dir                  : UNKNOWN
-                | - [R] build-dir                   : UNKNOWN
-                | - [R] ctest-driver                : UNKNOWN
+                | - [R] source-dir                  : /some/source/dir
+                | - [R] build-dir                   : /some/build/dir
+                | - [R] ctest-driver                : /some/source/dir/cmake/SimpleTesting/cmake/ctest-driver.cmake
                 | - [R] ctest-drop-site             : testing.sandia.gov
                 |
                 | - [O] dry-run                     : False
@@ -115,122 +106,13 @@ class Test_parse_args(unittest.TestCase):
                 | - [O] workspace-dir               : /dev/null/Trilinos_clone
                 ''')
 
-        self.help_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url
-                                   TARGET_REPO_URL --target-branch-name TARGET_BRANCH_NAME
-                                   --pullrequest-build-name PULLREQUEST_BUILD_NAME
-                                   --genconfig-build-name GENCONFIG_BUILD_NAME
-                                   --pullrequest-number PULLREQUEST_NUMBER
-                                   --jenkins-job-number JENKINS_JOB_NUMBER
-                                   [--dashboard-build-name DASHBOARD_BUILD_NAME]
-                                   [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
-                                   [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
-                                   [--ctest-drop-site CTEST_DROP_SITE]
-                                   [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
-                                   [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
-                                   [--pullrequest-gen-config-file PULLREQUEST_GEN_CONFIG_FILE]
-                                   [--workspace-dir WORKSPACE_DIR]
-                                   [--filename-packageenables FILENAME_PACKAGEENABLES]
-                                   [--filename-subprojects FILENAME_SUBPROJECTS]
-                                   [--test-mode TEST_MODE]
-                                   [--req-mem-per-core REQ_MEM_PER_CORE]
-                                   [--max-cores-allowed MAX_CORES_ALLOWED]
-                                   [--num-concurrent-tests NUM_CONCURRENT_TESTS]
-                                   [--enable-ccache] [--dry-run]
-                                   [--extra-configure-args EXTRA_CONFIGURE_ARGS]
-
-                Parse the repo and build information
-
-                optional arguments:
-                  -h, --help            show this help message and exit
-
-                Required Arguments:
-                  --source-repo-url SOURCE_REPO_URL
-                                        Repo with the new changes
-                  --target-repo-url TARGET_REPO_URL
-                                        Repo to merge into
-                  --target-branch-name TARGET_BRANCH_NAME
-                                        Branch to merge into
-                  --pullrequest-build-name PULLREQUEST_BUILD_NAME
-                                        The Jenkins job base name
-                  --genconfig-build-name GENCONFIG_BUILD_NAME
-                                        The job base name for the cmake configuration
-                  --pullrequest-number PULLREQUEST_NUMBER
-                                        The github PR number
-                  --jenkins-job-number JENKINS_JOB_NUMBER
-                                        The Jenkins build number
-
-                Optional Arguments:
-                  --dashboard-build-name DASHBOARD_BUILD_NAME
-                                        The build name posted by ctest to a dashboard
-                  --source-dir SOURCE_DIR
-                                        Directory containing the source code to compile/test.
-                  --build-dir BUILD_DIR
-                                        Path to the build directory.
-                  --use-explicit-cachefile
-                                        Use -DTrilinos_CONFIGURE_OPTIONS_FILE instead of -C.
-                  --ctest-driver CTEST_DRIVER
-                                        Location of the CTest driver script to load via `-S`.
-                  --ctest-drop-site CTEST_DROP_SITE
-                                        URL of the cdash server to post to.
-                  --pullrequest-cdash-track PULLREQUEST_CDASH_TRACK
-                                        The CDash Track to add results to. Default=Pull
-                                        Request
-                  --pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE
-                                        The Trilinos PR driver configuration file containing
-                                        job mappings to environment specifications. Default=/d
-                                        ev/null/Trilinos_clone/pr_config/pullrequest.ini
-                  --pullrequest-gen-config-file PULLREQUEST_GEN_CONFIG_FILE
-                                        The Trilinos PR driver configuration file containing
-                                        job mappings to cmake specifications.
-                                        Default=/dev/null/Trilinos_clone/../GenConfig/src/gen-
-                                        config.ini
-                  --workspace-dir WORKSPACE_DIR
-                                        The local workspace directory that Jenkins set up.
-                                        Default=/dev/null/Trilinos_clone
-                  --filename-packageenables FILENAME_PACKAGEENABLES
-                                        The packageEnables.cmake is usually generated by
-                                        TriBiTS infrastructure based on which packages contain
-                                        the changes between the source and target branches.
-                                        Default=../packageEnables.cmake
-                  --filename-subprojects FILENAME_SUBPROJECTS
-                                        The subprojects_file is used by the testing
-                                        infrastructure. This parameter allows the default,
-                                        generated file, to be overridden. Generally this
-                                        should not be changed from the defaults..
-                                        Default=../package_subproject_list.cmake
-                  --test-mode TEST_MODE
-                                        PR testing mode. Use 'standard' for normal PR tests,
-                                        'installation' for installation testing. Default =
-                                        standard
-                  --req-mem-per-core REQ_MEM_PER_CORE
-                                        Minimum required memory per core (GB) to build
-                                        Trilinos.Default = 3.0
-                  --max-cores-allowed MAX_CORES_ALLOWED
-                                        Max cores allowed, if >= 0 we will use the # of
-                                        detected cores on the system. Default = 12
-                  --num-concurrent-tests NUM_CONCURRENT_TESTS
-                                        Set the number of concurrent tests allowd in CTest.
-                                        This is equivalent to `ctest -j <num-concurrent-
-                                        tests>`. If > 0 then this value is used, otherwise the
-                                        value is calculated based on number_of_available_cores
-                                        / max_test_parallelism Default = -1
-                  --enable-ccache       Enable ccache object caching to improve build times.
-                                        Default = False
-                  --dry-run             Enable dry-run mode. Script will run but not execute
-                                        the build steps. Default = False
-                  --extra-configure-args EXTRA_CONFIGURE_ARGS
-                                        Extra arguments that will be passed to CMake for
-                                        configuring Trilinos.
-                ''')
-
         self.usage_output = dedent('''\
-                usage: programName [-h] --source-repo-url SOURCE_REPO_URL --target-repo-url TARGET_REPO_URL
+                usage: programName [-h] [--source-repo-url SOURCE_REPO_URL] [--target-repo-url TARGET_REPO_URL]
                                    --target-branch-name TARGET_BRANCH_NAME
-                                   --pullrequest-build-name PULLREQUEST_BUILD_NAME
+                                   [--pullrequest-build-name PULLREQUEST_BUILD_NAME]
                                    --genconfig-build-name GENCONFIG_BUILD_NAME
                                    --pullrequest-number PULLREQUEST_NUMBER
-                                   --jenkins-job-number JENKINS_JOB_NUMBER
+                                   [--jenkins-job-number JENKINS_JOB_NUMBER]
                                    [--dashboard-build-name DASHBOARD_BUILD_NAME]
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--use-explicit-cachefile] [--ctest-driver CTEST_DRIVER]
@@ -246,7 +128,7 @@ class Test_parse_args(unittest.TestCase):
                                    [--max-cores-allowed MAX_CORES_ALLOWED]
                                    [--num-concurrent-tests NUM_CONCURRENT_TESTS]
                                    [--enable-ccache] [--dry-run] [--extra-configure-args EXTRA_CONFIGURE_ARGS]
-                programName: error: the following arguments are required: --source-repo-url, --target-repo-url, --target-branch-name, --pullrequest-build-name, --genconfig-build-name, --pullrequest-number, --jenkins-job-number
+                programName: error: the following arguments are required: --target-branch-name, --genconfig-build-name, --pullrequest-number
                 ''')
 
         self.m_cwd = mock.patch('PullRequestLinuxDriverTest.os.getcwd',
@@ -266,7 +148,6 @@ class Test_parse_args(unittest.TestCase):
         '''
         No inputs
         '''
-        import difflib
         with self.m_argv, self.stdoutRedirect as m_stdout:
             returned_default = PullRequestLinuxDriverTest.parse_args()
 
@@ -295,28 +176,6 @@ class Test_parse_args(unittest.TestCase):
         return
 
 
-    def test_help(self):
-        """
-        Compare the help message to the expected
-        """
-
-        with mock.patch.object(sys, 'argv', ['programName', '--help']), self.assertRaises(SystemExit), self.stdoutRedirect as m_stdout:
-            PullRequestLinuxDriverTest.parse_args()
-
-        self.assertEqual(self.help_output, m_stdout.getvalue())
-        return
-
-
-    def test_usage(self):
-        '''
-        Compare the usage message to the expected
-        '''
-
-        with mock.patch.object(sys, 'argv', ['programName', '--usage']), self.assertRaises(SystemExit), self.stderrRedirect as m_stderr:
-            PullRequestLinuxDriverTest.parse_args()
-
-        self.assertEqual(re.sub("\s+", " ", self.usage_output, flags=re.DOTALL), re.sub("\s+", " ", m_stderr.getvalue(), flags=re.DOTALL))
-        return
 
 
 class Test_main(unittest.TestCase):

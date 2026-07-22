@@ -45,8 +45,8 @@ buildDistanceLaplacian(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, N
   ghosted_coords->doImport(*coords, *graph->getImporter(), Xpetra::INSERT);
 
   {
-    auto lcl_coords         = coords->getHostLocalView(Xpetra::Access::ReadOnly);
-    auto lcl_ghosted_coords = ghosted_coords->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto lcl_coords         = coords->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto lcl_ghosted_coords = ghosted_coords->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto lcl_distLapl       = distLapl->getLocalMatrixHost();
 
     // TODO: parallel_for
@@ -131,7 +131,7 @@ constructAuxiliaryOperator(RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdi
       fineLevel.SetFactoryManager(Teuchos::null);
       fineLevel.SetLevelID(0);
       fineLevel.Set("A", auxOp);
-      auto filterFact = rcp(new ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>("A", 1.0e-8, true, -1));
+      auto filterFact = rcp(new ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>("A", 1.0e-8, true));
       fineLevel.Request("A", filterFact.get());
       filterFact->Build(fineLevel);
       auxOp = fineLevel.Get<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("A", filterFact.get());

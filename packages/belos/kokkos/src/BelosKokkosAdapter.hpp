@@ -30,6 +30,51 @@
 #define BELOS_KOKKOS_ADAPTER_HPP
 namespace Belos {
 
+template<class SerialDenseMatrixType, class KokkosViewMatrixType >
+void copySerialDenseMatrix(const SerialDenseMatrixType& B, const KokkosViewMatrixType& KMat, const bool& KMat_to_B) {
+  using ScalarType = typename KokkosViewMatrixType::value_type;
+  using UMHostViewMatrixType =
+        Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UMHostViewMatrixType2 =
+        Kokkos::View<ScalarType**,Kokkos::LayoutStride, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  if (B.numRows() == B.stride()) {
+    UMHostViewMatrixType umB_h(B.values(), KMat.extent(0), KMat.extent(1));
+    if (KMat_to_B) {
+      Kokkos::deep_copy(umB_h, KMat);
+    }
+    else {
+      Kokkos::deep_copy(KMat, umB_h);
+    }
+  }
+  else {
+    Kokkos::LayoutStride layout(KMat.extent(0), 1, KMat.extent(1), B.stride());
+    UMHostViewMatrixType2 umB_h(B.values(), layout);   
+    constexpr bool KokkosExecCanAccessB = Kokkos::SpaceAccessibility<typename KokkosViewMatrixType::device_type::execution_space,
+                                                                     typename UMHostViewMatrixType2::device_type::memory_space>::accessible;
+    constexpr bool BExecCanAccessKokkos = Kokkos::SpaceAccessibility<typename UMHostViewMatrixType2::device_type::execution_space,
+                                                                     typename KokkosViewMatrixType::device_type::memory_space>::accessible;
+    if (!KokkosExecCanAccessB && !BExecCanAccessKokkos) {
+      Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace> tmp_h(Kokkos::view_alloc(Kokkos::WithoutInitializing,"tmp_h"), KMat.extent(0), KMat.extent(1));
+      if (KMat_to_B) {
+        Kokkos::deep_copy(tmp_h, KMat);
+        Kokkos::deep_copy(umB_h, tmp_h);
+      }
+      else {
+        Kokkos::deep_copy(tmp_h, umB_h);
+        Kokkos::deep_copy(KMat, tmp_h);
+      }
+    }
+    else {
+      if (KMat_to_B) {
+        Kokkos::deep_copy(umB_h, KMat);
+      }
+      else {
+        Kokkos::deep_copy(KMat, umB_h);
+      }
+    }
+  }
+}
+
 //Forward class declaration of KokkosCrsOperator:
 template<class ScalarType, class OrdinalType, class Device>
 class KokkosCrsOperator;
@@ -60,10 +105,6 @@ public:
         Kokkos::View<ScalarType*,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using UMHostConstViewVectorType =
         Kokkos::View<const ScalarType*,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using UMHostViewMatrixType =
-        Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using UMHostConstViewMatrixType =
-        Kokkos::View<const ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
 protected:
   ViewMatrixType myView;
@@ -76,21 +117,21 @@ public:
   ///
   /// The `label` string indicates the label for the internal `Kokkos::view`.
   /// If `zeroOut` is set to `true`, the multivector will be initialized to zeros.
-  KokkosMultiVec<ScalarType, Device> (const std::string label, const int numrows, const int numvecs, const bool zeroOut = true) :
+  KokkosMultiVec (const std::string label, const int numrows, const int numvecs, const bool zeroOut = true) :
     myView (Kokkos::view_alloc(Kokkos::WithoutInitializing,label),numrows,numvecs)
     { if (zeroOut) { Kokkos::deep_copy(myView,0); } }
 
   /// \brief Returns a multivector with `numrows` rows and `numvecs` columns.
   ///
   /// If `zeroOut` is set to `true`, the multivector will be initialized to zeros.
-  KokkosMultiVec<ScalarType, Device> (const int numrows, const int numvecs, const bool zeroOut = true) :
+  KokkosMultiVec (const int numrows, const int numvecs, const bool zeroOut = true) :
     myView (Kokkos::view_alloc(Kokkos::WithoutInitializing,"MV"),numrows,numvecs)
     { if (zeroOut) { Kokkos::deep_copy(myView,0); } }
 
   /// \brief Returns a single column multivector with `numrows` rows.
   ///
   /// If `zeroOut` is set to `true`, the multivector will be initialized to zeros.
-  KokkosMultiVec<ScalarType, Device> (const int numrows, const bool zeroOut = true) :
+  KokkosMultiVec (const int numrows, const bool zeroOut = true) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing,"MV"),numrows,1)
     { if (zeroOut) { Kokkos::deep_copy(myView,0); } }
 
@@ -98,7 +139,7 @@ public:
 
   /// This copy constructor returns a new KokksMultiVec containing a
   /// deep copy of the multivector given by the user.
-  KokkosMultiVec<ScalarType, Device> (const KokkosMultiVec<ScalarType, Device> &sourceVec) :
+  KokkosMultiVec (const KokkosMultiVec<ScalarType, Device> &sourceVec) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing,"MV"),(int)sourceVec.GetGlobalLength(),sourceVec.GetNumberVecs())
   { Kokkos::deep_copy(myView,sourceVec.GetInternalViewConst()); }
 
@@ -109,7 +150,7 @@ public:
   /// The internal data of the multivector is converted from
   /// `ScalarType` to `ScalarType2`.
   template < class ScalarType2 >
-    KokkosMultiVec<ScalarType, Device> (const KokkosMultiVec<ScalarType2, Device> &sourceVec) :
+    KokkosMultiVec (const KokkosMultiVec<ScalarType2, Device> &sourceVec) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "MV"),(int)sourceVec.GetGlobalLength(),sourceVec.GetNumberVecs())
   { Kokkos::deep_copy(myView,sourceVec.GetInternalViewConst()); }
 
@@ -119,7 +160,7 @@ public:
   /// the right-hand side KokkosMultiVec to the
   /// left-hand side KokkosMultiVec. The left-hand
   /// side MultiVec will be resized if necessary.
-  KokkosMultiVec<ScalarType, Device> & operator=(const KokkosMultiVec<ScalarType, Device> & sourceVec) {
+  KokkosMultiVec & operator=(const KokkosMultiVec<ScalarType, Device> & sourceVec) {
     int len = sourceVec.GetGlobalLength();
     int cols = sourceVec.GetNumberVecs();
     if( len != (int)myView.extent(0) || cols != (int)myView.extent(1) ){
@@ -138,7 +179,7 @@ public:
   /// The internal data of the right-hand side multivec
   /// is converted from `ScalarType` to `ScalarType2`.
   template < class ScalarType2 >
-  KokkosMultiVec<ScalarType, Device> & operator=(const KokkosMultiVec<ScalarType2, Device> & sourceVec) {
+  KokkosMultiVec & operator=(const KokkosMultiVec<ScalarType2, Device> & sourceVec) {
     int len = sourceVec.GetGlobalLength();
     int cols = sourceVec.GetNumberVecs();
     if( len != (int)myView.extent(0) || cols != (int)myView.extent(1) ){
@@ -157,7 +198,7 @@ public:
   /// shallow copy of the given `Kokkos::view`.  (This option assumes that
   /// the user will make no changes to that view outside of
   /// the KokkosMultiVec interface.)
-  KokkosMultiVec<ScalarType, Device> (const ViewMatrixType & sourceView, bool makeCopy = true) {
+  KokkosMultiVec (const ViewMatrixType & sourceView, bool makeCopy = true) {
     if( makeCopy ){
       if( sourceView.extent(0) != myView.extent(0) || sourceView.extent(1) != myView.extent(1) ){
         Kokkos::resize(myView, sourceView.extent(0), sourceView.extent(1));
@@ -176,12 +217,12 @@ public:
   /// a deep copy of the sourceView in order to change scalar
   /// types.
   template < class ScalarType2 > //TODO: Fix this so that passing in a view without device specified actually compiles...
-  KokkosMultiVec<ScalarType, Device> (const Kokkos::View<ScalarType2**,Kokkos::LayoutLeft, Device> & sourceView) :
+  KokkosMultiVec (const Kokkos::View<ScalarType2**,Kokkos::LayoutLeft, Device> & sourceView) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "MV"),sourceView.extent(0),sourceView.extent(1))
   { Kokkos::deep_copy(myView,sourceView); }
 
   //! Destructor (default)
-  ~KokkosMultiVec<ScalarType, Device>(){}
+  ~KokkosMultiVec(){}
 
   //@}
 
@@ -409,10 +450,9 @@ public:
       ConstViewVectorType Asub = Kokkos::subview(A_vec->GetInternalViewConst(), Kokkos::ALL, 0);
       KokkosBlas::axpby(scal1, Asub, beta, mysub);
     }
-    else{
-      UMHostConstViewMatrixType mat_h(B.values(), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
+    else {
       ViewMatrixType mat_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"mat"), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
-      Kokkos::deep_copy(mat_d, mat_h);
+      copySerialDenseMatrix(B, mat_d, false);
       if( myView.extent(1) == 1 ){ // B has only 1 col
           ConstViewVectorType Bsub = Kokkos::subview(mat_d, Kokkos::ALL, 0);
           ViewVectorType mysub = Kokkos::subview(myView, Kokkos::ALL, 0);
@@ -480,11 +520,10 @@ public:
    //     B(i,0) = soln(i);
    //   }
    // }
-    else{
-      UMHostViewMatrixType soln_h(B.values(), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
+    else {
       ViewMatrixType soln_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"mat"), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
       KokkosBlas::gemm("C", "N", alpha, A_vec->GetInternalViewConst(), myView, ScalarType(0.0), soln_d);
-      Kokkos::deep_copy(soln_h, soln_d);
+      copySerialDenseMatrix(B, soln_d, true);
     }
   }
 
@@ -558,7 +597,7 @@ public:
   /// (This function will first copy the multivector to host space
   /// if needed.)
   void MvPrint( std::ostream& os ) const {
-    typename ViewMatrixType::HostMirror hostView("myViewMirror", myView.extent(0), myView.extent(1));
+    typename ViewMatrixType::host_mirror_type hostView("myViewMirror", myView.extent(0), myView.extent(1));
     Kokkos::deep_copy(hostView, myView);
     for(unsigned int i = 0; i < (hostView.extent(0)); i++){
       for (unsigned int j = 0; j < (hostView.extent(1)); j++){
@@ -585,11 +624,11 @@ public:
   //! @name Constructor/Destructor
   //@{
   //! Constructor obtains a shallow copy of the given CrsMatrix.
-  KokkosCrsOperator<ScalarType, OrdinalType, Device> (const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device> mat)
+  KokkosCrsOperator (const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device> mat)
    : myMatrix(mat) {}
 
   //! Destructor.
-  ~KokkosCrsOperator<ScalarType, OrdinalType, Device>(){}
+  ~KokkosCrsOperator(){}
   //@}
 
   //! @name Methods relating to applying the operator

@@ -31,7 +31,7 @@ private:
 class StkParticleRebalance : public StkRebalance
 {
 public:
-  StkParticleRebalance(stk::unit_test_util::simple_fields::ParticleManager & particleManager,
+  StkParticleRebalance(stk::unit_test_util::ParticleManager & particleManager,
                        stk::mesh::BulkData &stkMeshBulkData,
                        const stk::balance::DoubleFieldType &weightField,
                        const double defaultVertexWeight)
@@ -57,7 +57,7 @@ private:
 
   void set_particle_destination_from_owning_element(stk::balance::DecompositionChangeList & decomp, stk::mesh::Entity owner_element, const int destination) const
   {
-    stk::unit_test_util::simple_fields::ParticleVector & vec = m_particleManager.get_particle_vector(owner_element);
+    stk::unit_test_util::ParticleVector & vec = m_particleManager.get_particle_vector(owner_element);
     for (auto && particlePtr : vec) {
       set_particle_destination(decomp, particlePtr->spherical_element(), destination);
     }
@@ -94,10 +94,10 @@ private:
   StkParticleRebalance(const StkParticleRebalance&) = delete;
   StkParticleRebalance& operator=(const StkParticleRebalance&) = delete;
 
-  stk::unit_test_util::simple_fields::ParticleManager &m_particleManager;
+  stk::unit_test_util::ParticleManager &m_particleManager;
 };
 
-class RebalanceParticleMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class RebalanceParticleMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   RebalanceParticleMesh()
@@ -173,16 +173,17 @@ protected:
   {
     int numGlobalElements = get_bulk().parallel_size()*numLocalElements;
 
+    auto particleCountFieldData = m_particleCountField->data<stk::mesh::ReadWrite>();
     for (int elementId=1; elementId<=numGlobalElements; ++elementId) {
       stk::mesh::Entity element = get_bulk().get_entity(stk::mesh::EntityKey(stk::topology::ELEM_RANK,elementId));
       if (get_bulk().is_valid(element) && get_bulk().bucket(element).owned()) {
-        double* weight = stk::mesh::field_data(*m_particleCountField, element);
-        EXPECT_TRUE(nullptr != weight);
+        EXPECT_TRUE(m_particleCountField->defined_on(element));
+        auto weight = particleCountFieldData.entity_values(element);
         if (elementId == 1) {
-          *weight = static_cast<double>(numGlobalElements - 1);
+          weight() = static_cast<double>(numGlobalElements - 1);
         }
         else {
-          *weight = 1.0;
+          weight() = 1.0;
         }
       }
     }
@@ -190,9 +191,10 @@ protected:
 
   void update_vertex_weight(stk::mesh::Entity elem)
   {
-    double* weight = stk::mesh::field_data(*m_particleCountField, elem);
-    EXPECT_TRUE(nullptr != weight);
-    *weight = static_cast<double> (m_particleManager.count_particles_in_element(elem));
+    auto particleCountFieldData = m_particleCountField->data<stk::mesh::ReadWrite>();
+    EXPECT_TRUE(m_particleCountField->defined_on(elem));
+    auto weight = particleCountFieldData.entity_values(elem);
+    weight() = static_cast<double> (m_particleManager.count_particles_in_element(elem));
   }
 
   void add_particles_to_element(const std::vector<int> & particleIds, stk::mesh::Entity elem)
@@ -230,14 +232,15 @@ protected:
   double get_total_weight_for_these_elements(const stk::mesh::EntityVector & solidElements)
   {
     double totalWeightTheseElements = 0.0;
+    auto particleCountFieldData = m_particleCountField->data();
     for (const stk::mesh::Entity element : solidElements) {
-      double* weight = stk::mesh::field_data(*m_particleCountField, element);
-      totalWeightTheseElements += (*weight);
+      auto weight = particleCountFieldData.entity_values(element);
+      totalWeightTheseElements += (weight());
     }
     return totalWeightTheseElements;
   }
 
-  double get_total_element_weight_for_this_proc(const int numLocalElements)
+  double get_total_element_weight_for_this_proc(const int /*numLocalElements*/)
   {
     stk::mesh::EntityVector solidElements;
     stk::mesh::Selector solidSelector = (!(*m_particlePart)) & get_meta().locally_owned_part();
@@ -294,7 +297,7 @@ protected:
   }
 
 protected:
-  stk::unit_test_util::simple_fields::ParticleManager m_particleManager;
+  stk::unit_test_util::ParticleManager m_particleManager;
   stk::balance::DoubleFieldType * m_particleCountField;
   stk::mesh::Part * m_particlePart;
 };
@@ -362,7 +365,7 @@ protected:
 
 int get_num_local_elements_from_cmdline()
 {
-  return stk::unit_test_util::simple_fields::get_command_line_option<int>("-nLocal", 100);
+  return stk::unit_test_util::get_command_line_option<int>("-nLocal", 100);
 }
 
 TEST_F(RebalanceParticleMesh, UnevenParticles2ProcWithAura)

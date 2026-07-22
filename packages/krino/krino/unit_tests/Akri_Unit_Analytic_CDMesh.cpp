@@ -49,7 +49,6 @@ public:
     auto & vec_type = fixture.meta_data().spatial_dimension() == 2 ? FieldType::VECTOR_2D : FieldType::VECTOR_3D;
     coord_field = aux_meta.register_field("coordinates", vec_type, stk::topology::NODE_RANK, 1u, 1u, fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
-    cdfemSupport.add_edge_interpolation_field(coord_field);
 
     cdfemSupport.set_prolongation_model(INTERPOLATION);
   }
@@ -65,11 +64,16 @@ public:
     Block_Surface_Connectivity block_surface_info;
     phase_support.set_input_block_surface_connectivity(block_surface_info);
     phase_support.register_blocks_for_level_set(surfaceIdentifier, blocks);
-    std::vector<std::tuple<stk::mesh::PartVector, 
-      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
-    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
-    phase_support.decompose_blocks(ls_sets);
+    DecompositionPackage decomps;
+    decomps.add_levelset_decomposition(blocks, named_phases);
+    phase_support.decompose_blocks(decomps);
+  }
+
+  void setup_phase_support_on_block1()
+  {
+    AuxMetaData & aux_meta = AuxMetaData::get(fixture.meta_data());
+    auto & block1_part = aux_meta.get_part("block_1");
+    setup_phase_support({&block1_part});
   }
 
   stk::mesh::Part & declare_input_block(const std::string & name, const stk::topology topo)
@@ -81,30 +85,7 @@ public:
 
   void decompose_mesh(const InterfaceGeometry & interfaceGeometry)
   {
-    NodeToCapturedDomainsMap nodesToCapturedDomains;
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-    {
-      const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
-      nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
-          krino_mesh->get_active_part(),
-          cdfemSupport.get_snap_fields(),
-          interfaceGeometry,
-          cdfemSupport.get_global_ids_are_parallel_consistent(),
-          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
-          minIntPtWeightForEstimatingCutQuality,
-          cdfemSupport.get_max_edge_snap());
-    }
-    interfaceGeometry.prepare_to_decompose_elements(krino_mesh->stk_bulk(), nodesToCapturedDomains);
-
-    krino_mesh->generate_nonconformal_elements();
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-      krino_mesh->snap_nearby_intersections_to_nodes(interfaceGeometry, nodesToCapturedDomains);
-    krino_mesh->set_phase_of_uncut_elements(interfaceGeometry);
-    krino_mesh->triangulate(interfaceGeometry);
-    krino_mesh->decompose(interfaceGeometry);
-    krino_mesh->stash_field_data(-1);
-    krino_mesh->modify_mesh();
-    krino_mesh->prolongation();
+    krino_mesh->decompose_mesh(interfaceGeometry, -1);
   }
 
   void commit()
@@ -136,8 +117,7 @@ public:
     else
       cdfemSupport.set_cdfem_edge_degeneracy_handling(SNAP_TO_NODE);
 
-    auto & block1_part = aux_meta.get_part("block_1");
-    setup_phase_support({&block1_part});
+    setup_phase_support_on_block1();
 
     fixture.set_domain(domain, meshSize);
     fixture.populate_mesh();
@@ -179,6 +159,7 @@ class SphereDecompositionFixture : public AnalyticDecompositionFixture<MESH_FIXT
 public:
   SphereDecompositionFixture()
   {
+    this->setup_phase_support_on_block1();
     mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&mySphere}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
@@ -244,7 +225,7 @@ public:
       }};
     for (auto && facetVerts : facetsVerts)
       myCube.emplace_back_3d( cubeVerts[facetVerts[0]], cubeVerts[facetVerts[1]], cubeVerts[facetVerts[2]] );
-
+    this->setup_phase_support_on_block1();
     myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry({this->surfaceIdentifier}, {&myCube}, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:

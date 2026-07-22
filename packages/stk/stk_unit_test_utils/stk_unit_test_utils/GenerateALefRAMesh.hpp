@@ -34,6 +34,7 @@
 #ifndef GENERATE_ALEFRA_MESH_HPP
 #define GENERATE_ALEFRA_MESH_HPP
 
+#include <stk_util/stk_config.h>
 #include <string>
 
 namespace stk {
@@ -66,29 +67,6 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
                                                                       ElementOrdering elemOrdering,
                                                                       const std::string & fieldName,
                                                                       const double initValue);
-
-namespace simple_fields {
-
-void create_AA_mesh(stk::mesh::BulkData &bulk, ElementOrdering elemOrdering = INCREASING);
-void create_AB_mesh(stk::mesh::BulkData &bulk, ElementOrdering elemOrdering = INCREASING);
-
-stk::mesh::Part* create_AA_mesh_with_sideset(stk::mesh::BulkData &bulk, SidesetDirection direction,
-                                             ElementOrdering elemOrdering = INCREASING);
-stk::mesh::Part* create_AB_mesh_with_sideset(stk::mesh::BulkData &bulk, SidesetDirection direction,
-                                             ElementOrdering elemOrdering = INCREASING);
-
-stk::mesh::Part* create_AA_mesh_with_sideset_and_field(stk::mesh::BulkData &bulk, SidesetDirection direction,
-                                                       ElementOrdering elemOrdering, const std::string & fieldName);
-stk::mesh::Part* create_AB_mesh_with_sideset_and_field(stk::mesh::BulkData &bulk, SidesetDirection direction,
-                                                       ElementOrdering elemOrdering, const std::string & fieldName);
-
-stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh::BulkData &bulk,
-                                                                      SidesetDirection direction,
-                                                                      ElementOrdering elemOrdering,
-                                                                      const std::string & fieldName,
-                                                                      const double initValue);
-
-} // namespace simple_fields
 
 }
 }

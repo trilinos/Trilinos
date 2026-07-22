@@ -1,46 +1,11 @@
-/*
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //         Stratimikos: Thyra-based strategies for linear solvers
-//                Copyright (2006) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Stratimikos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-*/
-
 
 #ifndef THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
@@ -160,6 +125,7 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
   label_(""),
   filenameLHS_(""),
   filenameRHS_(""),
+  init_(false),
   counter_(0)
 {}
 
@@ -193,6 +159,7 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   approxFwdOpSrc_ = approxFwdOpSrc;
   supportSolveUse_ = supportSolveUse_in;
   convergenceTestFrequency_ = convergenceTestFrequency;
+  init_ = false;
   // Check if "Convergence Tolerance" is in the solver parameter list.  If
   // not, use the default from the solver.
   if ( !is_null(solverPL_) ) {
@@ -361,6 +328,7 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   isExternalPrec_ = false;
   approxFwdOpSrc_ = Teuchos::null;
   supportSolveUse_ = SUPPORT_SOLVE_UNSPECIFIED;
+  init_ = false;
 }
 
 
@@ -554,7 +522,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  Teuchos::Time totalTimer(""), timer("");
+  Teuchos::Time totalTimer("Stratimikos::BelosLinearOpWithSolve::totalTime");
   totalTimer.start(true);
 
   assertSolveSupports(*this, M_trans, solveCriteria);
@@ -685,7 +653,10 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
         );
     Teuchos::OSTab tab1(outUsed,1,"BELOS");
     tmpPL->set("Output Stream", outUsed);
-    iterativeSolver_->setParameters(tmpPL);
+    if (!init_) {
+      iterativeSolver_->setParameters(tmpPL);
+      init_ = !nonnull(solveCriteria);
+    }
     if (nonnull(generalSolveCriteriaBelosStatusTest)) {
       iterativeSolver_->setUserConvStatusTest(generalSolveCriteriaBelosStatusTest);
     }
@@ -706,54 +677,48 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   totalTimer.stop();
 
   SolveStatus<Scalar> solveStatus;
-
-  switch (belosSolveStatus) {
-    case Belos::Unconverged: {
-      solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
-      // Set achievedTol even if the solver did not converge.  This is
-      // helpful for things like nonlinear solvers, which might be
-      // able to use a partially converged result, and which would
-      // like to know the achieved convergence tolerance for use in
-      // computing bounds.  It's also helpful for estimating whether a
-      // small increase in the maximum iteration count might be
-      // helpful next time.
+  if (belosSolveStatus == Belos::Converged) {
+    solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
+    if (nonnull(generalSolveCriteriaBelosStatusTest)) {
+      // The user set a custom status test.  This means that we
+      // should ask the custom status test itself, rather than the
+      // Belos solver, what the final achieved convergence tolerance
+      // was.
+      const ArrayView<const ScalarMag> achievedTol =
+        generalSolveCriteriaBelosStatusTest->achievedTol();
+      solveStatus.achievedTol = Teuchos::ScalarTraits<ScalarMag>::zero();
+      for (Ordinal i = 0; i < achievedTol.size(); ++i) {
+        solveStatus.achievedTol = std::max(solveStatus.achievedTol, achievedTol[i]);
+      }
+    }
+    else {
       try {
         // Some solvers might not have implemented achievedTol().
         // The default implementation throws std::runtime_error.
         solveStatus.achievedTol = iterativeSolver_->achievedTol();
       } catch (std::runtime_error&) {
-        // Do nothing; use the default value of achievedTol.
+        // Use the default convergence tolerance.  This is a correct
+        // upper bound, since we did actually converge.
+        solveStatus.achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
       }
-      break;
     }
-    case Belos::Converged: {
-      solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
-      if (nonnull(generalSolveCriteriaBelosStatusTest)) {
-        // The user set a custom status test.  This means that we
-        // should ask the custom status test itself, rather than the
-        // Belos solver, what the final achieved convergence tolerance
-        // was.
-        const ArrayView<const ScalarMag> achievedTol =
-          generalSolveCriteriaBelosStatusTest->achievedTol();
-        solveStatus.achievedTol = Teuchos::ScalarTraits<ScalarMag>::zero();
-        for (Ordinal i = 0; i < achievedTol.size(); ++i) {
-          solveStatus.achievedTol = std::max(solveStatus.achievedTol, achievedTol[i]);
-        }
-      }
-      else {
-        try {
-          // Some solvers might not have implemented achievedTol().
-          // The default implementation throws std::runtime_error.
-          solveStatus.achievedTol = iterativeSolver_->achievedTol();
-        } catch (std::runtime_error&) {
-          // Use the default convergence tolerance.  This is a correct
-          // upper bound, since we did actually converge.
-          solveStatus.achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
-        }
-      }
-      break;
+  }
+  else {
+    solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
+    // Set achievedTol even if the solver did not converge.  This is
+    // helpful for things like nonlinear solvers, which might be
+    // able to use a partially converged result, and which would
+    // like to know the achieved convergence tolerance for use in
+    // computing bounds.  It's also helpful for estimating whether a
+    // small increase in the maximum iteration count might be
+    // helpful next time.
+    try {
+      // Some solvers might not have implemented achievedTol().
+      // The default implementation throws std::runtime_error.
+      solveStatus.achievedTol = iterativeSolver_->achievedTol();
+    } catch (std::runtime_error&) {
+      // Do nothing; use the default value of achievedTol.
     }
-    TEUCHOS_SWITCH_DEFAULT_DEBUG_ASSERT();
   }
 
   std::ostringstream ossmessage;

@@ -59,7 +59,7 @@ class PatchObjective
 
   protected:
     // for derived class additional work
-    virtual void set_active_patch_d(ActiveVertData& data) {}
+    virtual void set_active_patch_d(ActiveVertData& /*data*/) {}
 
     // get the data for the patch under the given parameterization,
     // setting the current vert position to the given coordinates

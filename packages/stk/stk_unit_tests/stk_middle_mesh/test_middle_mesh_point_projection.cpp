@@ -34,7 +34,7 @@ class MiddleMeshPointProjectionTester
 
   private:
     void test_coordinate_interpolation(std::shared_ptr<mesh::Mesh> meshIn, std::shared_ptr<XiCoordinates> xiCoords,
-                                       std::shared_ptr<mesh::Mesh> inputMesh, mesh::FieldPtr<utils::Point> xiCoordsOnInputMeshPtr,
+                                       std::shared_ptr<mesh::Mesh> /*inputMesh*/, mesh::FieldPtr<utils::Point> xiCoordsOnInputMeshPtr,
                                        mesh::FieldPtr<mesh::MeshEntityPtr> meshInToInputMeshPtr)
     {
       auto& xiCoordsOnInputMesh = *xiCoordsOnInputMeshPtr;
@@ -79,7 +79,7 @@ class XiCoordinatesForTest : public XiCoordinates
         throw std::runtime_error("only triangles and quads supported");
     }
 
-    std::pair<double, double> get_xi_coord_range(mesh::MeshEntityType type) override { return std::make_pair(0, 2); }
+    std::pair<double, double> get_xi_coord_range(mesh::MeshEntityType /*type*/) override { return std::make_pair(0, 2); }
 
   private:
     std::vector<utils::Point> m_triangleXiCoords = {utils::Point(0.1, 0.2), utils::Point(1.5, 0.3)};

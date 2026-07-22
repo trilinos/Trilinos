@@ -62,7 +62,7 @@ namespace {
 using stk::unit_test_util::build_mesh;
 using stk::unit_test_util::build_mesh_no_simple_fields;
 
-void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::string & filename)
+void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::string & /*filename*/)
 {
   if(bulk.parallel_size() == 1) {
     stk::mesh::MetaData& meta = bulk.mesh_meta_data();
@@ -113,11 +113,12 @@ void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::
                                        1,1,1,
                                        0,1,1};
 
-    for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
-    {
-      double * nodalCoords = stk::mesh::field_data(coordsField, nodes[nodeIndex]);
-      for(unsigned coordIndex=0; coordIndex < spatialDim; coordIndex++)
-         nodalCoords[coordIndex] = coordinates[nodeIndex*spatialDim+coordIndex];
+    auto coordData = coordsField.data<stk::mesh::ReadWrite>();
+    for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++) {
+      auto nodalCoords = coordData.entity_values(nodes[nodeIndex]);
+      for(stk::mesh::ComponentIdx coordIndex(0); coordIndex < static_cast<int>(spatialDim); ++coordIndex){
+        nodalCoords(coordIndex) = coordinates[nodeIndex*spatialDim+coordIndex];
+      }
     }
 
     stk::mesh::EntityVector elements;

@@ -44,10 +44,10 @@
 
     protected:
 
-      virtual bool check_convergence() { return true; }
+      virtual bool check_convergence() override { return true; }
       virtual void get_step();
-      virtual double run_one_iteration();
-      virtual int get_num_stages() { return 1; }
+      virtual double run_one_iteration() override;
+      virtual int get_num_stages() override { return 1; }
       int find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, stk::mesh::FieldBase *coord_field_orig);
       void get_wall_distances();
 

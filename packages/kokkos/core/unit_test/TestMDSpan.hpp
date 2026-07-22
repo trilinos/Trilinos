@@ -1,23 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_UNITTEST_MDSPAN_HPP
 #define KOKKOS_UNITTEST_MDSPAN_HPP
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <gtest/gtest.h>
 
 #ifdef KOKKOS_ENABLE_IMPL_MDSPAN
@@ -35,13 +27,19 @@ void test_mdspan_minimal_functional() {
   Kokkos::parallel_reduce(
       "CheckMinimalMDSpan", Kokkos::RangePolicy<TEST_EXECSPACE>(0, N),
       KOKKOS_LAMBDA(int i, int& err) {
+#if !defined(KOKKOS_ENABLE_OPENACC)
         Kokkos::mdspan<int, Kokkos::dextents<int, 1>> b_mds(a.data(), N);
-#ifdef KOKKOS_ENABLE_CXX23
+#endif
+#if !defined(KOKKOS_ENABLE_CXX20)
         if (a_mds[i] != i) err++;
+#if !defined(KOKKOS_ENABLE_OPENACC)
         if (b_mds[i] != i) err++;
+#endif
 #else
         if (a_mds(i) != i) err++;
+#if !defined(KOKKOS_ENABLE_OPENACC)
         if (b_mds(i) != i) err++;
+#endif
 #endif
       },
       errors);

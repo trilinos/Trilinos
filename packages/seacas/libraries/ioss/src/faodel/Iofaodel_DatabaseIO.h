@@ -126,6 +126,8 @@ namespace Iofaodel {
      */
     void get_step_times_nl() override;
 
+    std::vector<double> get_db_step_times_nl() override;
+
     void get_edgeblocks();
     void get_elemblocks();
     void get_faceblocks();

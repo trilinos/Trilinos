@@ -48,13 +48,12 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 //-BEGIN    
-TEST(StkMeshHowTo, UseStkIO)
+TEST(StkMeshHowTo, UseStkIO_externalFile)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   if(stk::parallel_machine_size(communicator) == 1)
   {
     std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
-    bulkPtr->mesh_meta_data().use_simple_fields();
 
     stk::io::StkMeshIoBroker meshReader;
     meshReader.set_bulk_data(*bulkPtr);

@@ -36,42 +36,40 @@
 
 #include "Kokkos_Core.hpp"
 #include "stk_util/stk_kokkos_macros.h"
-
-#if defined(STK_DEBUG_FIELD_SYNC) && !defined(STK_USE_DEVICE_MESH)
-static_assert(false, "The STK field sync debugger does nothing unless you also have enabled the DeviceMesh/DeviceField."
-                     " To enable these, pass -DSTK_USE_DEVICE_MESH on the configure line.");
-#endif
+#include <stk_util/ngp/NgpSpaces.hpp>
 
 namespace stk {
 namespace mesh {
 
-class HostMesh;
-class DeviceMesh;
-
-class StkFieldSyncDebugger;
-class EmptyStkFieldSyncDebugger;
-template <typename T> class NgpFieldSyncDebugger;
-template <typename T> class EmptyNgpFieldSyncDebugger;
-
-#ifdef STK_DEBUG_FIELD_SYNC
-  using DefaultStkFieldSyncDebugger = StkFieldSyncDebugger;
-  template <typename T> using DefaultNgpFieldSyncDebugger = NgpFieldSyncDebugger<T>;
-#else
-  using DefaultStkFieldSyncDebugger = EmptyStkFieldSyncDebugger;
-  template <typename T> using DefaultNgpFieldSyncDebugger = EmptyNgpFieldSyncDebugger<T>;
-#endif
-
-template<typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger> class HostField;
-template<typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger> class DeviceField;
+template<typename NgpMemSpace> class HostMeshT;
+template<typename NgpMemSpace> class DeviceMeshT;
 
 #ifdef STK_USE_DEVICE_MESH
-  using NgpMesh = stk::mesh::DeviceMesh;
-  template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-    using NgpField = stk::mesh::DeviceField<T, NgpDebugger>;
+  using NgpMeshDefaultMemSpace = stk::ngp::MemSpace;
 #else
-  using NgpMesh = stk::mesh::HostMesh;
-  template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-    using NgpField = stk::mesh::HostField<T, NgpDebugger>;
+  using NgpMeshDefaultMemSpace = stk::ngp::HostMemSpace;
+#endif
+
+template<typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+class HostField;
+template<typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+class DeviceField;
+
+#ifdef STK_USE_DEVICE_MESH
+  template<typename NgpMemSpace>
+    using NgpMeshT = stk::mesh::DeviceMeshT<NgpMemSpace>;
+  using NgpMesh = NgpMeshT<NgpMeshDefaultMemSpace>;
+
+  template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+  using NgpField = stk::mesh::DeviceField<T, NgpMemSpace>;
+
+#else
+  template<typename NgpMemSpace>
+    using NgpMeshT = stk::mesh::HostMeshT<NgpMemSpace>;
+  using NgpMesh = NgpMeshT<NgpMeshDefaultMemSpace>;
+
+  template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+  using NgpField = stk::mesh::HostField<T, NgpMemSpace>;
 #endif
 
 }

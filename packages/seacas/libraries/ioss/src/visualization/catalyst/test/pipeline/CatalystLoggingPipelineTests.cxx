@@ -6,8 +6,8 @@
 
 #include "CatalystTestFixture.h"
 #include "Ioss_PropertyManager.h"
-#include "catch.hpp"
 #include <Iovs_CatalystLogging.h>
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE_METHOD(CatalystTestFixture, "CatalystLoggingDefault", "[catalyst logging]")
 {

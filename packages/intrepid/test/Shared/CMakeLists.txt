@@ -1,6 +1,0 @@
-ADD_SUBDIRECTORY(ArrayTools)
-ADD_SUBDIRECTORY(FieldContainer)
-ADD_SUBDIRECTORY(IntrepidBurkardtRules)
-ADD_SUBDIRECTORY(IntrepidPolylib)
-ADD_SUBDIRECTORY(RealSpaceTools)
-ADD_SUBDIRECTORY(PointTools)

@@ -1,3 +1,11 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef TOPOPT_FILTERED_COMPLIANCE_ROBJ_H
 #define TOPOPT_FILTERED_COMPLIANCE_ROBJ_H
@@ -114,20 +122,12 @@ public:
       // Reject:   flag = false, iter > -1
       // Accept:   flag = true,  iter > -1
       if (flag) {
-        if (iter > -1) {
-          update_accept(z,iter);
-        }
-        else {
-          update_temp(z,iter);
-        }
+        if (iter > -1) update_accept(z,iter);
+        else           update_temp(z,iter);
       }
       else {
-        if (iter > -1) {
-          update_revert(z,iter);
-        }
-        else {
-          update_trial(z,iter);
-        }
+        if (iter > -1) update_revert(z,iter);
+        else           update_trial(z,iter);
       }
     }
     comp_->update(*Fz_,flag,iter);

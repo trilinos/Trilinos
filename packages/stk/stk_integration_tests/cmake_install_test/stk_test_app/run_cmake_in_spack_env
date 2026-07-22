@@ -2,14 +2,21 @@ spack env status
 
 spack find -v trilinos
 
-TEST_STK_APP_SOURCE_DIR=$(pwd)
+if [ -z ${STK_SOURCE_DIR+x} ]; then
+  echo "STK_SOURCE_DIR is unset";
+  return 1;
+else
+  echo "STK_SOURCE_DIR is set to '$STK_SOURCE_DIR'";
+fi
 
-mkdir -p build
-
-cd build
+stk_source_dir=${STK_SOURCE_DIR}
 
 cmake \
 -DCMAKE_BUILD_TYPE=${BUILD_TYPE:-RELEASE} \
 -DCMAKE_CXX_COMPILER=mpicxx \
-${TEST_STK_APP_SOURCE_DIR}
+-DSTK_ENABLE_ALL:BOOL=ON \
+-DSTK_ENABLE_MPI:BOOL=ON \
+-DSTK_ENABLE_TESTS:BOOL=ON \
+-DSTK_ENABLE_STKMiddle_mesh:BOOL=OFF \
+${stk_source_dir}
 

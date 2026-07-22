@@ -89,6 +89,7 @@ public:
   void set_mesh_structure_type(BoundingBoxMeshStructureType type) { myMeshStructureType = type; }
   bool has_flat_boundaries() const { return CUBIC_BOUNDING_BOX_MESH == myMeshStructureType || FLAT_WALLED_BCC_BOUNDING_BOX_MESH == myMeshStructureType || FLAT_WALLED_TRIANGULAR_LATTICE_BOUNDING_BOX_MESH == myMeshStructureType; }
 private:
+  static BoundingBoxMeshStructureType default_structure_type_for_topology(const stk::topology elementTopology);
   void declare_domain_side_parts(const stk::mesh::Part & blockPart);
   void require_has_flat_boundaries() const;
   void populate_2D_triangular_lattice_based_mesh();

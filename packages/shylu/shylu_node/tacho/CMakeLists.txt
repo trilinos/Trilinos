@@ -7,6 +7,12 @@ IF (Kokkos_ENABLE_CUDA)
   ENDIF()
 ENDIF()
 
+IF (Kokkos_ENABLE_HIP)
+  IF (NOT (TPL_ENABLE_ROCBLAS AND TPL_ENABLE_ROCSPARSE AND TPL_ENABLE_ROCSOLVER))
+    MESSAGE(FATAL_ERROR "Tacho can not be build with HIP without enabling ROCBLAS, ROCSPARSE, and ROCSOLVER TPLs. Please disable Tacho, or enable these three TPLs")
+  ENDIF()
+ENDIF()
+
 IF (Kokkos_ENABLE_THREADS)
   IF (NOT Kokkos_ENABLE_OPENMP)
     MESSAGE(FATAL_ERROR "Tacho can not be build with Pthreads as the Kokkos Host Backend.")

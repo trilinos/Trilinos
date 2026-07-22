@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #include "Tacho_ExampleExternalInterface.hpp"
 #include "Tacho_CommandLineParser.hpp"
@@ -58,21 +50,25 @@ void testTachoSolver(int nSolvers, int numRows, int *rowBegin, int *columns, dou
   tachoParams[tacho::SOLUTION_METHOD] = solutionMethod;
 
 #if defined(KOKKOS_ENABLE_CUDA)
+#ifdef TACHO_DEPRECATED_PARAMETERS
   tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = 32;
   tachoParams[tacho::TASKING_OPTION_BLOCKSIZE] = 64;
   tachoParams[tacho::TASKING_OPTION_PANELSIZE] = 32;
 
   tachoParams[tacho::LEVELSET_OPTION_SCHEDULING] = 1;
+#endif
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_LEVEL_CUT] = 0;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_FACTOR_THRES] = 64;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_SOLVE_THRES] = 128;
   tachoParams[tacho::LEVELSET_OPTION_NSTREAMS] = 8;
 #else
+#ifdef TACHO_DEPRECATED_PARAMETERS
   tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = std::max(tacho::host_space().concurrency() / 2, 1);
   tachoParams[tacho::TASKING_OPTION_BLOCKSIZE] = 256;
   tachoParams[tacho::TASKING_OPTION_PANELSIZE] = 128;
 
   tachoParams[tacho::LEVELSET_OPTION_SCHEDULING] = 0;
+#endif
   // the following options are not used and set dummy values
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_LEVEL_CUT] = 0;
   tachoParams[tacho::LEVELSET_OPTION_DEVICE_FACTOR_THRES] = 0;

@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_GESV_HPP__
-#define __KOKKOSBATCHED_GESV_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_GESV_HPP
+#define KOKKOSBATCHED_GESV_HPP
 
 /// \author Kim Liegeois (knliege@sandia.gov)
 
@@ -64,15 +51,12 @@ struct Gesv {
 template <typename ArgAlgo>
 struct SerialGesv {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A,
-                                           const XVectorType X,
-                                           const YVectorType Y,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType tmp);
 
   template <typename MatrixType, typename VectorType>
-  [[deprecated]] KOKKOS_INLINE_FUNCTION static int invoke(
-      const MatrixType A, const VectorType X, const VectorType Y,
-      const MatrixType tmp) {
+  [[deprecated]] KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const VectorType X, const VectorType Y,
+                                                          const MatrixType tmp) {
     return invoke(A, X, Y, tmp);
   }
 };
@@ -109,9 +93,7 @@ struct SerialGesv {
 template <typename MemberType, typename ArgAlgo>
 struct TeamGesv {
   template <typename MatrixType, typename VectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const MatrixType A,
-                                           const VectorType X,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y);
 };
 
@@ -148,9 +130,7 @@ struct TeamGesv {
 template <typename MemberType, typename ArgAlgo>
 struct TeamVectorGesv {
   template <typename MatrixType, typename VectorType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const MatrixType A,
-                                           const VectorType X,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y);
 };
 

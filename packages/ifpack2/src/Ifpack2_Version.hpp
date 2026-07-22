@@ -12,10 +12,8 @@
 
 namespace Ifpack2 {
 
-inline
-std::string Version() {
+inline std::string Version() {
   return "Ifpack2 VOTD";
 }
 
-}//namespace Ifpack2
-
+}  // namespace Ifpack2

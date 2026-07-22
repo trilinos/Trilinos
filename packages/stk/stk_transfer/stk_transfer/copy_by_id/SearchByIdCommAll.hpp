@@ -46,10 +46,10 @@ class SearchByIdCommAll : public SearchById {
 public:
   SearchByIdCommAll() {}
   virtual ~SearchByIdCommAll() {}
-  virtual void intialize(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb) {}
+  virtual void intialize(const TransferCopyByIdMeshAdapter & /*mesha*/, const TransferCopyByIdMeshAdapter & /*meshb*/) override {}
   virtual void do_search(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb,
-                         KeyToTargetProcessor & key_to_target_processor);
-  virtual const MeshIDSet & get_remote_keys() const { return m_remote_keys; }
+                         KeyToTargetProcessor & key_to_target_processor) override;
+  virtual const MeshIDSet & get_remote_keys() const override { return m_remote_keys; }
 
 private:
   MeshIDSet m_remote_keys;

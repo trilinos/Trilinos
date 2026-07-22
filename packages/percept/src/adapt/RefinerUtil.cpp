@@ -25,7 +25,6 @@
 
 namespace percept {
 
-  using namespace std;
   using namespace percept;
 
 #define EXTRA_PRINT_UR_GETBLOCKS 0
@@ -497,7 +496,7 @@ namespace percept {
 
 #define DEBUG_CORRECT_BLOCKS_1 0
 
-  BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks, const std::string& geomFile)
+  BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::PerceptMesh& eMesh, BlockNamesType& blocks, const std::string& /*geomFile*/)
   {
     if (blocks[stk::topology::ELEMENT_RANK].size() == 0)
       return blocks;
@@ -758,7 +757,7 @@ namespace percept {
       }
   }
 
-  void RefinerUtil::find_or_set_parent_child_relation(PerceptMesh& eMesh, stk::mesh::EntityRank rank, stk::mesh::Entity& element, stk::mesh::Entity& parent_elem, size_t& i_ft, std::vector<stk::mesh::Entity>& ft_new_elements)
+  void RefinerUtil::find_or_set_parent_child_relation(PerceptMesh& eMesh, stk::mesh::EntityRank /*rank*/, stk::mesh::Entity& element, stk::mesh::Entity& parent_elem, size_t& i_ft, std::vector<stk::mesh::Entity>& ft_new_elements)
   {
     const stk::mesh::EntityRank FAMILY_TREE_RANK = static_cast<stk::mesh::EntityRank>(stk::topology::ELEMENT_RANK + 1u);
 
@@ -881,7 +880,7 @@ namespace percept {
     eMesh.get_bulk_data()->modification_end();
   }
 
-  void RefinerUtil::save_node_registry(PerceptMesh& eMesh, NodeRegistry& nodeRegistry, const std::string& msg, bool doComm)
+  void RefinerUtil::save_node_registry(PerceptMesh& eMesh, NodeRegistry& nodeRegistry, const std::string& /*msg*/, bool doComm)
   {
     if (eMesh.m_node_registry_field == 0)
       return;
@@ -971,7 +970,7 @@ namespace percept {
       }
   }
 
-  void RefinerUtil::rebuild_node_registry(PerceptMesh& eMesh, NodeRegistry& nodeRegistry, bool initNR, PerceptMesh* eMeshNR, NodeRegistry *compareNR, bool skipEmpty)
+  void RefinerUtil::rebuild_node_registry(PerceptMesh& eMesh, NodeRegistry& nodeRegistry, bool initNR, PerceptMesh* /*eMeshNR*/, NodeRegistry */*compareNR*/, bool /*skipEmpty*/)
   {
     if (eMesh.m_node_registry_field == 0)
       return;

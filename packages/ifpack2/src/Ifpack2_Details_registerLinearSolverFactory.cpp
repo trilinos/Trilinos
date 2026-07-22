@@ -24,21 +24,17 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
 // call it LCL_CALL and not LCL_INST.  We are just using the fix for
 // Bug 6380 to invoke this class method over the set of enabled
 // template parameters.
-#define LCL_CALL( SC, LO, GO, NT ) \
-  ::Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT>::registerLinearSolverFactory ();
+#define LCL_CALL(SC, LO, GO, NT) \
+  ::Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT>::registerLinearSolverFactory();
 
 namespace Ifpack2 {
 namespace Details {
 
-void
-registerLinearSolverFactory ()
-{
+void registerLinearSolverFactory() {
   // Fill in the body of the function with all the type-specific
   // run-time registration functions.
-  IFPACK2_INSTANTIATE_SLGN( LCL_CALL )
+  IFPACK2_INSTANTIATE_SLGN(LCL_CALL)
 }
 
-} // namespace Details
-} // namespace Ifpack2
-
-
+}  // namespace Details
+}  // namespace Ifpack2

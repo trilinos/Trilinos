@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //        Piro: Strategy package for embedded analysis capabilitites
-//                  Copyright (2010) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2010 NTESS and the Piro contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <cmath>
@@ -290,9 +257,28 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
   Scalar nrm = norm_2(*v);
   *out << "Initial Velocity = " << nrm << std::endl;
 
+  // Static-equilibrium start: solve the static problem K x = f (no inertia)
+  // and begin the transient from there with v = a = 0. Injecting
+  // fdt2 = tdt = 0 makes the decorator hand the model xdot = xdotdot = 0
+  // with alpha = omega = 0, beta = 1 -- a pure static solve. This is the
+  // physically appropriate start for problems (e.g. gravity-loaded soil)
+  // that have been in equilibrium since long before t = 0: it produces no
+  // spurious initial transient for the undamped Newmark scheme to carry.
+  if (static_init_solve_ == true) {
+    assign(x_pred_a.ptr(), *x);
+    assign(x_pred_v.ptr(), *x);
+    model->injectData(x, x_pred_a, 0.0, x_pred_v, 0.0, t);
+
+    noxSolver->evalModel(nox_inargs, nox_outargs);
+
+    assign(x.ptr(), *gx_out);
+    Thyra::put_scalar(0.0, v.ptr());
+    Thyra::put_scalar(0.0, a.ptr());
+    *out << "Static-equilibrium init solve: ||x_static|| = " << norm_2(*x) << std::endl;
+  }
    //calculate intial acceleration using small time step (1.0e-3*delta_t)
    // AGS: Check this for inital velocity
-  if (calc_init_accel_ == true) {
+  else if (calc_init_accel_ == true) {
     Scalar pert= 1.0e6 * 4.0 / (delta_t * delta_t);
     assign(x_pred_a.ptr(), *x);
     assign(x_pred_v.ptr(), *x);
@@ -385,9 +371,10 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
      // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*soln, t);
 
-     if (g_out != Teuchos::null)
-       *out << "Responses at time step(time) = " << timeStep << "("<<t<<")\n" << g_out << std::endl;
-
+     if (g_out != Teuchos::null) {
+       Scalar gnorm = norm_2(*g_out);
+       *out << "Responses norm at time step(time) = " << timeStep << "("<<t<<")\n" << gnorm << std::endl;
+     }
    }
 
 }

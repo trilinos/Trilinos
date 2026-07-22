@@ -22,8 +22,6 @@
 
 #include <Teuchos_RCP.hpp>
 
-using namespace Intrepid;
-
   namespace percept
   {
 
@@ -95,18 +93,18 @@ using namespace Intrepid;
         return output;
       }
 
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time = 0.0)=0;
+      virtual void operator()(MDArray& domain, MDArray& codomain, double time = 0.0) override = 0;
       //using GenericFunction::operator();
 
       // FIXME make protected
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& /*in*/, MDArray& /*out*/, const stk::mesh::Entity /*element*/, const MDArray& /*parametric_coords*/, double /*time_value_optional*/=0.0)
       {
         EXCEPTWATCH;
         throw std::runtime_error("Not implemented");
       }
 
       // FIXME make protected
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& /*in*/, MDArray& /*out*/, const stk::mesh::Bucket& /*bucket*/, const MDArray& /*parametric_coords*/, double /*time_value_optional*/=0.0)
       {
         EXCEPTWATCH;
         throw std::runtime_error("Not implemented");
@@ -166,13 +164,13 @@ using namespace Intrepid;
        *
        */
 
-      virtual Teuchos::RCP<Function > derivative(MDArrayString& deriv_spec)
+      virtual Teuchos::RCP<Function > derivative(MDArrayString& /*deriv_spec*/)
       //virtual Function& derivative(MDArrayString& deriv_spec)
       {
         throw std::runtime_error("not implemented");
       }
 
-      virtual Teuchos::RCP<Function > gradient(int spatialDim=3)
+      virtual Teuchos::RCP<Function > gradient(int /*spatialDim*/=3)
       {
         throw std::runtime_error("not implemented");
       }
@@ -210,7 +208,7 @@ using namespace Intrepid;
 
     protected:
 
-      static int last_dimension(MDArray& arr) { return arr.dimension(arr.rank()-1); }
+      static int last_dimension(MDArray& arr) { return arr.extent_int(arr.rank()-1); }
       static NameToFunctionMap& getNameToFunctionMap();
 
       std::string m_name;

@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//                    Teuchos: Common Tools Package
+//
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 // MPI-only (no Teuchos::Comm) version of waterman_teuchoscomm.cpp
 // This version runs correctly on waterman.
 #include <iostream>

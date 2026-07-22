@@ -5,12 +5,13 @@
 # FILE TO FORCE THE RECONFIGURE ON OTHER PEOPLE'S BUILDS.
 
 # Consider this file touched!
-FILE(GLOB xmlFiles RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.xml)
+FILE(
+  GLOB xmlFiles
+  RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+  *.xml
+)
 
 # disabling a test
 LIST(REMOVE_ITEM xmlFiles default_e2d.xml)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_default_EasyParameterListInterpreter_cp
-  SOURCE_FILES ${xmlFiles}
-  )
-
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ParameterList_default_EasyParameterListInterpreter_cp SOURCE_FILES ${xmlFiles})

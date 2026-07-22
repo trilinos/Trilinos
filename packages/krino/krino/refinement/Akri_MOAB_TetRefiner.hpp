@@ -70,6 +70,33 @@
 #include <stk_math/StkVector.hpp>
 
 namespace krino {
+
+class ElementMetricForTetRefinement
+{
+public:
+  virtual ~ElementMetricForTetRefinement() {}
+  virtual double element_quality(const int *indices, const double *coords[10]) const = 0;
+  virtual bool is_higher_quality_better() const = 0;
+};
+
+class MeanRatioMetricForTetRefinement : public ElementMetricForTetRefinement
+{
+public:
+  MeanRatioMetricForTetRefinement() = default;
+  virtual ~MeanRatioMetricForTetRefinement() {}
+  virtual double element_quality(const int *indices, const double *coords[10]) const override;
+  virtual bool is_higher_quality_better() const override { return true; }
+};
+
+class LengthRatioMetricForTetRefinement : public ElementMetricForTetRefinement
+{
+public:
+  LengthRatioMetricForTetRefinement() = default;
+  virtual ~LengthRatioMetricForTetRefinement() {}
+  virtual double element_quality(const int *indices, const double *coords[10]) const override;
+  virtual bool is_higher_quality_better() const override { return false; }
+};
+
 namespace moab {
 
 typedef std::array<int, 4> TetTupleInt;
@@ -89,18 +116,16 @@ public:
   virtual ~SimplexTemplateRefiner() {}
 
 public:
-  static std::vector<TetDescription> refinement_child_nodes_and_sides_tet4(const unsigned encodedEdgesToRefine, const std::array<stk::math::Vector3d,4> & elementNodeCoords, const std::array<int,4> & elementNodeScore, const bool needSides);
-  static std::vector<TetTupleInt> refinement_child_nodes_tet4(const unsigned encodedEdgesToRefine, const std::array<stk::math::Vector3d,4> & elementNodeCoords, const std::array<int,4> & elementNodeScore);
+  static std::vector<TetDescription> refinement_child_nodes_and_sides_tet4(const ElementMetricForTetRefinement & qualityMetric, const unsigned encodedEdgesToRefine, const std::array<stk::math::Vector3d,10> & elementNodeCoords, const std::array<int,4> & elementNodeScore, const bool needSides);
+  static std::vector<TetTupleInt> refinement_child_nodes_tet4(const ElementMetricForTetRefinement & qualityMetric, const unsigned encodedEdgesToRefine, const std::array<stk::math::Vector3d,10> & elementNodeCoords, const std::array<int,4> & elementNodeScore);
   static unsigned determine_permutation_tet4(const unsigned caseId);
   static unsigned determine_permuted_case_id_tet4(const unsigned caseId);
   static unsigned num_new_child_elements_tet4(const int caseId);
 
 private:
   static int template_index[64][2];
-  static int permutations_from_index[24][14];
+  static int permutations_from_index[24][10];
   static int templates[];
-
-  static int best_tets( const int* alternates, const double* coords[14], int, int );
 };
 
 } // namespace moab

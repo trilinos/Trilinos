@@ -1,43 +1,10 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //        Piro: Strategy package for embedded analysis capabilitites
-//                  Copyright (2010) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2010 NTESS and the Piro contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #include <iostream>
@@ -86,18 +53,24 @@ int main(int argc, char *argv[]) {
 
     Piro::SolverFactory solverFactory;
 
-    int numTests = 3;
+    int numTests = 5;
 
     for (int iTest = 0; iTest < numTests; iTest++) {
         if (doAll) {
             switch (iTest) {
                 case 0:
-                    inputFile = "input_Solve_NOX_ForwardSensitivities_Thyra.xml";
+                    inputFile = "input_Solve_NOX_ForwardSensitivities_MatrixFree_Thyra.xml";
                     break;
                 case 1:
-                    inputFile = "input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml";
+                    inputFile = "input_Solve_NOX_ForwardSensitivities_Thyra.xml";
                     break;
                 case 2:
+                    inputFile = "input_Solve_LOCA_Thyra.xml";
+                    break;
+                case 3:
+                    inputFile = "input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml";
+                    break;
+                case 4:
                     inputFile = "input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml";
                     break;
                 default:
@@ -122,14 +95,16 @@ int main(int argc, char *argv[]) {
                 rcp(new Teuchos::ParameterList("Piro Parameters"));
             Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
+            bool isLocaTest = (iTest==2);
+            int numParams = (iTest==2) ?  1:  2;   //only one parameter for loca
             std::vector<int> p_indices{0};
-            const RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm));
+            const RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm,numParams));
             const RCP<Thyra::ModelEvaluator<double>> model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
             bool adjoint = (piroParams->get("Sensitivity Method", "Forward") == "Adjoint");
             bool explicitAdjointME = adjoint && piroParams->get("Explicit Adjoint Model Evaluator", false);
             RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
             if(explicitAdjointME) {
-              const RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,true));
+              const RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,numParams,true));
               adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
             }
 
@@ -169,7 +144,7 @@ int main(int argc, char *argv[]) {
 
             ::Thyra::seed_randomize<double>(seed);
             directions.resize(np);
-            int n_directions = 2;
+            int n_directions = numParams;
             for (int l = 0; l < np; l++) {
                 auto p_space = piro->getNominalValues().get_p(l)->space();
                 directions[l] = Thyra::createMembers(p_space, n_directions);
@@ -197,33 +172,14 @@ int main(int argc, char *argv[]) {
                 << "\n-----------------------------------------------------------------"
                 << std::setprecision(9) << std::endl;
 
-            if (Teuchos::is_null(p1)) {
-              out << "\nError: parameters pointer is null" << std::endl;
-              status += 33;
-            } else {
-                out << "\nParameters! {1,1}\n"
-                    << *p1 << std::endl;
-                Thyra::DetachedVectorView<double> p_view(p1->clone_v());
-                double p_exact[2] = {1, 1};
-
-                double l2_diff = std::sqrt(std::pow(p_view(0) - p_exact[0], 2) + std::pow(p_view(1) - p_exact[1], 2));
-                if (l2_diff > tol) {
-                    status += 100;
-                    out << "\nPiro_AnalysisDrvier:  Expected parameter values are: {"
-                        << p_exact[0] << ", " << p_exact[1] << "}, but the values are: {"
-                        << p_view(0) << ", " << p_view(1) << "}.\n"
-                        << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
-                }
-            }
             if (Teuchos::is_null(g1)) {
               out << "\nError: Responses pointer is null" << std::endl;
               status += 33;
             } else {
-                out << "\nResponses! {8.0}\n"
-                    << *g1 << std::endl;
                 Thyra::DetachedVectorView<double> g_view(g1);
                 double g_computed = g_view(0);
-                double g_exact = 8.0;
+                double g_exact = isLocaTest ? 29.0 : 8.0;
+                out << "\nResponses! {" << g_exact << "}\n"  << g_computed << std::endl;
 
                 double diff = std::abs(g_exact - g_computed);
                 if (diff > tol) {
@@ -238,10 +194,16 @@ int main(int argc, char *argv[]) {
               out << "\nError: solution pointer is null" << std::endl;
               status += 33;
             } else {
-                out << "\nSolution! {1,2,3,4}\n"
-                    << *gx << std::endl;
+                
                 Thyra::DetachedVectorView<double> x_view(gx);
-                double x_exact[4] = {1, 2, 3, 4};
+
+                double x_exact[4] = {1.0, 2.0, 3.0, 4.0};
+                if(isLocaTest) {
+                  out << "\nSolution! {2,6,7,8}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
+                  x_exact[0] = 2.0; x_exact[1] = 6.0; x_exact[2] = 7.0; x_exact[3] = 8.0; 
+                } else {
+                  out << "\nSolution! {1,2,3,4}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
+                }
 
                 double l2_diff = std::sqrt(std::pow(x_view(0) - x_exact[0], 2) +
                                            std::pow(x_view(1) - x_exact[1], 2) +
@@ -250,19 +212,32 @@ int main(int argc, char *argv[]) {
                 if (l2_diff > tol) {
                     status += 100;
                     out << "\nPiro_AnalysisDrvier:  Expected solution vector is : {"
-                        << x_exact[0] << ", " << x_exact[1] << "}, but computed solution vector is: {"
-                        << x_view(0) << ", " << x_view(1) << "}.\n"
+                        << x_exact[0] << ", " << x_exact[1] << ", " << x_exact[2] << ", " << x_exact[3] << "}, but computed solution vector is: {"
+                        << x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << "}.\n"
                         << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
                 }
             }
             if (Teuchos::is_null(dgdp)) {
               out << "\nError: sensitivities pointer is null" << std::endl;
               status += 33;
-            } else {
-                out << "\nSensitivities {6.66667, -8.0}\n"
-                    << *dgdp << std::endl;
-                Thyra::DetachedVectorView<double> dgdp_view(dgdp->col(0));
+            } else {             
+              Thyra::DetachedVectorView<double> dgdp_view(dgdp->col(0));
+              if(isLocaTest) {
+                double dgdp_exact = 73.0/8.0;
+                out << "\nSensitivities {-7.785}\n" << dgdp_view(0) << " "  << std::endl;
+
+                double l2_diff = std::abs(dgdp_view(0) - dgdp_exact);
+                if (l2_diff > tol) {
+                    status += 100;
+                    out << "\nPiro_AnalysisDrvier:  Expected sensitivity is: {"
+                        << dgdp_exact << "}, but computed sensitivity is: {"
+                        << dgdp_view(0) << "}.\n"
+                        << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
+                }
+              } else {
                 double dgdp_exact[2] = {20./3, -8.};
+                out << "\nSensitivities {6.66667, -8.0}\n"
+                    << dgdp_view(0) << " "  << dgdp_view(1) << std::endl;
 
                 double l2_diff = std::sqrt(std::pow(dgdp_view(0) - dgdp_exact[0], 2) +
                                            std::pow(dgdp_view(1) - dgdp_exact[1], 2));
@@ -273,6 +248,7 @@ int main(int argc, char *argv[]) {
                         << dgdp_view(0) << ", " << dgdp_view(1) << "}.\n"
                         << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
                 }
+              }
             }
 
             if (Teuchos::is_null(hv)) {
@@ -306,13 +282,10 @@ int main(int argc, char *argv[]) {
         overall_status += status;
     }
 
-    if (Proc == 0) {
-        if (overall_status == 0)
-            std::cout << "\nTEST PASSED\n"
-                      << std::endl;
-        else
-            std::cout << "\nTEST Failed:  " << overall_status << std::endl;
-    }
+    if (overall_status == 0)
+      out << "\nTEST PASSED\n" << std::endl;
+    else
+      out << "\nTEST Failed:  " << overall_status << std::endl;
 
     return status;
 }

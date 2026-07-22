@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_LDL_INTERNAL_HPP__
 #define __TACHO_LDL_INTERNAL_HPP__
@@ -46,7 +38,7 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
     const ordinal_type m = A.extent(0);
     if (m > 0) {
       /// factorize LDL
-      LapackTeam<value_type>::sytrf(member, Uplo::Lower::param, m, A.data(), A.stride_1(), P.data(), W.data(), &r_val);
+      LapackTeam<value_type>::sytrf(member, Uplo::Lower::param, m, A.data(), A.stride(1), P.data(), W.data(), &r_val);
     }
     return r_val;
   }
@@ -67,9 +59,9 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
     int r_val = 0;
     const ordinal_type m = A.extent(0);
     if (m > 0) {
-      value_type *__restrict__ Aptr = A.data();
-      ordinal_type *__restrict__ ipiv = P.data(), *__restrict__ fpiv = ipiv + m, *__restrict__ perm = fpiv + m,
-                                 *__restrict__ peri = perm + m;
+      value_type *KOKKOS_RESTRICT Aptr = A.data();
+      ordinal_type *KOKKOS_RESTRICT ipiv = P.data(), *KOKKOS_RESTRICT fpiv = ipiv + m, *KOKKOS_RESTRICT perm = fpiv + m,
+                                 *KOKKOS_RESTRICT peri = perm + m;
       const value_type one(1);
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const int &i) { perm[i] = i; });
       member.team_barrier();
@@ -92,8 +84,8 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
           //       fpiv[i] = fla_pivot;
           //     }
           //     if (fla_pivot) {
-          //       value_type *__restrict__ src = Aptr + i;
-          //       value_type *__restrict__ tgt = src + fla_pivot;
+          //       value_type *KOKKOS_RESTRICT src = Aptr + i;
+          //       value_type *KOKKOS_RESTRICT tgt = src + fla_pivot;
           //       if (j<(i-1)) {
           //         const ordinal_type idx = j*m;
           //         swap(src[idx], tgt[idx]);
@@ -143,10 +135,10 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
     /// no piv version
     // if (m > 0) {
     //   ordinal_type
-    //     *__restrict__ ipiv = P.data(),
-    //     *__restrict__ fpiv = ipiv + m,
-    //     *__restrict__ perm = fpiv + m,
-    //     *__restrict__ peri = perm + m;
+    //     *KOKKOS_RESTRICT ipiv = P.data(),
+    //     *KOKKOS_RESTRICT fpiv = ipiv + m,
+    //     *KOKKOS_RESTRICT perm = fpiv + m,
+    //     *KOKKOS_RESTRICT peri = perm + m;
     //   const value_type one(1);
     //   Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
     //       D(i,0) = A(i,i);
@@ -157,6 +149,21 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
     //       peri[i] = i;
     //     });
     // }
+    return r_val;
+  }
+};
+
+template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Internal> {
+  template <typename MemberType, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const bool conjugate) {
+
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
+
+    int r_val = 0;
+    const ordinal_type m = A.extent(0);
+    if (m > 0)
+      LapackTeam<value_type>::sytrf_nopiv(member, ArgUplo::param, conjugate, m, A.data(), A.stride(1), &r_val);
     return r_val;
   }
 };

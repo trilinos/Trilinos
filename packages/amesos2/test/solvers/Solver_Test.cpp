@@ -43,21 +43,6 @@
 
 #include "Amesos2.hpp"          // includes everything from Amesos2
 
-// #ifdef HAVE_TPETRA_INST_INT_INT
-#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
-#ifdef HAVE_MPI
-#include <mpi.h>
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-#include <Epetra_Map.h>
-#include <Epetra_MultiVector.h>
-#include <Epetra_CrsMatrix.h>
-#include <EpetraExt_CrsMatrixIn.h>
-#endif  // HAVE_AMESOS2_EPETRAEXT
-//#endif
-
 using std::string;
 
 using Teuchos::rcp;
@@ -102,6 +87,12 @@ bool multiple_solves = true;
  */
 bool refactor = false;
 
+/**
+ * If \c true, then the solution routine will at some point reperform
+ * symbolic factorization using the same solver object
+ */
+bool resymbol = false;
+
 /*
  * Takes the given parameter list and performs the test solves that it describes.
  *
@@ -115,35 +106,6 @@ bool test_mat_with_solver(const string& mm_file,
                           const string& solver_name,
                           const ParameterList& test_params,
                           ParameterList solve_params);
-
-#ifdef HAVE_TPETRA_INST_INT_INT
-#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
-/*
- * Tests a matrix solve with the given solver on the matrix found in
- * the named file.  EPETRA_RUNS is a parameter list that describes the
- * runs that should be performed for the named solver with the Epetra
- * linear algebra objects.  As opposed to the tpetra tests, this
- * parameter list cannot let you specify ordinal or scalar types
- * (because this is not supported by epetra), but does let you specify
- * run-specific solver parameters.  If a non-list parameter entry is
- * found in EPETRA_RUNS, then a single test run with the default
- * parameters will be executed following all other epetra test runs.
- *
- * Instantiates the matrix as an Epetra_CrsMatrix, so types will be <int,int,double>
- *
- * This test is run for every non-complex matrix, with the idea that
- * all solvers will support the <int,int,double> types.
- *
- * Note: the input matrix must be square!
- *
- * \return Whether all tests for this matrix with epetra objects passed
- */
-bool test_epetra(const string& mm_file,
-                 const string& solver_name,
-                 const ParameterList& epetra_runs,
-                 ParameterList solve_params);
-#endif
-#endif //HAVE_TPETRA_INST_INT_INT
 
 /*
  * Tests a matrix solve with the matrix found in the named file using
@@ -202,6 +164,7 @@ int main(int argc, char*argv[])
   cmdp.setOption("verbosity", &verbosity, "Set verbosity level of output");
   cmdp.setOption("multiple-solves","single-solve", &multiple_solves, "Perform multiple solves with different RHS arguments");
   cmdp.setOption("refactor","no-refactor", &refactor, "Recompute L and U using a numerically different matrix at some point");
+  cmdp.setOption("resymbol","no-resymbol", &resymbol, "Reperform symbolic using the same solver object");
   try{
     cmdp.parse(argc,argv);
   } catch (const Teuchos::CommandLineProcessor::HelpPrinted& hp) {
@@ -381,27 +344,7 @@ test_mat_with_solver (const string& mm_file,
       const string object_name = test_params.name (object_it);
 
       // There may be a more flexible way (e.g. a `query' function) to do this check
-      if (object_name == "epetra") {
-        if (verbosity > 1) {
-          *fos << "    Testing Epetra objects" << endl;
-        }
-#ifdef HAVE_TPETRA_INST_INT_INT
-#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
-        const ParameterList epetra_runs = Teuchos::getValue<ParameterList> (test_params.entry (object_it));
-        const bool epetraSuccess = test_epetra (mm_file, solver_name, epetra_runs, solve_params);
-        success &= epetraSuccess;
-        if (verbosity > 1) {
-          *fos << "      - Epetra test " << (epetraSuccess ? "succeeded" : "failed") << endl;
-        }
-#else
-        if (verbosity > 1) {
-          *fos << "    EpetraExt must be enabled for testing of Epetra objects.  Skipping this test."
-               << endl;
-        }
-#endif // HAVE_AMESOS2_EPETRAEXT
-#endif
-      }
-      else if (object_name == "kokkos") {
+      if (object_name == "kokkos") {
         if (verbosity > 1) {
           *fos << "    Testing Kokkos objects" << endl;
         }
@@ -503,25 +446,6 @@ struct solution_checker<Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpac
 };
 
 
-#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
-template <>
-struct solution_checker<Epetra_MultiVector> {
-  bool operator() (RCP<Epetra_MultiVector> true_solution, RCP<Epetra_MultiVector> given_solution)
-  {
-    int num_vecs = true_solution->NumVectors();
-
-    Teuchos::Array<double> ts_norms(num_vecs), gs_norms(num_vecs);
-    true_solution->Norm2(ts_norms.getRawPtr());
-    given_solution->Norm2(gs_norms.getRawPtr());
-
-    return Teuchos::compareFloatingArrays(ts_norms, "true_solution",
-                                          gs_norms, "given_solution",
-                                          0.005, *compare_fos);
-  }
-};
-#endif
-
-
 ///////////////////////////
 // Generic solve routine //
 ///////////////////////////
@@ -608,6 +532,7 @@ do_solve_routine(const string& solver_name,
     solver = Amesos2::create<Matrix,Vector> (solver_name, A1);
     //JDB: We should really use the parameters the user gives
     solver->setParameters( rcpFromRef(solve_params) );
+    solver->describe(*fos, Teuchos::VERB_HIGH);
     switch (phase) {
     case Amesos2::CLEAN:
       if (verbosity > 2) {
@@ -635,6 +560,7 @@ do_solve_routine(const string& solver_name,
     if (verbosity > 2) {
       *fos << endl << " ** done **" << std::endl << std::flush;
     }
+    solver->printTiming(*fos);
     ++phase;
   }
 
@@ -727,21 +653,29 @@ do_solve_routine(const string& solver_name,
 
     if( refactor ){
 
-
       // Keep the symbolic factorization from A1
       solver->setA(A2, Amesos2::SYMBFACT);
 
       switch( style ){
       case SOLVE_VERBOSE:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SOLVE_VERBOSE ++" << std::endl << std::flush;
+        }
         solver->numericFactorization();
         solver->setB(b2);
         solver->solve();
         break;
       case SOLVE_XB:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SOLVE_XB ++" << std::endl << std::flush;
+        }
         solver->numericFactorization();
         solver->solve(outArg(*Xhat), ptrInArg(*b2));
         break;
       case SOLVE_SHORT:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SHORT ++" << std::endl << std::flush;
+        }
         solver->solve(outArg(*Xhat), ptrInArg(*b2));
         break;
       }
@@ -750,6 +684,20 @@ do_solve_routine(const string& solver_name,
       if( !success ) return success; // bail out early if necessary
     }
 
+    if( resymbol ) {
+      if (verbosity > 2) {
+        *fos << endl << " ++ Re Symbolic ++" << std::endl << std::flush;
+      }
+      solver->setA(A2, Amesos2::SYMBFACT);
+
+      solver->preOrdering();
+      solver->symbolicFactorization();
+      solver->numericFactorization();
+      solver->solve(outArg(*Xhat), ptrInArg(*b2));
+
+      success &= checker(x2, Xhat);
+    }
+    solver->printTiming(*fos);
     ++style;
   }
 
@@ -757,178 +705,6 @@ do_solve_routine(const string& solver_name,
 }
 
 
-#ifdef HAVE_TPETRA_INST_INT_INT
-#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
-
-//////////////////////////
-//     Epetra Tests     //
-//////////////////////////
-
-bool do_epetra_test(const string& mm_file,
-                    const string& solver_name,
-                    ParameterList solve_params)
-{
-  using Teuchos::ScalarTraits;
-
-  typedef Epetra_CrsMatrix MAT;
-  typedef Epetra_MultiVector MV;
-  const size_t numVecs = 5;     // arbitrary number
-  const size_t numRHS  = 5;     // also quite arbitrary
-
-  bool transpose = solve_params.get<bool>("Transpose", false);
-
-#ifdef HAVE_MPI
-  const Epetra_MpiComm comm (MPI_COMM_WORLD);
-#else
-  const Epetra_SerialComm comm;
-#endif
-
-  if( verbosity > 2 ){
-    *fos << std::endl << "      Reading matrix from " << mm_file << " ... " << std::flush;
-  }
-  std::string path = filedir + mm_file;
-  MAT* A;
-  int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm, A, false, false);
-  if( ret == -1 ){
-    *fos << "error reading file from disk, aborting run." << std::endl;
-    return( false );
-  }
-  if( verbosity > 2 ) *fos << "done" << std::endl;
-  if( verbosity > 3 ) A->Print(std::cout);
-
-  const Epetra_Map dmnmap = A->DomainMap();
-  const Epetra_Map rngmap = A->RangeMap();
-
-  RCP<MAT> A_rcp(A);
-  RCP<MAT> A2;
-  RCP<MV> x2, b2;
-  RCP<MV> Xhat;
-  if( transpose ){
-    Xhat = rcp(new MV(dmnmap,numVecs));
-    if( refactor ){
-      x2 = rcp(new MV(dmnmap,numVecs));
-      b2 = rcp(new MV(rngmap,numVecs));
-    }
-  } else {
-    Xhat = rcp(new MV(rngmap,numVecs));
-    if( refactor ){
-      x2 = rcp(new MV(rngmap,numVecs));
-      b2 = rcp(new MV(dmnmap,numVecs));
-    }
-  }
-  Xhat->SetLabel("Xhat");
-
-  Array<RCP<MV> > x(numRHS);
-  Array<RCP<MV> > b(numRHS);
-  for( size_t i = 0; i < numRHS; ++i ){
-    if( transpose ){
-      x[i] = rcp(new MV(dmnmap,numVecs));
-      b[i] = rcp(new MV(rngmap,numVecs));
-    } else {
-      x[i] = rcp(new MV(rngmap,numVecs));
-      b[i] = rcp(new MV(dmnmap,numVecs));
-    }
-    std::ostringstream xlabel, blabel;
-    xlabel << "x[" << i << "]";
-    blabel << "b[" << i << "]";
-    x[i]->SetLabel(xlabel.str().c_str());
-    b[i]->SetLabel(blabel.str().c_str());
-
-    x[i]->Random();
-    A->Multiply(transpose, *x[i], *b[i]);
-  }
-
-  if( refactor ){
-    // There isn't a really nice way to get a deep copy of an entire
-    // CrsMatrix, so we just read the file again.
-    MAT* A2_ptr;
-    ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
-                                                 A2_ptr,
-                                                 false, false);
-    if( ret == -1 ){
-      *fos << "error reading file from disk, aborting run." << std::endl;
-      return( false );
-    }
-    A2.reset(A2_ptr);
-
-    // perturb the values just a bit (element-wise square of first row)
-    int l_fst_row_nnz = 0;
-    A2->NumMyRowEntries(0, l_fst_row_nnz);
-    Array<int> indices(l_fst_row_nnz);
-    Array<double> values(l_fst_row_nnz);
-    A2->ExtractMyRowCopy(0, l_fst_row_nnz, l_fst_row_nnz,
-                         values.getRawPtr(), indices.getRawPtr());
-    for( int i = 0; i < l_fst_row_nnz; ++i ){
-      values[i] = values[i] * values[i];
-    }
-    A2->ReplaceMyValues(0, l_fst_row_nnz, values.getRawPtr(), indices.getRawPtr());
-
-    x2->Random();
-    A2->Multiply(transpose, *x2, *b2);
-  } // else A2 is never read
-
-  const bool result = do_solve_routine<MAT,MV>(solver_name, A_rcp, A2,
-                                               Xhat, x(), b(), x2, b2,
-                                               numRHS, solve_params);
-
-  if (!result) {
-    if( verbosity > 1 ){
-      *fos << "failed!" << std::endl;
-    }
-    return( false );
-  } else {
-    if( verbosity > 1 ){
-      *fos << "passed" << std::endl;
-    }
-    return( true );
-  }
-}
-
-bool test_epetra(const string& mm_file,
-                 const string& solver_name,
-                 const ParameterList& epetra_runs,
-                 ParameterList solve_params)
-{
-  bool success = true;
-  bool do_default = false;
-
-  ParameterList::ConstIterator run_it;
-  for( run_it = epetra_runs.begin(); run_it != epetra_runs.end(); ++run_it ){
-    // an empty parameters list or any plain Parameter causes a default test for epetra
-    if( epetra_runs.entry(run_it).isList() ){
-      ParameterList run_list = Teuchos::getValue<ParameterList>(epetra_runs.entry(run_it));
-      if( run_list.isSublist("solver_run_params") ){
-        ParameterList solve_params_copy(solve_params);
-        solve_params_copy.sublist(solver_name).setParameters( run_list.sublist("solver_run_params") );
-        if( run_list.isSublist("amesos2_params") ){
-          solve_params_copy.setParameters( run_list.sublist("amesos2_params") );
-        }
-
-        string run_name = epetra_runs.name(run_it);
-        if( verbosity > 1 ){
-          *fos << "    Doing epetra test run `" << run_name << "' ... " << std::flush;
-        }
-        success &= do_epetra_test(mm_file, solver_name, solve_params_copy);
-      } else {
-        do_default = true;
-      }
-    } else {
-      do_default = true;
-    }
-  }
-
-  // only do one default run
-  if( do_default ){
-    if( verbosity > 1 ){
-      *fos << "    Doing epetra test default test run ... " << std::flush;
-    }
-    success &= do_epetra_test(mm_file, solver_name, solve_params);
-  }
-
-  return( success );
-}
-#endif  // HAVE_AMESOS2_EPETRAEXT
-#endif // HAVE_TPETRA_INST_INT_INT
 //////////////////////////
 //     Tpetra Tests     //
 //////////////////////////
@@ -951,20 +727,41 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
   typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> MAP;
   const size_t numVecs = 5;     // arbitrary number
   const size_t numRHS  = 5;     // also arbitrary
-
-  bool transpose = solve_params.get<bool>("Transpose", false);
-
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
+  bool isContiguous = true;
+  string rowmap_file = "";
+  if (solve_params.isParameter("rowmap")) {
+    // Test non-contig GIDS with rowmap
+    rowmap_file = solve_params.get<string>("rowmap");
+    isContiguous = solve_params.sublist(solver_name).get("IsContiguous", false);
+    solve_params.remove("rowmap");
+  }
   if (verbosity > 2) {
-    *fos << endl << "      Reading matrix from " << mm_file << " ... " << flush;
+    *fos << endl << "      Reading matrix from " << mm_file;
+    if (rowmap_file != "") {
+      *fos << " with " << rowmap_file;
+    }
+    if (isContiguous) {
+      *fos << " (contiguous)";
+    }
+    *fos << " ... " << flush;
   }
   std::string path = filedir + mm_file;
-  RCP<MAT> A =
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
-
+  RCP<MAT> A;
+  if (rowmap_file == "") {
+    A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
+  } else {
+    int num_header_lines = 2;
+    bool convert_mtx_to_zero_base = true;
+    RCP<const MAP> rowMap = Tpetra::MatrixMarket::Reader<MAT>::readMapFile(filedir + rowmap_file, comm);
+    RCP<const MAP> domainMap = rowMap;
+    RCP<const MAP> rangeMap = rowMap;
+    A = Amesos2::Util::readCrsMatrixFromFile<MAP, MAT> (path, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
+  }
   if (verbosity > 2) {
     *fos << "done" << endl;
     switch (verbosity) {
@@ -977,9 +774,10 @@ bool do_tpetra_test_with_types(const string& mm_file,
     }
   }
 
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > dmnmap = A->getDomainMap();
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rngmap = A->getRangeMap();
+  RCP<const MAP > dmnmap = A->getDomainMap();
+  RCP<const MAP > rngmap = A->getRangeMap();
 
+  bool transpose = solve_params.get<bool>("Transpose", false);
   ETransp trans = transpose ? CONJ_TRANS : NO_TRANS;
 
   if (verbosity > 2) {
@@ -1036,19 +834,21 @@ bool do_tpetra_test_with_types(const string& mm_file,
     // // CrsMatrix, so we just read the file again.
     // A2 = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm);
 
-    // perturb the values just a bit (element-wise square of first row)
-    size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
-    //Array<LocalOrdinal> indices(l_fst_row_nnz);
-    //Array<Scalar> values(l_fst_row_nnz);
-    typename MAT::nonconst_local_inds_host_view_type indices ("indices", l_fst_row_nnz);
-    typename MAT::nonconst_values_host_view_type     values  ("values",  l_fst_row_nnz);
-
-    A2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
-    for( size_t i = 0; i < l_fst_row_nnz; ++i ){
-      values[i] = values[i] * values[i];
-    }
     A2->resumeFill ();
-    A2->replaceLocalValues (0, indices, values);
+    if (A2->getComm()->getRank() == 0) {
+      // perturb the values just a bit (element-wise square of first row)
+      size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
+      //Array<LocalOrdinal> indices(l_fst_row_nnz);
+      //Array<Scalar> values(l_fst_row_nnz);
+      typename MAT::nonconst_local_inds_host_view_type indices ("indices", l_fst_row_nnz);
+      typename MAT::nonconst_values_host_view_type     values  ("values",  l_fst_row_nnz);
+
+      A2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
+      for( size_t i = 0; i < l_fst_row_nnz; ++i ){
+        values[i] = values[i] * values[i];
+      }
+      A2->replaceLocalValues (0, indices, values);
+    }
     A2->fillComplete (A->getDomainMap (), A->getRangeMap ());
 
     x2->randomize();
@@ -1452,7 +1252,8 @@ bool do_kokkos_test_with_types(const string& mm_file,
   typedef KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,device_t> MAT;
   typedef Kokkos::View<Scalar**, Kokkos::LayoutLeft, device_t> view_t;
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  // each MPI will solve independent system
+  RCP<const Teuchos::Comm<int> > comm =  Teuchos::rcp(new Teuchos::SerialComm<int>());
 
   // Kokkos adapter doesn't support the distributed modes.
   // We just load to the root rank which allows something like SuperLU to
@@ -1515,7 +1316,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
       auto row_map = A2->graph.row_map;
       Kokkos::RangePolicy<execution_space> policy(0, vals.size());
       Kokkos::parallel_for(policy, KOKKOS_LAMBDA(size_t i) {
-        if(i < row_map(1)) { // just do 1st row
+        if(i < size_t(row_map(1))) { // just do 1st row
           vals(i) = vals(i) * vals(i);
         }
       });

@@ -46,7 +46,7 @@ void RemoteCoordinateUpdator::pack_buffers()
     }
 }
 
-void RemoteCoordinateUpdator::unpack_buffer(int rank, const std::vector<IdAndCoords>& buf)
+void RemoteCoordinateUpdator::unpack_buffer(int /*rank*/, const std::vector<IdAndCoords>& buf)
 {
   for (const IdAndCoords& data : buf)
   {

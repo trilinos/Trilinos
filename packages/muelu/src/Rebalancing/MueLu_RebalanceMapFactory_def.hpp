@@ -68,17 +68,17 @@ void RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level &level)
 
     // create vector based on input map
     // Note, that the map can be a part only of the full map stored in rebalanceImporter.getSourceMap()
-    RCP<Vector> v = VectorFactory::Build(map);
+    RCP<Vector> v = VectorFactory::Build(map, false);
     v->putScalar(1.0);
 
     // create a new vector based on the full rebalanceImporter.getSourceMap()
     // import the partial map information to the full source map
     RCP<const Import> blowUpImporter = ImportFactory::Build(map, rebalanceImporter->getSourceMap());
-    RCP<Vector> pv                   = VectorFactory::Build(rebalanceImporter->getSourceMap());
+    RCP<Vector> pv                   = VectorFactory::Build(rebalanceImporter->getSourceMap(), false);
     pv->doImport(*v, *blowUpImporter, Xpetra::INSERT);
 
     // do rebalancing using rebalanceImporter
-    RCP<Vector> ptv = VectorFactory::Build(rebalanceImporter->getTargetMap());
+    RCP<Vector> ptv = VectorFactory::Build(rebalanceImporter->getTargetMap(), false);
     ptv->doImport(*pv, *rebalanceImporter, Xpetra::INSERT);
 
     if (pL.get<bool>("repartition: use subcommunicators") == true)

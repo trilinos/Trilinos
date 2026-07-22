@@ -32,7 +32,7 @@ WrapperModelEvaluatorBasic<Scalar>::createInArgs() const
     inArgs.set_stage_number(p_->stageNumber_);
 
   inArgs.setModelEvalDescription(this->description());
-  return std::move(inArgs);
+  return inArgs;
 }
 
 template <typename Scalar>
@@ -42,7 +42,7 @@ WrapperModelEvaluatorBasic<Scalar>::createOutArgsImpl() const
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgsSetup<Scalar> outArgs(appModel_->createOutArgs());
   outArgs.setModelEvalDescription(this->description());
-  return std::move(outArgs);
+  return outArgs;
 }
 
 template <typename Scalar>

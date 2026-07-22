@@ -90,7 +90,7 @@
     <parameter>
       <name>fuse prolongation and update</name>
       <type>bool</type>
-      <default>false</default>
+      <default>true</default>
       <description>Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.</description>
       <visible>false</visible>
     </parameter>
@@ -353,7 +353,7 @@
       <name>coarse: type</name>
       <comment-ML>needs special treatment in ML</comment-ML>
       <type>string</type>
-      <default>"SuperLU"</default>
+      <default>"KLU"</default>
       <description>Coarse solver. Possible values: see Table~\ref{tab:coarse_solvers}.</description>
     </parameter>
 
@@ -377,6 +377,15 @@
   <aggregation>
 
     <parameter>
+      <name>aggregation: backend</name>
+      <type>string</type>
+      <default>"default"</default>
+      <description>Aggregation scheme. Possible values: "default", "host", "kokkos"</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: type</name>
       <type>string</type>
       <default>"uncoupled"</default>
@@ -389,7 +398,7 @@
       <name>aggregation: mode</name>
       <type>string</type>
       <default>"uncoupled"</default>
-      <description>Controls whether aggregates are allowed to cross processor boundaries. Possible values: "coupled" aggregates can cross processor boundaries, "uncoupled" aggregates cannot cross processor boundaries.</description>
+      <description>Controls whether aggregates are allowed to cross processor boundaries. Possible values: "uncoupled" aggregates cannot cross processor boundaries.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -419,12 +428,43 @@
     -->
 
     <parameter>
+      <name>aggregation: symmetrize graph after dropping</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Symmetrize the graph used for aggregation.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: use blocking</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Drop connections between different blocks. Blocks are given by a vector "BlockNumber" of scalar type LocalOrdinal that is passed via the "user data" list.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
       <description>Connectivity dropping scheme for a graph used in
-      aggregation. Possible values: "classical", "distance laplacian",
-      "unsupported vector smoothing"</description>
+      aggregation. Possible values: "point-wise" and "cut-drop". "signed classical sa", "classical", "distance laplacian", "signed classical", "block diagonal", "block diagonal classical", "block diagonal distance laplacian", "block diagonal signed classical", "block diagonal colored signed classical", "signed classical distance laplacian", "signed classical sa distance laplacian" are also allowed, but discouraged. Instead, the corresponding combination of "aggregation: strength-of-connection: matrix", "aggregation: strength-of-connection: measure" and "aggregation: drop scheme" should be used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: strength-of-connection: matrix</name>
+      <type>string</type>
+      <default>"A"</default>
+      <description>The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself), "distance laplacian", and "MinvA".</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: strength-of-connection: measure</name>
+      <type>string</type>
+      <default>"smoothed aggregation"</default>
+      <description>The strength measure used for constructing the graph. Possible values: "smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled".</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -501,6 +541,14 @@
       <default>"default"</default>
       <description>Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".</description>
       <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: distance laplacian metric</name>
+      <type>string</type>
+      <default>unweighted</default>
+      <description>Metric used to compute the distance Laplacian. Possible values: "unweighted", "material"</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -877,6 +925,22 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: output file: aggregate qualities</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to plot the aggregate quality.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: material</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to plot the material.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: params</name>
       <type>\parameterlist</type>
       <visible>false</visible>
@@ -1049,25 +1113,25 @@
     </parameter>
 
     <parameter>
-      <name>keep data</name>
-      <type>string</type>
-      <default>"{}"</default>
-      <description>Keep a subset of the hierarchy data after the
-      hierarchy is constructed.  Use comma-separated array in braces</description>
-      <visible>false</visible>
+      <name>project auxiliary matrices</name>
+      <type>\parameterlist</type>
+      <description>Fine level matrices that will be projected down the hierarchy.
+      Currently, the list can contain any of the following parameter names
+      (``M'', ``Minv'', ``MinvA'') of type \texttt{string} and value
+      (``NoFactory'' or ``CoalesceDrop'') indicating factory which creates data.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
-      <name>save data</name>
+      <name>keep data</name>
       <type>string</type>
       <default>"{}"</default>
-      <description>Data to dump to disk after the
-      hierarchy is constructed.  Use comma-separated array in braces</description>
+      <description>Keep a subset of the hierarchy data after the
+      hierarchy is constructed.  This could be for disk I/O, or for
+      use in other preconditioners. Use comma-separated array in braces</description>
       <visible>false</visible>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
-
 
     <parameter>
       <name>print initial parameters</name>
@@ -1234,7 +1298,7 @@
     <parameter>
       <name>semicoarsen: number of levels</name>
       <type>int</type>
-      <default>3</default>
+      <default>0</default>
       <description>Determines the maximum number of times that semicoarsening is applied.</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
@@ -1267,6 +1331,14 @@
       <default-ML>1.33</default-ML>
       <compatibility-ML>MLParameterListInterpreter, ML2MueLuParameterTranslator</compatibility-ML>
       <description-ML>Damping factor for smoothed aggregation.</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>sa: nodal damping factor</name>
+      <type>double</type>
+      <default>1.33</default>
+      <description>Damping factor for smoothed aggregation for the nodal smoothing in Maxwell1.</description>
+      <visible>false</visible>
     </parameter>
 
     <parameter>
@@ -1335,6 +1407,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>sa: diagonal replacement tolerance</name>
+      <type>double</type>
+      <default>-1.0</default>
+      <description>If not -1, use this value for deciding whether a diagonal value in prolongator smoothing is too small and should be replaced.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>sa: rowsumabs diagonal replacement tolerance</name>
       <type>double</type>
       <default>-1.0</default>
@@ -1342,6 +1423,7 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
       <name-ML>not supported by ML</name-ML>
     </parameter>
+
 
     <parameter>
       <name>sa: rowsumabs use automatic diagonal tolerance</name>
@@ -1371,6 +1453,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>sa: keep tentative prolongator</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Keep the tentative prolongator instead of dropping it once it has been smoothed.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>replicate: npdes</name>
       <type>int</type>
       <default>1</default>
@@ -1384,6 +1475,15 @@ Only used when tentative: calculate qr is set to false.</description>
       <type>int</type>
       <default>1</default>
       <description> Used with multigrid algorithm 'combine' to combine multiple sub-block prolongators into one  for PDE systems (numBlks x numBlks). </description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
+      <name>combine: useMaxLevels</name>
+      <type>bool</type>
+      <default>false</default>
+      <description> Used with multigrid algorithm 'combine'. When 'true', use the maximum number of levels across all sub-block hierarchies. </description>
       <visible>false</visible>
       <name-ML>not supported by ML</name-ML>
     </parameter>
@@ -1453,6 +1553,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>filtered matrix: lumping choice</name>
+      <type>string</type>
+      <default>"diag lumping"</default>
+      <description>Can be no lumping (no modification to kept entries), diag lumping (modify diagonal to maintain row sums), or distributed lumping (modify kept nonzeros in a fashion proportional to their magnitude to preserve row sums). </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>filtered matrix: use spread lumping</name>
       <type>bool</type>
       <default>false</default>
@@ -1516,10 +1625,29 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>filtered matrix: count negative diagonals</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Counts the number of negative diagonals (involves MPI communication).</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+
+    <parameter>
+      <name>matrix: compute analysis</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Perform matrix analysis. Checks several matrix properties and prints statistics.</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>emin: iterative method</name>
       <type>string</type>
       <default>"cg"</default>
-      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual), "sd" (steepest descent).</description>
+      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual).</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -1561,6 +1689,22 @@ Only used when tentative: calculate qr is set to false.</description>
       <default>true</default>
       <ConvectionDiffusion>true</ConvectionDiffusion>
       <description>Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>emin: constraint type</name>
+      <type>string</type>
+      <default>nullspace</default>
+      <description>Type of constraint to enforce. Valid values are "nullspace" and "maxwell".</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>emin: least squares solver type</name>
+      <type>string</type>
+      <default>direct</default>
+      <description>Type of solver to use for least squares problem. Valid values are "direct" and "Belos". "Belos" only works for nullspace constraints.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -1786,6 +1930,35 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>repartition: save importer</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Mark Importer as 'Final' to keep it on the hierarchy after setup is complete.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>repartition: put on single proc</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Number of rows below which we always repartition to a single rank</description>
+      <name-ML>repartition: put on single proc</name-ML>
+      <default-ML>5000</default-ML>
+      <visible>false</visible>
+      <description-ML>Number of rows below which we always repartition to a single rank</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>repartition: send type</name>
+      <type>string</type>
+      <visible>false</visible>
+      <default>""</default>
+      <description>Tpetra 'Send type' to use in repartitioning</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
   </rebalancing>
 
   <rap>
@@ -1945,6 +2118,18 @@ optimized neighbor discovery for Importer construction.</description>
     </parameter>
   </amgx>
 
+  <tuning>
+    <parameter>
+      <name>kokkos tuning: muelu parameter mapping</name>
+      <type>\parameterlist</type>
+      <description>Sublist for Kokkos Tuning of MueLu Parameters</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+  </tuning>
+
+
+
   <debug>
 
     <parameter>
@@ -1986,6 +2171,13 @@ optimized neighbor discovery for Importer construction.</description>
       <type>bool</type>
       <default>false</default>
       <description>Dump matrices to disk.</description>
+    </parameter>
+
+    <parameter>
+      <name>maxwell1: check and fix D0 scaling</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Check that D0 is scaled appropriately and rescale if necessary.</description>
     </parameter>
 
     <parameter>

@@ -68,7 +68,7 @@ struct PointConnections {
 
     //! Returns a component of the local coordinate after transformation from global to local under the orthonormal basis V.
     KOKKOS_INLINE_FUNCTION
-    static double convertGlobalToLocalCoordinate(const XYZ global_coord, const int dim, const scratch_matrix_right_type& V) {
+    static double convertGlobalToLocalCoordinate(const XYZ global_coord, const int dim, const device_unmanaged_matrix_right_type& V) {
         compadre_kernel_assert_debug(dim<3);
         // only written for 2d manifold in 3d space or 2D problem with 1D manifold
         double val = 0;
@@ -80,7 +80,7 @@ struct PointConnections {
 
     //! Returns a component of the global coordinate after transformation from local to global under the orthonormal basis V^T.
     KOKKOS_INLINE_FUNCTION
-    static double convertLocalToGlobalCoordinate(const XYZ local_coord, const int dim, const scratch_matrix_right_type& V) {
+    static double convertLocalToGlobalCoordinate(const XYZ local_coord, const int dim, const device_unmanaged_matrix_right_type& V) {
         double val = 0.0;
         if (dim == 0 && V.extent_int(0)==1) { // 2D problem with 1D manifold
             val = local_coord.x * V(0, dim);
@@ -144,7 +144,7 @@ struct PointConnections {
     //! Returns one component of the target coordinate for a particular target. Whether global or local coordinates 
     //! depends upon V being specified
     KOKKOS_INLINE_FUNCTION
-    double getTargetCoordinate(const int target_index, const int dim, const scratch_matrix_right_type* V = NULL) const {
+    double getTargetCoordinate(const int target_index, const int dim, const device_unmanaged_matrix_right_type* V = NULL) const {
         compadre_kernel_assert_debug((_target_coordinates.extent(0) >= (size_t)target_index) && "Target index is out of range for _target_coordinates.");
         if (V==NULL) {
             return _target_coordinates(target_index, dim);
@@ -159,7 +159,7 @@ struct PointConnections {
     //! Returns one component of the neighbor coordinate for a particular target. Whether global or local coordinates 
     //! depends upon V being specified
     KOKKOS_INLINE_FUNCTION
-    double getNeighborCoordinate(const int target_index, const int neighbor_list_num, const int dim, const scratch_matrix_right_type* V = NULL) const {
+    double getNeighborCoordinate(const int target_index, const int neighbor_list_num, const int dim, const device_unmanaged_matrix_right_type* V = NULL) const {
         compadre_kernel_assert_debug((_source_coordinates.extent(0) >= (size_t)(this->getNeighborIndex(target_index, neighbor_list_num))) && "Source index is out of range for _source_coordinates.");
         if (V==NULL) {
             return _source_coordinates(this->getNeighborIndex(target_index, neighbor_list_num), dim);
@@ -177,7 +177,7 @@ struct PointConnections {
     //! Returns the relative coordinate as a vector between the target site and the neighbor site. 
     //! Whether global or local coordinates depends upon V being specified
     KOKKOS_INLINE_FUNCTION
-    XYZ getRelativeCoord(const int target_index, const int neighbor_list_num, const int dimension, const scratch_matrix_right_type* V = NULL) const {
+    XYZ getRelativeCoord(const int target_index, const int neighbor_list_num, const int dimension, const device_unmanaged_matrix_right_type* V = NULL) const {
         XYZ coordinate_delta;
 
         coordinate_delta.x = this->getNeighborCoordinate(target_index, neighbor_list_num, 0, V) - this->getTargetCoordinate(target_index, 0, V);

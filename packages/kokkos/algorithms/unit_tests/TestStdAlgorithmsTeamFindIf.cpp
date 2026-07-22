@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 
@@ -57,20 +44,13 @@ struct TestFunctorA {
     const auto myRowIndex = member.league_rank();
     auto myRowViewFrom = Kokkos::subview(m_dataView, myRowIndex, Kokkos::ALL());
     const auto val     = m_greaterThanValuesView(myRowIndex);
-    // FIXME_INTEL
-#if defined(KOKKOS_COMPILER_INTEL) && (1900 == KOKKOS_COMPILER_INTEL)
-    GreaterEqualFunctor<
-        typename GreaterThanValuesViewType::non_const_value_type>
-        unaryPred{val};
-#else
     GreaterEqualFunctor unaryPred{val};
-#endif
     ptrdiff_t resultDist = 0;
 
     switch (m_apiPick) {
       case 0: {
         auto it    = KE::find_if(member, KE::cbegin(myRowViewFrom),
-                              KE::cend(myRowViewFrom), unaryPred);
+                                 KE::cend(myRowViewFrom), unaryPred);
         resultDist = KE::distance(KE::cbegin(myRowViewFrom), it);
         Kokkos::single(Kokkos::PerTeam(member), [=, *this]() {
           m_distancesView(myRowIndex) = resultDist;
@@ -185,12 +165,7 @@ void test_A(const bool predicatesReturnTrue, std::size_t numTeams,
     const auto rowFromBegin = KE::cbegin(rowFrom);
     const auto rowFromEnd   = KE::cend(rowFrom);
     const auto val          = greaterEqualValuesView_h(i);
-    // FIXME_INTEL
-#if defined(KOKKOS_COMPILER_INTEL) && (1900 == KOKKOS_COMPILER_INTEL)
-    const GreaterEqualFunctor<ValueType> unaryPred{val};
-#else
     const GreaterEqualFunctor unaryPred{val};
-#endif
 
     auto it = std::find_if(rowFromBegin, rowFromEnd, unaryPred);
 

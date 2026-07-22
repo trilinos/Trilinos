@@ -1,11 +1,11 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE RIXID (INLINE, IFLD, INTYP, CFIELD, IFIELD,
-     &   SELMSG, MAXSEL, IDSEL, NUMSEL, IXSEL, *)
+     &   SELMSG, MAXSEL, IDSEL, NUMSEL, IXSEL, NAME, *)
 C=======================================================================
 
 C   --*** RIXID *** (BLOT) Parse selection command
@@ -30,6 +30,8 @@ C   --   IXSEL - IN/OUT - the selected items
 C   --   * - return statement if error before any items selected
 
       include 'exodusII.inc'
+      INCLUDE 'exp_dbnums.blk'
+
       CHARACTER*(*) INLINE
       INTEGER INTYP(*)
       CHARACTER*(*) CFIELD(*)
@@ -39,8 +41,9 @@ C   --   * - return statement if error before any items selected
       INTEGER IXSEL(*)
 
       LOGICAL FFEXST, FFNUMB, FFMATC
-      CHARACTER*80 ERRMSG
-      CHARACTER*(MXNAME) WORD
+      CHARACTER*1024 ERRMSG
+      CHARACTER*(MXNAME) WORD, LCWORD
+      CHARACTER*(NAMLEN) NAME(*)
 
       IF (.NOT. (FFEXST (IFLD, INTYP))) THEN
 
@@ -66,43 +69,60 @@ C      --Reset to none selected unless ADD
             CALL FFADDC ('ADD', INLINE)
          ELSE
             NUMSEL = 0
-            IF (.NOT. FFNUMB (IFLD, INTYP)) THEN
-               ERRMSG =
-     &            'Expected "OFF" or "ADD" or ' // SELMSG // ' range'
-               CALL PRTERR ('CMDERR', ERRMSG(:LENSTR(ERRMSG)))
-               GOTO 130
-            END IF
          END IF
 
   110    CONTINUE
          IF (FFEXST (IFLD, INTYP)) THEN
-
-C         --Scan ID
-
-            CALL FFINTG (IFLD, INTYP, IFIELD,
-     &         SELMSG, 0, ID, *120)
-
-C         --Find and store the index of the ID
-
-            IX = LOCINT (ID, MAXSEL, IDSEL)
-
-            IF (IX .LE. 0) THEN
-               CALL INTSTR (1, 0, ID, WORD, LSTR)
-               ERRMSG = SELMSG // ' ' //
-     &            WORD(:LSTR) // ' does not exist, ignored'
-               CALL PRTERR ('CMDERR', ERRMSG(:LENSTR(ERRMSG)))
-
-            ELSE IF (LOCINT (IX, NUMSEL, IXSEL) .LE. 0) THEN
-               CALL FFADDI (ID, INLINE)
+            IF (.NOT. FFNUMB (IFLD, INTYP)) THEN
+               CALL FFCHAR (IFLD, INTYP, CFIELD,' ', WORD)
+               call lowstr(LCWORD, WORD)
+               WORD = LCWORD
+               do i = 1, maxsel
+                  call lowstr(LCWORD, name(i))
+                  if (word .eq. LCWORD) then
+                     goto 208
+                  end if
+               end do
+               ERRMSG = SELMSG // ' "' // WORD //
+     $              '" does not exist, ignored'
+               call sqzstr(errmsg, lstr)
+               call prterr('CMDERR', errmsg(:lstr))
+               goto 110
+ 208           continue
                IF (NUMSEL .GE. MAXSEL) THEN
                   ERRMSG = 'Too many ' // SELMSG // 's selected'
                   CALL PRTERR ('CMDERR', ERRMSG(:LENSTR(ERRMSG)))
                   GOTO 120
                END IF
+               numsel = numsel + 1
+               ixsel(numsel) = i
+            ELSE
+C         --Scan ID
 
-               NUMSEL = NUMSEL + 1
-               IXSEL(NUMSEL) = IX
-            END IF
+               CALL FFINTG (IFLD, INTYP, IFIELD,
+     &              SELMSG, 0, ID, *120)
+
+C         --Find and store the index of the ID
+
+               IX = LOCINT (ID, MAXSEL, IDSEL)
+
+               IF (IX .LE. 0) THEN
+                  CALL INTSTR (1, 0, ID, WORD, LSTR)
+                  write (*,*) 'WORD: ', WORD(:LSTR), ID
+                  CALL PRTERR ('CMDERR', SELMSG // ' ' //
+     &                 WORD(:LSTR) // ' does not exist, ignored')
+               ELSE IF (LOCINT (IX, NUMSEL, IXSEL) .LE. 0) THEN
+                  CALL FFADDI (ID, INLINE)
+                  IF (NUMSEL .GE. MAXSEL) THEN
+                     ERRMSG = 'Too many ' // SELMSG // 's selected'
+                     CALL PRTERR ('CMDERR', ERRMSG(:LENSTR(ERRMSG)))
+                     GOTO 120
+                  END IF
+
+                  NUMSEL = NUMSEL + 1
+                  IXSEL(NUMSEL) = IX
+               END IF
+            end if
 
             GOTO 110
          END IF

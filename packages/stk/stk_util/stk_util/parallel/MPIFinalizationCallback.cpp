@@ -4,7 +4,7 @@
 
 namespace stk {
 
-int mpi_comm_destructor(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state)
+int mpi_comm_destructor(MPI_Comm /*comm*/, int /*comm_keyval*/, void* attribute_val, void* /*extra_state*/)
 {
   MPIFinalizationCallback* callback = reinterpret_cast<MPIFinalizationCallback*>(attribute_val);
   callback->destructor();

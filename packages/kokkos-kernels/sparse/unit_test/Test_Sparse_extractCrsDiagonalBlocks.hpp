@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_spmv.hpp"
@@ -20,15 +7,14 @@
 #include "KokkosKernels_TestUtils.hpp"
 
 namespace Test {
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   using RowMapType     = Kokkos::View<size_type *, device>;
   using EntriesType    = Kokkos::View<lno_t *, device>;
   using ValuesType     = Kokkos::View<scalar_t *, device>;
-  using RowMapType_hm  = typename RowMapType::HostMirror;
-  using EntriesType_hm = typename EntriesType::HostMirror;
-  using ValuesType_hm  = typename ValuesType::HostMirror;
+  using RowMapType_hm  = typename RowMapType::host_mirror_type;
+  using EntriesType_hm = typename EntriesType::host_mirror_type;
+  using ValuesType_hm  = typename ValuesType::host_mirror_type;
   using crsMat_t       = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
   crsMat_t A;
@@ -84,12 +70,9 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   }
 
   // Extract
-  KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(A,
-                                                                      DiagBlks);
+  KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks);
 
-  auto perm =
-      KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(
-          A, DiagBlks_rcm, true);
+  auto perm = KokkosSparse::Experimental::kk_extract_diagonal_blocks_crsmatrix_sequential(A, DiagBlks_rcm, true);
 
   // Checking
   lno_t numRows = 0;
@@ -106,8 +89,7 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
     bool flag       = true;
     lno_t col_start = 0;
     for (int i = 0; i < nblocks; i++) {
-      RowMapType_hm hrow_map_diagblk("hrow_map_diagblk",
-                                     DiagBlks[i].numRows() + 1);
+      RowMapType_hm hrow_map_diagblk("hrow_map_diagblk", DiagBlks[i].numRows() + 1);
       EntriesType_hm hentries_diagblk("hentries_diagblk", DiagBlks[i].nnz());
       ValuesType_hm hvalues_diagblk("hvalues_diagblk", DiagBlks[i].nnz());
 
@@ -147,14 +129,12 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
 
         Kokkos::deep_copy(In, one);
 
-        auto h_perm =
-            Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm[i]);
+        auto h_perm = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm[i]);
 
         KokkosSparse::spmv("N", one, DiagBlks_rcm[i], In, zero, Out);
 
         Kokkos::deep_copy(h_Out_tmp, Out);
-        for (lno_t ii = 0; ii < static_cast<lno_t>(DiagBlks[i].numRows());
-             ii++) {
+        for (lno_t ii = 0; ii < static_cast<lno_t>(DiagBlks[i].numRows()); ii++) {
           lno_t rcm_ii = h_perm(ii);
           h_Out(ii)    = h_Out_tmp(rcm_ii);
         }
@@ -170,24 +150,18 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
 }
 }  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type,
-          typename device>
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void test_extract_diagonal_blocks() {
   for (int s = 1; s <= 8; s++) {
-    Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        0, s);
-    Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        153, s);
-    Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(
-        1553, s);
+    Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(0, s);
+    Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(153, s);
+    Test::run_test_extract_diagonal_blocks<scalar_t, lno_t, size_type, device>(1553, s);
   }
 }
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
-  TEST_F(                                                                                \
-      TestCategory,                                                                      \
-      sparse##_##extract_diagonal_blocks##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    test_extract_diagonal_blocks<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                       \
+  TEST_F(TestCategory, sparse##_##extract_diagonal_blocks##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_extract_diagonal_blocks<SCALAR, ORDINAL, OFFSET, DEVICE>();                                      \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

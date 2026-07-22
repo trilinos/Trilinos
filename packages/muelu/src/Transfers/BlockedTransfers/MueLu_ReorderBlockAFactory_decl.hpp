@@ -22,7 +22,7 @@
 namespace MueLu {
 
 /*!
-  @class ReorderBlockAFactory class.
+  @class ReorderBlockAFactory
   @brief Factory for building a reordered (nested) block operator
 
   Example

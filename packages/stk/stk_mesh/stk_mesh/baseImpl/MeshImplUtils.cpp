@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,25 +30,33 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Relation.hpp>
+#include <stk_mesh/base/FindPermutation.hpp>
+#include <stk_mesh/base/DestroyRelations.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/StaticAssert.hpp>
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/EntityGhostData.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/baseImpl/Visitors.hpp>
 
 #include <vector>
+#include <numeric>
+#include <limits>
 
 //----------------------------------------------------------------------
 
@@ -56,71 +64,15 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool is_in_list(Entity entity, const Entity* begin, const Entity* end)
-{
-    return std::find(begin, end, entity) != end;
-}
-
-void remove_entities_not_in_list(const Entity* begin, const Entity* end, std::vector<Entity>& elementsInCommon)
-{
-    int numElemsFound=0;
-    for(int j=0, endElemsInCommon=elementsInCommon.size(); j<endElemsInCommon; ++j) {
-        if (is_in_list(elementsInCommon[j], begin, end)) {
-            if (j > numElemsFound) {
-                elementsInCommon[numElemsFound] = elementsInCommon[j];
-            }
-            ++numElemsFound;
-        }
-    }
-    elementsInCommon.resize(numElemsFound);
-}
-
-void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
-{
-    for(unsigned i = 1; i < numNodes; ++i) {
-        const ConnectedEntities conn = mesh.get_connected_entities(nodes[i], rank);
-        remove_entities_not_in_list(conn.data(), conn.data()+conn.size(), elementsInCommon);
-    }
-}
-
-void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
-{
-    elementsInCommon.clear();
-    if(numNodes > 0)
-    {
-        const ConnectedEntities conn = mesh.get_connected_entities(nodes[0], rank);
-        elementsInCommon.assign(conn.data(), conn.data()+conn.size());
-        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
-    }
-}
-
-
-void fill_owned_entities_with_larger_ids_connected_to_node(const BulkData& mesh,
-                                   Entity node,
-                                   stk::mesh::EntityRank rank,
-                                   stk::mesh::EntityId id,
-                                   std::vector<Entity>& elemsWithLargerIds)
-{
-    const ConnectedEntities elems = mesh.get_connected_entities(node, rank);
-    unsigned numElems = elems.size();
-    elemsWithLargerIds.reserve(numElems);
-
-    for(unsigned j = 0; j < numElems; ++j)
-        if(mesh.identifier(elems[j]) > id && mesh.bucket(elems[j]).owned())
-            elemsWithLargerIds.push_back(elems[j]);
-}
-
 void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
 {
-    elementsInCommon.clear();
-    if(numNodes > 0)
-    {
-        fill_owned_entities_with_larger_ids_connected_to_node(mesh, nodes[0], rank, id, elementsInCommon);
-        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
-    }
+  find_entities_these_nodes_have_in_common_and(mesh, rank, numNodes, nodes, elementsInCommon,
+  [&](const Entity& entity) {
+    return mesh.identifier(entity) > id && mesh.bucket(entity).owned();
+  });
 }
 
-const EntityCommListInfo& find_entity(const BulkData& mesh,
+const EntityCommListInfo& find_entity([[maybe_unused]] const BulkData& mesh,
                                const EntityCommListInfoVector& entities,
                                const EntityKey& key)
 {
@@ -133,28 +85,22 @@ const EntityCommListInfo& find_entity(const BulkData& mesh,
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes)
 {
   std::vector<Entity> elems;
-  find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems);
-  bool found_shell = false;
-  for (unsigned count = 0; count < elems.size(); ++count) {
-      if (mesh.bucket(elems[count]).topology().is_shell()) {
-          found_shell = true;
-      }
-  }
-  return found_shell;
+  find_entities_these_nodes_have_in_common_and(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems,
+  [&](const Entity& entity) {
+    return mesh.bucket(entity).topology().is_shell();
+  });
+  return !elems.empty();
 }
 
 void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems)
 {
-  find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems);
-
-  for(int i=elems.size()-1; i>=0; --i) {
-    if (!mesh.bucket(elems[i]).owned()) {
-      elems.erase(elems.begin()+i);
-    }
-  }
+  find_entities_these_nodes_have_in_common_and(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems,
+  [&](const Entity& entity) {
+    return mesh.bucket(entity).owned();
+  });
 }
 
-bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes)
+bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned /*numEdgeNodes*/, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes)
 {
   stk::topology elemTopology = mesh.bucket(element).topology();
   const Entity* elemNodes = mesh.begin_nodes(element);
@@ -229,23 +175,11 @@ int check_no_shared_elements_or_higher(const BulkData& mesh)
 void delete_upward_relations(stk::mesh::BulkData& bulkData,
                              const stk::mesh::Entity& entity)
 {
-  stk::mesh::EntityRank entity_rank = bulkData.entity_rank(entity);
-  const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(bulkData.mesh_meta_data().entity_rank_count() - 1);
-  const stk::mesh::EntityRank begin_rank = static_cast<stk::mesh::EntityRank>(entity_rank);
+  stk::mesh::EntityRank entityRank = bulkData.entity_rank(entity);
+  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulkData.mesh_meta_data().entity_rank_count() - 1);
 
-  for(stk::mesh::EntityRank irank = end_rank; irank != begin_rank; --irank)
-  {
-    int num_conn = bulkData.num_connectivity(entity, irank);
-    for(int j = num_conn - 1; j >= 0; --j)
-    {
-      const stk::mesh::Entity* rel_entities = bulkData.begin(entity, irank);
-      const stk::mesh::ConnectivityOrdinal* rel_ordinals = bulkData.begin_ordinals(entity, irank);
-      if(bulkData.is_valid(rel_entities[j]) && bulkData.state(rel_entities[j]) != Deleted)
-      {
-        bool relationDestoryed = bulkData.destroy_relation(rel_entities[j], entity, rel_ordinals[j]);
-        STK_ThrowRequireWithSierraHelpMsg(relationDestoryed);
-      }
-    }
+  for(stk::mesh::EntityRank irank = endRank; irank != entityRank; --irank) {
+    destroy_relations(bulkData, entity, irank);
   }
 }
 
@@ -309,7 +243,7 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
     STK_ThrowRequireMsg(entity_ordinal !=100000, "Program error. Contact sierra-help for support.");
     if ((entity_rank > stk::topology::NODE_RANK) && (mesh.entity_rank(upward_entity) > entity_rank))
     {
-        perm = mesh.find_permutation(upward_entity_topology, upward_entity_nodes, entity_top, nodes, entity_ordinal);
+        perm = stk::mesh::find_permutation(mesh, upward_entity_topology, upward_entity_nodes, entity_top, nodes, entity_ordinal);
         STK_ThrowRequireMsg(perm != INVALID_PERMUTATION, "find_permutation could not find permutation that produces a match");
     }
     mesh.declare_relation(upward_entity, entity, entity_ordinal, perm, scratch1, scratch2, scratch3);
@@ -319,7 +253,7 @@ void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity up
 
 // Given a vector of local ownership changes, remove duplicates and
 // sanity check.
-void internal_clean_and_verify_parallel_change(
+bool internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change )
 {
@@ -327,7 +261,7 @@ void internal_clean_and_verify_parallel_change(
   const int             p_size = mesh.parallel_size();
   const ParallelMachine p_comm = mesh.parallel();
 
-  size_t error_count = 0 ;
+  size_t error_and_count[2] = {0, 0} ;
 
   std::ostringstream error_msg ;
 
@@ -361,7 +295,7 @@ void internal_clean_and_verify_parallel_change(
          bad_new_owner_does_not_exist ||
          bad_inconsistent_change)
     {
-      ++error_count ;
+      ++error_and_count[0];
 
       error_msg << "  P" << p_rank << ": " ;
       if ( bad_null ) { error_msg << " NULL ENTITY" ; }
@@ -383,14 +317,6 @@ void internal_clean_and_verify_parallel_change(
     }
   }
 
-  all_reduce( p_comm , ReduceSum<1>( & error_count ) );
-
-  if ( error_count ) {
-    all_write_string( p_comm , std::cerr , error_msg.str() );
-
-    STK_ThrowErrorMsg("Bad change ownership directives\n");
-  }
-
   // Filter out non-changes (entity will be NULL
   {
     std::vector<EntityProc>::iterator i = local_change.begin(),
@@ -398,8 +324,19 @@ void internal_clean_and_verify_parallel_change(
     i = std::remove( i , j , EntityProc(Entity(), 0) );
     local_change.erase( i , j );
   }
-}
 
+  error_and_count[1] = local_change.size();
+
+  all_reduce( p_comm , ReduceSum<2>( error_and_count ) );
+
+  if ( error_and_count[0] ) {
+    all_write_string( p_comm , std::cerr , error_msg.str() );
+
+    STK_ThrowErrorMsg("Bad change ownership directives\n");
+  }
+
+  return error_and_count[1] > 0;
+}
 
 //----------------------------------------------------------------------
 // Generate a parallel consistent list of ownership changes:
@@ -469,7 +406,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
   std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess(mesh) );
 }
 
-stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
+stk::mesh::EntityVector convert_keys_to_entities(const stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
 {
     stk::mesh::EntityVector nodes(node_keys.size());
     for (size_t i=0;i<nodes.size();++i)
@@ -520,47 +457,6 @@ void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<Entity
             }
         }
     }
-}
-
-bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm)
-{
-    Selector shared = mesh.mesh_meta_data().globally_shared_part();
-    bool local_any_shared_entities_modified = false;
-    for(stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; ++rank ) {
-        const stk::mesh::BucketVector& buckets = rank==stk::topology::ELEM_RANK ? mesh.buckets(rank) : mesh.get_buckets(rank, shared);
-        for(size_t b=0; b<buckets.size(); ++b) {
-            const stk::mesh::Bucket& bkt = *buckets[b];
-            for(size_t i=0; i<bkt.size(); ++i) {
-                if (mesh.state(bkt[i]) == Modified) {
-                    if (rank == stk::topology::ELEM_RANK) {
-                        unsigned num_nodes = mesh.num_nodes(bkt[i]);
-                        const stk::mesh::Entity* nodes = mesh.begin_nodes(bkt[i]);
-                        for(unsigned j=0; j<num_nodes; ++j) {
-                            if (mesh.bucket(nodes[j]).shared()) {
-                                local_any_shared_entities_modified = true;
-                                break;
-                            }
-                        }
-                    }
-                    else { 
-                        local_any_shared_entities_modified = true;
-                        break;
-                    }
-                }
-            }
-            if (local_any_shared_entities_modified) {
-                break;
-            }
-        }
-        if (local_any_shared_entities_modified) {
-            break;
-        }
-    }
-
-    int local_shared_modified = local_any_shared_entities_modified ? 1 : 0;
-    int global_shared_modified = 0;
-    stk::all_reduce_max(comm, &local_shared_modified, &global_shared_modified, 1);
-    return global_shared_modified > 0;
 }
 
 stk::parallel::DistributedIndex::KeySpanVector
@@ -614,7 +510,7 @@ void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVec
     for (unsigned count=0 ; count<sideTopology.num_nodes() ; ++count) {
         side_nodes[count] = mesh.get_entity(stk::topology::NODE_RANK,side_node_ids[count]);
     }
-    bool is_connected_to_shell = stk::mesh::impl::do_these_nodes_have_any_shell_elements_in_common(mesh,sideTopology.num_nodes(),side_nodes.data());
+    bool is_connected_to_shell = do_these_nodes_have_any_shell_elements_in_common(mesh,sideTopology.num_nodes(),side_nodes.data());
 
     if (elemTopology.is_shell() || is_connected_to_shell) {
 
@@ -640,7 +536,7 @@ void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVec
 void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData       & mesh,
                              const Bucket&          bucket_from,
                              const OrdinalVector  & omit,
-                                   EntityRank       entity_rank_to,
+                                   [[maybe_unused]] EntityRank       entity_rank_to,
                                    OrdinalVector  & induced_parts)
 {
   const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
@@ -665,7 +561,7 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData 
 
 void get_part_ordinals_to_induce_on_lower_ranks(const BulkData& mesh,
                                                 const Bucket& bucket_from,
-                                                EntityRank       entity_rank_to,
+                                                [[maybe_unused]] EntityRank       entity_rank_to,
                                                 OrdinalVector  & induced_parts)
 {
   const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
@@ -690,59 +586,113 @@ void get_part_ordinals_to_induce_on_lower_ranks(const BulkData& mesh,
 
 template<typename PARTVECTOR>
 Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
-        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top)
+        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entityTopo,
+        const std::vector<Entity> & entityTopoNodes)
 {
-    stk::topology elem_top = mesh.bucket(elem).topology();
+    stk::topology elemTopo = mesh.bucket(elem).topology();
 
-    OrdinalVector entity_node_ordinals(entity_top.num_nodes());
-    elem_top.sub_topology_node_ordinals(mesh.entity_rank(entity), relationOrdinal, entity_node_ordinals.data());
+    stk::mesh::EntityVector elemNodes(mesh.begin_nodes(elem),mesh.end_nodes(elem));
+    STK_ThrowAssertMsg(entityTopoNodes.size() == entityTopo.num_nodes(),
+            "connect_element_to_entity: " << mesh.entity_key(entity) <<
+            " with topology: " << entityTopo.name() << " is being used with different number of nodes: " << entityTopoNodes.size());
 
-    const stk::mesh::Entity *elem_nodes = mesh.begin_nodes(elem);
-    EntityVector entity_top_nodes(entity_top.num_nodes());
-    elem_top.sub_topology_nodes(elem_nodes, mesh.entity_rank(entity), relationOrdinal, entity_top_nodes.data());
-
-    Permutation perm = mesh.find_permutation(elem_top, elem_nodes, entity_top, entity_top_nodes.data(), relationOrdinal);
+    Permutation perm = stk::mesh::find_permutation(mesh, elemTopo, elemNodes.data(), entityTopo, entityTopoNodes.data(), relationOrdinal);
 
     OrdinalVector scratch1, scratch2, scratch3;
 
     PARTVECTOR initialParts;
     initialParts.reserve(parts.size() + 1);
     initialParts = parts;
-    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(entity_top));
+    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(entityTopo));
     mesh.change_entity_parts(entity, initialParts);
 
-    const stk::mesh::ConnectivityOrdinal *side_ordinals = mesh.begin_ordinals(elem, mesh.entity_rank(entity));
-    unsigned num_sides = mesh.count_valid_connectivity(elem, mesh.entity_rank(entity));
+    const stk::mesh::ConnectivityOrdinal *sideOrdinals = mesh.begin_ordinals(elem, mesh.entity_rank(entity));
+    unsigned numSides = mesh.count_valid_connectivity(elem, mesh.entity_rank(entity));
 
-    bool elem_to_side_exists = false;
-    for(unsigned i = 0; i < num_sides; ++i)
-    {
-        if(side_ordinals[i] == relationOrdinal)
-        {
-            elem_to_side_exists = true;
-            break;
-        }
-    }
+    bool elemToSideExists = std::any_of(sideOrdinals, sideOrdinals+numSides,
+                                        [&relationOrdinal](unsigned ord){return ord == relationOrdinal;});
 
-    if(!elem_to_side_exists)
+    if(!elemToSideExists)
     {
         mesh.declare_relation(elem, entity, relationOrdinal, perm, scratch1, scratch2, scratch3);
     }
 
-    const unsigned num_side_nodes = mesh.count_valid_connectivity(entity, stk::topology::NODE_RANK);
-    if(0 == num_side_nodes)
+    const unsigned numSideNodes = mesh.count_valid_connectivity(entity, stk::topology::NODE_RANK);
+    if(0 == numSideNodes)
     {
-        Permutation node_perm = stk::mesh::Permutation::INVALID_PERMUTATION;
-        Entity const *elem_nodes_local = mesh.begin_nodes(elem);
-        for(unsigned i = 0; i < entity_top.num_nodes(); ++i)
+        Permutation nodePerm = stk::mesh::Permutation::INVALID_PERMUTATION;
+        for(unsigned i = 0; i < entityTopo.num_nodes(); ++i)
         {
-            Entity node = elem_nodes_local[entity_node_ordinals[i]];
-            mesh.declare_relation(entity, node, i, node_perm, scratch1, scratch2, scratch3);
+            Entity node = entityTopoNodes[i];
+            mesh.declare_relation(entity, node, i, nodePerm, scratch1, scratch2, scratch3);
         }
     }
     else
     {
-        STK_ThrowAssertMsg(num_side_nodes == entity_top.num_nodes(),
+        STK_ThrowAssertMsg(numSideNodes == entityTopo.num_nodes(),
+                "connect_element_to_entity: " << mesh.entity_key(entity) << " already exists with different number of nodes.");
+    }
+
+    return entity;
+}
+
+template
+Entity connect_element_to_entity<stk::mesh::PartVector>(BulkData & mesh, Entity elem, Entity entity,
+        const unsigned relationOrdinal, const stk::mesh::PartVector& parts, stk::topology entityTopo,
+        const std::vector<Entity> & entityTopoNodes);
+
+template
+Entity connect_element_to_entity<stk::mesh::ConstPartVector>(BulkData & mesh, Entity elem, Entity entity,
+        const unsigned relationOrdinal, const stk::mesh::ConstPartVector& parts, stk::topology entityTopo,
+        const std::vector<Entity> & entityTopoNodes);
+
+template<typename PARTVECTOR>
+Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
+        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entityTopo)
+{
+    stk::topology elemTopo = mesh.bucket(elem).topology();
+
+    OrdinalVector entityNodeOrdinals(entityTopo.num_nodes());
+    elemTopo.sub_topology_node_ordinals(mesh.entity_rank(entity), relationOrdinal, entityNodeOrdinals.data());
+
+    stk::mesh::EntityVector elemNodes(mesh.begin_nodes(elem),mesh.end_nodes(elem));
+    EntityVector entityTopoNodes(entityTopo.num_nodes());
+    elemTopo.sub_topology_nodes(elemNodes.data(), mesh.entity_rank(entity), relationOrdinal, entityTopoNodes.data());
+
+    Permutation perm = stk::mesh::find_permutation(mesh, elemTopo, elemNodes.data(), entityTopo, entityTopoNodes.data(), relationOrdinal);
+
+    OrdinalVector scratch1, scratch2, scratch3;
+
+    PARTVECTOR initialParts;
+    initialParts.reserve(parts.size() + 1);
+    initialParts = parts;
+    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(entityTopo));
+    mesh.change_entity_parts(entity, initialParts);
+
+    const stk::mesh::ConnectivityOrdinal *sideOrdinals = mesh.begin_ordinals(elem, mesh.entity_rank(entity));
+    unsigned numSides = mesh.count_valid_connectivity(elem, mesh.entity_rank(entity));
+
+    bool elemToSideExists = std::any_of(sideOrdinals, sideOrdinals+numSides,
+                                        [&relationOrdinal](unsigned ord){return ord == relationOrdinal;});
+
+    if(!elemToSideExists)
+    {
+        mesh.declare_relation(elem, entity, relationOrdinal, perm, scratch1, scratch2, scratch3);
+    }
+
+    const unsigned numSideNodes = mesh.count_valid_connectivity(entity, stk::topology::NODE_RANK);
+    if(0 == numSideNodes)
+    {
+        Permutation nodePerm = stk::mesh::Permutation::INVALID_PERMUTATION;
+        for(unsigned i = 0; i < entityTopo.num_nodes(); ++i)
+        {
+            Entity node = elemNodes[entityNodeOrdinals[i]];
+            mesh.declare_relation(entity, node, i, nodePerm, scratch1, scratch2, scratch3);
+        }
+    }
+    else
+    {
+        STK_ThrowAssertMsg(numSideNodes == entityTopo.num_nodes(),
                 "declare_element_to_entity: " << mesh.entity_key(entity) << " already exists with different number of nodes.");
     }
 
@@ -751,16 +701,160 @@ Entity connect_element_to_entity(BulkData & mesh, Entity elem, Entity entity,
 
 template
 Entity connect_element_to_entity<stk::mesh::PartVector>(BulkData & mesh, Entity elem, Entity entity,
-        const unsigned relationOrdinal, const stk::mesh::PartVector& parts, stk::topology entity_top);
+        const unsigned relationOrdinal, const stk::mesh::PartVector& parts, stk::topology entityTopo);
 template
 Entity connect_element_to_entity<stk::mesh::ConstPartVector>(BulkData & mesh, Entity elem, Entity entity,
-        const unsigned relationOrdinal, const stk::mesh::ConstPartVector& parts, stk::topology entity_top);
+        const unsigned relationOrdinal, const stk::mesh::ConstPartVector& parts, stk::topology entityTopo);
 
+template<typename PARTVECTOR>
+Entity connect_element_to_side(BulkData & mesh, Entity elem, Entity side,
+                               const unsigned sideOrdinal, const PARTVECTOR& parts, stk::topology sideTopo)
+{
+    stk::topology elemTopo = mesh.bucket(elem).topology();
+
+    OrdinalVector sideNodeOrdinals(sideTopo.num_nodes());
+    elemTopo.side_node_ordinals(sideOrdinal, sideNodeOrdinals.data());
+
+    stk::mesh::EntityVector elemNodes(mesh.begin_nodes(elem),mesh.end_nodes(elem));
+    EntityVector sideTopoNodes(sideTopo.num_nodes());
+    elemTopo.side_nodes(elemNodes.data(), sideOrdinal, sideTopoNodes.data());
+
+    unsigned localRankedSideOrdinal;
+    stk::topology::rank_t topoSideRank;
+    elemTopo.ranked_side_ordinal(sideOrdinal, localRankedSideOrdinal, topoSideRank);
+
+    auto sideRank = mesh.entity_rank(side);
+
+    STK_ThrowAssertMsg(topoSideRank == sideRank,
+                       "connect_element_to_side: " <<
+                       mesh.entity_key(side) <<
+                       " does not have the correct rank for element: " <<
+                       mesh.entity_key(elem) <<
+                       " on side ordinal: " << sideOrdinal);
+
+    Permutation perm = stk::mesh::find_permutation(mesh, elemTopo, elemNodes.data(), sideTopo, sideTopoNodes.data(), localRankedSideOrdinal);
+
+    OrdinalVector scratch1, scratch2, scratch3;
+
+    PARTVECTOR initialParts;
+    initialParts.reserve(parts.size() + 1);
+    initialParts = parts;
+    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(sideTopo));
+    mesh.change_entity_parts(side, initialParts);
+
+    const stk::mesh::ConnectivityOrdinal *sideOrdinals = mesh.begin_ordinals(elem, sideRank);
+    unsigned numSides = mesh.count_valid_connectivity(elem, sideRank);
+
+    bool elemToSideExists = std::any_of(sideOrdinals, sideOrdinals+numSides,
+                                        [&localRankedSideOrdinal](unsigned ord){return ord == localRankedSideOrdinal;});
+
+    if(!elemToSideExists)
+    {
+        mesh.declare_relation(elem, side, localRankedSideOrdinal, perm, scratch1, scratch2, scratch3);
+    }
+
+    const unsigned numSideNodes = mesh.count_valid_connectivity(side, stk::topology::NODE_RANK);
+    if(0 == numSideNodes)
+    {
+        Permutation nodePerm = stk::mesh::Permutation::INVALID_PERMUTATION;
+        for(unsigned i = 0; i < sideTopo.num_nodes(); ++i)
+        {
+            Entity node = elemNodes[sideNodeOrdinals[i]];
+            mesh.declare_relation(side, node, i, nodePerm, scratch1, scratch2, scratch3);
+        }
+    }
+    else
+    {
+        STK_ThrowAssertMsg(numSideNodes == sideTopo.num_nodes(),
+                "declare_element_to_entity: " << mesh.entity_key(side) << " already exists with different number of nodes.");
+    }
+
+    return side;
+}
+
+template
+Entity connect_element_to_side<stk::mesh::PartVector>(BulkData & mesh, Entity elem, Entity entity,
+        const unsigned relationOrdinal, const stk::mesh::PartVector& parts, stk::topology entityTopo);
+template
+Entity connect_element_to_side<stk::mesh::ConstPartVector>(BulkData & mesh, Entity elem, Entity entity,
+        const unsigned relationOrdinal, const stk::mesh::ConstPartVector& parts, stk::topology entityTopo);
+
+
+template<typename PARTVECTOR>
+Entity connect_element_to_side(BulkData & mesh, Entity elem, Entity side,
+                               const unsigned sideOrdinal, const PARTVECTOR& parts, stk::topology sideTopo,
+                               const std::vector<Entity> & sideNodes)
+{
+    stk::topology elemTopo = mesh.bucket(elem).topology();
+
+    stk::mesh::EntityVector elemNodes(mesh.begin_nodes(elem),mesh.end_nodes(elem));
+
+    unsigned localRankedSideOrdinal;
+    stk::topology::rank_t topoSideRank;
+    elemTopo.ranked_side_ordinal(sideOrdinal, localRankedSideOrdinal, topoSideRank);
+
+    auto sideRank = mesh.entity_rank(side);
+
+    STK_ThrowAssertMsg(topoSideRank == sideRank,
+                       "connect_element_to_side: " <<
+                       mesh.entity_key(side) <<
+                       " does not have the correct rank for element: " <<
+                       mesh.entity_key(elem) <<
+                       " on side ordinal: " << sideOrdinal);
+
+    Permutation perm = stk::mesh::find_permutation(mesh, elemTopo, elemNodes.data(), sideTopo, sideNodes.data(), localRankedSideOrdinal);
+
+    OrdinalVector scratch1, scratch2, scratch3;
+
+    PARTVECTOR initialParts;
+    initialParts.reserve(parts.size() + 1);
+    initialParts = parts;
+    initialParts.push_back(&mesh.mesh_meta_data().get_topology_root_part(sideTopo));
+    mesh.change_entity_parts(side, initialParts);
+
+    const stk::mesh::ConnectivityOrdinal *sideOrdinals = mesh.begin_ordinals(elem, sideRank);
+    unsigned numSides = mesh.count_valid_connectivity(elem, sideRank);
+
+    bool elemToSideExists = std::any_of(sideOrdinals, sideOrdinals+numSides,
+                                        [&localRankedSideOrdinal](unsigned ord){return ord == localRankedSideOrdinal;});
+
+    if(!elemToSideExists)
+    {
+        mesh.declare_relation(elem, side, localRankedSideOrdinal, perm, scratch1, scratch2, scratch3);
+    }
+
+    const unsigned numSideNodes = mesh.count_valid_connectivity(side, stk::topology::NODE_RANK);
+    if(0 == numSideNodes)
+    {
+        Permutation nodePerm = stk::mesh::Permutation::INVALID_PERMUTATION;
+        for(unsigned i = 0; i < sideTopo.num_nodes(); ++i)
+        {
+            Entity node = sideNodes[i];
+            mesh.declare_relation(side, node, i, nodePerm, scratch1, scratch2, scratch3);
+        }
+    }
+    else
+    {
+        STK_ThrowAssertMsg(numSideNodes == sideTopo.num_nodes(),
+                "declare_element_to_entity: " << mesh.entity_key(side) << " already exists with different number of nodes.");
+    }
+
+    return side;
+}
+
+template
+Entity connect_element_to_side<stk::mesh::PartVector>(BulkData & mesh, Entity elem, Entity side,
+        const unsigned sideOrdinal, const stk::mesh::PartVector& parts, stk::topology sideTopo,
+        const std::vector<Entity> & sideNodes);
+template
+Entity connect_element_to_side<stk::mesh::ConstPartVector>(BulkData & mesh, Entity elem, Entity side,
+        const unsigned sideOrdinal, const stk::mesh::ConstPartVector& parts, stk::topology sideTopo,
+        const std::vector<Entity> & sideNodes);
 
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
-                                                     stk::mesh::EntityId new_face_global_id,
+                                                     stk::mesh::EntityId /*new_face_global_id*/,
                                                      const stk::mesh::PartVector & parts)
 {
     stk::mesh::Entity new_face = stk::mesh::Entity();
@@ -805,19 +899,16 @@ void create_shell_status(const std::vector<stk::topology> & elements_touching_su
     }
 }
 
-
-
-void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
-                                      stk::mesh::Entity face,
-                                      stk::mesh::Entity elem_with_face,
-                                      int elem_with_face_side_ordinal
-)
+void connect_side_to_other_elements(stk::mesh::BulkData & bulk,
+                                    stk::mesh::Entity side,
+                                    stk::mesh::Entity elem_with_side,
+                                    int ordinal_for_elem_with_side)
 {
-    stk::topology elem_topology = bulk.bucket(elem_with_face).topology();
-    stk::topology side_topology = elem_topology.face_topology(elem_with_face_side_ordinal);
+    stk::topology elem_topology = bulk.bucket(elem_with_side).topology();
+    stk::topology side_topology = elem_topology.side_topology(ordinal_for_elem_with_side);
     int num_side_nodes = side_topology.num_nodes();
     std::vector<stk::mesh::Entity> side_nodes(num_side_nodes);
-    elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,side_nodes.data());
+    elem_topology.side_nodes(bulk.begin_nodes(elem_with_side),ordinal_for_elem_with_side,side_nodes.data());
     std::vector<stk::mesh::Entity> common_elements;
     stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk,stk::topology::ELEMENT_RANK,num_side_nodes,side_nodes.data(),common_elements);
 
@@ -827,16 +918,25 @@ void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
     }
     std::vector<ShellStatus> element_shell_status;
     create_shell_status(element_topology_touching_surface_vector, elem_topology, element_shell_status);
+
+    SideCreationElementPair elemPair;
+    elemPair.creationElementTopology = elem_topology;
+    elemPair.creationElementOrdinal = ordinal_for_elem_with_side;
+
     for (size_t count=0 ; count<common_elements.size() ; ++count) {
-        if (common_elements[count] != elem_with_face) {
+        if (common_elements[count] != elem_with_side) {
             stk::mesh::Entity other_elem = common_elements[count];
             stk::topology other_elem_topology = element_topology_touching_surface_vector[count];
-            for (unsigned other_elem_side = 0; other_elem_side < other_elem_topology.num_faces() ; ++other_elem_side) {
-                stk::topology other_elem_side_topology = other_elem_topology.face_topology(other_elem_side);
+            for (unsigned other_elem_side = 0; other_elem_side < other_elem_topology.num_sides() ; ++other_elem_side) {
+                stk::topology other_elem_side_topology = other_elem_topology.side_topology(other_elem_side);
                 std::vector<stk::mesh::Entity> other_elem_side_nodes(other_elem_side_topology.num_nodes());
-                other_elem_topology.face_nodes(bulk.begin_nodes(other_elem),other_elem_side,other_elem_side_nodes.data());
-                if (should_face_be_connected_to_element_side(side_nodes,other_elem_side_nodes,other_elem_side_topology,element_shell_status[count])) {
-                    stk::mesh::connect_side_to_element_with_ordinal(bulk, other_elem, face, other_elem_side);
+                other_elem_topology.side_nodes(bulk.begin_nodes(other_elem),other_elem_side,other_elem_side_nodes.data());
+
+                elemPair.connectionElementTopology = other_elem_topology;
+                elemPair.connectionElementOrdinal = other_elem_side;
+
+                if (should_face_be_connected_to_element_side(side_nodes,other_elem_side_nodes,elemPair,element_shell_status[count])) {
+                    stk::mesh::connect_side_to_element_with_ordinal(bulk, other_elem, side, other_elem_side, side_nodes);
                     break;
                 }
             }
@@ -844,7 +944,43 @@ void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
     }
 }
 
-void pack_downward_relations_if_valid_permutation_exists(stk::mesh::BulkData& mesh, stk::mesh::Entity some_entity, std::vector<stk::mesh::Relation>& recv_relations1)
+void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
+                                      stk::mesh::Entity face,
+                                      stk::mesh::Entity elem_with_face,
+                                      int elem_with_face_side_ordinal)
+{
+  stk::topology elem_topology = bulk.bucket(elem_with_face).topology();
+  stk::topology side_topology = elem_topology.face_topology(elem_with_face_side_ordinal);
+  int num_side_nodes = side_topology.num_nodes();
+  std::vector<stk::mesh::Entity> side_nodes(num_side_nodes);
+  elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,side_nodes.data());
+  std::vector<stk::mesh::Entity> common_elements;
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk,stk::topology::ELEMENT_RANK,num_side_nodes,side_nodes.data(),common_elements);
+
+  std::vector<stk::topology> element_topology_touching_surface_vector(common_elements.size());
+  for (size_t i=0 ; i<common_elements.size() ; ++i) {
+      element_topology_touching_surface_vector[i] = bulk.bucket(common_elements[i]).topology();
+  }
+  std::vector<ShellStatus> element_shell_status;
+  create_shell_status(element_topology_touching_surface_vector, elem_topology, element_shell_status);
+  for (size_t count=0 ; count<common_elements.size() ; ++count) {
+      if (common_elements[count] != elem_with_face) {
+          stk::mesh::Entity other_elem = common_elements[count];
+          stk::topology other_elem_topology = element_topology_touching_surface_vector[count];
+          for (unsigned other_elem_side = 0; other_elem_side < other_elem_topology.num_faces() ; ++other_elem_side) {
+              stk::topology other_elem_side_topology = other_elem_topology.face_topology(other_elem_side);
+              std::vector<stk::mesh::Entity> other_elem_side_nodes(other_elem_side_topology.num_nodes());
+              other_elem_topology.face_nodes(bulk.begin_nodes(other_elem),other_elem_side,other_elem_side_nodes.data());
+              if (should_face_be_connected_to_element_side(side_nodes,other_elem_side_nodes,other_elem_side_topology,element_shell_status[count])) {
+                  stk::mesh::connect_side_to_element_with_ordinal(bulk, other_elem, face, other_elem_side);
+                  break;
+              }
+          }
+      }
+  }
+}
+
+void pack_downward_relations_if_valid_permutation_exists(const BulkData& mesh, Entity some_entity, std::vector<Relation>& recv_relations1)
 {
     recv_relations1.clear();
     unsigned bucket_ordinal = mesh.bucket_ordinal(some_entity);
@@ -871,7 +1007,7 @@ void pack_downward_relations_if_valid_permutation_exists(stk::mesh::BulkData& me
     }
 }
 
-bool check_permutations_on_all(stk::mesh::BulkData& mesh)
+bool check_permutations_on_all(const stk::mesh::BulkData& mesh)
 {
     std::ostringstream os;
     bool all_ok = true;
@@ -891,7 +1027,7 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
                 {
                     if (mesh.entity_rank(entity) < stk::topology::ELEM_RANK)
                     {
-                        bool valid_permutation = mesh.check_permutation(entity,
+                        bool valid_permutation = stk::mesh::check_permutation(mesh, entity,
                                                            entity_relations[k].entity(),
                                                            static_cast<unsigned>(entity_relations[k].getOrdinal()),
                                                            static_cast<stk::mesh::Permutation>(entity_relations[k].attribute())
@@ -915,7 +1051,7 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
 
 
     int verified_ok = all_ok ? 1 : 0;
-    if (mesh.parallel_size() > 1) 
+    if (mesh.parallel_size() > 1)
     {
         all_reduce( mesh.parallel() , ReduceMin<1>( & verified_ok ) );
     }
@@ -925,41 +1061,72 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
     return all_ok;
 }
 
-void send_entity_keys_to_owners(
-  BulkData & mesh ,
-  const std::vector<Entity> & recvGhosts,
-        std::set< EntityProc , EntityLess > & sendGhosts)
+uint16_t calc_owned_closure_count(const BulkData& mesh, Entity entity)
 {
-  const int parallel_size = mesh.parallel_size();
+  const Bucket* bptr = mesh.bucket_ptr(entity);
+  if (bptr == nullptr) {
+    return 0;
+  }
 
-  stk::CommSparse sparse( mesh.parallel() );
+  uint ownedClosureCount = bptr->owned() ? 1 : 0;
 
-  // For all entity keys in recvGhosts, send the entity key to the owning proc
-  for ( int phase = 0; phase < 2; ++phase) {
-    for (Entity recvGhost : recvGhosts) {
-      const int owner = mesh.parallel_owner_rank(recvGhost);
-      const EntityKey key = mesh.entity_key(recvGhost);
-      sparse.send_buffer( owner ).pack<EntityKey>( key );
-    }
-    if (phase == 0) { //allocation phase
-      sparse.allocate_buffers();
-    }
-    else { //communication phase
-      sparse.communicate();
+  EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+  EntityRank beginRank = static_cast<EntityRank>(mesh.entity_rank(entity)+1);
+
+  for(EntityRank rank=beginRank; rank<endRank; ++rank) {
+    const auto conn = mesh.get_connected_entities(entity, rank);
+    for(Entity upwardEntity : conn) {
+      bptr = mesh.bucket_ptr(upwardEntity);
+      const bool owned = bptr != nullptr ? bptr->owned() : false;
+      if (owned) {
+        ++ownedClosureCount;
+      }
     }
   }
 
-  // Insert into sendGhosts that entities need to be recvd on another proc
-  for ( int proc_rank = 0 ; proc_rank < parallel_size ; ++proc_rank ) {
-    stk::CommBuffer & buf = sparse.recv_buffer(proc_rank);
-    while ( buf.remaining() ) {
-      EntityKey key ;
-      buf.unpack<EntityKey>( key );
-      Entity entity = mesh.get_entity(key);
-      EntityProc tmp( entity, proc_rank );
-      sendGhosts.insert( tmp );
+  return ownedClosureCount;
+}
+
+bool check_owned_closure_on_shared(const BulkData& mesh)
+{
+  if (mesh.parallel_size() == 1) {
+    return true;
+  }
+
+  bool allCountsCorrect = true;
+  std::ostringstream oss;
+
+  for(EntityRank rank : {stk::topology::NODE_RANK, stk::topology::EDGE_RANK, stk::topology::FACE_RANK}) {
+    const BucketVector& bkts = mesh.get_buckets(rank, mesh.mesh_meta_data().globally_shared_part());
+    for(const Bucket* bptr : bkts) {
+      for(Entity ent : *bptr) {
+        const uint16_t ownedClosureCount = mesh.owned_closure_count(ent);
+        const uint16_t calculatedCount = calc_owned_closure_count(mesh, ent);
+        //There are a couple reasons why ownedClosureCount might be greater than
+        //calculatedCount: orphan-node-protection, (although orphan-node-protection
+        //should never be present for a shared node)
+        //or degenerate (repeated) connectivities.
+        //But it shouldn't be less...
+        if (ownedClosureCount < calculatedCount) {
+          oss << "P" << mesh.parallel_rank() << mesh.entity_key(ent)
+              << " has owned_closure_count=" << ownedClosureCount
+              << " but calculated count is " << calculatedCount << std::endl;
+          allCountsCorrect = false;
+          break;
+        }
+      }
+      if (!allCountsCorrect) {
+        break;
+      }
     }
   }
+
+  if (stk::is_true_on_any_proc(mesh.parallel(), !allCountsCorrect)) {
+    std::cerr<<oss.str();
+    return false;
+  }
+
+  return true;
 }
 
 void comm_sync_send_recv(const BulkData & mesh ,
@@ -1009,7 +1176,7 @@ void comm_sync_send_recv(const BulkData & mesh ,
       // Erase it from my processor's ghosting responsibility:
       // The iterator passed to the erase method will be invalidated.
       entProc.first = Entity();
-    }      
+    }
   }
 
   auto shouldRemove = [&](const EntityProc& ep){ return ep.first.local_offset() == 0; };
@@ -1113,14 +1280,14 @@ public:
 
     m_commSparse.allocate_buffers();
   }
-  
+
   void pack_and_communicate_buffers(const std::vector<Entity>& removeRecvGhosts)
   {
     unsigned idx = 0;
 
     for(int p=0; p<m_commSparse.parallel_size(); ++p) {
       stk::CommBuffer& buf = m_commSparse.send_buffer(p);
-  
+
       buf.pack<unsigned>(m_rmRecvCounts[p]);
       if (m_rmRecvCounts[p] > 0) {
         for(Entity entity : removeRecvGhosts) {
@@ -1130,7 +1297,7 @@ public:
           }
         }
       }
-  
+
       buf.pack<unsigned>(m_nonOwnedSendCounts[p]);
       if (m_nonOwnedSendCounts[p] > 0) {
         for(unsigned i=idx; i<idx+m_nonOwnedSendCounts[p]; ++i) {
@@ -1147,7 +1314,7 @@ public:
 
     m_commSparse.communicate();
   }
-  
+
   void unpack_recv_buffers(EntityProcVec& newSendGhosts,
                            std::set<EntityKeyProc>& removeSendGhosts)
   {
@@ -1155,13 +1322,13 @@ public:
       CommBuffer & buf = m_commSparse.recv_buffer(p);
       unsigned numRemoveSends = 0;
       buf.unpack<unsigned>(numRemoveSends);
-  
+
       for(unsigned i=0; i<numRemoveSends; ++i) {
         EntityKey key;
         buf.unpack<EntityKey>(key);
         removeSendGhosts.insert(EntityKeyProc(key,p));
       }
-  
+
       unsigned numReferredSends = 0;
       buf.unpack<unsigned>(numReferredSends);
       for(unsigned i=0; i<numReferredSends; ++i) {
@@ -1196,87 +1363,6 @@ void comm_sync_send_recv(const BulkData & mesh ,
   commHelper.pack_and_communicate_buffers(removeRecvGhosts);
 
   commHelper.unpack_recv_buffers(newSendGhosts, removeSendGhosts);
-}
-
-void comm_sync_aura_send_recv(
-  BulkData & mesh ,
-  std::vector<EntityProc>& sendGhosts,
-  EntityProcMapping& entityProcMapping,
-  std::vector<bool>& ghostStatus )
-{
-  const int parallel_rank = mesh.parallel_rank();
-  const int parallel_size = mesh.parallel_size();
-
-  stk::CommSparse all( mesh.parallel() );
-
-  // Communication sizing:
-
-  for (const EntityProc& ep : sendGhosts) {
-    const int owner = mesh.parallel_owner_rank(ep.first);
-    all.send_buffer( ep.second ).skip<EntityKey>(1).skip<int>(1);
-    if ( owner != parallel_rank ) {
-      all.send_buffer( owner ).skip<EntityKey>(1).skip<int>(1);
-    }
-  }
-
-  all.allocate_buffers();
-
-  // Loop thru all entities in sendGhosts, send the entity key to the sharing/ghosting proc
-  // Also, if the owner of the entity is NOT me, also send the entity key to the owing proc
-
-  // Communication packing (with message content comments):
-  for (const EntityProc& ep : sendGhosts) {
-    const Entity entity = ep.first;
-    const int owner = mesh.parallel_owner_rank(entity);
-
-    // Inform receiver of ghosting, the receiver does not own
-    // and does not share this entity.
-    // The ghost either already exists or is a to-be-done new ghost.
-    // This status will be resolved on the final communication pass
-    // when new ghosts are packed and sent.
-
-    const EntityKey entity_key = mesh.entity_key(entity);
-    const int proc = ep.second;
-
-    all.send_buffer( proc ).pack(entity_key).pack(proc);
-
-    if (owner != parallel_rank) {
-      all.send_buffer(owner).pack(entity_key).pack(proc);
-
-      //Erase it from my processor's ghosting responsibility:
-      entityProcMapping.eraseEntityProc(entity, proc);
-    }
-  }
-
-  all.communicate();
-
-  // Loop thru all the buffers, and insert ghosting request for entity e to other proc
-  // if the proc sending me the data is me, then insert into new_recv.
-  // Communication unpacking:
-  for ( int p = 0 ; p < parallel_size ; ++p ) {
-    CommBuffer & buf = all.recv_buffer(p);
-    while ( buf.remaining() ) {
-
-      EntityKey entity_key;
-      int proc = 0;
-
-      buf.unpack(entity_key).unpack(proc);
-
-      Entity const e = mesh.get_entity( entity_key );
-
-      if (parallel_rank != proc) {
-        //Receiving a ghosting need for an entity I own, add it.
-        entityProcMapping.addEntityProc(e, proc);
-      }
-      else if ( mesh.is_valid(e) ) {
-        //  I am the receiver for this ghost.
-        //  If I already have it add it to the receive list,
-        //  otherwise don't worry about it - I will receive
-        //  it in the final new-ghosting communication.
-        ghostStatus[e.local_offset()] = true;
-      }
-    }
-  }
 }
 
 void comm_sync_nonowned_sends(
@@ -1503,10 +1589,10 @@ void filter_out( OrdinalVector & vec ,
       }
       ++j ;
       ++ip ;
-    }    
+    }
   }
 
-  if ( i != j ) { vec.erase( i , j ); } 
+  if ( i != j ) { vec.erase( i , j ); }
 }
 
 void merge_in( OrdinalVector & vec , const OrdinalVector & parts )
@@ -1516,16 +1602,16 @@ void merge_in( OrdinalVector & vec , const OrdinalVector & parts )
 
   for ( ; i != vec.end() && ip != parts.end() ; ++i ) {
 
-    const unsigned ord = *ip; 
+    const unsigned ord = *ip;
 
     if ( ord <= *i ) {
-      if ( ord < *i ) { i = vec.insert( i , ord ); } 
+      if ( ord < *i ) { i = vec.insert( i , ord ); }
       ++ip ;
-    }    
+    }
   }
 
   for ( ; ip != parts.end() ; ++ip ) {
-    const unsigned ord = *ip; 
+    const unsigned ord = *ip;
     vec.push_back( ord );
   }
 }
@@ -1544,9 +1630,9 @@ void fill_inducible_parts_from_list(const MetaData& meta,
                                     OrdinalVector &induciblePartsFromList)
 {
   const PartVector& allParts = meta.get_parts();
-  for (size_t i = 0; i < partList.size(); i++) {
-    if (allParts[partList[i]]->should_induce(rank)) {
-      induciblePartsFromList.push_back(partList[i]);
+  for(Ordinal partOrd : partList) {
+    if (allParts[partOrd]->should_induce(rank)) {
+      induciblePartsFromList.push_back(partOrd);
     }
   }
 }
@@ -1675,11 +1761,11 @@ EntityId get_global_max_id_in_use(const BulkData& mesh,
   EntityId localMaxReserved = reservedIds.empty() ? 0 : *std::max_element(reservedIds.begin(), reservedIds.end());
   localMax = std::max(localMax, localMaxReserved);
 
-  for (Entity::entity_value_type local_offset : deletedEntitiesCurModCycle) {    
+  for (Entity::entity_value_type local_offset : deletedEntitiesCurModCycle) {
     stk::mesh::Entity entity(local_offset);
     if ( mesh.is_valid(entity) && mesh.entity_rank(entity) == rank ) {
       localMax = std::max(localMax, mesh.entity_key(entity).id());
-    }        
+    }
   }
 
   return stk::get_global_max(mesh.parallel(), localMax);
@@ -1730,7 +1816,7 @@ bool connect_edge_or_face_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh:
                                                                                             entityRank, entityNodes);
 
     if(ordinalAndPerm.first == stk::mesh::INVALID_CONNECTIVITY_ORDINAL) { return false; }
-    
+
     stk::mesh::impl::connect_element_to_entity(bulk, elem, entity, ordinalAndPerm.first, stk::mesh::PartVector{}, entityTopo);
   }
   return true;
@@ -1745,6 +1831,22 @@ void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)
 {
   STK_ThrowRequireMsg(connect_edge_or_face_to_elements_impl(bulk, face),
                   "Face with id: " << bulk.identifier(face) << " has no valid connectivity to elements");
+}
+
+bool part_is_on_upward_entity_except(const stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     stk::mesh::EntityRank upwardRank,
+                                     const stk::mesh::Part& part,
+                                     stk::mesh::Entity entityToSkip)
+{
+  const stk::mesh::ConnectedEntities conn = bulk.get_connected_entities(entity, upwardRank);
+  for(unsigned i=0; i<conn.size(); ++i) {
+    if (conn[i] != entityToSkip && bulk.bucket(conn[i]).member(part)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,
@@ -1819,7 +1921,7 @@ bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entit
 {
   return bulk.is_valid(entity) && !impl::has_upward_connectivity(bulk, entity);
 }
-  
+
 void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk,
                                             stk::mesh::Entity connectedEntity,
                                             EntityVector& scratchSpace)
@@ -1864,6 +1966,268 @@ void print_upward_connected_entities(stk::mesh::BulkData& bulk,
     }
   }
   os << std::endl;
+}
+
+
+bool is_shell_side(stk::topology elem_topo, unsigned ordinal)
+{
+  if(!elem_topo.is_shell()) {
+    return false;
+  }
+
+  return elem_topo.side_topology(ordinal) != elem_topo.side_topology(0);
+}
+
+ShellConnectionConfiguration get_shell_configuration(stk::topology elemTopo1, unsigned ordinal1, stk::mesh::Permutation perm1,
+                                                     stk::topology elemTopo2, unsigned ordinal2, stk::mesh::Permutation perm2)
+{
+  const bool isPositivePerm1 = elemTopo1.side_topology(ordinal1).is_positive_polarity(perm1);
+  const bool isPositivePerm2 = elemTopo2.side_topology(ordinal2).is_positive_polarity(perm2);
+
+  return get_shell_configuration(elemTopo1, ordinal1, elemTopo2, ordinal2, (isPositivePerm1 == isPositivePerm2));
+}
+
+ShellConnectionConfiguration get_shell_configuration(stk::topology elemTopo1, unsigned ordinal1,
+                                                     stk::topology elemTopo2, unsigned ordinal2, bool samePolarityForBothSides)
+{
+  ShellConnectionConfiguration status = ShellConnectionConfiguration::INVALID;
+
+  if(!elemTopo1.is_shell() || !elemTopo2.is_shell()) {
+    return ShellConnectionConfiguration::INVALID;
+  }
+
+  bool result1 = is_shell_side(elemTopo1, ordinal1);
+  bool result2 = is_shell_side(elemTopo2, ordinal2);
+
+  if(result1 == result2) {
+    bool isFaceFaceConfiguration = (result1 == false);
+    if(isFaceFaceConfiguration) {
+      // Non-degenerate Face-Face is always considered to be coincident and stacked regardless of orientation
+      status = ShellConnectionConfiguration::STACKED;
+    } else {
+      // Edge-Edge could be stacked or paved depending on permutations
+      // Reversed non-degenerate Face-Face is considered stacked so we should consider the attached edges to be stacked too...
+
+      status = (samePolarityForBothSides ? ShellConnectionConfiguration::STACKED : ShellConnectionConfiguration::PAVED);
+    }
+  }
+
+  return status;
+}
+
+ShellConnectionConfiguration get_shell_configuration(stk::topology elemTopo1, unsigned ordinal1,
+                                                     stk::topology elemTopo2, unsigned ordinal2)
+{
+  ShellConnectionConfiguration status = ShellConnectionConfiguration::INVALID;
+
+  if(!elemTopo1.is_shell() || !elemTopo2.is_shell()) {
+    return ShellConnectionConfiguration::INVALID;
+  }
+
+  bool result1 = is_shell_side(elemTopo1, ordinal1);
+  bool result2 = is_shell_side(elemTopo2, ordinal2);
+
+  if(result1 == result2) {
+    status = (result1 == false ? ShellConnectionConfiguration::STACKED : ShellConnectionConfiguration::PAVED);
+  }
+
+  return status;
+}
+
+ShellConnectionConfiguration get_shell_configuration(const SideCreationElementPair& shellPair)
+{
+  return get_shell_configuration(shellPair.creationElementTopology,
+                                 shellPair.creationElementOrdinal,
+                                 shellPair.connectionElementTopology,
+                                 shellPair.connectionElementOrdinal);
+}
+
+bool is_shell_configuration_valid_for_side_connection(stk::topology creationElementTopology,
+                                                      stk::mesh::ConnectivityOrdinal creationElementOrdinal,
+                                                      stk::topology connectionElementTopology,
+                                                      stk::mesh::ConnectivityOrdinal connectionElementOrdinal)
+{
+  if(!creationElementTopology.is_shell() || !connectionElementTopology.is_shell()) {
+    return false;
+  }
+
+  STK_ThrowRequireMsg(creationElementTopology.has_mixed_rank_sides() == connectionElementTopology.has_mixed_rank_sides(),
+                      "STK does not support connecting homogeneous and heterogeneous rank shells: " <<
+                      creationElementTopology.name() << " | " << connectionElementTopology.name());
+
+  if(creationElementTopology.side_topology(creationElementOrdinal) !=
+     connectionElementTopology.side_topology(connectionElementOrdinal)) {
+    return false;
+  }
+
+  ShellConnectionConfiguration status = get_shell_configuration(creationElementTopology,
+                                                                creationElementOrdinal,
+                                                                connectionElementTopology,
+                                                                connectionElementOrdinal);
+
+  if(status == ShellConnectionConfiguration::INVALID){
+    return false;
+  }
+
+  if(status == ShellConnectionConfiguration::STACKED) return true;
+
+  // This is a paved scenario
+  auto rank_for_creation = creationElementTopology.side_rank(creationElementOrdinal);
+  auto rank_for_connection = connectionElementTopology.side_rank(connectionElementOrdinal);
+
+  return rank_for_creation <= rank_for_connection;
+}
+
+bool is_shell_configuration_valid_for_side_connection(const SideCreationElementPair& shellPair)
+{
+  return is_shell_configuration_valid_for_side_connection(shellPair.creationElementTopology,
+                                                          shellPair.creationElementOrdinal,
+                                                          shellPair.connectionElementTopology,
+                                                          shellPair.connectionElementOrdinal);
+}
+
+std::vector<ConnectivityOrdinal> get_ordinals_without_connected_sides(BulkData & mesh, const Entity elem)
+{
+  auto elemTopology = mesh.bucket(elem).topology();
+  constexpr bool sortOrdinals = true;
+
+  std::vector<ConnectivityOrdinal> connectedOrdinals = get_side_ordinals(mesh, elem, sortOrdinals);
+
+  std::vector<ConnectivityOrdinal> allOrdinals(elemTopology.num_sides());
+  std::iota(allOrdinals.begin(), allOrdinals.end(), 0);
+
+  std::vector<ConnectivityOrdinal> nonConnectedOrdinals;
+  std::set_difference(allOrdinals.begin(), allOrdinals.end(),
+                      connectedOrdinals.begin(), connectedOrdinals.end(),
+                      std::inserter(nonConnectedOrdinals, nonConnectedOrdinals.begin()));
+
+  return nonConnectedOrdinals;
+}
+
+Entity get_entity_on_element_ordinal_of_rank(const BulkData & mesh, const Entity elem, const int side, EntityRank rank)
+{
+  unsigned index = mesh.find_ordinal(elem, rank, side);
+  unsigned numConnectivities = mesh.num_connectivity(elem, rank);
+
+  if(index < numConnectivities) {
+    return mesh.begin(elem, rank)[index];
+  }
+
+  return Entity();
+}
+
+void use_graph_to_connect_element_to_existing_sides(ElemElemGraph &graph, const Entity elem, const ConnectivityOrdinal ordinal)
+{
+  stk::mesh::impl::LocalId elemLocalId = graph.get_local_element_id(elem);
+
+  std::vector<GraphEdge> edges = graph.get_graph().get_edges_for_element_side(elemLocalId, ordinal);
+
+  const BulkData& bulk = graph.get_mesh();
+
+  for(auto& edge : edges) {
+    if(edge.is_elem2_local()) {
+      int ordinal2 = edge.side2();
+      Entity elem2 = graph.get_entity(edge.elem2());
+      auto elem2Topo = bulk.bucket(elem2).topology();
+
+      unsigned rankedOrdinal;
+      stk::topology::rank_t sideRank;
+
+      elem2Topo.ranked_side_ordinal(ordinal2, rankedOrdinal, sideRank);
+      Entity side = get_entity_on_element_ordinal_of_rank(bulk, elem2, rankedOrdinal, sideRank);
+
+      if(bulk.is_valid(side)) {
+        SideConnector sideConnector = graph.get_side_connector();
+        sideConnector.connect_side_to_all_elements(side, elem, ordinal);
+        break;
+      }
+    }
+  }
+}
+
+void connect_element_to_existing_side(BulkData & mesh, const Entity elem, const ConnectivityOrdinal sideOrdinal)
+{
+  stk::topology elemTopology = mesh.bucket(elem).topology();
+  EntityRank rank = elemTopology.side_rank(sideOrdinal);
+
+  stk::topology subTopology = elemTopology.side_topology(sideOrdinal);
+  unsigned numSubNodes = subTopology.num_nodes();
+
+  std::vector<stk::mesh::Entity> subNodes(numSubNodes);
+  elemTopology.side_nodes(mesh.begin_nodes(elem), sideOrdinal, subNodes.data());
+
+  std::vector<stk::mesh::Entity> commonEntities;
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(mesh, rank, numSubNodes, subNodes.data(), commonEntities);
+
+  STK_ThrowRequireMsg(commonEntities.size() <= 1,
+                      "Number of connected entities by node connectivity to element: " <<
+                      mesh.entity_key(elem) << " on ordinal: " << sideOrdinal << "is greater than one: " <<
+                      commonEntities.size());
+
+  for(auto entity : commonEntities) {
+    unsigned numEntityNodes = mesh.num_nodes(entity);
+
+    STK_ThrowAssertMsg(numSubNodes == numEntityNodes,
+        "Entity: " << mesh.entity_key(entity) << " that has common nodes with " <<
+        mesh.entity_key(elem) << " on ordinal " << sideOrdinal << " does not have the same number of nodes: " <<
+        numEntityNodes << " vs " << numSubNodes);
+
+    auto nodes = mesh.begin_nodes(entity);
+    for(unsigned i=0; i<numEntityNodes; i++) {
+      subNodes[i] = nodes[i];
+    }
+
+    impl::connect_element_to_side(mesh, elem, entity, sideOrdinal, stk::mesh::PartVector{}, subTopology, subNodes);
+  }
+}
+
+void connect_element_to_existing_sides(BulkData & mesh, const Entity elem)
+{
+  if(!mesh.is_valid(elem) || mesh.entity_rank(elem) != stk::topology::ELEM_RANK) {
+    return;
+  }
+
+  std::vector<ConnectivityOrdinal> ordinals = get_ordinals_without_connected_sides(mesh, elem);
+  for(auto ordinal : ordinals) {
+    if (mesh.has_face_adjacent_element_graph() && mesh.get_face_adjacent_element_graph().is_valid_graph_element(elem)) {
+      use_graph_to_connect_element_to_existing_sides(mesh.get_face_adjacent_element_graph(), elem, ordinal);
+    }
+    else {
+      connect_element_to_existing_side(mesh, elem, ordinal);
+    }
+  }
+}
+
+void set_local_ids(BulkData& mesh)
+{
+  const MetaData& meta = mesh.mesh_meta_data();
+
+  Selector owned = meta.locally_owned_part();
+  Selector shared = meta.globally_shared_part();
+  Selector sharedNotOwned = shared & (!owned);
+  Selector ghost = (!owned) & (!shared);
+
+  const EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+
+  EntityVector entities;
+  const bool sortById = true;
+  for(EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank) {
+    get_entities(mesh, rank, owned, entities, sortById);
+    unsigned localId = 0;
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, sharedNotOwned, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, ghost, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+  }
 }
 
 } // namespace impl

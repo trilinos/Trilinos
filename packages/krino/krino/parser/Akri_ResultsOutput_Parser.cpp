@@ -41,7 +41,7 @@ ResultsOutput_Parser::parse(const Parser::Node & region_node, Region & region)
       options->set_title(results_title);
     }
 
-    bool compose_results;
+    bool compose_results{false};
     if (results_node.get_if_present("compose_results", compose_results))
     {
       if (compose_results) options->add_property(Ioss::Property("COMPOSE_RESULTS", 1));
@@ -65,6 +65,39 @@ ResultsOutput_Parser::parse(const Parser::Node & region_node, Region & region)
     {
       const std::string field_name = variable_node.as<std::string>();
       options->add_element_field(field_name, field_name);
+    }
+  }
+}
+
+void
+ResultsSurfaceShellOutput_Parser::parse(const Parser::Node & regionNode, Region & region)
+{
+  const Parser::Node resultsNode = regionNode.get_map_if_present("surface_shell_output");
+  if ( resultsNode )
+  {
+    ResultsOutputOptions * options = region.get_results_options();
+
+    std::string results_database_name;
+    if (resultsNode.get_if_present("database_name", results_database_name))
+    {
+      options->set_surface_shells_filename(results_database_name);
+    }
+    else
+    {
+      stk::RuntimeDoomedAdHoc() << "Missing surface shell database_name for region " << region.name() << ".\n";
+    }
+
+    int output_frequency = 1;
+    if (resultsNode.get_if_present("output_frequency", output_frequency))
+    {
+      options->add_step_increment(0, output_frequency);
+    }
+
+    const Parser::Node surfaceNames = resultsNode.get_sequence_if_present("surface_names");
+    for ( auto && surfaceNode : surfaceNames )
+    {
+      const std::string surfaceName = surfaceNode.as<std::string>();
+      options->add_surface_shell_surface(surfaceName);
     }
   }
 }

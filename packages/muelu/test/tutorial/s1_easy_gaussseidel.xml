@@ -1,0 +1,29 @@
+<ParameterList name="MueLu">
+
+  <Parameter name="verbosity" type="string" value="low"/>
+
+  <Parameter name="max levels" type="int" value="10"/>
+  <Parameter name="coarse: max size" type="int" value="10"/>
+
+  <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
+
+  <!-- Gauss-Seidel as pre-smoother with damping of 0.6 -->
+  <Parameter name="smoother: pre type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: pre params">
+    <Parameter name="relaxation: type"  type="string" value="Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps" type="int" value="3"/>
+    <Parameter name="relaxation: damping factor" type="double" value="0.6"/>
+  </ParameterList>
+
+  <!-- Gauss-Seidel as pre-smoother with damping of 0.9 -->
+  <Parameter name="smoother: post type" type="string" value="RELAXATION"/>
+  <ParameterList name="smoother: post params">
+    <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
+    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+    <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+  </ParameterList>
+
+  <!-- Direct solver on the coarsest level -->
+  <Parameter name="coarse: type" type="string" value="DirectSolver"/>
+
+</ParameterList>

@@ -71,126 +71,6 @@ namespace fixtures {
 class Tet10Fixture
 {
 public:
-  typedef double                   Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
-
-  /**
-   * Set up meta data to support this fixture. Meta data is left uncommitted
-   * to allow additional modifications by the client.
-   */
-  Tet10Fixture(MetaData& meta,
-               BulkData& bulk,
-               size_t nx,
-               size_t ny,
-               size_t nz,
-               size_t nid_start,
-               size_t eid_start);
-
-  Tet10Fixture(stk::ParallelMachine pm,
-               size_t nx,
-               size_t ny,
-               size_t nz,
-               stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA);
-
-  Tet10Fixture(stk::ParallelMachine pm,
-               size_t nx,
-               size_t ny,
-               size_t nz,
-               const std::string& coordsName,
-               stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA);
-
-  ~Tet10Fixture();
-
-  const int         m_spatial_dimension;
-  const size_t      m_nx;
-  const size_t      m_ny;
-  const size_t      m_nz;
-  const size_t      node_id_start = 1;
-  const size_t      elem_id_start = 1;
-
-  size_t num_nodes() const {
-    return (2*m_nx+1)*(2*m_ny+1)*(2*m_nz+1);
-  }
-
-  size_t num_elements() const {
-    return 6*(m_nx)*(m_ny)*(m_nz);
-  }
-
-private:
-  std::shared_ptr<BulkData> m_bulk_p;
-
-public:
-  MetaData&         m_meta;
-  BulkData&         m_bulk_data;
-  PartVector        m_elem_parts;
-  PartVector        m_node_parts;
-  CoordFieldType &  m_coord_field ;
-  stk::topology     m_elem_topology = stk::topology::TET_10;
-  stk::topology     m_face_topology = stk::topology::TRI_6;
-
-
-  /**
-   * Thinking in terms of a 3D grid of nodes, get the id of the node in
-   * the (x, y, z) position.
-   */
-  EntityId node_id( size_t x , size_t y , size_t z ) const  {
-    return node_id_start + x + ( 2 * m_nx + 1 ) * ( y + ( 2 * m_ny + 1 ) * z );
-  }
-
-  /**
-   * Thinking in terms of a 3D grid of nodes, get the node in the (x, y, z)
-   * position. Return NULL if this process doesn't know about this node.
-   */
-  Entity node( size_t x , size_t y , size_t z ) const {
-    return m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id(x, y, z) );
-  }
-
-  /**
-   * Thinking in terms of a 3D grid of nodes, compute the (x, y, z) position
-   * of a node given it's id.
-   */
-  void node_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const;
-
-  /**
-   * Thinking in terms of a 3D grid of elements, compute the (x, y, z) position
-   * of an element given it's id.
-   */
-  void hex_x_y_z( EntityId entity_id, size_t &x , size_t &y , size_t &z ) const;
-
-  /**
-   * Create the mesh (into m_bulk_data).
-   */
-  void generate_mesh(const CoordinateMapping & coordMap = CartesianCoordinateMapping());
-
-  void generate_mesh( std::vector<size_t> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping());
-
-  // When creating entities, you can tell Tet10Fixture what parts to add
-  // elements and nodes.
-
-  template <typename Iterator>
-  void add_elem_parts(Iterator itr, size_t num)
-  {
-    STK_ThrowRequire(!m_meta.is_commit());
-    m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
-  }
-
- private:
-  typedef std::multimap<EntityId, int> NodeToProcsMMap;
-
-  NodeToProcsMMap m_nodes_to_procs;
-
-  Tet10Fixture();
-  Tet10Fixture( const Tet10Fixture &);
-  Tet10Fixture & operator=(const Tet10Fixture &);
-
-  void fill_node_map( int proc_rank);
-};
-
-namespace simple_fields {
-
-class Tet10Fixture
-{
-public:
   typedef double        Scalar;
   typedef Field<Scalar> CoordFieldType;
 
@@ -305,8 +185,6 @@ public:
 
   void fill_node_map( int proc_rank);
 };
-
-} // namespace simple_fields
 
 } // fixtures
 } // mesh

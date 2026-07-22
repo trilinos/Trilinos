@@ -54,7 +54,7 @@ void MemoryUsageStop() {
 #endif
 }
 
-void PrintMemoryUsage(const std::string& description, const std::string& filename) {
+void PrintMemoryUsage(const std::string& description, const std::string& /*filename*/) {
 #ifdef HAVE_MUELU_PROC_SELF_STATUS
   std::cout << description << ": " << GetMemoryUsage() << std::endl;
 #endif

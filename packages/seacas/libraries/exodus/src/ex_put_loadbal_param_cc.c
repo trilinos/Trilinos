@@ -111,7 +111,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
    * Get the dimension ID for the number of processors storing
    * information in this file.
    */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid_npf)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid_npf)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
              DIM_NUM_PROCS_F, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -120,14 +120,14 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   }
 
   /* Put NetCDF file into define mode */
-  if ((status = nc_redef(exoid)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Set the fill mode */
-  if ((status = nc_set_fill(exoid, NC_NOFILL, &oldfill)) != NC_NOERR) {
+  if ((status = nc_set_fill(exoid, NC_NOFILL, &oldfill)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file ID %d into no-fill mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -139,8 +139,8 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   }
 
   /* Output the file type */
-  if (nc_inq_varid(exoid, VAR_FILE_TYPE, &varid) != NC_NOERR) {
-    if ((status = nc_def_var(exoid, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_FILE_TYPE, &varid) != EX_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_FILE_TYPE, NC_INT, 0, NULL, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define file type in file ID %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
 
@@ -152,8 +152,8 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   }
 
   /* Define the status variables for the nodal vectors */
-  if (nc_inq_varid(exoid, VAR_INT_N_STAT, &varid) != NC_NOERR) {
-    if ((status = nc_def_var(exoid, VAR_INT_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_INT_N_STAT, &varid) != EX_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_INT_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_INT_N_STAT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -165,8 +165,8 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   }
 
   /* Set the dimension for status vectors */
-  if (nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid) != NC_NOERR) {
-    if ((status = nc_def_var(exoid, VAR_BOR_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid) != EX_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_BOR_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_BOR_N_STAT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -177,8 +177,8 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     }
   }
 
-  if (nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid) != NC_NOERR) {
-    if ((status = nc_def_var(exoid, VAR_EXT_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid) != EX_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_EXT_N_STAT, NC_INT, 1, &dimid_npf, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_EXT_N_STAT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -190,8 +190,8 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   }
 
   /* Define the variable IDs for the elemental status vectors */
-  if (nc_inq_varid(exoid, VAR_INT_E_STAT, &varid) != NC_NOERR) {
-    if ((status = nc_def_var(exoid, VAR_INT_E_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_INT_E_STAT, &varid) != EX_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_INT_E_STAT, NC_INT, 1, &dimid_npf, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_INT_E_STAT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -202,8 +202,8 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     }
   }
 
-  if (nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid) != NC_NOERR) {
-    if ((status = nc_def_var(exoid, VAR_BOR_E_STAT, NC_INT, 1, &dimid_npf, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid) != EX_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_BOR_E_STAT, NC_INT, 1, &dimid_npf, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to define variable \"%s\" in file ID %d",
                VAR_BOR_E_STAT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -215,7 +215,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   }
 
   /* Get the variable ID for the nodal status vectors */
-  if ((status = nc_inq_varid(exoid, VAR_INT_N_STAT, &varid_nm[0])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_INT_N_STAT, &varid_nm[0])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_INT_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -225,7 +225,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid_nm[1])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid_nm[1])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_BOR_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -235,7 +235,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid_nm[2])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid_nm[2])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_EXT_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -246,7 +246,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   }
 
   /* Get the variable IDs for the elemental status vectors */
-  if ((status = nc_inq_varid(exoid, VAR_INT_E_STAT, &varid_em[0])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_INT_E_STAT, &varid_em[0])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_INT_E_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -256,7 +256,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid_em[1])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid_em[1])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_BOR_E_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -296,7 +296,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
   /* Define variable for the internal element information */
   if (num_int_elem > 0) {
-    if ((status = nc_def_dim(exoid, DIM_NUM_INT_ELEMS, num_int_elem, &dimid[0])) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_INT_ELEMS, num_int_elem, &dimid[0])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
                DIM_NUM_INT_ELEMS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -306,7 +306,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_def_var(exoid, VAR_ELEM_MAP_INT, map_type, 1, dimid, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_ELEM_MAP_INT, map_type, 1, dimid, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_ELEM_MAP_INT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -319,7 +319,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_ELEM_MAP_INT_IDX, index_type, 1, &dimid_npf,
-                             &varid_idx[0])) != NC_NOERR) {
+                             &varid_idx[0])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_ELEM_MAP_INT_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -332,7 +332,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
   /* Define variable for the border element information */
   if (num_bor_elem > 0) {
-    if ((status = nc_def_dim(exoid, DIM_NUM_BOR_ELEMS, num_bor_elem, &dimid[0])) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_BOR_ELEMS, num_bor_elem, &dimid[0])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
                DIM_NUM_BOR_ELEMS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -342,7 +342,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_def_var(exoid, VAR_ELEM_MAP_BOR, map_type, 1, dimid, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_ELEM_MAP_BOR, map_type, 1, dimid, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_ELEM_MAP_BOR, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -355,7 +355,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_ELEM_MAP_BOR_IDX, index_type, 1, &dimid_npf,
-                             &varid_idx[1])) != NC_NOERR) {
+                             &varid_idx[1])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_ELEM_MAP_BOR_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -369,7 +369,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
   if (num_int_node > 0) {
     /* Define variable for vector of internal FEM node IDs */
-    if ((status = nc_def_dim(exoid, DIM_NUM_INT_NODES, num_int_node, &dimid[0])) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_INT_NODES, num_int_node, &dimid[0])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
                DIM_NUM_INT_NODES, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -380,7 +380,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     }
 
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_INT, map_type, 1, &dimid[0], &varid)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_NODE_MAP_INT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -393,7 +393,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_INT_IDX, index_type, 1, &dimid_npf,
-                             &varid_idx[2])) != NC_NOERR) {
+                             &varid_idx[2])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_NODE_MAP_INT_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -407,7 +407,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
   if (num_bor_node > 0) {
     /* Define variable for vector of border FEM node IDs */
-    if ((status = nc_def_dim(exoid, DIM_NUM_BOR_NODES, num_bor_node, &dimid[1])) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_BOR_NODES, num_bor_node, &dimid[1])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
                DIM_NUM_BOR_NODES, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -418,7 +418,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     }
 
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_BOR, map_type, 1, &dimid[1], &varid)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_NODE_MAP_BOR, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -431,7 +431,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_BOR_IDX, index_type, 1, &dimid_npf,
-                             &varid_idx[3])) != NC_NOERR) {
+                             &varid_idx[3])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_NODE_MAP_BOR_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -445,7 +445,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
   if (num_ext_node > 0) {
     /* Define dimension for vector of external FEM node IDs */
-    if ((status = nc_def_dim(exoid, DIM_NUM_EXT_NODES, num_ext_node, &dimid[2])) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_EXT_NODES, num_ext_node, &dimid[2])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to dimension \"%s\" in file id %d",
                DIM_NUM_EXT_NODES, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -456,7 +456,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     }
 
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_EXT, map_type, 1, &dimid[2], &varid)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_NODE_MAP_EXT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -469,7 +469,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_NODE_MAP_EXT_IDX, index_type, 1, &dimid_npf,
-                             &varid_idx[4])) != NC_NOERR) {
+                             &varid_idx[4])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_NODE_MAP_EXT_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -483,7 +483,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
   /* Output the communication map dimensions */
   if (num_n_cmaps > 0) {
-    if ((status = nc_def_dim(exoid, DIM_NUM_N_CMAPS, num_n_cmaps, &dimid[0])) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_N_CMAPS, num_n_cmaps, &dimid[0])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add dimension \"%s\" in file ID %d",
                DIM_NUM_N_CMAPS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -494,7 +494,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     }
 
     /* Add variables for communication maps */
-    if ((status = nc_def_var(exoid, VAR_N_COMM_IDS, id_type, 1, dimid, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_N_COMM_IDS, id_type, 1, dimid, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_N_COMM_IDS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -504,7 +504,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_def_var(exoid, VAR_N_COMM_STAT, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_N_COMM_STAT, NC_INT, 1, dimid, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_N_COMM_STAT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -516,7 +516,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_N_COMM_INFO_IDX, index_type, 1, &dimid_npf,
-                             &varid_idx[5])) != NC_NOERR) {
+                             &varid_idx[5])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_N_COMM_INFO_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -529,7 +529,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
   } /* End "if (num_n_cmaps > 0)" */
 
   if (num_e_cmaps > 0) {
-    if ((status = nc_def_dim(exoid, DIM_NUM_E_CMAPS, num_e_cmaps, &dimid[0])) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_E_CMAPS, num_e_cmaps, &dimid[0])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add dimension \"%s\" in file ID %d",
                DIM_NUM_E_CMAPS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -540,7 +540,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
     }
 
     /* Add variables for elemental communication maps */
-    if ((status = nc_def_var(exoid, VAR_E_COMM_IDS, id_type, 1, dimid, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_E_COMM_IDS, id_type, 1, dimid, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_E_COMM_IDS, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -550,7 +550,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_def_var(exoid, VAR_E_COMM_STAT, NC_INT, 1, dimid, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, VAR_E_COMM_STAT, NC_INT, 1, dimid, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_E_COMM_STAT, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -562,7 +562,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 
     /* and the index variable */
     if ((status = nc_def_var(exoid, VAR_E_COMM_INFO_IDX, index_type, 1, &dimid_npf,
-                             &varid_idx[6])) != NC_NOERR) {
+                             &varid_idx[6])) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define variable \"%s\" in file ID %d",
                VAR_E_COMM_INFO_IDX, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -625,7 +625,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       nmstat = 0;
     }
 
-    if ((status = nc_put_var1_int(exoid, varid_nm[0], start, &nmstat)) != NC_NOERR) {
+    if ((status = nc_put_var1_int(exoid, varid_nm[0], start, &nmstat)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output status int node map in file ID %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -639,7 +639,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       nmstat = 0;
     }
 
-    if ((status = nc_put_var1_int(exoid, varid_nm[1], start, &nmstat)) != NC_NOERR) {
+    if ((status = nc_put_var1_int(exoid, varid_nm[1], start, &nmstat)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output status bor node map in file ID %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -653,7 +653,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       nmstat = 0;
     }
 
-    if ((status = nc_put_var1_int(exoid, varid_nm[2], start, &nmstat)) != NC_NOERR) {
+    if ((status = nc_put_var1_int(exoid, varid_nm[2], start, &nmstat)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output status ext node map in file ID %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -667,7 +667,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       nmstat = 0;
     }
 
-    if ((status = nc_put_var1_int(exoid, varid_em[0], start, &nmstat)) != NC_NOERR) {
+    if ((status = nc_put_var1_int(exoid, varid_em[0], start, &nmstat)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output status int elem map in file ID %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -681,7 +681,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
       nmstat = 0;
     }
 
-    if ((status = nc_put_var1_int(exoid, varid_em[1], start, &nmstat)) != NC_NOERR) {
+    if ((status = nc_put_var1_int(exoid, varid_em[1], start, &nmstat)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to output status bor elem map in file ID %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -697,7 +697,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 #else
       status = nc_put_var1_int(exoid, varid_idx[0], start, &num_int_elem);
 #endif
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to output internal element map index in file ID %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -713,7 +713,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 #else
       status = nc_put_var1_int(exoid, varid_idx[1], start, &num_bor_elem);
 #endif
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to output border element map index in file ID %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -729,7 +729,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 #else
       status = nc_put_var1_int(exoid, varid_idx[2], start, &num_int_node);
 #endif
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to output internal node map index in file ID %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -745,7 +745,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 #else
       status = nc_put_var1_int(exoid, varid_idx[3], start, &num_bor_node);
 #endif
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to output border node map index in file ID %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -761,7 +761,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 #else
       status = nc_put_var1_int(exoid, varid_idx[4], start, &num_ext_node);
 #endif
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to output external node map index in file ID %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -777,7 +777,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 #else
       status = nc_put_var1_int(exoid, varid_idx[5], start, &num_n_cmaps);
 #endif
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to output node communication map index "
                  "in file ID %d",
@@ -795,7 +795,7 @@ int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void
 #else
       status = nc_put_var1_int(exoid, varid_idx[6], start, &num_e_cmaps);
 #endif
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to output elem communication map index "
                  "in file ID %d",

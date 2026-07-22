@@ -1,5 +1,14 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "ROL_StdVector.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_LAPACK.hpp"
 
 using namespace ROL;
 
@@ -9,7 +18,7 @@ class FiniteDifference {
     private:
         int n_;
         double dx2_;
-        Teuchos::LAPACK<int,Real> lapack_;
+        ROL::LAPACK<int,Real> lapack_;
 
         // subdiagonal is -1/dx^2 
         std::vector<Real> dl_;

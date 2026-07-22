@@ -31,15 +31,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "gtest/gtest.h"
 #include <cmath>
-#include "SimdFloatingPointFixture.hpp"
+#include <gtest/gtest.h>
 
+#include "SimdFloatingPointFixture.hpp"
+#include "SimdNameGenerator.hpp"
 
 template <typename T>
 using SimdFloatingPointMath = SimdFloatingPointFixture<T, T>;
 using FloatingPointTypes = ::testing::Types<stk::simd::Double, stk::simd::Float>;
-TYPED_TEST_SUITE(SimdFloatingPointMath, FloatingPointTypes,);
+TYPED_TEST_SUITE(SimdFloatingPointMath, FloatingPointTypes, SimdNameGenerator);
 
 TYPED_TEST(SimdFloatingPointMath, copysign_posNeg)
 {
@@ -158,7 +159,6 @@ TYPED_TEST(SimdFloatingPointMath, multiplysign_varying)
 
 template <typename T>
 using SimdFloatingPointOperator = SimdFloatingPointFixture<T, typename stk::BoolT<T>::type>;
-using FloatingPointTypes = ::testing::Types<stk::simd::Double, stk::simd::Float>;
 TYPED_TEST_SUITE(SimdFloatingPointOperator, FloatingPointTypes,);
 
 TYPED_TEST(SimdFloatingPointOperator, equal_aIsSmaller)
@@ -288,3 +288,139 @@ TYPED_TEST(SimdFloatingPointOperator, lessThan_varying)
   this->verify();
 }
 
+TYPED_TEST(SimdFloatingPointMath, pow_varying_linear_plus_minus)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_varying_linear_plus_minus();
+  this->compute_function([](const SimdType& a, const SimdType& b){ return stk::math::pow(a, b); });
+  this->compute_expected_result([](ScalarType a, ScalarType b){ return std::pow(a, b); });
+  this->verify();
+}
+
+TYPED_TEST(SimdFloatingPointMath, pow_linear)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_linear();
+  this->compute_function([](const SimdType& a, const SimdType& b){ return stk::math::pow(a, b); });
+  this->compute_expected_result([](ScalarType a, ScalarType b){ return std::pow(a, b); });
+  this->verify();
+}
+
+TYPED_TEST(SimdFloatingPointMath, sqrt_linear)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_linear();
+  this->compute_function([](const SimdType& a){ return stk::math::sqrt(a); });
+  this->compute_expected_result([](ScalarType a){ return std::sqrt(a); });
+  this->verify_with_tolerance();
+}
+
+TYPED_TEST(SimdFloatingPointMath, log_constant)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_constant(7.0);
+  this->compute_function([](const SimdType& a){ return stk::math::log(a); });
+  this->compute_expected_result([](ScalarType a){ return std::log(a); });
+  this->verify_with_tolerance();
+}
+
+TYPED_TEST(SimdFloatingPointMath, log10_constant)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_constant(7.0);
+  this->compute_function([](const SimdType& a){ return stk::math::log10(a); });
+  this->compute_expected_result([](ScalarType a){ return std::log10(a); });
+  this->verify_with_tolerance();
+}
+
+TYPED_TEST(SimdFloatingPointMath, sin_linear)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_linear();
+  this->compute_function([](const SimdType& a){ return stk::math::sin(a); });
+  this->compute_expected_result([](ScalarType a){ return std::sin(a); });
+  this->verify();
+}
+
+TYPED_TEST(SimdFloatingPointMath, cos_linear)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_linear();
+  this->compute_function([](const SimdType& a){ return stk::math::cos(a); });
+  this->compute_expected_result([](ScalarType a){ return std::cos(a); });
+  this->verify();
+}
+
+TYPED_TEST(SimdFloatingPointMath, tan_linear)
+{
+  using SimdType = TypeParam;
+  using ScalarType = typename stk::Traits<SimdType>::base_type;
+
+  this->fill_linear();
+  this->compute_function([](const SimdType& a){ return stk::math::tan(a); });
+  this->compute_expected_result([](ScalarType a){ return std::tan(a); });
+  this->verify();
+}
+
+using DoubleDoubleIntFixture = SimdFloatingPointFixture<stk::simd::Double, stk::simd::Double, int>;
+
+TEST_F(DoubleDoubleIntFixture, add_scalar_int) {
+  this->fill_varying_linear_plus_minus();
+  this->fill_constant_b(3); // B is scalar int broadcast
+
+  this->compute_function([](const stk::simd::Double& a, const int& b) {
+    return a + b; // your simd add with scalar int
+  });
+
+  this->compute_expected_result([](double a, int b) {
+    return a + static_cast<double>(b);
+  });
+
+  this->verify();
+}
+
+TEST_F(DoubleDoubleIntFixture, pow_int) {
+  this->fill_varying_linear_plus_minus();
+  this->fill_constant_b(3); // B is scalar int broadcast
+
+  this->compute_function([](const stk::simd::Double& a, const int& b) {
+    return stk::math::pow(a, b); 
+  });
+
+  this->compute_expected_result([](double a, int b) {
+    return std::pow(a, b);
+  });
+
+  this->verify();
+}
+
+using DoubleDoubleDoubleFixture = SimdFloatingPointFixture<stk::simd::Double, stk::simd::Double, double>;
+
+TEST_F(DoubleDoubleIntFixture, pow_double) {
+  this->fill_varying_linear_plus_minus();
+  this->fill_constant_b(3.0); // B is scalar double broadcast
+
+  this->compute_function([](const stk::simd::Double& a, const double& b) {
+    return stk::math::pow(a, b); 
+  });
+
+  this->compute_expected_result([](double a, double b) {
+    return std::pow(a, b);
+  });
+
+  this->verify_with_tolerance();
+}

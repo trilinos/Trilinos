@@ -33,19 +33,26 @@
 //
 
 #include <Kokkos_Core.hpp>
+#include <stdlib.h>
 #include <gtest/gtest.h>
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_expreval/Evaluator.hpp>
+#include <stk_util/util/FPExceptions.hpp>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <iomanip>
 #include <cmath>
 #include <memory>
+#include "stk_expreval/Eval.hpp"
+#include "stk_expreval/NgpNode.hpp"
+#include "stk_expreval/Node.hpp"
 
 namespace {
 
 using ViewInt1DHostType = Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::HostSpace>;
+
+using FPErrorBehavior = stk::expreval::Eval::FPErrorBehavior;
 
 bool
 has_variable(const std::vector<std::string>& variableNames, const std::string& variableName)
@@ -87,6 +94,7 @@ double evaluate(const std::string & expression,
                 const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
 {
   stk::expreval::Eval eval(expression, arrayOffsetType);
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Error);
   eval.parse();
 
   for (ScalarBinding & scalar : boundScalars) {
@@ -119,7 +127,7 @@ double device_evaluate(const std::string & expression,
   auto variableIndicesHost = ViewInt1DHostType("variableIndices", 10);
   auto variableSizesHost = ViewInt1DHostType("variableSizes", 10);
   Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
-  Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
+  Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type variableHostValues("input variables");
 
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
     variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
@@ -167,10 +175,10 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   auto variableIndicesHost = ViewInt1DHostType("variableIndices", 10);
   auto variableSizesHost = ViewInt1DHostType("variableSizes", 10);
   Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
-  Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
+  Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type variableHostValues("input variables");
 
   Kokkos::View<double[numThreads], stk::ngp::MemSpace> deviceResults("device results");
-  typename Kokkos::View<double[numThreads], stk::ngp::MemSpace>::HostMirror hostResults = Kokkos::create_mirror_view(deviceResults);
+  typename Kokkos::View<double[numThreads], stk::ngp::MemSpace>::host_mirror_type hostResults = Kokkos::create_mirror_view(deviceResults);
 
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
     variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
@@ -212,6 +220,37 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   std::vector<double> vectorHostResults(hostResults.data(), hostResults.data()+numThreads);
   return vectorHostResults;
 }
+
+TEST(UnitTestEvaluator, FPErrorBehaviorEnum)
+{
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("Ignore"), stk::expreval::Eval::FPErrorBehavior::Ignore);
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("Warn"), stk::expreval::Eval::FPErrorBehavior::Warn);
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("WarnOnce"), stk::expreval::Eval::FPErrorBehavior::WarnOnce);
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("Error"), stk::expreval::Eval::FPErrorBehavior::Error);
+
+  EXPECT_ANY_THROW(stk::expreval::fp_error_behavior_string_to_enum("ignore"));
+  EXPECT_ANY_THROW(stk::expreval::fp_error_behavior_string_to_enum("foo"));
+}
+
+TEST(UnitTestEvaluator, FPErrorBehaviorEnvVariable)
+{
+
+  std::string env_var("STK_EXPREVAL_FP_ERROR_BEHAVIOR");
+  {
+    setenv(env_var.c_str(), "Error", true);
+    stk::expreval::Eval eval("1+1");
+    EXPECT_EQ(eval.get_fp_error_behavior(), stk::expreval::Eval::FPErrorBehavior::Error);
+    unsetenv(env_var.c_str());
+  }
+
+  {
+    setenv(env_var.c_str(), "Ignore", true);
+    stk::expreval::Eval eval("1+1");
+    EXPECT_EQ(eval.get_fp_error_behavior(), stk::expreval::Eval::FPErrorBehavior::Ignore);
+    unsetenv(env_var.c_str());
+  }  
+}
+
 
 TEST(UnitTestEvaluator, getVariableIndex_validVariables)
 {
@@ -450,6 +489,7 @@ TEST(UnitTestEvaluator, getDependentVariables_noAssign)
   stk::expreval::Eval eval("x");
   eval.parse();
   EXPECT_EQ(eval.get_dependent_variable_names().size(), 0u);
+  EXPECT_FALSE(eval.is_dependent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_constant)
@@ -458,7 +498,7 @@ TEST(UnitTestEvaluator, getDependentVariables_constant)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_oneDependent)
@@ -467,7 +507,8 @@ TEST(UnitTestEvaluator, getDependentVariables_oneDependent)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
+  EXPECT_FALSE(eval.is_dependent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_constantAssign)
@@ -476,8 +517,8 @@ TEST(UnitTestEvaluator, getDependentVariables_constantAssign)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
-  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
+  EXPECT_TRUE(eval.is_dependent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_twoIdenticalVariables)
@@ -486,8 +527,9 @@ TEST(UnitTestEvaluator, getDependentVariables_twoIdenticalVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
-  EXPECT_TRUE(has_variable(variableNames, "z"));
+  EXPECT_TRUE(eval.is_dependent_variable("z"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
+  EXPECT_FALSE(eval.is_dependent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_twoVariables)
@@ -496,8 +538,10 @@ TEST(UnitTestEvaluator, getDependentVariables_twoVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "y"));
-  EXPECT_TRUE(has_variable(variableNames, "w"));
+  EXPECT_TRUE(eval.is_dependent_variable("y"));
+  EXPECT_TRUE(eval.is_dependent_variable("w"));
+  EXPECT_FALSE(eval.is_dependent_variable("z"));
+  EXPECT_FALSE(eval.is_dependent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_noVariables)
@@ -513,7 +557,7 @@ TEST(UnitTestEvaluator, getIndependentVariables_noAssign)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(eval.is_independent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_constant)
@@ -529,7 +573,8 @@ TEST(UnitTestEvaluator, getIndependentVariables_oneDependent)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_FALSE(eval.is_independent_variable("x"));
+  EXPECT_TRUE(eval.is_independent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_constantAssign)
@@ -537,6 +582,8 @@ TEST(UnitTestEvaluator, getIndependentVariables_constantAssign)
   stk::expreval::Eval eval("x = 2; y = x");
   eval.parse();
   EXPECT_EQ(eval.get_independent_variable_names().size(), 0u);
+  EXPECT_FALSE(eval.is_independent_variable("x"));
+  EXPECT_FALSE(eval.is_independent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_twoIdenticalVariables)
@@ -545,7 +592,9 @@ TEST(UnitTestEvaluator, getIndependentVariables_twoIdenticalVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_FALSE(eval.is_independent_variable("x"));
+  EXPECT_TRUE(eval.is_independent_variable("y"));
+  EXPECT_FALSE(eval.is_independent_variable("z"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_twoVariables)
@@ -554,8 +603,10 @@ TEST(UnitTestEvaluator, getIndependentVariables_twoVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
-  EXPECT_TRUE(has_variable(variableNames, "z"));
+  EXPECT_TRUE(eval.is_independent_variable("x"));
+  EXPECT_FALSE(eval.is_independent_variable("y"));
+  EXPECT_TRUE(eval.is_independent_variable("z"));
+  EXPECT_FALSE(eval.is_independent_variable("w"));
 }
 
 TEST( UnitTestEvaluator, testEvaluateEmptyString)
@@ -564,6 +615,37 @@ TEST( UnitTestEvaluator, testEvaluateEmptyString)
     double result = evaluate(emptyExpression);
     EXPECT_EQ(0.0, result);
 }
+
+TEST( UnitTestEvaluator, FunctionNameNullTerminated)
+{
+  stk::expreval::Eval eval("sin(0.5)");
+  eval.parse();
+  for (int i=0; i < eval.get_node_count(); ++i)
+  {
+    stk::expreval::Node* node = eval.get_node(i);
+    if (node->m_opcode == stk::expreval::OPCODE_FUNCTION)
+    {
+      EXPECT_EQ(std::strcmp(node->m_data.function.functionName, "sin"), 0);
+    }
+  }
+}
+
+#ifndef STK_ENABLE_GPU
+
+TEST(UnitTestEvaluator, CheckNGPNodeFPError_Ignore)
+{
+  FPErrorBehavior m_fpErrorBehavior = FPErrorBehavior::Ignore;
+  EXPECT_NO_THROW(checkNgpNodeFPError(NAN, "foo"));
+}
+
+TEST(UnitTestEvaluator, CheckNGPNodeFPError_Error)
+{
+  FPErrorBehavior m_fpErrorBehavior = FPErrorBehavior::Error;
+  EXPECT_ANY_THROW(checkNgpNodeFPError(NAN, "foo"));
+}
+
+#endif
+
 
 TEST(UnitTestEvaluator, test_copy_constructor)
 {
@@ -727,12 +809,12 @@ void evaluate_scalar_inputs_on_device(xType & x, yType & y, const std::string & 
   auto & parsedEval = eval.get_parsed_eval();
 
   Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
-  typename Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  typename Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type xHostValues("x host value");
   xHostValues[0] = x;
   Kokkos::deep_copy(xDeviceValues, xHostValues);
 
   Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
-  typename Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  typename Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type yHostValues("y host value");
   yHostValues[0] = y;
   Kokkos::deep_copy(yDeviceValues, yHostValues);
 
@@ -839,18 +921,18 @@ void evaluate_scalar_assignment_on_device(xType & x, yType & y, const std::strin
   auto & parsedEval = eval.get_parsed_eval();
 
   Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
-  typename Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  typename Kokkos::View<std::remove_const_t<xType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type xHostValues("x host value");
   xHostValues[0] = x;
   Kokkos::deep_copy(xDeviceValues, xHostValues);
 
   Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
-  typename Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  typename Kokkos::View<std::remove_const_t<yType>[1], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type yHostValues("y host value");
   yHostValues[0] = y;
   Kokkos::deep_copy(yDeviceValues, yHostValues);
 
   double result = 0.0;
   Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA (const int & i, double & localResult) {
+    KOKKOS_LAMBDA (const int & /*i*/, double & localResult) {
       stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
       deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]));
       deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]));
@@ -944,18 +1026,18 @@ void evaluate_array_inputs_on_device(xType x[3], yType y[3], const std::string &
   auto & parsedEval = eval.get_parsed_eval();
 
   Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
-  typename Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  typename Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type xHostValues("x host value");
   std::memcpy(xHostValues.data(), x, 3*sizeof(xType));
   Kokkos::deep_copy(xDeviceValues, xHostValues);
 
   Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
-  typename Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  typename Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type yHostValues("y host value");
   std::memcpy(yHostValues.data(), y, 3*sizeof(yType));
   Kokkos::deep_copy(yDeviceValues, yHostValues);
 
   double result = 0.0;
   Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA (const int & i, double & localResult) {
+    KOKKOS_LAMBDA (const int & /*i*/, double & localResult) {
       stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
       deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]), 3);
       deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]), 3);
@@ -1060,18 +1142,18 @@ void evaluate_array_assignment_on_device(xType x[3], yType y[3], const std::stri
   auto & parsedEval = eval.get_parsed_eval();
 
   Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> xDeviceValues("x device value");
-  typename Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror xHostValues("x host value");
+  typename Kokkos::View<std::remove_const_t<xType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type xHostValues("x host value");
   std::memcpy(xHostValues.data(), x, 3*sizeof(xType));
   Kokkos::deep_copy(xDeviceValues, xHostValues);
 
   Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace> yDeviceValues("y device value");
-  typename Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror yHostValues("y host value");
+  typename Kokkos::View<std::remove_const_t<yType>[3], Kokkos::LayoutRight, stk::ngp::MemSpace>::host_mirror_type yHostValues("y host value");
   std::memcpy(yHostValues.data(), y, 3*sizeof(yType));
   Kokkos::deep_copy(yDeviceValues, yHostValues);
 
   double result = 0.0;
   Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA (const int & i, double & localResult) {
+    KOKKOS_LAMBDA (const int & /*i*/, double & localResult) {
       stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
       deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]), 3);
       deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]), 3);
@@ -1159,12 +1241,13 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isValidFunction("sin(1)"));
   EXPECT_TRUE(isValidFunction("SIN(1)"));
   EXPECT_TRUE(isValidFunction("rand()"));
-  EXPECT_TRUE(isValidFunction("srand()"));
+  EXPECT_TRUE(isValidFunction("srand(1)"));
   EXPECT_TRUE(isValidFunction("time()"));
   EXPECT_TRUE(isValidFunction("random()"));
   EXPECT_TRUE(isValidFunction("random(1)"));
   EXPECT_TRUE(isValidFunction("random(time())"));
   EXPECT_TRUE(isValidFunction("cosine_ramp(x,y)"));
+  EXPECT_TRUE(isValidFunction("linear_ramp(x,y,z)"));
   EXPECT_TRUE(isValidFunction("sign(x)"));
   EXPECT_TRUE(isValidFunction("weibull_pdf(x, alpha, beta)"));
   EXPECT_TRUE(isValidFunction("normal_pdf(x, alpha, beta)"));
@@ -1174,6 +1257,41 @@ TEST(UnitTestEvaluator, testFunctionSyntax)
   EXPECT_TRUE(isInvalidFunction("gamma(1)"));
 }
 
+class OneArgFunction : public stk::expreval::CFunctionBase
+{
+  public:
+    explicit OneArgFunction() :
+      CFunctionBase(1)
+    {}
+
+    double operator()(int argc, const double * argv) override
+    {
+      STK_ThrowRequire(argc == 1);
+      return argv[0];
+    }
+};
+
+TEST(UnitTestEvaluator, testFunctionArgumentCountCheck)
+{
+  stk::expreval::addFunction("my_function", new OneArgFunction());
+  EXPECT_TRUE(isValidFunction("my_function(1)"));
+  EXPECT_TRUE(isInvalidFunction("my_function(1, 2)"));
+}
+
+TEST(UnitTestEvaluator, testParsedEvalNoUserDefinedFunctions)
+{
+  stk::expreval::addFunction("my_function", new OneArgFunction());
+  stk::expreval::Eval eval("my_function(1)");
+  EXPECT_ANY_THROW(eval.get_parsed_eval());
+}
+
+TEST(UnitTestEvaluator, testParsedEvalNoRandom)
+{
+  stk::expreval::Eval eval("rand()");
+  EXPECT_ANY_THROW(eval.get_parsed_eval());
+}
+
+
 #if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMP)
 TEST(UnitTestEvaluator, deviceVariableMap_too_small)
 {
@@ -1181,7 +1299,7 @@ TEST(UnitTestEvaluator, deviceVariableMap_too_small)
   eval.parse();
 
   auto & parsedEval = eval.get_parsed_eval();
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA (const int& i) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA (const int& /*i*/) {
     EXPECT_ANY_THROW(stk::expreval::DeviceVariableMap<2> deviceVariableMap(parsedEval));
   });
 }
@@ -2188,6 +2306,9 @@ TEST(UnitTestEvaluator, testFunction_sqrt)
   EXPECT_DOUBLE_EQ(evaluate("sqrt(9)"),    3);
   EXPECT_DOUBLE_EQ(evaluate("sqrt(2)"),    std::sqrt(2));
   EXPECT_DOUBLE_EQ(evaluate("sqrt(1.21)"), 1.1);
+  if (stk::util::have_errno() || stk::util::have_errexcept()) {
+    EXPECT_ANY_THROW(evaluate("sqrt(-1)"));
+  }
 }
 
 TEST(UnitTestEvaluator, Ngp_testFunction_sqrt)
@@ -2198,6 +2319,90 @@ TEST(UnitTestEvaluator, Ngp_testFunction_sqrt)
   EXPECT_DOUBLE_EQ(device_evaluate("sqrt(9)"),    3);
   EXPECT_DOUBLE_EQ(device_evaluate("sqrt(2)"),    std::sqrt(2));
   EXPECT_DOUBLE_EQ(device_evaluate("sqrt(1.21)"), 1.1);
+  if (stk::util::have_errno() || stk::util::have_errexcept()) {
+    KOKKOS_IF_ON_HOST(
+      EXPECT_ANY_THROW(evaluate("sqrt(-1)"));
+    )
+  }
+}
+
+TEST(UnitTestEvaluator, IgnoreFloatingPointError)
+{
+  stk::expreval::Eval eval("sqrt(-1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Ignore);
+  eval.parse();
+  EXPECT_NO_THROW(eval.evaluate());
+  EXPECT_FALSE(eval.get_fp_warning_issued());
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointError)
+{
+  stk::expreval::Eval eval("sqrt(-1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+  EXPECT_NO_THROW(eval.evaluate());
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointErrorMultipleErrors)
+{
+  stk::expreval::Eval eval("sqrt(-1); sqrt(-2)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  size_t line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 4U);  
+}
+
+TEST(UnitTestEvaluator, NoWarningWhenNoError)
+{
+  stk::expreval::Eval eval("sqrt(1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_EQ(stderr_message.size(), 0U);
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointErrorOnlyOnce)
+{
+  stk::expreval::Eval eval("sqrt(-1); sqrt(-2)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::WarnOnce);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  size_t line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 3U);  
+  
+  
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 0U);    
+}
+
+TEST(UnitTestEvaluator, ThrowFloatingPointError)
+{
+  if (!stk::util::have_errno() && !stk::util::have_errexcept()) { GTEST_SKIP(); }
+  stk::expreval::Eval eval("sqrt(-1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Error);
+  eval.parse();
+  EXPECT_ANY_THROW(eval.evaluate());
 }
 
 TEST(UnitTestEvaluator, testFunction_exp)
@@ -2562,7 +2767,7 @@ TEST(UnitTestEvaluator, testFunction_atanh)
   EXPECT_DOUBLE_EQ(evaluate("atanh(0)"),    0);
   EXPECT_DOUBLE_EQ(evaluate("atanh(0.1)"),  std::atanh(0.1));
   EXPECT_DOUBLE_EQ(evaluate("atanh(0.5)"),  std::atanh(0.5));
-  EXPECT_DOUBLE_EQ(evaluate("atanh(1)"),    std::atanh(1));
+  EXPECT_DOUBLE_EQ(evaluate("atanh(0.9)"),  std::atanh(0.9));
 }
 
 TEST(UnitTestEvaluator, Ngp_testFunction_atanh)
@@ -2571,7 +2776,7 @@ TEST(UnitTestEvaluator, Ngp_testFunction_atanh)
   EXPECT_DOUBLE_EQ(device_evaluate("atanh(0)"),    0);
   EXPECT_DOUBLE_EQ(device_evaluate("atanh(0.1)"),  std::atanh(0.1));
   EXPECT_DOUBLE_EQ(device_evaluate("atanh(0.5)"),  std::atanh(0.5));
-  EXPECT_DOUBLE_EQ(device_evaluate("atanh(1)"),    std::atanh(1));
+  EXPECT_DOUBLE_EQ(device_evaluate("atanh(0.9)"),  std::atanh(0.9));
 }
 
 TEST(UnitTestEvaluator, testFunction_erf)
@@ -2827,6 +3032,17 @@ TEST(UnitTestEvaluator, testFunction_cosine_ramp3)
   EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1.5, 0, 1)"),  1);
 }
 
+TEST(UnitTestEvaluator, testFunction_linear_ramp3)
+{
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1/4, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(3/4, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("linear_ramp(1.5, 0, 1)"),  1);
+}
+
 TEST(UnitTestEvaluator, Ngp_testFunction_cosine_ramp3)
 {
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(-0.5, 0, 1)"), 0);
@@ -2836,6 +3052,17 @@ TEST(UnitTestEvaluator, Ngp_testFunction_cosine_ramp3)
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(2/3, 0, 1)"),  0.75);
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(1, 0, 1)"),    1);
   EXPECT_DOUBLE_EQ(device_evaluate("cosine_ramp(1.5, 0, 1)"),  1);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_linear_ramp3)
+{
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1/4, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(3/4, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(device_evaluate("linear_ramp(1.5, 0, 1)"),  1);
 }
 
 TEST(UnitTestEvaluator, testFunction_cosine_ramp2)
@@ -2992,6 +3219,24 @@ TEST(UnitTestEvaluator, Ngp_testFunction_point3d)
   EXPECT_DOUBLE_EQ(device_evaluate("point3d(0, 0, -7/6, 1, 1)"), 0.25);
   EXPECT_DOUBLE_EQ(device_evaluate("point3d(0, 0, -1.5, 1, 1)"), 0);
   EXPECT_DOUBLE_EQ(device_evaluate("point3d(0, 0, -2, 1, 1)"),   0);
+}
+
+TEST(UnitTestEvaluator, testFunction_relative_error)
+{
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(5, 4)"), -0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4, 5)"), 0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4e-17, 5e-17)"), 0.0);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4e-6, 5e-6, 1e-8)"), 0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(5e-6, 4e-6, 1e-8)"), -0.2);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_relative_error)
+{
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(5, 4)"), -0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4, 5)"), 0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4e-17, 5e-17)"), 0.0);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4e-6, 5e-6, 1e-8)"), 0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(5e-6, 4e-6, 1e-8)"), -0.2);
 }
 
 TEST(UnitTestEvaluator, testFunction_exponential_pdf)
@@ -3179,13 +3424,15 @@ void checkUniformDist(std::vector<double> const& vals) {
   const int maxN = *std::max_element(bins.begin(), bins.end());
   const int minN = *std::min_element(bins.begin(), bins.end());
 
-  EXPECT_NEAR(maxN, NUM_SAMPLES/10, 100);
-  EXPECT_NEAR(minN, NUM_SAMPLES/10, 100);
+  const int EXPECTED_NUMBER_PER_BIN = NUM_SAMPLES / 10;
+  const int TOLERANCE = EXPECTED_NUMBER_PER_BIN / 10;
+  EXPECT_NEAR(maxN, EXPECTED_NUMBER_PER_BIN, TOLERANCE);
+  EXPECT_NEAR(minN, EXPECTED_NUMBER_PER_BIN, TOLERANCE);
 }
 
 void testRandom(const char * expression)
 {
-  const int NUM_SAMPLES = 10000;
+  const int NUM_SAMPLES = 100000;
   std::vector<double> results(NUM_SAMPLES);
   for (int i = 0; i < NUM_SAMPLES; ++i) {
     results[i] = evaluate(expression);
@@ -3198,22 +3445,6 @@ TEST(UnitTestEvaluator, testFunction_rand)
   testRandom("rand()");
 }
 
-void Ngp_testRandom(const char * expression)
-{
-  const int NUM_SAMPLES = 10000;
-  std::vector<double> results(NUM_SAMPLES);
-  for (int i = 0; i < NUM_SAMPLES; ++i) {
-    results[i] = device_evaluate(expression);
-  }
-  checkUniformDist(results);
-}
-
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_rand)
-{
-  Ngp_testRandom("rand()");
-}
-#endif
 
 TEST(UnitTestEvaluator, testFunction_srand_repeatability)
 {
@@ -3229,33 +3460,10 @@ TEST(UnitTestEvaluator, testFunction_srand_repeatability)
   }
 }
 
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_srand_repeatability)
-{
-  std::vector<double> result(10);
-  device_evaluate("srand(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    result[i] = device_evaluate("rand()");
-  }
-
-  device_evaluate("srand(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    EXPECT_DOUBLE_EQ(device_evaluate("rand()"), result[i]);
-  }
-}
-#endif
-
 TEST(UnitTestEvaluator, testFunction_random)
 {
   testRandom("random()");
 }
-
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_random)
-{
-  Ngp_testRandom("random()");
-}
-#endif
 
 TEST(UnitTestEvaluator, testFunction_random1_repeatability)
 {
@@ -3270,22 +3478,6 @@ TEST(UnitTestEvaluator, testFunction_random1_repeatability)
     EXPECT_DOUBLE_EQ(evaluate("random()"), result[i]);
   }
 }
-
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_random1_repeatability)
-{
-  std::vector<double> result(10);
-  device_evaluate("random(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    result[i] = device_evaluate("random()");
-  }
-
-  device_evaluate("random(123.)");
-  for (unsigned i = 0; i < result.size(); ++i) {
-    EXPECT_DOUBLE_EQ(device_evaluate("random()"), result[i]);
-  }
-}
-#endif
 
 TEST(UnitTestEvaluator, testFunction_ts_random_distribution)
 {
@@ -3436,11 +3628,5 @@ TEST(UnitTestEvaluator, testFunction_time)
   EXPECT_NEAR(evaluate("time()"), std::time(nullptr), 1.1);
 }
 
-#if !defined(STK_ENABLE_GPU) && !defined(KOKKOS_ENABLE_SYCL)
-TEST(UnitTestEvaluator, Ngp_testFunction_time)
-{
-  EXPECT_NEAR(device_evaluate("time()"), std::time(nullptr), 1.1);
-}
-#endif
 
 } // namespace <unnamed>

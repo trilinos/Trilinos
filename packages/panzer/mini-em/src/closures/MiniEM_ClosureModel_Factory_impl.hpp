@@ -1,9 +1,20 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef __MiniEM_ClosureModelFactoryT_hpp__
 #define __MiniEM_ClosureModelFactoryT_hpp__
 
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
+#include "PanzerMiniEM_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Integrator_Scalar.hpp"
@@ -23,6 +34,9 @@
 #include "MiniEM_PiecewiseConstant.hpp"
 #include "MiniEM_TensorConductivity.hpp"
 #include "MiniEM_VariableTensorConductivity.hpp"
+#ifdef HAVE_PANZERMINIEM_PAMGEN
+#include "MiniEM_RTC.hpp"
+#endif
 
 // ********************************************************************
 // ********************************************************************
@@ -163,6 +177,23 @@ buildClosureModels(const std::string& model_id,
 	evaluators->push_back(e);
 
         found = true;
+      }
+      if(type=="RTC") {
+#ifdef HAVE_PANZERMINIEM_PAMGEN
+        std::string funBody = plist.get<std::string>("body");
+        std::string DoF = plist.get<std::string>("DoF Name");
+	RCP< Evaluator<panzer::Traits> > e =
+	  rcp(new mini_em::RTC<EvalT,panzer::Traits>(key,*ir,fl, funBody, DoF));
+	evaluators->push_back(e);
+
+        found = true;
+#else
+        std::stringstream msg;
+        msg << "ClosureModelFactory failed to build evaluator for key \"" << key
+	<< "\"\nin model \"" << model_id
+	<< "\" because the optional depenceny Pamgen is not enabled." <<std::endl;
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+#endif
       }
       if(type=="TENSOR CONDUCTIVITY") {
         double sigma = plist.get<double>("sigma");

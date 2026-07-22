@@ -105,6 +105,58 @@ parse_ellipsoid(const Parser::Node & ic_node)
   return new Ellipsoid(center, semiaxes, rotationVec, sign);
 }
 
+Cuboid *
+parse_cuboid(const Parser::Node & ic_node)
+{
+  std::vector<double> center;
+  if (ic_node.get_if_present("center", center))
+  {
+    if (center.size() != 3)
+    {
+      stk::RuntimeDoomedAdHoc() << "Expecting 3 real values for center for cuboid.\n";
+    }
+  }
+  else
+  {
+    stk::RuntimeDoomedAdHoc() << "Missing center for cuboid.\n";
+  }
+
+  std::vector<double> dimensions;
+  if (ic_node.get_if_present("dimensions", dimensions))
+  {
+    if (dimensions.size() != 3)
+    {
+      stk::RuntimeDoomedAdHoc() << "Expecting 3 real values for dimensions for cuboid.\n";
+    }
+  }
+  else
+  {
+    stk::RuntimeDoomedAdHoc() << "Missing dimensions for IC cuboid.\n";
+  }
+
+  double sign = 1.0;
+  if (ic_node.get_if_present("sign", sign))
+  {
+    if (sign != -1.0 && sign == 1.0)
+    {
+      stk::RuntimeDoomedAdHoc() << "Sign for sphere must be -1 or 1.\n";
+    }
+  }
+
+  std::vector<double> rotation;
+  if (ic_node.get_if_present("rotation", rotation))
+  {
+    if (rotation.size() != 3)
+    {
+      stk::RuntimeDoomedAdHoc() << "Expecting 3 real values for rotation for cuboid.\n";
+    }
+
+    return new Cuboid(stk::math::Vector3d(center.data()), stk::math::Vector3d(dimensions.data()), stk::math::Vector3d(rotation.data()), sign);
+  }
+
+  return new Cuboid(stk::math::Vector3d(center.data()), stk::math::Vector3d(dimensions.data()), sign);
+}
+
 Plane *
 parse_plane(const Parser::Node & ic_node)
 {
@@ -187,7 +239,7 @@ parse_cylinder(const Parser::Node & ic_node)
     }
   }
 
-  return new Cylinder(p1.data(), p2.data(), radius, sign);
+  return new Cylinder(stk::math::Vector3d(p1.data()), stk::math::Vector3d(p2.data()), radius, sign);
 }
 
 Surface *
@@ -315,6 +367,19 @@ parse_string_function(const Parser::Node & ic_node)
   return surf;
 }
 
+Implicit_Neural_Representation *
+parse_implicit_neural_representation(const Parser::Node & ic_node)
+{
+  std::string model_filename;
+  if (!ic_node.get_if_present("filename", model_filename))
+  {
+    stk::RuntimeDoomedAdHoc() << "Missing model filename for implicit neural representation.\n";
+  }
+
+  Implicit_Neural_Representation * surf = new Implicit_Neural_Representation(model_filename);
+  return surf;
+}
+
 }
 
 Surface *
@@ -339,6 +404,10 @@ Surface_Parser::parse(const Parser::Node & parserNode, const stk::mesh::MetaData
   {
     return parse_ellipsoid(parserNode);
   }
+  else if ( parserNode.get_null_if_present("cuboid") )
+  {
+    return parse_cuboid(parserNode);
+  }
   else if ( parserNode.get_null_if_present("plane") )
   {
     return parse_plane(parserNode);
@@ -358,6 +427,10 @@ Surface_Parser::parse(const Parser::Node & parserNode, const stk::mesh::MetaData
   else if ( parserNode.get_scalar_if_present("mesh") )
   {
     return parse_mesh_surface(parserNode, meta);
+  }
+  else if ( parserNode.get_null_if_present("implicit_neural_representation") )
+  {
+    return parse_implicit_neural_representation(parserNode);
   }
   else if ( parserNode.get_null_if_present("random") )
   {

@@ -304,6 +304,7 @@ private:
 };
 
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2026
 /**
  * @brief Class <b>RuntimeDoomedDeferred</b> reports a deferred fatal error message to the report
  * system.
@@ -324,7 +325,7 @@ private:
  *     }
  * </PRE>
  */
-class RuntimeDoomedDeferred
+class STK_DEPRECATED RuntimeDoomedDeferred
 {
 public:
   /**
@@ -402,6 +403,7 @@ public:
 private:
   const MessageCode     m_messageCode;          ///< Message id and uninitialized throttle
 };
+#endif
 
 using RuntimeDoomed = stk::RuntimeDoomedAdHoc;
 

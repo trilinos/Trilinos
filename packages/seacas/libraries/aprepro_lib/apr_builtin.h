@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -79,6 +79,7 @@ namespace SEAMS {
   double do_cols(const array *arr);
   double do_time();
 
+  const char *do_use_legacy_output_format();
   const char *do_dumpsym();
   const char *do_dumpsym_json();
   const char *do_dumpfunc();
@@ -107,6 +108,7 @@ namespace SEAMS {
   const char *do_switch(double x);
   const char *do_case(double x);
 
+  const char *do_format(double n, char *form);
   const char *do_get_word(double n, char *string, char *delm);
   const char *do_print_array(const array *my_array_data);
 
@@ -127,6 +129,8 @@ namespace SEAMS {
   const char *do_exodus_info_range(char *filename, char *beg, char *end);
   const char *do_exodus_info(char *filename, char *prefix);
   const char *do_exodus_meta(char *filename);
+  const char *do_exodus_meta_cd(char *filename, double cs_index);
+  const char *do_exodus_query_change_sets(char *filename);
 #endif
 
   array *do_csv_array(const char *filename, double skip);
@@ -134,7 +138,7 @@ namespace SEAMS {
   array *do_csv_array2(const char *filename, const char *comment);
   array *do_make_array(double rows, double cols);
   array *do_make_array_init(double rows, double cols, double init);
-  array *do_linear_array(double init, double final, double count);
+  array *do_linear_array(double init, double last, double count);
   array *do_identity(double size);
   array *do_transpose(const array *a);
   array *do_principal(const array *a);

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -357,6 +357,7 @@ sexp:     QSTRING               { $$ = $1;                              }
             $$ = (char*)"";
         }
         | sexp CONCAT sexp      { concat_string($1, $3, &$$); }
+	| sexp PLU sexp         { concat_string($1, $3, &$$); }
         | SFNCT LPAR exp COMMA exp RPAR {
           if (arg_check($1, $1->value.strfnct_dd == NULL))
             $$ = (char*)(*($1->value.strfnct_dd))($3, $5);
@@ -375,6 +376,18 @@ sexp:     QSTRING               { $$ = $1;                              }
           else
             $$ = (char*)"";
         }
+        | SFNCT LPAR exp COMMA sexp RPAR {
+          if (arg_check($1, $1->value.strfnct_dc == NULL))
+            $$ = (char*)(*($1->value.strfnct_dc))($3, $5);
+          else
+            $$ = (char*)"";
+        }
+        | SFNCT LPAR sexp COMMA exp RPAR {
+          if (arg_check($1, $1->value.strfnct_cd == NULL))
+            $$ = (char*)(*($1->value.strfnct_cd))($3, $5);
+          else
+            $$ = (char*)"";
+        }
         | SFNCT LPAR sexp COMMA sexp COMMA sexp  RPAR {
           if (arg_check($1, $1->value.strfnct_ccc == NULL))
             $$ = (char*)(*($1->value.strfnct_ccc))($3, $5, $7);
@@ -388,6 +401,17 @@ sexp:     QSTRING               { $$ = $1;                              }
             $$ = (char*)"";
         }
         | bool QUEST sexp COLON sexp  { $$ = ($1) ? ($3) : ($5);              }
+	| exp TIM sexp          { $$ = (char*)""; yyerror(aprepro, "Multiplying an arithmetic with a string is not defined"); yyerrok;}
+	| sexp TIM exp          { $$ = (char*)""; yyerror(aprepro, "Multiplying a string with an arithmetic is not defined"); yyerrok;}
+	| sexp TIM sexp         { $$ = (char*)""; yyerror(aprepro, "Multiplying a string with a string is not defined"); yyerrok;}
+	| sexp DIV exp          { $$ = (char*)""; yyerror(aprepro, "Dividing a string by an arithmetic is not defined"); yyerrok;}
+	| exp DIV sexp          { $$ = (char*)""; yyerror(aprepro, "Dividing an arithmetic by a string is not defined"); yyerrok;}
+	| sexp DIV sexp         { $$ = (char*)""; yyerror(aprepro, "Dividing a string by a string is not defined"); yyerrok;}
+	| exp PLU sexp          { $$ = (char*)""; yyerror(aprepro, "Adding an arithmetic and a string is not defined"); yyerrok;}
+	| sexp PLU exp          { $$ = (char*)""; yyerror(aprepro, "Adding a string and an arithmetic is not defined"); yyerrok;}
+	| exp SUB sexp          { $$ = (char*)""; yyerror(aprepro, "Subtracting an arithmetic and a string is not defined"); yyerrok;}
+	| sexp SUB exp          { $$ = (char*)""; yyerror(aprepro, "Subtracting a string and an arithmetic is not defined"); yyerrok;}
+	| sexp SUB sexp         { $$ = (char*)""; yyerror(aprepro, "Subtracting a string from a string is not defined"); yyerrok;}
 
 exp:      NUM                   { $$ = $1;                              }
         | INC NUM               { $$ = $2 + 1;                          }
@@ -573,7 +597,7 @@ exp:      NUM                   { $$ = $1;                              }
                                     }
                                   else
                                     $$ = $1 / $3;                       }
-        | exp MOD exp           { if ($3 == 0.)
+        | exp MOD exp           { if ((int)$3 == 0.)
                                     {
 				      $$ = (int)$1;
                                       yyerror(aprepro, "Zero divisor");

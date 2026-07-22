@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_SYMMETRIZE_ON_DEVICE_HPP__
 #define __TACHO_SYMMETRIZE_ON_DEVICE_HPP__
@@ -26,18 +18,21 @@ Sandia National Laboratories, Albuquerque, NM, USA
 namespace Tacho {
 
 template <> struct Symmetrize<Uplo::Upper, Algo::OnDevice> {
-  template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A) {
+
+  template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A, const bool conjugate = false) {
     static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
     static_assert(std::is_same<typename ViewTypeA::memory_space, Kokkos::HostSpace>::value,
                   "A is not accessible from host");
 
+    using value_type = typename ViewTypeA::non_const_value_type;
+    using arith_traits = ArithTraits<value_type>;
     const ordinal_type m = A.extent(0), n = A.extent(1);
 
     if (m == n) {
       if (A.span() > 0) {
         for (ordinal_type j = 0; j < n; ++j)
           for (ordinal_type i = 0; i < j; ++i)
-            A(j, i) = A(i, j);
+            A(j, i) = (conjugate ? arith_traits::conj(A(i, j)) : A(i, j));
       }
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "A is not a square matrix");
@@ -46,8 +41,11 @@ template <> struct Symmetrize<Uplo::Upper, Algo::OnDevice> {
   }
 
   template <typename ExecSpaceType, typename ViewTypeA>
-  inline static int invoke(ExecSpaceType &exec_instance, const ViewTypeA &A) {
+  inline static int invoke(ExecSpaceType &exec_instance, const ViewTypeA &A, const bool conjugate) {
     static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
+
+    using value_type = typename ViewTypeA::non_const_value_type;
+    using arith_traits = ArithTraits<value_type>;
     const ordinal_type m = A.extent(0), n = A.extent(1);
 
     if (m == n) {
@@ -59,7 +57,7 @@ template <> struct Symmetrize<Uplo::Upper, Algo::OnDevice> {
               const ordinal_type i = ij % m;
               const ordinal_type j = ij / m;
               if (i < j)
-                A(j, i) = A(i, j);
+                A(j, i) = (conjugate ? arith_traits::conj(A(i, j)) : A(i, j));
             });
       }
     } else {
@@ -70,18 +68,20 @@ template <> struct Symmetrize<Uplo::Upper, Algo::OnDevice> {
 };
 
 template <> struct Symmetrize<Uplo::Lower, Algo::OnDevice> {
-  template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A) {
+  template <typename ViewTypeA> inline static int invoke(const ViewTypeA &A, const bool conjugate = false) {
     static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
     static_assert(std::is_same<typename ViewTypeA::memory_space, Kokkos::HostSpace>::value,
                   "A is not accessible from host");
 
+    using value_type = typename ViewTypeA::non_const_value_type;
+    using arith_traits = ArithTraits<value_type>;
     const ordinal_type m = A.extent(0), n = A.extent(1);
 
     if (m == n) {
       if (A.span() > 0) {
         for (ordinal_type j = 0; j < n; ++j)
           for (ordinal_type i = 0; i < j; ++i)
-            A(i, j) = A(j, i);
+            A(i, j) = (conjugate ? arith_traits::conj(A(j, i)) : A(j, i));
       }
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "A is not a square matrix");
@@ -90,8 +90,11 @@ template <> struct Symmetrize<Uplo::Lower, Algo::OnDevice> {
   }
 
   template <typename ExecSpaceType, typename ViewTypeA>
-  inline static int invoke(ExecSpaceType &exec_instance, const ViewTypeA &A) {
+  inline static int invoke(ExecSpaceType &exec_instance, const ViewTypeA &A, const bool conjugate) {
     static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
+
+    using value_type = typename ViewTypeA::non_const_value_type;
+    using arith_traits = ArithTraits<value_type>;
     const ordinal_type m = A.extent(0), n = A.extent(1);
 
     if (m == n) {
@@ -103,7 +106,7 @@ template <> struct Symmetrize<Uplo::Lower, Algo::OnDevice> {
               const ordinal_type i = ij % m;
               const ordinal_type j = ij / m;
               if (i < j)
-                A(i, j) = A(j, i);
+                A(i, j) = (conjugate ? arith_traits::conj(A(j, i)) : A(j, i));
             });
       }
     } else {

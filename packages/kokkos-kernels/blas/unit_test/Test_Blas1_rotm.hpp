@@ -1,29 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <KokkosBlas1_rotm.hpp>
 
 namespace Test {
 
 template <class vector_view_type, class param_view_type, class vector_ref_type>
-void set_rotm_inputs(const int &test_case, vector_view_type &X,
-                     vector_view_type &Y, param_view_type &param,
+void set_rotm_inputs(const int &test_case, vector_view_type &X, vector_view_type &Y, param_view_type &param,
                      vector_ref_type &Xref, vector_ref_type &Yref) {
   // Initialize X and Y inputs
-  typename vector_view_type::HostMirror X_h = Kokkos::create_mirror_view(X);
-  typename vector_view_type::HostMirror Y_h = Kokkos::create_mirror_view(Y);
+  typename vector_view_type::host_mirror_type X_h = Kokkos::create_mirror_view(X);
+  typename vector_view_type::host_mirror_type Y_h = Kokkos::create_mirror_view(Y);
 
   X_h(0) = 0.6;
   X_h(1) = 0.1;
@@ -37,8 +23,7 @@ void set_rotm_inputs(const int &test_case, vector_view_type &X,
   Kokkos::deep_copy(Y, Y_h);
 
   // Initialize Xref, Yref and param (test case dependent)
-  typename param_view_type::HostMirror param_h =
-      Kokkos::create_mirror_view(param);
+  typename param_view_type::host_mirror_type param_h = Kokkos::create_mirror_view(param);
   switch (test_case) {
     case 0:
       param_h(0) = -2.0;
@@ -116,16 +101,15 @@ void set_rotm_inputs(const int &test_case, vector_view_type &X,
 }
 
 template <class vector_view_type, class vector_ref_type>
-void check_results(vector_view_type &X, vector_view_type &Y,
-                   vector_ref_type &Xref, vector_ref_type &Yref) {
+void check_results(vector_view_type &X, vector_view_type &Y, vector_ref_type &Xref, vector_ref_type &Yref) {
   using Scalar = typename vector_view_type::value_type;
 
-  typename vector_view_type::HostMirror X_h = Kokkos::create_mirror_view(X);
-  typename vector_view_type::HostMirror Y_h = Kokkos::create_mirror_view(Y);
+  typename vector_view_type::host_mirror_type X_h = Kokkos::create_mirror_view(X);
+  typename vector_view_type::host_mirror_type Y_h = Kokkos::create_mirror_view(Y);
   Kokkos::deep_copy(X_h, X);
   Kokkos::deep_copy(Y_h, Y);
 
-  Scalar const tol = 10 * Kokkos::ArithTraits<Scalar>::eps();
+  Scalar const tol = 10 * KokkosKernels::ArithTraits<Scalar>::eps();
   for (int idx = 0; idx < 4; ++idx) {
     Test::EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
     Test::EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);
@@ -162,8 +146,7 @@ int test_rotm() {
 }
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotm_float) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotm");
   test_rotm<float, TestDevice>();
@@ -172,8 +155,7 @@ TEST_F(TestCategory, rotm_float) {
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) &&  \
-     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F(TestCategory, rotm_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::rotm");
   test_rotm<double, TestDevice>();

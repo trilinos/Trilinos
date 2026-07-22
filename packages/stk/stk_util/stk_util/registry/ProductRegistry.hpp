@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP
 #define STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP
 
+#include <stk_util/stk_config.h>
 #include <map>     // for map, map<>::const_iterator, map<>::value_compare
 #include <string>  // for string
 
@@ -250,16 +251,5 @@ private:
 std::string get_version(const std::string& executableName);
 
 } // namespace stk
-
-#ifdef STK_BUILT_IN_SIERRA
-#undef VERSION // Nice, Trilinos leaves us this gem
-
-namespace sierra {
-
-typedef stk::ProductRegistry ProductRegistry;
-
-} // namespace sierra
-#endif // STK_BUILT_IN_SIERRA
-
 
 #endif // STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP

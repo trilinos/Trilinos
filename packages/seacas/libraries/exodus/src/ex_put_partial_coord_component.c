@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,7 +31,7 @@ int ex_put_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
 
   int status;
   int numnoddim;
-  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim) != EX_NOERR) {
     /* If not found, then this file is storing 0 nodes.
        Return immediately */
     EX_FUNC_LEAVE(EX_NOERR);
@@ -40,7 +40,7 @@ int ex_put_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
   int64_t num_nod;
   {
     size_t tmp;
-    if ((status = nc_inq_dimlen(exoid, numnoddim, &tmp)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, numnoddim, &tmp)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: inquire failed to return number of nodes in file id %d", exoid);
@@ -51,7 +51,7 @@ int ex_put_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
   }
 
   int ndimdim;
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
              exoid);
@@ -60,7 +60,7 @@ int ex_put_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
   }
 
   size_t num_dim;
-  if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of dimensions in file id %d",
              exoid);
@@ -79,7 +79,7 @@ int ex_put_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (component > num_dim) {
+  if (component > (int)num_dim) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: Component (%d) is larger than number of dimensions (%zu) in file id %d",
@@ -114,7 +114,7 @@ int ex_put_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
     }
 
     int coordid;
-    if ((status = nc_inq_varid(exoid, comp, &coordid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, comp, &coordid)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s nodal coordinates in file id %d",
                which, exoid);
@@ -129,7 +129,7 @@ int ex_put_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
       status = nc_put_vara_double(exoid, coordid, start, count, coor);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d", which,
                exoid);

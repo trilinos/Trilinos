@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef KOKKOS_SPARSE_FINDRELOFFSET_HPP
-#define KOKKOS_SPARSE_FINDRELOFFSET_HPP
+#ifndef KOKKOSSPARSE_FINDRELOFFSET_HPP
+#define KOKKOSSPARSE_FINDRELOFFSET_HPP
 
 /// \file KokkosSparse_findRelOffset.hpp
 /// \brief Find the relative offset of a column index in a sparse
@@ -83,11 +70,10 @@ namespace KokkosSparse {
 ///   to be a Kokkos::View.  Thankfully, arguments to a C++ function
 ///   behave more like LET* than LET (in ANSI Common Lisp terms).
 template <class OffsetType, class IndexViewType>
-KOKKOS_FUNCTION OffsetType findRelOffset(
-    const IndexViewType& indsToSearch, const OffsetType numEnt,
-    /* typename IndexViewType::const_value_type */
-    const typename std::decay<decltype(indsToSearch[0])>::type indToFind,
-    const OffsetType hint, const bool isSorted) {
+KOKKOS_FUNCTION OffsetType findRelOffset(const IndexViewType& indsToSearch, const OffsetType numEnt,
+                                         /* typename IndexViewType::const_value_type */
+                                         const typename std::decay<decltype(indsToSearch[0])>::type indToFind,
+                                         const OffsetType hint, const bool isSorted) {
   // IndexViewType doesn't have to be a Kokkos::View; it just has to
   // implement operator[] like a 1-D array.
   //
@@ -95,8 +81,7 @@ KOKKOS_FUNCTION OffsetType findRelOffset(
   //                 "IndexViewType must be a Kokkos::View");
   // static_assert (static_cast<int> (IndexViewType::rank) == 1,
   //                 "IndexViewType must be a rank-1 Kokkos::View");
-  static_assert(std::is_integral<OffsetType>::value,
-                "OffsetType must be an integer.");
+  static_assert(std::is_integral<OffsetType>::value, "OffsetType must be an integer.");
 
   if (hint < numEnt && indsToSearch[hint] == indToFind) {
     return hint;  // hint was correct
@@ -149,4 +134,4 @@ KOKKOS_FUNCTION OffsetType findRelOffset(
 
 }  // namespace KokkosSparse
 
-#endif  // KOKKOS_SPARSE_FINDRELOFFSET_HPP
+#endif  // KOKKOSSPARSE_FINDRELOFFSET_HPP

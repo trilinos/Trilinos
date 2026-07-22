@@ -1,26 +1,7 @@
 <ParameterList name="test_params">
   <ParameterList name="arc130.mtx">
     <ParameterList name="LAPACK">
-      
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-	<ParameterList name="equilibrate">
-	  <!-- For epetra, we cannot specify types, so solver_run_params are the most meaningful -->
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="Equilibrate" type="bool" value="true"/>
-	  </ParameterList>
-	</ParameterList>
-	<ParameterList name="transpose solve">
-	  <ParameterList name="solver_run_params">
-	    <Parameter name="Equilibrate" type="bool" value="true"/>
-	  </ParameterList>
-	  <ParameterList name="amesos2_params">
-	    <Parameter name="Transpose" type="bool" value="true"/>
-	  </ParameterList>
-	</ParameterList>
-      </ParameterList>
-      
-      <!-- Next test Tpetra objects -->
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
 	<ParameterList name="run0">
 	  <Parameter name="Scalar" type="string" value="float"/>
@@ -50,7 +31,7 @@
 	  </ParameterList>
 	</ParameterList>
       </ParameterList> <!-- end tpetra tests -->
-    </ParameterList> <!-- end SuperLU -->
+    </ParameterList> <!-- end LAPACK -->
     <ParameterList name="all_solver_params">
       <Parameter name="Transpose" type="bool" value="false"/>
     </ParameterList>

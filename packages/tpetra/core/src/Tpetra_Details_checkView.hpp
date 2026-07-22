@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TPETRA_DETAILS_CHECKVIEW_HPP
@@ -58,7 +28,7 @@
 namespace Tpetra {
 namespace Details {
 
-std::string memorySpaceName (const void* ptr);
+std::string memorySpaceName(const void* ptr);
 
 /// \brief Is the given View valid?
 ///
@@ -80,35 +50,31 @@ std::string memorySpaceName (const void* ptr);
 ///   as part of human-readable error output to <tt>*lclErrStrm</tt>.
 ///
 /// \param view [in] The Kokkos::View to investigate.
-template<class DataType, class ... Properties>
-bool
-checkLocalViewValidity
-  (std::ostream* lclErrStrm,
-   const int myMpiProcessRank,
-   const Kokkos::View<DataType, Properties...>& view)
-{
-  using Teuchos::TypeNameTraits;
+template <class DataType, class... Properties>
+bool checkLocalViewValidity(std::ostream* lclErrStrm,
+                            const int myMpiProcessRank,
+                            const Kokkos::View<DataType, Properties...>& view) {
   using std::endl;
+  using Teuchos::TypeNameTraits;
   using view_type = Kokkos::View<DataType, Properties...>;
 
-  if (view.size () == 0) {
+  if (view.size() == 0) {
     // Kokkos::View can be zero size with a nonnull pointer.
     // Even std::vector can have this behavior.
     return true;
-  }
-  else { // nonzero size
-    auto ptr = view.data ();
+  } else {  // nonzero size
+    auto ptr = view.data();
 
     if (ptr == nullptr) {
       if (lclErrStrm != nullptr) {
-        const std::string viewName = TypeNameTraits<view_type>::name ();
+        const std::string viewName = TypeNameTraits<view_type>::name();
         *lclErrStrm << "Proc " << myMpiProcessRank << ": Kokkos::View "
-          "of type " << viewName << " has nonzero size " << view.size ()
-          << " but a null pointer." << endl;
+                                                      "of type "
+                    << viewName << " has nonzero size " << view.size()
+                    << " but a null pointer." << endl;
       }
       return false;
-    }
-    else 
+    } else
       return true;
   }
 }
@@ -116,194 +82,182 @@ checkLocalViewValidity
 /// \brief Is the given Kokkos::DualView valid?
 ///
 /// A DualView is valid if both of its constituent Views are valid.
-template<class DataType ,
-         class... Args>
-bool
-checkLocalDualViewValidity
-  (std::ostream* const lclErrStrm,
-   const int myMpiProcessRank,
-   const Kokkos::DualView<DataType, Args...>& dv)
-{
+template <class DataType,
+          class... Args>
+bool checkLocalDualViewValidity(std::ostream* const lclErrStrm,
+                                const int myMpiProcessRank,
+                                const Kokkos::DualView<DataType, Args...>& dv) {
   const bool dev_good =
-    checkLocalViewValidity (lclErrStrm, myMpiProcessRank,
-                            dv.view_device ());
+      checkLocalViewValidity(lclErrStrm, myMpiProcessRank,
+                             dv.view_device());
   const bool host_good =
-    checkLocalViewValidity (lclErrStrm, myMpiProcessRank,
-                            dv.view_host ());
+      checkLocalViewValidity(lclErrStrm, myMpiProcessRank,
+                             dv.view_host());
   const bool good = dev_good && host_good;
-  if (! good && lclErrStrm != nullptr) {
-    using Teuchos::TypeNameTraits;
+  if (!good && lclErrStrm != nullptr) {
     using std::endl;
+    using Teuchos::TypeNameTraits;
     using dv_type =
-      Kokkos::DualView<DataType, Args...>;
+        Kokkos::DualView<DataType, Args...>;
 
-    const std::string dvName = TypeNameTraits<dv_type>::name ();
+    const std::string dvName = TypeNameTraits<dv_type>::name();
     *lclErrStrm << "Proc " << myMpiProcessRank << ": Kokkos::DualView "
-      "of type " << dvName << " has one or more invalid Views.  See "
-      "above error messages from this MPI process for details." << endl;
+                                                  "of type "
+                << dvName << " has one or more invalid Views.  See "
+                             "above error messages from this MPI process for details."
+                << endl;
   }
   return good;
 }
 
-template<class DataType ,
-         class... Args>
-bool
-checkGlobalDualViewValidity
-(std::ostream* const gblErrStrm,
- const Kokkos::DualView<DataType, Args...>& dv,
- const bool verbose,
- const Teuchos::Comm<int>* const comm)
-{
+template <class DataType,
+          class... Args>
+bool checkGlobalDualViewValidity(std::ostream* const gblErrStrm,
+                                 const Kokkos::DualView<DataType, Args...>& dv,
+                                 const bool verbose,
+                                 const Teuchos::Comm<int>* const comm) {
   using std::endl;
-  const int myRank = comm == nullptr ? 0 : comm->getRank ();
+  const int myRank = comm == nullptr ? 0 : comm->getRank();
   std::ostringstream lclErrStrm;
   int lclSuccess = 1;
 
   try {
     const bool lclValid =
-      checkLocalDualViewValidity (&lclErrStrm, myRank, dv);
+        checkLocalDualViewValidity(&lclErrStrm, myRank, dv);
     lclSuccess = lclValid ? 1 : 0;
-  }
-  catch (std::exception& e) {
+  } catch (std::exception& e) {
     lclErrStrm << "Proc " << myRank << ": checkLocalDualViewValidity "
-      "threw an exception: " << e.what () << endl;
+                                       "threw an exception: "
+               << e.what() << endl;
     lclSuccess = 0;
-  }
-  catch (...) {
+  } catch (...) {
     lclErrStrm << "Proc " << myRank << ": checkLocalDualViewValidity "
-      "threw an exception not a subclass of std::exception." << endl;
+                                       "threw an exception not a subclass of std::exception."
+               << endl;
     lclSuccess = 0;
   }
 
-  int gblSuccess = 0; // output argument
+  int gblSuccess = 0;  // output argument
   if (comm == nullptr) {
     gblSuccess = lclSuccess;
-  }
-  else {
+  } else {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
   }
 
   if (gblSuccess != 1 && gblErrStrm != nullptr) {
     *gblErrStrm << "On at least one (MPI) process, the "
-      "Kokkos::DualView has "
-      "either the device or host pointer in the "
-      "DualView equal to null, but the DualView has a nonzero number of "
-      "rows.  For more detailed information, please rerun with the "
-      "TPETRA_VERBOSE environment variable set to 1. ";
+                   "Kokkos::DualView has "
+                   "either the device or host pointer in the "
+                   "DualView equal to null, but the DualView has a nonzero number of "
+                   "rows.  For more detailed information, please rerun with the "
+                   "TPETRA_VERBOSE environment variable set to 1. ";
     if (verbose) {
       *gblErrStrm << "  Here are error messages from all "
-        "processes:" << endl;
+                     "processes:"
+                  << endl;
       if (comm == nullptr) {
-        *gblErrStrm << lclErrStrm.str ();
-      }
-      else {
+        *gblErrStrm << lclErrStrm.str();
+      } else {
         using Tpetra::Details::gathervPrint;
-        gathervPrint (*gblErrStrm, lclErrStrm.str (), *comm);
+        gathervPrint(*gblErrStrm, lclErrStrm.str(), *comm);
       }
     }
-   *gblErrStrm << endl;
+    *gblErrStrm << endl;
   }
   return gblSuccess == 1;
 }
-
 
 /// \brief Is the given Tpetra::WrappedDualView valid?
 ///
 /// A WrappedDualView is valid if both of its constituent Views are valid.
-template<class DataType ,
-         class... Args>
-bool
-checkLocalWrappedDualViewValidity
-  (std::ostream* const lclErrStrm,
-   const int myMpiProcessRank,
-   const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >& dv)
-{
+template <class DataType,
+          class... Args>
+bool checkLocalWrappedDualViewValidity(std::ostream* const lclErrStrm,
+                                       const int myMpiProcessRank,
+                                       const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >& dv) {
   const bool dev_good  = dv.is_valid_device();
-  const bool host_good = dv. is_valid_host();
-  const bool good = dev_good && host_good;
-  if (! good && lclErrStrm != nullptr) {
-    using Teuchos::TypeNameTraits;
+  const bool host_good = dv.is_valid_host();
+  const bool good      = dev_good && host_good;
+  if (!good && lclErrStrm != nullptr) {
     using std::endl;
+    using Teuchos::TypeNameTraits;
     using dv_type =
-      Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >;
+        Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >;
 
-    const std::string dvName = TypeNameTraits<dv_type>::name ();
+    const std::string dvName = TypeNameTraits<dv_type>::name();
     *lclErrStrm << "Proc " << myMpiProcessRank << ": Tpetra::WrappedDualView "
-      "of type " << dvName << " has one or more invalid Views.  See "
-      "above error messages from this MPI process for details." << endl;
+                                                  "of type "
+                << dvName << " has one or more invalid Views.  See "
+                             "above error messages from this MPI process for details."
+                << endl;
   }
   return good;
 }
 
-template<class DataType ,
-         class... Args>
-bool
-checkGlobalWrappedDualViewValidity
-(std::ostream* const gblErrStrm,
- const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >& dv,
- const bool verbose,
- const Teuchos::Comm<int>* const comm)
-{
+template <class DataType,
+          class... Args>
+bool checkGlobalWrappedDualViewValidity(std::ostream* const gblErrStrm,
+                                        const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Args...> >& dv,
+                                        const bool verbose,
+                                        const Teuchos::Comm<int>* const comm) {
   using std::endl;
-  const int myRank = comm == nullptr ? 0 : comm->getRank ();
+  const int myRank = comm == nullptr ? 0 : comm->getRank();
   std::ostringstream lclErrStrm;
   int lclSuccess = 1;
 
   try {
     const bool lclValid =
-      checkLocalWrappedDualViewValidity (&lclErrStrm, myRank, dv);
+        checkLocalWrappedDualViewValidity(&lclErrStrm, myRank, dv);
     lclSuccess = lclValid ? 1 : 0;
-  }
-  catch (std::exception& e) {
+  } catch (std::exception& e) {
     lclErrStrm << "Proc " << myRank << ": checkLocalDualViewValidity "
-      "threw an exception: " << e.what () << endl;
+                                       "threw an exception: "
+               << e.what() << endl;
     lclSuccess = 0;
-  }
-  catch (...) {
+  } catch (...) {
     lclErrStrm << "Proc " << myRank << ": checkLocalDualViewValidity "
-      "threw an exception not a subclass of std::exception." << endl;
+                                       "threw an exception not a subclass of std::exception."
+               << endl;
     lclSuccess = 0;
   }
 
-  int gblSuccess = 0; // output argument
+  int gblSuccess = 0;  // output argument
   if (comm == nullptr) {
     gblSuccess = lclSuccess;
-  }
-  else {
+  } else {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
-    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    reduceAll(*comm, REDUCE_MIN, lclSuccess, outArg(gblSuccess));
   }
 
   if (gblSuccess != 1 && gblErrStrm != nullptr) {
     *gblErrStrm << "On at least one (MPI) process, the "
-      "Kokkos::DualView has "
-      "either the device or host pointer in the "
-      "DualView equal to null, but the DualView has a nonzero number of "
-      "rows.  For more detailed information, please rerun with the "
-      "TPETRA_VERBOSE environment variable set to 1. ";
+                   "Kokkos::DualView has "
+                   "either the device or host pointer in the "
+                   "DualView equal to null, but the DualView has a nonzero number of "
+                   "rows.  For more detailed information, please rerun with the "
+                   "TPETRA_VERBOSE environment variable set to 1. ";
     if (verbose) {
       *gblErrStrm << "  Here are error messages from all "
-        "processes:" << endl;
+                     "processes:"
+                  << endl;
       if (comm == nullptr) {
-        *gblErrStrm << lclErrStrm.str ();
-      }
-      else {
+        *gblErrStrm << lclErrStrm.str();
+      } else {
         using Tpetra::Details::gathervPrint;
-        gathervPrint (*gblErrStrm, lclErrStrm.str (), *comm);
+        gathervPrint(*gblErrStrm, lclErrStrm.str(), *comm);
       }
     }
-   *gblErrStrm << endl;
+    *gblErrStrm << endl;
   }
   return gblSuccess == 1;
 }
 
+}  // namespace Details
+}  // namespace Tpetra
 
-} // namespace Details
-} // namespace Tpetra
-
-#endif // TPETRA_DETAILS_CHECKVIEW_HPP
+#endif  // TPETRA_DETAILS_CHECKVIEW_HPP

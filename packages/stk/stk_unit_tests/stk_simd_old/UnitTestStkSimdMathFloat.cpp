@@ -4,6 +4,8 @@
 #include <algorithm>
 #include "SimdFixture.hpp"
 
+constexpr float floatEpsilon = 5.e-7;
+
 TEST(StkSimd, SimdAddSubtractMultDivideFloat)
 {
   int N = 400000;
@@ -226,7 +228,7 @@ TEST(StkSimd, SimdSqrtFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real SQRT took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon );
 }
 
 TEST(StkSimd, SimdLogFloat) 
@@ -260,8 +262,7 @@ TEST(StkSimd, SimdLogFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Log took " << t0 << " seconds" <<  std::endl;
 
-  const double epsilon = 1.e-6;
-  ASSERT_NEAR( max_error(out1, out2), 0.0, epsilon );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon );
 }
 
 TEST(StkSimd, SimdExpFloat) 
@@ -294,7 +295,7 @@ TEST(StkSimd, SimdExpFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon );
 }
 
 TEST(StkSimd, SimdPowAFloat) 
@@ -335,7 +336,7 @@ TEST(StkSimd, SimdPowAFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon );
 }
 
 TEST(StkSimd, SimdPowBFloat) 
@@ -374,7 +375,7 @@ TEST(StkSimd, SimdPowBFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Pow took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0);
+  ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon);
 }
 
 TEST(StkSimd, SimdPowCFloat) 
@@ -407,7 +408,7 @@ TEST(StkSimd, SimdPowCFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real Exp took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2), 0.0, 0.0);
+  ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon);
 }
 
 TEST(StkSimd, SimdCbrtFloat)
@@ -440,7 +441,6 @@ TEST(StkSimd, SimdCbrtFloat)
   t0 += stk::get_time_in_seconds();
   std::cout << "Real cbrt took " << t0 << " seconds" <<  std::endl;
 
-  constexpr float floatEpsilon = 5.e-7;
   ASSERT_NEAR( max_error(out1, out2), 0.0, floatEpsilon );  
 }
 
@@ -558,8 +558,8 @@ TEST(StkSimd, SimdTimeLoadStoreDataLayoutFloat)
   }
 
   // figure out error
-  ASSERT_NEAR( max_error(y, z), 0.0, 1.0e-16 );
-  ASSERT_NEAR( max_error(y, w), 0.0, 1.0e-16 );
+  ASSERT_NEAR( max_error(y, z), 0.0, floatEpsilon );
+  ASSERT_NEAR( max_error(y, w), 0.0, floatEpsilon );
 }
 
 TEST(StkSimd, SimdTimeLoadStoreInnerProductFloat)
@@ -679,8 +679,8 @@ TEST(StkSimd, SimdTimeLoadStoreInnerProductFloat)
   }
 
   // figure out error
-  ASSERT_NEAR( max_error(y,z), 0.0, 1.0e-16 );
-  ASSERT_NEAR( max_error(y,w), 0.0, 1.0e-16 );
+  ASSERT_NEAR( max_error(y,z), 0.0, floatEpsilon );
+  ASSERT_NEAR( max_error(y,w), 0.0, floatEpsilon );
 }
 
 
@@ -733,7 +733,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // less than equal
 
@@ -750,7 +750,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // equal
 
@@ -767,7 +767,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // greater than equal
 
@@ -784,7 +784,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // greater than
 
@@ -801,7 +801,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // not equal
 
@@ -818,7 +818,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // if then zero
 
@@ -835,7 +835,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // if ! then
 
@@ -852,7 +852,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // &&
 
@@ -873,7 +873,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // ||
 
@@ -896,7 +896,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // any
 
@@ -996,7 +996,7 @@ TEST(StkSimd, SimdSpecialFunctionsFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // max
 
@@ -1011,7 +1011,7 @@ TEST(StkSimd, SimdSpecialFunctionsFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 
   // min
 
@@ -1026,7 +1026,7 @@ TEST(StkSimd, SimdSpecialFunctionsFloat)
     stk::simd::store(&z1[n],zl);
   }
   
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, floatEpsilon );
 }
 
 TEST(StkSimd, SimdTimeSet1VsConstFloats)
@@ -1078,7 +1078,7 @@ TEST(StkSimd, SimdTimeSet1VsConstFloats)
   t0 += stk::get_time_in_seconds();
   std::cout << "Non simd took " << t0 << " seconds" <<  std::endl;
 
-  ASSERT_NEAR( max_error(out1, out2, out3, out4), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2, out3, out4), 0.0, floatEpsilon );
 }
 
 template <typename REAL_TYPE> 
@@ -1133,7 +1133,7 @@ TEST(StkSimd, NegatingAVectorFloat)
     stk::simd::store_array<3>(out3.data() + 3*n,b);
   }
 
-  ASSERT_NEAR( max_error(out1, out2, out3), 0.0, 0.0 );
+  ASSERT_NEAR( max_error(out1, out2, out3), 0.0, floatEpsilon );
 }
 
 TEST(StkSimd, SimdIsnanFloat)

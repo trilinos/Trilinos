@@ -21,10 +21,10 @@ public:
   stk::mesh::impl::ParallelGraphInfo& get_parallel_info() { return m_parallelInfoForGraphEdges.get_parallel_graph_info(); }
 };
 
-class ParallelGraphUpdate : public stk::unit_test_util::simple_fields::MeshFixture
+class ParallelGraphUpdate : public stk::unit_test_util::MeshFixture
 {
 public:
-  ParallelGraphUpdate() : stk::unit_test_util::simple_fields::MeshFixture()
+  ParallelGraphUpdate() : stk::unit_test_util::MeshFixture()
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     airPart = &get_meta().declare_part_with_topology("air", stk::topology::HEXAHEDRON_8);
@@ -293,8 +293,8 @@ TEST_F(ParallelGraphUpdate, deleteBothShellElementsOnParallelEdge)
       0,0,2, 1,0,2, 1,1,2, 0,1,2
     };
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     get_bulk().initialize_face_adjacent_element_graph();
 
     stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1u);
@@ -319,7 +319,7 @@ TEST_F(ParallelGraphUpdate, deleteBothShellElementsOnParallelEdge)
     const stk::mesh::ElemElemGraph &graph = get_bulk().get_face_adjacent_element_graph();
     const stk::mesh::impl::ParallelGraphInfo& parallelGraphInfo = graph.get_parallel_info_for_graph_edges().get_parallel_graph_info();
 
-    EXPECT_EQ(4u, parallelGraphInfo.size());
+    EXPECT_EQ(8u, parallelGraphInfo.size());
 
     get_bulk().modification_begin();
     get_bulk().destroy_entity(elem2);
@@ -348,14 +348,14 @@ TEST_F(ParallelGraphUpdate, createAefA_FromScratch)
       0,0,2, 1,0,2, 1,1,2, 0,1,2
     };
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     get_bulk().initialize_face_adjacent_element_graph();
 
     const stk::mesh::ElemElemGraph &graph = get_bulk().get_face_adjacent_element_graph();
     const stk::mesh::impl::ParallelGraphInfo& parallelGraphInfo = graph.get_parallel_info_for_graph_edges().get_parallel_graph_info();
 
-    EXPECT_EQ(4u, parallelGraphInfo.size());
+    EXPECT_EQ(8u, parallelGraphInfo.size());
 
     stk::mesh::impl::ParallelPartInfo parallelPartInfo;
     EXPECT_NO_THROW(stk::mesh::impl::populate_part_ordinals_for_remote_edges(get_bulk(), graph, parallelPartInfo));
@@ -386,8 +386,8 @@ TEST_F(ParallelGraphUpdate, createAefA_FromAA)
       0,0,2, 1,0,2, 1,1,2, 0,1,2
     };
 
-    stk::unit_test_util::simple_fields::setup_text_mesh(
-          get_bulk(), stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coordinates));
+    stk::unit_test_util::setup_text_mesh(
+          get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     get_bulk().initialize_face_adjacent_element_graph();
 
     const stk::mesh::ElemElemGraph &graph = get_bulk().get_face_adjacent_element_graph();
@@ -408,7 +408,7 @@ TEST_F(ParallelGraphUpdate, createAefA_FromAA)
     stk::mesh::Entity elem = stk::mesh::declare_element(get_bulk(), *shellPart, shellId, shellNodeIds);
     get_bulk().modification_end();
 
-    EXPECT_EQ(4u, parallelGraphInfo.size());
+    EXPECT_EQ(8u, parallelGraphInfo.size());
 
     get_bulk().modification_begin();
     get_bulk().destroy_entity(elem);

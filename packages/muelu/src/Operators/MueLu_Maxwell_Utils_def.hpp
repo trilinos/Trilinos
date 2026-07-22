@@ -15,7 +15,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include "Xpetra_Map.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
 #include "MueLu_Maxwell_Utils_decl.hpp"
@@ -153,14 +153,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     removeExplicitZeros(const RCP<Matrix>& A,
                         const magnitudeType tolerance,
-                        const bool keepDiagonal,
-                        const size_t expectedNNZperRow) {
+                        const bool keepDiagonal) {
   Level fineLevel;
   fineLevel.SetFactoryManager(null);
   fineLevel.SetLevelID(0);
   fineLevel.Set("A", A);
   fineLevel.setlib(A->getDomainMap()->lib());
-  RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A", tolerance, keepDiagonal, expectedNNZperRow));
+  RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A", tolerance, keepDiagonal));
   fineLevel.Request("A", ThreshFact.get());
   ThreshFact->Build(fineLevel);
   return fineLevel.Get<RCP<Matrix> >("A", ThreshFact.get());
@@ -178,7 +177,7 @@ void Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::removeExplicitZer
   // In the construction of the prolongator we use the graph of the
   // matrix, so zero entries mess it up.
   if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getLocalMaxNumRowEntries() > 2) {
-    D0_Matrix_ = removeExplicitZeros(D0_Matrix_, 1e-8, false, 2);
+    D0_Matrix_ = removeExplicitZeros(D0_Matrix_, 1e-8, false);
 
     // If D0 has too many zeros, maybe SM and M1 do as well.
     defaultFilter = true;
@@ -216,9 +215,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     thresholdedAbs(const RCP<Matrix>& A,
                    const magnitudeType threshold) {
-  using ATS         = Kokkos::ArithTraits<Scalar>;
+  using ATS         = KokkosKernels::ArithTraits<Scalar>;
   using impl_Scalar = typename ATS::val_type;
-  using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+  using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
   using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
   const impl_Scalar impl_SC_ONE  = impl_ATS::one();
@@ -252,7 +251,7 @@ void Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    PtAPWrapper(const RCP<Matrix>& A, const RCP<Matrix>& P, ParameterList& params, std::string& label) {
+    PtAPWrapper(const RCP<Matrix>& A, const RCP<Matrix>& P, ParameterList& params, const std::string& label) {
   Level fineLevel, coarseLevel;
   fineLevel.SetFactoryManager(null);
   coarseLevel.SetFactoryManager(null);

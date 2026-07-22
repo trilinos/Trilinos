@@ -1,24 +1,19 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef TEST_FUNCTOR_ANALYSIS_HPP
 #define TEST_FUNCTOR_ANALYSIS_HPP
 
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.core_impl;
+#else
 #include <Kokkos_Core.hpp>
+#endif
+
+#include <impl/Kokkos_FunctorAnalysis.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -48,10 +43,10 @@ struct TestFunctorAnalysis_04 {
   KOKKOS_INLINE_FUNCTION static void init(float&) {}
 };
 
-template <class ExecSpace>
 void test_functor_analysis() {
   //------------------------------
-  auto c01 = KOKKOS_LAMBDA(int){};
+  using ExecSpace = TEST_EXECSPACE;
+  auto c01        = KOKKOS_LAMBDA(int){};
   using A01 =
       Kokkos::Impl::FunctorAnalysis<Kokkos::Impl::FunctorPatternInterface::FOR,
                                     Kokkos::RangePolicy<ExecSpace>,
@@ -59,10 +54,10 @@ void test_functor_analysis() {
 
   using R01 = typename A01::Reducer;
 
-  static_assert(std::is_void<typename A01::value_type>::value);
-  static_assert(std::is_void<typename A01::pointer_type>::value);
-  static_assert(std::is_void<typename A01::reference_type>::value);
-  static_assert(std::is_same<typename R01::functor_type, decltype(c01)>::value);
+  static_assert(std::is_void_v<typename A01::value_type>);
+  static_assert(std::is_void_v<typename A01::pointer_type>);
+  static_assert(std::is_void_v<typename A01::reference_type>);
+  static_assert(std::is_same_v<typename R01::functor_type, decltype(c01)>);
 
   static_assert(!A01::has_join_member_function);
   static_assert(!A01::has_init_member_function);
@@ -77,10 +72,10 @@ void test_functor_analysis() {
       Kokkos::RangePolicy<ExecSpace>, decltype(c02), void>;
   using R02 = typename A02::Reducer;
 
-  static_assert(std::is_same<typename A02::value_type, double>::value);
-  static_assert(std::is_same<typename A02::pointer_type, double*>::value);
-  static_assert(std::is_same<typename A02::reference_type, double&>::value);
-  static_assert(std::is_same<typename R02::functor_type, decltype(c02)>::value);
+  static_assert(std::is_same_v<typename A02::value_type, double>);
+  static_assert(std::is_same_v<typename A02::pointer_type, double*>);
+  static_assert(std::is_same_v<typename A02::reference_type, double&>);
+  static_assert(std::is_same_v<typename R02::functor_type, decltype(c02)>);
 
   static_assert(!A02::has_join_member_function);
   static_assert(!A02::has_init_member_function);
@@ -96,14 +91,14 @@ void test_functor_analysis() {
       Kokkos::RangePolicy<ExecSpace>, TestFunctorAnalysis_03, void>;
   using R03 = typename A03::Reducer;
 
-  static_assert(std::is_same<typename A03::value_type,
-                             TestFunctorAnalysis_03::value_type>::value);
-  static_assert(std::is_same<typename A03::pointer_type,
-                             TestFunctorAnalysis_03::value_type*>::value);
-  static_assert(std::is_same<typename A03::reference_type,
-                             TestFunctorAnalysis_03::value_type&>::value);
+  static_assert(std::is_same_v<typename A03::value_type,
+                               TestFunctorAnalysis_03::value_type>);
+  static_assert(std::is_same_v<typename A03::pointer_type,
+                               TestFunctorAnalysis_03::value_type*>);
+  static_assert(std::is_same_v<typename A03::reference_type,
+                               TestFunctorAnalysis_03::value_type&>);
   static_assert(
-      std::is_same<typename R03::functor_type, TestFunctorAnalysis_03>::value);
+      std::is_same_v<typename R03::functor_type, TestFunctorAnalysis_03>);
 
   static_assert(A03::has_join_member_function);
   static_assert(A03::has_init_member_function);
@@ -135,9 +130,7 @@ void test_functor_analysis() {
   ASSERT_EQ(R04(c04).length(), 1);
 }
 
-TEST(TEST_CATEGORY, functor_analysis) {
-  test_functor_analysis<TEST_EXECSPACE>();
-}
+TEST(TEST_CATEGORY, functor_analysis) { test_functor_analysis(); }
 
 }  // namespace Test
 

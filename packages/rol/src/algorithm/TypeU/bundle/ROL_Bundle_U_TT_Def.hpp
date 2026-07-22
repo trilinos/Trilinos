@@ -1,54 +1,20 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef ROL_BUNDLE_U_TT_DEF_H
 #define ROL_BUNDLE_U_TT_DEF_H
 
 #include "ROL_Types.hpp"
-#include <limits.h> 
-#include <stdint.h> 
-#include <float.h> 
-#include <math.h> 
+#include <limits.h>
+#include <stdint.h>
+#include <float.h>
+#include <math.h>
 #include <algorithm> // TT: std::find
 
 #define EXACT 1
@@ -61,7 +27,7 @@ template<typename Real>
 Bundle_U_TT<Real>::Bundle_U_TT(const unsigned maxSize,
             const Real coeff,
             const Real omega,
-            const unsigned remSize) 
+            const unsigned remSize)
   : Bundle_U<Real>(maxSize,coeff,omega,remSize),
     maxSize_(maxSize), isInitialized_(false) {
   maxind_ = std::numeric_limits<int>::max();
@@ -77,7 +43,7 @@ Real Bundle_U_TT<Real>::sgn(const Real x) const {
   return ((x < zero) ? -one :
          ((x > zero) ?  one : zero));
 }
-  
+
 template<typename Real>
 unsigned Bundle_U_TT<Real>::solveDual(const Real t, const unsigned maxit, const Real tol) {
   unsigned iter = 0;
@@ -153,16 +119,16 @@ void Bundle_U_TT<Real>::addSubgradToBase(unsigned ind, Real delta) {
       base_[currSize_-1] = tmp;
       ind--;
   } // end if dependent
-  
+
   L_(ind,ind) = delta;
-  
+
   // update z1 and z2
   unsigned zsize = ind+1;
   z1_.resize(zsize); z2_.resize(zsize);
   z1_[ind] = ( static_cast<Real>(1) - lhz1_ ) / delta;
-  z2_[ind] = ( Bundle_U<Real>::alpha(base_[ind]) - lhz2_ ) / delta;  
-  //z2[zsize-1] = ( Bundle_U<Real>::alpha(entering_) - lhz2_ ) / delta;  
-  
+  z2_[ind] = ( Bundle_U<Real>::alpha(base_[ind]) - lhz2_ ) / delta;
+  //z2[zsize-1] = ( Bundle_U<Real>::alpha(entering_) - lhz2_ ) / delta;
+
   // update kappa
   if(delta > L_(LiMax_,LiMax_)){
     LiMax_ = ind;
@@ -179,11 +145,11 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
   const Real zero(0), one(1);
   // update L, currSize, base_, z1, z2, dependent, dualVariables_, kappa
   if (ind >= currSize_-dependent_){
-    // if dependent > 0, the last one or two rows of L are lin. dependent              
+    // if dependent > 0, the last one or two rows of L are lin. dependent
     if (ind < currSize_-1){ // eliminate currSize_-2 but keep currSize_-1
       // swap the last row with the second to last
       swapRowsL(ind,currSize_-1);
-      base_[ind] = base_[currSize_-1];                
+      base_[ind] = base_[currSize_-1];
 #if( ! EXACT )
       lhNorm = ljNorm; // new last row is lh
 #endif
@@ -199,22 +165,22 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
   } // end if dependent item
 
   /* currently L_B is lower trapezoidal
-          
+
            | L_1  0  0   |
      L_B = | l    d  0   |
-           | Z    v  L_2 | 
-          
+           | Z    v  L_2 |
+
      Apply Givens rotations to transform it to
-          
+
      | L_1  0  0    |
      | l    d  0    |
      | Z    0  L_2' |
-          
+
      then delete row and column to obtain factorization of L_B' with B' = B/{i}
-           
+
      L_B' = | L_1  0    |
             | Z    L_2' |
-          
+
   */
   for (unsigned j=ind+1; j<currSize_-dependent_; ++j){
     Real ai = L_(j,ind);
@@ -251,8 +217,8 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
     // d  = hypot(ai,aj);
     // Gc = aj/d;
     // Gs = -ai/d;
-            
-    L_(j,j) = d; L_(j,ind) = zero; 
+
+    L_(j,j) = d; L_(j,ind) = zero;
     // apply Givens to columns i,j of L
     for (unsigned h=j+1; h<currSize_; ++h){
       Real tmp1 = L_(h,ind);
@@ -276,7 +242,7 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
     if( dependent_ > 1 )                 // j = currSize_ - 1, h = currSize_ - 2
       deltaLj_ = L_(currSize_-1,ind);
   }
-          
+
   // shift rows and columns of L by exchanging i-th row with next row and i-th column with next column until the row to be deleted is the last, then deleting last row and column
   swapRowsL(ind,currSize_-1);
   swapRowsL(ind,currSize_-1,true);
@@ -298,7 +264,7 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
 
   // update kappa
   updateK();
-          
+
   if(dependent_){
     // if some previously dependent item have become independent
     // recompute deltaLh
@@ -315,8 +281,8 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
     Real signum = sgn1 * sgn2; // sgn( deltaLh ) * sgn ( deltaLj );
     deltaLh_ = std::abs( ghNorm - lhNorm + deltaLh_ * deltaLh_);
 #endif
- 
-    if( std::sqrt(deltaLh_) > tol*kappa_*std::max(static_cast<Real>(1),ghNorm) ){ // originally had deltaLh without sqrt 
+
+    if( std::sqrt(deltaLh_) > tol*kappa_*std::max(static_cast<Real>(1),ghNorm) ){ // originally had deltaLh without sqrt
       unsigned newind = currSize_-dependent_;
       dependent_--;
       // get the last row of L
@@ -329,7 +295,7 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
         lhz2_ += lh_[ii]*z2_[ii];
       }
       deltaLh_ = std::sqrt(deltaLh_);
-      addSubgradToBase(newind,deltaLh_);                
+      addSubgradToBase(newind,deltaLh_);
 
       if(dependent_){ // dependent was 2
 #if( ! EXACT )
@@ -366,13 +332,13 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
 #else
       deltaLj_ = std::abs( gjNorm - ljNorm + deltaLj_ * deltaLj_);
 #endif
-              
+
       if( std::sqrt(deltaLj_) > tol*kappa_*std::max(static_cast<Real>(1),gjNorm) ){ // originally had deltaLj without sqrt
         unsigned newind = currSize_-1;
         dependent_--;
         // get the last row of L
         lj_.size(newind-1); // initialize to zeros;
-        Real ljz1_ = zero;
+        ljz1_ = zero;
         Real ljTz2 = zero;
         for (unsigned ii=0;ii<newind-1;ii++){
           lj_[ii] = L_(newind,ii);
@@ -380,7 +346,7 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
           ljTz2 += lj_[ii]*z2_[ii];
         }
         deltaLj_ = std::sqrt(deltaLj_);
-        addSubgradToBase(newind,deltaLj_);        
+        addSubgradToBase(newind,deltaLj_);
 #if( EXACT )
         deltaLh_ = GiGj(base_[currSize_-2],base_[currSize_-1]);
         for (unsigned ii=0;ii<currSize_-1;ii++){
@@ -400,7 +366,7 @@ void Bundle_U_TT<Real>::deleteSubgradFromBase(unsigned ind, Real tol){
     } // end if ( dependent > 1 )
   } // end if(dependent)
 }// end deleteSubgradFromBase()
-  
+
 template<typename Real>
 void Bundle_U_TT<Real>::solveSystem(int size, char tran, LA::Matrix<Real> &L, LA::Vector<Real> &v){
   int info;
@@ -435,8 +401,8 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
   entering_ = maxind_;
 
   // cold start
-  optimal_   = true; 
-  dependent_ = 0; 
+  optimal_   = true;
+  dependent_ = 0;
   rho_       = ROL_INF<Real>(); // value of rho = -v
   currSize_  = 1;               // current base size
   base_.clear();
@@ -458,7 +424,7 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
   kappa_     = one;                  // condition number of matrix L ( >= max|L_ii|/min|L_ii| )
   objval_    = ROL_INF<Real>();      // value of objective
   minobjval_ = ROL_INF<Real>();      // min value of objective (ever reached)
-  
+
   unsigned iter;
   //-------------------------- MAIN LOOP --------------------------------//
   for (iter=0;iter<maxit;iter++){
@@ -471,7 +437,7 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
             L = L_B'
           */
           z1z2    = z1_.dot(z2_);
-          z1z1    = z1_.dot(z1_); 
+          z1z1    = z1_.dot(z1_);
           rho_    = ( one + z1z2/t )/z1z1;
           tempv_  = z1_; tempv_.scale(rho_);
           tempw1_ = z2_; tempw1_.scale(one/t);
@@ -480,26 +446,26 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
           optimal_ = true;
           break;
         }
-      case(1): 
+      case(1):
         {
           /*
             L = | L_B'   0 | \ currSize
                 | l_h^T  0 | /
           */
-          LA::Matrix<Real> LBprime( LA::Copy,L_,currSize_-1,currSize_-1);     
+          LA::Matrix<Real> LBprime( LA::Copy,L_,currSize_-1,currSize_-1);
           lh_.size(currSize_-1); // initialize to zeros;
           lhz1_ = zero;
           lhz2_ = zero;
           for(unsigned i=0; i<currSize_-1; ++i){
             Real tmp = L_(currSize_-1,i);
             lhz1_ += tmp*z1_(i);
-            lhz2_ += tmp*z2_(i); 
+            lhz2_ += tmp*z2_(i);
             lh_[i] = tmp;
           }
           // Test for singularity
-          if (std::abs(lhz1_-one) <= tol*kappa_){ 
+          if (std::abs(lhz1_-one) <= tol*kappa_){
             // tempv is an infinite direction
-            tempv_ = lh_;  
+            tempv_ = lh_;
             solveSystem(currSize_-1,'T',LBprime,tempv_);
             tempv_.resize(currSize_);   // add last entry
             tempv_[currSize_-1] = -one;
@@ -509,7 +475,7 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
             // system has (unique) solution
             rho_ = ( (Bundle_U<Real>::alpha(base_[currSize_-1]) - lhz2_)/t ) / ( one - lhz1_ );
             z1z2 = z1_.dot(z2_);
-            z1z1 = z1_.dot(z1_); 
+            z1z1 = z1_.dot(z1_);
             Real tmp = ( one + z1z2 / t - rho_ * z1z1 )/( one - lhz1_ );
             tempw1_ = z1_; tempw1_.scale(rho_);
             tempw2_ = z2_; tempw2_.scale(one/t);
@@ -539,13 +505,13 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
             Real tmp1 = L_(currSize_-1,i);
             Real tmp2 = L_(currSize_-2,i);
             ljz1_ += tmp1*z1_(i);
-            lhz1_ += tmp2*z1_(i); 
+            lhz1_ += tmp2*z1_(i);
             lj_[i] = tmp1;
             lh_[i] = tmp2;
           }
-          if(std::abs(ljz1_-one) <= tol*kappa_){ 
+          if(std::abs(ljz1_-one) <= tol*kappa_){
             // tempv is an infinite direction
-            tempv_ = lj_;    
+            tempv_ = lj_;
             solveSystem(currSize_-2,'T',LBprime,tempv_);
             tempv_.resize(currSize_);   // add two last entries
             tempv_[currSize_-2] = zero;
@@ -573,7 +539,7 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
           // set dual variables to values in tempv
           Bundle_U<Real>::resetDualVariables();
           for (unsigned i=0; i<currSize_; ++i){
-            Bundle_U<Real>::setDualVariable(base_[i],tempv_[i]); 
+            Bundle_U<Real>::setDualVariable(base_[i],tempv_[i]);
           }
         }
         else{
@@ -613,19 +579,19 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
           QPStatus_ = -1; // invalid step
           return iter;
         }
-        
+
         for (unsigned i=0; i<currSize_; ++i)
-          Bundle_U<Real>::setDualVariable(base_[i],Bundle_U<Real>::getDualVariable(base_[i]) + step * tempv_[i]);          
+          Bundle_U<Real>::setDualVariable(base_[i],Bundle_U<Real>::getDualVariable(base_[i]) + step * tempv_[i]);
       }// if(!optimal)
-      
+
       //------------------------- ITEMS ELIMINATION ---------------------------//
-      
+
       // Eliminate items with 0 multipliers from base
       bool deleted = optimal_;
       for (unsigned baseitem=0; baseitem<currSize_; ++baseitem){
         if (Bundle_U<Real>::getDualVariable(base_[baseitem]) <= tol){
           deleted = true;
-          
+
 #if( TABOO_LIST )
           // item that just entered shouldn't exit; if it does, mark it as taboo
           if( base_[baseitem] == entering_ ){
@@ -634,18 +600,18 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
           }
 #endif
 
-          // eliminate item from base; 
+          // eliminate item from base;
           deleteSubgradFromBase(baseitem,tol);
 
         } // end if(dualVariables_[baseitem] < tol)
-      } // end loop over baseitem 
-        
+      } // end loop over baseitem
+
       if(!deleted){ // nothing deleted and not optimal
         QPStatus_ = -2; // loop
         return iter;
       }
     } // end inner loop
-    
+
     Real newobjval(0), Lin(0), Quad(0); // new objective value
     for (unsigned i=0; i<currSize_; ++i){
       Lin += Bundle_U<Real>::alpha(base_[i])*Bundle_U<Real>::getDualVariable(base_[i]);
@@ -660,12 +626,12 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
     }
 
 #if( TABOO_LIST )
-    // -- test for strict decrease -- // 
+    // -- test for strict decrease -- //
     // if item didn't provide decrease, move it to taboo list ...
     if( ( entering_ < maxind_ ) && ( objval_ < ROL_INF<Real>() ) ){
       if( newobjval >= objval_ - std::max( tol*std::abs(objval_), ROL_EPSILON<Real>() ) ){
         taboo_.push_back(entering_);
-      } 
+      }
     }
 #endif
 
@@ -680,7 +646,7 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
     //---------------------- OPTIMALITY TEST -------------------------//
     if ( (rho_ >= ROL_NINF<Real>()) && (objval_ <= ROL_NINF<Real>()) ) // if current x (dualVariables_) is feasible
       break;
-      
+
     entering_  = maxind_;
     Real minro = - std::max( tol*currSize_*std::abs(objval_), ROL_EPSILON<Real>() );
 #if ( ! FIRST_VIOLATED )
@@ -703,15 +669,15 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
 
 
         if (rho_ >= ROL_NINF<Real>()){
-          ro = ro - rho_; // note: rho = -v 
+          ro = ro - rho_; // note: rho = -v
         }
         else{
           ro         = ROL_NINF<Real>();
           minobjval_ = ROL_INF<Real>();
           objval_    = ROL_INF<Real>();
         }
-        
-        if (ro < minro){                       
+
+        if (ro < minro){
 #if ( FIRST_VIOLATED )
           entering_ = bundleitem;
           break; // skip going through rest of constraints; alternatively, could look for "most violated"
@@ -723,11 +689,11 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
           }
 #endif
         }
-        
+
       } // end if item not in base
     }// end of loop over items in bundle
 
-    //----------------- INSERTING ITEM ------------------------// 
+    //----------------- INSERTING ITEM ------------------------//
     if (entering_ < maxind_){ // dual constraint is violated
       optimal_ = false;
       Bundle_U<Real>::setDualVariable(entering_,zero);
@@ -740,7 +706,7 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
       for (unsigned i=0; i<zsize; ++i){
         lh_[i] = GiGj(entering_,base_[i]);
       }
-      LA::Matrix<Real> LBprime( LA::Copy,L_,zsize,zsize);      
+      LA::Matrix<Real> LBprime( LA::Copy,L_,zsize,zsize);
       solveSystem(zsize,'N',LBprime,lh_); // lh = (L_B^{-1})*(G_B^T*g_h)
       for (unsigned i=0; i<zsize; ++i){
         lhz1_ += lh_[i]*z1_[i];
@@ -757,14 +723,14 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
 #endif
 
       currSize_++; // update base size
-      
+
       L_.reshape(currSize_,currSize_);
       zsize = currSize_ - dependent_; // zsize is the size of L_Bprime (new one)
       for (unsigned i=0; i<zsize-1; ++i){
         L_(currSize_-1,i) = lh_[i];
       }
 
-      Real deltaeps = tol*kappa_*std::max(one,lh_.dot(lh_)); 
+      Real deltaeps = tol*kappa_*std::max(one,lh_.dot(lh_));
       if ( delta > deltaeps ){ // new row is independent
         // add subgradient to the base
         unsigned ind = currSize_-1;
@@ -788,7 +754,7 @@ unsigned Bundle_U_TT<Real>::solveDual_TT(const Real t, const unsigned maxit, con
     }
 
     if(optimal_)
-      break; 
+      break;
   } // end main loop
 
   taboo_.clear();

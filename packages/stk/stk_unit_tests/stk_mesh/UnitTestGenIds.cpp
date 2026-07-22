@@ -116,7 +116,7 @@ TEST(GeneratedIds, StkMeshApproach1)
 {
   MpiInfo mpiInfo(MPI_COMM_WORLD);
 
-  std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "generated:10x10x10");
+  std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
   const int spatialDim = 3;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, mpiInfo.getMpiComm());
   stk::mesh::MetaData& stkMeshMetaData = bulkPtr->mesh_meta_data();
@@ -203,7 +203,7 @@ TEST(GeneratedIds, StkMeshApproach2)
 {
   MpiInfo mpiInfo(MPI_COMM_WORLD);
 
-  std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "generated:10x10x10");
+  std::string exodusFileName = stk::unit_test_util::get_option("-i", "generated:10x10x10");
   const int spatialDim = 3;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, mpiInfo.getMpiComm());
   stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
@@ -311,7 +311,9 @@ void checkUniqueIds(stk::mesh::BulkData &stkMeshBulkData, const std::vector<uint
 
 ////////////////////////////////////////////////////////////////////
 
-void writeIdsToFile(const std::string &filename, const INTMPI myProcId, const std::vector<uint64_t> &uniqueIds)
+void writeIdsToFile(const std::string & /*filename*/,
+                    [[maybe_unused]] const INTMPI myProcId,
+                    [[maybe_unused]] const std::vector<uint64_t> &uniqueIds)
 {
 #ifdef DEBUG_THIS_
   std::ostringstream os;
@@ -393,7 +395,7 @@ void receiveIdAndCheck(const int root, stk::mesh::BulkData &stkMeshBulkData, MPI
 
 ////////////////////////////////////////////////////////////////////
 
-void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t maxId, const std::vector<uint64_t> &idsInUse, MPI_Comm comm)
+void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t /*maxId*/, const std::vector<uint64_t> &idsInUse, MPI_Comm comm)
 {
   uint64_t id=0;
 
@@ -419,7 +421,7 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
 
 ////////////////////////////////////////////////////////////////////
 
-void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t maxId, stk::mesh::BulkData& stkMeshBulkData, MPI_Comm comm)
+void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t /*maxId*/, stk::mesh::BulkData& stkMeshBulkData, MPI_Comm comm)
 {
   uint64_t id=0;
 

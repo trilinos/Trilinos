@@ -1,23 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_UNITTEST_MEMPOOL_HPP
 #define KOKKOS_UNITTEST_MEMPOOL_HPP
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 namespace TestMemoryPool {
 
@@ -455,9 +447,8 @@ struct TestMemoryPoolHuge {
 
 template <class DeviceType>
 struct TestMemoryPoolHuge<
-    DeviceType,
-    std::enable_if_t<std::is_same<Kokkos::HostSpace,
-                                  typename DeviceType::memory_space>::value>> {
+    DeviceType, std::enable_if_t<std::is_same_v<
+                    Kokkos::HostSpace, typename DeviceType::memory_space>>> {
   using ptrs_type    = Kokkos::View<uintptr_t*, DeviceType>;
   using pool_type    = Kokkos::MemoryPool<DeviceType>;
   using memory_space = typename DeviceType::memory_space;

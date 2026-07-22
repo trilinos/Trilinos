@@ -21,7 +21,7 @@ namespace krino {
 
 class Cutting_Surface;
 class CDFEM_Parent_Edge;
-class ElementIntersection;
+struct ElementIntersection;
 
 typedef std::function<bool(const std::vector<int> &)> ElementIntersectionPointFilter;
 typedef std::map<InterfaceID, std::shared_ptr<Cutting_Surface>> InterfaceToSurface;
@@ -47,7 +47,7 @@ public:
   virtual bool is_one_ls_per_phase() const = 0;
   void fill_interior_intersections(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
   void fill_interior_intersections(std::vector<ElementIntersection> & intersections) const;
-  void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
+  void append_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const;
   static std::string visualize_cutting_surfaces(const stk::topology & topology, const InterfaceToSurface & cuttingSurfaces);
   virtual std::string visualize() const { return visualize_cutting_surfaces(myTopology, cutting_surfaces); }
 
@@ -86,7 +86,7 @@ public:
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const override;
 private:
-  virtual bool intersection_point_is_real(const stk::math::Vector3d & intersection, const std::vector<int> & sortedDomains) const override { return true; }
+  virtual bool intersection_point_is_real(const stk::math::Vector3d & /*intersection*/, const std::vector<int> & /*sortedDomains*/) const override { return true; }
   static std::vector<Edge_Crossing> build_cut_edges(const InterfaceID & interface,
     const std::vector<const CDFEM_Parent_Edge *> & parentEdges,
     const std::vector<bool> & parentEdgeIsOrientedSameAsElementEdge);

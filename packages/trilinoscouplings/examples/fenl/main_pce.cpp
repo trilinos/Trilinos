@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Kokkos_View_MP_Vector_Fwd.hpp"
 #include "Kokkos_View_UQ_PCE_Fwd.hpp"
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
@@ -91,11 +100,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     quad_values_type( "quad points", num_quad_points_aligned, dim );
   qd.values_view =
     quad_values_type( "quad values", num_quad_points_aligned, num_pce );
-  typename quad_weights_type::HostMirror host_weights_view =
+  typename quad_weights_type::host_mirror_type host_weights_view =
     Kokkos::create_mirror_view( qd.weights_view );
-  typename quad_values_type::HostMirror host_points_view =
+  typename quad_values_type::host_mirror_type host_points_view =
     Kokkos::create_mirror_view( qd.points_view );
-  typename quad_values_type::HostMirror host_values_view =
+  typename quad_values_type::host_mirror_type host_values_view =
     Kokkos::create_mirror_view( qd.values_view );
   for (int qp=0; qp<num_quad_points; ++qp) {
     host_weights_view(qp) = quad_weights[qp];
@@ -146,7 +155,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
                             kl_exp, kl_exp_shift, kl_exp_scale,
                             kl_disc_exp_scale );
   typedef typename KL::RandomVariableView RV;
-  typedef typename RV::HostMirror HRV;
+  typedef typename RV::host_mirror_type HRV;
   RV rv("KL Random Variables", dim);
   HRV hrv = Kokkos::create_mirror_view(rv);
 

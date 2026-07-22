@@ -1,47 +1,11 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-
 
 #pragma once
 #ifndef ROL_LINEARALGEBRA_HPP
@@ -78,81 +42,253 @@ using EMatrix = Eigen::Matrix<Real,Eigen::Dynamic,Eigen::Dynamic>;
 template<typename Real>
 class Vector{
   private:
-    EVector<Real> v_;
+    EVector<Real> v_;  // Owned data
+    Eigen::Map<EVector<Real>> map_;  // View of external data
+    mutable bool using_map_;  // Flag to track which member to use
+    
   public:
-    Vector(int size) : v_(size) {}
-    Vector() : v_() {}
-    Real* values(){ return const_cast<Real*>(v_.data()); }
-    void resize(int n) { v_.resize(n); }
-    void size(int n) { v_.resize(n); v_.setZero();}
+    Vector(int size) : v_(size), map_(v_.data(), size), using_map_(false) {}
+    Vector() : v_(), map_(nullptr, 0), using_map_(false) {}
+    
+    Vector(const Vector& other) : v_(), map_(nullptr, 0), using_map_(false) {
+      if (other.using_map_) {
+        // Copy data from the map into owned storage
+        v_ = other.map_;
+        map_ = Eigen::Map<EVector<Real>>(v_.data(), v_.size());
+      } else {
+        v_ = other.v_;  
+        map_ = Eigen::Map<EVector<Real>>(v_.data(), v_.size());
+      }
+    }
+    
+    Vector(DataAccess access, Real* data, int size) : v_(), map_(nullptr, 0), using_map_(true) {
+      if (access == View) {
+        // Create map to external data
+        map_ = Eigen::Map<EVector<Real>>(data, size);
+      } else {
+        // Copy data into owned storage
+        v_.resize(size);
+        using_map_ = false;
+        map_ = Eigen::Map<EVector<Real>>(v_.data(), size);
+        std::copy(data, data + size, v_.data());
+      }
+    }
+
+    Real* values() { 
+      return using_map_ ? const_cast<Real*>(map_.data()) : const_cast<Real*>(v_.data()); 
+    }
+    
+    void resize(int n) { 
+      if (!using_map_) {
+        v_.resize(n); 
+        map_ = Eigen::Map<EVector<Real>>(v_.data(), n);
+      }
+      // Cannot resize a mapped vector
+    }
+    
+    void size(int n) { 
+      if (!using_map_) {
+        v_.resize(n); 
+        v_.setZero();
+        map_ = Eigen::Map<EVector<Real>>(v_.data(), n);
+      }
+    }
+    
     Real& operator()(int i) {
-      return v_(i);
+      return using_map_ ? map_(i) : v_(i);
     }
-    Real& operator[](int i) { return v_[i];}
-    Real dot(Vector<Real> x) {
-      return v_.dot(x.v_);
+    
+    Real& operator[](int i) { 
+      return using_map_ ? map_[i] : v_[i];
     }
-    void operator -=(Vector<Real> x) { v_-= x.v_;}
-    void operator +=(Vector<Real> x) { v_+= x.v_;}
-    void scale(Real alpha) { v_ *= alpha; }
-    int numRows() { return v_.size(); }
-    int stride() { return v_.outerStride(); }
+    
+    Real dot(const Vector<Real>& x) const {
+      auto& this_ref = using_map_ ? map_ : v_;
+      auto& x_ref = x.using_map_ ? x.map_ : x.v_;
+      return this_ref.dot(x_ref);
+    }
+    
+    void operator -=(const Vector<Real>& x) { 
+//      auto& this_ref = using_map_ ? map_ : v_;
+//      const auto& x_ref = x.using_map_ ? x.map_ : x.v_;
+//      this_ref -= x_ref;
+      map_ -= x.map_;
+    }
+    
+    void operator +=(const Vector<Real>& x) { 
+//      auto& this_ref = using_map_ ? map_ : v_;
+//      const auto& x_ref = x.using_map_ ? x.map_ : x.v_;
+//      this_ref += x_ref;
+      map_ += x.map_;
+    }
+    
+    void scale(Real alpha) { 
+      if (using_map_) {
+        map_ *= alpha;
+      } else {
+        v_ *= alpha;
+      }
+    }
+    
+    int numRows() const { 
+      return using_map_ ? map_.size() : v_.size(); 
+    }
+    
+    int stride() const { 
+      return numRows(); // For LAPACK compatibility - return size for vectors
+    }
 };
 
 template<typename Real>
 class Matrix{
   private:
-    EMatrix<Real> M_;
+    EMatrix<Real> M_;  // Owned data
+    Eigen::Map<EMatrix<Real>> map_;  // View of external data
+    bool using_map_;  // Flag to track which member to use
+    
   public:
-    Matrix() : M_() {}
-    Matrix(int rows, int columns) : M_(rows, columns) {}
+    Matrix() : M_(), map_(nullptr, 0, 0), using_map_(false) {}
+    
+    Matrix(const Matrix& other) : M_(), map_(nullptr, 0, 0), using_map_(false) {
+      if (other.using_map_) {
+        // Copy data from the map into owned storage
+        M_ = other.map_;
+        map_ = Eigen::Map<EMatrix<Real>>(M_.data(), M_.rows(), M_.cols());
+      } else {
+        M_ = other.M_;  
+        map_ = Eigen::Map<EMatrix<Real>>(M_.data(), M_.rows(), M_.cols());
+      }
+    }
+    
+    Matrix(int rows, int columns) : M_(rows, columns), map_(M_.data(), rows, columns), using_map_(false) {
+      // Create owned matrix and map pointing to it
+    }
+    
+    // New constructor to support DataAccess with external data pointer
+    Matrix(DataAccess access, Real* data, int rows, int cols, int stride = 0) 
+      : M_(), map_(nullptr, 0, 0), using_map_(true) {
+      if (stride == 0) stride = rows;  // Default to column-major
+      
+      if (access == View) {
+        // Create map to external data
+        map_ = Eigen::Map<EMatrix<Real>>(data, rows, cols);
+      } else { // Copy
+        // Create owned storage and copy data
+        M_.resize(rows, cols);
+        using_map_ = false;
+        map_ = Eigen::Map<EMatrix<Real>>(M_.data(), rows, cols);
+        
+        // Copy data respecting stride (assume column-major external data)
+        for (int j = 0; j < cols; j++) {
+          for (int i = 0; i < rows; i++) {
+            M_(i, j) = data[i + j * stride];
+          }
+        }
+      }
+    }
+    
+    // Existing block constructor - modified to work with dual member approach
     Matrix(DataAccess access, Matrix<Real> A, int rows, int cols, int rowstart = 0, int colstart=0)
-    {
-      if(access == Copy)
-        M_ = A.M_.block(rowstart, colstart, rows, cols).eval();
-      else
-        M_ = A.M_.block(rowstart, colstart, rows, cols); // Does this DTRT?
-
+      : M_(), map_(nullptr, 0, 0), using_map_(false) {
+      if(access == Copy) {
+        if (A.using_map_) {
+          M_ = A.map_.block(rowstart, colstart, rows, cols).eval();
+        } else {
+          M_ = A.M_.block(rowstart, colstart, rows, cols).eval();
+        }
+        map_ = Eigen::Map<EMatrix<Real>>(M_.data(), M_.rows(), M_.cols());
+      } else {
+        // View case - this is tricky with Map, we'll create a copy for now
+        // A proper implementation would need nested Map support
+        if (A.using_map_) {
+          M_ = A.map_.block(rowstart, colstart, rows, cols).eval();
+        } else {
+          M_ = A.M_.block(rowstart, colstart, rows, cols).eval();
+        }
+        map_ = Eigen::Map<EMatrix<Real>>(M_.data(), M_.rows(), M_.cols());
+      }
     }
-    Real* values(){ return const_cast<Real*>(M_.data()); }
-    int stride() { return M_.outerStride(); }
-    void reshape(int m, int n) { M_.resize(m, n); }
-    Real normOne() { return M_.template lpNorm<1>(); }
-    Eigen::PartialPivLU<EMatrix<Real>> partialPivLu(bool inplace)
-    {
-      if(inplace)
-        return Eigen::PartialPivLU<Eigen::Ref<EMatrix<Real>>>(M_);
-      else
-        return M_.partialPivLu();
+    
+    Real* values() { 
+      return using_map_ ? const_cast<Real*>(map_.data()) : const_cast<Real*>(M_.data()); 
     }
+    
+    int stride() { 
+      // Return leading dimension for LAPACK compatibility
+      return using_map_ ? map_.rows() : M_.rows();
+    }
+    void reshape(int m, int n) { 
+      if (!using_map_) {
+        M_.resize(m, n); 
+        map_ = Eigen::Map<EMatrix<Real>>(M_.data(), m, n);
+      }
+      // Cannot reshape a mapped matrix
+    }
+    
+    Real normOne() { 
+      return using_map_ ? map_.template lpNorm<1>() : M_.template lpNorm<1>(); 
+    }
+    
+    Eigen::PartialPivLU<EMatrix<Real>> partialPivLu(bool inplace) {
+      if (using_map_) {
+        if(inplace)
+          return Eigen::PartialPivLU<Eigen::Ref<Eigen::Map<EMatrix<Real>>>>(map_);
+        else
+          return map_.partialPivLu();
+      } else {
+        if(inplace)
+          return Eigen::PartialPivLU<Eigen::Ref<EMatrix<Real>>>(M_);
+        else
+          return M_.partialPivLu();
+      }
+    }
+    
     Real& operator()(int i, int j) {
-      return M_(i, j);
+      return using_map_ ? map_(i, j) : M_(i, j);
     }
 
-    void multiply	(ETransp transa, ETransp transb, Real alpha, const Matrix&	A,
-                   const Matrix& B, Real 	beta) {
+    void multiply(ETransp transa, ETransp transb, Real alpha, const Matrix& A, const Matrix& B, Real beta) {
+      // Get the appropriate matrix references
+      auto& A_ref = A.using_map_ ? A.map_ : A.M_;
+      auto& B_ref = B.using_map_ ? B.map_ : B.M_;
+//      auto& this_ref = using_map_ ? map_ : M_;
 
       EMatrix<Real> AA;
       if(transa == NO_TRANS)
-        AA = A.M_;
+        AA = A_ref;
       else if(transa == TRANS)
-        AA = A.M_.transpose();
+        AA = A_ref.transpose();
       else
-        AA = A.M_.conjugate();
+        AA = A_ref.conjugate();
+        
       EMatrix<Real> BB;
-      if(transa == NO_TRANS)
-        BB = B.M_;
-      else if(transa == TRANS)
-        BB = B.M_.transpose();
+      if(transb == NO_TRANS)
+        BB = B_ref;
+      else if(transb == TRANS)
+        BB = B_ref.transpose();
       else
-        BB = B.M_.conjugate();
-      if(beta != Real(1))
-        M_ *= beta;
-      M_.noalias() += alpha * AA * BB;
+        BB = B_ref.conjugate();
+        
+      if(beta != Real(1)) map_ *= beta;
+      map_.noalias() += alpha * AA * BB;
     }
 
-    int numRows() { return M_.rows(); }
-    int numCols() { return M_.cols(); }
+    int numRows() const { 
+      return using_map_ ? map_.rows() : M_.rows(); 
+    }
+    
+    int numCols() const { 
+      return using_map_ ? map_.cols() : M_.cols(); 
+    }
+    
+    // Set all elements to scalar value
+    void putScalar(Real value) {
+      if (using_map_) {
+        map_.setConstant(value);
+      } else {
+        M_.setConstant(value);
+      }
+    }
 
 };
 

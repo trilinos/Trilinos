@@ -55,14 +55,14 @@ if $(RTenv-arg) = "user" {
 project votd
   : requirements
     $(sierra-warnings)
-    <define>STK_HIDE_DEPRECATED_CODE
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
     <target-os>darwin:<define>_GNU_SOURCE=1
     <include>$(stk_util-root-inc)
   : usage-requirements
-    <define>STK_HIDE_DEPRECATED_CODE
-    <define>STK_BUILT_IN_SIERRA
+    <define>STK_BUILT_FOR_SIERRA
+    <define>STK_BUILT_WITH_BJAM
     <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
     <include>$(stk_util-root-inc)
   : build-dir $(stk_util-builddir)
@@ -80,6 +80,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
   stk_util_utest
+  stk_util_integration_tester
   stk_util_doc_test
   ;
 
@@ -209,6 +210,17 @@ lib stk_util_parallel
   ;
 
 
+exe stk_util_integration_tester
+  :
+    [ glob
+      $(stk_search-root)/../stk_integration_tests/stk_util/*.cpp
+    ]
+    stk_util_parallel
+    /sierra/stk_unit_test_utils//stk_unit_main
+  : <tag>@sierra-exec-tag
+  ;
+
+
 # Run version script. This will generate stk_version.hpp, and
 # return the version to this script. If it doesn't do so, set the version
 # string to 'unable-to-set-version'.
@@ -320,7 +332,7 @@ lib stk_util_util
         [ glob $(stk_util-root)/stk_util/util/*.cpp ]
     ]
     /mpi//mpi
-    /tpl/trilinos//kokkoscore
+    /tpl/kokkos//kokkoscore
     /tpl/boost//boost_header_only_libs
     /tpl/lapack//lapack_interface
   :

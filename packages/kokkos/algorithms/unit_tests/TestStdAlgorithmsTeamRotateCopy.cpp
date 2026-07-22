@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 #include <algorithm>
@@ -136,7 +123,7 @@ void test_A(std::size_t numTeams, std::size_t numCols, std::size_t pivotShift,
 
     auto pivot = KE::cbegin(myRowFrom) + pivotShift;
     auto it    = std::rotate_copy(KE::cbegin(myRowFrom), pivot,
-                               KE::cend(myRowFrom), KE::begin(myRowDest));
+                                  KE::cend(myRowFrom), KE::begin(myRowDest));
     const std::size_t stdDistance = KE::distance(KE::begin(myRowDest), it);
     ASSERT_EQ(stdDistance, distancesView_h(i));
     ASSERT_TRUE(intraTeamSentinelView_h(i));

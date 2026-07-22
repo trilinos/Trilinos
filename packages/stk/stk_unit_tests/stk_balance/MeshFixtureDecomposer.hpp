@@ -39,11 +39,11 @@
 #include <stk_balance/internal/Decomposer.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include <vector>
 #include <unistd.h>
 
-class MeshFixtureDecomposer : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshFixtureDecomposer : public stk::unit_test_util::MeshFixture
 {
 protected:
   MeshFixtureDecomposer()
@@ -94,9 +94,9 @@ protected:
     }
 
 
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     stk::balance::DecompositionChangeList decomp = m_decomposer->get_partition();
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
 
     bool isNested = true;
     for (const auto & entityProc : decomp) {
@@ -108,6 +108,21 @@ protected:
     }
 
     return stk::is_true_on_all_procs(get_comm(), isNested);
+  }
+
+
+  void clean_up_decomposer()
+  {
+    std::string meshfile = m_balanceSettings.get_input_filename();
+    unsigned numInputProcs = m_balanceSettings.get_num_input_processors();
+    if (get_parallel_rank() == 0) {
+      unlink(meshfile.c_str());
+      for (unsigned i = 0; i < numInputProcs; i++) {
+        std::string suffix = "." + std::to_string(numInputProcs) + "." + std::to_string(i);
+        std::string output_filename = meshfile + suffix; 
+        unlink(output_filename.c_str());
+      }
+    }
   }
 
   stk::balance::Decomposer * m_decomposer;

@@ -36,7 +36,9 @@
 #define STK_GET_MESH_SPEC_H
 
 #include <stk_unit_test_utils/getOption.h>
+#include <stk_util/stk_config.h>
 #include <string>
+#include <vector>
 
 namespace stk
 {
@@ -125,39 +127,6 @@ inline std::string get_many_block_mesh_desc(unsigned numBlocks, unsigned numProc
 
   return oss.str();
 }
-
-namespace simple_fields {
-
-inline
-std::string get_mesh_spec(unsigned dim) {
-  return stk::unit_test_util::get_mesh_spec(dim);
-}
-
-inline
-std::string get_mesh_spec(const std::string &optionName)
-{
-  return stk::unit_test_util::get_mesh_spec(optionName);
-}
-
-inline
-std::vector<double> get_many_block_coordinates(unsigned numBlocks)
-{
-  return stk::unit_test_util::get_many_block_coordinates(numBlocks);
-}
-
-inline
-void get_block_proc_distribution(unsigned numBlocks, unsigned numProc, std::vector<unsigned>& procs)
-{
-  stk::unit_test_util::get_block_proc_distribution(numBlocks, numProc, procs);
-}
-
-inline
-std::string get_many_block_mesh_desc(unsigned numBlocks, unsigned numProc = 1)
-{
-  return stk::unit_test_util::get_many_block_mesh_desc(numBlocks, numProc);
-}
-
-} // namespace simple_fields
 
 }
 }

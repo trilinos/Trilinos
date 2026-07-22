@@ -46,7 +46,6 @@ std::shared_ptr<stk::mesh::BulkData> build_mesh(stk::ParallelMachine comm,
   stk::mesh::MeshBuilder builder(comm);
   builder.set_aura_option(auraOption);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -59,7 +58,6 @@ std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
   builder.set_spatial_dimension(spatialDim);
   builder.set_aura_option(auraOption);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 

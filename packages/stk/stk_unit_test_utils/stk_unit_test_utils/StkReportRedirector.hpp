@@ -9,7 +9,7 @@
 #ifndef STK_STK_UNIT_TEST_UTILS_STKREPORTREDIRECTOR_HPP_
 #define STK_STK_UNIT_TEST_UTILS_STKREPORTREDIRECTOR_HPP_
 #include <stk_util/util/ReportHandler.hpp>
-
+#include "stk_util/stk_config.h"
 
 namespace stk
 {
@@ -25,12 +25,6 @@ class StkReportRedirector {
  private:
   stk::REH orig_report_handler;
 };
-
-namespace simple_fields {
-
-class StkReportRedirector : public stk::unit_test_util::StkReportRedirector {};
-
-} // namespace simple_fields
 
 }
 }

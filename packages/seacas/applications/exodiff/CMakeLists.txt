@@ -18,7 +18,7 @@ SET(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ED_SystemInterface.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/node_set.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/edge_block.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/side_set.C
-	    ${CMAKE_CURRENT_SOURCE_DIR}/exoII_read.C
+	    ${CMAKE_CURRENT_SOURCE_DIR}/exo_read.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/stringx.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/exo_block.C
 	    ${CMAKE_CURRENT_SOURCE_DIR}/util.C)

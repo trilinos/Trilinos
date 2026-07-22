@@ -1,40 +1,10 @@
 # @HEADER
-# ************************************************************************
-#
+# *****************************************************************************
 #            TriBITS: Tribal Build, Integrate, and Test System
-#                    Copyright 2013 Sandia Corporation
 #
-# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-# the U.S. Government retains certain rights in this software.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-# 1. Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright
-# notice, this list of conditions and the following disclaimer in the
-# documentation and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the Corporation nor the names of the
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# ************************************************************************
+# Copyright 2013-2016 NTESS and the TriBITS contributors.
+# SPDX-License-Identifier: BSD-3-Clause
+# *****************************************************************************
 # @HEADER
 
 include(TribitsLibIsTestOnly)
@@ -65,7 +35,7 @@ include(TribitsSetAndIncDirs)
 #     [HEADERS <h0> <h1> ...]
 #     [HEADERS_INSTALL_SUBDIR <headerssubdir>]
 #     [NOINSTALLHEADERS <nih0> <hih1> ...]
-#     [SOURCES <src0> <src1> ...]
+#     [SOURCES <src0> <src1> ...|HEADERONLY]
 #     [DEPLIBS <deplib0> <deplib1> ...]
 #     [IMPORTEDLIBS <ideplib0> <ideplib1> ...]
 #     [STATIC|SHARED]
@@ -179,6 +149,12 @@ include(TribitsSetAndIncDirs)
 #     shared lib since that is not portable (but can be done on some platforms
 #     if, for example, ``-fPIC`` is specified).  So be careful to use
 #     ``STATIC`` in all downstream libraries!
+#
+#   ``HEADERONLY``
+#
+#     If passed in, then the ``<libTargetName>`` library target will be
+#     declared ``INTERFACE`` and the ``SOURCES`` argument must be empty.  This
+#     is used to create a header-only library.
 #
 #   ``TESTONLY``
 #
@@ -349,7 +325,7 @@ function(tribits_add_library  LIBRARY_NAME_IN)
     #prefix
     PARSE
     #Options    
-    "STATIC;SHARED;TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY"
+    "STATIC;SHARED;HEADERONLY;TESTONLY;NO_INSTALL_LIB_OR_HEADERS;CUDALIBRARY"
     #one_value_keywords
     ""
     #mulit_value_keywords
@@ -399,27 +375,39 @@ function(tribits_add_library  LIBRARY_NAME_IN)
       add_definitions(${PARSE_DEFINES})
     endif()
 
+    if (PARSE_HEADERONLY)
+      set(tribitsAddLibraryIncludeDirsMode "INTERFACE")
+    else()
+      set(tribitsAddLibraryIncludeDirsMode "PUBLIC")
+    endif()
+
+    set(STATIC_KEYWORD "")
+    set(SHARED_KEYWORD "")
+
     if (PARSE_STATIC)
       set(STATIC_KEYWORD "STATIC")
-    else()
-      set(STATIC_KEYWORD "")
     endif()
 
     if (PARSE_SHARED)
       set(SHARED_KEYWORD "SHARED")
-    else()
-      set(SHARED_KEYWORD "")
     endif()
 
     if (NOT PARSE_CUDALIBRARY)
-      add_library(
-        ${LIBRARY_NAME}
-        ${STATIC_KEYWORD}
-        ${SHARED_KEYWORD}
-        ${PARSE_HEADERS}
-        ${PARSE_NOINSTALLHEADERS}
-        ${PARSE_SOURCES}
-        )
+      if (PARSE_HEADERONLY)
+        add_library(
+          ${LIBRARY_NAME}
+	  INTERFACE
+          )
+      else()
+        add_library(
+          ${LIBRARY_NAME}
+          ${STATIC_KEYWORD}
+          ${SHARED_KEYWORD}
+          ${PARSE_HEADERS}
+          ${PARSE_NOINSTALLHEADERS}
+          ${PARSE_SOURCES}
+          )
+      endif()
     else()
       cuda_add_library(
         ${LIBRARY_NAME}
@@ -463,30 +451,35 @@ function(tribits_add_library  LIBRARY_NAME_IN)
 
     # DEPLIBS
     foreach(depLib ${PARSE_DEPLIBS})
-      target_link_libraries(${LIBRARY_NAME} PUBLIC "${LIBRARY_NAME_PREFIX}${depLib}")
+      target_link_libraries(${LIBRARY_NAME}
+	${tribitsAddLibraryIncludeDirsMode} "${LIBRARY_NAME_PREFIX}${depLib}")
     endforeach()
     # ${PACKAGE_NAME}_LIBRARIES
-    target_link_libraries(${LIBRARY_NAME} PUBLIC ${${PACKAGE_NAME}_LIBRARIES})
+    target_link_libraries(${LIBRARY_NAME}
+      ${tribitsAddLibraryIncludeDirsMode} ${${PACKAGE_NAME}_LIBRARIES})
     # ${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES
     foreach(depPkg IN LISTS ${PACKAGE_NAME}_LIB_ENABLED_DEPENDENCIES)
-      target_link_libraries(${LIBRARY_NAME} PUBLIC ${depPkg}::all_libs)
+      target_link_libraries(${LIBRARY_NAME}
+	${tribitsAddLibraryIncludeDirsMode} ${depPkg}::all_libs)
     endforeach()
     # ${PACKAGE_NAME}_TEST_ENABLED_DEPENDENCIES (TESTONLY lib)
     if (PARSE_TESTONLY)
       foreach(depPkg IN LISTS ${PACKAGE_NAME}_TEST_ENABLED_DEPENDENCIES)
-        target_link_libraries(${LIBRARY_NAME} PUBLIC ${depPkg}::all_libs)
+        target_link_libraries(${LIBRARY_NAME}
+	  ${tribitsAddLibraryIncludeDirsMode} ${depPkg}::all_libs)
       endforeach()
     endif()
     # IMPORTEDLIBS
     foreach(importedLib ${PARSE_IMPORTEDLIBS})
-      target_link_libraries(${LIBRARY_NAME} PUBLIC "${importedLib}")
+      target_link_libraries(${LIBRARY_NAME}
+	${tribitsAddLibraryIncludeDirsMode} "${importedLib}")
     endforeach()
 
     # ToDo: #63: Above, allow for other link visibilities other than 'PUBLIC'!
 
     if (${PROJECT_NAME}_CXX_STANDARD_FEATURE)
-      target_compile_features(${LIBRARY_NAME} PUBLIC
-        "${${PROJECT_NAME}_CXX_STANDARD_FEATURE}")
+      target_compile_features(${LIBRARY_NAME}
+	${tribitsAddLibraryIncludeDirsMode} "${${PROJECT_NAME}_CXX_STANDARD_FEATURE}")
     endif()
 
     # Add to the install target
@@ -540,7 +533,8 @@ function(tribits_add_library  LIBRARY_NAME_IN)
     foreach (includeDir IN LISTS INCLUDE_DIRS_CURRENT)
       list(APPEND buildInterfaceIncludeDirs "$<BUILD_INTERFACE:${includeDir}>")
     endforeach()
-    target_include_directories( ${LIBRARY_NAME} PUBLIC ${buildInterfaceIncludeDirs} )
+    target_include_directories( ${LIBRARY_NAME}
+      ${tribitsAddLibraryIncludeDirsMode} ${buildInterfaceIncludeDirs} )
 
     # Add ALIAS library <PackageName>::<libname>
     add_library(${PACKAGE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})

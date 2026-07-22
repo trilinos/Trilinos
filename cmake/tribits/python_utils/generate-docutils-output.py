@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 usageHelp = r"""generate-docutils-output.py --file-base=<FILEBASE> [options]
 

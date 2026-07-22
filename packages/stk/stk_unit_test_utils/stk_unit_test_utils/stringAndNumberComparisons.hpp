@@ -34,6 +34,7 @@
 #ifndef STRING_AND_NUMBER_COMPARISONS_HPP
 #define STRING_AND_NUMBER_COMPARISONS_HPP
 
+#include "stk_util/stk_config.h"
 #include <iostream>
 #include <string>
 
@@ -54,19 +55,6 @@ inline bool isNear(double a, double b, double tolerance)
 bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::string &actualWord, double tol);
 
 bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol);
-
-namespace simple_fields {
-
-inline bool isNear(double a, double b, double tolerance)
-{
-  return stk::unit_test_util::isNear(a, b, tolerance);
-}
-
-bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::string &actualWord, double tol);
-
-bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol);
-
-} // namespace simple_fields
 
 }
 }

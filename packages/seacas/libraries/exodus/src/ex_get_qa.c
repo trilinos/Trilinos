@@ -64,7 +64,7 @@ int ex_get_qa(int exoid, char *qa_record[][4])
   int status;
   int rootid = exoid & EX_FILE_ID_MASK;
   int dimid;
-  if ((status = nc_inq_dimid(rootid, DIM_NUM_QA, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(rootid, DIM_NUM_QA, &dimid)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no qa records stored in file id %d", rootid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -72,7 +72,7 @@ int ex_get_qa(int exoid, char *qa_record[][4])
   }
 
   size_t num_qa_records;
-  if ((status = nc_inq_dimlen(rootid, dimid, &num_qa_records)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(rootid, dimid, &num_qa_records)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of qa records in file id %d",
              rootid);
@@ -83,7 +83,7 @@ int ex_get_qa(int exoid, char *qa_record[][4])
   /* do this only if there are any QA records */
   if (num_qa_records > 0) {
     int varid;
-    if ((status = nc_inq_varid(rootid, VAR_QA_TITLE, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(rootid, VAR_QA_TITLE, &varid)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate qa record data in file id %d",
                rootid);
@@ -96,7 +96,7 @@ int ex_get_qa(int exoid, char *qa_record[][4])
       for (size_t j = 0; j < 4; j++) {
         size_t start[] = {i, j, 0};
         size_t count[] = {1, 1, MAX_STR_LENGTH + 1};
-        if ((status = nc_get_vara_text(rootid, varid, start, count, qa_record[i][j])) != NC_NOERR) {
+        if ((status = nc_get_vara_text(rootid, varid, start, count, qa_record[i][j])) != EX_NOERR) {
           char errmsg[MAX_ERR_LENGTH];
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get qa record data in file id %d",
                    rootid);

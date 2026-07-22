@@ -52,7 +52,7 @@
         if (m_face_breaker_tri) delete m_face_breaker_tri;
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         EXCEPTWATCH;
         bp.resize(3);
@@ -64,8 +64,8 @@
 #endif
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(3);
         needed_entities[0].first = m_eMesh.edge_rank();
@@ -77,14 +77,14 @@
         needed_entities[1].third.assign(faces,faces+5);
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 8; }
+      virtual unsigned getNumNewElemPerElem() override { return 8; }
 
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
 #if 0
         static bool s_not_printed = true;

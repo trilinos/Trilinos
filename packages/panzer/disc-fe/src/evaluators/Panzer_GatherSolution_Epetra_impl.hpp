@@ -1,43 +1,11 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //           Panzer: A partial differential equation assembly
 //       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef   __Panzer_GatherSolution_Epetra_impl_hpp__
@@ -509,13 +477,13 @@ evaluateFields(
 	// Loop over the cells in the workset.
 	for (int cell(0); cell < numCells; ++cell) {
 	  // Loop over the fields to be gathered.
-	  int fieldNum(fieldIds_[fieldInd]);
-	  const vector<int>& elmtOffset =
-	    globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-	  int numBases(elmtOffset.size());
+	  int fieldNum2(fieldIds_[fieldInd]);
+	  const vector<int>& elmtOffset2 =
+	    globalIndexer_->getGIDFieldOffsets(blockId, fieldNum2);
+	  int numBases2(elmtOffset2.size());
 	  
 	  // Loop over the basis functions.
-	  for (int basis(0); basis < numBases; ++basis){
+	  for (int basis(0); basis < numBases2; ++basis){
             field_h(cell, basis).fastAccessDx(i) =
               tf(cell, basis).val();
 	  } // end loop over the basis functions
@@ -759,19 +727,19 @@ evaluateFields(
 
   // Deal with the sensitivities.
     if (applySensitivities_)  {
-      int fieldNum(fieldIds_[fieldInd]);
-      const vector<int>& elmtOffset =
-        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-      int numBases(elmtOffset.size());
+      int fieldNum2(fieldIds_[fieldInd]);
+      const vector<int>& elmtOffset2 =
+        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum2);
+      int numBases2(elmtOffset2.size());
 
       // Gather operation for each cell in the workset.
       for (int cell(0); cell < numCells; ++cell)
       {
         // Loop over the basis functions.
-        for (int basis(0); basis < numBases; ++basis)
+        for (int basis(0); basis < numBases2; ++basis)
         {
           // Seed the FAD object.
-          int offset(elmtOffset[basis]);
+          int offset(elmtOffset2[basis]);
 
           field_h(cell, basis).fastAccessDx(dos + offset) = seedValue;
         } // end loop over the basis functions

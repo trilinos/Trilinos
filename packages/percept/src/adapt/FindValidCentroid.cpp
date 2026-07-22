@@ -9,7 +9,7 @@
 
 #include <adapt/FindValidCentroid.hpp>
 
-#if defined(STK_BUILT_IN_SIERRA) && !STK_PERCEPT_LITE
+#if defined(STK_BUILT_FOR_SIERRA) && !STK_PERCEPT_LITE
 #include <percept/mesh/geometry/volume/sierra_only/FiniteVolumeMesh.hpp>
 #endif
 
@@ -29,7 +29,7 @@ namespace percept {
       {
         const CellTopologyData *cell_topo_data = m_eMesh.get_cell_topology(children[ii]);
         volumes[ii] = m_eMesh.volume(children[ii], m_eMesh.get_coordinates_field(), cell_topo_data);
-#if defined(STK_BUILT_IN_SIERRA) && !STK_PERCEPT_LITE
+#if defined(STK_BUILT_FOR_SIERRA) && !STK_PERCEPT_LITE
         if (m_use_finite_volume)
           {
             volumes[ii] = std::numeric_limits<double>::max();

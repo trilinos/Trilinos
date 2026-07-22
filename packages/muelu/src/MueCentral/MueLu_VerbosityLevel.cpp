@@ -90,8 +90,10 @@ MsgType toVerbLevel(const std::string& verbLevelStr) {
   std::string lcVerb = lowerCase(verbLevelStr);
   if (verbMap.find(lcVerb) != verbMap.end())
     return verbMap[lcVerb];
-  else
+  else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::ParameterListInterpreter():: invalid verbosity level: " << verbLevelStr);
+    TEUCHOS_UNREACHABLE_RETURN(Errors);
+  }
 }
 
 }  // namespace MueLu

@@ -39,7 +39,7 @@
 #include <stk_balance/internal/Balancer.hpp>
 #include <stk_balance/mesh/BalanceMesh.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
 #include "stk_balance/io/BalanceIO.hpp"
 #include <vector>
 #include <string>
@@ -49,8 +49,8 @@ namespace {
 class IdAndTimeFieldValueSetter : public stk::unit_test_util::FieldValueSetter
 {
 public:
-    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step,
-                                const double time) const override
+    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned /*step*/,
+                                const double time, const double fieldValueScaleFactor = 1.0) const override
 {
     stk::mesh::EntityRank fieldRank = field->entity_rank();
 
@@ -61,13 +61,13 @@ public:
 
     for(stk::mesh::FieldBase * transientField : allTransientFields)
     {
+        auto transientFieldData = transientField->data<double, stk::mesh::ReadWrite>();
         for(size_t i = 0; i < entities.size(); i++)
         {
-            unsigned numEntriesPerEntity = stk::mesh::field_scalars_per_entity(*transientField, entities[i]);
-            double value = 100.0 * static_cast<double>(bulk.identifier(entities[i])) + time;
-            double *data = static_cast<double*> (stk::mesh::field_data(*transientField, entities[i]));
-            for(unsigned j=0; j<numEntriesPerEntity; j++)
-                data[j] = value + j;
+            double value = 100.0 * fieldValueScaleFactor * static_cast<double>(bulk.identifier(entities[i])) + time;
+            auto data = transientFieldData.entity_values(entities[i]);
+            for(stk::mesh::ComponentIdx component : data.components())
+              data(component) = value + static_cast<int>(component);
         }
     }
 }
@@ -77,12 +77,12 @@ class BalanceFromField : public MeshFixtureRebalance
 {
 public:
   BalanceFromField() {
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::set_outputP0(&stk::outputNull());
     testing::internal::CaptureStderr();
   }
 
   ~BalanceFromField() override {
-    stk::EnvData::instance().m_outputP0 = &std::cout;
+    stk::reset_default_output_streams();
     testing::internal::GetCapturedStderr();
   }
 
@@ -91,7 +91,7 @@ public:
     m_transientTimeSteps = {0.0, 1.0, 2.0};
     m_transientFieldName = "weight_field";
     m_globalVariableName = "global_variable";
-    stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
+    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
                                                                                              get_input_file_name(),
                                                                                              m_transientFieldName,
                                                                                              stk::topology::ELEM_RANK,
@@ -131,16 +131,19 @@ TEST_F(BalanceFromField, 6elems2procs_readLastTimeStepFromFile)
   stk::mesh::BulkData & bulk = initialMesh.get_bulk();
   stk::mesh::Field<double> &weightField = *bulk.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
                                                                                    m_transientFieldName + "_scalar");
+  auto weightFieldData = weightField.data();
   const stk::mesh::BucketVector & elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK,
                                                                  bulk.mesh_meta_data().locally_owned_part());
   for (const stk::mesh::Bucket * bucket : elemBuckets) {
     for (const stk::mesh::Entity elem : *bucket) {
       const stk::mesh::EntityId elemId = bulk.identifier(elem);
-      const double * fieldWeight = stk::mesh::field_data(weightField, elem);
+      auto fieldWeight = weightFieldData.entity_values(elem);
       const double expectedFieldWeight = 100 * elemId + 2.0;  // Fixture scales ID by 100 and adds time
-      EXPECT_DOUBLE_EQ(*fieldWeight, expectedFieldWeight);
+      EXPECT_DOUBLE_EQ(fieldWeight(), expectedFieldWeight);
     }
   }
+
+  clean_up_temporary_files();
 }
 
 TEST_F(BalanceFromField, 6elems2procs_checkGeometricDecomp)
@@ -165,6 +168,8 @@ TEST_F(BalanceFromField, 6elems2procs_checkGeometricDecomp)
   else {
     EXPECT_EQ(counts[stk::topology::ELEM_RANK], 2u);
   }
+
+  clean_up_temporary_files();
 }
 
 TEST_F(BalanceFromField, 6elems2procs_checkGraphDecomp)
@@ -189,6 +194,8 @@ TEST_F(BalanceFromField, 6elems2procs_checkGraphDecomp)
   else {
     EXPECT_EQ(counts[stk::topology::ELEM_RANK], 4u);
   }
+
+  clean_up_temporary_files();
 }
 
 }

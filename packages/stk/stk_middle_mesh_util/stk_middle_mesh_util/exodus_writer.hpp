@@ -29,7 +29,6 @@ class ExodusWriter
       , m_mesh(mesh)
       , m_meshFields(fields)
     {
-      m_metaDataOutPtr->use_simple_fields();
       initialize_output_mesh();
       create_part("block_1");
       declare_fields();

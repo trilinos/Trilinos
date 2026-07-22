@@ -26,6 +26,7 @@
 
 // Ifpack2
 #include "Ifpack2_OverlappingRowMatrix_def.hpp"
+#include "Xpetra_TpetraMultiVector_decl.hpp"
 
 // MueLu
 #include <MueLu_Utilities.hpp>
@@ -103,7 +104,7 @@ template <class Scalar        = Operator<>::scalar_type,
           class LocalOrdinal  = Operator<>::local_ordinal_type,
           class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
           class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type,
-          UnderlyingLib lib   = Xpetra::UseEpetra,
+          UnderlyingLib lib   = Xpetra::UseTpetra,
           bool collapse       = false>
 class MatrixSplitting : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -621,7 +622,7 @@ class MatrixSplitting : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     TEUCHOS_TEST_FOR_EXCEPTION(num_total_regions_ != regionMatrixData_.size(), Exceptions::RuntimeError, "Number of regions does not match with the size of regionMatrixData_ structure \n");
     RCP<Matrix> region_matrix = regionMatrixData_[region_idx];
 
-    RCP<tpetra_crs_matrix> tpetraGlobalMatrix = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(compositeMatrixData_);
+    RCP<tpetra_crs_matrix> tpetraGlobalMatrix = toTpetra(compositeMatrixData_);
     Ifpack2::OverlappingRowMatrix<tpetra_row_matrix> enlargedMatrix(tpetraGlobalMatrix, 2);
 
     region_matrix->resumeFill();
@@ -1302,9 +1303,7 @@ class MatrixSplitting : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
       int num_elements = xpetraMap->getGlobalNumElements();
 
       RCP<CrsMatrix> crs_matrix;
-      if (Xpetra::UseEpetra == lib)
-        crs_matrix = rcp(new EpetraCrsMatrix(xpetraMap, num_elements));
-      else if (Xpetra::UseTpetra == lib)
+      if (Xpetra::UseTpetra == lib)
         crs_matrix = rcp(new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpetraMap, num_elements));
       else
         std::cerr << " The library to build matrices must be either Epetra or Tpetra \n";

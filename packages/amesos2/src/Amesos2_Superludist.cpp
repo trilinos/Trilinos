@@ -19,9 +19,6 @@
 #  include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
 namespace Amesos2 {
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(Superludist);
-#endif
 
 #ifdef HAVE_TPETRA_INST_INT_INT
 #ifdef HAVE_TPETRA_INST_DOUBLE

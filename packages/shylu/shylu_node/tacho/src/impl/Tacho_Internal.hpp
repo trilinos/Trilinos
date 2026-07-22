@@ -1,20 +1,12 @@
 // clang-format off
-/* =====================================================================================
-Copyright 2022 National Technology & Engineering Solutions of Sandia, LLC (NTESS).
-Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government retains
-certain rights in this software.
-
-SCR#:2790.0
-
-This file is part of Tacho. Tacho is open source software: you can redistribute it
-and/or modify it under the terms of BSD 2-Clause License
-(https://opensource.org/licenses/BSD-2-Clause). A copy of the licese is also
-provided under the main directory
-
-Questions? Kyungjoo Kim at <kyukim@sandia.gov,https://github.com/kyungjoo-kim>
-
-Sandia National Laboratories, Albuquerque, NM, USA
-===================================================================================== */
+// @HEADER
+// *****************************************************************************
+//                            Tacho package
+//
+// Copyright 2022 NTESS and the Tacho contributors.
+// SPDX-License-Identifier: BSD-2-Clause
+// *****************************************************************************
+// @HEADER
 // clang-format on
 #ifndef __TACHO_INTERNAL_HPP__
 #define __TACHO_INTERNAL_HPP__
@@ -119,6 +111,10 @@ Sandia National Laboratories, Albuquerque, NM, USA
 #include "Tacho_Gemv_Serial.hpp"
 #include "Tacho_Gemv_External.hpp"
 #include "Tacho_Gemv_Internal.hpp"
+
+#include "Tacho_Trmv.hpp"
+#include "Tacho_Trmv_External.hpp"
+#include "Tacho_Trmv_Internal.hpp"
 
 #include "Tacho_CholSupernodes.hpp"
 #include "Tacho_CholSupernodes_Serial.hpp"

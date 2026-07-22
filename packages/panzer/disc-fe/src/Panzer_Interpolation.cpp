@@ -1,3 +1,13 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #include "Panzer_Interpolation.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_IntrepidOrientation.hpp"
@@ -23,9 +33,9 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
   using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
   using vals_type    = typename crs_matrix::local_matrix_device_type::values_type;
 
-  using ATS = Kokkos::ArithTraits<Scalar>;
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
   using impl_SC  = typename ATS::val_type;
-  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 
   auto lclA = A->getLocalMatrixDevice();
 
@@ -89,8 +99,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double>> buildInterpolation(const Teuchos::RCP<
   using Teuchos::rcp_dynamic_cast;
 
   using Scalar = double;
-  using LocalOrdinal = int;
-  using GlobalOrdinal = panzer::GlobalOrdinal;
 
   using tpetraBlockedLinObjFactory = typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits, Scalar, LocalOrdinal, GlobalOrdinal>;
 #ifdef PANZER_HAVE_EPETRA_STACK
@@ -149,11 +157,9 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   using Teuchos::rcp_dynamic_cast;
 
   using Scalar = double;
-  using LocalOrdinal = int;
-  using GlobalOrdinal = panzer::GlobalOrdinal;
 
   using STS = Teuchos::ScalarTraits<Scalar>;
-  using KAT = Kokkos::ArithTraits<Scalar>;
+  using KAT = KokkosKernels::ArithTraits<Scalar>;
   using OT  = Teuchos::OrdinalTraits<GlobalOrdinal>;
 
   using DeviceSpace = PHX::Device;
@@ -166,7 +172,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   using tp_matrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>;
   using tp_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal>;
 #ifdef PANZER_HAVE_EPETRA_STACK
-  using ep_linObjContainer = panzer::BlockedEpetraLinearObjContainer;
   using ep_matrix = Epetra_CrsMatrix;
   using ep_map = Epetra_Map;
 #endif
@@ -394,7 +399,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   int fieldRank = Intrepid2::getFieldRank(range_basis->getFunctionSpace());
   TEUCHOS_ASSERT((fieldRank == 0) || (fieldRank == 1));
 
-  auto entryFilterTol = 100*Teuchos::ScalarTraits<typename STS::magnitudeType>::eps();
+  auto entryFilterTol = 1e5*Teuchos::ScalarTraits<typename STS::magnitudeType>::eps();
 
   // range dof coordinates
   range_basis->getDofCoords(range_dofCoords_d);
@@ -551,18 +556,20 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                                        {
                                          // Check that there is no entry yet or that we are overwriting it with the same value
                                          auto row = lcl_tp_interp_matrix.rowConst(range_row);
-                                         for(size_t kk = 0; kk<row.length; ++kk)
-                                           if (row.colidx(kk) == loLIDs_d(loOffsets_d(domainIter)))
+                                         for(LocalOrdinal kk = 0; kk<row.length; ++kk)
+                                           if (row.colidx(kk) == domainLIDs_d(domainOffsets_d(domainIter)))
                                              if (!(KAT::magnitude(row.value(kk)-val) < entryFilterTol || KAT::magnitude(row.value(kk)) < entryFilterTol)) {
+#ifdef PANZER_INTERPOLATION_DEBUG_OUTPUT
                                                std::cout << "Replacing (" << range_row << "," << row.colidx(kk) << ") = " << row.value(kk) << " with " << val << std::endl;
+#endif
 #ifdef PANZER_DEBUG
-                                               TEUCHOS_ASSERT(false);
+                                               Kokkos::abort("MiniEM interpolation worksetLoop failed!");
 #endif
                                              }
                                        }
 #endif
 #ifdef PANZER_INTERPOLATION_DEBUG_OUTPUT
-                                       std::cout << "Setting (" << range_row << "," << loLIDs_d(loOffsets_d(domainIter)) << ") = " << val << std::endl;
+                                       std::cout << "Setting (" << range_row << "," << domainLIDs_d(domainOffsets_d(domainIter)) << ") = " << val << std::endl;
 #endif
 				       lcl_tp_interp_matrix.replaceValues(range_row, &(domainLIDs_d(domainOffsets_d(domainIter))), 1, &val, /*is_sorted=*/false, /*force_atomic=*/true);
                                      }
@@ -682,7 +689,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
 
       // loop over element worksets
       std::vector<int> elementIds = range_ugi->getElementBlock(elementBlockIds[blockIter]);
-      Kokkos::View<int*,DeviceSpace>::HostMirror elementIds_h(elementIds.data(), elementIds.size());
+      Kokkos::View<int*,DeviceSpace>::host_mirror_type elementIds_h(elementIds.data(), elementIds.size());
       Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
       Kokkos::deep_copy(elementIds_d, elementIds_h);
       for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {

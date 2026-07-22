@@ -183,13 +183,17 @@ void expect_equal_field_data(const stk::mesh::BulkData &oldBulk, stk::mesh::Enti
 
   for(unsigned i=0; i<oldFields.size(); ++i)
   {
-    unsigned oldBytesPerEntity = stk::mesh::field_bytes_per_entity(*oldFields[i], oldEntity);
-    unsigned newBytesPerEntity = stk::mesh::field_bytes_per_entity(*newFields[i], newEntity);
-    EXPECT_EQ(oldBytesPerEntity, newBytesPerEntity);
-    unsigned char* oldData = static_cast<unsigned char*>(stk::mesh::field_data(*oldFields[i], oldEntity));
-    unsigned char* newData = static_cast<unsigned char*>(stk::mesh::field_data(*newFields[i], newEntity));
-    for(unsigned j=0; j<oldBytesPerEntity; ++j)
-      EXPECT_EQ(oldData[j], newData[j]);
+    auto oldFieldBytes = oldFields[i]->data_bytes<const std::byte>();
+    auto newFieldBytes = newFields[i]->data_bytes<const std::byte>();
+
+    auto oldEntityBytes = oldFieldBytes.entity_bytes(oldEntity);
+    auto newEntityBytes = newFieldBytes.entity_bytes(newEntity);
+
+    EXPECT_EQ(oldEntityBytes.num_bytes(), newEntityBytes.num_bytes());
+
+    for (stk::mesh::ByteIdx idx : oldEntityBytes.bytes()) {
+      EXPECT_EQ(newEntityBytes(idx), oldEntityBytes(idx));
+    }
   }
 }
 
@@ -239,14 +243,14 @@ void expect_superset_sharing(const stk::mesh::BulkData& oldBulk, stk::mesh::Enti
         );
 }
 
-class CloningMesh : public stk::unit_test_util::simple_fields::MeshFixture
+class CloningMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
   const char *get_mesh_spec_for_1x1x8_with_sideset() const {return "generated:1x1x8|sideset:x";}
   stk::mesh::BulkData::AutomaticAuraOption get_no_auto_aura_option() const {return stk::mesh::BulkData::NO_AUTO_AURA;}
 
   CloningMesh()
-    : stk::unit_test_util::simple_fields::MeshFixture(3, {"node", "edge", "face", "element", "constraint"})
+    : stk::unit_test_util::MeshFixture(3, {"node", "edge", "face", "element", "constraint"})
   { }
 
   void create_constraints()
@@ -254,9 +258,9 @@ protected:
     size_t numConstraintsPerProc = 10;
     size_t localConstraintId = 1;
     get_bulk().modification_begin();
-    stk::mesh::Entity constraint = get_bulk().declare_constraint(get_bulk().parallel_rank() * numConstraintsPerProc + localConstraintId);
     stk::mesh::Part *submesh = get_meta().get_part("submesh");
-    get_bulk().change_entity_parts(constraint, stk::mesh::ConstPartVector{submesh}, {});
+    STK_ThrowRequire(submesh != nullptr);
+    stk::mesh::Entity constraint = get_bulk().declare_entity(stk::topology::CONSTRAINT_RANK, get_bulk().parallel_rank() * numConstraintsPerProc + localConstraintId, *submesh);
     declare_constraint_relations_to_block1_elements(constraint);
     get_bulk().modification_end();
   }
@@ -484,20 +488,5 @@ TEST_F(CloningMesh, cloningBulkData_modifiableStateThrows)
   ASSERT_THROW(stk::tools::copy_mesh(oldBulk, get_meta().universal_part(), newBulk), std::logic_error);
 }
 
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-//portability issue: bulk-data size seems to be different (48 bytes smaller) on intel 15.0
-//running this test on gcc should be sufficient to detect addition/deletion of class members.
-
-TEST(BulkDataSize, sizeChanges_needToUpdateCopyMesh)
-{
-  // KHP: different compilers (and different version of a compiler) give different values for the sizeof bulk.
-  // Only test on gcc 4.9.3 for now.
-#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
-  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);
-  EXPECT_TRUE(1176u >= sizeof(*bulk)) << "Size of BulkData changed.  Does mesh copying capability need to be updated?";
-#endif
 }
 
-#endif
-
-}

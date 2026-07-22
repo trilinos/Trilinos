@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_mesh_base_impl_Visitors_hpp
 #define stk_mesh_base_impl_Visitors_hpp
@@ -40,6 +40,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/base/EntityProcMapping.hpp>
 
 #include <vector>
@@ -176,7 +177,7 @@ struct StoreInSet {
 };
 
 struct AlwaysVisit {
-    bool operator()(Entity entity) { return true; }
+    bool operator()(Entity /*entity*/) { return true; }
 };
 
 struct OnlyVisitOnce {
@@ -288,8 +289,7 @@ void VisitUpwardClosureGeneral(
 {
     for (FORWARD_ITERATOR entity_iterator = start ; entity_iterator != finish ; ++entity_iterator)
     {
-        Entity entity = get_entity(entity_iterator);
-        VisitUpwardClosureGeneral<DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE,DESIRED_ENTITY>(mesh,entity,entityRank,endRank,do_this,desired_entity);
+        VisitUpwardClosureGeneral<DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE,DESIRED_ENTITY>(mesh,get_entity(entity_iterator),entityRank,endRank,do_this,desired_entity);
     }
 }
 
@@ -344,6 +344,7 @@ struct StoreEntity
     {
       stk::util::sort_and_unique(visitedEntities);
       entities.clear();
+      entities.reserve(visitedEntities.size());
       for(Entity ent : visitedEntities) {
         entities.emplace_back(ent);
       }

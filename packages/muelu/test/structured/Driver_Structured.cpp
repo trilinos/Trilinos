@@ -37,7 +37,6 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 #include <MueLu_Level.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Utilities.hpp>
 
@@ -67,10 +66,6 @@
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
-
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 

@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
-#define __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP
+#define KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP
 
 // Include explicit specializations of BatchedGemm.
 // If ETI_ONLY is disabled, the primary template will
@@ -82,32 +69,23 @@ namespace KokkosBatched {
 ///   BatchedGemm<ArgTransA, ArgTransB,
 ///               ArgBatchSzDim>(handle, alpha, A, B, beta, C);
 // clang-format on
-template <typename ArgTransA, typename ArgTransB, typename ArgBatchSzDim,
-          typename BatchedGemmHandleType, typename ScalarType,
-          typename AViewType, typename BViewType, typename CViewType>
-inline int BatchedGemm(BatchedGemmHandleType *const handle,
-                       const ScalarType alpha, const AViewType &A,
-                       const BViewType &B, const ScalarType beta,
-                       const CViewType &C) {
+template <typename ArgTransA, typename ArgTransB, typename ArgBatchSzDim, typename BatchedGemmHandleType,
+          typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
+inline int BatchedGemm(BatchedGemmHandleType *const handle, const ScalarType alpha, const AViewType &A,
+                       const BViewType &B, const ScalarType beta, const CViewType &C) {
   // Minimize the number of ImplBatchedGemmWrapper instantiations, by
   // standardizing on particular View specializations for its template
   // parameters.
-  using UnifiedAVT = Kokkos::View<
-      typename AViewType::value_type ***, typename AViewType::array_layout,
-      typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using UnifiedBVT = Kokkos::View<
-      typename BViewType::value_type ***, typename BViewType::array_layout,
-      typename BViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using UnifiedCVT = Kokkos::View<typename CViewType::non_const_value_type ***,
-                                  typename CViewType::array_layout,
-                                  typename CViewType::device_type,
-                                  Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UnifiedAVT = Kokkos::View<typename AViewType::value_type ***, typename AViewType::array_layout,
+                                  typename AViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UnifiedBVT = Kokkos::View<typename BViewType::value_type ***, typename BViewType::array_layout,
+                                  typename BViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UnifiedCVT = Kokkos::View<typename CViewType::non_const_value_type ***, typename CViewType::array_layout,
+                                  typename CViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   // Go through specialization layer in case ETI'd symbols are available.
-  return Impl::BatchedGemmSpec<ArgTransA, ArgTransB, ArgBatchSzDim,
-                               BatchedGemmHandleType, ScalarType, UnifiedAVT,
-                               UnifiedBVT, UnifiedCVT>::run(handle, alpha, A, B,
-                                                            beta, C);
+  return Impl::BatchedGemmSpec<ArgTransA, ArgTransB, ArgBatchSzDim, BatchedGemmHandleType, ScalarType, UnifiedAVT,
+                               UnifiedBVT, UnifiedCVT>::run(handle, alpha, A, B, beta, C);
 }
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP__
+#endif  // KOKKOSBATCHED_HOSTLEVEL_GEMM_DECL_HPP

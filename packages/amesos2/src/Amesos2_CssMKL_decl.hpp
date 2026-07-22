@@ -36,11 +36,11 @@ namespace Amesos2 {
 
   /** \brief Amesos2 interface to the CssMKL package.
    *
-   * This class provides access to the Pardiso (MKL version 10.3 and
-   * compatible) sparse direct solver with out-of-core solve support.
+   * This class provides access to the MKL's distributed-memory
+   * sparse direct solver, called Cluster Sparse Solver (CSS).
    * Access is provided for \c float and \c double scalar types, in
-   * both real and complex.  Access to to Pardiso's 64-bit integer
-   * routines is also provided.
+   * both real and complex.  Access to 32-bit or 64-bit integer routines
+   * are provided based on the global_ordinal_type.
    *
    * \ingroup amesos2_solver_interfaces
    */
@@ -76,7 +76,7 @@ namespace Amesos2 {
 
     // This may be PMKL::_INTEGER_t or long long int depending on the
     // mapping and input ordinal
-    typedef typename TypeMap<Amesos2::PardisoMKL,local_ordinal_type>::type int_t;
+    typedef typename TypeMap<Amesos2::PardisoMKL,global_ordinal_type>::type int_t;
 
     /* For CssMKL we dispatch based on the integer type instead of
      * the scalar type:
@@ -156,28 +156,41 @@ namespace Amesos2 {
     /**
      * \brief Determines whether the shape of the matrix is OK for this solver.
      *
-     * Pardiso MKL handles square matrices.
+     * CSS handles square matrices.
      */
     bool matrixShapeOK_impl() const;
 
 
     /**
-     * The Pardiso MKL parameters that are currently recognized are:
+     * The MKL CSS parameters that are currently recognized are:
      *
      * <ul>
-     *  <li> \c "IPARM(2)"</li>
-     *  <li> \c "IPARM(4)"</li>
-     *  <li> \c "IPARM(8)"</li>
-     *  <li> \c "IPARM(10)"</li>
-     *  <li> \c "IPARM(12)"</li>
-     *  <li> \c "IPARM(18)"</li>
-     *  <li> \c "IPARM(24)"</li>
-     *  <li> \c "IPARM(25)"</li>
-     *  <li> \c "IPARM(60)"</li>
+     *  <li> \c "IPARM(2)"</li>: Fill-in reducing ordering for the input matrix.
+     *                           2*: nested dissection algorithm from the METIS package,
+     *                           3: thread-parallel version of the nested dissection algorithm, and
+     *                           10: MPI-parallel version of the nested dissection.
+     *  <li> \c "IPARM(8)"</li>: Iterative refinement step.
+     *                           0*: performs two steps of iterative refinement when perturbed pivots are obtained during the numerical factorization.
+     *                           >0: Maximum number of iterative refinement steps that the solver performs.
+     *                           <0: Same as above, but the accumulation of the residuum uses extended precision.
+     *  <li> \c "IPARM(10)"</li>: Pivoting perturbation.
+     *                            8: default value for symmetric indefinite matrices
+     *                            13: default value for nonsymmetric matrices
+     *  <li> \c "IPARM(12)"</li>: Solve with transposed or conjugate transposed matrix A.
+     *                            0*: Solve a linear system AX = B.
+     *                            1: Solve a conjugate transposed system A^HX = B 
+     *                            2: Solve a transposed system A^TX = B
+     *  <li> \c "IPARM(13)"</li>: Improved accuracy using (non-) symmetric weighted matching.
+     *                            0: Disable matching. Default for symmetric indefinite matrices.
+     *                            1: nable matching. Default for nonsymmetric matrices.
+     *  <li> \c "IPARM(18)"</li>: Report the number of non-zero elements in the factors.
+     *                            <0*: Enable reporting.
+     *                            >=0: Disable reporting.
+     *  <li> \c "IPARM(27)"</li>: Matrix checker.
+     *                            0*:Do not check the sparse matrix representation for error.
+     *                            1: Check integer arrays ia and ja. In particular, check whether the column indices are sorted in increasing order within each row.
      * </ul>
      *
-     * Please see the Pardiso MKL documentation for a summary of the
-     * meaning and valid values for each parameter.
      */
     void setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
 
@@ -198,6 +211,14 @@ namespace Amesos2 {
      * \return \c true if the matrix was loaded, \c false if not
      */
     bool loadA_impl(EPhase current_phase);
+
+
+    /** 
+     * \brief Prints the status information about the current solver with some level
+     * of verbosity
+     */
+    void describe_impl(Teuchos::FancyOStream &out,
+                       const Teuchos::EVerbosityLevel verbLevel) const;
 
 
     ////////// Internal routines (not called from outside) //////////
@@ -271,12 +292,12 @@ namespace Amesos2 {
     bool css_initialized_;
     bool is_contiguous_;
 
+    /// The messaging level.  Set to 1 if you wish for CSS to print statistical info
+    int_t msglvl_;
+
     /// CssMKL parameter vector.  Note that the documentation uses
     /// 1-based indexing, but our interface must use 0-based indexing
     int_t iparm_[64];
-
-    /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
-    static const int_t msglvl_;
 
     // We will deal with 1 factor at a time
     static const int_t maxfct_;
@@ -289,6 +310,8 @@ namespace Amesos2 {
 
     MPI_Fint CssComm_;
     Teuchos::RCP<const map_type> css_rowmap_;
+    Teuchos::RCP<const map_type> css_contig_rowmap_;
+    Teuchos::RCP<const map_type> css_contig_colmap_;
 
 };                              // End class CssMKL
 

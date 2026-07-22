@@ -64,7 +64,7 @@ double perform_device_evaluation(const std::string& expression)
   //evaluate the expression on device
   double result = 0.0;
   Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA (const int& i, double& localResult) {
+    KOKKOS_LAMBDA (const int& /*i*/, double& localResult) {
 
       //device data that will be bound to expression variables
       double yDeviceValue = 3.0;

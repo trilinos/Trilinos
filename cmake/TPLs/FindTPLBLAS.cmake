@@ -22,4 +22,4 @@ if (MSVC AND NOT
 endif()
 
 tribits_tpl_find_include_dirs_and_libraries( BLAS
-  REQUIRED_LIBS_NAMES "blas blas_win32")
+  REQUIRED_LIBS_NAMES "blas blas_win32 openblas")

@@ -69,11 +69,12 @@ void testFieldOnNodes(stk::mesh::BulkData &stkMeshBulkData,
                       stk::mesh::Part &nodePart,
                       stk::mesh::Field<double> &nodeField1)
 {
+  auto nodeField1Data = nodeField1.data();
   for(size_t i = 0; i < nodes.size(); ++i)
   {
     EXPECT_TRUE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));
-    double* fieldPtr = stk::mesh::field_data(nodeField1, nodes[i]);
-    EXPECT_EQ(*static_cast<double*>(nodeField1.get_initial_value()), *fieldPtr);
+    auto nodeFieldData = nodeField1Data.entity_values(nodes[i]);
+    EXPECT_EQ(*reinterpret_cast<double*>(nodeField1.get_initial_value_bytes().data()), nodeFieldData(0_comp));
   }
 }
 
@@ -103,7 +104,7 @@ void testRemovingNodesFromPart(stk::mesh::BulkData &stkMeshBulkData,
                                const stk::mesh::EntityVector &nodes,
                                stk::mesh::Part &nodePart,
                                stk::mesh::Selector partSelector,
-                               stk::mesh::Field<double> &nodeField1)
+                               stk::mesh::Field<double> & /*nodeField1*/)
 {
   stkMeshBulkData.modification_begin();
   stk::mesh::PartVector emptyAddParts;
@@ -132,7 +133,6 @@ TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -169,7 +169,6 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -195,11 +194,12 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
 
   stk::mesh::EntityVector nodesInFirstPart;
   stk::mesh::get_selected_entities(firstPart, stkMeshBulkData.buckets(stk::topology::NODE_RANK), nodesInFirstPart);
+  auto nodeField1Data = nodeField1.data<stk::mesh::ReadWrite>();
 
   for(size_t i=0; i<nodesInFirstPart.size(); i++)
   {
-    double* fieldPtr = stk::mesh::field_data(nodeField1, nodesInFirstPart[i]);
-    *fieldPtr = stkMeshBulkData.identifier(nodesInFirstPart[i]);
+    auto nodeData = nodeField1Data.entity_values(nodesInFirstPart[i]);
+    nodeData(0_comp) = stkMeshBulkData.identifier(nodesInFirstPart[i]);
   }
 
   stk::mesh::Part& partAfterCommit = stkMeshMetaData.declare_part("partAfterCommit", stk::topology::ELEMENT_RANK);
@@ -217,10 +217,11 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
     EXPECT_EQ(nodesInFirstPart[i], nodesInPartDeclaredAfterCommit[i]);
   }
 
+  nodeField1Data = nodeField1.data<stk::mesh::ReadWrite>();
   for(size_t i = 0; i < nodesInFirstPart.size(); ++i)
   {
-    double* fieldPtr = stk::mesh::field_data(nodeField1, nodesInFirstPart[i]);
-    EXPECT_NEAR(static_cast<double>(stkMeshBulkData.identifier(nodesInFirstPart[i])), *fieldPtr, 1e-10);
+    auto nodeData = nodeField1Data.entity_values(nodesInFirstPart[i]);
+    EXPECT_NEAR(static_cast<double>(stkMeshBulkData.identifier(nodesInFirstPart[i])), nodeData(0_comp), 1e-10);
   }
 }
 
@@ -231,7 +232,6 @@ TEST(UnitTestPartsAfterCommit, SelectorOps)
   if(numProcs == 1)
   {
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.use_simple_fields();
     const std::string generatedMeshSpecification = "generated:1x1x1";
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();

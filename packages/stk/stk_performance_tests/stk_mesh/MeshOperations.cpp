@@ -46,7 +46,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <string>
 
-class MeshOperations : public stk::unit_test_util::simple_fields::MeshFixture {
+class MeshOperations : public stk::unit_test_util::MeshFixture {
 public:
   MeshOperations()
     : p_rank(get_parallel_rank()),
@@ -148,7 +148,6 @@ TEST_F( MeshOperations, PerformanceTimings )
     batchTimer.start_batch_timer();
 
     stk::io::StkMeshIoBroker broker(get_comm());
-    broker.use_simple_fields();
 
     initialize_meta(broker);
     initialize_bulk(broker);

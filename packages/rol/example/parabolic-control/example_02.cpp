@@ -1,48 +1,14 @@
 // @HEADER
-// ************************************************************************
-//
+// *****************************************************************************
 //               Rapid Optimization Library (ROL) Package
-//                 Copyright (2014) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact lead developers:
-//              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
-//
-// ************************************************************************
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 /*! \file  example_02.cpp
-    \brief Shows how to solve a linear-quadratic parabolic control problem 
+    \brief Shows how to solve a linear-quadratic parabolic control problem
            with bound constraints.
 */
 
@@ -52,9 +18,8 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -71,7 +36,7 @@ class Objective_ParabolicControl : public ROL::Objective<Real> {
   typedef ROL::Vector<Real>    V;
   typedef ROL::StdVector<Real> SV;
 
-  typedef typename vector::size_type  uint;  
+  typedef typename vector::size_type  uint;
 
 private:
   std::vector<Real> u0_;
@@ -87,12 +52,12 @@ private:
 /***************************************************************/
 
   ROL::Ptr<const vector> getVector( const V& x ) {
-     
+
     return dynamic_cast<const SV&>(x).getVector();
   }
 
   ROL::Ptr<vector> getVector( V& x ) {
-    
+
     return dynamic_cast<SV&>(x).getVector();
   }
 
@@ -121,7 +86,7 @@ private:
     o.resize(nx_-1,dx_/6.0 - dt_/dx_);
   }
 
-  void compute_residual(std::vector<Real> &r, 
+  void compute_residual(std::vector<Real> &r,
                   const std::vector<Real> &up, const std::vector<Real> &u, const Real z) {
     r.clear();
     r.resize(nx_,0.0);
@@ -157,11 +122,11 @@ private:
     }
   }
 
-  void linear_solve(std::vector<Real> &u, std::vector<Real> &d, std::vector<Real> &o, 
+  void linear_solve(std::vector<Real> &u, std::vector<Real> &d, std::vector<Real> &o,
               const std::vector<Real> &r) {
     u.assign(r.begin(),r.end());
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int nx   = static_cast<int>(nx_);
     int ldb  = nx;
@@ -199,13 +164,13 @@ private:
       utmp.assign(u.begin(),u.end());
       update(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
-      rnorm = compute_norm(r); 
+      rnorm = compute_norm(r);
       while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
         update(utmp,s,-alpha);
         compute_residual(r,up,utmp,z);
-        rnorm = compute_norm(r); 
+        rnorm = compute_norm(r);
       }
       // Update iterate
       u.assign(utmp.begin(),utmp.end());
@@ -220,7 +185,7 @@ private:
 
 public:
 
-  Objective_ParabolicControl(Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1) 
+  Objective_ParabolicControl(Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1)
     : alpha_(alpha), nx_(nx), nt_(nt), T_(T) {
     u0_.resize(nx_,0.0);
     dx_ = 1.0/((Real)nx-1.0);
@@ -265,7 +230,7 @@ public:
       }
       else {
         apply_mass(r,P[t]);
-      } 
+      }
       // Solve solve adjoint system at current time step
       linear_solve(p,d,o,r);
       // Update State Storage
@@ -273,11 +238,11 @@ public:
     }
   }
 
-  void solve_state_sensitivity(std::vector<std::vector<Real> > &V, 
+  void solve_state_sensitivity(std::vector<std::vector<Real> > &pV,
                          const std::vector<std::vector<Real> > &U, const std::vector<Real> &z) {
     // Initialize State Storage
-    V.clear();
-    V.resize(nt_);
+    pV.clear();
+    pV.resize(nt_);
     // Time Step Using Implicit Euler
     std::vector<Real> v(nx_,0.0);
     std::vector<Real> d(nx_,0.0);
@@ -292,19 +257,19 @@ public:
         r[nx_-1] = dt_*z[t];
       }
       else {
-        apply_mass(r,V[t-1]);
+        apply_mass(r,pV[t-1]);
         r[nx_-1] += dt_*z[t];
       }
       // Solve solve adjoint system at current time step
       linear_solve(v,d,o,r);
       // Update State Storage
-      (V[t]).assign(v.begin(),v.end());
+      (pV[t]).assign(v.begin(),v.end());
     }
   }
 
-  void solve_adjoint_sensitivity(std::vector<std::vector<Real> > &Q, 
+  void solve_adjoint_sensitivity(std::vector<std::vector<Real> > &Q,
                            const std::vector<std::vector<Real> > &U, const std::vector<std::vector<Real> > &P,
-                           const std::vector<std::vector<Real> > &V, const std::vector<Real> &z) {
+                           const std::vector<std::vector<Real> > &pV, const std::vector<Real> &z) {
     // Initialize State Storage
     Q.clear();
     Q.resize(nt_);
@@ -320,13 +285,13 @@ public:
       if ( t == nt_ ) {
         std::vector<Real> tmp(nx_,0.0);
         r.assign(nx_,0.0);
-        apply_mass(tmp,V[t-1]);
+        apply_mass(tmp,pV[t-1]);
         update(r,tmp,-1.0);
       }
       else {
         apply_mass(r,Q[t]);
       }
-      r[nx_-1]-=dt_*12.0*std::pow(U[t][nx_-1],2.0)*P[t-1][nx_-1]*V[t-1][nx_-1];
+      r[nx_-1]-=dt_*12.0*std::pow(U[t][nx_-1],2.0)*P[t-1][nx_-1]*pV[t-1][nx_-1];
       // Solve Tridiagonal System Using LAPACK's SPD Tridiagonal Solver
       linear_solve(q,d,o,r);
       // Update State Storage
@@ -348,7 +313,7 @@ public:
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
 
     // SOLVE STATE EQUATION
@@ -389,7 +354,7 @@ public:
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
     ROL::Ptr<vector> gp = getVector(g);
 
@@ -407,7 +372,7 @@ public:
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
     ROL::Ptr<const vector> vp = getVector(v);
     ROL::Ptr<vector> hvp = getVector(hv);
@@ -419,11 +384,11 @@ public:
     std::vector<std::vector<Real> > P;
     solve_adjoint(P,U);
     // SOLVE STATE SENSITIVITY EQUATION
-    std::vector<std::vector<Real> > V;
-    solve_state_sensitivity(V,U,*vp);
+    std::vector<std::vector<Real> > lV;
+    solve_state_sensitivity(lV,U,*vp);
     // SOLVE ADJOINT SENSITIVITY EQUATION
     std::vector<std::vector<Real> > Q;
-    solve_adjoint_sensitivity(Q,U,P,V,*vp);
+    solve_adjoint_sensitivity(Q,U,P,lV,*vp);
     // COMPUTE HESSVEC
     for (uint t=0; t<nt_; t++) {
       (*hvp)[t] = dt_*(alpha_*(*vp)[t] - (Q[t])[nx_-1]);
@@ -437,12 +402,12 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
 
   typedef std::vector<RealT>         vector;
-  typedef typename vector::size_type uint;
+  typedef typename vector::size_type luint;
 
-    
-  
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -459,8 +424,8 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    uint nx      = 100;   // Set spatial discretization.
-    uint nt      = 300;   // Set temporal discretization.
+    luint nx      = 100;   // Set spatial discretization.
+    luint nt      = 300;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
     Objective_ParabolicControl<RealT> obj(alpha,nx,nt,T);
@@ -468,7 +433,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(nt, 1.0);
     ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(nt, 0.0);
 
-    for (uint i=0; i<nt; i++) {
+    for (luint i=0; i<nt; i++) {
       (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
@@ -516,7 +481,7 @@ int main(int argc, char *argv[]) {
     // Output control to file.
     std::ofstream file;
     file.open("control_PDAS.txt");
-    for ( uint i = 0; i < nt; i++ ) {
+    for ( luint i = 0; i < nt; i++ ) {
       file << (*x_ptr)[i] << "\n";
     }
     file.close();
@@ -534,11 +499,11 @@ int main(int argc, char *argv[]) {
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
-    for ( uint i = 0; i < nt; i++ ) {
+    for ( luint i = 0; i < nt; i++ ) {
       file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
-   
+
     ROL::Ptr<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
@@ -551,9 +516,9 @@ int main(int argc, char *argv[]) {
     obj.solve_state(U,*y_ptr);
     std::ofstream file1;
     file1.open("state_tx.txt");
-    for (uint t=0; t<nt; t++) {
+    for (luint t=0; t<nt; t++) {
       file1 << t*(T/((RealT)nt-1.0)) << "  ";
-      for (uint i=0; i<nx; i++) {
+      for (luint i=0; i<nx; i++) {
         file1 << (U[t])[i] << "  ";
       }
       file1 << "\n";
@@ -561,9 +526,9 @@ int main(int argc, char *argv[]) {
     file1.close();
     std::ofstream file2;
     file2.open("state_xt.txt");
-    for (uint i=0; i<nx; i++) {
+    for (luint i=0; i<nx; i++) {
       file2 << i*(1.0/((RealT)nx-1.0)) << "  ";
-      for (uint t=0; t<nt; t++) {
+      for (luint t=0; t<nt; t++) {
         file2 << (U[t])[i] << "  ";
       }
       file2 << "\n";

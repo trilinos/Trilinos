@@ -86,7 +86,7 @@ class Monitor : public BaseClass {
   */
   Monitor(const BaseClass& object, const std::string& msg, const std::string& label, MsgType msgLevel = Runtime0, MsgType timerLevel = Timings0);
 
-  virtual ~Monitor() = default;
+  virtual ~Monitor();
 
  private:
   //! Manages printing.
@@ -133,6 +133,8 @@ class SubMonitor : public BaseClass {
       @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
   */
   SubMonitor(const BaseClass& object, const std::string& msg, const std::string& label, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1);
+
+  ~SubMonitor();
 
  private:
   PrintMonitor printMonitor_;
@@ -186,13 +188,11 @@ class FactoryMonitor : public Monitor {
   */
   FactoryMonitor(const BaseClass& object, const std::string& msg, const Level& level, MsgType msgLevel = static_cast<MsgType>(Test | Runtime0), MsgType timerLevel = Timings0);
 
+  ~FactoryMonitor();
+
  private:
   //! Total time spent on this level in this object and all its children.
   RCP<TimeMonitor> levelTimeMonitor_;
-  //! Total time spent on all levels in this object only, excluding all children.
-  MutuallyExclusiveTimeMonitor<FactoryBase> timerMonitorExclusive_;
-  //! Total time spent on this level in this object only, excluding all children.
-  RCP<MutuallyExclusiveTimeMonitor<Level> > levelTimeMonitorExclusive_;
 };
 
 //---------------------------------------------------------------------------------------------------
@@ -232,6 +232,8 @@ class SubFactoryMonitor : public SubMonitor {
       @param[in] timerLevel  Governs whether timing information should be *gathered*.  Setting this to NoTimeReport prevents the creation of timers.
   */
   SubFactoryMonitor(const BaseClass& object, const std::string& msg, const Level& level, MsgType msgLevel = Runtime1, MsgType timerLevel = Timings1);
+
+  ~SubFactoryMonitor();
 
  private:
   //! Total time spent on this level in this object and all children.

@@ -145,9 +145,9 @@ void expect_equal_field_restrictions(stk::mesh::MetaData &newMeta, stk::mesh::Fi
 
 void expect_equal_field_initial_values(stk::mesh::FieldBase &oldField, stk::mesh::FieldBase &newField)
 {
-  ASSERT_EQ(oldField.get_initial_value_num_bytes(), newField.get_initial_value_num_bytes());
-  const char *oldInitValPtr = static_cast<const char *>(oldField.get_initial_value());
-  const char *newInitValPtr = static_cast<const char *>(newField.get_initial_value());
+  ASSERT_EQ(oldField.get_initial_value_num_bytes(), newField.get_initial_value_num_bytes()) << "oldField "<<oldField.name()<<" newField "<<newField.name();
+  const std::byte* oldInitValPtr = oldField.get_initial_value_bytes().data();
+  const std::byte* newInitValPtr = newField.get_initial_value_bytes().data();
   for(unsigned j=0; j<oldField.get_initial_value_num_bytes(); j++)
     EXPECT_EQ(oldInitValPtr[j], newInitValPtr[j]);
 }
@@ -264,7 +264,7 @@ void expect_equal_entity_counts(stk::mesh::BulkData& oldBulk, stk::mesh::BulkDat
   EXPECT_EQ(oldCount, newCount);
 }
 
-class MeshClone : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshClone : public stk::unit_test_util::MeshFixture
 {
 public:
   MeshClone()
@@ -368,7 +368,6 @@ TEST_F(MeshClone, copyOnlyMeta)
   initialize_mesh_with_parts_and_fields();
 
   stk::mesh::MetaData newMeta;
-  newMeta.use_simple_fields();
   stk::tools::copy_meta_with_io_attributes(get_meta(), newMeta);
 
   expect_equal_meta_datas(get_meta(), newMeta);
@@ -450,8 +449,7 @@ TEST_F(MeshClone, copyMeshWithOrphanNodesOnOwnedSide)
 TEST(MetaDataSize, sizeChanges_needToUpdateCopyMesh)
 {
   stk::mesh::MetaData meta;
-  meta.use_simple_fields();
-  EXPECT_GE(632u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
+  EXPECT_GE(648u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
 }
 #endif
 

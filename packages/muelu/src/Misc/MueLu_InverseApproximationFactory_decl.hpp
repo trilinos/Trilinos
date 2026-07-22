@@ -24,7 +24,7 @@
 namespace MueLu {
 
 /*!
-  @class InverseApproximationFactory class.
+  @class InverseApproximationFactory
   @brief Factory for building the approximate inverse of a matrix.
 
   ## Context, assumptions, and use cases ##

@@ -4,6 +4,19 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <fmt/format.h>
+#include <iomanip>
+#include <iostream>
+#include <pthread.h>
+#include <string>
+#include <unistd.h>
+#include <vector>
+
 #include "Ionit_Initializer.h"
 #include "Ioss_CodeTypes.h"
 #include "Ioss_DataPool.h"
@@ -17,25 +30,8 @@
 #include "Ioss_SurfaceSplit.h"
 #include "Ioss_Transform.h"
 #include "Ioss_Utils.h"
-#include <fmt/format.h>
-
-#include <algorithm>
-#include <cassert>
-#include <cstddef>
-#include <cstdlib>
-#include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <pthread.h>
-#include <string>
-#include <unistd.h>
-#include <vector>
 
 #include "shell_interface.h"
-
-#ifdef SEACAS_HAVE_KOKKOS
-#include <Kokkos_Core.hpp> // for Kokkos::View
-#endif
 
 #define DO_OUTPUT                                                                                  \
   if (rank == 0)                                                                                   \
@@ -95,6 +91,22 @@ namespace {
 
   template <typename INT>
   void set_owned_node_count(Ioss::Region &region, int my_processor, INT dummy);
+
+  bool open_change_set(const std::string &cs_name, Ioss::Region &region, int my_rank)
+  {
+    bool success = true;
+    if (!cs_name.empty()) {
+      success = region.load_internal_change_set_mesh(cs_name);
+      if (!success) {
+        if (my_rank == 0) {
+          fmt::print(stderr, "ERROR: Unable to open change_set '{}' in file '{}'\n", cs_name,
+                     region.get_database()->get_filename());
+        }
+      }
+    }
+    return success;
+  }
+
 } // namespace
 // ========================================================================
 
@@ -192,11 +204,10 @@ int main(int argc, char *argv[])
 }
 
 namespace {
-  void file_copy(IOShell::Interface &interFace, int rank)
+  void file_copy(IOShell::Interface &interFace, int my_rank)
   {
     Ioss::PropertyManager properties = set_properties(interFace);
 
-    bool first = true;
     for (const auto &inpfile : interFace.inputFile) {
       Ioss::DatabaseIO *dbi =
           Ioss::IOFactory::create(interFace.inFiletype, inpfile, Ioss::READ_MODEL,
@@ -209,8 +220,8 @@ namespace {
       if (mem_stats) {
         dbi->progress("Database Creation");
       }
-      if (!interFace.lower_case_variable_names) {
-        dbi->set_lower_case_variable_names(false);
+      if (!interFace.lowercase_variable_names) {
+        dbi->set_lowercase_variable_names(false);
       }
       dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_type));
       dbi->set_field_separator(interFace.fieldSuffixSeparator);
@@ -218,22 +229,22 @@ namespace {
         dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
       }
 
-      if (!interFace.groupName.empty()) {
-        bool success = dbi->open_group(interFace.groupName);
+      // NOTE: 'region' owns 'db' pointer at this time...
+      Ioss::Region region(dbi, "region_1");
+
+      if (!interFace.changeSetName.empty()) {
+        bool success = open_change_set(interFace.changeSetName, region, my_rank);
         if (!success) {
-          if (rank == 0) {
+          if (my_rank == 0) {
             fmt::print(stderr, "ERROR: Unable to open group '{}' in file '{}'\n",
-                       interFace.groupName, inpfile);
+                       interFace.changeSetName, inpfile);
           }
           return;
         }
       }
 
-      // NOTE: 'region' owns 'db' pointer at this time...
-      Ioss::Region region(dbi, "region_1");
-
       if (region.mesh_type() != Ioss::MeshType::UNSTRUCTURED) {
-        if (rank == 0) {
+        if (my_rank == 0) {
           fmt::print(stderr,
                      "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' mesh is "
                      "supported at this time.\n",
@@ -283,15 +294,10 @@ namespace {
       if (interFace.inputFile.size() > 1) {
         properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_APPEND_GROUP));
 
-        if (!first) {
-          // Putting each file into its own output group...
-          // The name of the group will be the basename portion of the filename...
-          Ioss::FileInfo file(inpfile);
-          dbo->create_subgroup(file.tailname());
-        }
-        else {
-          first = false;
-        }
+        // Putting each file into its own output group...
+        // The name of the group will be the basename portion of the filename...
+        Ioss::FileInfo file(inpfile);
+        dbo->create_internal_change_set(file.tailname());
       }
 
       if (interFace.debug) {
@@ -315,9 +321,9 @@ namespace {
       // and output regions... (This is checked during nodeset output)
       if (output_region.get_database()->needs_shared_node_information()) {
         if (interFace.ints_64_bit)
-          set_owned_node_count(region, rank, (int64_t)0);
+          set_owned_node_count(region, my_rank, (int64_t)0);
         else
-          set_owned_node_count(region, rank, (int)0);
+          set_owned_node_count(region, my_rank, (int)0);
       }
 
       transfer_edgeblocks(region, output_region, interFace.debug);
@@ -974,7 +980,9 @@ namespace {
 
       assert(oge->field_exists(out_field_name));
 
+#ifdef SEACAS_HAVE_KOKKOS
       int basic_type = ige->get_field(field_name).get_type();
+#endif
 
       size_t isize = ige->get_field(field_name).get_size();
       size_t osize = oge->get_field(out_field_name).get_size();
@@ -1180,7 +1188,6 @@ namespace {
     if (isize != oge->get_field(field_name).get_size()) {
       assert(isize == oge->get_field(field_name).get_size());
     }
-    int basic_type = ige->get_field(field_name).get_type();
 
     if (field_name == "mesh_model_coordinates_x") {
       return;
@@ -1215,6 +1222,10 @@ namespace {
     if (field_name == "ids" && ige->type() == Ioss::SIDEBLOCK) {
       return;
     }
+
+#ifdef SEACAS_HAVE_KOKKOS
+    int basic_type = ige->get_field(field_name).get_type();
+#endif
 
     Ioss::DataPool pool;
     pool.data.resize(isize);

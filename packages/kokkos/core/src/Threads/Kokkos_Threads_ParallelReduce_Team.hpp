@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_THREADS_PARALLEL_REDUCE_TEAM_HPP
 #define KOKKOS_THREADS_PARALLEL_REDUCE_TEAM_HPP
@@ -42,7 +29,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   const size_t m_shared;
 
   template <class TagType>
-  inline static std::enable_if_t<std::is_void<TagType>::value> exec_team(
+  inline static std::enable_if_t<std::is_void_v<TagType>> exec_team(
       const FunctorType &functor, Member member, reference_type update) {
     for (; member.valid_static(); member.next_static()) {
       functor(member, update);
@@ -50,7 +37,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   }
 
   template <class TagType>
-  inline static std::enable_if_t<!std::is_void<TagType>::value> exec_team(
+  inline static std::enable_if_t<!std::is_void_v<TagType>> exec_team(
       const FunctorType &functor, Member member, reference_type update) {
     const TagType t{};
     for (; member.valid_static(); member.next_static()) {
@@ -106,9 +93,14 @@ class ParallelReduce<CombinedFunctorReducerType,
       policy.impl_set_vector_length(1);
     }
     if (policy.team_size() < 0) {
-      policy.impl_set_team_size(policy.team_size_recommended(
+      int team_size = policy.team_size_recommended(
           m_functor_reducer.get_functor(), m_functor_reducer.get_reducer(),
-          ParallelReduceTag{}));
+          ParallelReduceTag{});
+      if (team_size <= 0)
+        Kokkos::Impl::throw_runtime_exception(
+            "Kokkos::Impl::ParallelReduce<Threads, TeamPolicy> could not find "
+            "a valid execution configuration.");
+      policy.impl_set_team_size(team_size);
     }
     return policy;
   }
@@ -127,6 +119,29 @@ class ParallelReduce<CombinedFunctorReducerType,
                                         Kokkos::HostSpace>::accessible,
         "Kokkos::Threads reduce result must be a View accessible from "
         "HostSpace");
+
+    if ((arg_policy.scratch_size(0, m_policy.team_size()) +
+         FunctorTeamShmemSize<FunctorType>::value(
+             m_functor_reducer.get_functor(), arg_policy.team_size())) >
+        static_cast<size_t>(m_policy.scratch_size_max(0))) {
+      std::stringstream error;
+      error << "Kokkos::parallel_reduce<Threads>: Requested too much scratch "
+               "memory on level 0. Requested: "
+            << arg_policy.scratch_size(0, m_policy.team_size()) +
+                   FunctorTeamShmemSize<FunctorType>::value(
+                       m_functor_reducer.get_functor(), arg_policy.team_size())
+            << ", Maximum: " << m_policy.scratch_size_max(0);
+      Kokkos::Impl::throw_runtime_exception(error.str().c_str());
+    }
+    if (arg_policy.scratch_size(1, m_policy.team_size()) >
+        static_cast<size_t>(m_policy.scratch_size_max(1))) {
+      std::stringstream error;
+      error << "Kokkos::parallel_reduce<Threads>: Requested too much scratch "
+               "memory on level 1. Requested: "
+            << arg_policy.scratch_size(1, m_policy.team_size())
+            << ", Maximum: " << m_policy.scratch_size_max(1);
+      Kokkos::Impl::throw_runtime_exception(error.str().c_str());
+    }
   }
 };
 

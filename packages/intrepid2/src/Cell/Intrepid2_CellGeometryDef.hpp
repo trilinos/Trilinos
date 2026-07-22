@@ -175,7 +175,7 @@ namespace Intrepid2
         
         int cellTypeModulus = uniformJacobianModulus();
         
-        data = getMatchingViewWithLabel(pointComponentView, "CellGeometryProvider: Jacobian data", cellTypeModulus, spaceDim, spaceDim);
+        data = Impl::createMatchingDynRankView(pointComponentView, "CellGeometryProvider: Jacobian data", cellTypeModulus, spaceDim, spaceDim);
       }
       else
       {
@@ -184,7 +184,7 @@ namespace Intrepid2
         variationType[D2_DIM] = BLOCK_PLUS_DIAGONAL;
         blockPlusDiagonalLastNonDiagonal = -1;
         
-        data = getMatchingViewWithLabel(pointComponentView, "CellGeometryProvider: Jacobian data", spaceDim);
+        data = Impl::createMatchingDynRankView(pointComponentView, "CellGeometryProvider: Jacobian data", spaceDim);
       }
     }
     else if (cellGeometryType_ == TENSOR_GRID)
@@ -201,7 +201,7 @@ namespace Intrepid2
         variationType[D1_DIM]    = GENERAL;
         variationType[D2_DIM]    = GENERAL;
         
-        data = getMatchingViewWithLabel(data, "CellGeometryProvider: Jacobian data", numCells_, spaceDim, spaceDim);
+        data = Impl::createMatchingDynRankView(data, "CellGeometryProvider: Jacobian data", numCells_, spaceDim, spaceDim);
       }
       else
       {
@@ -212,12 +212,12 @@ namespace Intrepid2
         {
           // no point variation
           variationType[POINT_DIM] = CONSTANT;
-          data = getMatchingViewWithLabel(data, "CellGeometryProvider: Jacobian data", numCellsWorkset, spaceDim, spaceDim);
+          data = Impl::createMatchingDynRankView(data, "CellGeometryProvider: Jacobian data", numCellsWorkset, spaceDim, spaceDim);
         }
         else
         {
           variationType[POINT_DIM] = GENERAL;
-          data = getMatchingViewWithLabel(data, "CellGeometryProvider: Jacobian data", numCellsWorkset, pointsPerCell, spaceDim, spaceDim);
+          data = Impl::createMatchingDynRankView(data, "CellGeometryProvider: Jacobian data", numCellsWorkset, pointsPerCell, spaceDim, spaceDim);
         }
       }
     }
@@ -228,7 +228,7 @@ namespace Intrepid2
       variationType[POINT_DIM] = GENERAL;
       variationType[D1_DIM]    = GENERAL;
       variationType[D2_DIM]    = GENERAL;
-      data = getMatchingViewWithLabel(data, "CellGeometryProvider: Jacobian data", numCellsWorkset, pointsPerCell, spaceDim, spaceDim);
+      data = Impl::createMatchingDynRankView(data, "CellGeometryProvider: Jacobian data", numCellsWorkset, pointsPerCell, spaceDim, spaceDim);
     }
     else
     {
@@ -335,8 +335,8 @@ namespace Intrepid2
 
           // TODO: find an allocation-free way to do this… (consider modifying CellTools::setJacobian() to support affine case.)
           const int onePoint = 1;
-          auto testPointView = getMatchingViewWithLabel(dataView3, "CellGeometryProvider: test point", onePoint, spaceDim);
-          auto tempData      = getMatchingViewWithLabel(dataView3, "CellGeometryProvider: temporary Jacobian data", numCellsWorkset, onePoint, spaceDim, spaceDim);
+          auto testPointView = Impl::createMatchingDynRankView(dataView3, "CellGeometryProvider: test point", onePoint, spaceDim);
+          auto tempData      = Impl::createMatchingDynRankView(dataView3, "CellGeometryProvider: temporary Jacobian data", numCellsWorkset, onePoint, spaceDim, spaceDim);
           
           Kokkos::deep_copy(testPointView, 0.0);
           
@@ -840,8 +840,8 @@ namespace Intrepid2
             const int numPoints = points.extent_int(1);
             const int numFields = basisForNodes->getCardinality();
             
-            auto cellBasisGradientsView = getMatchingViewWithLabel(points, "CellGeometryProvider: cellBasisGradients", numCells, numFields, numPoints, spaceDim);
-            auto basisGradientsView     = getMatchingViewWithLabel(points, "CellGeometryProvider: basisGradients", numFields, numPoints, spaceDim);
+            auto cellBasisGradientsView = Impl::createMatchingDynRankView(points, "CellGeometryProvider: cellBasisGradients", numCells, numFields, numPoints, spaceDim);
+            auto basisGradientsView     = Impl::createMatchingDynRankView(points, "CellGeometryProvider: basisGradients", numFields, numPoints, spaceDim);
             
             for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
             {
@@ -923,7 +923,7 @@ namespace Intrepid2
           // and/or very high polynomial order.)
           
           auto firstPointComponentView = points.getTensorComponent(0); // (P,D0)
-          auto basisGradientsView = getMatchingViewWithLabel(firstPointComponentView, "CellGeometryProvider: temporary basisGradients", numFields, numPoints, spaceDim);
+          auto basisGradientsView = Impl::createMatchingDynRankView(firstPointComponentView, "CellGeometryProvider: temporary basisGradients", numFields, numPoints, spaceDim);
           
           using ExecutionSpace = typename DeviceType::execution_space;
           auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numFields,numPoints,spaceDim});

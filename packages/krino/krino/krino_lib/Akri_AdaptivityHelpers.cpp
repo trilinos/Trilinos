@@ -13,6 +13,7 @@
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Phase_Support.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -26,11 +27,10 @@
 #include <string>
 #include <vector>
 
-#include "Akri_RefinementInterface.hpp"
 namespace krino
 {
 
-void filter_refinement_marker(const RefinementInterface & refinement, const stk::mesh::BulkData & mesh, FieldRef elem_marker, const stk::mesh::Selector & do_not_refine_or_unrefine_selector)
+void filter_refinement_marker(const RefinementManager & refinement, const stk::mesh::BulkData & mesh, FieldRef elem_marker, const stk::mesh::Selector & do_not_refine_or_unrefine_selector)
 {
   const auto & parentPart = refinement.parent_part();
 
@@ -54,16 +54,17 @@ void filter_refinement_marker(const RefinementInterface & refinement, const stk:
 }
 
 
-void perform_multilevel_adaptivity(RefinementInterface & refinement,
+void perform_multilevel_adaptivity(RefinementManager & refinement,
     stk::mesh::BulkData & mesh,
     const std::function<void(int)> & marker_function,
-    const stk::mesh::Selector & do_not_refine_selector)
+    const stk::mesh::Selector & do_not_refine_selector,
+    const int rebalanceInterval)
 {
   Tracespec trace__("perform_multilevel_adaptivity()");
 
   const auto & aux_meta = AuxMetaData::get(mesh.mesh_meta_data());
 
-  const FieldRef elem_marker = refinement.get_marker_field();
+  const FieldRef elem_marker = refinement.get_marker_field_and_sync_to_host();
 
   const stk::mesh::Selector active_selector = aux_meta.active_part();
   const stk::mesh::Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
@@ -102,6 +103,11 @@ void perform_multilevel_adaptivity(RefinementInterface & refinement,
     {
       krinolog << "Skipping/Terminating refinement because no elements are marked for refinement.\n";
       done = true;
+    }
+
+    if (rebalanceInterval > 0 && num_refinements%rebalanceInterval == 0)
+    {
+      refinement.do_rebalance();
     }
   }
 

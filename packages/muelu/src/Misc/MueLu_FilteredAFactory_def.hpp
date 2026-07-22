@@ -31,7 +31,8 @@ namespace MueLu {
 template <class T>
 void sort_and_unique(T& array) {
   std::sort(array.begin(), array.end());
-  std::unique(array.begin(), array.end());
+  auto last = std::unique(array.begin(), array.end());
+  array.erase(last, array.end());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -47,6 +48,7 @@ RCP<const ParameterList> FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, N
   SET_VALID_ENTRY("filtered matrix: spread lumping diag dom growth factor");
   SET_VALID_ENTRY("filtered matrix: spread lumping diag dom cap");
   SET_VALID_ENTRY("filtered matrix: Dirichlet threshold");
+  SET_VALID_ENTRY("filtered matrix: count negative diagonals");
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used for filtering");
@@ -177,6 +179,12 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& c
     // the D^{-1}A estimate in A, may as well use it.
     // NOTE: ML does that too
     filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+  }
+
+  if (pL.get<bool>("filtered matrix: count negative diagonals")) {
+    // Count the negative diagonals (and display that information)
+    GlobalOrdinal neg_count = MueLu::Utilities<SC, LO, GO, NO>::CountNegativeDiagonalEntries(*A);
+    GetOStream(Runtime0) << "FilteredA: Negative diagonals: " << neg_count << std::endl;
   }
 
   Set(currentLevel, "A", filteredA);
@@ -446,9 +454,9 @@ void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Lists of nodes in each aggregate
   struct {
     // GH: For now, copy everything to host until we properly set this factory to run device code
-    // Instead, we'll copy data into HostMirrors and run the algorithms on host, saving optimization for later.
+    // Instead, we'll copy data into host_mirror_types and run the algorithms on host, saving optimization for later.
     typename Aggregates::LO_view ptr, nodes, unaggregated;
-    typename Aggregates::LO_view::HostMirror ptr_h, nodes_h, unaggregated_h;
+    typename Aggregates::LO_view::host_mirror_type ptr_h, nodes_h, unaggregated_h;
   } nodesInAgg;
   aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
   nodesInAgg.ptr_h          = Kokkos::create_mirror_view(nodesInAgg.ptr);

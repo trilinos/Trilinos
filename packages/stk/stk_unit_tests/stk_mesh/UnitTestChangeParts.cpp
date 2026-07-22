@@ -61,7 +61,6 @@ std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
   builder.set_spatial_dimension(spatialDim);
   builder.set_aura_option(auraOption);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -97,14 +96,78 @@ TEST(UnitTestChangeParts, test_throw_on_internal_part_change)
   EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 }
 
+void do_simple_batch_part_change_test(stk::mesh::BulkData& bulkData)
+{
+  stk::mesh::MetaData& metaData = bulkData.mesh_meta_data();
+  stk::mesh::Part& bluePart = metaData.declare_part("blue_part");
+  stk::mesh::Part& redPart = metaData.declare_part("red_part");
+
+  stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
+  EXPECT_TRUE(bulkData.is_valid(elem1));
+
+  stk::mesh::EntityVector nodes(bulkData.begin_nodes(elem1), bulkData.begin_nodes(elem1)+bulkData.num_nodes(elem1));
+  EXPECT_EQ(8u, nodes.size());
+
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_FALSE(bulkData.bucket(node).member(bluePart));
+    EXPECT_FALSE(bulkData.bucket(node).member(redPart));
+  }
+
+  stk::mesh::PartVector blue_parts(1, &bluePart);
+  stk::mesh::PartVector red_parts(1, &redPart);
+  bulkData.batch_change_entity_parts(nodes, blue_parts, {});
+  nodes.resize(4);
+  bulkData.batch_change_entity_parts(nodes, red_parts, blue_parts);
+
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_TRUE(bulkData.bucket(node).member(redPart));
+    EXPECT_FALSE(bulkData.bucket(node).member(bluePart));
+  }
+
+  nodes.resize(1);
+  bulkData.batch_change_entity_parts(nodes, blue_parts, red_parts);
+
+  EXPECT_TRUE(bulkData.bucket(nodes[0]).member(bluePart));
+  EXPECT_FALSE(bulkData.bucket(nodes[0]).member(redPart));
+}
+
+TEST(UnitTestChangeParts, genmesh_test_batch_part_change_1_node)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 1) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::io::fill_mesh("generated:1x1x1", *bulkPtr);
+
+  do_simple_batch_part_change_test(*bulkPtr);
+}
+
+TEST(UnitTestChangeParts, test_batch_part_change_1_node)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
+
+  if (p_size != 1) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1";
+  stk::unit_test_util::setup_text_mesh(*bulkPtr, meshDesc);
+
+  do_simple_batch_part_change_test(*bulkPtr);
+}
+
 TEST(UnitTestChangeParts, test_batch_part_change)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int p_size = stk::parallel_machine_size( pm );
 
-  if (p_size != 1) {
-    return;
-  }
+  if (p_size != 1) { GTEST_SKIP(); }
 
   const int spatialDim = 3;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
@@ -113,7 +176,7 @@ TEST(UnitTestChangeParts, test_batch_part_change)
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
+  stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
 
   stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
   EXPECT_TRUE(bulkData.is_valid(elem1));
@@ -165,7 +228,7 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
   stk::mesh::put_field_on_mesh(field, supersetPart, nullptr);
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
+  stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
 
   stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1u);
   EXPECT_TRUE(bulkData.is_valid(node1));
@@ -216,18 +279,13 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
   EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
   EXPECT_TRUE(bulkData.bucket(node2).member(subsetPart2));
 
-  double* node1Data = (double*) stk::mesh::field_data(field, node1);
-  double* node2Data = (double*) stk::mesh::field_data(field, node1);
-
-  EXPECT_TRUE(node1Data != nullptr);
-  EXPECT_TRUE(node2Data != nullptr);
-
+  EXPECT_TRUE(field.defined_on(node1));
+  EXPECT_TRUE(field.defined_on(node2));
 
   for(unsigned i=3; i<8u; ++i) {
     stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, i);
     EXPECT_TRUE(bulkData.is_valid(node));
-    double* nodeData = (double*) stk::mesh::field_data(field, node);
-    EXPECT_TRUE(nodeData == nullptr);
+    EXPECT_FALSE(field.defined_on(node));
   }
 }
 
@@ -303,11 +361,11 @@ TEST(ChangeElemParts, addThenRemoveElemPart_checkSharedNode)
   EXPECT_EQ(stk::mesh::Modified, bulk.state(node5));
 }
 
-class TestChangePartsWithSelector : public stk::unit_test_util::simple_fields::MeshFixture
+class TestChangePartsWithSelector : public stk::unit_test_util::MeshFixture
 {
 public:
   TestChangePartsWithSelector()
-    : stk::unit_test_util::simple_fields::MeshFixture(3)
+    : stk::unit_test_util::MeshFixture(3)
   {
     setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "ON", 1);
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
@@ -402,7 +460,7 @@ public:
     EXPECT_EQ(expectedBucketCount, bucketCount);
   }
 
-  void test_partitions_equality(stk::mesh::EntityRank rank, stk::mesh::Bucket const* bucket1, stk::mesh::Bucket const* bucket2)
+  void test_partitions_equality(stk::mesh::EntityRank /*rank*/, stk::mesh::Bucket const* bucket1, stk::mesh::Bucket const* bucket2)
   {
     stk::mesh::impl::Partition* partition1 = bucket1->getPartition();
     stk::mesh::impl::Partition* partition2 = bucket2->getPartition();
@@ -847,7 +905,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_to_ranked_par
 
 TEST_F(TestChangePartsWithSelector, element_in_ranked_part_move_to_unranked_part_conflicting_partitions)
 {
-  if(get_bulk().parallel_size() > 1) { return; }
+  if(get_bulk().parallel_size() > 1) { GTEST_SKIP(); }
 
   unsigned numBlockParts = 2;
   unsigned numElem = 2;

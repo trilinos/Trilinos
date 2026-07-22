@@ -1,4 +1,4 @@
-// Copyright(C) 1999-, 20212021, , ,  National Technology & Engineering Solutions
+// Copyright(C) 1999-, 20212021, , , , , , , , ,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -16,10 +16,10 @@ namespace SEAMS {
   struct array
   {
     std::vector<double> data{};
-    int                 rows{0};
-    int                 cols{0};
+    size_t              rows{0};
+    size_t              cols{0};
 
-    array(int r, int c) : rows(r), cols(c) { data.resize(r * c); }
+    array(size_t r, size_t c) : rows(r), cols(c) { data.resize(r * c); }
   };
 
   struct symrec
@@ -53,7 +53,9 @@ namespace SEAMS {
       const char *(*strfnct_a)(const array *){nullptr};
       const char *(*strfnct_dd)(double, double){nullptr};
       const char *(*strfnct_cc)(char *, char *){nullptr};
+      const char *(*strfnct_cd)(char *, double){nullptr};
       const char *(*strfnct_ccc)(char *, char *, char *){nullptr};
+      const char *(*strfnct_dc)(double, char *){nullptr};
       const char *(*strfnct_dcc)(double, char *, char *){nullptr};
       const char *(*strfnct_dcccc)(double, char *, char *, char *, char *){nullptr};
       array *avar{nullptr}; /* Array Variable */

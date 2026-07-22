@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 #define KOKKOS_IMPL_PUBLIC_INCLUDE
@@ -130,10 +117,10 @@ int HostThreadTeamData::organize_team(const int team_size) {
     //     zombi team around (for example m_pool_size = 5 and team_size = 2
     // (ii) if team_alloc > team_size then the last team might have less
     //      threads than the others
-    m_team_rank = (team_base_rank + team_size <= m_pool_size) &&
+    m_team_rank            = (team_base_rank + team_size <= m_pool_size) &&
                           (team_alloc_rank < team_size)
-                      ? team_alloc_rank
-                      : -1;
+                                 ? team_alloc_rank
+                                 : -1;
     m_team_size            = team_size;
     m_team_alloc           = team_alloc_size;
     m_league_rank          = league_rank;

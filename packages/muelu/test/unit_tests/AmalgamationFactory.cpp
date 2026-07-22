@@ -60,7 +60,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, DOFGid2NodeId, Scalar, Lo
   }
 }  // DOFGid2NodeId
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMap, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMapI, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
   // Test static method AmalgamationFactory::AmalgamateMap().
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
@@ -95,7 +95,44 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMap, Scalar, Lo
     TEST_EQUALITY(nonUniqueMap->getLocalElement(localEltList[j]), static_cast<LO>(j));
   }
 
-}  // AmalgamateMap
+}  // AmalgamateMapI
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMapII, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+  // Test static method AmalgamationFactory::AmalgamateMap().
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "Test static method AmalgamationFactory::AmalgamateMap()." << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+  const GlobalOrdinal nx = 32;
+  Teuchos::ParameterList matrixList;
+  matrixList.set("nx", nx);
+  matrixList.set("matrixType", "Laplace1D");
+  RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::BuildMatrix(matrixList, TestHelpers::Parameters::getLib());
+  LO blkSize     = 2;
+  Op->SetFixedBlockSize(blkSize);
+
+  RCP<const Map> uniqueMap;
+  RCP<const StridedMap> rowMap = rcp_dynamic_cast<const StridedMap>(Op->getRowMap("stridedMaps"));
+  AmalgamationFactory::AmalgamateMap(rowMap, uniqueMap);
+
+  Teuchos::ArrayView<const GO> localEltList = uniqueMap->getLocalElementList();
+  for (size_t j = 0; j < uniqueMap->getLocalNumElements(); j++) {
+    TEST_EQUALITY(uniqueMap->getLocalElement(localEltList[j]), static_cast<LO>(j));
+  }
+
+  RCP<const Map> nonUniqueMap;
+  RCP<const StridedMap> colMap = rcp_dynamic_cast<const StridedMap>(Op->getColMap("stridedMaps"));
+  AmalgamationFactory::AmalgamateMap(colMap, nonUniqueMap);
+
+  localEltList = nonUniqueMap->getLocalElementList();
+  for (size_t j = 0; j < nonUniqueMap->getLocalNumElements(); j++) {
+    TEST_EQUALITY(nonUniqueMap->getLocalElement(localEltList[j]), static_cast<LO>(j));
+  }
+
+}  // AmalgamateMapII
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, DOFGidOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
   // Test static method AmalgamationFactory::DOFGidOffset().
@@ -133,10 +170,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, DOFGidOffset, Scalar, Loc
 
 }  // AmalgamateMap
 
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                    \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, Constructor, Scalar, LO, GO, Node)   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGid2NodeId, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMap, Scalar, LO, GO, Node) \
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, Constructor, Scalar, LO, GO, Node)     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGid2NodeId, Scalar, LO, GO, Node)   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMapI, Scalar, LO, GO, Node)  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMapII, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGidOffset, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>

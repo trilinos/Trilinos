@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -64,8 +64,12 @@ void Cpup::SystemInterface::enroll_options()
   options_.enroll("steps", GetLongOption::MandatoryValue,
                   "Specify subset of timesteps to transfer to output file.\n"
                   "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
+                  "\t\tIf the 'beg' or 'end' is < 0, then it is the \"-Nth\" step...\n"
+                  "\t\t-1 is \"first last\" or last, -3 is \"third last\"\n"
+                  "\t\tTo copy just the last 3 steps, do: `-steps -3:-1`\n"
                   "\t\tEnter LAST for last step",
                   "1:", nullptr, true);
+
   options_.enroll("extension", GetLongOption::MandatoryValue,
                   "CGNS database extension for the input files", "cgns");
 
@@ -119,19 +123,6 @@ void Cpup::SystemInterface::enroll_options()
       "\t\tThis tries to detect file corruption immediately instead of later. Mainly useful in "
       "large subcycle runs.",
       nullptr);
-
-  options_.enroll(
-      "zlib", GetLongOption::NoValue,
-      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
-      nullptr);
-
-  options_.enroll("szip", GetLongOption::NoValue,
-                  "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
-
-  options_.enroll("compress_data", GetLongOption::MandatoryValue,
-                  "The output database will be written using compression (netcdf-4 mode only).\n"
-                  "\t\tValue ranges from 0..9 for zlib/gzip or even values 4..32 for szip.",
-                  nullptr, nullptr, true);
 
   options_.enroll("append", GetLongOption::NoValue,
                   "Append to database instead of opening a new database.\n"
@@ -236,7 +227,7 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
                  "\tWrites: current_directory/basename.output_extension\n"
                  "\tReads:  root/sub/basename.extension.#p.0 to\n"
                  "\t\troot/sub/basename.extension.#p.#p-1\n"
-                 "\n\t->->-> Send email to gdsjaar@sandia.gov for cpup support.<-<-<-\n");
+                 "\n\t->->-> Send email to sierra-help@sandia.gov for cpup support.<-<-<-\n");
     }
     return false;
   }
@@ -297,18 +288,7 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
 
   append_ = options_.retrieve("append") != nullptr;
 
-  if (options_.retrieve("szip") != nullptr) {
-    szip_ = true;
-    zlib_ = false;
-  }
-  zlib_ = (options_.retrieve("zlib") != nullptr);
-
-  if (szip_ && zlib_) {
-    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
-  }
-
   append_ = options_.retrieve("append") != nullptr;
-  compressData_ = options_.get_option_value("compress_data", compressData_);
   //subcycle_        = options_.get_option_value("subcycle", subcycle_);
   cycle_           = options_.get_option_value("cycle", cycle_);
   subcycleJoin_    = options_.retrieve("join_subcycles") != nullptr;
@@ -466,7 +446,11 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
   //:    <li>":Y"                 -- 1 to Y by 1</li>
   //:    <li>"::Z"                -- 1 to oo by Z</li>
   //:  </ul>
-  //: The count and step must always be >= 0
+  //: The step must always be > 0
+  //: If the 'from' or 'to' is < 0, then it is the "-Nth" step...
+  //: -1 is "first last" or last
+  //: -4 is "fourth last step"
+  //: To copy just the last 3 steps, do: `-steps -3:-1`
 
   // Break into tokens separated by ":"
 
@@ -482,31 +466,31 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
       for (auto &val : vals) {
         // Parse 'i'th field
         char tmp_str[128];
-        int  k = 0;
 
+        int k = 0;
         while (tokens[j] != '\0' && tokens[j] != ':') {
           tmp_str[k++] = tokens[j++];
         }
 
         tmp_str[k] = '\0';
         if (strlen(tmp_str) > 0) {
-          val = strtoul(tmp_str, nullptr, 0);
+          val = std::stoi(tmp_str);
         }
 
         if (tokens[j++] == '\0') {
           break; // Reached end of string
         }
       }
-      stepMin_      = abs(vals[0]);
-      stepMax_      = abs(vals[1]);
-      stepInterval_ = abs(vals[2]);
+      stepMin_      = vals[0];
+      stepMax_      = vals[1];
+      stepInterval_ = abs(vals[2]); // step is always positive...
     }
     else if (str_equal("LAST", tokens)) {
       stepMin_ = stepMax_ = -1;
     }
     else {
       // Does not contain a separator, min == max
-      stepMin_ = stepMax_ = strtol(tokens, nullptr, 0);
+      stepMin_ = stepMax_ = std::stoi(tokens);
     }
   }
 }

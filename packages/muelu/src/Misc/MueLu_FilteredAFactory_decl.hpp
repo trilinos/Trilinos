@@ -23,7 +23,7 @@
 namespace MueLu {
 
 /*!
-  @class FilteredAFactory class.
+  @class FilteredAFactory
   @brief Factory for building filtered matrices using filtered graphs.
 */
 

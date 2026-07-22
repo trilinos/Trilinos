@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -28,23 +28,23 @@ C=======================================================================
      $          5,2,4,  1,6,3,  2,7,4,  3,8,1,
      $          6,1,8,  7,2,5,  8,3,6,  5,4,7/
 
-      do 10 inod = 1, numnp
+      do inod = 1, numnp
          nodes(inod) = 0
- 10   continue
+      end do
 
-      do 30 ilnk = 1, nlink
-         do 20 iel = 1, numel
+      do ilnk = 1, nlink
+         do iel = 1, numel
             nodes(link(ilnk, iel)) = 1
- 20      continue
- 30   continue
+         end do
+      end do
 
-      do 60 iel = 1, numel
-         do 50 iseg=1,nlink
+      do iel = 1, numel
+         do iseg=1,nlink
             XI = x( link(ISEG,iel) )
             YI = y( link(ISEG,iel) )
             ZI = z( link(ISEG,iel) )
 
-            do 40 ino = 1, 3
+            do ino = 1, 3
                XJ = x( link(map(ino,iseg,1),iel) ) - xi
                YJ = y( link(map(ino,iseg,1),iel) ) - yi
                ZJ = z( link(map(ino,iseg,1),iel) ) - zi
@@ -65,11 +65,11 @@ C=======================================================================
      $              ay / rmag
                cosin(3, link(iseg, iel)) = cosin(3, link(iseg, iel)) +
      $              az / rmag
- 40         continue
- 50      continue
- 60   continue
+            end do
+         end do
+      end do
 
-      do 70 inod = 1, numnp
+      do inod = 1, numnp
          if (nodes(inod) .ne. 0) then
             if ( abs(cosin(1, inod)) .gt. tol .or.
      $           abs(cosin(2, inod)) .gt. tol .or.
@@ -78,7 +78,7 @@ C=======================================================================
                isbnd(inod) = .TRUE.
             end if
          end if
- 70   continue
+      end do
 
       RETURN
       END

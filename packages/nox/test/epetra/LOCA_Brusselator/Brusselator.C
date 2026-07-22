@@ -381,7 +381,7 @@ Epetra_CrsGraph& Brusselator::getGraph()
   return *AA;
 }
 
-Epetra_CrsGraph& Brusselator::generateGraph(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& Brusselator::generateGraph(Epetra_CrsGraph& AA_)
 {
 
   // Declare required variables
@@ -409,16 +409,16 @@ Epetra_CrsGraph& Brusselator::generateGraph(Epetra_CrsGraph& AA)
             for (int m=0; m<NumSpecies; m++) {
               column=OverlapMap->GID( NumSpecies*(ne+j) + m);
               //printf("\t\tWould like to insert -> (%d, %d)\n",row,column);
-              AA.InsertGlobalIndices(row, 1, &column);
+              AA_.InsertGlobalIndices(row, 1, &column);
             }
           }
         }
       }
     }
   }
-  AA.FillComplete();
+  AA_.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }
 

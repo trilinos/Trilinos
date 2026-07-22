@@ -46,7 +46,6 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 
   namespace percept {
-    using namespace std;
     using namespace percept;
 
 
@@ -233,7 +232,7 @@
         }
     }
 
-    void Refiner::getSideParentsToBeRemeshed(SetOfEntities& parents_to_be_remeshed, SetOfEntities& parent_side_elements, bool newVersion, SetOfEntities *avoid_sides)
+    void Refiner::getSideParentsToBeRemeshed(SetOfEntities& parents_to_be_remeshed, SetOfEntities& parent_side_elements, bool /*newVersion*/, SetOfEntities *avoid_sides)
     {
       if (getIgnoreSideSets()) return;
 
@@ -569,7 +568,7 @@
     }
 
     void Refiner::
-    remeshElements(SetOfEntities& rootElements, stk::mesh::EntityRank rank, int pool_size_hint, SetOfEntities *elemsToBeDeleted)
+    remeshElements(SetOfEntities& rootElements, stk::mesh::EntityRank rank, int /*pool_size_hint*/, SetOfEntities *elemsToBeDeleted)
     {
       DTIMER(remeshElements);
 
@@ -1086,7 +1085,7 @@
     }
 
     void Refiner::
-    get_deleted_sides(SetOfEntities& sides_to_delete, ElementUnrefineCollection& elements_to_unref, SetOfEntities& elements_to_be_remeshed)
+    get_deleted_sides(SetOfEntities& sides_to_delete, ElementUnrefineCollection& elements_to_unref, SetOfEntities& /*elements_to_be_remeshed*/)
     {
 #if 1
       SetOfEntities side_set(*m_eMesh.get_bulk_data());

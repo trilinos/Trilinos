@@ -1,12 +1,12 @@
 
-TRIBITS_ADD_EXECUTABLE(
+ROL_ADD_EXECUTABLE(
   ParameterCheck
   SOURCES test_01.cpp
   ADD_DIR_TO_NAME
   )
 
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(
+ROL_COPY_FILES_TO_BINARY_DIR(
   ParameterDataCopy
   SOURCE_FILES
     parameters.xml

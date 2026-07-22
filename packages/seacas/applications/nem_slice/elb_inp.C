@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,6 +50,49 @@ namespace {
     }
     return filename;
   }
+
+  int check_change_sets(int exoid, int &selected_change_set)
+  {
+    // First, see if the file contains change sets...
+    int num_change_sets = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
+
+    if (num_change_sets == 0) {
+      if (selected_change_set > 0) {
+        fmt::print(stderr,
+                   "ERROR: Reading from change set {} was specified, but the file contains no "
+                   "change sets.\n",
+                   selected_change_set);
+
+        Gen_Error(0, "fatal: no change sets in mesh database");
+        return 0;
+      }
+      return exoid;
+    }
+
+    // File contains change sets...
+    if (selected_change_set == 0) {
+      fmt::print(
+          stderr,
+          "\nWARNING: Exodus database contains {} change sets.\n         Setting to read from "
+          "first change set since `-change_set #` option not specified.\n\n",
+          num_change_sets);
+      selected_change_set = 1;
+      return exoid + selected_change_set;
+    }
+
+    if (selected_change_set > num_change_sets) {
+      fmt::print(stderr,
+                 "ERROR: Change set {} was specified for reading, but mesh only contains {} change "
+                 "sets.\n",
+                 selected_change_set, num_change_sets);
+      Gen_Error(0, "fatal: selected change set does not exist in mesh database");
+      return 0;
+    }
+    // Contains change sets and selected change set is in range...
+    fmt::print(stderr, "NOTE: Mesh data will be read from change set {} of {}\n",
+               selected_change_set, num_change_sets);
+    return exoid + selected_change_set;
+  }
 } // namespace
 /*****************************************************************************/
 /*****************************************************************************/
@@ -94,14 +137,14 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
   const char *weight_subopts[] = {"none",  "read",       "eb",       "var_index",
                                   "edges", "time_index", "var_name", nullptr};
 
-  const char *mach_subopts[] = {"mesh", "hcube", "hypercube", "cluster", nullptr};
+  const char *mach_subopts[] = {"invalid", "mesh", "hcube", "hypercube", "cluster", nullptr};
 
-  const char *lb_subopts[] = {"multikl",   "spectral", "inertial", "linear", "random",
-                              "scattered", "infile",   "kl",       "none",   "num_sects",
-                              "cnctd_dom", "outfile",  "zpinch",   "brick",  "rcb",
-                              "rib",       "hsfc",     "ignore_z", nullptr};
+  const char *lb_subopts[] = {"invalid",   "multikl",   "spectral", "inertial", "linear",
+                              "random",    "scattered", "infile",   "kl",       "none",
+                              "num_sects", "cnctd_dom", "outfile",  "zpinch",   "brick",
+                              "rcb",       "rib",       "hsfc",     "ignore_z", nullptr};
 
-  const char *solve_subopts[] = {"tolerance", "use_rqi", "vmax", nullptr};
+  const char *solve_subopts[] = {"invalid", "tolerance", "use_rqi", "vmax", nullptr};
 
   /*---------------------------Execution Begins--------------------------------*/
 
@@ -115,7 +158,7 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
   }
 
   /* Loop over each command line option */
-  while ((opt_let = getopt(argc, argv, "3264a:hm:l:nes:x:w:vyo:cg:fpS")) != EOF) {
+  while ((opt_let = getopt(argc, argv, "3264a:hm:l:nes:x:w:vyo:cg:fpSIC:")) != EOF) {
 
     /* case over the option letter */
     switch (opt_let) {
@@ -151,6 +194,19 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
       prob->skip_checks = 1;
       break;
 
+    case 'C':
+      /* Specify (1-based) index of change set in mesh file */
+      if (optarg == nullptr) {
+        prob->selected_change_set = 0;
+      }
+      else {
+        iret = sscanf(optarg, "%d", &prob->selected_change_set);
+        if (iret != 1) {
+          prob->selected_change_set = 0;
+        }
+      }
+      break;
+
     case 'f':
       /*
        * use the face method to calculate adjacencies for
@@ -159,7 +215,7 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
       prob->face_adj = 1;
       break;
 
-    case 'C':
+    case 'I':
       /*
        * detect vertical columns of elements and ensure that
        * elements of a columns are all in one partition
@@ -325,20 +381,20 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
 
     case 'n':
       /* Nodal decomposition */
-      if (prob->type == ELEMENTAL) {
+      if (prob->type == DecompType::ELEMENTAL) {
         Gen_Error(0, "FATAL: -e and -n are mutually exclusive");
         return 0;
       }
-      prob->type = NODAL;
+      prob->type = DecompType::NODAL;
       break;
 
     case 'e':
       /* Elemental decomposition */
-      if (prob->type == NODAL) {
+      if (prob->type == DecompType::NODAL) {
         Gen_Error(0, "FATAL: -e and -n are mutually exclusive\n");
         return 0;
       }
-      prob->type = ELEMENTAL;
+      prob->type = DecompType::ELEMENTAL;
       break;
 
     case 'm':
@@ -350,26 +406,26 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
       while (sub_opt != nullptr && *sub_opt != '\0') {
 
         /* Switch over the machine description */
-        switch (my_getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
-        case HCUBE:
-        case HYPERCUBE:
-          if (machine->type < 0) {
-            machine->type = HCUBE;
+        switch ((MachineType)my_getsubopt(&sub_opt, (char *const *)mach_subopts, &value)) {
+        case MachineType::HCUBE:
+        case MachineType::HYPERCUBE:
+          if (machine->type == MachineType::INVALID) {
+            machine->type = MachineType::HCUBE;
             max_dim       = 1;
           }
           FALL_THROUGH;
 
-        case MESH:
-          if (machine->type < 0) {
-            machine->type = MESH;
+        case MachineType::MESH:
+          if (machine->type == MachineType::INVALID) {
+            machine->type = MachineType::MESH;
             max_dim       = 3;
           }
 
           cptr = value; /* want to set this for both mesh and hcube */
           FALL_THROUGH;
 
-        case CLUSTER:
-          if (machine->type < 0) /* so, get the number of boxes */
+        case MachineType::CLUSTER:
+          if (machine->type == MachineType::INVALID) /* so, get the number of boxes */
           {
             if (value == nullptr || strlen(value) == 0) {
               Gen_Error(0, "FATAL: need to specify number of boxes");
@@ -379,11 +435,11 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
             /* now need to find what each box consists of */
             cptr = strpbrk(value, "mMhH");
             if (*cptr == 'm' || *cptr == 'M') {
-              machine->type = MESH;
+              machine->type = MachineType::MESH;
               max_dim       = 3;
             }
             else if (*cptr == 'h' || *cptr == 'H') {
-              machine->type = HCUBE;
+              machine->type = MachineType::HCUBE;
               max_dim       = 1;
             }
             else {
@@ -448,30 +504,30 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
         string_to_lower(sub_opt, '\0');
       }
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (my_getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
-        case MULTIKL: lb->type = MULTIKL; break;
+        switch ((Balance)my_getsubopt(&sub_opt, (char *const *)lb_subopts, &value)) {
+        case Balance::MULTIKL: lb->type = Balance::MULTIKL; break;
 
-        case SPECTRAL: lb->type = SPECTRAL; break;
+        case Balance::SPECTRAL: lb->type = Balance::SPECTRAL; break;
 
-        case INERTIAL: lb->type = INERTIAL; break;
+        case Balance::INERTIAL: lb->type = Balance::INERTIAL; break;
 
-        case ZPINCH: lb->type = ZPINCH; break;
+        case Balance::ZPINCH: lb->type = Balance::ZPINCH; break;
 
-        case BRICK: lb->type = BRICK; break;
+        case Balance::BRICK: lb->type = Balance::BRICK; break;
 
-        case ZOLTAN_RCB: lb->type = ZOLTAN_RCB; break;
+        case Balance::ZOLTAN_RCB: lb->type = Balance::ZOLTAN_RCB; break;
 
-        case ZOLTAN_RIB: lb->type = ZOLTAN_RIB; break;
+        case Balance::ZOLTAN_RIB: lb->type = Balance::ZOLTAN_RIB; break;
 
-        case ZOLTAN_HSFC: lb->type = ZOLTAN_HSFC; break;
+        case Balance::ZOLTAN_HSFC: lb->type = Balance::ZOLTAN_HSFC; break;
 
-        case LINEAR: lb->type = LINEAR; break;
+        case Balance::LINEAR: lb->type = Balance::LINEAR; break;
 
-        case RANDOM: lb->type = RANDOM; break;
+        case Balance::RANDOM: lb->type = Balance::RANDOM; break;
 
-        case SCATTERED: lb->type = SCATTERED; break;
+        case Balance::SCATTERED: lb->type = Balance::SCATTERED; break;
 
-        case INFILE:
+        case Balance::INFILE:
           if (value == nullptr) {
             Gen_Error(0, "FATAL: need to specify a value with file");
             return 0;
@@ -483,14 +539,14 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
             Gen_Error(0, "FATAL: invalid value associated with file");
             return 0;
           }
-          lb->type = INFILE;
+          lb->type = Balance::INFILE;
           break;
 
-        case KL_REFINE: lb->refine = KL_REFINE; break;
+        case Balance::KL_REFINE: lb->refine = Balance::KL_REFINE; break;
 
-        case NO_REFINE: lb->refine = NO_REFINE; break;
+        case Balance::NO_REFINE: lb->refine = Balance::NO_REFINE; break;
 
-        case NUM_SECTS:
+        case Balance::NUM_SECTS:
           if (value == nullptr) {
             Gen_Error(0, "FATAL: need to specify a value with num_sects");
             return 0;
@@ -502,11 +558,11 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
           }
           break;
 
-        case CNCT_DOM: lb->cnctd_dom = 1; break;
+        case Balance::CNCT_DOM: lb->cnctd_dom = 1; break;
 
-        case IGNORE_Z: lb->ignore_z = 1; break;
+        case Balance::IGNORE_Z: lb->ignore_z = 1; break;
 
-        case OUTFILE:
+        case Balance::OUTFILE:
           if (value == nullptr) {
             Gen_Error(0, "FATAL: need to specify a value with outfile");
             return 0;
@@ -539,8 +595,8 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
         string_to_lower(sub_opt, '\0');
       }
       while (sub_opt != nullptr && *sub_opt != '\0') {
-        switch (my_getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
-        case TOLER:
+        switch ((SolverOptions)my_getsubopt(&sub_opt, (char *const *)solve_subopts, &value)) {
+        case SolverOptions::TOLER:
           if (value == nullptr) {
             fmt::print(stderr, "FATAL: tolerance specification requires \
 value\n");
@@ -554,24 +610,26 @@ value\n");
 
           break;
 
-        case USE_RQI:
-          if (solver->rqi_flag == USE_RQI) {
-            solver->rqi_flag = -1;
+        case SolverOptions::USE_RQI:
+          if (solver->rqi_flag == SolverOptions::USE_RQI) {
+            solver->rqi_flag = SolverOptions::INVALID;
           }
           else {
-            solver->rqi_flag = USE_RQI;
+            solver->rqi_flag = SolverOptions::USE_RQI;
           }
 
           break;
 
-        case VMAX:
+        case SolverOptions::VMAX:
           if (value == nullptr) {
-            fmt::print(stderr, "FATAL: must specify a value with {}\n", solve_subopts[VMAX]);
+            fmt::print(stderr, "FATAL: must specify a value with {}\n",
+                       solve_subopts[(int)SolverOptions::VMAX]);
             return 0;
           }
           iret = sscanf(value, "%d", &(solver->vmax));
           if (iret != 1) {
-            fmt::print(stderr, "FATAL: invalid value read for {}\n", solve_subopts[VMAX]);
+            fmt::print(stderr, "FATAL: invalid value read for {}\n",
+                       solve_subopts[(int)SolverOptions::VMAX]);
             return 0;
           }
 
@@ -715,7 +773,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
       }
       else if (token_compare(cptr, "decomposition method")) {
         /* The method to use for decomposing the graph */
-        if (lb->type < 0 || lb->refine < 0 || lb->num_sects < 0) {
+        if (lb->type == Balance::INVALID || lb->refine == Balance::INVALID || lb->num_sects < 0) {
 
           /* Search to the first null character */
           cptr = strchr(cptr, '\0');
@@ -726,63 +784,63 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             strip_string(cptr, " \t\n");
             string_to_lower(cptr, '\0');
             if (strcmp(cptr, "multikl") == 0) {
-              if (lb->type < 0) {
-                lb->type = MULTIKL;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::MULTIKL;
               }
             }
             else if (strcmp(cptr, "spectral") == 0) {
-              if (lb->type < 0) {
-                lb->type = SPECTRAL;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::SPECTRAL;
               }
             }
             else if (strcmp(cptr, "scattered") == 0) {
-              if (lb->type < 0) {
-                lb->type = SCATTERED;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::SCATTERED;
               }
             }
             else if (strcmp(cptr, "linear") == 0) {
-              if (lb->type < 0) {
-                lb->type = LINEAR;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::LINEAR;
               }
             }
             else if (strcmp(cptr, "inertial") == 0) {
-              if (lb->type < 0) {
-                lb->type = INERTIAL;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::INERTIAL;
               }
             }
             else if (strcmp(cptr, "zpinch") == 0) {
-              if (lb->type < 0) {
-                lb->type = ZPINCH;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::ZPINCH;
               }
             }
             else if (strcmp(cptr, "brick") == 0) {
-              if (lb->type < 0) {
-                lb->type = BRICK;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::BRICK;
               }
             }
             else if (strcmp(cptr, "rcb") == 0) {
-              if (lb->type < 0) {
-                lb->type = ZOLTAN_RCB;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::ZOLTAN_RCB;
               }
             }
             else if (strcmp(cptr, "rib") == 0) {
-              if (lb->type < 0) {
-                lb->type = ZOLTAN_RIB;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::ZOLTAN_RIB;
               }
             }
             else if (strcmp(cptr, "hsfc") == 0) {
-              if (lb->type < 0) {
-                lb->type = ZOLTAN_HSFC;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::ZOLTAN_HSFC;
               }
             }
             else if (strcmp(cptr, "random") == 0) {
-              if (lb->type < 0) {
-                lb->type = RANDOM;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::RANDOM;
               }
             }
             else if (strstr(cptr, "infile")) {
-              if (lb->type < 0) {
-                lb->type = INFILE;
+              if (lb->type == Balance::INVALID) {
+                lb->type = Balance::INFILE;
                 cptr2    = strchr(cptr, '=');
                 if (cptr2 == nullptr) {
                   Gen_Error(0, "FATAL: need to specify a value with infile");
@@ -799,14 +857,12 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               }
             }
             else if (strcmp(cptr, "kl") == 0) {
-              if (lb->refine < 0) {
-                lb->refine = KL_REFINE;
+              if (lb->refine == Balance::INVALID) {
+                lb->refine = Balance::KL_REFINE;
               }
             }
             else if (strcmp(cptr, "none") == 0) {
-              if (lb->refine < 0) {
-                lb->refine = NS_NONE;
-              }
+              ; // Do nothing.
             }
             else if (strcmp(cptr, "ignore_z") == 0) {
               lb->ignore_z = 1;
@@ -892,11 +948,11 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             }
           }
           else if (strcmp(cptr, "use_rqi") == 0) {
-            if (solver->rqi_flag == USE_RQI) {
-              solver->rqi_flag = -1;
+            if (solver->rqi_flag == SolverOptions::USE_RQI) {
+              solver->rqi_flag = SolverOptions::INVALID;
             }
             else {
-              solver->rqi_flag = USE_RQI;
+              solver->rqi_flag = SolverOptions::USE_RQI;
             }
           }
           else if (strstr(cptr, "vmax")) {
@@ -924,26 +980,24 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
         }
       }
       else if (token_compare(cptr, "graph type")) {
-        if (problem->type < 0) {
-          cptr = strtok(nullptr, "\t=");
-          strip_string(cptr, " \t\n");
-          string_to_lower(cptr, '\0');
-          if (strcmp(cptr, "nodal") == 0) {
-            problem->type = NODAL;
-          }
-          else if (strcmp(cptr, "node") == 0) {
-            problem->type = NODAL;
-          }
-          else if (strcmp(cptr, "elemental") == 0) {
-            problem->type = ELEMENTAL;
-          }
-          else if (strcmp(cptr, "element") == 0) {
-            problem->type = ELEMENTAL;
-          }
-          else {
-            Gen_Error(0, "FATAL: unknown graph type specified");
-            return 0;
-          }
+        cptr = strtok(nullptr, "\t=");
+        strip_string(cptr, " \t\n");
+        string_to_lower(cptr, '\0');
+        if (strcmp(cptr, "nodal") == 0) {
+          problem->type = DecompType::NODAL;
+        }
+        else if (strcmp(cptr, "node") == 0) {
+          problem->type = DecompType::NODAL;
+        }
+        else if (strcmp(cptr, "elemental") == 0) {
+          problem->type = DecompType::ELEMENTAL;
+        }
+        else if (strcmp(cptr, "element") == 0) {
+          problem->type = DecompType::ELEMENTAL;
+        }
+        else {
+          Gen_Error(0, "FATAL: unknown graph type specified");
+          return 0;
         }
       }
       else if (token_compare(cptr, "machine description")) {
@@ -966,11 +1020,11 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
           /* Find out the machine type */
           strip_string(cptr, " \t\n");
           if (strcasecmp(cptr, "mesh") == 0) {
-            machine->type = MESH;
+            machine->type = MachineType::MESH;
             max_dim       = 3;
           }
           else if (strcasecmp(cptr, "hcube") == 0 || strcasecmp(cptr, "hypercube") == 0) {
-            machine->type = HCUBE;
+            machine->type = MachineType::HCUBE;
             max_dim       = 1;
           }
           else if (strcasecmp(cptr, "cluster") == 0) {
@@ -978,11 +1032,11 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
             cptr  = cptr2 + 1;
             cptr2 = strpbrk(cptr, "mMhH");
             if (*cptr2 == 'm' || *cptr2 == 'M') {
-              machine->type = MESH;
+              machine->type = MachineType::MESH;
               max_dim       = 3;
             }
             else if (*cptr2 == 'h' || *cptr2 == 'H') {
-              machine->type = HCUBE;
+              machine->type = MachineType::HCUBE;
               max_dim       = 1;
             }
             else {
@@ -1301,18 +1355,18 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
  *---------------------------------------------------------------------------*/
 template int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                              Machine_Description *machine, LB_Description<int> *lb,
-                             Problem_Description *prob, Solver_Description *solver,
+                             Problem_Description *problem, Solver_Description *solver,
                              Weight_Description *weight);
 
 template int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                              Machine_Description *machine, LB_Description<int64_t> *lb,
-                             Problem_Description *prob, Solver_Description *solver,
+                             Problem_Description *problem, Solver_Description *solver,
                              Weight_Description *weight);
 
 template <typename INT>
 int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                     Machine_Description *machine, LB_Description<INT> *lb,
-                    Problem_Description *prob, Solver_Description *solver,
+                    Problem_Description *problem, Solver_Description *solver,
                     Weight_Description *weight)
 {
   /* Check that an input ExodusII file name was specified */
@@ -1332,23 +1386,32 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     return 0;
   }
 
+  // Determine whether there are any change sets in file.
+  // If there are, check whether user specified a specific
+  // change set index and set to that one (if valid), or
+  // if not specified, set to the first.
+  exid_inp = check_change_sets(exid_inp, problem->selected_change_set);
+  if (exid_inp == 0) {
+    return 0;
+  }
+
   /* Get the integer size stored on the database */
-  prob->int64db = ex_int64_status(exid_inp) & EX_ALL_INT64_DB;
+  problem->int64db = ex_int64_status(exid_inp) & EX_ALL_INT64_DB;
 
   ex_close(exid_inp);
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                       Check the machine specification                     */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (machine->type != MESH && machine->type != HCUBE) {
+  if (machine->type != MachineType::MESH && machine->type != MachineType::HCUBE) {
     Gen_Error(0, "FATAL: machine type not properly set");
     return 0;
   }
-  if (machine->type == HCUBE && machine->num_dims != 1) {
+  if (machine->type == MachineType::HCUBE && machine->num_dims != 1) {
     Gen_Error(0, "FATAL: improper number of dimension for a hypercube, only"
                  " 1 allowed");
     return 0;
   }
-  if (machine->type == MESH && machine->num_dims > 3) {
+  if (machine->type == MachineType::MESH && machine->num_dims > 3) {
     Gen_Error(0, "FATAL: maximum of 3 dimensions for a mesh exceeded");
     return 0;
   }
@@ -1359,7 +1422,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   }
 
   /* Find out the number of processors */
-  if (machine->type == HCUBE) {
+  if (machine->type == MachineType::HCUBE) {
     machine->procs_per_box = 1 << machine->dim[0];
   }
   else {
@@ -1376,7 +1439,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
    * currently, do not allow groups and clusters since the
    * loops to chaco get a bit too confusing
    */
-  if (machine->num_boxes > 1 && prob->groups != nullptr) {
+  if (machine->num_boxes > 1 && problem->groups != nullptr) {
     Gen_Error(0, "FATAL: groups cannot be designated for a cluster machine");
     return 0;
   }
@@ -1384,65 +1447,67 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                      Check the problem specifications                     */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (prob->type != ELEMENTAL && prob->type != NODAL) {
+  if (problem->type != DecompType::ELEMENTAL && problem->type != DecompType::NODAL) {
     Gen_Error(0, "FATAL: unknown problem type specified");
     return 0;
   }
 
-  if (prob->skip_checks < 0) {
-    prob->skip_checks = 0;
+  if (problem->skip_checks < 0) {
+    problem->skip_checks = 0;
   }
 
-  if (prob->face_adj < 0) {
-    prob->face_adj = 0;
+  if (problem->face_adj < 0) {
+    problem->face_adj = 0;
   }
 
   /*
    * using face definition of adjacencies only makes sense
    * with an elemental decomposition
    */
-  if (prob->type != ELEMENTAL && prob->face_adj) {
+  if (problem->type != DecompType::ELEMENTAL && problem->face_adj) {
     Gen_Error(1, "WARNING: can only use face definition of");
     Gen_Error(1, "WARNING: adjacency with elemental decomposition");
     Gen_Error(1, "WARNING: face definition turned off");
-    prob->face_adj = 0;
+    problem->face_adj = 0;
   }
 
   /*
    * Detecting columns and fixing their partitioning only makes sense
    * with an elemental decomposition
    */
-  if (prob->type != ELEMENTAL && prob->fix_columns) {
+  if (problem->type != DecompType::ELEMENTAL && problem->fix_columns) {
     Gen_Error(1, "WARNING: can only use fix columns options");
     Gen_Error(1, "WARNING: with elemental decomposition");
     Gen_Error(1, "WARNING: fix columns option turned off");
-    prob->fix_columns = 0;
+    problem->fix_columns = 0;
   }
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                      Check the load balance parameters                    */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (lb->type != MULTIKL && lb->type != SPECTRAL && lb->type != INERTIAL && lb->type != LINEAR &&
-      lb->type != RANDOM && lb->type != SCATTERED && lb->type != INFILE && lb->type != ZPINCH &&
-      lb->type != BRICK && lb->type != ZOLTAN_RCB && lb->type != ZOLTAN_RIB &&
-      lb->type != ZOLTAN_HSFC) {
+  if (lb->type != Balance::MULTIKL && lb->type != Balance::SPECTRAL &&
+      lb->type != Balance::INERTIAL && lb->type != Balance::LINEAR && lb->type != Balance::RANDOM &&
+      lb->type != Balance::SCATTERED && lb->type != Balance::INFILE &&
+      lb->type != Balance::ZPINCH && lb->type != Balance::BRICK &&
+      lb->type != Balance::ZOLTAN_RCB && lb->type != Balance::ZOLTAN_RIB &&
+      lb->type != Balance::ZOLTAN_HSFC) {
     Gen_Error(0, "FATAL: unknown load balance type requested");
     return 0;
   }
 
-  if ((sizeof(INT) == 8) && (lb->type != LINEAR && lb->type != SCATTERED)) {
+  if ((sizeof(INT) == 8) && (lb->type != Balance::LINEAR && lb->type != Balance::SCATTERED)) {
     Gen_Error(1, "WARNING: This mesh is using 64-bit integers. The only supported");
     Gen_Error(1, "         load balance methods for 64-bit integers are 'linear' or 'scattered'");
     Gen_Error(1, "         The load balance method will be automatically changed to 'linear'.");
-    lb->type = LINEAR;
+    lb->type = Balance::LINEAR;
   }
 
-  if (lb->type == MULTIKL) {
-    lb->refine = KL_REFINE;
+  if (lb->type == Balance::MULTIKL) {
+    lb->refine = Balance::KL_REFINE;
   }
 
-  if (lb->refine != KL_REFINE && lb->refine != NO_REFINE) {
-    lb->refine = NO_REFINE; /* Default if not specified */
+  if (lb->refine != Balance::KL_REFINE && lb->refine != Balance::NO_REFINE) {
+    lb->refine = Balance::NO_REFINE; /* Default if not specified */
   }
 
   if (lb->num_sects <= 0) {
@@ -1452,7 +1517,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   if (lb->cnctd_dom < 0) {
     lb->cnctd_dom = 0;
   }
-  else if (!prob->face_adj) {
+  else if (!problem->face_adj) {
     Gen_Error(1, "WARNING: can only set connected domain");
     Gen_Error(1, "WARNING: when using face definition of adjacency");
     Gen_Error(1, "WARNING: connected domain turned off");
@@ -1463,13 +1528,13 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     lb->outfile = ELB_FALSE;
   }
 
-  if (lb->type == INFILE) {
+  if (lb->type == Balance::INFILE) {
     if (lb->outfile) {
       Gen_Error(0, "FATAL: both infile and outfile cannot be specified");
       return 0;
     }
 
-    if (lb->refine != NO_REFINE) {
+    if (lb->refine != Balance::NO_REFINE) {
       Gen_Error(1, "WARNING: no refinement can be specified with infile");
       return 0;
     }
@@ -1478,15 +1543,11 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                   Check the eigensolver parameters                        */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (lb->type == SPECTRAL || lb->type == MULTIKL) {
+  if (lb->type == Balance::SPECTRAL || lb->type == Balance::MULTIKL) {
     if (solver->tolerance < 0.0) {
       Gen_Error(1, "WARNING: using default value for eigensolver"
                    " tolerance");
       solver->tolerance = 1.0e-3;
-    }
-
-    if (solver->rqi_flag < 0) {
-      solver->rqi_flag = 0;
     }
 
     if (solver->vmax < 0) {
@@ -1506,14 +1567,15 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      */
     std::string ctemp2;
     switch (machine->type) {
-    case MESH: ctemp2 = fmt::format("-m{}-", machine->num_procs); break;
+    case MachineType::MESH: ctemp2 = fmt::format("-m{}-", machine->num_procs); break;
 
-    case HCUBE: ctemp2 = fmt::format("-h{}-", machine->num_procs); break;
+    case MachineType::HCUBE: ctemp2 = fmt::format("-h{}-", machine->num_procs); break;
+    default:; // do nothing
     }
 
     switch (lb->type) {
-    case MULTIKL:
-    case SPECTRAL:
+    case Balance::MULTIKL:
+    case Balance::SPECTRAL:
       if (lb->num_sects == 1) {
         ctemp2 += "b";
       }
@@ -1526,24 +1588,25 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
 
       break;
 
-    case INERTIAL: ctemp2 += "i"; break;
+    case Balance::INERTIAL: ctemp2 += "i"; break;
 
-    case ZPINCH: ctemp2 += "z"; break;
+    case Balance::ZPINCH: ctemp2 += "z"; break;
 
-    case BRICK: ctemp2 += "x"; break;
+    case Balance::BRICK: ctemp2 += "x"; break;
 
-    case ZOLTAN_RCB:
-    case ZOLTAN_RIB:
-    case ZOLTAN_HSFC: ctemp2 += "Z"; break;
+    case Balance::ZOLTAN_RCB:
+    case Balance::ZOLTAN_RIB:
+    case Balance::ZOLTAN_HSFC: ctemp2 += "Z"; break;
 
-    case SCATTERED: ctemp2 += "s"; break;
+    case Balance::SCATTERED: ctemp2 += "s"; break;
 
-    case RANDOM: ctemp2 += "r"; break;
+    case Balance::RANDOM: ctemp2 += "r"; break;
 
-    case LINEAR: ctemp2 += "l"; break;
+    case Balance::LINEAR: ctemp2 += "l"; break;
+    default:; // do nothing
     }
 
-    if (lb->refine == KL_REFINE) {
+    if (lb->refine == Balance::KL_REFINE) {
       ctemp2 += "KL";
     }
 
@@ -1557,7 +1620,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                 Check the weighting specifications                        */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (weight->exo_filename.length() > 0) {
+  if (!weight->exo_filename.empty()) {
     /* Check that a variable name and/or index was specified. */
     if (weight->exo_varname.empty() && weight->exo_vindx <= 0) {
       Gen_Error(0, "FATAL: must specify an index and/or a name for weighting"
@@ -1595,7 +1658,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     ex_entity_type type;
-    if (prob->type == NODAL) {
+    if (problem->type == DecompType::NODAL) {
       type = EX_NODAL;
     }
     else {
@@ -1798,7 +1861,8 @@ namespace {
                " -m <machine description>\n"
                "\t -l <load bal description> -s <eigen solver specs>\n"
                "\t -w <weighting options> -g <group list> -f]\n"
-               "\t [-a <ascii file>] exoII_file\n\n"
+               "\t [-a <ascii file>] [-c change_set_#] exoII_file\n\n"
+               " -C index\tSpecify which change set to read from (1-based index)\n"
                " -32\t\tforce use of 32-bit integers\n"
                " -64\t\tforce use of 64-bit integers\n"
                " -n\t\tperform a nodal based load balance\n"
@@ -1812,7 +1876,7 @@ namespace {
                " -f\t\tuse face definition of adjacency\n"
                " -p\t\tuse partial definition of adjacency: \n"
                "   \t\trequire only 3 matching quad face nodes\n"
-               " -C\tavoid splitting vertical element columns\n"
+               " -I\t\tavoid splitting vertical element columns\n"
                "   \t\tacross partitions\n"
                " -h\t\tusage information\n"
                " -a ascii file\tget info from ascii input file name\n",

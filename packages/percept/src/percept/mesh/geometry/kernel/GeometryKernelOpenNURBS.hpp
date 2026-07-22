@@ -23,15 +23,15 @@ public:
     virtual ~GeometryKernelOpenNURBS();
 
     virtual bool read_file(const std::string& file_name,
-                           std::vector<GeometryHandle>& geometry_entities);
-    virtual bool debug_dump_file(const std::string& file_name);
+                           std::vector<GeometryHandle>& geometry_entities) override;
+    virtual bool debug_dump_file(const std::string& file_name) override;
 
     virtual void snap_to(KernelPoint& point, GeometryHandle geom,
                          double *converged_tolerance = NULL,
                          double *uvw_computed = NULL,
-                         double *uvw_hint = NULL, void *extra_hint = NULL);
+                         double *uvw_hint = NULL, void *extra_hint = NULL) override;
 
-    virtual void normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal, void *extra_hint = NULL);
+    virtual void normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal, void *extra_hint = NULL) override;
 
   bool debug_is_curve(int geom) const;
 

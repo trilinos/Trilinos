@@ -74,7 +74,7 @@ namespace percept
       stkMeshCreateBulkAfterMetaCommit(comm);
     }
 
-    static std::vector<std::string> get_entity_rank_names(unsigned dim)
+    static std::vector<std::string> get_entity_rank_names(unsigned /*dim*/)
     {
       std::vector<std::string> names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE
@@ -89,8 +89,7 @@ namespace percept
       builder.set_spatial_dimension(3);
       builder.set_entity_rank_names(get_entity_rank_names(3u));
       m_bulkData = builder.create();
-      m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(), [](auto ptrWeWontDelete){});
-      m_metaData->use_simple_fields();
+      m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(), [](auto /*ptrWeWontDelete*/){});
 
       m_parts.resize(NUM_ELEM_TYPES);
 
@@ -132,7 +131,7 @@ namespace percept
         }
     }
 
-    void SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& comm)
+    void SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& /*comm*/)
     {
 
       //stk::mesh::BulkData & bulkData = modifiableBulkData();

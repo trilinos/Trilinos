@@ -55,68 +55,70 @@ class ExecSpaceWrapper {
 };
 
 #ifdef KOKKOS_ENABLE_CUDA
-namespace impl {
-struct CudaStreamDeleter {
-  void operator()(cudaStream_t* stream) const {
-    cudaStreamDestroy(*stream);
-    delete stream;
-  }
-};
-
-struct ExecSpaceAndCudaStreamDeleter {
-  ExecSpaceAndCudaStreamDeleter() {}
-  ExecSpaceAndCudaStreamDeleter(cudaStream_t* streamPtr_)
-    : streamPtr(streamPtr_)
-  {}
-  ExecSpaceAndCudaStreamDeleter(const ExecSpaceAndCudaStreamDeleter& deleter)
-  {
-    streamPtr = deleter.streamPtr;
-  }
-
-  void operator()(stk::ngp::ExecSpace* e) const {
-    delete e;
-    cudaStreamDestroy(*streamPtr);
-    delete streamPtr;
-  }
-
-  cudaStream_t* streamPtr;
-};
-}
-
 template<>
 class ExecSpaceWrapper<Kokkos::Cuda> {
  public:
   using ExecSpaceType = Kokkos::Cuda;
 
-  ExecSpaceWrapper()
-   : stream(new cudaStream_t) {
-    cudaStreamCreate(stream);
-    space = std::shared_ptr<ExecSpaceType>(new ExecSpaceType(*stream), impl::ExecSpaceAndCudaStreamDeleter(stream));
+  ExecSpaceWrapper() {
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
+    space = ExecSpaceType(stream, Kokkos::Impl::ManageStream::yes);
   }
 
-  operator const ExecSpaceType&() { return *space; }
-  const char* name() const { return space->name(); }
-  void fence() const { space->fence(); }
-  const ExecSpaceType& get_execution_space() const { return *space; }
+  operator const ExecSpaceType&() { return space; }
+  const char* name() const { return space.name(); }
+  void fence() const { space.fence(); }
+  const ExecSpaceType& get_execution_space() const { return space; }
 
  private:
-  std::shared_ptr<ExecSpaceType> space;
-  cudaStream_t* stream;
+  ExecSpaceType space;
+};
+
+#elif defined(KOKKOS_ENABLE_HIP)
+template<>
+class ExecSpaceWrapper<Kokkos::HIP> {
+ public:
+  using ExecSpaceType = Kokkos::HIP;
+
+  ExecSpaceWrapper() {
+    hipStream_t stream;
+    [[maybe_unused]] auto success = hipStreamCreate(&stream);
+    space = ExecSpaceType(stream, Kokkos::Impl::ManageStream::yes);
+  }
+
+  operator const ExecSpaceType&() { return space; }
+  const char* name() const { return space.name(); }
+  void fence() const { space.fence(); }
+  const ExecSpaceType& get_execution_space() const { return space; }
+
+ private:
+  ExecSpaceType space;
 };
 #endif
 
 inline ExecSpaceWrapper<> get_execution_space_with_stream()
 {
-  bool launchBlockingIsOn = get_env_var_as_bool("CUDA_LAUNCH_BLOCKING", false);
+  std::string launchBlockingEnvVar;
+  bool launchBlockingIsOn = false;
   static bool printedOnce = false;
 
-  if(launchBlockingIsOn && !printedOnce) {
-    sierra::Env::outputP0() << "stk::mesh::get_execution_space_with_stream: CUDA_LAUNCH_BLOCKING is ON. Asynchronous operations will block." << std::endl;
+#ifdef KOKKOS_ENABLE_CUDA
+  launchBlockingEnvVar = "CUDA_LAUNCH_BLOCKING";
+  launchBlockingIsOn = get_env_var_as_bool(launchBlockingEnvVar, false);
+#elif defined(KOKKOS_ENABLE_HIP)
+  launchBlockingEnvVar = "HIP_LAUNCH_BLOCKING";
+  launchBlockingIsOn = get_env_var_as_bool(launchBlockingEnvVar, false);
+#endif
+
+  if (launchBlockingIsOn && !printedOnce) {
+    sierra::Env::outputP0()
+      << "stk::mesh::get_execution_space_with_stream: " << launchBlockingEnvVar
+      << " is ON. Asynchronous operations will block." << std::endl;
     printedOnce = true;
   }
 
-  auto execSpace = ExecSpaceWrapper<>();
-  return execSpace;
+  return ExecSpaceWrapper<>();
 }
 
 }

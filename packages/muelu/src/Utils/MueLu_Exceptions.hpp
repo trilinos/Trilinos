@@ -21,6 +21,7 @@ namespace Exceptions {
 class BadCast : public Teuchos::ExceptionBase {
  public:
   BadCast(const std::string& what_arg);
+  ~BadCast();
 };
 
 //! Exception throws when you call an unimplemented method of MueLu
@@ -28,36 +29,42 @@ class BadCast : public Teuchos::ExceptionBase {
 class NotImplemented : public Teuchos::ExceptionBase {
  public:
   NotImplemented(const std::string& what_arg);
+  ~NotImplemented();
 };
 
 //! Exception throws to report errors in the internal logical of the program.
 class RuntimeError : public Teuchos::ExceptionBase {
  public:
   RuntimeError(const std::string& what_arg);
+  ~RuntimeError();
 };
 
 //! Exception throws to report overflows.
 class Overflow : public Teuchos::ExceptionBase {
  public:
   Overflow(const std::string& what_arg);
+  ~Overflow();
 };
 
 //! Exception throws to report incompatible objects (like maps).
 class Incompatible : public Teuchos::ExceptionBase {
  public:
   Incompatible(const std::string& what_arg);
+  ~Incompatible();
 };
 
 //! Exception throws to report data dependency problems between factories.
 class DependencyError : public Teuchos::ExceptionBase {
  public:
   DependencyError(const std::string& what_arg);
+  ~DependencyError();
 };
 
 //! Exception throws to report invalid user entry
 class InvalidArgument : public Teuchos::ExceptionBase {
  public:
   InvalidArgument(const std::string& what_arg);
+  ~InvalidArgument();
 };
 
 }  // namespace Exceptions

@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_SET_IDENTITY_DECL_HPP__
-#define __KOKKOSBATCHED_SET_IDENTITY_DECL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_SET_IDENTITY_DECL_HPP
+#define KOKKOSBATCHED_SET_IDENTITY_DECL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -39,8 +26,7 @@ struct SerialSetIdentity {
 template <typename MemberType>
 struct TeamSetIdentity {
   template <typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const AViewType &A);
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A);
 };
 
 ///
@@ -49,8 +35,7 @@ struct TeamSetIdentity {
 template <typename MemberType, typename ArgMode>
 struct SetIdentity {
   template <typename AViewType>
-  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member,
-                                                const AViewType &A) {
+  KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A) {
     int r_val = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
       r_val = SerialSetIdentity::invoke(A);

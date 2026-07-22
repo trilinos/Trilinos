@@ -1,3 +1,4 @@
+#include <stk_util/stk_config.h>
 #include "stk_middle_mesh/create_mesh.hpp"
 #include "stk_middle_mesh/incremental_mesh_boundary_snapper.hpp"
 #include "stk_middle_mesh/mesh_io.hpp"
@@ -10,7 +11,7 @@
 #include <cmath>
 
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
 #include "stk_middle_mesh_util/create_stk_mesh.hpp"
 #include "stk_middle_mesh_util/exodus_writer.hpp"
 
@@ -681,7 +682,7 @@ TEST(Interface, EllipsoidNewTri)
   }
 }
 
-#ifdef STK_BUILT_IN_SIERRA
+#ifdef STK_BUILT_FOR_SIERRA
 
 TEST(Interface, EllipsoidFromCADNewQuad)
 {

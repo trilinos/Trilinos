@@ -72,7 +72,7 @@ class CallbackChecker
 namespace {
   MPI_Request req;
   bool is_complete = false;
-  int comm_destructor_callback(MPI_Comm, int keyval, void* attribute_val, void* extra_state)
+  int comm_destructor_callback(MPI_Comm, int, void*, void*)
   {
     MPI_Wait(&req, MPI_STATUS_IGNORE);
     is_complete = true;

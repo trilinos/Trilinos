@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 // Note: Luc Berger-Vergiat 10/25/21
 //       Only include this test if compiling
 //       the cuda sparse tests and cuSPARSE
@@ -35,8 +22,8 @@ void test_rocsparse_version() {
   rocsparse_get_version(handle, &ver);
   rocsparse_get_git_rev(handle, rev);
 
-  std::cout << "rocSPARSE version: " << ver / 100000 << "." << ver / 100 % 1000
-            << "." << ver % 100 << "-" << rev << std::endl;
+  std::cout << "rocSPARSE version: " << ver / 100000 << "." << ver / 100 % 1000 << "." << ver % 100 << "-" << rev
+            << std::endl;
 
   rocsparse_destroy_handle(handle);
 }
@@ -47,11 +34,11 @@ void test_rocsparse_safe_call() {
   bool caught_exception = false;
 
   rocsparse_status myStatus = rocsparse_status_success;
-  KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(myStatus);
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(myStatus);
 
   try {
     myStatus = rocsparse_status_internal_error;
-    KOKKOS_ROCSPARSE_SAFE_CALL_IMPL(myStatus);
+    KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(myStatus);
   } catch (std::runtime_error& e) {
     caught_exception = true;
   }
@@ -64,8 +51,7 @@ void test_rocsparse_safe_call() {
 // fails it throws an error with the
 // KOKKOS_ROCBLAS_SAFE_CALL_IMPL macro
 void test_rocsparse_singleton() {
-  KokkosKernels::Impl::RocsparseSingleton& s =
-      KokkosKernels::Impl::RocsparseSingleton::singleton();
+  KokkosKernels::Impl::RocsparseSingleton& s = KokkosKernels::Impl::RocsparseSingleton::singleton();
   (void)s;
 }
 

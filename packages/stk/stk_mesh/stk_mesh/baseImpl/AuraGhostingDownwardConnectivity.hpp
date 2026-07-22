@@ -47,7 +47,7 @@ class AuraGhostingDownwardConnectivity : public AuraGhosting
 public:
     AuraGhostingDownwardConnectivity();
 
-    virtual void generate_aura(BulkData& bulkData);
+    virtual void generate_aura(BulkData& bulkData) override;
 
     virtual ~AuraGhostingDownwardConnectivity();
 };

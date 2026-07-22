@@ -12,17 +12,18 @@ smoother ->
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+project auxiliary matrices -> 
+ [empty list]
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -47,17 +48,18 @@ smoother ->
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical": threshold = 0, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
+project auxiliary matrices -> 
+ [empty list]
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
+Build (MueLu::AmalgamationFactory)
+[empty list]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -85,10 +87,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) pre  : "Ifpack2::Chebyshev": {Initialized: true, Computed: true, "Ifpack2::Details::Chebyshev":{degree: 1, lambdaMax = <ignored>, alpha: 20, lambdaMin = <ignored>, boost factor: 1.1, algorithm: first}, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 Smoother (level 0) post : "Ifpack2::ILUT": {Initialized: true, Computed: true, Level-of-fill: 1, absolute threshold: 0, relative threshold: 1, relaxation value: 0, Global matrix dimensions: [9999, 9999], Global nnz: 29995}

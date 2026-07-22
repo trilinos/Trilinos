@@ -37,10 +37,13 @@
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_Quality.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_Unit_DecompositionFixture.hpp>
 #include <Akri_MeshSpecs.hpp>
+#include <Akri_OutputUtils.hpp>
+#include <Akri_RefinementManager.hpp>
+#include <Akri_UnitTestUtils.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 
 namespace krino
 {
@@ -49,6 +52,7 @@ class LevelSet;
 
 namespace
 {
+
 template <class DECOMP_FIXTURE>
 void build_one_tet4_mesh(DECOMP_FIXTURE & fixture,
     stk::mesh::Part & elem_part,
@@ -256,7 +260,6 @@ public:
         1u,
         fixture.meta_data().universal_part());
     cdfemSupport.set_coords_field(coord_field);
-    cdfemSupport.add_edge_interpolation_field(coord_field);
     cdfemSupport.register_parent_node_ids_field();
 
     cdfemSupport.set_prolongation_model(INTERPOLATION);
@@ -318,37 +321,8 @@ public:
 
   void decompose_mesh()
   {
-    NodeToCapturedDomainsMap nodesToSnappedDomains;
     std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(fixture.meta_data().spatial_dimension(), krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), levelset_fields());
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-    {
-      const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
-      nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
-          krino_mesh->get_active_part(),
-          cdfemSupport.get_snap_fields(),
-          *interfaceGeometry,
-          cdfemSupport.get_global_ids_are_parallel_consistent(),
-          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
-          minIntPtWeightForEstimatingCutQuality,
-          cdfemSupport.get_max_edge_snap());
-    }
-    interfaceGeometry->prepare_to_decompose_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
-
-    krino_mesh->generate_nonconformal_elements();
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() ==
-        SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-      krino_mesh->snap_nearby_intersections_to_nodes(*interfaceGeometry, nodesToSnappedDomains);
-    krino_mesh->set_phase_of_uncut_elements(*interfaceGeometry);
-    krino_mesh->triangulate(*interfaceGeometry);
-    krino_mesh->decompose(*interfaceGeometry);
-    krino_mesh->stash_field_data(-1);
-    krino_mesh->modify_mesh();
-    krino_mesh->prolongation();
-
-    if (krinolog.shouldPrint(LOG_DEBUG))
-    {
-      krino_mesh->debug_output();
-    }
+    krino_mesh->decompose_mesh(*interfaceGeometry, -1);
   }
 
   void debug_output() { krino_mesh->debug_output(); }
@@ -391,7 +365,7 @@ public:
     stk::mesh::BulkData & mesh = fixture.bulk_data();
     stk::mesh::MetaData & meta = fixture.meta_data();
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
-    RefinementInterface * refinement = nullptr;
+    RefinementManager * refinement = nullptr;
 
     if (parallel_size != 2) return;
 
@@ -916,8 +890,6 @@ TEST_F(CDMeshTestsTwoRightTris3LSPerPhase, Two_Tri3_Check_Compatibility_When_Sna
   //write_mesh("Two_Tri3_Check_Compatibility_When_Snapping_LSPerPhase.e");
 }
 
-
-
 class TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRegularTetsSharingNodeAtOrigin, LSPerInterfacePolicy, 1>
 {
 public:
@@ -941,7 +913,7 @@ TEST_F(TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture, onlyCut
   attempt_decompose_mesh();
 
   const ScaledJacobianQualityMetric qualityMetric;
-  const double qualityAfterCut = compute_mesh_quality(mMesh, get_aux_meta().active_part(), qualityMetric);
+  const double qualityAfterCut = compute_mesh_quality(mMesh, get_aux_meta().active_part(), get_coordinates_field(), qualityMetric);
   EXPECT_LT(0.07, qualityAfterCut);
 
   //write_mesh("test.e");
@@ -950,8 +922,6 @@ TEST_F(TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture, onlyCut
 class TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRightTets, LSPerInterfacePolicy, 1>
 {
 public:
-TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture() {}
-
 void build_mesh_with_optional_sideset(const bool addSideset)
 {
   const std::array<unsigned, 3> side1Nodes{{0,2,4}};
@@ -978,7 +948,8 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Write_Results_No_
 
   build_mesh_with_optional_sideset(false);
 
-  write_mesh("Write_Results_No_Side.e");
+  if (krino::is_parallel_io_enabled() || stk::parallel_machine_size(mComm) == 1)
+    write_mesh("Write_Results_No_Side.e");
 }
 
 TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Write_Results_With_Side)
@@ -987,16 +958,17 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Write_Results_Wit
 
   build_mesh_with_optional_sideset(true);
 
-  write_mesh("Write_Results_With_Side.e");
+  if (krino::is_parallel_io_enabled() || stk::parallel_machine_size(mComm) == 1)
+    write_mesh("Write_Results_With_Side.e");
 }
 
 namespace
 {
 void randomize_ls_field(const stk::mesh::BulkData & mesh,
     const FieldRef & field,
-    std::mt19937 & mt,
-    std::uniform_real_distribution<double> & dist)
+    std::mt19937 & mt)
 {
+  std::uniform_real_distribution<double> dist(-1., 1.);
   auto & node_buckets = mesh.buckets(stk::topology::NODE_RANK);
   for (auto && b_ptr : node_buckets)
   {
@@ -1007,6 +979,20 @@ void randomize_ls_field(const stk::mesh::BulkData & mesh,
     }
   }
 }
+
+void randomize_levelset_fields_and_parallel_sync_fields(const stk::mesh::BulkData & mesh, const FieldRef coordField, const std::vector<LS_Field> & lsFields, std::mt19937 & mt)
+{
+  std::vector<const stk::mesh::FieldBase *> syncFields = {&coordField.field()};
+  for (auto && ls_field : lsFields)
+    syncFields.push_back(&ls_field.isovar.field());
+
+  for (auto & lsField : lsFields)
+  {
+    randomize_ls_field(mesh, lsField.isovar, mt);
+  }
+  stk::mesh::communicate_field_data(mesh, syncFields);
+}
+
 void set_ls_field_on_part(const stk::mesh::BulkData & mesh,
     const stk::mesh::Part & part,
     const FieldRef & ls_field,
@@ -1025,6 +1011,113 @@ void set_ls_field_on_part(const stk::mesh::BulkData & mesh,
 
 } // namespace
 
+class UMRRegularTriOn1Or2Procs3LSPerPhase : public DecompositionFixture<UMRRegularTri, LSPerPhasePolicy, 3>
+{
+public:
+void build_mesh_and_setup_ls_fields()
+{
+  const SideIdAndTriSideNodes sideset1{1, { {{0,3}}, {{3,1}} }};
+  const SideIdAndTriSideNodes sideset2{2, { {{1,4}}, {{4,2}} }};
+  const SideIdAndTriSideNodes sideset3{3, { {{2,5}}, {{5,0}} }};
+  const std::vector<SideIdAndTriSideNodes> sidesets{ sideset1, sideset2, sideset3 };
+  mBuilder.create_sideset_parts(sidesets);
+
+  if(stk::parallel_machine_size(mComm) == 1)
+    this->build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+  else if(stk::parallel_machine_size(mComm) == 2)
+    this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1}, {0,1,0,1});
+
+  mBuilder.add_sides_to_sidesets(sidesets);
+
+  setup_ls_fields();
+}
+};
+
+TEST_F(UMRRegularTriOn1Or2Procs3LSPerPhase, Random_Decompositions)
+{
+  if(stk::parallel_machine_size(mComm) > 2) return;
+
+  build_mesh_and_setup_ls_fields();
+
+  cdfem_support().set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfem_support().register_cdfem_snap_displacements_field();
+  cdfem_support().finalize_fields();
+
+  std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
+  {
+    if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
+
+    randomize_levelset_fields_and_parallel_sync_fields(mMesh, get_coordinates_field(), levelset_fields(), mt);
+    stk::mesh::field_copy(levelset_fields()[0].isovar.field(), levelset_fields()[1].isovar.field());
+    stk::mesh::field_scale(-1., levelset_fields()[1].isovar.field());
+    stk::mesh::field_fill(0., levelset_fields()[2].isovar.field());
+
+    attempt_decompose_mesh();
+    check_mesh_consistency();
+    check_nonfatal_error("Random_UMRRegularTri_iter", i);
+
+    CDMesh::reset_mesh_to_original_undecomposed_state(mMesh);
+    cdmesh = std::make_unique<CDMesh>(mMesh);
+  }
+}
+
+class UMRRegularTetOn1Or2Procs3LSPerPhase : public DecompositionFixture<UMRRegularTet, LSPerPhasePolicy, 3>
+{
+public:
+void build_mesh_and_setup_ls_fields()
+{
+  const SideIdAndTetSideNodes sideset1{1, { {{0,4,7}}, {{1,8,4}}, {{3,7,8}}, {{4,8,7}} }};
+  const SideIdAndTetSideNodes sideset2{2, { {{1,5,8}}, {{2,9,5}}, {{3,8,9}}, {{5,9,8}} }};
+  const SideIdAndTetSideNodes sideset3{3, { {{2,6,9}}, {{0,7,6}}, {{3,9,7}}, {{6,7,9}} }};
+  const SideIdAndTetSideNodes sideset4{4, { {{0,6,4}}, {{1,4,5}}, {{2,5,6}}, {{4,6,5}} }};
+  const std::vector<SideIdAndTetSideNodes> sidesets{ sideset1, sideset2, sideset3, sideset4 };
+  mBuilder.create_sideset_parts(sidesets);
+
+  if(stk::parallel_machine_size(mComm) == 1)
+    this->build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+  else if(stk::parallel_machine_size(mComm) == 2)
+    this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1,1,1,1,1}, {0,1,0,1,0,1,0,1});
+  else if(stk::parallel_machine_size(mComm) == 4)
+      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1,1,1,1,1}, {0,1,2,3,0,1,2,3});
+
+  mBuilder.add_sides_to_sidesets(sidesets);
+
+  setup_ls_fields();
+}
+};
+
+TEST_F(UMRRegularTetOn1Or2Procs3LSPerPhase, Random_Decompositions)
+{
+  if(stk::parallel_machine_size(mComm) > 4) return;
+
+  build_mesh_and_setup_ls_fields();
+
+  cdfem_support().set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
+  cdfem_support().register_cdfem_snap_displacements_field();
+  cdfem_support().finalize_fields();
+
+  std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
+
+  for (int i = 0; i < num_random_test_cases(200, 1000); ++i)
+  {
+    if (i % 100 == 0) std::cout << "Testing random configuration " << i << std::endl;
+
+    randomize_levelset_fields_and_parallel_sync_fields(mMesh, get_coordinates_field(), levelset_fields(), mt);
+    stk::mesh::field_copy(levelset_fields()[0].isovar.field(), levelset_fields()[1].isovar.field());
+    stk::mesh::field_scale(-1., levelset_fields()[1].isovar.field());
+    stk::mesh::field_fill(0., levelset_fields()[2].isovar.field());
+
+    attempt_decompose_mesh();
+    check_mesh_consistency();
+    check_nonfatal_error("Random_UMRRegularTet_iter", i);
+
+    CDMesh::reset_mesh_to_original_undecomposed_state(mMesh);
+    cdmesh = std::make_unique<CDMesh>(mMesh);
+  }
+}
+
 TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Random_TwoTet4_InternalSideset)
 {
   if(stk::parallel_machine_size(mComm) > 2) return;
@@ -1036,18 +1129,12 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Random_TwoTet4_In
   cdfem_support().set_simplex_generation_method(CUT_QUADS_BY_GLOBAL_IDENTIFIER);
 
   std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 5000;
-#else
-  const int num_cases = 1000;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
-    randomize_ls_field(mMesh, get_ls_field(), mt, dist);
-    stk::mesh::communicate_field_data(mMesh, {&get_ls_field().field(), &get_coordinates_field().field()});
+    randomize_levelset_fields_and_parallel_sync_fields(mMesh, get_coordinates_field(), levelset_fields(), mt);
 
     attempt_decompose_mesh();
 
@@ -1094,22 +1181,16 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
   const double expectedMinVol = std::pow(mesh_size * approxMinRelativeSize, 2.) / 2.;
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 5000;
-#else
-  const int num_cases = 1000;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    randomize_ls_field(mesh, get_ls_field(), mt, dist);
+    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
     set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), get_ls_field(), 1.);
-    stk::mesh::communicate_field_data(mesh, {&get_ls_field().field(), &coord_field.field()});
 
     try
     {
@@ -1191,11 +1272,6 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part(), &aux_meta.active_part()});
 
-  const auto & lsFields = levelset_fields();
-  std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for (auto && lsField : lsFields)
-    sync_fields.push_back(&lsField.isovar.field());
-
   double overallMinEdgeLength = std::numeric_limits<double>::max();
   double overallMaxEdgeLength = -std::numeric_limits<double>::max();
   double overallMinVolume = std::numeric_limits<double>::max();
@@ -1204,24 +1280,15 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
   const double expectedMinVol = std::pow(mesh_size * approxMinRelativeSize, 2.) / 2.;
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 5000;
-#else
-  const int num_cases = 1000;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    for (auto && lsField : lsFields)
-    {
-      randomize_ls_field(mesh, lsField.isovar, mt, dist);
-    }
-    stk::mesh::communicate_field_data(mesh, sync_fields);
+    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
 
     try
     {
@@ -1302,22 +1369,16 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
   const double expectedMinVol = std::pow(mesh_size * approxMinRelativeSize, 3.) / 6.;
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 1000;
-#else
-  const int num_cases = 250;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(250, 1000); ++i)
   {
     if (i % 250 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    randomize_ls_field(mesh, get_ls_field(), mt, dist);
+    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
     set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), get_ls_field(), 1.);
-    stk::mesh::communicate_field_data(mesh, {&get_ls_field().field(), &coord_field.field()});
 
     try
     {
@@ -1409,22 +1470,16 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
       std::pow(BCCsize * approxMinRelativeSize, 3.) / (6. * std::sqrt(2.));
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 1000;
-#else
-  const int num_cases = 250;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(250, 1000); ++i)
   {
     if (i % 250 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    randomize_ls_field(mesh, get_ls_field(), mt, dist);
+    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
     set_ls_field_on_part(mesh, aux_meta.exposed_boundary_part(), get_ls_field(), 1.);
-    stk::mesh::communicate_field_data(mesh, {&get_ls_field().field(), &coord_field.field()});
 
     try
     {
@@ -1557,30 +1612,16 @@ TEST_F(TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture, Random_TwoTri3_In
 
   cdfem_support().set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
 
-  const auto & lsFields = levelset_fields();
-  std::vector<const stk::mesh::FieldBase *> sync_fields = {&get_coordinates_field().field()};
-  for (auto && ls_field : lsFields)
-    sync_fields.push_back(&ls_field.isovar.field());
-
   std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 5000;
-#else
-  const int num_cases = 1000;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mMesh, 0); // restore original uncut mesh
     cdmesh = std::make_unique<CDMesh>(mMesh);   // new krino_mesh each time
 
-    for (auto && ls_field : lsFields)
-    {
-      randomize_ls_field(mMesh, ls_field.isovar, mt, dist);
-    }
-    stk::mesh::communicate_field_data(mMesh, sync_fields);
+    randomize_levelset_fields_and_parallel_sync_fields(mMesh, get_coordinates_field(), levelset_fields(), mt);
 
     attempt_decompose_mesh();
 
@@ -1626,30 +1667,16 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const auto & ls_fields = levelset_fields();
-  std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for (auto && ls_field : ls_fields)
-    sync_fields.push_back(&ls_field.isovar.field());
-
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 5000;
-#else
-  const int num_cases = 1000;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    for (auto && ls_field : ls_fields)
-    {
-      randomize_ls_field(mesh, ls_field.isovar, mt, dist);
-    }
-    stk::mesh::communicate_field_data(mesh, sync_fields);
+    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
 
     try
     {
@@ -1743,7 +1770,7 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
 
   // regression test
   const ScaledJacobianQualityMetric qualityMetric;
-  const double quality = compute_mesh_quality(mesh, krino_mesh->get_active_part(), qualityMetric);
+  const double quality = compute_mesh_quality(mesh, krino_mesh->get_active_part(), cdfemSupport.get_coords_field(), qualityMetric);
   const double goldQuality = 0.21;
   EXPECT_GT(quality, goldQuality);
 }
@@ -1784,27 +1811,13 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const auto & ls_fields = levelset_fields();
-  std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for (auto && ls_field : ls_fields)
-    sync_fields.push_back(&ls_field.isovar.field());
-
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 5000;
-#else
-  const int num_cases = 1000;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
-    for (auto && ls_field : ls_fields)
-    {
-      randomize_ls_field(mesh, ls_field.isovar, mt, dist);
-    }
-    stk::mesh::communicate_field_data(mesh, sync_fields);
+    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
 
     try
     {
@@ -1869,30 +1882,16 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
   stk::mesh::create_exposed_block_boundary_sides(
       mesh, meta.universal_part(), {&aux_meta.exposed_boundary_part()});
 
-  const auto & ls_fields = levelset_fields();
-  std::vector<const stk::mesh::FieldBase *> sync_fields = {&coord_field.field()};
-  for (auto && ls_field : ls_fields)
-    sync_fields.push_back(&ls_field.isovar.field());
-
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
-#ifdef NDEBUG
-  const int num_cases = 5000;
-#else
-  const int num_cases = 1000;
-#endif
-  for (int i = 0; i < num_cases; ++i)
+
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
     MeshClone::stash_or_restore_mesh(mesh, 0); // restore original uncut mesh
     commit();                                  // new krino_mesh each time
 
-    for (auto && ls_field : ls_fields)
-    {
-      randomize_ls_field(mesh, ls_field.isovar, mt, dist);
-    }
-    stk::mesh::communicate_field_data(mesh, sync_fields);
+    randomize_levelset_fields_and_parallel_sync_fields(mesh, coord_field, levelset_fields(), mt);
 
     try
     {
@@ -1965,7 +1964,6 @@ TEST_F(CDMeshTests3DLSPerPhase, RestoreAfterFailedStep)
     sync_fields.push_back(&ls_field.isovar.field());
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
-  std::uniform_real_distribution<double> dist(-1., 1.);
   for (int i = 0; i < 100; ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
@@ -1983,7 +1981,7 @@ TEST_F(CDMeshTests3DLSPerPhase, RestoreAfterFailedStep)
     {
       for (auto && ls_field : ls_fields)
       {
-        randomize_ls_field(mesh, ls_field.isovar, mt, dist);
+        randomize_ls_field(mesh, ls_field.isovar, mt);
       }
       stk::mesh::communicate_field_data(mesh, sync_fields);
     };

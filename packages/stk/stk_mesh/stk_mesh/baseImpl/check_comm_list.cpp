@@ -75,7 +75,8 @@ void push_back_key_procs_ghost_ids(EntityKey key, bool locally_owned,
                                    std::vector<KeyProcGhostId>& key_proc_ghostid_vec)
 {
     for(; !commInfo.empty(); ++commInfo) {
-        const bool expectToRecv = !locally_owned || (commInfo->ghost_id == 0);
+        const bool expectToRecv = (!locally_owned || (commInfo->ghost_id == 0))
+                                && commInfo->ghost_id < BulkData::SYMM_INFO;
         if (expectToRecv) {
             push_back_key_proc_ghost_id(key, commInfo->proc, commInfo->ghost_id, key_proc_ghostid_vec);
         }
@@ -155,21 +156,6 @@ void unpack_and_check_recvd_data(stk::CommSparse& comm, int local_proc, int num_
             }
         }
     }
-}
-
-bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
-                                      const EntityCommDatabase& commDB,
-                                      const EntityCommListInfoVector& comm_list)
-{
-    std::ostringstream os;
-    bool result = is_comm_list_globally_consistent(mesh, commDB, comm_list, os);
-
-    std::string str = os.str();
-    if (!str.empty()) {
-        std::cerr<<"P"<<mesh.parallel_rank()<<" check_comm_list_global_consistency:\n"<<str;
-    }
-
-    return result;
 }
 
 bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,

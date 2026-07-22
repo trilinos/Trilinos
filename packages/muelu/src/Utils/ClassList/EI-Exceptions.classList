@@ -2,7 +2,6 @@
 FakeSmootherPrototype
 GraphBase
 HierarchyFactory
-HierarchyManager
 PreDropFunctionBaseClass
 PRFactory
 Smoother

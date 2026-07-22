@@ -19,11 +19,9 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
 
-#include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -73,7 +71,7 @@ int main(int argc, char *argv[]) {
   std::string coarseSolver = "amesos2";
   clp.setOption("maxLevels", &maxLevels, "maximum number of levels allowed");
   clp.setOption("its", &its, "number of multigrid cycles");
-  clp.setOption("coarseSolver", &coarseSolver, "amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
+  clp.setOption("coarseSolver", &coarseSolver, "amesos2 or ifpack2");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
@@ -179,16 +177,9 @@ int main(int argc, char *argv[]) {
      ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
      ifpackList.set("chebyshev: zero starting solution", false);
      */
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-    ifpackList.set("relaxation: type", "symmetric Gauss-Seidel");
-    smooProto = rcp(new IfpackSmoother("point relaxation stand-alone", ifpackList));
-#endif
-  } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_IFPACK2)
+  if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
     ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
     smooProto = rcp(new Ifpack2Smoother("RELAXATION", ifpackList));
-#endif
   }
   if (smooProto == Teuchos::null) {
     throw(MueLu::Exceptions::RuntimeError("main: smoother error"));
@@ -211,26 +202,12 @@ int main(int argc, char *argv[]) {
   // FIXME we should be able to just call smoother->SetNIts(50) ... but right now an exception gets thrown
 
   RCP<SmootherPrototype> coarseProto;
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
-    if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS" << std::endl;
-    Teuchos::ParameterList amesosList;
-    amesosList.set("PrintTiming", true);
-    coarseProto = rcp(new AmesosSmoother("Amesos_Klu", amesosList));
-    //#elif
-#endif
-  } else if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
+  if (xpetraParameters.GetLib() == Xpetra::UseTpetra) {
     if (coarseSolver == "amesos2") {
-#if defined(HAVE_MUELU_AMESOS2)
       if (comm->getRank() == 0) std::cout << "CoarseGrid: AMESOS2" << std::endl;
       Teuchos::ParameterList paramList;  // unused
       coarseProto = rcp(new Amesos2Smoother("Superlu", paramList));
-#else
-      std::cout << "AMESOS2 not available (try --coarseSolver=ifpack2)" << std::endl;
-      return EXIT_FAILURE;
-#endif  // HAVE_MUELU_AMESOS2
     } else if (coarseSolver == "ifpack2") {
-#if defined(HAVE_MUELU_IFPACK2)
       if (comm->getRank() == 0) std::cout << "CoarseGrid: IFPACK2" << std::endl;
       Teuchos::ParameterList ifpack2List;
       ifpack2List.set("fact: ilut level-of-fill", 99);  // TODO ??
@@ -238,10 +215,6 @@ int main(int argc, char *argv[]) {
       ifpack2List.set("fact: absolute threshold", 0);
       ifpack2List.set("fact: relative threshold", 0);
       coarseProto = rcp(new Ifpack2Smoother("ILUT", ifpack2List));
-#else
-      std::cout << "IFPACK2 not available (try --coarseSolver=amesos2)" << std::endl;
-      return EXIT_FAILURE;
-#endif
     } else {
       std::cout << "Unknow coarse grid solver (try  --coarseSolver=ifpack2 or --coarseSolver=amesos2)" << std::endl;
       return EXIT_FAILURE;

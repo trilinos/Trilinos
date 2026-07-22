@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TSQR_IMPL_LAPACK_HPP
 #define TSQR_IMPL_LAPACK_HPP
 
@@ -17,10 +26,10 @@ namespace Impl {
 /// from host for every column of the matrix, especially not when
 /// cuSOLVER already has all the needed QR factorization and apply Q
 /// factor functions.
-template<class Scalar>
+template <class Scalar>
 class Lapack : public RawQR<Scalar> {
-public:
-  using value_type = Scalar;
+ public:
+  using value_type     = Scalar;
   using magnitude_type = decltype(std::abs(Scalar{}));
 
   // NOTE (mfh 22 Dec 2019) I would normally write "= default;" here,
@@ -30,21 +39,19 @@ public:
   // https://github.com/trilinos/Trilinos/pull/6488#issuecomment-568351758
   ~Lapack() override {}
 
-  int
-  compute_QR_lwork(const int m, const int n,
-                   value_type A[], const int lda) const override;
+  int compute_QR_lwork(const int m, const int n,
+                       value_type A[], const int lda) const override;
 
   void
   compute_QR(const int m, const int n, value_type A[],
              const int lda, value_type TAU[], value_type WORK[],
              const int lwork) const override;
 
-  int
-  apply_Q_factor_lwork(const char SIDE, const char TRANS,
-                       const int m, const int n, const int k,
-                       const value_type A[], const int lda,
-                       const value_type TAU[],
-                       value_type C[], const int ldc) const override;
+  int apply_Q_factor_lwork(const char SIDE, const char TRANS,
+                           const int m, const int n, const int k,
+                           const value_type A[], const int lda,
+                           const value_type TAU[],
+                           value_type C[], const int ldc) const override;
 
   void
   apply_Q_factor(const char SIDE, const char TRANS,
@@ -54,10 +61,9 @@ public:
                  value_type C[], const int ldc,
                  value_type WORK[], const int lwork) const override;
 
-  int
-  compute_explicit_Q_lwork(const int m, const int n, const int k,
-                           value_type A[], const int lda,
-                           const value_type TAU[]) const override;
+  int compute_explicit_Q_lwork(const int m, const int n, const int k,
+                               value_type A[], const int lda,
+                               const value_type TAU[]) const override;
 
   void
   compute_explicit_Q(const int m, const int n, const int k,
@@ -93,9 +99,9 @@ extern template class Lapack<double>;
 #ifdef HAVE_TPETRATSQR_COMPLEX
 extern template class Lapack<std::complex<float>>;
 extern template class Lapack<std::complex<double>>;
-#endif // HAVE_TPETRATSQR_COMPLEX
+#endif  // HAVE_TPETRATSQR_COMPLEX
 
-} // namespace Impl
-} // namespace TSQR
+}  // namespace Impl
+}  // namespace TSQR
 
-#endif // TSQR_IMPL_LAPACK_HPP
+#endif  // TSQR_IMPL_LAPACK_HPP

@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-/// \file Ifpack2_Details_LinearSolver_decl_hpp
+/// \file Ifpack2_Details_LinearSolver_decl.hpp
 /// \brief Declaration of Ifpack2::Details::LinearSolver, an
 ///   implementation detail of Ifpack2's LinearSolverFactory.
 
@@ -68,17 +68,17 @@ namespace Details {
 /// "CUSTOM", we assume that the Ifpack2::Preconditioner comes from
 /// the user (via e.g., AdditiveSchwarz::setInnerPreconditioner), and
 /// that Ifpack2::Factory might not know how to create it.
-template<class SC, class LO, class GO, class NT>
-class LinearSolver :
-    public Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
-                                           Tpetra::Operator<SC, LO, GO, NT>,
-                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>,
-    virtual public Teuchos::Describable
-{
-public:
+template <class SC, class LO, class GO, class NT>
+class LinearSolver : public Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
+                                                            Tpetra::Operator<SC, LO, GO, NT>,
+                                                            typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>,
+                     virtual public Teuchos::Describable {
+ public:
   typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
   typedef Tpetra::Operator<SC, LO, GO, NT> OP;
   typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+  typedef Tpetra::MultiVector<magnitude_type, LO, GO, NT> coord_type;
 
   /// \brief Constructor
   ///
@@ -91,51 +91,62 @@ public:
   ///   and that Ifpack2::Factory might not know how to create it.
   ///   Otherwise, the name needs to be that of a solver that
   ///   Ifpack2::Factory::create knows how to create.
-  LinearSolver (const Teuchos::RCP<prec_type>& solver, const std::string& solverName);
+  LinearSolver(const Teuchos::RCP<prec_type>& solver, const std::string& solverName);
 
   //! Destructor (virtual for memory safety).
-  virtual ~LinearSolver () {}
+  virtual ~LinearSolver() {}
 
   /// \brief Set the solver's matrix.
   ///
   /// \param A [in] Pointer to the matrix A in the linear system(s)
   ///   AX=B to solve.
-  void setMatrix (const Teuchos::RCP<const OP>& A);
+  void setMatrix(const Teuchos::RCP<const OP>& A);
+
+  /// \brief Set the matrix rows' coordinates.
+  ///
+  /// \param C [in] Pointer to the coordinates multivector.
+  void setCoord(const Teuchos::RCP<const coord_type>& C);
 
   //! Get the solver's matrix.
-  Teuchos::RCP<const OP> getMatrix () const;
+  Teuchos::RCP<const OP> getMatrix() const;
+
+  //! Get the coordinates associated with the solver's matrix rows.
+  Teuchos::RCP<const coord_type> getCoord() const;
 
   //! Solve the linear system AX=B for X.
-  void solve (MV& X, const MV& B);
+  void solve(MV& X, const MV& B);
 
   //! Set the solver's parameters.
-  void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params);
+  void setParameters(const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Precompute for matrix structure changes.
-  void symbolic ();
+  void symbolic();
 
   //! Precompute for matrix values' changes.
-  void numeric ();
+  void numeric();
 
   //! Implementation of Teuchos::Describable::description.
-  std::string description () const;
+  std::string description() const;
 
   //! Implementation of Teuchos::Describable::describe.
   void
-  describe (Teuchos::FancyOStream& out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
 
-private:
+ private:
   //! The Ifpack2 solver.
   Teuchos::RCP<prec_type> solver_;
   //! Name of the Ifpack2 solver to wrap.
   std::string solverName_;
   //! Matrix A in the linear system to solve.
   Teuchos::RCP<const OP> A_;
+  //! Coordinates C associated with rows of A
+  //! (only used for RCB distribution into streams in RILUK)
+  Teuchos::RCP<const coord_type> C_;
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP
+#endif  // IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP

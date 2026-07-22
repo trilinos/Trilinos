@@ -22,12 +22,15 @@ namespace Iocatalyst {
   public:
     inline static const std::string CATALYST_DATABASE_TYPE  = "catalyst";
     inline static const std::string CATALYST_DUMMY_DATABASE = "dummy.db";
+    inline static const std::string NODE_BLOCK_NAME         = "nodeblock";
 
     class IOSSparams
     {
     public:
-      IOSSparams(const std::string &fileName, const std::string &dbType, Ioss::PropertyManager dbProps = {})
-          : fileName(fileName), dbType(dbType), databaseIO(nullptr), isCatalyst(false), dbProps(dbProps)
+      IOSSparams(const std::string &fileName, const std::string &dbType,
+                 Ioss::PropertyManager dbProps = {})
+          : fileName(fileName), dbType(dbType), databaseIO(nullptr), isCatalyst(false),
+            dbProps(dbProps), nodeBlockName(NODE_BLOCK_NAME), writeConnectivityRaw(false)
       {
       }
       bool              isStructured() { return dbType == CGNS_DATABASE_TYPE; }
@@ -40,17 +43,19 @@ namespace Iocatalyst {
       std::unique_ptr<Ioss::Region> region;
       conduit_cpp::Node             conduitNode;
       Ioss::PropertyManager         dbProps;
+      std::string                   nodeBlockName;
+      bool                          writeConnectivityRaw;
 
     private:
       IOSSparams();
     };
 
-    void addBlockMesh(const BlockMesh &blockMesh);
-    void writeIOSSFile(IOSSparams &iop);
-    void writeCatalystIOSSFile(IOSSparams &iop);
-    Ioss::DatabaseIO* getCatalystDatabase(IOSSparams &iop);
-    
-    int  getNumLocalPointsInMeshSet();
+    void              addBlockMesh(const BlockMesh &blockMesh);
+    void              writeIOSSFile(IOSSparams &iop);
+    void              writeCatalystIOSSFile(IOSSparams &iop);
+    Ioss::DatabaseIO *getCatalystDatabase(IOSSparams &iop);
+
+    int getNumLocalPointsInMeshSet();
 
     std::string getStructuredBlockName(int index);
     std::string getStructuredNodeBlockName(int index);

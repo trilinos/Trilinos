@@ -9,7 +9,7 @@
 namespace
 {
 
-class ElemGraphDeleteElementsTester : public stk::unit_test_util::simple_fields::MeshFixture
+class ElemGraphDeleteElementsTester : public stk::unit_test_util::MeshFixture
 {
 protected:
   ElemGraphDeleteElementsTester() : elementGraph(nullptr) { }
@@ -59,7 +59,7 @@ protected:
       stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
       if(get_bulk().is_valid(elem) && get_bulk().bucket(elem).owned())
       {
-        elements_to_delete.push_back( {elem, elemId, get_bulk().bucket(elem).topology().is_shell()});
+        elements_to_delete.push_back( {elem, elemId, get_bulk().bucket(elem).topology()});
       }
     }
   }
@@ -97,7 +97,7 @@ protected:
     EXPECT_EQ(numActiveElements, counts[stk::topology::ELEM_RANK]);
   }
 
-  void expect_correct_number_of_connections_in_graph_after_deletes(stk::mesh::Selector locallyOwned,
+  void expect_correct_number_of_connections_in_graph_after_deletes(stk::mesh::Selector /*locallyOwned*/,
                                                                    size_t goldNumGlobalConnectionsAfterDeletes,
                                                                    stk::mesh::EntityVector &elems)
   {

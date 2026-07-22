@@ -105,12 +105,52 @@ void write_mesh_with_fields(const std::string& filename, stk::io::StkMeshIoBroke
     }
 }
 
+void write_mesh_with_specified_fields(const std::string& filename, stk::io::StkMeshIoBroker &outStkIo,
+		const std::vector<std::string>& fieldNames, int step, double time, stk::io::DatabasePurpose databasePurpose)
+{
+    size_t outputFileIndex = outStkIo.create_output_mesh(filename, databasePurpose);
+
+    if (step>0)
+    {
+        const stk::mesh::FieldVector fields = outStkIo.bulk_data().mesh_meta_data().get_fields();
+        for(stk::mesh::FieldBase* field : fields)
+        {
+        	std::string fieldName = field->name();
+        	if (std::find(fieldNames.begin(), fieldNames.end(), fieldName) == fieldNames.end()) {
+        	  continue;
+        	}
+
+            const Ioss::Field::RoleType* fieldRole = stk::io::get_field_role(*field);
+            if(fieldRole == nullptr || *fieldRole == Ioss::Field::TRANSIENT)
+                outStkIo.add_field(outputFileIndex, *field);
+        }
+    }
+
+    outStkIo.write_output_mesh(outputFileIndex);
+
+    if (step>0)
+    {
+        outStkIo.begin_output_step(outputFileIndex, time);
+        outStkIo.write_defined_output_fields(outputFileIndex);
+        outStkIo.end_output_step(outputFileIndex);
+    }
+}
+
 void write_mesh_with_fields(const std::string& filename, stk::mesh::BulkData &bulkData, int step, double time, stk::io::DatabasePurpose databasePurpose)
 {
     stk::io::StkMeshIoBroker outStkIo;
     outStkIo.set_bulk_data(bulkData);
     write_mesh_with_fields(filename, outStkIo, step, time, databasePurpose);
 }
+
+void write_mesh_with_specified_fields(const std::string& filename, stk::mesh::BulkData &bulkData,
+							const std::vector<std::string>& fieldNames, int step, double time, stk::io::DatabasePurpose databasePurpose)
+{
+    stk::io::StkMeshIoBroker outStkIo;
+    outStkIo.set_bulk_data(bulkData);
+    write_mesh_with_specified_fields(filename, outStkIo, fieldNames, step, time, databasePurpose);
+}
+
 
 void set_64bit_properties(stk::io::StkMeshIoBroker &outStkIo)
 {

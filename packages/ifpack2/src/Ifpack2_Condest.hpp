@@ -56,14 +56,13 @@ namespace Ifpack2 {
 /// where \f$y = A*[1, \dots, 1]^T\f$.  That is, if the input matrix
 /// is \f$A\f$, we multiply it on the right by a vector of ones, and
 /// return the infinity norm (maximum absolute value) of the result.
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Condest (const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>& TIFP,
-         const Ifpack2::CondestType CT,
-         const int MaxIters = 1550,
-         const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = Teuchos::as<Scalar> (1e-9),
-         const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& matrix_in = Teuchos::null)
-{
+Condest(const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>& TIFP,
+        const Ifpack2::CondestType CT,
+        const int MaxIters                                                                                 = 1550,
+        const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol                                   = Teuchos::as<Scalar>(1e-9),
+        const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& matrix_in = Teuchos::null) {
   using Teuchos::Ptr;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType MT;
@@ -71,47 +70,46 @@ Condest (const Ifpack2::Preconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
 
-  MT condNumEst = -STS::magnitude( STS::one() );
+  MT condNumEst = -STS::magnitude(STS::one());
 
   // Users may either provide a matrix for which to estimate the
   // condition number, or use the Preconditioner's built-in matrix.
   Ptr<const row_matrix_type> matrix = matrix_in;
   if (matrix_in == Teuchos::null) {
-    matrix = TIFP.getMatrix ().ptr ();
+    matrix = TIFP.getMatrix().ptr();
     TEUCHOS_TEST_FOR_EXCEPTION(
-      matrix == Teuchos::null,
-      std::logic_error,
-      "Ifpack2::Condest: Both the input matrix (matrix_in) and the Ifpack2 "
-      "preconditioner's matrix are null, so we have no matrix with which to "
-      "compute a condition number estimate.  This probably indicates a bug "
-      "in Ifpack2, since no Ifpack2::Preconditioner subclass should accept a"
-      "null matrix.");
+        matrix == Teuchos::null,
+        std::logic_error,
+        "Ifpack2::Condest: Both the input matrix (matrix_in) and the Ifpack2 "
+        "preconditioner's matrix are null, so we have no matrix with which to "
+        "compute a condition number estimate.  This probably indicates a bug "
+        "in Ifpack2, since no Ifpack2::Preconditioner subclass should accept a"
+        "null matrix.");
   }
 
   if (CT == Ifpack2::Cheap) {
-    vec_type ones (TIFP.getDomainMap ()); // Vector of ones
-    ones.putScalar (STS::one ());
-    vec_type onesResult (TIFP.getRangeMap ()); // A*ones
-    onesResult.putScalar (STS::zero ());
-    TIFP.apply (ones, onesResult);
-    condNumEst = onesResult.normInf (); // max (abs (A*ones))
+    vec_type ones(TIFP.getDomainMap());  // Vector of ones
+    ones.putScalar(STS::one());
+    vec_type onesResult(TIFP.getRangeMap());  // A*ones
+    onesResult.putScalar(STS::zero());
+    TIFP.apply(ones, onesResult);
+    condNumEst = onesResult.normInf();  // max (abs (A*ones))
     TEUCHOS_TEST_FOR_EXCEPTION(
-      STM::isnaninf (condNumEst),
-      std::runtime_error,
-      "Ifpack2::Condest: $\\|A*[1, ..., 1]^T\\|_{\\infty}$ = " << condNumEst << " is NaN or Inf.");
+        STM::isnaninf(condNumEst),
+        std::runtime_error,
+        "Ifpack2::Condest: $\\|A*[1, ..., 1]^T\\|_{\\infty}$ = " << condNumEst << " is NaN or Inf.");
   } else if (CT == Ifpack2::CG) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Ifpack2::Condest: Condition number estimation using CG is not currently supported.");
+        true, std::logic_error,
+        "Ifpack2::Condest: Condition number estimation using CG is not currently supported.");
   } else if (CT == Ifpack2::GMRES) {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Ifpack2::Condest: Condition number estimation using GMRES is not currently supported.");
+        true, std::logic_error,
+        "Ifpack2::Condest: Condition number estimation using GMRES is not currently supported.");
   }
   return condNumEst;
 }
 
-}//namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_CONDEST_HPP
-
+#endif  // IFPACK2_CONDEST_HPP

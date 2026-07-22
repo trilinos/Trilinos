@@ -40,6 +40,5 @@ int main( int argc, char ** argv )
     startup.handle_exception("Unknown",is_parsing);
   }
 
-  // all done
   return 0;
 }

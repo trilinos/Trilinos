@@ -84,14 +84,10 @@ public:
     static ordinal_type
     getWorkSizePerPoint(ordinal_type order) {
       auto cardinality = CardinalityHDivTri(order);
-      switch (opType) {
-      case OPERATOR_GRAD:
-      case OPERATOR_DIV:
-      case OPERATOR_D1:
+      if constexpr ((opType == OPERATOR_GRAD) || (opType == OPERATOR_DIV) || (opType == OPERATOR_D1))
         return 5*cardinality;
-      default:
+      else
         return getDkCardinality<opType,2>()*cardinality;
-      }
     }
   };
 
@@ -138,26 +134,21 @@ public:
 
       typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
-      auto vcprop = Kokkos::common_view_alloc_prop(_work);
-      workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.extent(0));
+      workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
 
-      switch (opType) {
-      case OPERATOR_VALUE : {
+      if constexpr (opType == OPERATOR_VALUE) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      case OPERATOR_DIV: {
+      else if constexpr (opType == OPERATOR_DIV) {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange);
         Serial<opType>::getValues( output, input, work, _coeffs );
-        break;
       }
-      default: {
+      else {
         INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR: (Intrepid2::Basis_HDIV_TRI_In_FEM::Functor) operator is not supported");
 
-      }
       }
     }
   };
@@ -169,31 +160,30 @@ template<typename DeviceType = void,
     typename pointValueType = double>
 class Basis_HDIV_TRI_In_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
-    public:
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
+  public:
+    using BasisBase = Basis<DeviceType, outputValueType, pointValueType>;
+    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisBase::OrdinalTypeArray3DHost;
 
-  /** \brief  Constructor.
-   */
-  Basis_HDIV_TRI_In_FEM(const ordinal_type order,
+    /** \brief  Constructor.
+     */
+    Basis_HDIV_TRI_In_FEM(const ordinal_type order,
       const EPointType   pointType = POINTTYPE_EQUISPACED);
 
-  using HostBasis = Basis_HDIV_TRI_In_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
+    using HostBasis = Basis_HDIV_TRI_In_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
       
-  using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-  using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-  using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
-
-  typedef typename Basis<DeviceType,outputValueType,pointValueType>::scalarType  scalarType;
-
-  using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
+    using scalarType = typename BasisBase::scalarType;
+    using BasisBase::getValues;
 
   virtual
   void
-  getValues( /* */ OutputViewType outputValues,
-      const PointViewType  inputPoints,
-      const EOperator operatorType = OPERATOR_VALUE) const override {
+  getValues(       OutputViewType outputValues,
+             const PointViewType  inputPoints,
+             const EOperator operatorType = OPERATOR_VALUE) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HDIV_Args(outputValues,
         inputPoints,
@@ -209,9 +199,25 @@ class Basis_HDIV_TRI_In_FEM
         operatorType);
   }
 
-  virtual
-  void
-  getDofCoords( ScalarViewType dofCoords ) const override {
+    virtual void 
+    getScratchSpaceSize(      ordinal_type& perThreadSpaceSize,
+                        PointViewType inputPointsconst,
+                        const EOperator operatorType = OPERATOR_VALUE) const override;
+
+    KOKKOS_INLINE_FUNCTION
+    virtual void 
+    getValues(       
+          OutputViewType outputValues,
+      const PointViewType  inputPoints,
+      const EOperator operatorType,
+      const typename Kokkos::TeamPolicy<typename DeviceType::execution_space>::member_type& team_member,
+      const int threadScratchLevel, 
+      const ordinal_type subcellDim = -1,
+      const ordinal_type subcellOrdinal = -1) const override;
+
+    virtual
+    void
+    getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,

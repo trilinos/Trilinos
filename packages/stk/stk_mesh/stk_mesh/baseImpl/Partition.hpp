@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef STK_MESH_IMPL_PARTITION_HPP_
 #define STK_MESH_IMPL_PARTITION_HPP_
@@ -69,8 +69,8 @@ public:
 
   size_t size() const { return m_size; }
 
-  /// Returns the representation used by BucketRepository to identify a bucket,
-  /// including the parts it corresponds to.
+  std::pair<const unsigned *, const unsigned *> superset_part_ordinals() const { return m_partOrdsBeginEnd; }
+
   const std::vector<PartOrdinal> &get_legacy_partition_id() const { return m_extPartitionKey; }
 
   const unsigned * key() const { return m_extPartitionKey.data(); }
@@ -84,6 +84,9 @@ public:
 
   /// Remove an entity from this partition.
   bool remove(Entity entity);
+
+  // adds an empty bucket to partition (even if existing buckets are empty)
+  stk::mesh::Bucket* add_empty_bucket();
 
   /// Sort the entities in this partition by EntityKey without changing
   /// the number or sizes of buckets.
@@ -103,6 +106,10 @@ public:
   bool belongs(const Bucket &bkt) const { return bkt.getPartition() == this;}
 
   size_t num_buckets() const { return m_buckets.size();}
+
+  Bucket* get_bucket(unsigned ord) { return m_buckets[ord]; }
+
+  const Bucket* get_bucket(unsigned ord) const { return m_buckets[ord]; }
 
   inline BucketVector::iterator begin() { return m_buckets.begin(); }
   inline BucketVector::iterator end() { return m_buckets.end(); }
@@ -152,8 +159,8 @@ private:
 
   void check_sorted(const std::string& prefixMsg);
 
-  // Identifies the partition, borrowing the representation from BucketRepository.
   std::vector<PartOrdinal> m_extPartitionKey;
+  std::pair<const PartOrdinal*,const PartOrdinal*> m_partOrdsBeginEnd;
 
   // Used if the set of buckets (not just bucket contents) are being modified.
   BucketVector m_buckets;
@@ -200,51 +207,40 @@ private:
 #endif
   }
 
-  void internal_swap_to_end(Entity entity);
-
   // Overwrite the location defined by the input arguments with the entity
   // at the very end of this entire partition
   void overwrite_from_end( Bucket& bucket, unsigned ordinal);
+
+  template <typename NgpMemSpace>
+  friend class DevicePartition;
 };
 
 std::ostream &operator<<(std::ostream &, const stk::mesh::impl::Partition &);
 
 struct PartitionLess {
-  bool operator()( const Partition * lhs_Partition , const unsigned * rhs ) const ;
-  bool operator()( const unsigned * lhs , const Partition * rhs_Partition ) const ;
+  bool operator()( const Partition * lhs_Partition , const OrdinalVector& rhs ) const
+  {
+    return lhs_Partition->get_legacy_partition_id().size() != rhs.size() ?
+           lhs_Partition->get_legacy_partition_id().size() < rhs.size() :
+           lhs_Partition->get_legacy_partition_id() < rhs;
+  }
+
+  bool operator()( const OrdinalVector& lhs , const Partition * rhs_Partition ) const
+  {
+    return lhs.size() != rhs_Partition->get_legacy_partition_id().size() ?
+           lhs.size() < rhs_Partition->get_legacy_partition_id().size() :
+           lhs < rhs_Partition->get_legacy_partition_id();
+  }
 };
 
 inline
-bool partition_key_less( const unsigned * lhs , const unsigned * rhs )
-{
-//  const unsigned * const last_lhs = lhs + ( *lhs < *rhs ? *lhs : *rhs );
-//  while ( last_lhs != lhs && *lhs == *rhs ) { ++lhs ; ++rhs ; }
-
-  if (*lhs == *rhs) {
-    const unsigned * const last_lhs = lhs + *lhs;
-    do {
-      ++lhs ; ++rhs ;
-    } while ( last_lhs != lhs && *lhs == *rhs );
-  }
-  return *lhs < *rhs ;
-}
-
-// The part count and part ordinals are less
-inline bool PartitionLess::operator()( const Partition * lhs_partition ,
-                                       const unsigned * rhs ) const
-{ return partition_key_less( lhs_partition->key() , rhs ); }
-
-inline bool PartitionLess::operator()( const unsigned * lhs ,
-                                       const Partition * rhs_partition ) const
-{ return partition_key_less( lhs , rhs_partition->key() ); }
-
-inline
 std::vector<Partition*>::iterator
-lower_bound( std::vector<Partition*> & v , const unsigned * key )
-{ return std::lower_bound( v.begin() , v.end() , key , PartitionLess() ); }
+upper_bound( std::vector<Partition*> & v , const OrdinalVector& key )
+{ return std::upper_bound( v.begin() , v.end() , key , PartitionLess() ); }
 
 } // impl
 } // mesh
 } // stk
 
-#endif /* PartitionFAMILY_HPP_ */
+#endif /* STK_MESH_IMPL_PARTITION_HPP_ */
+

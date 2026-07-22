@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_mesh_BucketRepository_hpp
 #define stk_mesh_BucketRepository_hpp
@@ -70,24 +70,7 @@ public:
    *
    *  Don't call inside BucketRepository member functions!
    */
-  const BucketVector & buckets( EntityRank rank ) const
-  {
-    static const BucketVector emptyBucketVector;
-
-    if( rank < static_cast<EntityRank>(m_buckets.size()) )
-    {
-      if (m_need_sync_from_partitions[rank])
-      {
-        const_cast<BucketRepository *>(this)->sync_from_partitions(rank);
-      }
-
-      return m_buckets[ rank ];
-    }
-    else
-    {
-      return emptyBucketVector;
-    }
-  }
+  const BucketVector & buckets( EntityRank rank ) const;
 
   BulkData& mesh() const { return m_mesh; }
 
@@ -97,15 +80,8 @@ public:
 
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
 
-  template <class RankType>
-  inline
-  Bucket *get_bucket(RankType rank_id) const;
-
-  ////
-  //// Partitions are now the primary location of buckets.
-  ////
-
   friend class Partition;
+  template<typename NgpMemSpace> friend class stk::mesh::DeviceMeshT;
 
   void add_entity_with_part_memberships(const Entity entity,
                                         const EntityRank arg_entity_rank,
@@ -120,15 +96,11 @@ public:
 
   Partition *get_partition(const EntityRank arg_entity_rank ,
                            const OrdinalVector &parts,
-                           std::vector<Partition*>::iterator& ik,
-                           PartOrdinal* keyPtr,
-                           PartOrdinal* keyEnd);
+                           std::vector<Partition*>::iterator& ik);
 
   Partition *create_partition(const EntityRank arg_entity_rank ,
                               const OrdinalVector &parts,
-                              std::vector<Partition*>::iterator& ik,
-                              PartOrdinal* keyPtr,
-                              PartOrdinal* keyEnd);
+                              std::vector<Partition*>::iterator& ik);
 
   // For use by BulkData::internal_modification_end().
   void internal_modification_end();
@@ -137,10 +109,12 @@ public:
   void sync_from_partitions();
   void sync_from_partitions(EntityRank rank);
 
-  // Used in unit tests.  Returns the current partitions.
-  std::vector<Partition *> get_partitions(EntityRank rank) const;
+  const std::vector<Partition *>& get_partitions(EntityRank rank) const;
 
   Partition* get_partition(const EntityRank arg_entity_rank, const OrdinalVector &parts);
+
+  // get partition by index
+  Partition* get_partition(const EntityRank arg_entity_rank, unsigned ordinal);
 
   bool being_destroyed() const { return m_being_destroyed; }
 
@@ -165,18 +139,15 @@ private:
 
   void deallocate_bucket(Bucket *bucket);
 
+  void deallocate_partition(EntityRank entityRank, unsigned ordinal);
+
   void sync_bucket_ids(EntityRank entity_rank);
 
   void ensure_data_structures_sized();
 
-  void fill_key_ptr(const OrdinalVector& parts, PartOrdinal** keyPtr, PartOrdinal** keyEnd,
-                    const unsigned maxKeyTmpBufferSize, PartOrdinal* keyTmpBuffer, OrdinalVector& keyTmpVec);
+  BulkData & m_mesh ;
 
-
-  BulkData & m_mesh ; // Associated Bulk Data Aggregate
-
-  // Vector of bucket pointers by rank.  This is now a cache and no longer the primary
-  // location of Buckets when USE_STK_MESH_IMPL_PARTITION is #defined.
+  // Vector of bucket pointers for each rank.
   std::vector< BucketVector >   m_buckets ;
 
   std::vector<std::vector<Partition *> > m_partitions;
@@ -185,6 +156,9 @@ private:
   unsigned m_initialBucketCapacity;
   unsigned m_maximumBucketCapacity;
   bool m_being_destroyed;
+
+  template <typename NgpMemSpace>
+  friend class stk::mesh::impl::DeviceBucketRepository;
 };
 
 inline

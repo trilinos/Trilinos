@@ -11,11 +11,15 @@
 #include <gtest/gtest.h>
 #include <stk_util/parallel/Parallel.hpp>      // for parallel_machine_rank
 #include <stk_util/parallel/ParallelComm.hpp>  // for parallel_data_exchange...
+#include "stk_mesh/base/Types.hpp"             // for BucketVector, EntityPr...
 #include <stk_mesh/base/Bucket.hpp>            // for Bucket
 #include <stk_mesh/base/BulkData.hpp>          // for BulkData, BulkData::NO...
 #include <stk_mesh/base/MeshBuilder.hpp>
-#include <stk_mesh/base/FieldBase.hpp>         // for field_data, FieldBase
+#include <stk_mesh/base/FieldBase.hpp>         // for FieldBase
 #include <stk_mesh/base/FieldParallel.hpp>     // for parallel_sum, parallel...
+#include <stk_mesh/base/NgpFieldParallel.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
+#include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_mesh/base/GetEntities.hpp>       // for count_selected_entities
 #include <stk_mesh/base/Part.hpp>              // for Part
 #include <stk_mesh/base/Selector.hpp>          // for Selector, operator|
@@ -25,9 +29,9 @@
 #include "stk_mesh/base/Entity.hpp"            // for Entity
 #include "stk_mesh/base/Field.hpp"             // for Field
 #include "stk_mesh/base/MetaData.hpp"          // for MetaData, put_field_on...
-#include "stk_mesh/base/Types.hpp"             // for BucketVector, EntityPr...
 #include "stk_util/environment/Env.hpp"        // for parallel_rank, paralle...
 #include "stk_util/environment/perf_util.hpp"  // for get_max_hwm_across_procs
+#include "stk_unit_test_utils/timer.hpp"
 #include <cstddef>                             // for size_t
 #include <algorithm>                           // for fill
 #include <iostream>                            // for operator<<, basic_ostr...
@@ -39,10 +43,10 @@ namespace stk { namespace mesh { class Ghosting; } }
 
 namespace STKperf {
 
-static const int X_DIM = 500; //num_elems_x
-static const int Y_DIM = 500; //num_elems_y
+static const int X_DIM = 200; //num_elems_x
+static const int Y_DIM = 200; //num_elems_y
 
-static const int NUM_FIELDS = 40;
+static const int NUM_FIELDS = 20;
 
 static const int NUM_ITERS = 40;
 
@@ -51,13 +55,13 @@ stk::mesh::EntityId node_id( unsigned x , unsigned y , unsigned z, unsigned nx, 
   return 1 + x + ( nx + 1 ) * ( y + ( ny + 1 ) * z );
 }
 
-void do_stk_test(bool with_ghosts=false)
+void do_stk_test(bool with_ghosts=false, bool device_mpi=false, bool deterministic=false)
 {
   using namespace stk::mesh;
 
   typedef Field<double> ScalarField;
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk::ParallelMachine pm = stk::parallel_machine_world();
   const int parallel_size = stk::parallel_machine_size(pm);
   const int parallel_rank = stk::parallel_machine_rank(pm);
   if (parallel_size < 3)
@@ -68,30 +72,33 @@ void do_stk_test(bool with_ghosts=false)
       }
       return;
   }
-  int z_dim = parallel_size*2;
 
-  //vector of mesh-dimensions holds the number of elements in each dimension.
-  //Hard-wired to 3. This test can run with spatial-dimension less than 3,
-  //(if generated-mesh can do that) but not greater than 3.
+  const int xdim = X_DIM;
+  const int ydim = Y_DIM;
+  const int zdim = parallel_size*2;
+  const int numFields = NUM_FIELDS;
+  const int numIters = NUM_ITERS;
 
   std::ostringstream oss;
-  oss << "generated:" << X_DIM << "x" << Y_DIM << "x" << z_dim;
+  oss << "generated:" << xdim << "x" << ydim << "x" << zdim;
 
   stk::mesh::MeshBuilder builder(pm);
   unsigned spatialDim = 3;
   builder.set_spatial_dimension(spatialDim);
+  if (with_ghosts) {
+    builder.set_symmetric_ghost_info(true);
+  }
   builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk = *bulkPtr;
-  meta.use_simple_fields();
   if (parallel_rank == 0)
   {
-      std::cerr << "Mesh: " << oss.str() << std::endl;
+      std::cout << "Mesh: " << oss.str() << std::endl;
   }
 
-  std::vector<const FieldBase*> fields(NUM_FIELDS);
-  for (int i = 0; i < NUM_FIELDS; ++i) {
+  std::vector<const FieldBase*> fields(numFields);
+  for (int i = 0; i < numFields; ++i) {
     std::ostringstream oss2;
     oss2 << "field_" << i;
     FieldBase* field = &meta.declare_field<double>(stk::topology::NODE_RANK, oss2.str());
@@ -161,64 +168,81 @@ void do_stk_test(bool with_ghosts=false)
 
   // populate field data
   stk::mesh::BucketVector const& node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, communicated_nodes);
-  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
-    stk::mesh::Bucket const& bucket = *node_buckets[b];
-    for (int i = 0; i < NUM_FIELDS; ++i) {
-      const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
-      double* data = stk::mesh::field_data(field, bucket);
-      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
-        data[n] = static_cast<double>(i+1);
+
+  for (int i = 0; i < numFields; ++i) {
+    const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
+    auto fieldData = field.data<stk::mesh::ReadWrite>();
+    for (stk::mesh::Bucket* bucket : node_buckets) {
+      auto bucketValues = fieldData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        bucketValues(entityIdx) = (i+1);
       }
     }
   }
 
   MPI_Barrier(pm);
 
-  double start_time = stk::cpu_time();
+  stk::unit_test_util::BatchTimer batchTimer(pm);
+  batchTimer.initialize_batch_timer();
 
-  for (int t = 0; t < NUM_ITERS; ++t) {
-      if (with_ghosts)
-      {
-          stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+  const int NUM_RUNS = 5;
+  for(int r=0; r<NUM_RUNS; ++r) {
+    batchTimer.start_batch_timer();
+
+    for (int t = 0; t < numIters; ++t) {
+      if (with_ghosts) {
+        if (device_mpi) {
+          stk::mesh::parallel_sum_including_ghosts<stk::ngp::DeviceSpace>(bulk, fields, deterministic);
+        }
+        else {
+          stk::mesh::parallel_sum_including_ghosts<stk::ngp::HostSpace>(bulk, fields, deterministic);
+        }
       }
-      else
-      {
-          stk::mesh::parallel_sum(bulk, fields);
+      else {
+        if (device_mpi) {
+          stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(bulk, fields, deterministic);
+        }
+        else {
+          stk::mesh::parallel_sum<stk::ngp::HostSpace>(bulk, fields, deterministic);
+        }
       }
+    }
+
+    batchTimer.stop_batch_timer();
   }
 
-  double stk_sum_time = stk::cpu_time() - start_time;
-
-  double max_time;
-  MPI_Reduce(static_cast<void*>(&stk_sum_time), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
-
-  double power2 = std::pow(2,NUM_ITERS);
-  double power3 = std::pow(3,NUM_ITERS);
+  double power2 = std::pow(2,numIters*NUM_RUNS);
+  double power3 = std::pow(3,numIters*NUM_RUNS);
   const double tolerance = 1.e-8;
 
   // Sanity check
-  size_t num_comm_nodes = 0;
-  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
-    stk::mesh::Bucket const& bucket = *node_buckets[b];
-    const bool isShared = bucket.shared();
-    num_comm_nodes += bucket.size();
-    for (int f = 0; f < NUM_FIELDS; ++f) {
-      const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[f]);
-      const double* stk_data = stk::mesh::field_data(field, bucket);
-      const double expected_shared_value = static_cast<double>(f+1) * power2;
-      const double expected_ghosted_value = static_cast<double>(f+1) * power3;
+  for (int i = 0; i < numFields; ++i) {
+    const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
+    auto fieldData = field.data();
+    for (stk::mesh::Bucket* bucket : node_buckets) {
+      const bool isShared = bucket->shared();
+      auto bucketValues = fieldData.bucket_values(*bucket);
+      const double expected_shared_value = static_cast<double>(i+1) * power2;
+      const double expected_ghosted_value = static_cast<double>(i+1) * power3;
       const double expected = isShared ? expected_shared_value : expected_ghosted_value;
-      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
-        const double relativeError = std::abs(stk_data[n] - expected) / expected;
-        EXPECT_NEAR(0.0, relativeError, tolerance);
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        const double relativeError = std::abs(bucketValues(entityIdx) - expected) / expected;
+        EXPECT_NEAR(0.0, relativeError, tolerance) << "node " << bulk.identifier((*bucket)[entityIdx]) <<
+                                                      ", expected=" << expected << ", stk_data= "<<
+                                                      bucketValues(entityIdx);
       }
     }
   }
 
-  size_t expected_num_shared_nodes = (X_DIM+1) * (Y_DIM+1);
+  size_t num_comm_nodes = 0;
+  for (stk::mesh::Bucket* bucket : node_buckets) {
+    num_comm_nodes += bucket->size();
+  }
+
+  size_t expected_num_shared_nodes = (xdim+1) * (ydim+1);
   if (parallel_rank != 0 && parallel_rank != last_proc)
   {
-      expected_num_shared_nodes += (X_DIM+1) * (Y_DIM+1);
+      expected_num_shared_nodes += (xdim+1) * (ydim+1);
   }
   if (parallel_rank == 0 || parallel_rank == last_proc || parallel_rank == next_to_last_proc)
   {
@@ -226,9 +250,7 @@ void do_stk_test(bool with_ghosts=false)
   }
   EXPECT_EQ(expected_num_shared_nodes, num_comm_nodes);
 
-  size_t hwm_max = stk::get_max_hwm_across_procs(pm);
-
-  stk::print_stats_for_performance_compare(std::cout, max_time, hwm_max, NUM_ITERS, pm);
+  batchTimer.print_batch_timing(numIters);
 }
 
 TEST(ParallelDataExchange, test_nonsym_known_sizes_from_proc0_to_all_other_procs)
@@ -324,16 +346,109 @@ TEST(ParallelDataExchange, test_nonsym_known_sizes_from_all_other_procs_to_proc0
     }
 }
 
+void do_kokkos_test()
+{
+  constexpr int N = 1000;
+  constexpr int numDoubles = 80802*2*20;
+
+  using BufferView = Kokkos::View<double*, stk::ngp::HostSpace::mem_space>;
+
+  stk::unit_test_util::BatchTimer batchTimer(stk::parallel_machine_world());
+  batchTimer.initialize_batch_timer();
+
+  for(int i=0; i<N; ++i) {
+    batchTimer.start_batch_timer();
+
+    {
+      auto data = BufferView("data", numDoubles);
+      int half = numDoubles/2;
+      auto firstHalf = Kokkos::subview(data, std::make_pair(0, half));
+      auto secondHalf = Kokkos::subview(data, std::make_pair(half, numDoubles));
+      Kokkos::deep_copy(data, 1.0);
+
+      double sum = 0.0;
+      for(int j=0; j<numDoubles/2; ++j) {
+        sum += firstHalf(j);
+      }
+      for(int j=0; j<numDoubles/2; ++j) {
+        sum += secondHalf(j);
+      }
+      EXPECT_DOUBLE_EQ(sum, static_cast<double>(numDoubles));
+    }
+
+    batchTimer.stop_batch_timer();
+  }
+
+  batchTimer.print_batch_timing(N);
+}
+
+TEST(PureKokkos, looping)
+{
+  do_kokkos_test();
+}
+
 TEST(STKMesh_perf, parallel_sum)
 {
     const bool with_ghosts = false;
-    do_stk_test(with_ghosts);
+    const bool device_mpi = false;
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_device_mpi)
+{
+    const bool with_ghosts = false;
+    const bool device_mpi = true;
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_deterministic)
+{
+    const bool with_ghosts = false;
+    const bool device_mpi = false;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_device_mpi_deterministic)
+{
+    const bool with_ghosts = false;
+    const bool device_mpi = true;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
 }
 
 TEST(STKMesh_perf, parallel_sum_including_ghosts)
 {
     const bool with_ghosts = true;
-    do_stk_test(with_ghosts);
+    const bool device_mpi = false;
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_including_ghosts_device_mpi)
+{
+    const bool with_ghosts = true;
+    const bool device_mpi = true;
+    const bool deterministic = false;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_including_ghosts_deterministic)
+{
+    const bool with_ghosts = true;
+    const bool device_mpi = false;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
+}
+
+TEST(STKMesh_perf, parallel_sum_including_ghosts_device_mpi_deterministic)
+{
+    const bool with_ghosts = true;
+    const bool device_mpi = true;
+    const bool deterministic = true;
+    do_stk_test(with_ghosts, device_mpi, deterministic);
 }
 
 } //namespace STKperf

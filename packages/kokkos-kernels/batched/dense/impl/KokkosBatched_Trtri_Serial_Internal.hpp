@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
-#ifndef __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
-#define __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
+#ifndef KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP
+#define KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Trmm_Serial_Internal.hpp"
@@ -25,27 +12,23 @@ namespace KokkosBatched {
 template <typename AlgoType>
 struct SerialTrtriInternalLower {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
-                                           const int am, const int an,
-                                           ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1);
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const int am, const int an,
+                                           ValueType *KOKKOS_RESTRICT A, const int as0, const int as1);
 };
 
 template <typename AlgoType>
 struct SerialTrtriInternalUpper {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag,
-                                           const int am, const int an,
-                                           ValueType *KOKKOS_RESTRICT A,
-                                           const int as0, const int as1);
+  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const int am, const int an,
+                                           ValueType *KOKKOS_RESTRICT A, const int as0, const int as1);
 };
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int
-SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(
-    const bool use_unit_diag, const int am, const int /*an*/,
-    ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
+KOKKOS_INLINE_FUNCTION int SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(const bool use_unit_diag,
+                                                                                    const int am, const int /*an*/,
+                                                                                    ValueType *KOKKOS_RESTRICT A,
+                                                                                    const int as0, const int as1) {
   ValueType one(1.0), zero(0.0), A_ii;
   if (!use_unit_diag) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -74,14 +57,13 @@ SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(
       int A_col_vec_m = am - i - 1, A_col_vec_n = 1;
       // TRMV/TRMM −− x=Ax
       // A((j+1):n,j) = A((j+1):n,(j+1):n) ∗ A((j+1):n,j) ;
-      SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(
-          use_unit_diag, false, A_subblock_m, A_subblock_n, A_col_vec_m,
-          A_col_vec_n, one, A_subblock, as0, as1, A_col_vec, as0, as1);
+      SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::invoke(use_unit_diag, false, A_subblock_m, A_subblock_n,
+                                                                 A_col_vec_m, A_col_vec_n, one, A_subblock, as0, as1,
+                                                                 A_col_vec, as0, as1);
 
       // SCAL -- x=ax
       // A((j+1):n,j) = A_ii * A((j+1):n,j)
-      KokkosBlas::Impl::SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n,
-                                                    A_ii, A_col_vec, as0, as1);
+      KokkosBlas::Impl::SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n, A_ii, A_col_vec, as0, as1);
     }
   }
   return 0;
@@ -89,10 +71,10 @@ SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(
 
 template <>
 template <typename ValueType>
-KOKKOS_INLINE_FUNCTION int
-SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(
-    const bool use_unit_diag, const int am, const int /*an*/,
-    ValueType *KOKKOS_RESTRICT A, const int as0, const int as1) {
+KOKKOS_INLINE_FUNCTION int SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(const bool use_unit_diag,
+                                                                                    const int am, const int /*an*/,
+                                                                                    ValueType *KOKKOS_RESTRICT A,
+                                                                                    const int as0, const int as1) {
   ValueType one(1.0), zero(0.0), A_ii;
 
   if (!use_unit_diag) {
@@ -123,17 +105,16 @@ SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(
       // TRMV/TRMM −− x=Ax
       // A(1:(j-1),j) = A(1:(j-1),1:(j-1)) ∗ A(1:(j-1),j) ;
       // SerialTrmm<Side::Left,Uplo::Lower,Trans::NoTranspose,Diag::NoUnit,Algo::Trmm::Unblocked>
-      SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(
-          use_unit_diag, false, A_subblock_m, A_subblock_n, A_col_vec_m,
-          A_col_vec_n, one, A_subblock, as0, as1, A_col_vec, as0, as1);
+      SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::invoke(use_unit_diag, false, A_subblock_m, A_subblock_n,
+                                                                 A_col_vec_m, A_col_vec_n, one, A_subblock, as0, as1,
+                                                                 A_col_vec, as0, as1);
 
       // SCAL -- x=ax
       // A((j+1):n,j) = A_ii * A((j+1):n,j)
-      KokkosBlas::Impl::SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n,
-                                                    A_ii, A_col_vec, as0, as1);
+      KokkosBlas::Impl::SerialScaleInternal::invoke(A_col_vec_m, A_col_vec_n, A_ii, A_col_vec, as0, as1);
     }
   }
   return 0;
 }
 }  // namespace KokkosBatched
-#endif  // __KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP__
+#endif  // KOKKOSBATCHED_TRTRI_SERIAL_INTERNAL_HPP

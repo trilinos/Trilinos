@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -7,7 +7,7 @@ C    See packages/seacas/LICENSE for details
       COMMON /GRPCOC/ DEVNAM(2), DEVCOD(2)
       CHARACTER*3 DEVNAM
       CHARACTER*8 DEVCOD
-      COMMON /GRPCOM/ ICURDV, 
+      COMMON /GRPCOM/ ICURDV,
      &   NSNAP(2), IFONT(2),
      &   MAXCOL(2), NUMCOL(0:1,2), MAPALT(2), MAPUSE(2),
      &   ISHARD, DEVOK(2), TALKOK(2), SOFTCH(2), AUTOPL(2)

@@ -1,46 +1,12 @@
 // @HEADER
-// ************************************************************************
-//
-//        Phalanx: A Partial Differential Equation Field Evaluation
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
 //       Kernel for Flexible Management of Complex Dependency Chains
-//                    Copyright 2008 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov), Sandia
-// National Laboratories.
-//
-// ************************************************************************
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
 
 #ifndef PHX_EVALUATION_CONTAINER_DEF_HPP
 #define PHX_EVALUATION_CONTAINER_DEF_HPP
@@ -172,7 +138,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   std::unordered_map<std::string,Kokkos::Impl::SharedAllocationTracker> field_allocation_trackers;
   if (minimize_dag_memory_use_) {
     for (const auto& f : fields_to_allocate_) {
-      PHX::any field;
+      std::any field;
       Kokkos::Impl::SharedAllocationTracker tracker;
       memory_manager_->createView<EvalT>(field,tracker,f.first,*(f.second),kokkos_extended_data_type_dimensions_);
       fields_[f.second->identifier()] = field;
@@ -537,7 +503,7 @@ getKokkosExtendedDataTypeDimensions() const
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
-PHX::any
+std::any
 PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
   //return fields_[f.identifier()];
@@ -551,7 +517,7 @@ PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 // *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
-setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a,
+setUnmanagedField(const PHX::FieldTag& f, const std::any& a,
                   const bool cleanup_output)
 {
   // An unmanaged field is a MDField where the user has manually
@@ -598,7 +564,7 @@ setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a,
 // *************************************************************************
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
-bindField(const PHX::FieldTag& f, const PHX::any& a)
+bindField(const PHX::FieldTag& f, const std::any& a)
 {
   auto s = fields_.find(f.identifier());
 
@@ -648,7 +614,7 @@ void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
   os << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
   os << this->dag_manager_ << std::endl;
   os << "Fields:" << std::endl;
-  for (std::unordered_map<std::string,PHX::any>::const_iterator i =
+  for (std::unordered_map<std::string,std::any>::const_iterator i =
 	 fields_.begin(); i != fields_.end(); ++i)
     os << "  " << i->first << std::endl;
 

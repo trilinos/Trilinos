@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,7 +13,6 @@
 #include <cassert>
 #include <cstddef>
 #include <fmt/ostream.h>
-#include <iostream>
 #include <string>
 
 #include "Ioss_CodeTypes.h"
@@ -33,11 +32,11 @@
  */
 Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::string &my_name,
                                      int64_t entity_cnt)
-    : entityCount(entity_cnt), entityName(my_name), database_(io_database),
+    : entityName(my_name), database_(io_database), entityCount(entity_cnt),
       hash_(Ioss::Utils::hash(my_name))
 {
-  properties.add(Ioss::Property("name", my_name));
-  properties.add(Ioss::Property("entity_count", entity_cnt));
+  properties.add(Ioss::Property(this, "name", Ioss::Property::STRING));
+  properties.add(Ioss::Property(this, "entity_count", Ioss::Property::INTEGER));
   properties.add(Ioss::Property(this, "attribute_count", Ioss::Property::INTEGER));
 
   if (my_name != "null_entity") {
@@ -50,8 +49,8 @@ Ioss::GroupingEntity::GroupingEntity(Ioss::DatabaseIO *io_database, const std::s
 }
 
 Ioss::GroupingEntity::GroupingEntity(const Ioss::GroupingEntity &other)
-    : properties(other.properties), fields(other.fields), entityCount(other.entityCount),
-      entityName(other.entityName), attributeCount(other.attributeCount),
+    : properties(other.properties), fields(other.fields), entityName(other.entityName),
+      entityCount(other.entityCount), attributeCount(other.attributeCount),
       entityState(other.entityState), hash_(other.hash_)
 {
 }
@@ -96,20 +95,6 @@ Ioss::DatabaseIO *Ioss::GroupingEntity::get_database() const
 {
   assert(database_ != nullptr);
   return database_;
-}
-
-/** \brief Get the file name associated with the database containing this entity.
- *
- *  \returns The file name.
- */
-std::string Ioss::GroupingEntity::get_filename() const
-{
-  // Ok for database_ to be nullptr at this point.
-  if (database_ == nullptr) {
-    return {};
-  }
-
-  return database_->get_filename();
 }
 
 void Ioss::GroupingEntity::set_database(Ioss::DatabaseIO *io_database)
@@ -157,16 +142,20 @@ Ioss::Property Ioss::GroupingEntity::get_implicit_property(const std::string &my
 {
   // Handle properties generic to all GroupingEntities.
   // These include:
+  if (my_name == "entity_count") {
+    return {my_name, entityCount};
+  }
+  if (my_name == "name") {
+    return {my_name, entityName};
+  }
   if (my_name == "attribute_count") {
     count_attributes();
     return {my_name, static_cast<int>(attributeCount)};
   }
 
   // End of the line. No property of this name exists.
-  std::ostringstream errmsg;
-  fmt::print(errmsg, "\nERROR: Property '{}' does not exist on {} {}\n\n", my_name, type_string(),
-             name());
-  IOSS_ERROR(errmsg);
+  IOSS_ERROR(fmt::format("\nERROR: Property '{}' does not exist on {} {}\n\n", my_name,
+                         type_string(), name()));
 }
 
 bool Ioss::GroupingEntity::check_for_duplicate(const Ioss::Field &new_field) const
@@ -178,20 +167,19 @@ bool Ioss::GroupingEntity::check_for_duplicate(const Ioss::Field &new_field) con
       // Get the existing field so we can compare with `new_field`
       const Ioss::Field &field = fields.getref(new_field.get_name());
       if (field != new_field) {
-        std::string        warn_err = behavior == DuplicateFieldBehavior::WARNING_ ? "" : "ERROR: ";
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "{}Duplicate incompatible fields named '{}' on {} {}:\n"
-                   "\tExisting  field: {} {} of size {} bytes with role '{}' and storage '{}',\n"
-                   "\tDuplicate field: {} {} of size {} bytes with role '{}' and storage '{}'.",
-                   warn_err, new_field.get_name(), type_string(), name(), field.raw_count(),
-                   field.type_string(), field.get_size(), field.role_string(),
-                   field.raw_storage()->name(), new_field.raw_count(), new_field.type_string(),
-                   new_field.get_size(), new_field.role_string(), new_field.raw_storage()->name());
+        std::string warn_err = behavior == DuplicateFieldBehavior::WARNING_ ? "" : "ERROR: ";
+        std::string errmsg   = fmt::format(
+            "{}Duplicate incompatible fields named '{}' on {} {}:\n"
+              "\tExisting  field: {} {} of size {} bytes with role '{}' and storage '{}',\n"
+              "\tDuplicate field: {} {} of size {} bytes with role '{}' and storage '{}'.",
+            warn_err, new_field.get_name(), type_string(), name(), field.raw_count(),
+            field.type_string(), field.get_size(), field.role_string(), field.raw_storage()->name(),
+            new_field.raw_count(), new_field.type_string(), new_field.get_size(),
+            new_field.role_string(), new_field.raw_storage()->name());
         if (behavior == DuplicateFieldBehavior::WARNING_) {
           auto util = get_database()->util();
           if (util.parallel_rank() == 0) {
-            fmt::print(Ioss::WarnOut(), "{}\n", errmsg.str());
+            fmt::print(Ioss::WarnOut(), "{}\n", errmsg);
           }
           return true;
         }
@@ -229,14 +217,12 @@ void Ioss::GroupingEntity::field_add(Ioss::Field new_field)
     new_field.reset_count(entity_size);
   }
   else if (entity_size != field_size && type() != REGION) {
-    std::string        filename = get_database()->get_filename();
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "IO System error: The {} '{}' has a size of {},\nbut the field '{}' which is being "
-               "output on that entity has a size of {}\non database '{}'.\nThe sizes must match.  "
-               "This is an application error that should be reported.",
-               type_string(), name(), entity_size, new_field.get_name(), field_size, filename);
-    IOSS_ERROR(errmsg);
+    std::string filename = get_database()->get_filename();
+    IOSS_ERROR(fmt::format(
+        "IO System error: The {} '{}' has a size of {},\nbut the field '{}' which is being "
+        "output on that entity has a size of {}\non database '{}'.\nThe sizes must match.  "
+        "This is an application error that should be reported.",
+        type_string(), name(), entity_size, new_field.get_name(), field_size, filename));
   }
   if (!check_for_duplicate(new_field)) {
     fields.add(new_field);
@@ -348,11 +334,10 @@ void Ioss::GroupingEntity::verify_field_exists(const std::string &field_name,
                                                const std::string &inout) const
 {
   if (!field_exists(field_name)) {
-    std::string        filename = get_database()->get_filename();
-    std::ostringstream errmsg;
-    fmt::print(errmsg, "\nERROR: On database '{}', Field '{}' does not exist for {} on {} {}\n\n",
-               filename, field_name, inout, type_string(), name());
-    IOSS_ERROR(errmsg);
+    std::string filename = get_database()->get_filename();
+    IOSS_ERROR(
+        fmt::format("\nERROR: On database '{}', Field '{}' does not exist for {} on {} {}\n\n",
+                    filename, field_name, inout, type_string(), name()));
   }
 }
 

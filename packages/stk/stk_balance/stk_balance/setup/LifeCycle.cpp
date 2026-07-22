@@ -33,6 +33,7 @@
 
 #include "LifeCycle.hpp"
 
+#include "stk_util/parallel/OutputStreams.hpp"
 #include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/EnvData.hpp"
 #include "stk_util/environment/OutputLog.hpp"
@@ -81,7 +82,7 @@ void LifeCycle::run()
   }
 
   print_running_message();
-  print_banner(sierra::Env::outputP0());
+  print_banner(stk::outputP0());
 
   if (is_serial_no_op()) {
     print_serial_no_op_message();
@@ -132,14 +133,14 @@ bool LifeCycle::rebalance_will_corrupt_data(const stk::io::StkMeshIoBroker & ioB
   if (isRebalancing && sameInputAndOutputFile && sameInputAndOutputProcCount) {
     if (hasTransientFieldData) {
       willCorruptData = true;
-      sierra::Env::outputP0()
+      stk::outputP0()
           << "Aborting rebalance: Overwriting input files that contain transient fields will" << std::endl
           << "lead to data corruption.  Please specify a different outputDirectory." << std::endl;
     }
 
     if (has64BitIds) {
       willCorruptData = true;
-      sierra::Env::outputP0()
+      stk::outputP0()
           << "Aborting rebalance: Overwriting input files that contain 64-bit IDs will" << std::endl
           << "lead to data corruption.  Please specify a different outputDirectory." << std::endl;
     }
@@ -162,14 +163,13 @@ void LifeCycle::balance()
   io.write(mesh);
 
   DiagnosticsPrinter diagPrinter(m_comm, m_settings.get_num_output_processors());
-  diagPrinter.print(sierra::Env::outputP0());
+  diagPrinter.print(stk::outputP0());
 }
 
 void LifeCycle::rebalance()
 {
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(m_comm).create();
   stk::mesh::MetaData& meta = bulk->mesh_meta_data();
-  meta.use_simple_fields();
   stk::io::StkMeshIoBroker ioBroker;
 
   meta.set_coordinate_field_name(m_settings.getCoordinateFieldName());
@@ -188,7 +188,7 @@ void LifeCycle::rebalance()
   stk::balance::rebalance(ioBroker, m_settings);
 
   DiagnosticsPrinter diagPrinter(m_comm, m_settings.get_num_output_processors());
-  diagPrinter.print(sierra::Env::outputP0());
+  diagPrinter.print(stk::outputP0());
 }
 
 void LifeCycle::set_output_streams()
@@ -196,18 +196,18 @@ void LifeCycle::set_output_streams()
   if (m_isProc0) {
     const std::string & logName = m_settings.get_log_filename();
     if (logName == "cout"  || logName == "cerr") {
-      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream(logName);
+      stk::set_outputP0(stk::get_log_ostream(logName));
     }
     else {
       stk::bind_output_streams("log=\"" + logName + "\"");
-      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream("log");
+      stk::set_outputP0(stk::get_log_ostream("log"));
     }
   }
   else {
-    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    //stk::outputP0() is already a null output stream by default on other MPI ranks.
   }
 
-  Ioss::Utils::set_output_stream(sierra::Env::outputP0());
+  Ioss::Utils::set_output_stream(stk::outputP0());
 }
 
 void LifeCycle::print_parse_error(const char* what) const
@@ -226,7 +226,7 @@ void LifeCycle::print_balance_error(const char* what) const
 
 void LifeCycle::print_serial_no_op_message() const
 {
-  sierra::Env::outputP0()
+  stk::outputP0()
     << "Aborting balance: Rewriting the same input serial mesh file.  Please specify" << std::endl
     << "a different outputDirectory if you wish to copy the input file to an output" << std::endl
     << "file of the same name." << std::endl;
@@ -257,10 +257,10 @@ void LifeCycle::print_running_message() const
     }
 
     diag_stream << "     Input files:  "
-                << construct_generic_parallel_file_name(m_settings.get_input_filename(), inputRanks) << std::endl;
+                << stk::io::construct_generic_parallel_file_name(m_settings.get_input_filename(), inputRanks) << std::endl;
 
     diag_stream << "    Output files:  "
-                << construct_generic_parallel_file_name(m_settings.get_output_filename(), outputRanks) << std::endl;
+                << stk::io::construct_generic_parallel_file_name(m_settings.get_output_filename(), outputRanks) << std::endl;
 
     stk::unregister_ostream(diag_stream);
   }

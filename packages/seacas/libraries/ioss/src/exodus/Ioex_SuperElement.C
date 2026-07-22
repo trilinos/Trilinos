@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,8 +13,9 @@
 #include "exodus/Ioex_SuperElement.h" // for SuperElement
 #include <cassert>
 #include <cstddef>
+#include <exodusII.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <iosfwd>
 #include <netcdf.h>
 #include <string>
 
@@ -28,7 +29,7 @@ namespace {
 
     int varid  = 0;
     int status = nc_inq_varid(ncid, name, &varid);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       return status;
     }
 
@@ -38,26 +39,22 @@ namespace {
 
   int nc_get_dimension(int ncid, const char *DIMENSION, const char *label, size_t *count)
   {
-    std::ostringstream errmsg;
-
     *count    = 0;
     int dimid = -1;
 
     int status = nc_inq_dimid(ncid, DIMENSION, &dimid);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       if (status == NC_EBADDIM) {
         // Value is zero if the dimension is not defined.
         *count = 0;
         return 0;
       }
-      fmt::print(errmsg, "ERROR: Failed to locate number of {} in superelement file.", label);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Failed to locate number of {} in superelement file.", label));
     }
 
     status = nc_inq_dimlen(ncid, dimid, count);
-    if (status != NC_NOERR) {
-      fmt::print(errmsg, "ERROR: Failed to get number of {} in superelement file.", label);
-      IOSS_ERROR(errmsg);
+    if (status != EX_NOERR) {
+      IOSS_ERROR(fmt::format("ERROR: Failed to get number of {} in superelement file.", label));
     }
     return status;
   }
@@ -76,10 +73,8 @@ Ioex::SuperElement::SuperElement(std::string filename, const std::string &my_nam
   std::string local_filename = fileName;
 
   int status = nc_open(local_filename.c_str(), NC_NOWRITE, &filePtr);
-  if (status != NC_NOERR) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg, "ERROR: Failed to open superelement file '{}'.", local_filename);
-    IOSS_ERROR(errmsg);
+  if (status != EX_NOERR) {
+    IOSS_ERROR(fmt::format("ERROR: Failed to open superelement file '{}'.", local_filename));
   }
 
   // At this point have a valid netcdf file handle.
@@ -152,10 +147,8 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     assert(num_to_get == 2 * num_nodes * num_dim);
     int status = nc_get_array(filePtr, "cbmap", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'cbmap' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Could not load coordinate data field 'cbmap' from file '{}'.",
+                             fileName));
     }
   }
   else if (field.get_name() == "node_num_map") {
@@ -163,81 +156,64 @@ int64_t Ioex::SuperElement::internal_get_field_data(const Ioss::Field &field, vo
     int status = nc_get_array(filePtr, "node_num_map", reinterpret_cast<double *>(data));
 
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Could not load coordinate data field 'node_num_map' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: Could not load coordinate data field 'node_num_map' from file '{}'.", fileName));
     }
   }
   else if (field.get_name() == "coordx") {
     assert(num_to_get == num_nodes);
     int status = nc_get_array(filePtr, "coordx", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'coordx' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Could not load coordinate data field 'coordx' from file '{}'.",
+                             fileName));
     }
   }
   else if (field.get_name() == "coordy") {
     assert(num_to_get == num_nodes);
     int status = nc_get_array(filePtr, "coordy", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'coordy' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Could not load coordinate data field 'coordy' from file '{}'.",
+                             fileName));
     }
   }
   else if (field.get_name() == "coordz") {
     assert(num_to_get == num_nodes);
     int status = nc_get_array(filePtr, "coordz", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not load coordinate data field 'coordz' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Could not load coordinate data field 'coordz' from file '{}'.",
+                             fileName));
     }
   }
   else if (field.get_name() == "Kr") {
     assert(num_to_get == numDOF * numDOF);
     int status = nc_get_array(filePtr, "Kr", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not load stiffness matrix field 'Kr' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Could not load stiffness matrix field 'Kr' from file '{}'.",
+                             fileName));
     }
   }
   else if (field.get_name() == "Mr") {
     assert(num_to_get == numDOF * numDOF);
     int status = nc_get_array(filePtr, "Mr", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not load mass matrix field 'Mr' from file '{}'.", fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(
+          fmt::format("ERROR: Could not load mass matrix field 'Mr' from file '{}'.", fileName));
     }
   }
   else if (field.get_name() == "InertiaTensor") {
     assert(num_to_get == numDOF * numRBM);
     int status = nc_get_array(filePtr, "InertiaTensor", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Could not load inertia matrix field 'InertialTensor' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: Could not load inertia matrix field 'InertialTensor' from file '{}'.", fileName));
     }
   }
   else if (field.get_name() == "MassInertia") {
     assert(num_to_get == numDOF * numRBM);
     int status = nc_get_array(filePtr, "MassInertia", reinterpret_cast<double *>(data));
     if (status != 0) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not mass inertia matrix field 'MassInertia' from file '{}'.",
-                 fileName);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: Could not mass inertia matrix field 'MassInertia' from file '{}'.", fileName));
     }
   }
   else {

@@ -98,54 +98,6 @@ public:
    void fill_node_map(int proc_rank);
 };
 
-namespace simple_fields {
-
-class RingFixture
-{
-public:
-  const int             m_spatial_dimension;
-  MetaData              m_meta_data;
-  stk::unit_test_util::BulkDataTester m_bulk_data;
-  PartVector            m_element_parts;
-  Part &                m_element_part_extra;
-  const size_t          m_num_element_per_proc;
-  std::vector<EntityId> m_node_ids , m_element_ids;
-  Part &                m_beam_2_part;
-
-  RingFixture( stk::ParallelMachine pm ,
-               unsigned num_element_per_proc = 10 ,
-               bool use_element_parts = false,
-               enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA);
-
-  ~RingFixture() {}
-
-  /**
-   * Generate a simple loop of mesh entities:
-   * node[i] : element[i] : node[ ( i + 1 ) % node.size() ]
-   */
-  void generate_mesh();
-
-  /**
-   * Make sure that element->owner_rank() == element->node[1]->owner_rank()
-   */
-  void fixup_node_ownership();
-
- protected:
-
-  typedef std::multimap<EntityId, int> NodeToProcsMMap;
-  NodeToProcsMMap m_nodes_to_procs;
-
- private:
-
-   RingFixture();
-   RingFixture( const RingFixture & );
-   RingFixture & operator=( const RingFixture & );
-
-   void fill_node_map(int proc_rank);
-};
-
-} // namespace simple_fields
-
 }
 }
 }

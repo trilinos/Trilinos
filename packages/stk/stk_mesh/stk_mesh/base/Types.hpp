@@ -37,14 +37,13 @@
 
 //----------------------------------------------------------------------
 
-#include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint64_t
-#include <limits>                       // for numeric_limits
 #include <stk_util/stk_config.h>
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
 #include <stk_util/util/PairIter.hpp>   // for PairIter
+#include <cstddef>
+#include <cstdint>
+#include <limits>                       // for numeric_limits
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include <set>
@@ -83,18 +82,41 @@ typedef std::vector< unsigned >     PermutationIndexVector;
 typedef std::vector<Entity>         EntityVector;
 typedef std::vector<EntityKey>      EntityKeyVector;
 
-template< typename Scalar = void ,
-          class Tag1 = void , class Tag2 = void ,
-          class Tag3 = void , class Tag4 = void ,
-          class Tag5 = void , class Tag6 = void ,
-          class Tag7 = void >
-  class Field ;
+enum class Layout : uint8_t
+{
+  Left,    // Adjacent Entities in memory
+  Right,   // Adjacent components in memory
+  Auto     // Run-time access to Field data with the correct layout; Not for Field registration
+};
 
-/** \brief Maximum
- *  \ref "multi-dimensional array" dimension of a
- *  \ref stk::mesh::Field "field"
- */
-enum { MaximumFieldDimension = 7 };
+inline std::ostream& operator<<(std::ostream& os, Layout layout) {
+    switch (layout) {
+        case Layout::Left:
+            os << "Layout::Left";
+            break;
+        case Layout::Right:
+            os << "Layout::Right";
+            break;
+        case Layout::Auto:
+            os << "Layout::Auto";
+            break;
+        default:
+            os << "Unknown Layout";
+            break;
+    }
+    return os;
+}
+
+#ifdef STK_UNIFIED_MEMORY
+constexpr Layout DefaultHostLayout = Layout::Left;
+#else
+constexpr Layout DefaultHostLayout = Layout::Right;
+#endif
+
+constexpr Layout DefaultDeviceLayout = Layout::Left;
+
+template <typename Scalar = void, Layout HostLayout = DefaultHostLayout>
+class Field;
 
 enum class Operation
 {
@@ -103,6 +125,46 @@ enum class Operation
   MAX
 };
 
+enum FieldAccessTag : uint8_t
+{
+  ReadOnly     = 0, // Sync values to memory space and do not mark as modified; Disallow modification
+  ReadWrite    = 1, // Sync values to memory space and mark as modified; Allow modification
+  OverwriteAll = 2, // Do not sync values to memory space and mark as modified; Allow modification
+
+  Unsynchronized,      // Do not sync values to memory space and do not mark as modified; Allow modification
+  ConstUnsynchronized, // Do not sync values to memory space and do not mark as modified; Disallow modification
+
+  InvalidAccess     // For internal use only.  Not valid for accessing data.
+};
+
+constexpr int NumTrackedFieldAccessTags = 3;
+
+inline std::ostream& operator<<(std::ostream& os, FieldAccessTag accessTag) {
+    switch (accessTag) {
+        case ReadOnly:
+            os << "ReadOnly";
+            break;
+        case ReadWrite:
+            os << "ReadWrite";
+            break;
+        case OverwriteAll:
+            os << "OverwriteAll";
+            break;
+        case Unsynchronized:
+            os << "Unsynchronized";
+            break;
+        case ConstUnsynchronized:
+            os << "ConstUnsynchronized";
+            break;
+        case InvalidAccess:
+            os << "InvalidAccess";
+            break;
+        default:
+            os << "Unknown Access Tag";
+            break;
+    }
+    return os;
+}
 
 /** \} */
 
@@ -118,34 +180,15 @@ enum EntityState : char { Unchanged = 0 ,
                    Created  = 1 ,
                    Modified = 2 ,
                    Deleted  = 3 };
-inline
-std::ostream& operator<<(std::ostream& os, EntityState state)
-{
-  switch(state) {
-  case Unchanged: os<<"Unchanged"; break;
-  case Created: os<<"Created"; break;
-  case Modified: os<<"Modified"; break;
-  case Deleted: os<<"Deleted"; break;
-  default: break;
-  };
-  return os;
-}
-
-template< class FieldType > struct STK_DEPRECATED FieldTraits ;
-
-namespace legacy {
-template< class FieldType > struct FieldTraits;
-}
-
+//
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,
 //and the offset (ordinal) into that bucket.
-//Ultimately we want this struct to contain two ints rather than a pointer and an int...
 struct MeshIndex
 {
   Bucket* bucket;
   unsigned bucket_ordinal;
 
-  MeshIndex(Bucket *bucketIn, size_t ordinal) : bucket(bucketIn), bucket_ordinal(ordinal) {}
+  constexpr MeshIndex(Bucket* bucketIn, size_t ordinal) : bucket(bucketIn), bucket_ordinal(ordinal) {}
 };
 
 // Smaller than MeshIndex and replaces bucket pointer with bucket_id to
@@ -156,30 +199,28 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
-inline bool operator<(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
+KOKKOS_INLINE_FUNCTION
+constexpr bool operator<(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
 {
   return lhs.bucket_id == rhs.bucket_id ? lhs.bucket_ord < rhs.bucket_ord : lhs.bucket_id < rhs.bucket_id;
 }
 
-inline bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
+KOKKOS_INLINE_FUNCTION
+constexpr bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
 {
   return lhs.bucket_id == rhs.bucket_id && lhs.bucket_ord == rhs.bucket_ord;
 }
 
-NAMED_PAIR(BucketInfo, unsigned, bucket_id, unsigned, num_entities_this_bucket)
-
-struct BucketIndices
+KOKKOS_INLINE_FUNCTION
+constexpr bool operator!=(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
 {
-  std::vector<BucketInfo> bucket_info;
-  std::vector<unsigned> ords;
-};
+  return lhs.bucket_id != rhs.bucket_id || lhs.bucket_ord != rhs.bucket_ord;
+}
 
-typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
 typedef stk::topology::rank_t EntityRank ;
 
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 typedef std::map<Selector, BucketVector> SelectorBucketMap;
-typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
 
@@ -191,19 +232,20 @@ typedef Ordinal RelationIdentifier;
 typedef Ordinal FieldArrayRank;
 
 typedef uint64_t EntityId ;
-static const EntityId InvalidEntityId = std::numeric_limits<stk::mesh::EntityId>::max();
+static constexpr EntityId InvalidEntityId = std::numeric_limits<stk::mesh::EntityId>::max();
 
 typedef std::vector<EntityId> EntityIdVector;
 
-static const EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
-static const PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
-static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
-static const int InvalidProcessRank = -1;
+static constexpr EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
+static constexpr PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
+static constexpr RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
+static constexpr int InvalidProcessRank = -1;
 
-  inline unsigned GetInvalidLocalId() {
-    static unsigned InvalidLocalId = std::numeric_limits<unsigned int>::max();
-    return InvalidLocalId;
-  }
+constexpr unsigned GetInvalidLocalId()
+{
+  unsigned InvalidLocalId = std::numeric_limits<unsigned int>::max();
+  return InvalidLocalId;
+}
 
 /**
 * Predefined identifiers for mesh object relationship types.
@@ -217,9 +259,9 @@ struct RelationType
     INVALID   = 10
   };
 
-  RelationType(relation_type_t value = INVALID) : m_value(value) {}
+  constexpr RelationType(relation_type_t value = INVALID) : m_value(value) {}
 
-  operator relation_type_t() const { return m_value; }
+  constexpr operator relation_type_t() const { return m_value; }
 
   relation_type_t m_value;
 };
@@ -240,7 +282,9 @@ using EntityIdProcMap = std::map<EntityId, int>;
 
 using EntityKeyProc    = std::pair<EntityKey, int>;
 using EntityKeyProcVec = std::vector<EntityKeyProc>;
-using EntityKeyProcMap = std::map<EntityKey, int>;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Aug 2025
+using EntityKeyProcMap STK_DEPRECATED = std::map<EntityKey, int>;
+#endif
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *
@@ -267,25 +311,6 @@ typedef PairIter<const EntityCommInfo*>  PairIterEntityComm ;
 /** \} */
 
 //----------------------------------------------------------------------
-/** \ingroup stk_mesh_relations
- *  \brief  A relation stencil maps entity relationships to ordinals.
- *
- *  A relation stencil function is the inverse mapping of a contiguous
- *  span of non-negative integers to a template of entity relations.
- *  For example, a triangle-to-vertex relation stencil would map:
- *  -  0 = relation_stencil( Element , Node , 0 )
- *  -  1 = relation_stencil( Element , Node , 1 )
- *  -  2 = relation_stencil( Element , Node , 2 )
- *
- *  If the input entity relationship is within the stencil then
- *  a stencil function returns a non-negative integer;
- *  otherwise a stencil function returns a negative value.
- */
-typedef int ( * relation_stencil_ptr )( EntityRank  from_type ,
-                                        EntityRank  to_type ,
-                                        unsigned  identifier );
-
-//----------------------------------------------------------------------
 /** \brief  Span of a sorted relations for a given domain entity.
  *
  *  The span is sorted by
@@ -309,6 +334,7 @@ enum ConnectivityType
 };
 
 constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<unsigned>::max();
+constexpr unsigned INVALID_PARTITION_ID = std::numeric_limits<unsigned>::max();
 
 #define STK_16BIT_CONNECTIVITY_ORDINAL
 #ifdef STK_16BIT_CONNECTIVITY_ORDINAL
@@ -316,13 +342,41 @@ using ConnectivityOrdinal = uint16_t;
 constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = 65535;
 #else
 using ConnectivityOrdinal = uint32_t;
-constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = ~0U;
+constexpr ConnectivityOrdinal INVALID_CONNECTIVITY_ORDINAL = std::numeric_limits<ConnectivityOrdinal>::max();
+#endif
+
+#ifdef STK_16BIT_UPWARDCONN_INDEX_TYPE
+using UpwardConnIndexType = uint16_t;
+constexpr UpwardConnIndexType INVALID_UPWARDCONN_INDEX = 65535;
+#else
+using UpwardConnIndexType = uint32_t;
+constexpr UpwardConnIndexType INVALID_UPWARDCONN_INDEX = std::numeric_limits<UpwardConnIndexType>::max();
 #endif
 
 enum Permutation : unsigned char
 {
   DEFAULT_PERMUTATION = 0,
   INVALID_PERMUTATION = 128
+};
+
+struct FieldMetaData
+{
+  std::byte* m_data {};
+  int m_bytesPerEntity {};
+  int m_numComponentsPerEntity {};
+  int m_numCopiesPerEntity {};
+  int m_bucketSize {};
+  int m_bucketCapacity {};
+};
+
+struct DeviceFieldMetaData
+{
+  std::byte* m_data {};
+  std::byte* m_hostData {};
+  int m_numComponentsPerEntity {};
+  int m_numCopiesPerEntity {};
+  int m_bucketSize {};
+  int m_bucketCapacity {};
 };
 
 } // namespace mesh

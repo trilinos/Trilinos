@@ -58,7 +58,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
     public:
       Transform() {}
       virtual ~Transform() {}
-      virtual Coord  operator()(const Coord& x)
+      virtual Coord  operator()(const Coord& x) override
       {
         Coord y;
         operator()(x, y);
@@ -67,7 +67,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
 
       using VectorFieldGeneralFunction::operator();
 
-      virtual void operator()(const Coord& x, Coord& y) =0;
+      virtual void operator()(const Coord& x, Coord& y) override =0;
 
     };
 
@@ -269,8 +269,8 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
           }
       }
 
-      void sweep(unsigned elemType, unsigned sweptElemType,
-                 VectorOfCoord& oldNodes, VectorOfInt& oldElems, VectorOfCoord& newNodes, VectorOfInt& newElems,  VectorOfInt& newSweptElems)
+      void sweep(unsigned elemType, unsigned /*sweptElemType*/,
+                 VectorOfCoord& /*oldNodes*/, VectorOfInt& oldElems, VectorOfCoord& /*newNodes*/, VectorOfInt& newElems,  VectorOfInt& newSweptElems)
       {
         // for now we assume all elems are "vertex only", i.e. only linears, so we can just double the nodes and tack on the end
         // special cases: line to quad: have to reverse the nodes

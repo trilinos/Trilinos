@@ -43,7 +43,7 @@ namespace
 {
 using stk::unit_test_util::build_mesh;
 
-class MeshWithTwoBlocks : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithTwoBlocks : public stk::unit_test_util::MeshFixture
 {
 protected:
   void switch_half_mesh_to_part(stk::mesh::Part &addPart, stk::mesh::Part &removePart)
@@ -171,7 +171,7 @@ TEST_F(MeshWithTwoBlocks, getOneBlockAndOneNodeset)
 
 }
 
-class MeshWithOneBlock : public stk::unit_test_util::simple_fields::MeshFixture
+class MeshWithOneBlock : public stk::unit_test_util::MeshFixture
 {
 
 };

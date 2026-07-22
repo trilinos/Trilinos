@@ -35,44 +35,61 @@
 #ifndef NGPTYPES_HPP
 #define NGPTYPES_HPP
 
-#include <stk_util/ngp/NgpSpaces.hpp>
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/Types.hpp"
-#include <Kokkos_Core.hpp>
+#include "stk_mesh/baseImpl/ViewVector.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace stk {
 namespace mesh {
 
-using DeviceCommMapIndices        = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
-using EntityKeyViewType           = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
-using EntityViewType              = Kokkos::View<Entity*, stk::ngp::MemSpace>;
-using HostEntityViewType          = Kokkos::View<const Entity*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-using BucketConnectivityType      = Kokkos::View<Entity*, stk::ngp::MemSpace>;
-using UnsignedViewType            = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
-using Unsigned2dViewType          = Kokkos::View<unsigned**, stk::ngp::MemSpace>;
-using BoolViewType                = Kokkos::View<bool*, stk::ngp::MemSpace>;
-using OrdinalViewType             = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;
-using PartOrdinalViewType         = Kokkos::View<PartOrdinal*, stk::ngp::MemSpace>;
-using HostPartOrdinalViewType     = Kokkos::View<const PartOrdinal*, stk::ngp::HostExecSpace::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-using PermutationViewType         = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
-using FastSharedCommMapViewType   = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
-using HostMeshIndexType           = Kokkos::View<FastMeshIndex*>::HostMirror;
-using MeshIndexType               = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
-using BucketEntityOffsetsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;
+template <typename MemSpace> using DeviceCommMapIndices           = Kokkos::View<FastMeshIndex*, MemSpace>;
+template <typename MemSpace> using HostCommMapIndices             = typename DeviceCommMapIndices<MemSpace>::host_mirror_type;
+template <typename MemSpace> using NgpCommMapIndices              = Kokkos::View<FastMeshIndex*, MemSpace>;
+template <typename MemSpace> using NgpCommMapIndicesHostMirror    = typename NgpCommMapIndices<MemSpace>::host_mirror_type;
 
-template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace>;
-template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
+template <typename MemSpace> using EntityKeyViewType              = Kokkos::View<EntityKey*, MemSpace>;
+template <typename MemSpace> using EntityViewType                 = Kokkos::View<Entity*, MemSpace>;
+using HostEntityViewType = Kokkos::View<const Entity*, stk::ngp::HostExecSpace::memory_space,
+                                        Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+template <typename MemSpace> using BucketConnectivityType         = Kokkos::View<Entity*, MemSpace>;
 
-using FieldDataPointerHostViewType = Kokkos::View<uintptr_t*, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
-using FieldDataPointerDeviceViewType = Kokkos::View<uintptr_t*, Kokkos::LayoutRight, stk::ngp::MemSpace>;
+template <typename MemSpace> using UnsignedViewType               = Kokkos::View<unsigned*, MemSpace>;
+template <typename MemSpace> using Unsigned2dViewType             = Kokkos::View<unsigned**, MemSpace>;
+template <typename MemSpace> using OrdinalViewType                = Kokkos::View<ConnectivityOrdinal*, MemSpace>;
+template <typename MemSpace> using PartOrdinalViewType            = Kokkos::View<PartOrdinal*, MemSpace>;
+using HostPartOrdinalViewType = Kokkos::View<const PartOrdinal*, stk::ngp::HostExecSpace::memory_space,
+                                             Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+template <typename MemSpace> using PermutationViewType            = Kokkos::View<Permutation*, MemSpace>;
+template <typename MemSpace> using FastSharedCommMapViewType      = DeviceCommMapIndices<MemSpace>;
+template <typename MemSpace> using MeshIndexType                  = Kokkos::View<FastMeshIndex*, MemSpace,
+                                                                                 Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+template <typename MemSpace> using HostMeshIndexType              = typename MeshIndexType<MemSpace>::host_mirror_type;
 
-template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+template <typename MemSpace> using EntityOffsetPairViewType       = Kokkos::View<Kokkos::pair<Entity, unsigned>*, MemSpace>;
+template <typename MemSpace> using EntityOffsetPair2dViewType     = Kokkos::View<Kokkos::pair<Entity, unsigned>**, MemSpace>;
+template <typename MemSpace> using UnsignedPairViewType           = Kokkos::View<Kokkos::pair<unsigned, unsigned>*, MemSpace>;
+template <typename MemSpace> using EntityRankViewType             = Kokkos::View<EntityRank*, MemSpace>;
 
-#ifdef STK_USE_DEVICE_MESH
-#define ORDER_INDICES(i,j) j,i
-#else
-#define ORDER_INDICES(i,j) i,j
-#endif
+using DeviceStringType = Kokkos::View<char*, stk::ngp::HostPinnedSpace>;
+
+template <typename MemSpace> using DeviceFieldMetaDataArrayType   = Kokkos::View<DeviceFieldMetaData*, MemSpace>;
+template <typename MemSpace> using HostFieldMetaDataArrayType     = typename DeviceFieldMetaDataArrayType<MemSpace>::host_mirror_type;
+template <typename MemSpace> using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, MemSpace>;
+
+using FieldMetaDataArrayType = impl::ViewVector<FieldMetaData, stk::ngp::HostMemSpace>;
+
+using FieldMetaDataModCountType = Kokkos::View<unsigned, stk::ngp::HostPinnedSpace>;
+
+template <typename Space>
+struct DefaultLayoutSelector {
+  static constexpr Layout layout = DefaultDeviceLayout;
+};
+
+template <>
+struct DefaultLayoutSelector<stk::ngp::HostSpace> {
+  static constexpr Layout layout = DefaultHostLayout;
+};
 
 }
 }

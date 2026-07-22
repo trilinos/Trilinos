@@ -1,6 +1,0 @@
-<ParameterList name="MueLu">
-  <Parameter name="multigrid algorithm"     type="string"   value="emin"/>
-
-  <Parameter name="emin: iterative method"  type="string"   value="sd"/>
-  <Parameter name="emin: num iterations"    type="int"      value="4"/>
-</ParameterList>

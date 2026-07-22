@@ -63,6 +63,7 @@ public:
   static AuxMetaData & get(const stk::mesh::MetaData & stk_meta);
   static bool has(const stk::mesh::MetaData & stk_meta);
   static AuxMetaData & create(stk::mesh::MetaData & stk_meta); // must be called before calling get
+  static AuxMetaData & get_or_create(stk::mesh::MetaData & stk_meta);
 
   AuxMetaData ( const AuxMetaData & ) = delete;
   AuxMetaData & operator= ( const AuxMetaData & ) = delete;
@@ -88,14 +89,21 @@ public:
     const stk::mesh::EntityRank entity_rank,
     const unsigned num_states);
 
+  FieldRef register_stk_field(
+    const std::string & fieldName,
+    const FieldType & fieldType,
+    const stk::mesh::EntityRank entityRank,
+    const unsigned numStates,
+    const unsigned dimension,
+    const stk::mesh::Selector & selector);
+
   FieldRef register_field(
     const std::string & fld_name,
     const FieldType & field_type,
     const stk::mesh::EntityRank entity_rank,
     const unsigned num_states,
     const unsigned dimension,
-    const stk::mesh::Part & part,
-    const void * value_type_init = nullptr);
+    const stk::mesh::Part & part);
 
   void assign_part_id(stk::mesh::Part& part);
   stk::mesh::Part & declare_io_part(const std::string & name, stk::mesh::EntityRank entityRank, const bool restartOnlyIOPart=false);

@@ -58,7 +58,6 @@ TEST(StkMeshIoBrokerHowTo, singleStepOnRestart)
   MPI_Comm comm = MPI_COMM_WORLD;
   {
     stk::io::StkMeshIoBroker stkIo(comm);
-    stkIo.use_simple_fields();
     const std::string exodusFileName = "generated:1x1x8";
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();

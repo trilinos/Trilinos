@@ -51,7 +51,7 @@ namespace {
 // ========================================================================
 
 namespace {
-  std::string       codename;
+  std::string codename;
 } // namespace
 
 int main(int argc, char *argv[])
@@ -114,7 +114,7 @@ namespace {
     }
 
     dbi->set_field_separator(interFace.field_suffix());
-    dbi->set_lower_case_variable_names(false);
+    dbi->set_lowercase_variable_names(false);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");

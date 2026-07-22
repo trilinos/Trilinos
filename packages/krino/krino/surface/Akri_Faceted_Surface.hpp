@@ -37,7 +37,9 @@ public:
   virtual size_t size() const = 0;
   virtual size_t nonlocal_size() const = 0;
   virtual double point_distance(const stk::math::Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const = 0;
-  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) = 0;
+  void prepare_to_compute(const double time,
+      const BoundingBox & point_bbox,
+      const double truncation_length) override = 0;
   virtual std::string print_sizes() const = 0;
   virtual stk::math::Vector3d closest_point(const stk::math::Vector3d &x) const = 0;
 
@@ -100,7 +102,7 @@ public:
   virtual void swap(FacetedSurfaceBase & other) override;
 
   virtual size_t nonlocal_size() const override { return myNonLocalFacets.size(); }
-  virtual std::string print_sizes() const;
+  std::string print_sizes() const override;
 
   void parallel_distribute_facets(const size_t batch_size, const std::vector<BoundingBox> & proc_bboxes);
   double point_distance(const stk::math::Vector3d &x, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance) const override;
@@ -109,13 +111,15 @@ public:
   std::vector<FACET> & get_facets() { return myLocalFacets; }
 
   virtual stk::math::Vector3d closest_point(const stk::math::Vector3d &x) const override;
+  virtual bool can_approximate_closest_point_normal() const override { return true; }
+  virtual stk::math::Vector3d closest_point_normal(const stk::math::Vector3d &x) const override;
 
 public:
   stk::math::Vector3d pseudo_normal_at_closest_point(const stk::math::Vector3d &x) const;
   const FACET * get_closest_facet(const stk::math::Vector3d &x) const;
 
 private:
-  virtual void build_local_facets(const BoundingBox & proc_bbox) {}
+  virtual void build_local_facets(const BoundingBox & /*proc_bbox*/) {}
   
   std::vector<FACET> myLocalFacets;
 

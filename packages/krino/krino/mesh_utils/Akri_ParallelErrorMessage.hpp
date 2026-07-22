@@ -19,7 +19,7 @@ namespace krino
 class ParallelErrorMessage
 {
 public:
-  ParallelErrorMessage(const stk::Parallel & c);
+  ParallelErrorMessage(const stk::Parallel & c, const unsigned precision=16);
 
   template <typename T> ParallelErrorMessage & operator<<(const T & t)
   {

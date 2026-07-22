@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -15,7 +15,7 @@ C=======================================================================
       include 'nu_varcnt.blk'
 
       REAL CRD(NUMNP,*), DISP(NUMNP,*), SVAR(*)
-      INTEGER MAT(6,*)
+      INTEGER MAT(7,*)
       LOGICAL ISEVOK(nvarel,*)
       CHARACTER*(*) NAME
       REAL TIME(*)

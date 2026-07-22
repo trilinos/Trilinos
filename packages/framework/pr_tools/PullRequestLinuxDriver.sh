@@ -2,29 +2,27 @@
 SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
-# set -x  # echo commands
 
-# Fetch arguments
-on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
-on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
-on_kokkos_develop=$(echo "$@" | grep '\-\-kokkos\-develop' &> /dev/null && echo "1")
-on_rhel8=$(echo "$@" | grep '\-\-on_rhel8' &> /dev/null && echo "1")
-
-bootstrap=$(echo "$@" | grep '\-\-\no\-bootstrap' &> /dev/null && echo "0" || echo "1")
 
 # Configure ccache via environment variables
 function configure_ccache() {
     print_banner "Configuring ccache"
 
-    envvar_set_or_create CCACHE_NODISABLE true
-    envvar_set_or_create CCACHE_DIR '/fgs/trilinos/ccache/cache'
-    envvar_set_or_create CCACHE_BASEDIR "${WORKSPACE:?}"
-    envvar_set_or_create CCACHE_NOHARDLINK true
-    envvar_set_or_create CCACHE_UMASK 077
-    envvar_set_or_create CCACHE_MAXSIZE 100G
+    if [[ ${GENCONFIG_BUILD_NAME} == *"coverage"* ]]
+    then
+        message_std "PRDriver> " "Skipping ccache configuration due to being coverage build"
+    else
+        envvar_set_or_create CCACHE_NODISABLE true
+        envvar_set_or_create CCACHE_DIR '/fgs/trilinos/ccache/cache'
+        envvar_set_or_create CCACHE_BASEDIR "${WORKSPACE:?}"
+        envvar_set_or_create CCACHE_NOHARDLINK true
+        envvar_set_or_create CCACHE_UMASK 077
+        envvar_set_or_create CCACHE_MAXSIZE 100G
 
-    message_std "PRDriver> " "$(ccache --show-stats --verbose)"
+        message_std "PRDriver> " "$(ccache --show-stats --verbose)"
+    fi
 }
+
 
 # Load the right version of Git / Python based on a regex
 # match to the Jenkins job name.
@@ -59,6 +57,8 @@ function bootstrap_modules() {
         module unload sems-python
         module load sems-git/2.37.0
         module load sems-python/3.9.0
+        execute_command_checked "module load sems-ccache"
+        configure_ccache
 
         module list
     else
@@ -76,15 +76,84 @@ function bootstrap_modules() {
     print_banner "Bootstrap environment modules complete"
 }
 
+
 print_banner "PullRequestLinuxDriver.sh"
+
+# Argument defaults
+on_weaver=0
+on_ats2=0
+on_kokkos_develop=0
+on_rhel8=0
+bootstrap=1
+
+original_args=$@
+
+# Do POSIXLY_CORRECT option handling.
+ARGS=$(getopt -n PullRequestLinuxDriver.sh \
+ --options '+x' \
+ --longoptions on-rhel8,on_rhel8 \
+ --longoptions on-weaver,on_weaver \
+ --longoptions on-ats2,on_ats2 \
+ --longoptions kokkos-develop \
+ --longoptions extra-configure-args: \
+ --longoptions no-bootstrap -- "${@}") || exit $?
+
+eval set -- "${ARGS}"
+
+while [ "$#" -gt 0 ]
+do
+    case "${1}" in
+    (--on_weaver|--on-weaver)
+        on_weaver=1
+        shift
+        ;;
+    (--on_rhel8|--on-rhel8)
+        on_rhel8=1
+        shift
+        ;;
+    (--on_ats2|--on-ats2)
+        on_ats2=1
+        shift
+        ;;
+    (--kokkos-develop)
+        on_kokkos_develop=1
+        shift
+        ;;
+    (--no-bootstrap)
+        bootstrap=0
+        shift
+        ;;
+    (--extra-configure-args)
+        extra_configure_args=$2
+        shift 2
+        ;;
+    (-h|--help)
+        # When help is requested echo it to stdout.
+        echo -e "$USAGE"
+        exit 0
+        ;;
+    (-x)
+        set -x
+        shift
+        ;;
+    (--) # This is an explicit directive to stop processing options.
+        shift
+        break
+        ;;
+    (-*) # Catch options which are defined but not implemented.
+        echo >&2 "${toolName}: ${1}: Unimplemented option passed."
+        exit 1
+        ;;
+    (*) # The first parameter terminates option processing.
+        break
+        ;;
+    esac
+done
 
 # Set up Sandia PROXY environment vars
 envvar_set_or_create https_proxy 'http://proxy.sandia.gov:80'
 envvar_set_or_create http_proxy  'http://proxy.sandia.gov:80'
 envvar_set_or_create no_proxy    'localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
-#export https_proxy=http://proxy.sandia.gov:80
-#export http_proxy=http://proxy.sandia.gov:80
-#export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 # bootstrap the python and git modules for this system
 if [[ ${bootstrap} == "1" ]]; then
@@ -106,8 +175,9 @@ sig_script_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullReque
 sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
 
 if [[ ${on_kokkos_develop} == "1" ]]; then
-    message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop"
+    message_std "PRDriver> --kokkos-develop is set - setting kokkos and kokkos-kernels packages to current develop and pointing at them"
     "${SCRIPTPATH}"/SetKokkosDevelop.sh
+    extra_configure_args="-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels${extra_configure_args:+;${extra_configure_args}}"
 else
     print_banner "Merge Source into Target"
     message_std "PRDriver> " "TRILINOS_SOURCE_SHA: ${TRILINOS_SOURCE_SHA:?}"
@@ -129,18 +199,12 @@ else
     message_std "PRDriver> " "Execute Merge Command: ${merge_cmd:?}"
     message_std "PRDriver> " ""
     execute_command_checked "${merge_cmd:?}"
-    #err=$?
-    #if [ $err != 0 ]; then
-    #    print_banner "An error occurred during merge"
-    #    exit $err
-    #fi
     print_banner "Merge completed"
 
 
     print_banner "Check for PR Driver Script Modifications"
 
     # Get the md5 checksum of this script:
-    #sig_script_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
     sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
     message_std "PRDriver> " ""
     message_std "PRDriver> " "Script File: ${SCRIPTFILE:?}"
@@ -148,7 +212,6 @@ else
     message_std "PRDriver> " "New md5sum : ${sig_script_new:?}"
 
     # Get the md5 checksum of the Merge script
-    #sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
     export MERGE_SCRIPT=${SCRIPTPATH:?}/PullRequestLinuxDriverMerge.py
     sig_merge_new=$(get_md5sum ${MERGE_SCRIPT:?})
     message_std "PRDriver> " ""
@@ -161,7 +224,7 @@ else
         message_std "PRDriver> " ""
         message_std "PRDriver> " "Driver or Merge script change detected. Re-launching PR Driver"
         message_std "PRDriver> " ""
-        ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh
+        ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh $original_args
         exit $?
     fi
 
@@ -176,24 +239,13 @@ if [[ "${JOB_BASE_NAME:?}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testi
     mode="installation"
 fi
 
-
 envvar_set_or_create TRILINOS_BUILD_DIR ${WORKSPACE}/pull_request_test
-
-#message_std "PRDriver> " "Create build directory if it does not exist."
-#message_std "PRDriver> " "Build Dir: ${TRILINOS_BUILD_DIR:?}"
-#mkdir -p ${TRILINOS_BUILD_DIR:?}
-
-
 
 print_banner "Launch the Test Driver"
 
-
 # Prepare the command for the TEST operation
 test_cmd_options=(
-    --source-repo-url=${TRILINOS_SOURCE_REPO:?}
-    --target-repo-url=${TRILINOS_TARGET_REPO:?}
     --target-branch-name=${TRILINOS_TARGET_BRANCH:?}
-    --pullrequest-build-name=${JOB_BASE_NAME:?}
     --genconfig-build-name=${GENCONFIG_BUILD_NAME:?}
     --pullrequest-env-config-file=${LOADENV_CONFIG_FILE:?}
     --pullrequest-gen-config-file=${GENCONFIG_CONFIG_FILE:?}
@@ -208,22 +260,35 @@ test_cmd_options=(
     --filename-subprojects=${WORKSPACE:?}/package_subproject_list.cmake
     --source-dir=${WORKSPACE}/Trilinos
     --build-dir=${TRILINOS_BUILD_DIR:?}
-    --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
-    --dashboard-build-name=${DASHBOARD_BUILD_NAME}
 )
 
-if [[ ${on_kokkos_develop} == "1" ]]
+if [[ ${DASHBOARD_BUILD_NAME:-} ]]
 then
-    test_cmd_options+=( "--extra-configure-args=\"-DKokkos_SOURCE_DIR_OVERRIDE:string=kokkos;-DKokkosKernels_SOURCE_DIR_OVERRIDE:string=kokkos-kernels\" ")
+    test_cmd_options+=( "--dashboard-build-name=${DASHBOARD_BUILD_NAME} ")
+fi
+
+if [[ ${extra_configure_args} ]]
+then
+    test_cmd_options+=( "--extra-configure-args=\"${extra_configure_args}\" ")
 fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
 then
     test_cmd_options+=( "--use-explicit-cachefile ")
-fi 
+fi
 
-# Execute the TEST operation
+if [[ ${GENCONFIG_BUILD_NAME} == *"framework"*
+    || ${GENCONFIG_BUILD_NAME} == *"compsim"* ]]
+then
+    test_cmd_options+=( "--skip-create-packageenables ")
+fi
+
+if [[ ${GENCONFIG_BUILD_NAME} == *"_uvm_"* && ${GENCONFIG_BUILD_NAME} == *"no-package-enables"* ]]
+then
+    test_cmd_options+=( "--skip-run-tests" )
+fi
+
 test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 # Call the script to launch the tests
@@ -231,6 +296,3 @@ print_banner "Execute Test Command"
 message_std "PRDriver> " "cd $(pwd)"
 message_std "PRDriver> " "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
 execute_command_checked "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
-
-#${test_cmd} --pullrequest-cdash-track="${PULLREQUEST_CDASH_TRACK:?}"
-#exit $?

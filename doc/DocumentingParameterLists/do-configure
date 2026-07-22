@@ -35,10 +35,10 @@ import subprocess
 def main():
     # Make sure that 'cmake' is in the user's path
     try:
-        cmake = subprocess.check_output(['which','cmake'])
+        cmake = subprocess.check_output(['which','cmake'], text=True)
         cmakeCommand[0] = cmake.strip()
     except subprocess.CalledProcessError:
-        print "Error: cannot find 'cmake'"
+        print("Error: cannot find 'cmake'")
         sys.exit(1)
 
     # Pull off any options and arguments from the command line.  I use optparse
@@ -90,7 +90,7 @@ def main():
     # If 'CMakeCache.txt' exists, delete it and echo the command
     cmakeCacheFileName = 'CMakeCache.txt'
     if os.path.isfile(cmakeCacheFileName):
-        print 'rm', cmakeCacheFileName
+        print('rm', cmakeCacheFileName)
         os.remove(cmakeCacheFileName)
 
     # If 'CMakeFiles' directory exists, delete it recursively and echo the
@@ -98,14 +98,14 @@ def main():
     # subprocess.call()
     cmakeFilesDir = 'CMakeFiles'
     if os.path.isdir(cmakeFilesDir):
-        print 'rm -r', cmakeFilesDir
+        print('rm -r', cmakeFilesDir)
         subprocess.call(['rm', '-r', cmakeFilesDir])
 
     # Pretty print the cmake command and then call it.  Note that 'join' is a
     # string method that takes a list of strings and joins them together using
     # the parent string as the separator.  We choose a separator string that
     # gives us a space and continuation character, a newline, and indentation.
-    print " \\\n    ".join(cmakeCommand)
+    print(" \\\n    ".join(cmakeCommand))
     subprocess.call(cmakeCommand)
 
 ################################################################################

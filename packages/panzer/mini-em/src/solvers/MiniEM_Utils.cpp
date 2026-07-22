@@ -1,6 +1,17 @@
+// @HEADER
+// *****************************************************************************
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//
+// Copyright 2011 NTESS and the Panzer contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef _MiniEM_Utils_cpp_
 #define _MiniEM_Utils_cpp_
 
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "MiniEM_Utils.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
@@ -196,8 +207,10 @@ namespace mini_em {
       // return Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(thyConst);
       return thyConst;
 #endif
-    } else
+    } else {
       TEUCHOS_ASSERT(false);
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+    }
   }
 
   bool isMatrixFreeOperator(const Teko::LinearOp& op) {

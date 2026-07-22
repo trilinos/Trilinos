@@ -10,7 +10,7 @@
 namespace
 {
 
-class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
+class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::MeshFixture
 {
 protected:
     DestroyElementTopologyPerformanceTest()
@@ -41,19 +41,16 @@ private:
 };
 
 
-class DestroyElementTopologyPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class DestroyElementTopologyPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
     DestroyElementTopologyPerformance(stk::mesh::BulkData &bulk)
-      : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+      : stk::unit_test_util::PerformanceTester(bulk.parallel()),
         bulkData(bulk)
     { }
 protected:
-    virtual void run_algorithm_to_time()
-    {
-        bulkData.destroy_elements_of_topology(stk::topology::HEX_8);
-    }
-    virtual size_t get_value_to_output_as_iteration_count() { return 1; }
+ virtual void run_algorithm_to_time() override { bulkData.destroy_elements_of_topology(stk::topology::HEX_8); }
+ virtual size_t get_value_to_output_as_iteration_count() override { return 1; }
 private:
     stk::mesh::BulkData & bulkData;
 };
@@ -64,22 +61,22 @@ TEST_F(DestroyElementTopologyPerformanceTest, DestroyElementTopology)
 }
 
 
-class DestroyAllElementsIndividuallyPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
+class DestroyAllElementsIndividuallyPerformance : public stk::unit_test_util::PerformanceTester
 {
 public:
     DestroyAllElementsIndividuallyPerformance(stk::mesh::BulkData &bulk)
-      : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+      : stk::unit_test_util::PerformanceTester(bulk.parallel()),
         bulkData(bulk)
     { }
 protected:
-    virtual void run_algorithm_to_time()
-    {
-        bulkData.modification_begin();
-        for(stk::mesh::EntityRank rank : {stk::topology::ELEM_RANK, stk::topology::FACE_RANK ,stk::topology::NODE_RANK})
-            destroy_entities_of_rank(rank);
-        bulkData.modification_end();
+ virtual void run_algorithm_to_time() override
+ {
+   bulkData.modification_begin();
+   for (stk::mesh::EntityRank rank : {stk::topology::ELEM_RANK, stk::topology::FACE_RANK, stk::topology::NODE_RANK})
+     destroy_entities_of_rank(rank);
+   bulkData.modification_end();
     }
-    virtual size_t get_value_to_output_as_iteration_count() { return 1; }
+    virtual size_t get_value_to_output_as_iteration_count() override { return 1; }
 private:
     void destroy_entities_of_rank(stk::mesh::EntityRank rank)
     {

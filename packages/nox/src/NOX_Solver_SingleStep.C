@@ -10,7 +10,6 @@
 #include "NOX_Solver_SingleStep.H"    // class definition
 #include "NOX_GlobalData.H"    // class definition
 #include "NOX_Abstract_Group.H"    // class definition
-#include "NOX_Abstract_Group.H"    // class definition
 #include "NOX_Solver_SolverUtils.H"
 #include "Teuchos_ParameterList.hpp"  // class data element
 #include "NOX_Observer.hpp"
@@ -26,7 +25,8 @@ SingleStep(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   updateJacobian(true),
   printNorms(false),
   computeRelativeNorm(false),
-  normF_0(0.0)
+  normF_0(0.0),
+  dirVecPtr(xGrp->getX().clone(ShapeCopy)) // stores the result of explicit call applyJacobianInverse()
 {
   Teuchos::ParameterList validParams;
   validParams.set("Ignore Linear Solver Failures",false,"Return the step as converged, ignoring the returned linear solver status.");
@@ -131,8 +131,7 @@ bool NOX::Solver::SingleStep::try_step()
   // Pick Jacobian matrix to use
   Teuchos::RCP<NOX::Abstract::Group> jacobian = updateJacobian ? solnPtr : frozenJacobianPtr;
 
-  // Reuse memory in group instead of new allocation for dir
-  NOX::Abstract::Vector& dir = const_cast<NOX::Abstract::Vector&>(solnPtr->getNewton());
+  NOX::Abstract::Vector& dir = *dirVecPtr;
   const auto ls_status = jacobian->applyJacobianInverse(paramsPtr->sublist("Single Step Solver").sublist("Linear Solver"),
                                                         solnPtr->getF(),
                                                         dir);
@@ -248,10 +247,11 @@ void NOX::Solver::SingleStep::printUpdate()
       if (!solnPtr->isF())
         solnPtr->computeF();
       double normF = solnPtr->getF().norm();
-      double normDx = solnPtr->getNewtonPtr()->norm();
+      double normDx = dirVecPtr->norm();
       utilsPtr->out() << "||F||=" << normF << ", ||dx||=" << normDx;
       if (computeRelativeNorm) {
-        utilsPtr->out() << ", ||F|| / ||F_0||=" << normF/normF_0;
+        utilsPtr->out() << ", ||F|| / ||F_0||=";
+        utilsPtr->out() << (normF_0 ? normF / normF_0 : std::numeric_limits<double>::quiet_NaN());
       }
     }
     if (status == NOX::StatusTest::Converged)

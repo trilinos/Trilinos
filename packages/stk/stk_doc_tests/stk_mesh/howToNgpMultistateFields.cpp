@@ -10,6 +10,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_ngp_test/ngp_test.hpp>
@@ -23,51 +24,55 @@ void set_field_on_host(const stk::mesh::BulkData& stkMesh,
 {
   stk::mesh::Selector select(stkField);
 
-  stkField.sync_to_host();
+  auto stkFieldData = stkField.data<stk::mesh::ReadWrite>();
 
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), select,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity entity) {
-      *stk::mesh::field_data(stkField, entity) = fieldVal;
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity entity) {
+      auto entityValues = stkFieldData.entity_values(entity);
+      entityValues() = fieldVal;
     });
-
-  stkField.modify_on_host();
 }
 
 void set_field_on_device(const stk::mesh::NgpMesh& ngpMesh,
-                         stk::mesh::NgpField<double>& ngpField,
+                         stk::mesh::Field<double>& stkField,
                          double fieldVal)
 {
-  stk::mesh::Selector select(*ngpField.get_field_base());
+  stk::mesh::Selector select(stkField);
 
-  ngpField.sync_to_device();
+  auto stkFieldData = stkField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
 
-  stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), select,
-    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
-      ngpField(entityIndex, 0) = fieldVal;
+  stk::mesh::for_each_entity_run(ngpMesh, stkField.entity_rank(), select,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
+      auto entityValues = stkFieldData.entity_values(entity);
+      entityValues() = fieldVal;
     });
-
-  ngpField.modify_on_device();
 }
 
+template<typename FieldDataType>
 void check_field_on_host(const stk::mesh::BulkData & bulk,
-                         stk::mesh::Field<double> & stkField,
+                         stk::mesh::Selector & select,
+                         stk::mesh::EntityRank rank,
+                         FieldDataType & stkFieldData,
                          double expectedFieldValue)
 {
-  stk::mesh::Selector select(stkField);
-  stk::mesh::for_each_entity_run(bulk, stkField.entity_rank(), select,
-    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity entity) {
-      EXPECT_NEAR(*stk::mesh::field_data(stkField, entity), expectedFieldValue, 1.e-9);
+  stk::mesh::for_each_entity_run(bulk, rank, select,
+    [&](const stk::mesh::BulkData& /*mesh*/, stk::mesh::Entity entity) {
+      auto entityValues = stkFieldData.entity_values(entity);
+      EXPECT_NEAR(entityValues(), expectedFieldValue, 1.e-9);
     });
 }
 
+template<typename FieldDataType>
 void check_field_on_device(const stk::mesh::NgpMesh& ngpMesh,
-                           stk::mesh::NgpField<double> & ngpField,
+                           stk::mesh::Selector & select,
+                           stk::mesh::EntityRank rank,
+                           FieldDataType & stkFieldData,
                            double expectedFieldValue)
 {
-  stk::mesh::Selector select(*ngpField.get_field_base());
-  stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), select,
-    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
-      NGP_EXPECT_NEAR(ngpField(entityIndex, 0), expectedFieldValue, 1.e-9);
+  stk::mesh::for_each_entity_run(ngpMesh, rank, select,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
+      auto entityValues = stkFieldData.entity_values(entity);
+      NGP_EXPECT_NEAR(entityValues(), expectedFieldValue, 1.e-9);
     });
 }
 
@@ -78,7 +83,6 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_checkOnDevice)
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                      .set_spatial_dimension(3).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
   constexpr unsigned numStates = 2;
   stk::mesh::Field<double>& stkFieldNew = meta.declare_field<double>(stk::topology::ELEM_RANK,
                                                                      "myElemField", numStates);
@@ -89,6 +93,10 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_checkOnDevice)
   EXPECT_EQ(stk::mesh::StateNew, stkFieldNew.state());
   stk::mesh::Field<double>& stkFieldOld = stkFieldNew.field_of_state(stk::mesh::StateOld);
   EXPECT_EQ(stk::mesh::StateOld, stkFieldOld.state());
+  stk::mesh::Selector selectFieldOld(stkFieldOld);
+  stk::mesh::Selector selectFieldNew(stkFieldNew);
+  stk::mesh::EntityRank entityRankFieldOld = stkFieldOld.entity_rank();
+  stk::mesh::EntityRank entityRankFieldNew = stkFieldNew.entity_rank();
 
   constexpr double oldValue = 1.0;
   constexpr double newValue = 2.0;
@@ -98,11 +106,11 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_checkOnDevice)
   bulkPtr->update_field_data_states();
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(stkFieldOld);
-  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(stkFieldNew);
 
-  check_field_on_device(ngpMesh, ngpFieldOld, newValue);
-  check_field_on_device(ngpMesh, ngpFieldNew, oldValue);
+  auto stkFieldOldData = stkFieldOld.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  auto stkFieldNewData = stkFieldNew.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData, newValue);
+  check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData, oldValue);
 }
 
 NGP_TEST(NgpMultistateField, setOnHost_swap_preExistingNgpFieldsNeedSync)
@@ -112,7 +120,6 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_preExistingNgpFieldsNeedSync)
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                      .set_spatial_dimension(3).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
   constexpr unsigned numStates = 2;
   stk::mesh::Field<double>& stkFieldNew = meta.declare_field<double>(stk::topology::ELEM_RANK,
                                                                      "myElemField", numStates);
@@ -124,6 +131,10 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_preExistingNgpFieldsNeedSync)
   EXPECT_EQ(stk::mesh::StateNew, stkFieldNew.state());
   stk::mesh::Field<double>& stkFieldOld = stkFieldNew.field_of_state(stk::mesh::StateOld);
   EXPECT_EQ(stk::mesh::StateOld, stkFieldOld.state());
+  stk::mesh::Selector selectFieldOld(stkFieldOld);
+  stk::mesh::Selector selectFieldNew(stkFieldNew);
+  stk::mesh::EntityRank entityRankFieldOld = stkFieldOld.entity_rank();
+  stk::mesh::EntityRank entityRankFieldNew = stkFieldNew.entity_rank();
 
   constexpr double oldValue = 1.0;
   constexpr double newValue = 2.0;
@@ -131,28 +142,37 @@ NGP_TEST(NgpMultistateField, setOnHost_swap_preExistingNgpFieldsNeedSync)
   set_field_on_host(*bulkPtr, stkFieldNew, newValue);
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(stkFieldOld);
-  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(stkFieldNew);
 
-  check_field_on_device(ngpMesh, ngpFieldOld, oldValue);
-  check_field_on_device(ngpMesh, ngpFieldNew, newValue);
+  {
+    auto stkFieldOldData = stkFieldOld.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto stkFieldNewData = stkFieldNew.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData, oldValue);
+    check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData, newValue);
+  }
 
-  stk::mesh::sync_to_host_and_mark_modified(meta);
-  bulkPtr->update_field_data_states();
+  {
+    bulkPtr->update_field_data_states();
+    auto stkFieldOldData = stkFieldOld.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto stkFieldNewData = stkFieldNew.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 
 #ifdef STK_USE_DEVICE_MESH
-  check_field_on_device(ngpMesh, ngpFieldOld, oldValue);
-  check_field_on_device(ngpMesh, ngpFieldNew, newValue);
+    check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData, oldValue);
+    check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData, newValue);
 #else
-  check_field_on_device(ngpMesh, ngpFieldOld, newValue);
-  check_field_on_device(ngpMesh, ngpFieldNew, oldValue);
+    check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData, newValue);
+    check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData, oldValue);
 #endif
+  }
 
-  ngpFieldOld.sync_to_device();
-  ngpFieldNew.sync_to_device();
+  {
+    stkFieldOld.synchronize<stk::mesh::ReadWrite>();
+    stkFieldNew.synchronize<stk::mesh::ReadWrite>();
+    auto stkFieldOldData = stkFieldOld.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto stkFieldNewData = stkFieldNew.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 
-  check_field_on_device(ngpMesh, ngpFieldOld, newValue);
-  check_field_on_device(ngpMesh, ngpFieldNew, oldValue);
+    check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData, newValue);
+    check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData, oldValue);
+  }
   //ENDNgpMultiStateField
 }
 
@@ -163,7 +183,6 @@ NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
   std::unique_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
                                                      .set_spatial_dimension(3).create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
-  meta.use_simple_fields();
   constexpr unsigned numStates = 2;
   stk::mesh::Field<double>& stkFieldNew = meta.declare_field<double>(stk::topology::ELEM_RANK,
                                                                      "myElemField", numStates);
@@ -173,31 +192,36 @@ NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
   EXPECT_EQ(stk::mesh::StateNew, stkFieldNew.state());
   stk::mesh::Field<double>& stkFieldOld = stkFieldNew.field_of_state(stk::mesh::StateOld);
   EXPECT_EQ(stk::mesh::StateOld, stkFieldOld.state());
+  stk::mesh::Selector selectFieldOld(stkFieldOld);
+  stk::mesh::Selector selectFieldNew(stkFieldNew);
+  stk::mesh::EntityRank entityRankFieldOld = stkFieldOld.entity_rank();
+  stk::mesh::EntityRank entityRankFieldNew = stkFieldNew.entity_rank();
 
   //BEGINNgpMultiStateFieldRotateOnDevice
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(stkFieldOld);
-  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(stkFieldNew);
 
   constexpr double oldValue = 1.0;
   constexpr double newValue = 2.0;
 
-  set_field_on_device(ngpMesh, ngpFieldOld, oldValue);
-  set_field_on_device(ngpMesh, ngpFieldNew, newValue);
-#ifdef STK_USE_DEVICE_MESH
-  check_field_on_host(*bulkPtr, stkFieldOld, 0.0);
-  check_field_on_host(*bulkPtr, stkFieldNew, 0.0);
-#else
-  check_field_on_host(*bulkPtr, stkFieldOld, oldValue);
-  check_field_on_host(*bulkPtr, stkFieldNew, newValue);
-#endif
+  set_field_on_device(ngpMesh, stkFieldOld, oldValue);
+  set_field_on_device(ngpMesh, stkFieldNew, newValue);
+
+  auto stkFieldOldData = stkFieldOld.data();
+  auto stkFieldNewData = stkFieldNew.data();
+
+  check_field_on_host(*bulkPtr, selectFieldOld, entityRankFieldOld, stkFieldOldData, oldValue);
+  check_field_on_host(*bulkPtr, selectFieldNew, entityRankFieldNew, stkFieldNewData, newValue);
 
   const bool rotateNgpFieldViews = true;
   bulkPtr->update_field_data_states(rotateNgpFieldViews);
 
-  check_field_on_device(ngpMesh, ngpFieldOld, newValue);
-  check_field_on_device(ngpMesh, ngpFieldNew, oldValue);
+  {
+    auto stkFieldOldData2 = stkFieldOld.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto stkFieldNewData2 = stkFieldNew.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+
+    check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData2, newValue);
+    check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData2, oldValue);
+  }
   //ENDNgpMultiStateFieldRotateOnDevice
 }
-
 }

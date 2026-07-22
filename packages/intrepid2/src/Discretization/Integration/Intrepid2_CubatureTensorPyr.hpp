@@ -29,6 +29,10 @@ namespace Intrepid2 {
   class CubatureTensorPyr
     : public CubatureTensor<DeviceType,pointValueType,weightValueType> {
   public:
+      using TensorPointDataType      = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::TensorPointDataType;
+      using TensorWeightDataType      = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::TensorWeightDataType;
+      using PointViewTypeAllocatable = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::PointViewTypeAllocatable;
+      using WeightViewTypeAllocatable = typename CubatureTensor<DeviceType,pointValueType,weightValueType>::WeightViewTypeAllocatable;
 
     template<typename cubPointViewType,
              typename cubWeightViewType>
@@ -68,7 +72,7 @@ namespace Intrepid2 {
     virtual
     void
     getCubature( PointViewType  cubPoints,
-                 weightViewType cubWeights ) const {
+                 weightViewType cubWeights ) const override {
       getCubatureImpl( cubPoints,
                        cubWeights );
     }
@@ -91,8 +95,65 @@ namespace Intrepid2 {
                        const CubatureLineType2 line2 ) 
       : CubatureTensor<DeviceType,pointValueType,weightValueType>(line0, line1, line2) {}
     
+      
+    /** \brief Returns a points container appropriate for passing to getCubature().
+
+        \return cubPoints  - Data structure sized for the cubature points.
+    */
+    virtual TensorPointDataType allocateCubaturePoints() const override
+    {
+      std::vector< PointViewTypeAllocatable > cubaturePointComponents(1);
+      
+      int numCubatures = this->getNumCubatures();
+      int numPoints = 1;
+      for (ordinal_type i=0;i<numCubatures;++i)
+      {
+        numPoints *= this->getCubatureComponent(i).getNumPoints();
+      }
+      
+      const int dim = 3;
+      cubaturePointComponents[0] = PointViewTypeAllocatable("cubature points", numPoints, dim);
+      
+      return TensorPointDataType(cubaturePointComponents);
+    }
+    
+    /** \brief Returns a weight container appropriate for passing to getCubature().
+
+        \return cubWeights  - Data structure sized for the cubature weights.
+    */
+    virtual TensorWeightDataType allocateCubatureWeights() const override
+    {
+      using WeightDataType = Data<weightValueType,DeviceType>;
+      
+      std::vector< WeightDataType > cubatureWeightComponents(1);
+      int numPoints = 1;
+      int numCubatures = this->getNumCubatures();
+      for (ordinal_type i=0;i<numCubatures;++i)
+      {
+        numPoints *= this->getCubatureComponent(i).getNumPoints();
+      }
+      
+      cubatureWeightComponents[0] = WeightDataType(WeightViewTypeAllocatable("cubature weights", numPoints));
+      
+      return TensorWeightDataType(cubatureWeightComponents);
+    }
+
+   /** \brief Returns tensor cubature points and weights.  For non-tensor cubatures, the tensor structures are trivial, thin wrappers around the data returned by getCubature().  The provided containers should be pre-allocated through calls to allocateCubaturePoints() and allocateCubatureWeights().
+
+       \param cubPoints       [out]   - TensorPoints structure containing the cubature points.
+       \param cubWeights      [out]  - TensorData structure containing cubature weights.
+   */
+   virtual
+   void
+   getCubature( const TensorPointDataType & tensorCubPoints,
+                const TensorWeightDataType & tensorCubWeights) const override {
+     // tensorCubPoints/Weights should have trivial tensor structure
+     auto points  = tensorCubPoints.getTensorComponent(0);
+        auto weights = tensorCubWeights.getTensorComponent(0).getUnderlyingView();
+        this->getCubature(points,weights);
+   }
   };
-} 
+}
 
 #include "Intrepid2_CubatureTensorPyrDef.hpp"
 

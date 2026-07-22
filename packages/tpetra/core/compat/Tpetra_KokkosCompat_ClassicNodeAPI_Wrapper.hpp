@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TPETRA_KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 #define TPETRA_KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
@@ -11,9 +20,9 @@
 // you.
 //
 namespace Teuchos {
-  class ParameterList;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+class ParameterList;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -24,10 +33,10 @@ namespace KokkosCompat {
 /// \tparam ExecutionSpace The type of the Kokkos execution space to wrap.
 /// \tparam MemorySpace The Kokkos memory space in which to work.
 ///   Defaults to the default memory space of ExecutionSpace.
-template<class ExecutionSpace,
-         class MemorySpace = typename ExecutionSpace::memory_space>
+template <class ExecutionSpace,
+          class MemorySpace = typename ExecutionSpace::memory_space>
 class KokkosDeviceWrapperNode {
-public:
+ public:
   //! The Node's Kokkos execution space.
   typedef ExecutionSpace execution_space;
   //! The Node's Kokkos memory space.
@@ -56,58 +65,59 @@ public:
   //! Whether the ExecutionSpace is GPU-like (its default memory space is not HostSpace)
   static constexpr bool is_gpu = !is_cpu;
 
-  KokkosDeviceWrapperNode (Teuchos::ParameterList& /* params */) = delete;
-  KokkosDeviceWrapperNode () = delete;
+  //! Whether the device is an APU with a single memory space shared between device and host (but which is not HostSpace).
+  static constexpr bool is_unified_memory_space = is_gpu &&
+                                                  Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename execution_space::memory_space>::accessible;
+
+  KokkosDeviceWrapperNode(Teuchos::ParameterList& /* params */) = delete;
+  KokkosDeviceWrapperNode()                                     = delete;
 
   //! Human-readable name of this Node.
-  static std::string name ();
+  static std::string name();
 };
 
 #ifdef KOKKOS_ENABLE_SYCL
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
-  typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
 #else
-  typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::Experimental::SYCL, ::Kokkos::Experimental::SYCLDeviceUSMSpace> KokkosSYCLWrapperNode;
 #endif
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
-  typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPManagedSpace> KokkosHIPWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPManagedSpace> KokkosHIPWrapperNode;
 #else
-  typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPSpace> KokkosHIPWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::HIP, ::Kokkos::HIPSpace> KokkosHIPWrapperNode;
 #endif
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
-  typedef KokkosDeviceWrapperNode<::Kokkos::Cuda,::Kokkos::CudaUVMSpace> KokkosCudaWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::Cuda, ::Kokkos::CudaUVMSpace> KokkosCudaWrapperNode;
 #else
-  typedef KokkosDeviceWrapperNode<::Kokkos::Cuda> KokkosCudaWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::Cuda> KokkosCudaWrapperNode;
 #endif
 #endif
 
 #ifdef KOKKOS_ENABLE_OPENMP
-  typedef KokkosDeviceWrapperNode<::Kokkos::OpenMP> KokkosOpenMPWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::OpenMP> KokkosOpenMPWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_THREADS
-  typedef KokkosDeviceWrapperNode<::Kokkos::Threads> KokkosThreadsWrapperNode;
+typedef KokkosDeviceWrapperNode<::Kokkos::Threads> KokkosThreadsWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_SERIAL
-  typedef KokkosDeviceWrapperNode<::Kokkos::Serial> KokkosSerialWrapperNode;
-#endif // KOKKOS_ENABLE_SERIAL
+typedef KokkosDeviceWrapperNode<::Kokkos::Serial> KokkosSerialWrapperNode;
+#endif  // KOKKOS_ENABLE_SERIAL
 
-  // The above definitions / initializations of class (static)
-  // variables need to precede the first use of these variables.
-  // Otherwise, CUDA 7.5 with GCC 4.8.4 emits a warning ("explicit
-  // specialization of member ... must precede its first use").
+// The above definitions / initializations of class (static)
+// variables need to precede the first use of these variables.
+// Otherwise, CUDA 7.5 with GCC 4.8.4 emits a warning ("explicit
+// specialization of member ... must precede its first use").
 
-} // namespace KokkosCompat
-} // namespace Tpetra
+}  // namespace KokkosCompat
+}  // namespace Tpetra
 
-
-
-
-#endif // TPETRAKOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
+#endif  // TPETRAKOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP

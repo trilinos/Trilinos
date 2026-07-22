@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,9 +6,9 @@
 #pragma once
 
 #include "exo_entity.h"
-#include "side_set.h" // for Side_Set
+#include "util.h"
 
-template <typename INT> class ExoII_Read;
+template <typename INT> class Exo_Read;
 
 template <typename INT> class Node_Set : public Exo_Entity
 {
@@ -45,5 +45,5 @@ private:
   mutable INT    *nodeIndex{nullptr}; // An index array which orders the nodelist in sorted order.
   mutable double *dist_factors{nullptr}; // Array.
 
-  friend class ExoII_Read<INT>;
+  friend class Exo_Read<INT>;
 };

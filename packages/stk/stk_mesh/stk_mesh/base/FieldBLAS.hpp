@@ -36,1853 +36,1412 @@
 #define STK_MESH_BASE_FIELDBLAS_HPP
 
 #include <stk_util/stk_config.h>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
+
 #include <stk_mesh/base/Field.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Ngp.hpp>
-#include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/baseImpl/FieldBLASImpl.hpp>
+#include <stk_mesh/baseImpl/NgpFieldBLASImpl.hpp>
 
-#include <complex>
-#include <string>
-#include <iostream>
-#include <algorithm>
+#include "stk_util/ngp/NgpSpaces.hpp"
 
-#if defined(_OPENMP) && !defined(__INTEL_COMPILER)
-#define OPEN_MP_ACTIVE_FIELDBLAS_HPP
-// there seems to be an issue with OpenMP combined with GoogleTest macros with Intel compilers
-// example of error:
-//    openMP.C(206): internal error: assertion failed at: "shared/cfe/edgcpfe/checkdir.c", line 5531
-#include <omp.h>
+namespace stk::mesh {
 
-#endif
-
-namespace stk {
-namespace mesh {
-
-template<typename Scalar>
-struct BucketSpan {
-  Scalar* ptr     = nullptr;
-  unsigned length = 0;
-
-  unsigned size() const { return length; }
-
-  const Scalar* data() const { return ptr; }
-        Scalar* data()       { return ptr; }
-
-        Scalar& operator[](unsigned i)       noexcept { return ptr[i]; }
-  const Scalar& operator[](unsigned i) const noexcept { return ptr[i]; }
-
-  template<typename Field_t>
-  BucketSpan(const Field_t & f, const Bucket& b)
-  {
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-    ptr    = reinterpret_cast<Scalar*>(field_meta_data.m_data);
-    length = b.size() * field_meta_data.m_bytesPerEntity/f.data_traits().size_of;
-  }
-
-  BucketSpan& operator=(const BucketSpan& B)
-  {
-    STK_ThrowAssertMsg(length == B.length, "The registered field lengths must match to be copied correctly");
-
-    for(size_t i = 0; i < length; ++i) {
-      ptr[i] = B.ptr[i];
-    }
-    return *this;
-  }
-};
-
-template<typename Field_t>
-inline bool is_compatible(const Field_t& x, const Field_t& y)
+//==============================================================================
+// axpy: y[i] = a*x[i] + y[i]
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_axpy(T alpha,
+    const FieldBase& xField,
+    const FieldBase& yField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
 {
-  if(&x.get_mesh() != &y.get_mesh()) return false;
-  if(x.entity_rank() != y.entity_rank()) return false;
-  if(x.data_traits().type_info != y.data_traits().type_info) return false;
-  return true;
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+
+  field_blas::impl::field_axpy_impl(alpha, xField, yField, selector);
 }
 
-template<typename Scalar, typename Field_t>
-inline bool is_compatible(const Field_t& x)
-{
-    if( x.data_traits().type_info != typeid(Scalar) ) return false;
-    return true;
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const typename NgpSpace::exec_space execSpace) {
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+
+  ngp_field_blas::impl::field_axpy_impl<NgpSpace>(alpha, xField, yField, selector, execSpace);
 }
 
-template<class Scalar>
-struct FortranBLAS
-{
-    inline static void axpy(int kmax, const Scalar alpha, const Scalar x[], Scalar y[])
-    {
-      if ( alpha != Scalar(1) ) {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] += alpha * x[k];
-        }
-      } else {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] += x[k];
-        }
-      }
-    }
-
-    inline static void axpby(int kmax, const Scalar alpha, const Scalar x[], const Scalar beta, Scalar y[])
-    {
-      if ( beta != Scalar(1) ) {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] *= beta;
-        }
-      }
-      if ( alpha != Scalar(1) ) {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] += alpha * x[k];
-        }
-      } else {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] += x[k];
-        }
-      }
-    }
-
-    inline static void copy(int kmax, const Scalar x[], Scalar y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] = x[k];
-        }
-    }
-
-    inline static void product(int kmax, const Scalar x[], const Scalar y[], Scalar z[])
-    {
-        for (int k = 0; k < kmax; ++k) {
-            z[k] = x[k]*y[k];
-        }
-    }
-
-    inline static Scalar dot(int kmax, const Scalar x[], const Scalar y[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += y[k] * x[k];
-        }
-        return result;
-    }
-
-    inline static Scalar nrm2(int kmax, const Scalar x[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::pow(std::abs(x[k]),2);
-        }
-        return Scalar(std::sqrt(result));
-    }
-
-    inline static void scal(int kmax, const Scalar alpha, Scalar x[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            x[k] = alpha * x[k];
-        }
-    }
-
-    inline static void fill(int numVals, Scalar alpha, Scalar x[], int stride = 1)
-    {
-        if (stride == 1) {
-            std::fill(x, x+numVals, alpha);
-        }
-        else {
-            for (Scalar * end = x+(numVals*stride); x < end; x+=stride) {
-                *x = alpha;
-            }
-        }
-    }
-
-    inline static void swap(int kmax, Scalar x[], Scalar y[])
-    {
-        Scalar temp;
-        for(int k = 0; k < kmax; ++k) {
-            temp = y[k];
-            y[k] = x[k];
-            x[k] = temp;
-        }
-    }
-
-    inline static Scalar asum(int kmax, const Scalar x[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::abs(x[k]);
-        }
-        return Scalar(result);
-    }
-
-    inline static int iamax(int kmax, const Scalar x[])
-    {
-        double amax = 0.0;
-        int result = 0;
-        for(int k = 0; k < kmax; ++k) {
-            if (amax < std::abs(x[k])) {
-                result = k;
-                amax = std::abs(x[k]);
-            }
-        }
-        return result;
-    }
-
-    inline static int iamin(int kmax, const Scalar x[])
-    {
-        int result = 0;
-        double amin = std::abs(x[0]);
-        for(int k = 0; k < kmax; ++k) {
-            if (std::abs(x[k]) < amin) {
-                result = k;
-                amin = std::abs(x[k]);
-            }
-        }
-        return result;
-    }
-};
-
-template<class Scalar>
-struct FortranBLAS<std::complex<Scalar> >
-{
-    inline static void axpy(int kmax, const std::complex<Scalar> alpha, const std::complex<Scalar> x[], std::complex<Scalar> y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] += alpha * x[k];
-        }
-    }
-
-    inline static void axpby(int kmax, const std::complex<Scalar> alpha, const std::complex<Scalar> x[], const std::complex<Scalar>& beta, std::complex<Scalar> y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] *= beta;
-        }
-        for(int k = 0; k < kmax; ++k) {
-            y[k] += alpha * x[k];
-        }
-    }
-
-    inline static void product(int kmax, const std::complex<Scalar> x[], const std::complex<Scalar> y[], std::complex<Scalar> z[])
-    {
-        for (int k = 0; k < kmax; ++k)
-        {
-            z[k] = x[k]*y[k];
-        }
-    }
-
-    inline static void copy(int kmax, const std::complex<Scalar> x[], std::complex<Scalar> y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] = x[k];
-        }
-    }
-
-    inline static std::complex<Scalar> dot(int kmax, const std::complex<Scalar> x[], const std::complex<Scalar> y[]) 
-    {
-        std::complex<Scalar> result = std::complex<Scalar>(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += y[k] * x[k];
-        }
-        return result;
-    }
-
-    inline static std::complex<Scalar> nrm2(int kmax, const std::complex<Scalar> x[]) 
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::pow(std::abs(x[k]),2);
-        }
-        return std::complex<Scalar>(std::sqrt(result));
-    }
-
-    inline static void scal(int kmax, const std::complex<Scalar> alpha, std::complex<Scalar> x[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            x[k] = alpha * x[k];
-        }
-    }
-
-    inline static void fill(int numVals, std::complex<Scalar> alpha, std::complex<Scalar> x[], int stride=1)
-    {
-        for (std::complex<Scalar> * end = x+(numVals*stride); x < end; x+=stride) {
-            *x = alpha;
-        }
-    }
-
-    inline static void swap(int kmax, std::complex<Scalar> x[], std::complex<Scalar> y[])
-    {
-        std::complex<Scalar> temp;
-        for(int k = 0; k < kmax; ++k) {
-            temp = y[k];
-            y[k] = x[k];
-            x[k] = temp;
-        }
-    }
-
-    inline static std::complex<Scalar> asum(int kmax, const std::complex<Scalar> x[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::abs(x[k]);
-        }
-        return std::complex<Scalar>(result,0.0);
-    }
-
-    inline static int iamax(int kmax, const std::complex<Scalar> x[]) 
-    {
-        Scalar amax(0.0);
-        int result = 0;
-        for(int k = 0; k < kmax; ++k) {
-            if (amax < std::norm(x[k])) {
-                result = k;
-                amax = std::norm(x[k]);
-            }
-        }
-        return result;
-    }
-
-    inline static int iamin(int kmax, const std::complex<Scalar> x[]) 
-    {
-        int result = 0;
-        Scalar amin = std::norm(x[0]);
-        for(int k = 0; k < kmax; ++k) {
-            if (std::norm(x[k]) < amin) {
-                result = k;
-                amin = std::norm(x[k]);
-            }
-        }
-        return result;
-    }
-
-};
-
-template<>
-struct FortranBLAS<double>
-{
-    static void axpy(int kmax, const double alpha, const double x[], double y[]);
-
-    static void axpby(int kmax, const double alpha, const double x[], const double beta, double y[]);
-
-    static void product(int kmax, const double x[], const double y[], double z[]);
-
-    static void copy(int kmax, const double x[], double y[]);
-
-    static double dot(int kmax, const double x[], const double y[]);
-
-    static double nrm2(int kmax, const double x[]);
-
-    static void scal(int kmax, const double alpha, double x[]);
-
-    static void fill(int kmax, double alpha, double x[], int inc=1);
-
-    static void swap(int kmax, double x[], double y[]);
-
-    static double asum(int kmax, const double x[]);
-
-    static int iamax(int kmax, const double x[]);
-
-    static int iamin(int kmax, const double x[]);
-};
-
-template<>
-struct FortranBLAS<float>
-{
-    static void axpy(int kmax, const float alpha, const float x[], float y[]);
-
-    static void axpby(int kmax, const float alpha, const float x[], const float& beta, float y[]);
-
-    static void product(int kmax, const float x[], const float y[], float z[]);
-
-    static void copy(int kmax, const float x[], float y[]);
-
-    static float dot(int kmax, const float x[], const float y[]);
-
-    static float nrm2(int kmax, const float x[]);
-
-    static void scal(int kmax, const float alpha, float x[]);
-
-    static void fill(int kmax, float alpha, float x[], int inc=1);
-
-    static void swap(int kmax, float x[], float y[]);
-
-    static float asum(int kmax, const float x[]);
-
-    static int iamax(int kmax, const float x[]);
-
-    static int iamin(int kmax, const float x[]);
-};
-
-inline int fix_omp_threads()
-{
-  int orig_thread_count = 0;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    orig_thread_count = omp_get_max_threads();
-    if(omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(omp_get_num_procs());}
-#endif
-    return orig_thread_count;
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField, const Selector& selector) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_axpy<NgpSpace>(alpha, xField, yField, selector, execSpace);
 }
 
-inline void unfix_omp_threads(int orig_thread_count)
-{
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    omp_set_num_threads(orig_thread_count);
-#endif
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField, const typename NgpSpace::exec_space execSpace) {
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_axpy<NgpSpace>(alpha, xField, yField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_axpy(const Scalar alpha, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
-{
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        FortranBLAS<Scalar>::axpy(x.size(),alpha,x.data(),y.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_axpy<NgpSpace>(alpha, xField, yField, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_axpy(const Scalar alpha, const FieldBase& xField, const FieldBase& yField)
+template <typename T>
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_axpy(alpha,xField,yField,selector);
+  field_axpy<ngp::HostSpace>(alpha, xField, yField, selector);
 }
 
-template<class Scalar>
-inline
-void field_axpby(const Scalar alpha, const FieldBase& xField, const Scalar beta, const FieldBase& yField, const Selector& selector)
+template <typename T>
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
+  field_axpy<ngp::HostSpace>(alpha, xField, yField);
+}
+//==============================================================================
+// axpby: y[i] = a*x[i] + b*y[i]
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_axpby(T alpha,
+    const FieldBase& xField,
+    T beta,
+    const FieldBase& yField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-
-    int orig_thread_count = fix_omp_threads();
-    if ( beta == Scalar(1) ) {
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-      for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        FortranBLAS<Scalar>::axpy(x.size(),alpha,x.data(),y.data());
-      }
-    } else {
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-      for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        FortranBLAS<Scalar>::axpby(x.size(),alpha,x.data(),beta,y.data());
-      }
-    }
-    unfix_omp_threads(orig_thread_count);
+  field_blas::impl::field_axpby_impl(alpha, xField, beta, yField, selector);
 }
 
-template<class Scalar>
-inline
-void field_axpby(const Scalar alpha, const FieldBase& xField, const Scalar beta, const FieldBase& yField)
-{
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_axpby(alpha,xField,beta,yField,selector);
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const Selector& selector, const typename NgpSpace::exec_space execSpace) {
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+
+  ngp_field_blas::impl::field_axpby_impl<NgpSpace>(alpha, xField, beta, yField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void INTERNAL_field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const Selector& selector) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_axpby<NgpSpace>(alpha, xField, beta, yField, selector, execSpace);
+}
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        BucketSpan<Scalar> z(zField, b);
-        FortranBLAS<Scalar>::product(x.size(),x.data(),y.data(),z.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const typename NgpSpace::exec_space execSpace) {
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_axpby<NgpSpace>(alpha, xField, beta, yField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_axpby<NgpSpace>(alpha, xField, beta, yField, execSpace);
+}
+
+template <typename T>
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const Selector& selector)
+{
+  field_axpby<ngp::HostSpace>(alpha, xField, beta, yField, selector);
+}
+
+template <typename T>
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField)
+{
+  field_axpby<ngp::HostSpace>(alpha, xField, beta, yField);
+}
+
+//==============================================================================
+// axpbyz: z[i] = a*x[i] + b*y[i]
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_axpbyz(T alpha,
+    const FieldBase& xField,
+    T beta,
+    const FieldBase& yField,
+    const FieldBase& zField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, zField));
+
+  field_blas::impl::field_axpbyz_impl(alpha, xField, beta, yField, zField, selector);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField, const Selector& selector, const typename NgpSpace::exec_space execSpace) {
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, zField));
+
+  ngp_field_blas::impl::field_axpbyz_impl<NgpSpace>(alpha, xField, beta, yField, zField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField, const Selector& selector) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_axpbyz<NgpSpace>(alpha, xField, beta, yField, zField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField, const typename NgpSpace::exec_space execSpace) {
+  const Selector selector = selectField(xField) & selectField(yField) & selectField(zField);
+  field_axpbyz<NgpSpace>(alpha, xField, beta, yField, zField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_axpbyz<NgpSpace>(alpha, xField, beta, yField, zField, execSpace);
+}
+
+template <typename T>
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
+{
+  field_axpbyz<ngp::HostSpace>(alpha, xField, beta, yField, zField, selector);
+}
+
+template <typename T>
+void field_axpbyz(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const FieldBase& zField)
+{
+  field_axpbyz<ngp::HostSpace>(alpha, xField, beta, yField, zField);
+}
+
+//==============================================================================
+// product: z[i] = x[i] * y[i]
+//
+template <typename NgpSpace>
+  requires ngp::is_host_space<NgpSpace>
+void field_product(const FieldBase& xField,
+    const FieldBase& yField,
+    const FieldBase& zField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(yField, zField));
+
+  field_blas::impl::field_product_impl(xField, yField, zField, selector);
+}
+
+template <typename NgpSpace> requires ngp::is_device_space<NgpSpace>
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(yField, zField));
+
+  ngp_field_blas::impl::field_product_impl<NgpSpace>(xField, yField, zField, selector, execSpace);
+}
+
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_product<NgpSpace>(xField, yField, zField, selector, execSpace);
+}
+
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const typename NgpSpace::exec_space execSpace)
+{
+  const Selector selector = selectField(xField) & selectField(yField) & selectField(zField);
+  field_product<NgpSpace>(xField, yField, zField, selector, execSpace);
+}
+
+
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_product<NgpSpace>(xField, yField, zField, execSpace);
+}
+
+template <typename T>
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
+{
+  field_product<ngp::HostSpace>(xField, yField, zField, selector);
+}
+
+template <typename T>
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField)
+{
+  field_product<ngp::HostSpace>(xField, yField, zField);
 }
 
 inline
 void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-    STK_ThrowRequire(is_compatible(yField, zField));
-
-    if (xField.data_traits().type_info == typeid(double)) {
-        INTERNAL_field_product<double>(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        INTERNAL_field_product<float>(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        INTERNAL_field_product<std::complex<double> >(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        INTERNAL_field_product<std::complex<float> >(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        INTERNAL_field_product<int>(xField,yField,zField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_product; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
+  field_product<ngp::HostSpace>(xField, yField, zField, selector);
 }
 
 inline
 void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_product(xField,yField,zField,selector);
+  field_product<ngp::HostSpace>(xField, yField, zField);
 }
 
-template<class Scalar>
-inline
-void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+//==============================================================================
+// copy: y[i] = x[i]
+//
+template <typename NgpSpace>
+  requires ngp::is_host_space<NgpSpace>
+void field_copy(const FieldBase& xField,
+    const FieldBase& yField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
 {
-  BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
 
-#ifdef STK_USE_DEVICE_MESH
-  const bool alreadySyncd_or_HostNewest = !xField.need_sync_to_host();
+  field_blas::impl::field_copy_impl(xField, yField, selector);
+}
 
-  yField.clear_sync_state();
+template <typename NgpSpace> requires ngp::is_device_space<NgpSpace>
+void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
 
-  if (alreadySyncd_or_HostNewest) {
-#endif
+  ngp_field_blas::impl::field_copy_impl<NgpSpace>(xField, yField, selector, execSpace);
+}
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for (size_t i = 0; i < buckets.size(); ++i) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        y = x;
-    }
-    unfix_omp_threads(orig_thread_count);
-    yField.clear_sync_state();
-    yField.modify_on_host();
-#ifdef STK_USE_DEVICE_MESH
-  }
-  else { // copy on device
-    auto ngpX = stk::mesh::get_updated_ngp_field<Scalar>(xField);
-    auto ngpY = stk::mesh::get_updated_ngp_field<Scalar>(yField);
-    auto ngpXview = impl::get_device_data(ngpX);
-    auto ngpYview = impl::get_device_data(ngpY);
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_copy<NgpSpace>(xField, yField, selector, execSpace);
+}
 
-    Kokkos::deep_copy(ngpYview, ngpXview);
-    yField.modify_on_device();
-  }
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_copy(const FieldBase& xField, const FieldBase& yField, const typename NgpSpace::exec_space execSpace)
+{
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_copy<NgpSpace>(xField, yField, selector, execSpace);
+}
 
-#endif
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_copy(const FieldBase& xField, const FieldBase& yField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_copy<NgpSpace>(xField, yField, execSpace);
+}
+
+template <typename T>
+void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  field_copy<ngp::HostSpace>(xField, yField, selector);
 }
 
 inline
 void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    if (xField.data_traits().type_info == typeid(double)) {
-        INTERNAL_field_copy<double>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        INTERNAL_field_copy<float>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        INTERNAL_field_copy<std::complex<double> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        INTERNAL_field_copy<std::complex<float> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        INTERNAL_field_copy<int>(xField,yField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_copy; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
+  field_copy<ngp::HostSpace>(xField, yField, selector);
 }
 
 inline
 void field_copy(const FieldBase& xField, const FieldBase& yField)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_copy(xField,yField,selector);
+  field_copy<ngp::HostSpace>(xField, yField);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_dot(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField, const Selector& selector, const MPI_Comm comm)
+//==============================================================================
+// dot: global_sum( sum_i( x[i]*y[i] ) )
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_dot(T& result,
+    const FieldBase& xField,
+    const FieldBase& yField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+  field_blas::impl::field_dot_impl(result, xField, yField, selector);
+}
 
-    Scalar local_result(0.0);
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const typename NgpSpace::exec_space execSpace) {
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(+:local_result)
+  ngp_field_blas::impl::field_dot_impl<NgpSpace>(result, xField, yField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField, const Selector& selector) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_dot<NgpSpace>(result, xField, yField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField, const typename NgpSpace::exec_space execSpace) {
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_dot<NgpSpace>(result, xField, yField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField) {
+  auto execSpace = typename NgpSpace::exec_space();
+  field_dot<NgpSpace>(result, xField, yField, execSpace);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T, Layout xLayout, Layout yLayout>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_dot(xField, yField, selector`")
+T field_dot(const Field<T, xLayout>& xField, const Field<T, yLayout>& yField, const Selector& selector,
+            const MPI_Comm /*comm*/)
+{
+  T result{};
+  field_dot<ngp::HostSpace>(result, xField, yField, selector);
+  return result;
+}
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),y.data());
-    }
 
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
+template <typename T, Layout xLayout, Layout yLayout>
+T field_dot(const Field<T, xLayout>& xField, const Field<T, yLayout>& yField, const Selector& selector)
+{
+  T result{};
+  field_dot<ngp::HostSpace>(result, xField, yField, selector);
+  return result;
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-std::complex<Scalar> field_dot(const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7>& xField, const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7>& yField, const Selector& selector, const MPI_Comm comm) 
+template <typename T, Layout xLayout, Layout yLayout>
+T field_dot(const Field<T, xLayout>& xField, const Field<T, yLayout>& yField)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
+  T result{};
+  field_dot<ngp::HostSpace>(result, xField, yField);
+  return result;
+}
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+template <typename T>
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  field_dot<ngp::HostSpace>(result, xField, yField, selector);
+}
 
-    Scalar local_result_r (0.0);
-    Scalar local_result_i (0.0);
-    std::complex<Scalar> priv_tmp;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_dot(result, xField, yField, selector`")
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField,
+               const Selector& selector, const MPI_Comm /*comm*/)
+{
+  field_dot<ngp::HostSpace>(result, xField, yField, selector);
+}
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<std::complex<Scalar>> x(xField, b);
-        BucketSpan<std::complex<Scalar>> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        priv_tmp = FortranBLAS<std::complex<Scalar> >::dot(x.size(),x.data(),y.data());
 
-        local_result_r += priv_tmp.real();
-        local_result_i += priv_tmp.imag();
-    }
-
-    Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
-    Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-    stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
+template <typename T>
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField)
+{
+  field_dot<ngp::HostSpace>(result, xField, yField);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_dot(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField, const Selector& selector)
+//==============================================================================
+// nrm2: sqrt( global_sum( sum_i( x[i]*x[i] )))
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_nrm2(
+    T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space /*execSpace*/)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_dot(xField,yField,selector,comm);
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  field_blas::impl::field_nrm2_impl(result, xField, selector);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_dot(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & yField)
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_nrm2(T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    return field_dot(xField,yField,selector);
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  ngp_field_blas::impl::field_nrm2_impl<NgpSpace>(result, xField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_dot(std::complex<Scalar>& global_result, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const MPI_Comm comm)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_nrm2(T& result, const FieldBase& xField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
+  auto execSpace = typename NgpSpace::exec_space();
+  field_nrm2<NgpSpace>(result, xField, selector, execSpace);
+}
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_nrm2(T& result, const FieldBase& xField, const typename NgpSpace::exec_space execSpace)
+{
+  const Selector selector = selectField(xField);
+  field_nrm2<NgpSpace>(result, xField, selector, execSpace);
+}
 
-    Scalar local_result_r (0.0);
-    Scalar local_result_i (0.0);
-    std::complex<Scalar> priv_tmp;
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_nrm2(T& result, const FieldBase& xField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_nrm2<NgpSpace>(result, xField, execSpace);
+}
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T, Layout xLayout>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_nrm2(xField, selector`")
+T field_nrm2(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm /*comm*/)
+{
+  T result;
+  field_nrm2<ngp::HostSpace>(result, xField, selector);
+  return result;
+}
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<std::complex<Scalar>> x(xField, b);
-        BucketSpan<std::complex<Scalar>> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        priv_tmp = FortranBLAS<std::complex<Scalar> >::dot(x.size(),x.data(),y.data());
 
-        local_result_r += priv_tmp.real();
-        local_result_i += priv_tmp.imag();
-    }
-
-    Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
-    Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-    stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-    global_result = std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
-    unfix_omp_threads(orig_thread_count);
+template <typename T, Layout xLayout>
+T field_nrm2(const Field<T, xLayout>& xField, const Selector& selector)
+{
+  T result;
+  field_nrm2<ngp::HostSpace>(result, xField, selector);
+  return result;
 }
 
-template<class Scalar>
-inline
-void field_dot(Scalar& glob_result, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const MPI_Comm comm)
+template <typename T, Layout xLayout>
+T field_nrm2(const Field<T, xLayout>& xField)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
+  T result;
+  field_nrm2<ngp::HostSpace>(result, xField);
+  return result;
+}
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+template <typename T>
+void field_nrm2(T& result, const FieldBase& xField, const Selector& selector)
+{
+  field_nrm2<ngp::HostSpace>(result, xField, selector);
+}
 
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_nrm2(result, xField, selector`")
+void field_nrm2(T& result, const FieldBase& xField, const Selector& selector, const MPI_Comm /*comm*/)
+{
+  field_nrm2<ngp::HostSpace>(result, xField, selector);
+}
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),y.data());
-    }
 
-    glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
+template <typename T>
+void field_nrm2(T& result, const FieldBase& xField)
+{
+  field_nrm2<ngp::HostSpace>(result, xField);
 }
 
-template<class Scalar>
-inline
-void field_dot(Scalar& result, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+//==============================================================================
+// scale: x[i] = a*x[i]
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_scale(
+    T alpha, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space /*execSpace*/)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_dot(result,xField,yField,selector,comm);
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  field_blas::impl::field_scale_impl(alpha, xField, selector);
 }
 
-template<class Scalar>
-inline
-void field_dot(Scalar& result, const FieldBase& xField, const FieldBase& yField)
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_scale(T alpha, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_dot(result,xField,yField,selector);
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  ngp_field_blas::impl::field_scale_impl<NgpSpace>(alpha, xField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_scale(const Scalar alpha, const FieldBase& xField, const Selector& selector)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_scale(T alpha, const FieldBase& xField, const Selector& selector)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        FortranBLAS<Scalar>::scal(x.size(),alpha,x.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+  auto execSpace = typename NgpSpace::exec_space();
+  field_scale<NgpSpace>(alpha, xField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_scale(const Scalar alpha, const FieldBase& xField)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_scale(T alpha, const FieldBase& xField, const typename NgpSpace::exec_space execSpace)
 {
-    const Selector selector = selectField(xField);
-    field_scale(alpha,xField,selector);
+  const Selector selector = selectField(xField);
+  field_scale<NgpSpace>(alpha, xField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_fill_component(const Scalar* alpha, const FieldBase& xField, const Selector& selector)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_scale(T alpha, const FieldBase& xField)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i = 0; i < buckets.size(); i++) {
-        const Bucket & b = *buckets[i];
-        const int length = b.size();
-        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
-        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
-
-        for (unsigned int j = 0; j < fieldSize; j++) {
-            FortranBLAS<Scalar>::fill(length,alpha[j],x+j,fieldSize);
-        }
-    }
-    unfix_omp_threads(orig_thread_count);
+  auto execSpace = typename NgpSpace::exec_space();
+  field_scale<NgpSpace>(alpha, xField, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_fill_component(const Scalar* alpha, const FieldBase& xField)
+template <typename T>
+void field_scale(T alpha, const FieldBase& xField, const Selector& selector)
 {
-    const Selector selector = selectField(xField);
-    field_fill_component(alpha,xField,selector);
+  field_scale<ngp::HostSpace>(alpha, xField, selector);
 }
 
-template<class Scalar>
-inline
-void field_fill(const Scalar alpha, const FieldBase& xField, const Selector& selector)
+template <typename T>
+void field_scale(T alpha, const FieldBase& xField)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i = 0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        FortranBLAS<Scalar>::fill(x.size(),alpha,x.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+  field_scale<ngp::HostSpace>(alpha, xField);
 }
 
-template<class Scalar>
-inline
-void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector)
+//==============================================================================
+// fill: x[i] = a
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_fill(
+    T alpha, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space /*execSpace*/)
 {
-    STK_ThrowRequire(xFields.size() >= 1 );
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
 
-    stk::mesh::EntityRank fieldEntityRank = xFields[0]->entity_rank();
-    BucketVector const& buckets = xFields[0]->get_mesh().get_buckets(fieldEntityRank,selector);
-
-    for (auto&& bucket : buckets){
-        for (unsigned int i=0; i<xFields.size(); ++i){
-            const FieldBase& xField = *xFields[i];
-            STK_ThrowRequire( is_compatible<Scalar>(xField) );
-            STK_ThrowRequire(fieldEntityRank == xField.entity_rank());
-            BucketSpan<Scalar> x(xField, *bucket);
-            FortranBLAS<Scalar>::fill(x.size(),alpha,x.data());
-        }
-    }
+  field_blas::impl::field_fill_impl(alpha, xField, selector);
 }
 
-template<class Scalar>
-inline
-void field_fill(const Scalar alpha, const FieldBase& xField)
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
 {
-    const Selector selector = selectField(xField);
-    field_fill(alpha,xField,selector);
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  ngp_field_blas::impl::field_fill_impl<NgpSpace>(alpha, xField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField, const Selector& selector)
 {
-    const Selector selector = selectField(*xFields[0]);
-    field_fill(alpha,xFields,selector);
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void INTERNAL_field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField, const typename NgpSpace::exec_space execSpace)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
+  const Selector selector = selectField(xField);
+  field_fill<NgpSpace>(alpha, xField, selector, execSpace);
+}
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        FortranBLAS<Scalar>::swap(x.size(),x.data(),y.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xField, execSpace);
+}
+
+template <typename T>
+void field_fill(T alpha, const FieldBase& xField, const Selector& selector)
+{
+  field_fill<ngp::HostSpace>(alpha, xField, selector);
+}
+
+template <typename T>
+void field_fill(T alpha, const FieldBase& xField)
+{
+  field_fill<ngp::HostSpace>(alpha, xField);
+}
+
+//==============================================================================
+// fill: x[i, c] = a
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_fill(T alpha,
+    const FieldBase& xField,
+    int component,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  field_blas::impl::field_fill_impl(alpha, xField, component, selector);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField, int component, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  ngp_field_blas::impl::field_fill_impl<NgpSpace>(alpha, xField, component, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField, int component, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xField, component, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField, int component, const typename NgpSpace::exec_space execSpace)
+{
+  const Selector selector = selectField(xField);
+  field_fill<NgpSpace>(alpha, xField, component, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const FieldBase& xField, int component)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xField, component, execSpace);
+}
+
+template <typename T>
+void field_fill(T alpha, const FieldBase& xField, int component, const Selector& selector)
+{
+  field_fill<ngp::HostSpace>(alpha, xField, component, selector);
+}
+
+template <typename T>
+void field_fill(T alpha, const FieldBase& xField, int component)
+{
+  field_fill<ngp::HostSpace>(alpha, xField, component);
+}
+
+//==============================================================================
+// fill: x_j[i] = a
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_fill(T alpha,
+    const std::vector<const FieldBase*>& xFields,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+    field_blas::impl::field_fill_impl(alpha, *xField, selector);
+  }
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+  }
+  ngp_field_blas::impl::field_fill_impl<NgpSpace>(alpha, xFields, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xFields, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_fill(
+    T alpha, const std::vector<const FieldBase*>& xFields, const typename NgpSpace::exec_space /*execSpace*/)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+    const Selector selector = selectField(*xField);
+    field_blas::impl::field_fill_impl(alpha, *xField, selector);
+  }
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, const typename NgpSpace::exec_space execSpace)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+  }
+  Selector selector = Selector(*xFields.front());
+  std::for_each(std::cbegin(xFields)+1, std::cend(xFields), [&selector](const auto* field) {
+    selector &= Selector(*field);
+  });
+  ngp_field_blas::impl::field_fill_impl<NgpSpace>(alpha, xFields, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xFields, execSpace);
+}
+
+template <typename T>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector)
+{
+  field_fill<ngp::HostSpace>(alpha, xFields, selector);
+}
+
+template <typename T>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields)
+{
+  field_fill<ngp::HostSpace>(alpha, xFields);
+}
+
+//==============================================================================
+// fill: x_j[i, c] = a
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_fill(T alpha,
+    const std::vector<const FieldBase*>& xFields,
+    int component,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+    field_blas::impl::field_fill_impl(alpha, *xField, component, selector);
+  }
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+  }
+  ngp_field_blas::impl::field_fill_impl<NgpSpace>(alpha, xFields, component, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xFields, component, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_fill(T alpha,
+    const std::vector<const FieldBase*>& xFields,
+    int component,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+    const Selector selector = selectField(*xField);
+    field_blas::impl::field_fill_impl(alpha, *xField, component, selector);
+  }
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component, const typename NgpSpace::exec_space execSpace)
+{
+  for (const FieldBase* xField : xFields) {
+    STK_ThrowRequire(field_blas::impl::is_compatible<T>(*xField));
+  }
+  Selector selector = Selector(*xFields.front());
+  std::for_each(std::cbegin(xFields)+1, std::cend(xFields), [&selector](const auto* field) {
+    selector &= Selector(*field);
+  });
+  ngp_field_blas::impl::field_fill_impl<NgpSpace>(alpha, xFields, component, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill<NgpSpace>(alpha, xFields, component, execSpace);
+}
+
+template <typename T>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component, const Selector& selector)
+{
+  field_fill<ngp::HostSpace>(alpha, xFields, component, selector);
+}
+
+template <typename T>
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, int component)
+{
+  field_fill<ngp::HostSpace>(alpha, xFields, component);
+}
+
+//==============================================================================
+// fill_component: x[i, comp] = a[comp]
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_fill_component(const T* alpha,
+    const FieldBase& xField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  field_blas::impl::field_fill_component_impl(alpha, xField, selector);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill_component(const T* alpha, const FieldBase& xField, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill_component<NgpSpace>(alpha, xField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill_component(const T* alpha, const FieldBase& xField, const typename NgpSpace::exec_space execSpace)
+{
+  const Selector selector = selectField(xField);
+  field_fill_component<NgpSpace>(alpha, xField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_fill_component(const T* alpha, const FieldBase& xField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_fill_component<NgpSpace>(alpha, xField, execSpace);
+}
+
+template <typename T>
+void field_fill_component(const T* alpha, const FieldBase& xField, const Selector& selector)
+{
+  field_fill_component<ngp::HostSpace>(alpha, xField, selector);
+}
+
+template <typename T>
+void field_fill_component(const T* alpha, const FieldBase& xField)
+{
+  field_fill_component<ngp::HostSpace>(alpha, xField);
+}
+
+//==============================================================================
+// swap: x[i] = y[i]
+//       y[i] = x[i]
+//
+template <typename NgpSpace>
+  requires ngp::is_host_space<NgpSpace>
+void field_swap(const FieldBase& xField,
+    const FieldBase& yField,
+    const Selector& selector,
+    const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+
+  field_blas::impl::field_swap_impl(xField, yField, selector);
+}
+
+template <typename NgpSpace> requires ngp::is_device_space<NgpSpace>
+void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible(xField, yField));
+
+  ngp_field_blas::impl::field_swap_impl<NgpSpace>(xField, yField, selector, execSpace);
+}
+
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_swap<NgpSpace>(xField, yField, selector, execSpace);
+}
+
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_swap(const FieldBase& xField, const FieldBase& yField, const typename NgpSpace::exec_space execSpace)
+{
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_swap<NgpSpace>(xField, yField, selector, execSpace);
+}
+
+template <typename NgpSpace> requires ngp::is_ngp_space<NgpSpace>
+void field_swap(const FieldBase& xField, const FieldBase& yField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_swap<NgpSpace>(xField, yField, execSpace);
+}
+
+template <typename T>
+void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  field_swap<ngp::HostSpace>(xField, yField, selector);
 }
 
 inline
 void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    if (xField.data_traits().type_info == typeid(double)) {
-        INTERNAL_field_swap<double>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        INTERNAL_field_swap<float>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        INTERNAL_field_swap<std::complex<double> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        INTERNAL_field_swap<std::complex<float> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        INTERNAL_field_swap<int>(xField,yField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_swap; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
+  field_swap<ngp::HostSpace>(xField, yField, selector);
 }
 
 inline
 void field_swap(const FieldBase& xField, const FieldBase& yField)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_swap(xField,yField,selector);
+  field_swap<ngp::HostSpace>(xField, yField);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_nrm2(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm)
+//==============================================================================
+// asum: global_sum( sum_i( abs(x[i]) ))
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_asum(
+    T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space /*execSpace*/)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
 
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),x.data());
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::sqrt(glob_result);
+  field_blas::impl::field_asum_impl(result, xField, selector);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-std::complex<Scalar> field_nrm2(const Field< std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm) 
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_asum(T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
 
-    Scalar local_result_r(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result_r += std::pow(FortranBLAS<std::complex<Scalar> >::nrm2(x.size(),x.data()).real(),2);
-    }
-
-    Scalar glob_result = local_result_r;
-    stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar>(std::sqrt(glob_result),0.0);
+  ngp_field_blas::impl::field_asum_impl<NgpSpace>(result, xField, selector, execSpace);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_nrm2(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_asum(T& result, const FieldBase& xField, const Selector& selector)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_nrm2(xField,selector,comm);
+  auto execSpace = typename NgpSpace::exec_space();
+  field_asum<NgpSpace>(result, xField, selector, execSpace);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_nrm2(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_asum(T& result, const FieldBase& xField, const typename NgpSpace::exec_space execSpace)
 {
-    const Selector selector = selectField(xField);
-    return field_nrm2(xField,selector);
+  const Selector selector = selectField(xField);
+  field_asum<NgpSpace>(result, xField, selector, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_nrm2(Scalar& glob_result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_asum(T& result, const FieldBase& xField)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),x.data());
-    }
-
-    glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    glob_result = std::sqrt(glob_result);
-    unfix_omp_threads(orig_thread_count);
+  auto execSpace = typename NgpSpace::exec_space();
+  field_asum<NgpSpace>(result, xField, execSpace);
 }
 
-template<class Scalar>
-inline
-void field_nrm2(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T, Layout xLayout>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_asum(xField, selector`")
+T field_asum(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm /*comm*/)
 {
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result_r(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result_r += std::pow(FortranBLAS<std::complex<Scalar> >::nrm2(x.size(),x.data()).real(),2);
-    }
-
-    Scalar glob_result = local_result_r;
-    stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-    result = std::complex<Scalar>(std::sqrt(glob_result),0.0);
-    unfix_omp_threads(orig_thread_count);
+  T result;
+  field_asum<ngp::HostSpace>(result, xField, selector);
+  return result;
 }
-
-template<class Scalar>
-inline
-void field_nrm2(Scalar& result, const FieldBase& xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_nrm2(result,xField,selector,comm);
-}
-
-template<class Scalar>
-inline
-void field_nrm2(Scalar& result, const FieldBase& xField)
-{
-    const Selector selector = selectField(xField);
-    field_nrm2(result,xField,selector);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_asum(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::asum(x.size(),x.data());
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-std::complex<Scalar> field_asum(const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm) 
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result += FortranBLAS<std::complex<Scalar> >::asum(x.size(),x.data()).real();
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar>(glob_result,0.0);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_asum(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_asum(xField,selector,comm);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_asum(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
-{
-    const Selector selector = selectField(xField);
-    return field_asum(xField,selector);
-}
-
-template<class Scalar>
-inline
-void field_asum(Scalar& glob_result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
-{
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::asum(x.size(),x.data());
-    }
-
-    glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-}
-
-template<class Scalar>
-inline
-void field_asum(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
-{
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result += FortranBLAS<std::complex<Scalar> >::asum(x.size(),x.data()).real();
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    result = std::complex<Scalar>(glob_result,0.0);
-    unfix_omp_threads(orig_thread_count);
-}
-
-template<class Scalar>
-inline
-void field_asum(Scalar& result, const FieldBase& xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_asum(result,xField,selector,comm);
-}
-
-template<class Scalar>
-inline
-void field_asum(Scalar& result, const FieldBase& xField)
-{
-    const Selector selector = selectField(xField);
-    field_asum(result,xField,selector);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_amax(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amax(-1.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamax(x.size(),x.data())]);
-
-        if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
-        }
-    }
-
-    Scalar global_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&global_amax,1u);
-    unfix_omp_threads(orig_thread_count);
-    return global_amax;
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-std::complex<Scalar> field_amax(const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm) 
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amax(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamax(x.size(),x.data())]);
-
-        if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
-        }
-    }
-
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar>(glob_amax,0.0);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_amax(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_amax(xField,selector,comm);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_amax(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
-{
-    const Selector selector = selectField(xField);
-    return field_amax(xField,selector);
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamax_complex(const FieldBase& xField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamax;
-    Scalar priv_amax;
-    Entity priv_result;
-    Scalar local_amax(-2.0);
-    Entity local_result = Entity();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamax,priv_amax,priv_result)
-    {
-#endif
-        priv_amax = Scalar(-1.0);
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:local_amax)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<std::complex<Scalar> > x(xField, b);
-            priv_iamax = FortranBLAS<std::complex<Scalar> >::iamax(x.size(),x.data());
-
-            if (priv_amax < std::norm(x[priv_iamax])) {
-                priv_result = b[priv_iamax];
-                priv_amax = std::norm(x[priv_iamax]);
-                local_amax = priv_amax;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (local_amax == priv_amax) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
 #endif
 
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId  glob_EntityId = local_EntityId;
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        local_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return local_result;
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamax(const FieldBase& xField, const Selector& selector)
+template <typename T, Layout xLayout>
+T field_asum(const Field<T, xLayout>& xField, const Selector& selector)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamax;
-    Scalar priv_amax;
-    Entity priv_result;
-    Scalar local_amax(-2.0);
-    Entity local_result = Entity();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamax,priv_amax,priv_result)
-    {
-#endif
-        priv_amax = Scalar(-1.0);
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:local_amax)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<Scalar> x(xField, b);
-            priv_iamax = FortranBLAS<Scalar>::iamax(x.size(),x.data());
-
-            if (priv_amax < std::abs(x[priv_iamax])) {
-                priv_result = b[priv_iamax];
-                priv_amax = std::abs(x[priv_iamax]);
-                local_amax = priv_amax;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (local_amax==priv_amax) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-    if (glob_EntityId==local_EntityId) {
-        local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        local_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return local_result;
+  T result;
+  field_asum<ngp::HostSpace>(result, xField, selector);
+  return result;
 }
 
+template <typename T, Layout xLayout>
+inline
+T field_asum(const Field<T, xLayout>& xField)
+{
+  T result;
+  field_asum<ngp::HostSpace>(result, xField);
+  return result;
+}
+
+template <typename T>
+void field_asum(T& result, const FieldBase& xField, const Selector& selector)
+{
+  field_asum<ngp::HostSpace>(result, xField, selector);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_asum(result, xField, selector`")
+void field_asum(T& globalResult, const FieldBase& xFieldBase, const Selector& selector, const MPI_Comm /*comm*/)
+{
+  field_asum<ngp::HostSpace>(globalResult, xFieldBase, selector);
+}
+#endif
+
+template <typename T>
+void field_asum(T& result, const FieldBase& xFieldBase)
+{
+  field_asum<ngp::HostSpace>(result, xFieldBase);
+}
+
+//==============================================================================
+// amax: global_max( max_i( abs(x[i]) ))
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_amax(
+    T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  field_blas::impl::field_amax_impl(result, xField, selector);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_amax(T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  ngp_field_blas::impl::field_amax_impl<NgpSpace>(result, xField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_amax(T& result, const FieldBase& xField, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_amax<NgpSpace>(result, xField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_amax(T& result, const FieldBase& xField, const typename NgpSpace::exec_space execSpace)
+{
+  const Selector selector = selectField(xField);
+  field_amax<NgpSpace>(result, xField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_amax(T& result, const FieldBase& xField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_amax<NgpSpace>(result, xField, execSpace);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T, Layout xLayout>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amax(xField, selector`")
+T field_amax(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm /*comm*/)
+{
+  T result;
+  field_amax<ngp::HostSpace>(result, xField, selector);
+  return result;
+}
+#endif
+
+template <typename T, Layout xLayout>
+T field_amax(const Field<T, xLayout>& xField, const Selector& selector)
+{
+  T result;
+  field_amax<ngp::HostSpace>(result, xField, selector);
+  return result;
+}
+
+template <typename T, Layout xLayout>
+T field_amax(const Field<T, xLayout>& xField)
+{
+  T result;
+  field_amax<ngp::HostSpace>(result, xField);
+  return result;
+}
+
+template <typename T>
+void field_amax(T& result, const FieldBase& xField, const Selector& selector)
+{
+  field_amax<ngp::HostSpace>(result, xField, selector);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amax(result, xField, selector`")
+void field_amax(T& result, const FieldBase& xField, const Selector& selector, const MPI_Comm /*comm*/)
+{
+  field_amax<ngp::HostSpace>(result, xField, selector);
+}
+#endif
+
+template <typename T>
+void field_amax(T& result, const FieldBase& xField)
+{
+  field_amax<ngp::HostSpace>(result, xField);
+}
+
+//==============================================================================
+// eamax: Entity(loc:global_max( max_i( abs(x[i]) )))
+//
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2026
+template <typename T>
+STK_DEPRECATED
 inline
 Entity field_eamax(const FieldBase& xField, const Selector& selector)
 {
-    if (xField.data_traits().type_info == typeid(double)) {
-        return INTERNAL_field_eamax<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        return INTERNAL_field_eamax<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        return INTERNAL_field_eamax_complex<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        return INTERNAL_field_eamax_complex<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        return INTERNAL_field_eamax<int>(xField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_eamax; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
-    return stk::mesh::Entity();
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
+
+  const stk::mesh::Layout xLayout = xField.host_data_layout();
+
+  field_blas::impl::MinMaxInfo localMinMaxInfo {};
+  T localMaxValue {};
+
+  if (xLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    localMinMaxInfo = field_blas::impl::FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
+  }
+  else if (xLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    localMinMaxInfo = field_blas::impl::FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_eamax().  xField layout: " << xLayout);
+  }
+
+  const stk::mesh::BulkData& bulk = xField.get_mesh();
+  T globalMaxValue;
+  EntityId globalEntityId {};
+  EntityId localEntityId {};
+  STK_ThrowRequireMsg(localMinMaxInfo.bucketId != InvalidOrdinal, "No minimum value location found in field_eamax()");
+
+  if constexpr (field_blas::impl::is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localValueArray = reinterpret_cast<ComplexType*>(&localMaxValue);
+    ComplexType* globalValueArray = reinterpret_cast<ComplexType*>(&globalMaxValue);
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_maxloc(bulk.parallel(), localValueArray, &localEntityId, globalValueArray, &globalEntityId, 1u);
+  }
+  else {
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_maxloc(bulk.parallel(), &localMaxValue, &localEntityId, &globalMaxValue, &globalEntityId, 1u);
+  }
+
+  if (globalEntityId == localEntityId) {
+    return bulk.get_entity(xField.entity_rank(), globalEntityId);
+  } else {
+    return Entity();
+  }
 }
 
+STK_DEPRECATED
+inline
+Entity field_eamax(const FieldBase& xField, const Selector& selector)
+{
+  if (xField.data_traits().type_info == typeid(double)) {
+    return field_eamax<double>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(float)) {
+    return field_eamax<float>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
+    return field_eamax<std::complex<double>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
+    return field_eamax<std::complex<float>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(int)) {
+    return field_eamax<int>(xField, selector);
+  }
+  else {
+    STK_ThrowErrorMsg("Error in field_eamax(): Field is of type " << xField.data_traits().type_info.name() <<
+                      ", which is not supported.");
+  }
+  return stk::mesh::Entity();
+}
+
+STK_DEPRECATED
 inline
 Entity field_eamax(const FieldBase& xField)
 {
-    const Selector selector = selectField(xField);
-    return field_eamax(xField,selector);
+  const Selector selector = selectField(xField);
+  return field_eamax(xField, selector);
 }
 
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
+template <typename T>
+STK_DEPRECATED
 inline
-Entity field_eamax(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
+Entity field_eamax(const Field<T>& xField)
 {
-    const Selector selector = selectField(xField);
-    return field_eamax(xField,selector);
+  const Selector selector = selectField(xField);
+  return field_eamax(xField, selector);
+}
+#endif
+
+//==============================================================================
+// amin: global_min( min_i( abs(x[i]) ))
+//
+template <typename NgpSpace, typename T>
+  requires ngp::is_host_space<NgpSpace>
+void field_amin(
+    T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space /*execSpace*/)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  field_blas::impl::field_amin_impl(result, xField, selector);
 }
 
-template<class Scalar>
+template <typename NgpSpace, typename T> requires ngp::is_device_space<NgpSpace>
+void field_amin(T& result, const FieldBase& xField, const Selector& selector, const typename NgpSpace::exec_space execSpace)
+{
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  ngp_field_blas::impl::field_amin_impl<NgpSpace>(result, xField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_amin(T& result, const FieldBase& xField, const Selector& selector)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_amin<NgpSpace>(result, xField, selector, execSpace);
+}
+
+template <typename NgpSpace, typename T>
+  requires ngp::is_ngp_space<NgpSpace>
+void field_amin(T& result, const FieldBase& xField, const typename NgpSpace::exec_space /*execSpace*/)
+{
+  const Selector selector = selectField(xField);
+  field_amin<NgpSpace>(result, xField, selector);
+}
+
+template <typename NgpSpace, typename T> requires ngp::is_ngp_space<NgpSpace>
+void field_amin(T& result, const FieldBase& xField)
+{
+  auto execSpace = typename NgpSpace::exec_space();
+  field_amin<NgpSpace>(result, xField, execSpace);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T, Layout xLayout>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amin(xField, selector`")
+T field_amin(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm /*comm*/)
+{
+  T result;
+  field_amin<ngp::HostSpace>(result, xField, selector);
+  return result;
+}
+#endif
+
+template <typename T, Layout xLayout>
+T field_amin(const Field<T, xLayout>& xField, const Selector& selector)
+{
+  T result;
+  field_amin<ngp::HostSpace>(result, xField, selector);
+  return result;
+}
+
+template <typename T, Layout xLayout>
 inline
-void field_amax(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+T field_amin(const Field<T, xLayout>& xField)
 {
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amax(-1.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamax(x.size(),x.data())]);
-
-        if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
-        }
-    }
-
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-    result = std::complex<Scalar>(glob_amax,0.0);
-    unfix_omp_threads(orig_thread_count);
+  T result;
+  field_amin<ngp::HostSpace>(result, xField);
+  return result;
 }
 
-template<class Scalar>
-inline
-void field_amax(Scalar& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+template <typename T>
+void field_amin(T& result, const FieldBase& xField, const Selector& selector)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amax(-1.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamax(x.size(),x.data())]);
-        if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
-        }
-    }
-
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-    result = glob_amax;
-    unfix_omp_threads(orig_thread_count);
+  field_amin<ngp::HostSpace>(result, xField, selector);
 }
 
-template<class Scalar>
-inline
-void field_amax(Scalar& result, const FieldBase& xField, const Selector& selector)
+#ifndef STK_HIDE_DEPRECATED_CODE // delete after June 2026
+template <typename T>
+STK_DEPRECATED_MSG("Replace with code `stk::mesh::field_amin(result, xField, selector`")
+void field_amin(T& result, const FieldBase& xField, const Selector& selector, const MPI_Comm /*comm*/)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_amax(result,xField,selector,comm);
+  field_amin<ngp::HostSpace>(result, xField, selector);
+}
+#endif
+
+template <typename T>
+void field_amin(T& result, const FieldBase& xField)
+{
+  field_amin<ngp::HostSpace>(result, xField);
 }
 
-template<class Scalar>
-inline
-void field_amax(Scalar& result, const FieldBase& xField)
-{
-    const Selector selector = selectField(xField);
-    field_amax(result,xField,selector);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Entity field_eamin(const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    Scalar priv_amin;
-    Entity priv_result;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<Scalar>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<std::complex<Scalar>> x(xField, b);
-            priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data());
-
-            if (std::abs(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::abs(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Entity field_eamin(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    Scalar priv_amin;
-    Entity priv_result;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<Scalar>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<Scalar> x(xField, b);
-            priv_iamin = FortranBLAS<Scalar>::iamin(x.size(),x.data());
-
-            if (std::abs(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::abs(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin == local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Entity field_eamin(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
-{
-    const Selector selector = selectField(xField);
-    return field_eamin(xField,selector);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-std::complex<Scalar> field_amin(const Field<std::complex<Scalar>,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm) 
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::norm(x[FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data())]);
-
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
-
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::sqrt(glob_amin);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_amin(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector, const MPI_Comm comm)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamin(x.size(),x.data())]);
-
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
-
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    unfix_omp_threads(orig_thread_count);
-    return glob_amin;
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_amin(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_amin(xField,selector,comm);
-}
-
-template<class Scalar,class T1,class T2,class T3,class T4,class T5,class T6,class T7>
-inline
-Scalar field_amin(const Field<Scalar,T1,T2,T3,T4,T5,T6,T7> & xField)
-{
-    const Selector selector = selectField(xField);
-    return field_amin(xField,selector);
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamin_complex(const FieldBase& xField, const Selector& selector) 
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    double priv_amin;
-    Entity priv_result;
-    double local_amin = std::numeric_limits<double>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<double>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<std::complex<Scalar>> x(xField, b);
-            priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data());
-
-            if (std::norm(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::norm(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin == local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    double glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamin(const FieldBase& xField, const Selector& selector) 
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    double priv_amin;
-    Entity priv_result;
-    double local_amin = std::numeric_limits<double>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<double>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<Scalar> x(xField, b);
-            priv_iamin = FortranBLAS<Scalar>::iamin(x.size(),x.data());
-
-            if ( std::abs(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::abs(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    double glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-   if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
-}
-
+//==============================================================================
+// eamin: Entity(loc:global_min( min_i( abs(x[i]) )))
+//
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2026
+template <typename T>
+STK_DEPRECATED
 inline
 Entity field_eamin(const FieldBase& xField, const Selector& selector)
 {
-    if (xField.data_traits().type_info == typeid(double)) {
-        return INTERNAL_field_eamin<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        return INTERNAL_field_eamin<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        return INTERNAL_field_eamin_complex<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        return INTERNAL_field_eamin_complex<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        return INTERNAL_field_eamin<int>(xField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_eamin; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
-    return stk::mesh::Entity();
+  STK_ThrowRequire(field_blas::impl::is_compatible<T>(xField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
+
+  const stk::mesh::Layout xLayout = xField.host_data_layout();
+
+  field_blas::impl::MinMaxInfo localMinMaxInfo {};
+  T localMinValue {};
+
+  if (xLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    localMinMaxInfo = field_blas::impl::FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
+  }
+  else if (xLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    localMinMaxInfo = field_blas::impl::FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_eamin().  xField layout: " << xLayout);
+  }
+
+  const stk::mesh::BulkData& bulk = xField.get_mesh();
+  T globalMinValue;
+  EntityId globalEntityId {};
+  EntityId localEntityId {};
+  STK_ThrowRequireMsg(localMinMaxInfo.bucketId != InvalidOrdinal, "No minimum value location found in field_eamin()");
+
+  if constexpr (field_blas::impl::is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localValueArray = reinterpret_cast<ComplexType*>(&localMinValue);
+    ComplexType* globalValueArray = reinterpret_cast<ComplexType*>(&globalMinValue);
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_minloc(bulk.parallel(), localValueArray, &localEntityId, globalValueArray, &globalEntityId, 1u);
+  }
+  else {
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_minloc(bulk.parallel(), &localMinValue, &localEntityId, &globalMinValue, &globalEntityId, 1u);
+  }
+
+  if (globalEntityId == localEntityId) {
+    return bulk.get_entity(xField.entity_rank(), globalEntityId);
+  } else {
+    return Entity();
+  }
 }
 
+STK_DEPRECATED
+inline
+Entity field_eamin(const FieldBase& xField, const Selector& selector)
+{
+  if (xField.data_traits().type_info == typeid(double)) {
+    return field_eamin<double>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(float)) {
+    return field_eamin<float>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
+    return field_eamin<std::complex<double>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
+    return field_eamin<std::complex<float>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(int)) {
+    return field_eamin<int>(xField, selector);
+  }
+  else {
+    STK_ThrowErrorMsg("Error in field_eamin(): Field is of type " << xField.data_traits().type_info.name() <<
+                      ", which is not supported.");
+  }
+  return stk::mesh::Entity();
+}
+
+STK_DEPRECATED
 inline
 Entity field_eamin(const FieldBase& xField)
 {
-    const Selector selector = selectField(xField);
-    return field_eamin(xField,selector);
+  const Selector selector = selectField(xField);
+  return field_eamin(xField, selector);
 }
 
-template<class Scalar>
+template <typename T>
+STK_DEPRECATED
 inline
-void field_amin(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+Entity field_eamin(const Field<T>& xField)
 {
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
+  const Selector selector = selectField(xField);
+  return field_eamin(xField, selector);
+}
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data())]);
 
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
-
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    result = std::complex<Scalar>(glob_amin,0.0);
-    unfix_omp_threads(orig_thread_count);
-}
-
-template<class Scalar>
-inline
-void field_amin(Scalar& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
-{
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamin(x.size(),x.data())]);
-
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    result = glob_amin;
-    unfix_omp_threads(orig_thread_count);
-}
-
-template<class Scalar>
-inline
-void field_amin(Scalar& result, const FieldBase& xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_amin(result,xField,selector,comm);
-}
-
-template<class Scalar>
-inline
-void field_amin(Scalar& result, const FieldBase& xField)
-{
-    const Selector selector = selectField(xField);
-    field_amin(result,xField,selector);
-}
-
-} // mesh
-} // stk
+} // stk::mesh
 
 #endif // STK_MESH_BASE_FIELDBLAS_HPP
 

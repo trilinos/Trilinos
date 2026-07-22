@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_HIP_PARALLEL_REDUCE_MDRANGE_HPP
 #define KOKKOS_HIP_PARALLEL_REDUCE_MDRANGE_HPP
@@ -50,6 +37,7 @@ class ParallelReduce<CombinedFunctorReducerType,
   using value_type     = typename ReducerType::value_type;
   using reference_type = typename ReducerType::reference_type;
   using functor_type   = FunctorType;
+  using reducer_type   = ReducerType;
   using size_type      = HIP::size_type;
 
   // Conditionally set word_size_type to int16_t or int8_t if value_type is

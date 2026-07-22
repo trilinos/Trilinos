@@ -1,28 +1,13 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_Preconditioner.hpp>
 #include <iostream>
 #include <string>
 
-#ifndef _GMRESHANDLE_HPP
-#define _GMRESHANDLE_HPP
+#ifndef KOKKOSSPARSE_GMRESHANDLE_HPP
+#define KOKKOSSPARSE_GMRESHANDLE_HPP
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -33,8 +18,8 @@ namespace Experimental {
  *
  * For more info, see KokkosSparse_gmres.hpp doxygen
  */
-template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace,
-          class TemporaryMemorySpace, class PersistentMemorySpace>
+template <class size_type_, class lno_t_, class scalar_t_, class ExecutionSpace, class TemporaryMemorySpace,
+          class PersistentMemorySpace>
 class GMRESHandle {
  public:
   using HandleExecSpace             = ExecutionSpace;
@@ -54,7 +39,7 @@ class GMRESHandle {
   using nnz_scalar_t       = typename std::remove_const<scalar_t_>::type;
   using const_nnz_scalar_t = const nnz_scalar_t;
 
-  using float_t = typename Kokkos::ArithTraits<nnz_scalar_t>::mag_type;
+  using float_t = typename KokkosKernels::ArithTraits<nnz_scalar_t>::mag_type;
 
   using nnz_row_view_t = typename Kokkos::View<size_type *, device_t>;
 
@@ -62,15 +47,12 @@ class GMRESHandle {
 
   using nnz_value_view_t = typename Kokkos::View<nnz_scalar_t *, device_t>;
 
-  using nnz_value_view2d_t =
-      typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, device_t>;
+  using nnz_value_view2d_t = typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, device_t>;
 
-  using signed_integral_t = typename std::make_signed<
-      typename nnz_row_view_t::non_const_value_type>::type;
+  using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
 
   using signed_nnz_lno_view_t =
-      Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout,
-                   typename nnz_row_view_t::device_type,
+      Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
   /**
@@ -107,8 +89,7 @@ class GMRESHandle {
 
  public:
   // Use set methods to control ortho, and verbose
-  GMRESHandle(const size_type m_ = 50, const float_t tol_ = 1e-8,
-              const size_type max_restart_ = 50)
+  GMRESHandle(const size_type m_ = 50, const float_t tol_ = 1e-8, const size_type max_restart_ = 50)
       : m(m_),
         tol(tol_),
         max_restart(max_restart_),
@@ -118,13 +99,11 @@ class GMRESHandle {
         end_rel_res(-1),
         conv_flag_val(NotRun) {
     if (m <= 0) {
-      throw std::invalid_argument(
-          "gmres: Please choose restart size m greater than zero.");
+      throw std::invalid_argument("gmres: Please choose restart size m greater than zero.");
     }
   }
 
-  void reset_handle(const size_type m_ = 50, const float_t tol_ = 1e-8,
-                    const size_type max_restart_ = 50) {
+  void reset_handle(const size_type m_ = 50, const float_t tol_ = 1e-8, const size_type max_restart_ = 50) {
     set_m(m_);
     set_tol(tol_);
     set_max_restart(max_restart_);
@@ -148,9 +127,7 @@ class GMRESHandle {
   size_type get_max_restart() const { return max_restart; }
 
   KOKKOS_INLINE_FUNCTION
-  void set_max_restart(const size_type max_restart_) {
-    this->max_restart = max_restart_;
-  }
+  void set_max_restart(const size_type max_restart_) { this->max_restart = max_restart_; }
 
   KOKKOS_INLINE_FUNCTION
   float_t get_tol() const { return tol; }

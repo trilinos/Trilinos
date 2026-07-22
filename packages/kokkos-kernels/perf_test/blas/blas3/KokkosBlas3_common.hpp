@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS3_COMMON_H_
 #define KOKKOSBLAS3_COMMON_H_
 #include "KokkosKernels_default_types.hpp"
@@ -42,14 +29,14 @@
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
   std::string trmm_args;
-  default_scalar alpha;
+  KokkosKernels::default_scalar alpha;
 };
 typedef struct perf_test_trmm_args pt_trmm_args_t;
 
 struct perf_test_gemm_args {
   std::string gemm_args;  //[N,T,C][N,T,C] for transA and transB
-  default_scalar alpha;
-  default_scalar beta;
+  KokkosKernels::default_scalar alpha;
+  KokkosKernels::default_scalar beta;
 };
 typedef struct perf_test_gemm_args pt_gemm_args_t;
 // ADD MORE BLAS3 ROUTINE ARG STRUCTS HERE.
@@ -130,11 +117,9 @@ typedef enum TEST {
 } test_e;
 
 static std::string test_e_str[TEST_N]{
-    "blas", "batched_heuristic", "batched_serial", "batched_serial_blocked",
-    "batched_serial_simd", "batched_serial_simd_blocked",
-    "batched_serial_compact_mkl", "batched_team", "batched_team_blocked",
-    "batched_team_vector", "batched_team_vector_blocked", "batched_team_simd",
-    "batched_team_simd_blocked",
+    "blas", "batched_heuristic", "batched_serial", "batched_serial_blocked", "batched_serial_simd",
+    "batched_serial_simd_blocked", "batched_serial_compact_mkl", "batched_team", "batched_team_blocked",
+    "batched_team_vector", "batched_team_vector_blocked", "batched_team_simd", "batched_team_simd_blocked",
     // ADD MORE TEST TYPES HERE
     "experiment"};
 
@@ -191,12 +176,11 @@ struct perf_test_options {
 typedef struct perf_test_options options_t;
 
 /*************************** Print macros **************************/
-//#define PERF_TEST_DEBUG
+// #define PERF_TEST_DEBUG
 #ifdef PERF_TEST_DEBUG
 #define STATUS printf("STATUS: %s:%d.\n", __func__, __LINE__);
 #else
 #define STATUS
 #endif  // PERF_TEST_DEBUG
-#define FATAL_ERROR(msg) \
-  printf("FATAL_ERROR: %s:%s:%d %s\n", __FILE__, __func__, __LINE__, (msg));
+#define FATAL_ERROR(msg) printf("FATAL_ERROR: %s:%s:%d %s\n", __FILE__, __func__, __LINE__, (msg));
 #endif  // KOKKOSBLAS3_COMMON_H_

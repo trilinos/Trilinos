@@ -124,8 +124,8 @@ namespace Anasazi {
 
         \return The return value is a pointer to the data, stored sequentially.
         \c *cor denotes whether the data is stored column-oriented (\f$*cor ==
-        true$) or row-oriented (\f$cor == false$). \c *stride denotes the stride
-        between columns/rows. 
+        true\f$) or row-oriented (\f$cor == false\f$). \c *stride denotes the stride
+        between columns/rows.
 
     */
     static ScalarType * values( DM& dm, int *stride, bool *cor) {

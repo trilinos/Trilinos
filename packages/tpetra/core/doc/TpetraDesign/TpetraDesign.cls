@@ -243,9 +243,10 @@
         Sandia National Laboratories\\
         Albuquerque, New Mexico 87185 and Livermore, California 94550\\
         \\
-        Sandia is a multiprogram laboratory operated by Sandia Corporation,\\
-        a Lockheed Martin Company, for the United States Department of\\
-        Energy under Contract DE-AC04-94AL85000.\\
+	      Sandia National Laboratories is a multimission laboratory managed and operated\\
+        by National Technology and Engineering Solutions of Sandia, LLC, a wholly owned\\
+        subsidiary of Honeywell International Inc., for the U.S. Department of Energy’s\\
+        National Nuclear Security Administration under contract DE-NA0003525.\\
         \\
         Approved for public release; further dissemination unlimited.\\
 

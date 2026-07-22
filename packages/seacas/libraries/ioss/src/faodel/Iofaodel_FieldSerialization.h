@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -40,7 +40,7 @@ namespace Iofaodel {
   IOFAODEL_EXPORT size_t data_size(const Ioss::Field &f);
 
   // Caller should write their own version of this
-  // FieldFunction should return a function or a lamba that matches the
+  // FieldFunction should return a function or a lambda that matches the
   // signature below. The function it returns may or may not capture variables
   // that are given to the user-defined function.
   // Some examples are given in this file and are also useful

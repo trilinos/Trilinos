@@ -1,48 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //             Xpetra: A linear algebra interface package
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the Xpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
@@ -53,14 +17,8 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_DefaultPlatform.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
-#endif
 
 // FINISH: add testing of operator==, operator!=, operator=, copy construct
 // put these into test_same_as and test_is_compatible
@@ -68,11 +26,7 @@
 namespace {
 
 bool mapDebugChecksEnabled() {
-#ifdef HAVE_XPETRA_TPETRA
   return Tpetra::Details::Behavior::debug("Map");
-#else
-  return false;
-#endif  // HAVE_XPETRA_TPETRA
 }
 
 bool testMpi         = true;
@@ -142,7 +96,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, validConstructor2, M, LO, GO, N) {
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, validConstructor3, M, LO, GO, N) {
-#ifdef HAVE_XPETRA_TPETRA
   // create Kokkos templates
   typedef typename N::device_type device_type;
   typedef typename device_type::execution_space execution_space;
@@ -341,7 +294,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, validConstructor3, M, LO, GO, N) {
     reduceAll(*comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int));
     TEST_EQUALITY_CONST(globalSuccess_int, 0);
   }
-#endif
 }
 
 // This test exercises Tpetra's debug-mode checks.
@@ -541,7 +493,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, compatabilityTests, M, LO, GO, N) {
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
-#ifdef HAVE_XPETRA_TPETRA  // Note: get Kokkos interface for Epetra is only available if Tpetra is also enabled!
   typedef typename N::device_type device_type;
   typedef typename device_type::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, int> range_type;
@@ -552,11 +503,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
   const auto myRank   = comm->getRank();
 
   M testMap(1, 0, comm);
-  Xpetra::UnderlyingLib lib = testMap.lib();
-  if (lib == Xpetra::UseEpetra) {
-    out << "Xpetra: localMap only valid when using Tpetra" << std::endl;
-    return;
-  }
 
   const auto INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
@@ -574,7 +520,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
       GO globalElement;
       Kokkos::parallel_reduce(
           "read GO element", range_type(0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& ge) {
+          KOKKOS_LAMBDA(int /*dummy*/, GO& ge) {
             ge = localMap.getGlobalElement(i);
           },
           globalElement);
@@ -602,7 +548,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
       GO globalElement;
       Kokkos::parallel_reduce(
           "read GO element", range_type(0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& ge) {
+          KOKKOS_LAMBDA(int /*dummy*/, GO& ge) {
             ge = localMap.getGlobalElement(i);
           },
           globalElement);
@@ -630,14 +576,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, localMap, M, LO, GO, N) {
       GO globalElement;
       Kokkos::parallel_reduce(
           "read GO element", range_type(0, 1),
-          KOKKOS_LAMBDA(int dummy, GO& ge) {
+          KOKKOS_LAMBDA(int /*dummy*/, GO& ge) {
             ge = localMap.getGlobalElement(i);
           },
           globalElement);
       TEST_EQUALITY(globalElement, elementList[i]);
     }
   }
-#endif
 }
 
 ////
@@ -726,19 +671,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, ContigUniformMap, M, LO, GO, N) {
 //
 // INSTANTIATIONS
 //
-#ifdef HAVE_XPETRA_TPETRA
 
 #define XPETRA_TPETRA_TYPES(LO, GO, N) \
   typedef typename Xpetra::TpetraMap<LO, GO, N> M##LO##GO##N;
-
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(LO, GO, N) \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N;
-
-#endif
 
 // List of tests (which run both on Epetra and Tpetra)
 #define XP_MAP_INSTANT(LO, GO, N)                                                         \
@@ -755,8 +690,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Map, ContigUniformMap, M, LO, GO, N) {
 #define XPT_MAP_INSTANT(LO, GO, N) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Map, validConstructor3, M##LO##GO##N, LO, GO, N)
 
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
@@ -765,22 +698,5 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_LGN(XPETRA_TPETRA_TYPES)
 TPETRA_INSTANTIATE_LGN(XP_MAP_INSTANT)
 TPETRA_INSTANTIATE_LGN(XPT_MAP_INSTANT)
-
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(int, int, EpetraNode)
-XP_MAP_INSTANT(int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(int, LongLong, EpetraNode)
-XP_MAP_INSTANT(int, LongLong, EpetraNode)
-#endif
-#endif
 
 }  // namespace

@@ -1,48 +1,11 @@
-/*
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //      Teko: A package for block and physics based preconditioning
-//                  Copyright 2010 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric C. Cyr (eccyr@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2010 NTESS and the Teko contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
-
-*/
 
 #include "Teko_TpetraBlockedMappingStrategy.hpp"
 #include "Teko_TpetraHelpers.hpp"
@@ -72,15 +35,15 @@ namespace TpetraHelpers {
 //       comm - Teuchos::RCP<Teuchos::Comm<int> > object related to the map
 //
 TpetraBlockedMappingStrategy::TpetraBlockedMappingStrategy(
-    const std::vector<std::vector<GO> >& vars,
-    const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& map, const Teuchos::Comm<int>& comm) {
+    const std::vector<std::vector<GO>>& vars,
+    const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& map, const Teuchos::Comm<int>& comm) {
   rangeMap_  = map;
   domainMap_ = map;
   buildBlockTransferData(vars, rangeMap_, comm);
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// an Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:
@@ -89,10 +52,21 @@ TpetraBlockedMappingStrategy::TpetraBlockedMappingStrategy(
 //
 void TpetraBlockedMappingStrategy::copyTpetraIntoThyra(
     const Tpetra::MultiVector<ST, LO, GO, NT>& X,
-    const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyra_X) const {
+    const Teuchos::Ptr<Thyra::MultiVectorBase<ST>>& thyra_X) const {
+  if (blockMaps_.empty()) {
+    auto prod_X = Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<ST>>(thyra_X);
+    auto vec    = rcp_dynamic_cast<Thyra::TpetraMultiVector<ST, LO, GO, NT>>(
+        prod_X->getNonconstMultiVectorBlock(0), true);
+
+    Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO, NT>> X_rcp_nonconst =
+        Teuchos::rcp_const_cast<Tpetra::MultiVector<ST, LO, GO, NT>>(Teuchos::rcpFromRef(X));
+    fillDefaultSpmdMultiVector(vec, X_rcp_nonconst);
+    return;
+  }
+
   int count = X.getNumVectors();
 
-  std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT> > > subX;
+  std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT>>> subX;
 
   // allocate vectors to copy into
   Blocking::buildSubVectors(blockMaps_, subX, count);
@@ -101,12 +75,12 @@ void TpetraBlockedMappingStrategy::copyTpetraIntoThyra(
   Blocking::one2many(subX, X, blockImport_);
 
   // convert subX to an array of multi vectors
-  Teuchos::Array<RCP<Thyra::MultiVectorBase<ST> > > thyra_subX;
-  Teuchos::Ptr<Thyra::ProductMultiVectorBase<ST> > prod_X =
-      Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<ST> >(thyra_X);
+  Teuchos::Array<RCP<Thyra::MultiVectorBase<ST>>> thyra_subX;
+  Teuchos::Ptr<Thyra::ProductMultiVectorBase<ST>> prod_X =
+      Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<ST>>(thyra_X);
   for (unsigned int i = 0; i < blockMaps_.size(); i++) {
-    RCP<Thyra::TpetraMultiVector<ST, LO, GO, NT> > vec =
-        rcp_dynamic_cast<Thyra::TpetraMultiVector<ST, LO, GO, NT> >(
+    RCP<Thyra::TpetraMultiVector<ST, LO, GO, NT>> vec =
+        rcp_dynamic_cast<Thyra::TpetraMultiVector<ST, LO, GO, NT>>(
             prod_X->getNonconstMultiVectorBlock(i), true);
 
     fillDefaultSpmdMultiVector(vec, subX[i]);
@@ -114,7 +88,7 @@ void TpetraBlockedMappingStrategy::copyTpetraIntoThyra(
 }
 
 // Virtual function defined in MappingStrategy.  This copies
-// an Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
+// a Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
 // blocking handled by the strides defined in the constructor.
 //
 //   arguments:
@@ -122,16 +96,25 @@ void TpetraBlockedMappingStrategy::copyTpetraIntoThyra(
 //      Y       - destination Tpetra::MultiVector<ST,LO,GO,NT>
 //
 void TpetraBlockedMappingStrategy::copyThyraIntoTpetra(
-    const RCP<const Thyra::MultiVectorBase<ST> >& thyra_Y,
+    const RCP<const Thyra::MultiVectorBase<ST>>& thyra_Y,
     Tpetra::MultiVector<ST, LO, GO, NT>& Y) const {
-  std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > > subY;
-  RCP<const Thyra::DefaultProductMultiVector<ST> > prod_Y =
-      rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<ST> >(thyra_Y);
+  if (blockMaps_.empty()) {
+    auto prod_Y = rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<ST>>(thyra_Y);
+    auto tmv    = rcp_dynamic_cast<const Thyra::TpetraMultiVector<ST, LO, GO, NT>>(
+                   prod_Y->getMultiVectorBlock(0), true)
+                   ->getConstTpetraMultiVector();
+    Y.assign(*tmv);
+    return;
+  }
+
+  std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT>>> subY;
+  RCP<const Thyra::DefaultProductMultiVector<ST>> prod_Y =
+      rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<ST>>(thyra_Y);
 
   // convert thyra product vector to subY
   for (unsigned int i = 0; i < blockMaps_.size(); i++) {
-    RCP<const Thyra::TpetraMultiVector<ST, LO, GO, NT> > tmv =
-        rcp_dynamic_cast<const Thyra::TpetraMultiVector<ST, LO, GO, NT> >(
+    RCP<const Thyra::TpetraMultiVector<ST, LO, GO, NT>> tmv =
+        rcp_dynamic_cast<const Thyra::TpetraMultiVector<ST, LO, GO, NT>>(
             prod_Y->getMultiVectorBlock(i), true);
     subY.push_back(tmv->getConstTpetraMultiVector());
   }
@@ -156,8 +139,10 @@ void TpetraBlockedMappingStrategy::copyThyraIntoTpetra(
 //       comm    - Teuchos::RCP<Teuchos::Comm<int> > object
 //
 void TpetraBlockedMappingStrategy::buildBlockTransferData(
-    const std::vector<std::vector<GO> >& vars,
-    const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& baseMap, const Teuchos::Comm<int>& comm) {
+    const std::vector<std::vector<GO>>& vars,
+    const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& baseMap, const Teuchos::Comm<int>& comm) {
+  if (vars.size() == 1) return;
+
   // build block for each vector
   for (std::size_t i = 0; i < vars.size(); i++) {
     // build maps and exporters/importers
@@ -180,13 +165,35 @@ void TpetraBlockedMappingStrategy::buildBlockTransferData(
 //    returns: Blocked Thyra linear operator with sub blocks
 //             defined by this mapping strategy
 //
-const Teuchos::RCP<Thyra::BlockedLinearOpBase<ST> >
+const Teuchos::RCP<Thyra::BlockedLinearOpBase<ST>>
 TpetraBlockedMappingStrategy::buildBlockedThyraOp(
-    const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& crsContent,
+    const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& crsContent,
     const std::string& label) const {
+  if (blockMaps_.empty()) {
+    RCP<Thyra::DefaultBlockedLinearOp<ST>> A = Thyra::defaultBlockedLinearOp<ST>();
+
+    auto crsCopy = Teuchos::make_rcp<Tpetra::CrsMatrix<ST, LO, GO, NT>>(*crsContent,
+                                                                        Teuchos::DataAccess::View);
+
+    A->beginBlockFill(1, 1);
+    A->setNonconstBlock(
+        0, 0,
+        Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+            Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crsCopy->getRangeMap()),
+            Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crsCopy->getDomainMap()), crsCopy));
+    A->endBlockFill();
+
+    return A;
+  }
+
   int dim = blockMaps_.size();
 
-  RCP<Thyra::DefaultBlockedLinearOp<ST> > A = Thyra::defaultBlockedLinearOp<ST>();
+  plocal2ContigGIDs.resize(dim);
+  for (int j = 0; j < dim; j++) {
+    plocal2ContigGIDs[j] = Blocking::getSubBlockColumnGIDs(*crsContent, blockMaps_[j]);
+  }
+
+  RCP<Thyra::DefaultBlockedLinearOp<ST>> A = Thyra::defaultBlockedLinearOp<ST>();
 
   A->beginBlockFill(dim, dim);
   for (int i = 0; i < dim; i++) {
@@ -196,8 +203,8 @@ TpetraBlockedMappingStrategy::buildBlockedThyraOp(
       ss << label << "_" << i << "," << j;
 
       // build the blocks and place it the right location
-      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > blk =
-          Blocking::buildSubBlock(i, j, crsContent, blockMaps_);
+      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> blk =
+          Blocking::buildSubBlock(i, j, crsContent, blockMaps_, plocal2ContigGIDs[j]);
       A->setNonconstBlock(i, j,
                           Thyra::tpetraLinearOp<ST, LO, GO, NT>(
                               Thyra::tpetraVectorSpace<ST, LO, GO, NT>(blk->getRangeMap()),
@@ -220,21 +227,34 @@ TpetraBlockedMappingStrategy::buildBlockedThyraOp(
 //           Tpetra::CrsMatrix<ST,LO,GO,NT>  at all relevant locations
 //
 void TpetraBlockedMappingStrategy::rebuildBlockedThyraOp(
-    const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& crsContent,
-    const RCP<Thyra::BlockedLinearOpBase<ST> >& A) const {
+    const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& crsContent,
+    const RCP<Thyra::BlockedLinearOpBase<ST>>& A) const {
+  if (blockMaps_.empty()) {
+    auto Aij  = A->getNonconstBlock(0, 0);
+    auto tAij = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(Aij, true);
+    auto eAij =
+        rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tAij->getTpetraOperator(), true);
+    auto values_dest      = eAij->getLocalMatrixDevice().values;
+    const auto values_src = crsContent->getLocalMatrixDevice().values;
+    TEUCHOS_DEBUG_ASSERT(eAij->getCrsGraph()->isIdenticalTo(*crsContent->getCrsGraph()));
+    TEUCHOS_DEBUG_ASSERT(values_dest.extent(0) == values_src.extent(0));
+    Kokkos::deep_copy(values_dest, values_src);
+    return;
+  }
+
   int dim = blockMaps_.size();
 
   for (int i = 0; i < dim; i++) {
     for (int j = 0; j < dim; j++) {
       // get Tpetra version of desired block
-      RCP<Thyra::LinearOpBase<ST> > Aij = A->getNonconstBlock(i, j);
-      RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT> > tAij =
-          rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT> >(Aij, true);
-      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > eAij =
-          rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT> >(tAij->getTpetraOperator(), true);
+      RCP<Thyra::LinearOpBase<ST>> Aij = A->getNonconstBlock(i, j);
+      RCP<Thyra::TpetraLinearOp<ST, LO, GO, NT>> tAij =
+          rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(Aij, true);
+      RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> eAij =
+          rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tAij->getTpetraOperator(), true);
 
       // rebuild the blocks and place it the right location
-      Blocking::rebuildSubBlock(i, j, crsContent, blockMaps_, *eAij);
+      Blocking::rebuildSubBlock(i, j, crsContent, blockMaps_, *eAij, plocal2ContigGIDs[j]);
     }
   }  // end for i
 }

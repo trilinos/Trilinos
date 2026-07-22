@@ -32,27 +32,26 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "gtest/gtest.h"                // for EXPECT_TRUE, TEST, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
+#include <stk_mesh/base/Types.hpp>      // for PartVector, BucketVector, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
 #include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
+#include "stk_mesh/base/SkinBoundary.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/SelectorFixture.hpp"  // for SelectorFixture
-#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-#include "gtest/gtest.h"                // for EXPECT_TRUE, TEST, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"
 #include <algorithm>                    // for find
 #include <array>                        // for array
 #include <iostream>                     // for ostringstream, ostream, etc
 #include <stddef.h>                     // for size_t
 #include <stdexcept>                    // for logic_error
-#include <stk_mesh/base/Part.hpp>       // for Part
-#include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
-#include <stk_mesh/base/Types.hpp>      // for PartVector, BucketVector, etc
-#include <stk_unit_test_utils/BulkDataTester.hpp>
-#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
 #include <string>                       // for basic_string, operator==, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector
@@ -60,9 +59,10 @@ namespace stk { namespace mesh { class Bucket; } }
 
 namespace {
 
-using stk::mesh::fixtures::simple_fields::SelectorFixture;
+using stk::mesh::fixtures::SelectorFixture;
 
-void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[]);
+void test_selector_with_buckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[]);
+void test_selector_with_partitions(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[]);
 
 void initialize(SelectorFixture& fixture)
 {
@@ -142,7 +142,8 @@ TEST(Verify, partASelector)
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {true, true, false, false, false};
 
-  testSelectorWithBuckets(fix, partASelector, gold_shouldEntityBeInSelector);
+  test_selector_with_buckets(fix, partASelector, gold_shouldEntityBeInSelector);
+  test_selector_with_partitions(fix, partASelector, gold_shouldEntityBeInSelector);
 }
 
 TEST(Verify, notPartASelector)
@@ -155,7 +156,8 @@ TEST(Verify, notPartASelector)
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {false, false, true, true, true};
 
-  testSelectorWithBuckets(fix, notPartASelector, gold_shouldEntityBeInSelector);
+  test_selector_with_buckets(fix, notPartASelector, gold_shouldEntityBeInSelector);
+  test_selector_with_partitions(fix, notPartASelector, gold_shouldEntityBeInSelector);
 }
 
 TEST(Verify, emptyPartSelector)
@@ -170,7 +172,8 @@ TEST(Verify, emptyPartSelector)
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {false, false, false, false, false};
 
-  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInSelector);
+  test_selector_with_buckets(fix, selector, gold_shouldEntityBeInSelector);
+  test_selector_with_partitions(fix, selector, gold_shouldEntityBeInSelector);
 }
 
 TEST(Verify, selectorEmptyDuringMeshMod)
@@ -182,7 +185,6 @@ TEST(Verify, selectorEmptyDuringMeshMod)
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::BulkData& bulk = *bulkPtr;
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  meta.use_simple_fields();
   stk::mesh::Part& block1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
   meta.commit();
 
@@ -255,7 +257,8 @@ TEST(Verify, complementOfPartASelector)
   const int numEntities = 5;
   bool gold_shouldEntityBeInSelector[numEntities] = {false, false, true, true, true};
 
-  testSelectorWithBuckets(fix, partAComplementSelector, gold_shouldEntityBeInSelector);
+  test_selector_with_buckets(fix, partAComplementSelector, gold_shouldEntityBeInSelector);
+  test_selector_with_partitions(fix, partAComplementSelector, gold_shouldEntityBeInSelector);
 }
 
 TEST(Verify, andedSelector)
@@ -271,9 +274,9 @@ TEST(Verify, andedSelector)
   bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true, false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true, true , false, false};
   bool gold_shouldEntityBeInAndedSelector[numEntities] = {false, true, false, false, false};
-  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, andedSelector, gold_shouldEntityBeInAndedSelector);
+  test_selector_with_buckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, andedSelector, gold_shouldEntityBeInAndedSelector);
 }
 
 TEST(Verify, oredSelector)
@@ -289,9 +292,9 @@ TEST(Verify, oredSelector)
   bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true, false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true, true , false, false};
   bool gold_shouldEntityBeInOredSelector[numEntities] =  {true , true, true , false, false};
-  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, oredSelector, gold_shouldEntityBeInOredSelector);
+  test_selector_with_buckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, oredSelector, gold_shouldEntityBeInOredSelector);
 }
 
 TEST(Verify, notAndedSelector)
@@ -308,9 +311,9 @@ TEST(Verify, notAndedSelector)
   bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true , false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true , true , false, false};
   bool gold_shouldEntityBeInAndedSelector[numEntities] = {true , false, true , true , true };
-  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, notAndedSelector, gold_shouldEntityBeInAndedSelector);
+  test_selector_with_buckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, notAndedSelector, gold_shouldEntityBeInAndedSelector);
 }
 
 TEST(Verify, noredSelector)
@@ -326,9 +329,9 @@ TEST(Verify, noredSelector)
   bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true , false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true , true , false, false};
   bool gold_shouldEntityBeInOredSelector[numEntities]  = {false, false, false, true , true };
-  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, norSelector, gold_shouldEntityBeInOredSelector);
+  test_selector_with_buckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, norSelector, gold_shouldEntityBeInOredSelector);
 }
 
 TEST(Verify, differenceSelector)
@@ -345,10 +348,10 @@ TEST(Verify, differenceSelector)
   bool gold_shouldEntityBeInPartASelector[numEntities]      = {true , true , false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities]      = {false, true , true , false, false};
   bool gold_shouldEntityBeInDifferenceSelector[numEntities] = {true , false, false, false, false};
-  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, differenceSelector, gold_shouldEntityBeInDifferenceSelector);
-  testSelectorWithBuckets(fix, equivSelector, gold_shouldEntityBeInDifferenceSelector);
+  test_selector_with_buckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, differenceSelector, gold_shouldEntityBeInDifferenceSelector);
+  test_selector_with_buckets(fix, equivSelector, gold_shouldEntityBeInDifferenceSelector);
 }
 
 TEST(Verify, variousSelectorCombinations)
@@ -369,12 +372,12 @@ TEST(Verify, variousSelectorCombinations)
   bool gold_shouldEntityNotBeInPartBOrPartCSelector[numEntities] = {true , false, false, false, true };
   bool gold_shouldEntityBeInPartASelector[numEntities]           = {true , true , false, false, false};
   bool gold_shouldEntityBeInComplexSelector[numEntities]         = {true , false, false, false, false};
-  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, partC, gold_shouldEntityBeInPartCSelector);
-  testSelectorWithBuckets(fix, partB|partC, gold_shouldEntityBeInPartBOrPartCSelector);
-  testSelectorWithBuckets(fix, !(partB|partC), gold_shouldEntityNotBeInPartBOrPartCSelector);
-  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, complexSelector, gold_shouldEntityBeInComplexSelector);
+  test_selector_with_buckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, partC, gold_shouldEntityBeInPartCSelector);
+  test_selector_with_buckets(fix, partB|partC, gold_shouldEntityBeInPartBOrPartCSelector);
+  test_selector_with_buckets(fix, !(partB|partC), gold_shouldEntityNotBeInPartBOrPartCSelector);
+  test_selector_with_buckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, complexSelector, gold_shouldEntityBeInComplexSelector);
 }
 
 TEST(Verify, complementOfSelectorComplement)
@@ -392,13 +395,13 @@ TEST(Verify, complementOfSelectorComplement)
   bool gold_shouldEntityBeInNoredSelector[numEntities]    = {false, false, false, true,  true };
   bool gold_shouldEntityBeInNotNoredSelector[numEntities] = {true , true , true , false, false};
 
-  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, norSelector, gold_shouldEntityBeInNoredSelector);
+  test_selector_with_buckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, norSelector, gold_shouldEntityBeInNoredSelector);
 
   stk::mesh::Selector selector = norSelector.complement();
-  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInNotNoredSelector);
-  testSelectorWithBuckets(fix, (partA | partB), gold_shouldEntityBeInNotNoredSelector);
+  test_selector_with_buckets(fix, selector, gold_shouldEntityBeInNotNoredSelector);
+  test_selector_with_buckets(fix, (partA | partB), gold_shouldEntityBeInNotNoredSelector);
 }
 
 TEST(Verify, complementOfDefaultConstructedSelector)
@@ -411,10 +414,10 @@ TEST(Verify, complementOfDefaultConstructedSelector)
   bool goldEntityInDefaultCtorComplement[numEntities] = {true , true , true , true , true };
 
   stk::mesh::Selector defaultConstructedSelector;
-  testSelectorWithBuckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
+  test_selector_with_buckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
 
   stk::mesh::Selector complementOfDefault = defaultConstructedSelector.complement();
-  testSelectorWithBuckets(fix, complementOfDefault, goldEntityInDefaultCtorComplement);
+  test_selector_with_buckets(fix, complementOfDefault, goldEntityInDefaultCtorComplement);
 }
 
 TEST(Verify, usingPartVectorToSelectIntersection)
@@ -431,9 +434,9 @@ TEST(Verify, usingPartVectorToSelectIntersection)
   bool gold_shouldEntityBeInPartASelector[numEntities] = {true , true, false, false, false};
   bool gold_shouldEntityBeInPartBSelector[numEntities] = {false, true, true , false, false};
   bool gold_shouldEntityBeInAndedSelector[numEntities] = {false, true, false, false, false};
-  testSelectorWithBuckets(fix, fix.m_partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInAndedSelector);
+  test_selector_with_buckets(fix, fix.m_partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, selector, gold_shouldEntityBeInAndedSelector);
 
   std::ostringstream msg;
   msg << selector;
@@ -474,11 +477,11 @@ TEST(Verify, usingPartVectorToSelectUnion)
   bool gold_shouldEntityBeInPartAOrPartBSelector[numEntities] = {true , true , true , false, false};
   bool gold_shouldEntityBeInPartCSelector[numEntities]        = {false, false, true , true , false};
   bool gold_shouldEntityBeInPartOredSelector[numEntities]     = {true , true , true , true , false};
-  testSelectorWithBuckets(fix, fix.m_partA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, (fix.m_partA | fix.m_partB), gold_shouldEntityBeInPartAOrPartBSelector);
-  testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
-  testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInPartOredSelector);
+  test_selector_with_buckets(fix, fix.m_partA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, (fix.m_partA | fix.m_partB), gold_shouldEntityBeInPartAOrPartBSelector);
+  test_selector_with_buckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
+  test_selector_with_buckets(fix, selector, gold_shouldEntityBeInPartOredSelector);
 
   std::ostringstream msg;
   msg << selector;
@@ -493,10 +496,15 @@ TEST(Verify, defaultConstructorForSelector)
 
   stk::mesh::Selector defaultConstructedSelector;
 
+  EXPECT_TRUE(defaultConstructedSelector.is_empty(stk::topology::NODE_RANK));
+
+  const stk::mesh::BucketVector& nodeBuckets = defaultConstructedSelector.get_buckets(stk::topology::NODE_RANK);
+  EXPECT_TRUE(nodeBuckets.empty());
+
   const int numEntities = 5;
   bool goldEntityInDefaultCtor[numEntities] = {false, false, false, false, false};
 
-  testSelectorWithBuckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
+  test_selector_with_buckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
 }
 
 TEST(Verify, usingEqualityOperator)
@@ -570,10 +578,10 @@ TEST(Verify, usingSelectField)
   bool gold_shouldEntityBeInPartCSelector[numEntities]         = {false, false, true , true , false};
   bool gold_shouldEntityBeInPartsABCUnionSelector[numEntities] = {true , true , true , true , false};
 
-  testSelectorWithBuckets(fix, selectFieldA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
-  testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
+  test_selector_with_buckets(fix, selectFieldA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
+  test_selector_with_buckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
 
   //
   //  Test selection of parts.  Part selection returns true if there is overlap between the test part set
@@ -606,10 +614,10 @@ TEST(Verify, usingSelectField)
   //
   fix.get_NonconstBulkData().modification_begin("TEST MODIFICATION");
 
-  testSelectorWithBuckets(fix, selectFieldA, gold_shouldEntityBeInPartASelector);
-  testSelectorWithBuckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
-  testSelectorWithBuckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
-  testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
+  test_selector_with_buckets(fix, selectFieldA, gold_shouldEntityBeInPartASelector);
+  test_selector_with_buckets(fix, fix.m_partB, gold_shouldEntityBeInPartBSelector);
+  test_selector_with_buckets(fix, fix.m_partC, gold_shouldEntityBeInPartCSelector);
+  test_selector_with_buckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
 
 
   fix.get_NonconstBulkData().modification_end();
@@ -758,7 +766,7 @@ TEST(Verify, usingLessThanOperator)
   EXPECT_TRUE(partAUnionPartBSelector < partAUnionPartBIntersectPartCSelector);
 }
 
-void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[])
+void test_selector_with_buckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[])
 {
   const stk::mesh::BulkData& stkMeshBulkData = selectorFixture.get_BulkData();
   {
@@ -788,13 +796,42 @@ void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::
   }
 }
 
+void test_selector_with_partitions(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[])
+{
+  const stk::mesh::BulkData& stkMeshBulkData = selectorFixture.get_BulkData();
+  {
+    const stk::mesh::impl::Partition* partition = stkMeshBulkData.bucket(selectorFixture.m_entity1).getPartition();
+    bool result = selector(*partition);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[0], result);
+  }
+  {
+    const stk::mesh::impl::Partition* partition = stkMeshBulkData.bucket(selectorFixture.m_entity2).getPartition();
+    bool result = selector(*partition);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[1], result);
+  }
+  {
+    const stk::mesh::impl::Partition* partition = stkMeshBulkData.bucket(selectorFixture.m_entity3).getPartition();
+    bool result = selector(*partition);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[2], result);
+  }
+  {
+    const stk::mesh::impl::Partition* partition = stkMeshBulkData.bucket(selectorFixture.m_entity4).getPartition();
+    bool result = selector(*partition);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[3], result);
+  }
+  {
+    const stk::mesh::impl::Partition* partition = stkMeshBulkData.bucket(selectorFixture.m_entity5).getPartition();
+    bool result = selector(*partition);
+    EXPECT_EQ(gold_shouldEntityBeInSelector[4], result);
+  }
+}
+
 std::shared_ptr<stk::mesh::BulkData> create_mesh(stk::ParallelMachine comm,
                                                  unsigned spatialDim)
 {
   stk::mesh::MeshBuilder builder(comm);
   builder.set_spatial_dimension(spatialDim);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
-  bulk->mesh_meta_data().use_simple_fields();
   return bulk;
 }
 
@@ -902,24 +939,71 @@ TEST(Selector, get_parts_intersection_ranked)
   EXPECT_EQ(1u, selector1Parts.size());
   EXPECT_EQ(rankedPart.mesh_meta_data_ordinal(), selector1Parts[0]->mesh_meta_data_ordinal());
 
-  stk::mesh::Selector selector2 = unrankedPart & rankedPart;
   stk::mesh::PartVector selector2Parts;
   selector1.get_parts(selector2Parts);
   EXPECT_EQ(1u, selector2Parts.size());
   EXPECT_EQ(rankedPart.mesh_meta_data_ordinal(), selector2Parts[0]->mesh_meta_data_ordinal());
 }
 
+TEST(Selector, partIntersection)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if (stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
 
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(comm).set_spatial_dimension(3).create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Part& sidePart = meta.declare_part_with_topology("sidePart", stk::topology::QUAD_4);
+  constexpr int NX=2, NY=2, NZ=2;
+  stk::mesh::fixtures::HexFixture::fill_mesh(NX, NY, NZ, *bulkPtr);
+  stk::mesh::create_exposed_block_boundary_sides(*bulkPtr, meta.universal_part(), {&sidePart});
+  EXPECT_EQ(24u, stk::mesh::count_entities(*bulkPtr, stk::topology::FACE_RANK, sidePart));
+
+  stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
+  EXPECT_TRUE(bulkPtr->is_valid(node1));
+  const stk::mesh::Bucket& node1Bucket = bulkPtr->bucket(node1);
+
+  stk::mesh::Selector validIntersection = sidePart & meta.locally_owned_part();
+  EXPECT_TRUE(validIntersection(node1Bucket));
+  EXPECT_TRUE(validIntersection(node1Bucket.supersets()));
+  stk::mesh::impl::Partition& node1Partition = *node1Bucket.getPartition();
+  EXPECT_TRUE(validIntersection(node1Partition));
+
+  stk::mesh::Selector invalidIntersection = stk::mesh::Selector() & meta.locally_owned_part();
+  EXPECT_FALSE(invalidIntersection(node1Bucket));
+  EXPECT_FALSE(invalidIntersection(node1Bucket.supersets()));
+  EXPECT_FALSE(invalidIntersection(node1Partition));
+}
+
+TEST(Selector, selectUnion_clone_for_different_mesh)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  constexpr unsigned spatialDim = 3;
+  stk::mesh::MetaData meta1(spatialDim);
+  std::string part1Name("myPart1"), part2Name("myPart2");
+  stk::mesh::PartVector parts1 = { &meta1.declare_part(part1Name), &meta1.declare_part(part2Name)};
+  stk::mesh::Selector select1 = stk::mesh::selectUnion(parts1);
+
+  stk::mesh::MetaData meta2;
+  meta2.declare_part(part1Name);
+  meta2.declare_part(part2Name);
+  meta2.initialize(spatialDim);
+
+  stk::mesh::Selector select2 = select1.clone_for_different_mesh(meta2);
+  stk::mesh::PartVector parts2;
+  select2.get_parts(parts2);
+
+  EXPECT_EQ(2u, parts2.size());
+  EXPECT_NE(parts2[0]->mesh_meta_data_ordinal(), parts1[0]->mesh_meta_data_ordinal());
+  EXPECT_NE(parts2[1]->mesh_meta_data_ordinal(), parts1[1]->mesh_meta_data_ordinal());
+  EXPECT_EQ(parts2[0]->name(), part1Name);
+  EXPECT_EQ(parts2[1]->name(), part2Name);
+}
 
 TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
-  int p_size = stk::parallel_machine_size(pm);
-
-  if(p_size > 1)
-  {
-    return;
-  }
+  if (stk::parallel_machine_size(pm) > 1) { GTEST_SKIP(); }
 
   const unsigned spatialDim = 3;
   std::shared_ptr<stk::mesh::BulkData> meshPtr = create_mesh(pm, spatialDim);

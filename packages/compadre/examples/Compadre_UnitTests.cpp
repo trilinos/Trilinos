@@ -17,27 +17,6 @@
 #include <mpi.h>
 #endif
 
-#define ASSERT_NO_DEATH(statement) \
-ASSERT_EXIT({{ statement } ::exit(EXIT_SUCCESS); }, ::testing::ExitedWithCode(0), "")
-
-//
-// KokkosParser tests go here because they modify the Kokkos backend
-//
-TEST (KokkosInitialize, NoArgsGiven) { 
-    ASSERT_NO_DEATH({
-            // default constructor is hidden for KokkosParser
-            // but still visible from this test
-            auto kp = Compadre::KokkosParser(false);
-    });
-}
-TEST (KokkosInitialize, NoCommandLineArgsGiven) { 
-    std::vector<std::string> arguments = {KOKKOS_THREADS_ARG+std::string("=4")};
-    ASSERT_NO_DEATH({
-            auto kp = KokkosParser(arguments);
-    });
-}
-
-
 // this provides main(),
 // but all other tests come from ./unittests/*.cpp
 int main(int argc, char **argv) {
@@ -46,17 +25,16 @@ int main(int argc, char **argv) {
     #ifdef COMPADRE_USE_MPI
     MPI_Init(&argc, &argv);
     #endif
+    // this MPI init is rerun when using the "threadsafe" test style below
 
     ::testing::InitGoogleTest(&argc, argv);
-    ::testing::GTEST_FLAG(filter) = "Kokkos*";
-    int sig = RUN_ALL_TESTS();
 
     // initializes kokkos
     Kokkos::initialize(argc, argv);
 
     // execute all tests
-    ::testing::GTEST_FLAG(filter) = "-Kokkos*";
-    sig += RUN_ALL_TESTS();
+    ::testing::GTEST_FLAG(filter) = "*";
+    int sig = RUN_ALL_TESTS();
 
     // finalize Kokkos and MPI (if available)
     Kokkos::finalize();

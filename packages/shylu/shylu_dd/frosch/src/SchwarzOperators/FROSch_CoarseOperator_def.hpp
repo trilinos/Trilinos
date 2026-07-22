@@ -1,43 +1,11 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// *****************************************************************************
+//               ShyLU: Scalable Hybrid LU Preconditioner and Solver
 //
-//               ShyLU: Hybrid preconditioner package
-//                 Copyright 2012 Sandia Corporation
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Alexander Heinlein (alexander.heinlein@uni-koeln.de)
-//
-// ************************************************************************
-//@HEADER
+// Copyright 2011 NTESS and the ShyLU contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
 
 #ifndef _FROSCH_COARSEOPERATOR_DEF_HPP
 #define _FROSCH_COARSEOPERATOR_DEF_HPP
@@ -380,8 +348,8 @@ namespace FROSch {
                             CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values);
                         } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
                             GOVec indicesGlob(1,CoarseSolveMap_->getGlobalElement(i));
-                            SCVec values(1,ScalarTraits<SC>::one());
-                            CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values());
+                            SCVec values2(1,ScalarTraits<SC>::one());
+                            CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values2());
                             numDiagonalsAdded++;
                         }
                     }
@@ -406,9 +374,9 @@ namespace FROSch {
                         if (indices.size()>0) {
                             CoarseMatrix_->insertGlobalValues(globalRow,indices,values);
                         } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
-                            GOVec indices(1,globalRow);
-                            SCVec values(1,ScalarTraits<SC>::one());
-                            CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
+                            GOVec indices2(1,globalRow);
+                            SCVec values2(1,ScalarTraits<SC>::one());
+                            CoarseMatrix_->insertGlobalValues(globalRow,indices2(),values2());
                             numDiagonalsAdded++;
                         }
                     }
@@ -628,7 +596,7 @@ namespace FROSch {
 
             LO numProcsGatheringStep = this->MpiComm_->getSize();
             GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
-            if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            if (coarseMapUnique->getGlobalNumElements()>0) {
                 numGlobalIndices += 1;
             }
             LO numMyRows;
@@ -865,7 +833,7 @@ namespace FROSch {
             GatheringMaps_[gatheringSteps-1] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),INVALID,uniEle,0,this->MpiComm_);
 
             GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
-            if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            if (coarseMapUnique->getGlobalNumElements()>0) {
                 numGlobalIndices += 1;
             }
             LO numMyRows;
@@ -878,7 +846,7 @@ namespace FROSch {
             //
             // LO numProcsGatheringStep = this->MpiComm_->getSize();
             // GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
-            // if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            // if (coarseMapUnique->getGlobalNumElements()>0) {
             //     numGlobalIndices += 1;
             // }
             // GO numMyRows;
@@ -919,7 +887,7 @@ namespace FROSch {
         const SC ZERO = Teuchos::ScalarTraits<SC>::zero();
 
         global = coarseMapUnique->getMaxAllGlobalIndex();
-        if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+        if (coarseMapUnique->getGlobalNumElements()>0) {
             global += 1;
         }
 
@@ -963,7 +931,7 @@ namespace FROSch {
 
         for (int i=0; i<GatheringMaps_.size(); i++) {
             global = GatheringMaps_[i]->getMaxAllGlobalIndex();
-            if (GatheringMaps_[i]->lib()==UseEpetra || GatheringMaps_[i]->getGlobalNumElements()>0) {
+            if (GatheringMaps_[i]->getGlobalNumElements()>0) {
                 global += 1;
             }
 

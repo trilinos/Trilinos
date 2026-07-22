@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,9 +50,14 @@ struct exi_obj_stats *exoII_ass = NULL;
 static char  ret_string[10 * (MAX_VAR_NAME_LENGTH + 1)];
 static char *cur_string = &ret_string[0];
 
-#ifndef _MSC_VER
-#if NC_HAS_HDF5
-extern int H5get_libversion(unsigned *, unsigned *, unsigned *);
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+#define WINDOWS__ 1
+#endif
+
+#ifndef WINDOWS__
+#if (NC_VERSION_MAJOR > 4 || (NC_VERSION_MAJOR == 4 && NC_VERSION_MINOR > 4)) && NC_HAS_HDF5
+extern int NC4_hdf5get_libversion(unsigned *, unsigned *, unsigned *);
 #endif
 #endif
 
@@ -96,19 +101,31 @@ const char *ex_config(void)
 #if NC_HAS_CDF5
   j += snprintf(buffer + j, buffer_size - j, "\t\tCDF5 enabled\n");
 #endif
-#ifndef _MSC_VER
+#ifndef WINDOWS__
 #if NC_HAS_HDF5
   {
+#if NC_VERSION_MAJOR > 4 || (NC_VERSION_MAJOR == 4 && NC_VERSION_MINOR > 4)
     unsigned major, minor, release;
-    H5get_libversion(&major, &minor, &release);
+    NC4_hdf5get_libversion(&major, &minor, &release);
     j += snprintf(buffer + j, buffer_size - j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor,
                   release);
+#endif
   }
   j += snprintf(buffer + j, buffer_size - j, "\t\tZlib Compression (read/write) enabled\n");
 #if NC_HAS_SZIP_WRITE == 1
   j += snprintf(buffer + j, buffer_size - j, "\t\tSZip Compression (read/write) enabled\n");
 #else
   j += snprintf(buffer + j, buffer_size - j, "\t\tSZip Compression (read/write) NOT enabled\n");
+#endif
+#if NC_HAS_ZSTD == 1
+  j += snprintf(buffer + j, buffer_size - j, "\t\tZstd Compression enabled\n");
+#else
+  j += snprintf(buffer + j, buffer_size - j, "\t\tZstd Compression NOT enabled\n");
+#endif
+#if NC_HAS_QUANTIZE == 1
+  j += snprintf(buffer + j, buffer_size - j, "\t\tQuantization support enabled\n");
+#else
+  j += snprintf(buffer + j, buffer_size - j, "\t\tQuantization support NOT enabled\n");
 #endif
 #endif
 #endif
@@ -193,7 +210,7 @@ int exi_check_file_type(const char *path, int *type)
     FILE *fp;
     if (!(fp = fopen(path, "r"))) {
       char errmsg[MAX_ERR_LENGTH];
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Could not open file '%s', error = %s.", path,
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Could not open file '%s',\n\t\terror = %s.", path,
                strerror(errno));
       ex_err(__func__, errmsg, EX_WRONGFILETYPE);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -203,8 +220,9 @@ int exi_check_file_type(const char *path, int *type)
     fclose(fp);
     if (i != MAGIC_NUMBER_LEN) {
       char errmsg[MAX_ERR_LENGTH];
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Could not read magic data from file '%s', err = %s.",
-               path, strerror(errno));
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: Could not read magic data from file '%s',\n\t\terror = %s.", path,
+               strerror(errno));
       ex_err(__func__, errmsg, EX_WRONGFILETYPE);
       EX_FUNC_LEAVE(EX_FATAL);
     }
@@ -254,9 +272,9 @@ int ex_set_max_name_length(int exoid, int length)
     ex_err_fn(exoid, __func__, errmsg, NC_EMAXNAME);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  if (length > NC_MAX_NAME) {
+  if (length > EX_MAX_NAME) {
     snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: Max name length (%d) exceeds netcdf max name size (%d).", length, NC_MAX_NAME);
+             "ERROR: Max name length (%d) exceeds netcdf max name size (%d).", length, EX_MAX_NAME);
     ex_err_fn(exoid, __func__, errmsg, NC_EMAXNAME);
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -281,7 +299,7 @@ void exi_update_max_name_length(int exoid, int length)
   int status;
   int db_length = 0;
   int rootid    = exoid & EX_FILE_ID_MASK;
-  if ((status = nc_get_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != NC_NOERR) {
+  if ((status = nc_get_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &db_length)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to update 'max_name_length' attribute in file id %d", exoid);
@@ -292,7 +310,7 @@ void exi_update_max_name_length(int exoid, int length)
     /* Update with new value... */
     ex_set_max_name_length(exoid, length);
     if ((status = nc_put_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &length)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to update 'max_name_length' attribute with new value in file id %d",
@@ -337,7 +355,7 @@ int exi_put_names(int exoid, int varid, size_t num_names, char *const *names,
       found_name = 1;
       ex_copy_string(&int_names[idx], names[i], name_length);
       size_t length = strlen(names[i]) + 1;
-      if (length > name_length) {
+      if (length > (size_t)name_length) {
         fprintf(stderr,
                 "Warning: The %s %s name '%s' is too long.\n\tIt will "
                 "be truncated from %d to %d characters. [Called from %s]\n",
@@ -346,7 +364,7 @@ int exi_put_names(int exoid, int varid, size_t num_names, char *const *names,
         length = name_length;
       }
 
-      if (length > max_name_len) {
+      if (length > (size_t)max_name_len) {
         max_name_len = length;
       }
     }
@@ -354,7 +372,7 @@ int exi_put_names(int exoid, int varid, size_t num_names, char *const *names,
   }
 
   int status;
-  if ((status = nc_put_var_text(exoid, varid, int_names)) != NC_NOERR) {
+  if ((status = nc_put_var_text(exoid, varid, int_names)) != EX_NOERR) {
     free(int_names);
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s names in file id %d",
@@ -407,12 +425,12 @@ int exi_put_name(int exoid, int varid, size_t index, const char *name, ex_entity
     }
 
     int status;
-    if ((status = nc_put_vara_text(exoid, varid, start, count, name)) != NC_NOERR) {
+    if ((status = nc_put_vara_text(exoid, varid, start, count, name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s name in file id %d",
                ex_name_of_object(obj_type), exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     /* Add the trailing null if the variable name was too long */
@@ -424,7 +442,7 @@ int exi_put_name(int exoid, int varid, size_t index, const char *name, ex_entity
     /* Update the maximum_name_length attribute on the file. */
     exi_update_max_name_length(exoid, count[1] - 1);
   }
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 
 /*!
@@ -443,11 +461,11 @@ int exi_get_names(int exoid, int varid, size_t num_names, char **names, ex_entit
 
   for (size_t i = 0; i < num_names; i++) {
     int status = exi_get_name(exoid, varid, i, names[i], name_size, obj_type, routine);
-    if (status != NC_NOERR) {
-      return (status);
+    if (status != EX_NOERR) {
+      return status;
     }
   }
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 
 /*!
@@ -466,20 +484,20 @@ int exi_get_name(int exoid, int varid, size_t index, char *name, int name_size,
   count[1] = name_size + 1;
 
   int status = nc_get_vara_text(exoid, varid, start, count, name);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get %s name at index %d from file id %d [Called from %s]",
              ex_name_of_object(obj_type), (int)index, exoid, routine);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   int api_name_size   = ex_inquire_int(exoid, EX_INQ_MAX_READ_NAME_LENGTH);
   name[api_name_size] = '\0';
 
   exi_trim(name);
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 
 /*!
@@ -521,7 +539,7 @@ char *exi_catstr(const char *string, int num)
   if (cur_string - ret_string > 9 * (MAX_VAR_NAME_LENGTH + 1)) {
     cur_string = ret_string;
   }
-  return (tmp_string);
+  return tmp_string;
 }
 
 /** exi_catstr2 - concatenate  string1num1string2num2   */
@@ -538,7 +556,7 @@ char *exi_catstr2(const char *string1, int num1, const char *string2, int num2)
   if (cur_string - ret_string > 9 * (MAX_VAR_NAME_LENGTH + 1)) {
     cur_string = ret_string;
   }
-  return (tmp_string);
+  return tmp_string;
 }
 
 /*!
@@ -640,7 +658,7 @@ char *exi_dim_num_objects(ex_entity_type obj_type)
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported in call to %s", obj_type,
              __func__);
     ex_err(__func__, errmsg, EX_BADPARAM);
-    return (NULL);
+    return NULL;
   }
   }
 }
@@ -695,7 +713,7 @@ char *exi_name_var_of_object(ex_entity_type obj_type, int i, int j)
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported in call to %s", obj_type,
              __func__);
     ex_err(__func__, errmsg, EX_BADPARAM);
-    return (NULL);
+    return NULL;
   }
   }
 }
@@ -722,7 +740,7 @@ char *exi_name_red_var_of_object(ex_entity_type obj_type, int id)
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: object type %d not supported in call to %s", obj_type,
              __func__);
     ex_err(__func__, errmsg, EX_BADPARAM);
-    return (NULL);
+    return NULL;
   }
   }
 }
@@ -781,8 +799,8 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
   char                  errmsg[MAX_ERR_LENGTH];
 
   switch (id_type) {
-  case EX_NODAL: return (0);
-  case EX_GLOBAL: return (0);
+  case EX_NODAL: return 0;
+  case EX_GLOBAL: return 0;
   case EX_ASSEMBLY: return num;
   case EX_BLOB: return num;
   case EX_ELEM_BLOCK:
@@ -861,7 +879,7 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported id array type %d for file id %d", id_type,
              exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   if ((tmp_stats->id_vals == NULL) || (!(tmp_stats->valid_ids))) {
@@ -871,27 +889,27 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     /* get size of id array */
 
     /* First get dimension id of id array */
-    if ((status = nc_inq_dimid(exoid, id_dim, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, id_dim, &dimid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate id array dimension in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     /* Next get value of dimension */
-    if ((status = nc_inq_dimlen(exoid, dimid, &dim_len)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &dim_len)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s array length in file id %d",
                id_table, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     /* get variable id of id array */
-    if ((status = nc_inq_varid(exoid, id_table, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, id_table, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s array in file id %d", id_table,
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     /* allocate space for id array and initialize to zero to ensure
@@ -900,7 +918,7 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to allocate memory for %s array for file id %d", id_table, exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
@@ -915,33 +933,33 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
                  exoid);
         ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
         free(id_vals);
-        return (EX_FATAL);
+        return EX_FATAL;
       }
       status = nc_get_var_int(exoid, varid, id_vals_int);
-      if (status == NC_NOERR) {
-        for (i = 0; i < dim_len; i++) {
-          id_vals[i] = (int64_t)id_vals_int[i];
+      if (status == EX_NOERR) {
+        for (size_t iii = 0; iii < dim_len; iii++) {
+          id_vals[iii] = (int64_t)id_vals_int[iii];
         }
       }
       free(id_vals_int);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s array from file id %d", id_table,
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       free(id_vals);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     /* check if values in stored arrays are filled with non-zeroes */
     bool filled = true;
     sequential  = true;
-    for (i = 0; i < dim_len; i++) {
-      if (id_vals[i] != i + 1) {
+    for (size_t iii = 0; iii < dim_len; iii++) {
+      if (id_vals[iii] != (int64_t)iii + 1) {
         sequential = false;
       }
-      if (id_vals[i] == EX_INVALID_ID || id_vals[i] == NC_FILL_INT) {
+      if (id_vals[iii] == EX_INVALID_ID || id_vals[iii] == NC_FILL_INT) {
         filled     = false;
         sequential = false;
         break; /* id array hasn't been completely filled with valid ids yet */
@@ -961,19 +979,19 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     sequential = tmp_stats->sequential;
   }
 
-  if (sequential && num < dim_len) {
+  if (sequential && (size_t)num < dim_len) {
     i = num - 1;
   }
   else {
     /* Do a linear search through the id array to find the array value
        corresponding to the passed index number */
-    for (i = 0; i < dim_len; i++) {
+    for (i = 0; i < (int64_t)dim_len; i++) {
       if (id_vals[i] == num) {
         break; /* found the id requested */
       }
     }
   }
-  if (i >= dim_len) /* failed to find id number */
+  if (i >= (int64_t)dim_len) /* failed to find id number */
   {
     if (!(tmp_stats->valid_ids)) {
       free(id_vals);
@@ -981,7 +999,7 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate id %" PRId64 " for file id %d", num,
              exoid);
     ex_set_err(__func__, errmsg, EX_LOOKUPFAIL);
-    return (-EX_LOOKUPFAIL); /*if we got here, the id array value doesn't exist */
+    return -EX_LOOKUPFAIL; /*if we got here, the id array value doesn't exist */
   }
 
   /* Now check status array to see if object is null */
@@ -993,22 +1011,22 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to allocate memory for %s array for file id %d", id_table, exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_MEMFAIL);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     /* first time through or status arrays haven't been filled yet */
-    if (nc_inq_varid(exoid, stat_table, &varid) == NC_NOERR) {
+    if (nc_inq_varid(exoid, stat_table, &varid) == EX_NOERR) {
       /* get variable id of status array */
       /* if status array exists, use it, otherwise assume object exists
          to be backward compatible */
 
-      if ((status = nc_get_var_int(exoid, varid, stat_vals)) != NC_NOERR) {
+      if ((status = nc_get_var_int(exoid, varid, stat_vals)) != EX_NOERR) {
         free(id_vals);
         free(stat_vals);
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s array from file id %d",
                  stat_table, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
-        return (EX_FATAL);
+        return EX_FATAL;
       }
     }
     else {
@@ -1036,12 +1054,12 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
     if (!(tmp_stats->valid_stat)) {
       free(stat_vals);
     }
-    return (-((int)i + 1)); /* return index into id array (1-based) */
+    return -((int)i + 1); /* return index into id array (1-based) */
   }
   if (!(tmp_stats->valid_stat)) {
     free(stat_vals);
   }
-  return (i + 1); /* return index into id array (1-based) */
+  return i + 1; /* return index into id array (1-based) */
 }
 
 /******************************************************************************
@@ -1052,7 +1070,10 @@ int exi_id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
 
 /*! this routine returns a pointer to a structure containing the ids of
  * element blocks, node sets, or side sets according to exoid;  if there
- * is not a structure that matches the exoid, one is created
+ * is not a structure that matches the exoid, one is created.
+ *
+ * NOTE: If this file contains `groups` or `change sets`, then each
+ *       group will have its own stat_ptr set of lists...
  * \internal
  */
 
@@ -1091,6 +1112,12 @@ struct exi_obj_stats *exi_get_stat_ptr(int exoid, struct exi_obj_stats **obj_ptr
  * element blocks, node sets, or side sets according to exoid;  this
  * is necessary to clean up because netCDF reuses file ids;  should be
  * called from ex_close
+ *
+ * NOTE: If this file contains `groups` or `change sets`, then each
+ *       group will have its own stat_ptr set of lists.  However,
+ *       this routine is called from ex_close which only closes the
+ *       root id, so we need to iterate the entire list to see if there
+ *       are any subgroups of the root group.
  * \internal
  */
 
@@ -1099,23 +1126,25 @@ void exi_rm_stat_ptr(int exoid, struct exi_obj_stats **obj_ptr)
   struct exi_obj_stats *tmp_ptr            = *obj_ptr;
   struct exi_obj_stats *last_head_list_ptr = *obj_ptr; /* save last head pointer */
 
-  while (tmp_ptr) /* Walk linked list of file ids/vals */
-  {
-    if (exoid == tmp_ptr->exoid) /* linear search for exodus file id */
-    {
-      if (tmp_ptr == *obj_ptr) {     /* Are we at the head of the list? */
-        *obj_ptr = (*obj_ptr)->next; /*   yes, reset ptr to head of list */
+  int root_id = exoid & EX_FILE_ID_MASK;
+  while (tmp_ptr) {                                      /* Walk linked list of file ids/vals */
+    if (root_id == (tmp_ptr->exoid & EX_FILE_ID_MASK)) { /* linear search for exodus file id */
+      if (tmp_ptr == *obj_ptr) {                         /* Are we at the head of the list? */
+        *obj_ptr = (*obj_ptr)->next;                     /*   yes, reset ptr to head of list */
       }
       else { /*   no, remove this record from chain*/
         last_head_list_ptr->next = tmp_ptr->next;
       }
-      free(tmp_ptr->id_vals); /* free up memory */
-      free(tmp_ptr->stat_vals);
-      free(tmp_ptr);
-      break; /* Quit if found */
+      struct exi_obj_stats *tmp = tmp_ptr;
+      tmp_ptr                   = tmp_ptr->next;
+      free(tmp->id_vals); /* free up memory */
+      free(tmp->stat_vals);
+      free(tmp);
     }
-    last_head_list_ptr = tmp_ptr;       /* save last head pointer */
-    tmp_ptr            = tmp_ptr->next; /* Loop back if not */
+    else {
+      last_head_list_ptr = tmp_ptr;       /* save last head pointer */
+      tmp_ptr            = tmp_ptr->next; /* Loop back if not */
+    }
   }
 }
 
@@ -1164,7 +1193,7 @@ struct exi_list_item **exi_get_counter_list(ex_entity_type obj_type)
   case EX_ELEM_SET: return &els_ctr_list;
   case EX_EDGE_MAP: return &edm_ctr_list;
   case EX_FACE_MAP: return &fam_ctr_list;
-  default: return (NULL);
+  default: return NULL;
   }
 }
 
@@ -1196,6 +1225,9 @@ struct exi_list_item **exi_get_counter_list(ex_entity_type obj_type)
  * \internal
  */
 
+/* NOTE: If this is done for a file which contains `groups` or `change sets`, then
+ * the exoid refers to the specific group id and not the `root_id`...
+ */
 int exi_inc_file_item(int                    exoid,    /* file id */
                       struct exi_list_item **list_ptr) /* ptr to ptr to list_item */
 {
@@ -1214,7 +1246,7 @@ int exi_inc_file_item(int                    exoid,    /* file id */
     tlist_ptr->next   = *list_ptr; /* insert into head of list */
     *list_ptr         = tlist_ptr; /* fix up new head of list  */
   }
-  return (tlist_ptr->value++);
+  return tlist_ptr->value++;
 }
 
 /*****************************************************************************
@@ -1261,10 +1293,10 @@ int exi_get_file_item(int                    exoid,    /* file id */
   }
 
   if (!tlist_ptr) { /* ptr NULL? */
-    return (-1);
+    return -1;
   }
 
-  return (tlist_ptr->value);
+  return tlist_ptr->value;
 }
 
 /*****************************************************************************
@@ -1289,6 +1321,10 @@ int exi_get_file_item(int                    exoid,    /* file id */
  *       number of files in one application, items must be taken out of the
  *       linked lists in each of the above routines.  these should be called
  *       after ncclose().
+ *
+ * NOTE: this is called from `ex_close` which only closes the root file and
+ *       not each group  or change set within that `root` file. If the file
+ *       contains groups, then we need to check the entire list...
  * \internal
  */
 
@@ -1298,20 +1334,25 @@ void exi_rm_file_item(int                    exoid,    /* file id */
 {
   struct exi_list_item *last_head_list_ptr = *list_ptr; /* save last head pointer */
 
+  int root_id = exoid & EX_FILE_ID_MASK;
+
   struct exi_list_item *tlist_ptr = *list_ptr;
-  while (tlist_ptr) {                  /* Walk linked list of file ids/vals */
-    if (exoid == tlist_ptr->exo_id) {  /* linear search for exodus file id */
-      if (tlist_ptr == *list_ptr) {    /* Are we at the head of the list? */
-        *list_ptr = (*list_ptr)->next; /*   yes, reset ptr to head of list */
+  while (tlist_ptr) {                                       /* Walk linked list of file ids/vals */
+    if (root_id == (tlist_ptr->exo_id & EX_FILE_ID_MASK)) { /* linear search for exodus file id */
+      if (tlist_ptr == *list_ptr) {                         /* Are we at the head of the list? */
+        *list_ptr = (*list_ptr)->next;                      /*   yes, reset ptr to head of list */
       }
       else { /*   no, remove this record from chain*/
         last_head_list_ptr->next = tlist_ptr->next;
       }
-      free(tlist_ptr); /* free up memory */
-      break;           /* Quit if found */
+      struct exi_list_item *temp = tlist_ptr;
+      tlist_ptr                  = tlist_ptr->next;
+      free(temp); /* free up memory */
     }
-    last_head_list_ptr = tlist_ptr;       /* save last head pointer */
-    tlist_ptr          = tlist_ptr->next; /* Loop back if not */
+    else {
+      last_head_list_ptr = tlist_ptr;       /* save last head pointer */
+      tlist_ptr          = tlist_ptr->next; /* Loop back if not */
+    }
   }
 }
 
@@ -1353,7 +1394,7 @@ int ex_get_num_props(int exoid, ex_entity_type obj_type)
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if (nc_inq_varid(exoid, var_name, &varid) != NC_NOERR) {
+    if (nc_inq_varid(exoid, var_name, &varid) != EX_NOERR) {
       /*   no variable with this name; return cntr which is now the number of */
       /*   properties for this type of entity */
       EX_FUNC_LEAVE(cntr);
@@ -1367,7 +1408,7 @@ int ex_get_num_props(int exoid, ex_entity_type obj_type)
   \ingroup Utilities
   \undoc
 */
-int exi_get_cpu_ws(void) { return (sizeof(float)); }
+int exi_get_cpu_ws(void) { return sizeof(float); }
 
 /* swap - interchange v[i] and v[j] */
 /*!
@@ -1627,14 +1668,14 @@ void exi_iqsort64(int64_t v[], int64_t iv[], int64_t N)
 int ex_large_model(int exoid)
 {
   if (exoid < 0) {
-    return (EXODUS_DEFAULT_SIZE); /* Specified in exodusII_int.h */
+    return EXODUS_DEFAULT_SIZE; /* Specified in exodusII_int.h */
   }
 
   /* See if the ATT_FILESIZE attribute is defined in the file */
   EX_FUNC_ENTER();
   int file_size = 0;
   int rootid    = exoid & EX_FILE_ID_MASK;
-  if (nc_get_att_int(rootid, NC_GLOBAL, ATT_FILESIZE, &file_size) != NC_NOERR) {
+  if (nc_get_att_int(rootid, NC_GLOBAL, ATT_FILESIZE, &file_size) != EX_NOERR) {
     /* Variable not found; default is 0 */
     file_size = 0;
   }
@@ -1653,7 +1694,7 @@ int exi_get_dimension(int exoid, const char *DIMENSION, const char *label, size_
   *count = 0;
   *dimid = -1;
 
-  if ((status = nc_inq_dimid(exoid, DIMENSION, dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIMENSION, dimid)) != EX_NOERR) {
     if (routine != NULL) {
       if (status == NC_EBADDIM) {
         char errmsg[MAX_ERR_LENGTH];
@@ -1672,7 +1713,7 @@ int exi_get_dimension(int exoid, const char *DIMENSION, const char *label, size_
     return status;
   }
 
-  if ((status = nc_inq_dimlen(exoid, *dimid, count)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, *dimid, count)) != EX_NOERR) {
     if (routine != NULL) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
@@ -1717,6 +1758,7 @@ void exi_set_compact_storage(int exoid, int varid)
   \internal
   \undoc
 */
+
 void exi_compress_variable(int exoid, int varid, int type)
 {
 #if NC_HAS_HDF5
@@ -1730,13 +1772,14 @@ void exi_compress_variable(int exoid, int varid, int type)
   }
   else {
     /* Compression only supported on HDF5 (NetCDF-4) files; Do not try to compress character data */
+    int status = EX_NOERR;
     if ((type == 1 || type == 2) && file->is_hdf5) {
       if (file->compression_algorithm == EX_COMPRESS_GZIP) {
         int deflate_level = file->compression_level;
         if (deflate_level > 0) {
           int compress = 1;
           int shuffle  = file->shuffle;
-          nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
+          status       = nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
         }
       }
       else if (file->compression_algorithm == EX_COMPRESS_SZIP) {
@@ -1755,11 +1798,57 @@ void exi_compress_variable(int exoid, int varid, int type)
         /* Even and between 4 and 32; typical values are 8, 10, 16, 32 */
         const int SZIP_PIXELS_PER_BLOCK =
             file->compression_level == 0 ? 32 : file->compression_level;
-        nc_def_var_szip(exoid, varid, NC_SZIP_NN, SZIP_PIXELS_PER_BLOCK);
+        status = nc_def_var_szip(exoid, varid, NC_SZIP_NN, SZIP_PIXELS_PER_BLOCK);
 #else
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: Compression algorithm SZIP is not supported yet (EXPERIMENTAL).");
+        ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+#endif
+      }
+      else if (file->compression_algorithm == EX_COMPRESS_ZSTD) {
+#if NC_HAS_ZSTD == 1
+        status = nc_def_var_zstandard(exoid, varid, file->compression_level);
+#else
+        char errmsg[MAX_ERR_LENGTH];
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: Compression algorithm ZSTANDARD is not supported in this version of the "
+                 "netCDF library.");
+        ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+#endif
+      }
+      else if (file->compression_algorithm == EX_COMPRESS_BZ2) {
+#if NC_HAS_BZ2 == 1
+        status = nc_def_var_bzip2(exoid, varid, file->compression_level);
+#else
+        char errmsg[MAX_ERR_LENGTH];
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: Compression algorithm BZIP2 / BZ2 is not supported in this version of the "
+                 "netCDF library.");
+        ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+#endif
+      }
+      if (status != EX_NOERR) {
+        char errmsg[MAX_ERR_LENGTH];
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to set compression attribute on variable in file id %d", exoid);
+        ex_err_fn(exoid, __func__, errmsg, status);
+      }
+
+      if (type == 2 && file->quantize_nsd > 0) {
+#if NC_HAS_QUANTIZE == 1
+        // Lossy compression using netCDF quantize methods.
+        if ((status = nc_def_var_quantize(exoid, varid, NC_QUANTIZE_GRANULARBR,
+                                          file->quantize_nsd)) != EX_NOERR) {
+          char errmsg[MAX_ERR_LENGTH];
+          snprintf(errmsg, MAX_ERR_LENGTH,
+                   "ERROR: failed to set quanitzation method on variable in file id %d", exoid);
+          ex_err_fn(exoid, __func__, errmsg, status);
+        }
+#else
+        char errmsg[MAX_ERR_LENGTH];
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: Quanitzation is not supported in this version of netCDF library.");
         ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
 #endif
       }
@@ -1777,18 +1866,116 @@ void exi_compress_variable(int exoid, int varid, int type)
   \internal
   \undoc
 */
-int exi_leavedef(int exoid, const char *call_rout)
+int exi_leavedef(int exoid, const char *call_func)
 {
   int status;
 
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
+  struct exi_file_item *file = exi_find_file_item(exoid);
+  if (!file) {
     char errmsg[MAX_ERR_LENGTH];
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err_fn(exoid, call_rout, errmsg, status);
-
-    return (EX_FATAL);
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
   }
-  return (EX_NOERR);
+
+  if (!file->persist_define_mode && file->in_define_mode) {
+    if ((status = nc_enddef(exoid)) != EX_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
+               exoid);
+      ex_err_fn(exoid, call_func, errmsg, status);
+
+      return EX_FATAL;
+    }
+    file->in_define_mode = 0;
+  }
+  return EX_NOERR;
+}
+
+int exi_redef(int exoid, const char *call_func)
+{
+  int status;
+
+  struct exi_file_item *file = exi_find_file_item(exoid);
+
+  if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
+  }
+
+  if (!file->in_define_mode) {
+    if ((status = nc_redef(exoid)) != EX_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to put file %d into definition mode in exi_redef called from %s",
+               exoid, call_func);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      return EX_FATAL;
+    }
+    file->in_define_mode = 1;
+  }
+  return EX_NOERR;
+}
+
+int exi_persist_redef(int exoid, const char *call_func)
+{
+  int status;
+
+  struct exi_file_item *file = exi_find_file_item(exoid);
+
+  if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
+  }
+
+  if ((++file->persist_define_mode == 1) && !file->in_define_mode) {
+    if ((status = nc_redef(exoid)) != EX_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(
+          errmsg, MAX_ERR_LENGTH,
+          "ERROR: failed to put file %d into definition mode in exi_persist_redef called from %s",
+          exoid, call_func);
+      ex_err_fn(exoid, __func__, errmsg, status);
+      return EX_FATAL;
+    }
+    file->in_define_mode = 1;
+  }
+  return EX_NOERR;
+}
+
+int exi_persist_leavedef(int exoid, const char *call_func)
+{
+  int status;
+
+  struct exi_file_item *file = exi_find_file_item(exoid);
+  if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
+    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for %s called from %s.", exoid,
+             __func__, call_func);
+    ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
+    return EX_FATAL;
+  }
+
+  if ((file->persist_define_mode-- == 1) && file->in_define_mode) {
+    if ((status = nc_enddef(exoid)) != EX_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
+               exoid);
+      ex_err_fn(exoid, call_func, errmsg, status);
+
+      return EX_FATAL;
+    }
+    file->in_define_mode      = 0;
+    file->persist_define_mode = 0;
+  }
+  return EX_NOERR;
 }
 
 static int warning_output = 0;
@@ -2090,9 +2277,16 @@ int exi_handle_mode(unsigned int my_mode, int is_parallel, int run_version)
    * unless specified differently via environment.
    */
   {
-    char *option = getenv("EXODUS_VERBOSE");
-    if (option != NULL) {
-      exoptval = EX_VERBOSE;
+    if (exoptval != EX_VERBOSE) {
+      /* Avoid getenv call if already in verbose mode */
+      char *option = getenv("EXODUS_VERBOSE");
+      if (option != NULL) {
+        exoptval = EX_VERBOSE;
+        if (option[0] != 'q') {
+          fprintf(stderr, "EXODUS: Setting EX_VERBOSE mode since EXODUS_VERBOSE environment "
+                          "variable is set.\n");
+        }
+      }
     }
     ex_opts(exoptval); /* call required to set ncopts first time through */
   }
@@ -2139,10 +2333,10 @@ int exi_populate_header(int exoid, const char *path, int my_mode, int is_paralle
   int mode;
 
   /* turn off automatic filling of netCDF variables */
-  if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
+  if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to set nofill mode in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   /* Verify that there is not an existing file_item struct for this
@@ -2162,7 +2356,7 @@ int exi_populate_header(int exoid, const char *path, int my_mode, int is_paralle
              exoid, path);
     ex_err_fn(exoid, __func__, errmsg, EX_BADFILEID);
     nc_close(exoid);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   /* initialize floating point size conversion.  since creating new file,
@@ -2185,7 +2379,7 @@ int exi_populate_header(int exoid, const char *path, int my_mode, int is_paralle
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to init conversion routines in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   /* put the EXODUS version number, and i/o floating point word size as
@@ -2198,11 +2392,11 @@ int exi_populate_header(int exoid, const char *path, int my_mode, int is_paralle
     float version_minor = EXODUS_VERSION_MINOR;
     version             = version_major + version_minor / 100.0;
     if ((status = nc_put_att_float(exoid, NC_GLOBAL, ATT_API_VERSION, NC_FLOAT, 1, &version)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to store Exodus II API version attribute in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
   }
 
@@ -2212,65 +2406,65 @@ int exi_populate_header(int exoid, const char *path, int my_mode, int is_paralle
     float version_minor = EXODUS_VERSION_MINOR;
     version             = version_major + version_minor / 100.0;
     if ((status = nc_put_att_float(exoid, NC_GLOBAL, ATT_VERSION, NC_FLOAT, 1, &version)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to store Exodus II file version attribute in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
   }
 
   /* store Exodus file float word size  as an attribute */
   lio_ws = (*io_ws);
   if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, NC_INT, 1, &lio_ws)) !=
-      NC_NOERR) {
+      EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store Exodus II file float word size "
              "attribute in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   /* store Exodus file size (1=large, 0=normal) as an attribute */
-  if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_FILESIZE, NC_INT, 1, &filesiz)) != NC_NOERR) {
+  if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_FILESIZE, NC_INT, 1, &filesiz)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store Exodus II file size attribute in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
 
   {
     int max_so_far = 32;
     if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to add maximum_name_length attribute in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
   }
 
   {
     int int64_db_status = int64_status & EX_ALL_INT64_DB;
     if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_INT64_STATUS, NC_INT, 1,
-                                 &int64_db_status)) != NC_NOERR) {
+                                 &int64_db_status)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to add int64_status attribute in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
   }
 
 #if 0
   /* Testing to see if can eliminate some nc_enddef movement of vars/recs */
-  if ((status = nc__enddef(exoid, 10000, 4, 10000, 4)) != NC_NOERR) {
+  if ((status = nc__enddef(exoid, 10000, 4, 10000, 4)) != EX_NOERR) {
 #else
-  if ((status = nc_enddef(exoid)) != NC_NOERR) {
+  if ((status = nc_enddef(exoid)) != EX_NOERR) {
 #endif
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-    return (EX_FATAL);
+    return EX_FATAL;
   }
   return EX_NOERR;
 }
@@ -2312,7 +2506,7 @@ int exi_get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
     variable...
     */
     int varid = 0;
-    if ((status = nc_inq_varid(exoid, VAR_NAME_COOR, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_NAME_COOR, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate node block variable id in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -2359,7 +2553,7 @@ int exi_get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
   }
 
   int varid = 0;
-  if ((status = nc_inq_varid(exoid, entryptr, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, entryptr, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entity list array for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), id, exoid);

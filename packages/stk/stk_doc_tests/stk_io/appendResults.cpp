@@ -34,70 +34,61 @@
 
 #include <gtest/gtest.h>
 #include <unistd.h>
-#include <stk_io/WriteMesh.hpp>
+#include <stk_io/FillMesh.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include "stk_mesh/base/FieldBase.hpp"
-#include <stk_unit_test_utils/MeshFixture.hpp>
 #include "stk_io/MeshField.hpp"
 
 namespace
 {
 
-class StkIoHowToAppend : public stk::unit_test_util::simple_fields::MeshFixture
+void write_five_steps_to_file(stk::mesh::BulkData& bulkData,
+                              stk::mesh::FieldBase& nodeField,
+                              double& time,
+                              const std::string& ouputName,
+                              stk::io::DatabasePurpose purpose)
 {
-protected:
-  void initialize_mesh_and_field()
-  {
-    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
-    nodeField = &get_meta().declare_field<double> (stk::topology::NODE_RANK, "nodal");
-    stk::mesh::put_field_on_mesh(*nodeField, get_meta().universal_part(), nullptr);
-    stk::io::fill_mesh("generated:8x8x8|sideset:xX|nodeset:xX", get_bulk());
+  stk::io::StkMeshIoBroker stkIo(bulkData.parallel());
+  stkIo.set_bulk_data(bulkData);
+  size_t outputFileIndex = stkIo.create_output_mesh(ouputName, purpose);
+  stkIo.add_field(outputFileIndex, nodeField);
+  stkIo.write_output_mesh(outputFileIndex);
+
+  const int numSteps = 5;
+  for(int i = 0; i < numSteps; ++i) {
+    stkIo.process_output_request(outputFileIndex, time);
+    time += 1.0;
   }
+}
 
-  void write_five_steps_to_file(const std::string& ouputName,
-                                stk::io::DatabasePurpose purpose)
-  {
-    stk::io::StkMeshIoBroker stkIo(get_comm());
-    stkIo.use_simple_fields();
-    stkIo.set_bulk_data(get_bulk());
-    size_t outputFileIndex = stkIo.create_output_mesh(ouputName, purpose);
-    stkIo.add_field(outputFileIndex, *nodeField);
-    stkIo.write_output_mesh(outputFileIndex);
-    write_num_steps_to_file(stkIo, outputFileIndex, 5);
-  }
-
-  void write_num_steps_to_file(stk::io::StkMeshIoBroker &stkIo, size_t outputFileIndex, int numSteps)
-  {
-    for(int i = 0; i < numSteps; ++i)
-    {
-      stkIo.process_output_request(outputFileIndex, time);
-      time += 1.0;
-    }
-  }
-
-  void expect_ten_steps_in_file(const std::string& ouputName)
-  {
-    stk::io::StkMeshIoBroker stkIo(get_comm());
-    stkIo.use_simple_fields();
-    stkIo.add_mesh_database(ouputName, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    EXPECT_EQ(10, stkIo.get_num_time_steps());
-  }
-
-  double time = 1.0;
-  stk::mesh::FieldBase *nodeField;
-};
-
-TEST_F(StkIoHowToAppend, toResultsFile)
+void expect_ten_steps_in_file(const std::string& ouputName, MPI_Comm comm)
 {
-  initialize_mesh_and_field();
+  stk::io::StkMeshIoBroker stkIo(comm);
+  stkIo.add_mesh_database(ouputName, stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  EXPECT_EQ(10, stkIo.get_num_time_steps());
+}
+
+TEST(StkIoHowToAppend, toResultsFile)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                  .set_spatial_dimension(3).create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::FieldBase& nodeField = meta.declare_field<double>(stk::topology::NODE_RANK, "nodalField");
+  stk::mesh::put_field_on_mesh(nodeField, meta.universal_part(), nullptr);
+  stk::io::fill_mesh("generated:8x8x8|sideset:xX|nodeset:xX", *bulkPtr);
+
   std::string ouputName = "output.exo";
-  write_five_steps_to_file(ouputName, stk::io::WRITE_RESULTS);
-  write_five_steps_to_file(ouputName, stk::io::APPEND_RESULTS);
-  expect_ten_steps_in_file(ouputName);
+  double time = 1.0;
+  write_five_steps_to_file(*bulkPtr, nodeField, time, ouputName, stk::io::WRITE_RESULTS);
+  write_five_steps_to_file(*bulkPtr, nodeField, time, ouputName, stk::io::APPEND_RESULTS);
+  expect_ten_steps_in_file(ouputName, bulkPtr->parallel());
   unlink(ouputName.c_str());
 }
 

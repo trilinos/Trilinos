@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_THREADS_PARALLEL_FOR_RANGE_HPP
 #define KOKKOS_THREADS_PARALLEL_FOR_RANGE_HPP
@@ -35,7 +22,7 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>,
   const Policy m_policy;
 
   template <class TagType>
-  inline static std::enable_if_t<std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member ibeg, const Member iend) {
 #if defined(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION) && \
     defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
@@ -47,7 +34,7 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class TagType>
-  inline static std::enable_if_t<!std::is_void<TagType>::value> exec_range(
+  inline static std::enable_if_t<!std::is_void_v<TagType>> exec_range(
       const FunctorType &functor, const Member ibeg, const Member iend) {
     const TagType t{};
 #if defined(KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION) && \
@@ -64,7 +51,7 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class Schedule>
-  static std::enable_if_t<std::is_same<Schedule, Kokkos::Static>::value>
+  static std::enable_if_t<std::is_same_v<Schedule, Kokkos::Static>>
   exec_schedule(ThreadsInternal &instance, const void *arg) {
     const ParallelFor &self = *((const ParallelFor *)arg);
 
@@ -77,7 +64,7 @@ class ParallelFor<FunctorType, Kokkos::RangePolicy<Traits...>,
   }
 
   template <class Schedule>
-  static std::enable_if_t<std::is_same<Schedule, Kokkos::Dynamic>::value>
+  static std::enable_if_t<std::is_same_v<Schedule, Kokkos::Dynamic>>
   exec_schedule(ThreadsInternal &instance, const void *arg) {
     const ParallelFor &self = *((const ParallelFor *)arg);
 

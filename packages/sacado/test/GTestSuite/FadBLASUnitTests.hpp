@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #ifndef FADBLASUNITTESTS_HPP
@@ -89,14 +69,14 @@ TYPED_TEST_SUITE_P(FadBLASUnitTests);
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testSCAL1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x1(m,ndot), x2(m,ndot), x3(m,ndot);
+  lVectorType x1(m,ndot), x2(m,ndot), x3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[i] = FadType(ndot, val);
     x2[i] = FadType(ndot, val);
     x3[i] = FadType(ndot, val);
@@ -130,15 +110,15 @@ TYPED_TEST_P(FadBLASUnitTests, testSCAL1) {
 // Tests non-unit inc
 TYPED_TEST_P(FadBLASUnitTests, testSCAL2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
   unsigned int incx = 2;
-  VectorType x1(m*incx,ndot), x2(m*incx,ndot), x3(m*incx,ndot);
+  lVectorType x1(m*incx,ndot), x2(m*incx,ndot), x3(m*incx,ndot);
   for (unsigned int i=0; i<m*incx; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[i] = FadType(ndot, val);
     x2[i] = FadType(ndot, val);
     x3[i] = FadType(ndot, val);
@@ -172,14 +152,14 @@ TYPED_TEST_P(FadBLASUnitTests, testSCAL2) {
 // Tests constant alpha
 TYPED_TEST_P(FadBLASUnitTests, testSCAL3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x1(m,ndot), x2(m,ndot), x3(m,ndot);
+  lVectorType x1(m,ndot), x2(m,ndot), x3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[i] = FadType(ndot, val);
     x2[i] = FadType(ndot, val);
     x3[i] = FadType(ndot, val);
@@ -190,7 +170,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSCAL3) {
       x3[i].fastAccessDx(k) = val;
     }
   }
-  ScalarType alpha = this->urand.number();
+  lScalarType alpha = this->urand.number();
 
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.SCAL(m, alpha, &x1[0], 1);
@@ -210,14 +190,14 @@ TYPED_TEST_P(FadBLASUnitTests, testSCAL3) {
 // Tests constant x
 TYPED_TEST_P(FadBLASUnitTests, testSCAL4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x1(m,ndot), x2(m,ndot), x3(m,ndot);
+  lVectorType x1(m,ndot), x2(m,ndot), x3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[i] = val;
     x2[i] = val;
     x3[i] = val;
@@ -244,15 +224,15 @@ TYPED_TEST_P(FadBLASUnitTests, testSCAL4) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testCOPY1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
+  lVectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
     x[i] = FadType(ndot, this->urand.number());
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = FadType(ndot, val);
     y2[i] = FadType(ndot, val);
     y3[i] = FadType(ndot, val);
@@ -283,14 +263,14 @@ TYPED_TEST_P(FadBLASUnitTests, testCOPY1) {
 // Tests non unit inc
 TYPED_TEST_P(FadBLASUnitTests, testCOPY2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
   unsigned int incx = 2;
   unsigned int incy = 3;
-  VectorType x(m*incx,ndot), y1(m*incy,ndot), y2(m*incy,ndot), y3(m*incy,ndot);
+  lVectorType x(m*incx,ndot), y1(m*incy,ndot), y2(m*incy,ndot), y3(m*incy,ndot);
   for (unsigned int i=0; i<m*incx; i++) {
     x[i] = FadType(ndot, this->urand.number());
     for (unsigned int k=0; k<ndot; k++) {
@@ -298,7 +278,7 @@ TYPED_TEST_P(FadBLASUnitTests, testCOPY2) {
     }
   }
   for (unsigned int i=0; i<m*incy; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = FadType(ndot, val);
     y2[i] = FadType(ndot, val);
     y3[i] = FadType(ndot, val);
@@ -328,17 +308,17 @@ TYPED_TEST_P(FadBLASUnitTests, testCOPY2) {
 // Tests x constant
 TYPED_TEST_P(FadBLASUnitTests, testCOPY3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
+  lVectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
     x[i] = this->urand.number();
   }
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = FadType(ndot, val);
     y2[i] = FadType(ndot, val);
     y3[i] = FadType(ndot, val);
@@ -368,15 +348,15 @@ TYPED_TEST_P(FadBLASUnitTests, testCOPY3) {
 // Tests y constant
 TYPED_TEST_P(FadBLASUnitTests, testCOPY4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
+  lVectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
     x[i] = FadType(ndot, this->urand.number());
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = val;
     y2[i] = val;
     y3[i] = val;
@@ -403,15 +383,15 @@ TYPED_TEST_P(FadBLASUnitTests, testCOPY4) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testAXPY1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
+  lVectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
     x[i] = FadType(ndot, this->urand.number());
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = FadType(ndot, val);
     y2[i] = FadType(ndot, val);
     y3[i] = FadType(ndot, val);
@@ -445,14 +425,14 @@ TYPED_TEST_P(FadBLASUnitTests, testAXPY1) {
 // Tests non unit inc
 TYPED_TEST_P(FadBLASUnitTests, testAXPY2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
   unsigned int incx = 2;
   unsigned int incy = 3;
-  VectorType x(m*incx,ndot), y1(m*incy,ndot), y2(m*incy,ndot), y3(m*incy,ndot);
+  lVectorType x(m*incx,ndot), y1(m*incy,ndot), y2(m*incy,ndot), y3(m*incy,ndot);
   for (unsigned int i=0; i<m*incx; i++) {
     x[i] = FadType(ndot, this->urand.number());
     for (unsigned int k=0; k<ndot; k++) {
@@ -460,7 +440,7 @@ TYPED_TEST_P(FadBLASUnitTests, testAXPY2) {
     }
   }
   for (unsigned int i=0; i<m*incy; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = FadType(ndot, val);
     y2[i] = FadType(ndot, val);
     y3[i] = FadType(ndot, val);
@@ -493,17 +473,17 @@ TYPED_TEST_P(FadBLASUnitTests, testAXPY2) {
 // Tests x constant
 TYPED_TEST_P(FadBLASUnitTests, testAXPY3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot), y4(m,ndot);
-  std::vector<ScalarType> xx(m);
+  lVectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot), y4(m,ndot);
+  std::vector<lScalarType> xx(m);
   for (unsigned int i=0; i<m; i++) {
     xx[i] = this->urand.number();
     x[i] = xx[i];
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = FadType(ndot, val);
     y2[i] = FadType(ndot, val);
     y3[i] = FadType(ndot, val);
@@ -542,15 +522,15 @@ TYPED_TEST_P(FadBLASUnitTests, testAXPY3) {
 // Tests y constant
 TYPED_TEST_P(FadBLASUnitTests, testAXPY4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
+  lVectorType x(m,ndot), y1(m,ndot), y2(m,ndot), y3(m,ndot);
   for (unsigned int i=0; i<m; i++) {
     x[i] = FadType(ndot, this->urand.number());
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     y1[i] = val;
     y2[i] = val;
     y3[i] = val;
@@ -580,11 +560,11 @@ TYPED_TEST_P(FadBLASUnitTests, testAXPY4) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testDOT1) {
   typedef decltype(this->fad) FadType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType X(m,ndot), Y(m,ndot);
+  lVectorType X(m,ndot), Y(m,ndot);
   for (unsigned int i=0; i<m; i++) {
     X[i] = FadType(ndot, this->real_urand.number());
     Y[i] = FadType(ndot, this->real_urand.number());
@@ -612,13 +592,13 @@ TYPED_TEST_P(FadBLASUnitTests, testDOT1) {
 // Tests non-unit inc
 TYPED_TEST_P(FadBLASUnitTests, testDOT2) {
   typedef decltype(this->fad) FadType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
   unsigned int incx = 2;
   unsigned int incy = 3;
-  VectorType X(m*incx,ndot), Y(m*incy,ndot);
+  lVectorType X(m*incx,ndot), Y(m*incy,ndot);
   for (unsigned int i=0; i<m*incx; i++) {
     X[i] = FadType(ndot, this->real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
@@ -650,13 +630,13 @@ TYPED_TEST_P(FadBLASUnitTests, testDOT2) {
 // Tests X constant
 TYPED_TEST_P(FadBLASUnitTests, testDOT3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType X(m,0), Y(m,ndot);
-  std::vector<ScalarType> x(m);
+  lVectorType X(m,0), Y(m,ndot);
+  std::vector<lScalarType> x(m);
   for (unsigned int i=0; i<m; i++) {
     x[i] = this->urand.number();
     X[i] = x[i];
@@ -688,13 +668,13 @@ TYPED_TEST_P(FadBLASUnitTests, testDOT3) {
 // Tests Y constant
 TYPED_TEST_P(FadBLASUnitTests, testDOT4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType X(m,ndot), Y(m,0);
-  std::vector<ScalarType> y(m);
+  lVectorType X(m,ndot), Y(m,0);
+  std::vector<lScalarType> y(m);
   for (unsigned int i=0; i<m; i++) {
     X[i] = FadType(ndot, this->real_urand.number());
     y[i] = this->urand.number();
@@ -726,11 +706,11 @@ TYPED_TEST_P(FadBLASUnitTests, testDOT4) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testNRM21) {
   typedef decltype(this->fad) FadType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
-  VectorType X(m,ndot);
+  lVectorType X(m,ndot);
   for (unsigned int i=0; i<m; i++) {
     X[i] = FadType(ndot, this->real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
@@ -759,12 +739,12 @@ TYPED_TEST_P(FadBLASUnitTests, testNRM21) {
 // Tests non-unit inc
 TYPED_TEST_P(FadBLASUnitTests, testNRM22) {
   typedef decltype(this->fad) FadType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto ndot = this->ndot_;
 
   unsigned int incx = 2;
-  VectorType X(m*incx,ndot);
+  lVectorType X(m*incx,ndot);
   for (unsigned int i=0; i<m*incx; i++) {
     X[i] = FadType(ndot, this->real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
@@ -793,13 +773,13 @@ TYPED_TEST_P(FadBLASUnitTests, testNRM22) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testGEMV1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*n,ndot), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot);
+  lVectorType A(m*n,ndot), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -818,7 +798,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV1) {
   }
 
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -851,8 +831,8 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV1) {
 // Tests non-unit inc and different lda
 TYPED_TEST_P(FadBLASUnitTests, testGEMV2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
@@ -860,7 +840,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV2) {
   unsigned int lda = m+3;
   unsigned int incb = 2;
   unsigned int incc = 3;
-  VectorType A(lda*n,ndot), B(n*incb,ndot), C1(m*incc,ndot), C2(m*incc,ndot),
+  lVectorType A(lda*n,ndot), B(n*incb,ndot), C1(m*incc,ndot), C2(m*incc,ndot),
     C3(m*incc,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -882,7 +862,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV2) {
   }
 
   for (unsigned int i=0; i<m*incc; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -915,13 +895,13 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV2) {
 // Tests transpose with all arguments
 TYPED_TEST_P(FadBLASUnitTests, testGEMV3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*n,ndot), B(m,ndot), C1(n,ndot), C2(n,ndot), C3(n,ndot);
+  lVectorType A(m*n,ndot), B(m,ndot), C1(n,ndot), C2(n,ndot), C3(n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -942,7 +922,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV3) {
   }
 
   for (unsigned int i=0; i<n; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -975,8 +955,8 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV3) {
 // Tests transpose with non-unit inc and different lda
 TYPED_TEST_P(FadBLASUnitTests, testGEMV4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
@@ -984,7 +964,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV4) {
   unsigned int lda = m+3;
   unsigned int incb = 2;
   unsigned int incc = 3;
-  VectorType A(lda*n,ndot), B(m*incb,ndot), C1(n*incc,ndot), C2(n*incc,ndot),
+  lVectorType A(lda*n,ndot), B(m*incb,ndot), C1(n*incc,ndot), C2(n*incc,ndot),
     C3(n*incc,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -1006,7 +986,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV4) {
   }
 
   for (unsigned int i=0; i<n*incc; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -1039,13 +1019,13 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV4) {
 // Tests with constant C
 TYPED_TEST_P(FadBLASUnitTests, testGEMV5) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*n,ndot), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot);
+  lVectorType A(m*n,ndot), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -1064,7 +1044,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV5) {
   }
 
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = val;
     C2[i] = val;
     C3[i] = val;
@@ -1091,13 +1071,13 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV5) {
 // Tests with constant alpha, beta
 TYPED_TEST_P(FadBLASUnitTests, testGEMV6) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*n,ndot), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot);
+  lVectorType A(m*n,ndot), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -1108,11 +1088,11 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV6) {
     for (unsigned int k=0; k<ndot; k++)
       B[j].fastAccessDx(k) = this->urand.number();
   }
-  ScalarType alpha = this->urand.number();
-  ScalarType beta = this->urand.number();
+  lScalarType alpha = this->urand.number();
+  lScalarType beta = this->urand.number();
 
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -1145,15 +1125,15 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV6) {
 // Tests wth constant B
 TYPED_TEST_P(FadBLASUnitTests, testGEMV7) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*n,ndot), B(n,0), C1(m,ndot), C2(m,ndot), C3(m,ndot),
+  lVectorType A(m*n,ndot), B(n,0), C1(m,ndot), C2(m,ndot), C3(m,ndot),
     C4(m,ndot);
-  std::vector<ScalarType> b(n);
+  std::vector<lScalarType> b(n);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -1171,7 +1151,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV7) {
   }
 
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -1211,15 +1191,15 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV7) {
 // Tests with constant A
 TYPED_TEST_P(FadBLASUnitTests, testGEMV8) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*n,0), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot),
+  lVectorType A(m*n,0), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot),
     C4(m,ndot);
-  std::vector<ScalarType> a(m*n);
+  std::vector<lScalarType> a(m*n);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -1237,7 +1217,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV8) {
   }
 
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -1277,15 +1257,15 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV8) {
 // Tests with constant A, B
 TYPED_TEST_P(FadBLASUnitTests, testGEMV9) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*n,0), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot),
+  lVectorType A(m*n,0), B(n,ndot), C1(m,ndot), C2(m,ndot), C3(m,ndot),
     C4(m,ndot);
-  std::vector<ScalarType> a(m*n), b(n);
+  std::vector<lScalarType> a(m*n), b(n);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -1302,7 +1282,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV9) {
   }
 
   for (unsigned int i=0; i<m; i++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     C1[i] = FadType(ndot, val);
     C2[i] = FadType(ndot, val);
     C3[i] = FadType(ndot, val);
@@ -1342,19 +1322,19 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMV9) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testTRMV1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(n*n,ndot), x1(n,ndot), x2(n,ndot), x3(n,ndot);
+  lVectorType A(n*n,ndot), x1(n,ndot), x2(n,ndot), x3(n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<n; i++) {
       A[i+j*n] = FadType(ndot, this->urand.number());
       for (unsigned int k=0; k<ndot; k++)
         A[i+j*n].fastAccessDx(k) = this->urand.number();
     }
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[j] = FadType(ndot, val);
     x2[j] = FadType(ndot, val);
     x3[j] = FadType(ndot, val);
@@ -1419,14 +1399,14 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMV1) {
 // Tests non unit inc, different lda
 TYPED_TEST_P(FadBLASUnitTests, testTRMV2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
   unsigned int lda = n+3;
   unsigned int incx = 2;
-  VectorType A(lda*n,ndot), x1(n*incx,ndot), x2(n*incx,ndot), x3(n*incx,ndot);
+  lVectorType A(lda*n,ndot), x1(n*incx,ndot), x2(n*incx,ndot), x3(n*incx,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<lda; i++) {
       A[i+j*lda] = FadType(ndot, this->urand.number());
@@ -1435,7 +1415,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMV2) {
     }
   }
   for (unsigned int j=0; j<n*incx; j++) {
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[j] = FadType(ndot, val);
     x2[j] = FadType(ndot, val);
     x3[j] = FadType(ndot, val);
@@ -1500,20 +1480,20 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMV2) {
 // Tests A constant
 TYPED_TEST_P(FadBLASUnitTests, testTRMV3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(n*n,ndot), x1(n,ndot), x2(n,ndot), x3(n,ndot), x4(n,ndot),
+  lVectorType A(n*n,ndot), x1(n,ndot), x2(n,ndot), x3(n,ndot), x4(n,ndot),
     x5(n,ndot);
-  std::vector<ScalarType> a(n*n);
+  std::vector<lScalarType> a(n*n);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<n; i++) {
       a[i+j*n] = this->urand.number();
       A[i+j*n] = a[i+j*n];
     }
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[j] = FadType(ndot, val);
     x2[j] = FadType(ndot, val);
     x3[j] = FadType(ndot, val);
@@ -1610,19 +1590,19 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMV3) {
 // Tests x constant
 TYPED_TEST_P(FadBLASUnitTests, testTRMV4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(n*n,ndot), x1(n,ndot), x2(n,ndot), x3(n,ndot);
+  lVectorType A(n*n,ndot), x1(n,ndot), x2(n,ndot), x3(n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<n; i++) {
       A[i+j*n] = FadType(ndot, this->urand.number());
       for (unsigned int k=0; k<ndot; k++)
         A[i+j*n].fastAccessDx(k) = this->urand.number();
     }
-    ScalarType val = this->urand.number();
+    lScalarType val = this->urand.number();
     x1[j] = val;
     x2[j] = val;
     x3[j] = val;
@@ -1681,21 +1661,21 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMV4) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testGER1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // GER is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), x(m,ndot), y(n,ndot);
+  lVectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), x(m,ndot), y(n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       A1[i+j*m] = FadType(ndot, val);
       A2[i+j*m] = FadType(ndot, val);
       A3[i+j*m] = FadType(ndot, val);
@@ -1740,25 +1720,25 @@ TYPED_TEST_P(FadBLASUnitTests, testGER1) {
 // Tests non unit inc, different lda
 TYPED_TEST_P(FadBLASUnitTests, testGER2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // GER is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
   unsigned int lda = m+3;
   unsigned int incx = 2;
   unsigned int incy = 3;
-  VectorType A1(lda*n,ndot), A2(lda*n,ndot), A3(lda*n,ndot), x(m*incx,ndot),
+  lVectorType A1(lda*n,ndot), A2(lda*n,ndot), A3(lda*n,ndot), x(m*incx,ndot),
     y(n*incy,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<lda; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       A1[i+j*lda] = FadType(ndot, val);
       A2[i+j*lda] = FadType(ndot, val);
       A3[i+j*lda] = FadType(ndot, val);
@@ -1803,21 +1783,21 @@ TYPED_TEST_P(FadBLASUnitTests, testGER2) {
 // Tests constant alpha
 TYPED_TEST_P(FadBLASUnitTests, testGER3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // GER is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), x(m,ndot), y(n,ndot);
+  lVectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), x(m,ndot), y(n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       A1[i+j*m] = FadType(ndot, val);
       A2[i+j*m] = FadType(ndot, val);
       A3[i+j*m] = FadType(ndot, val);
@@ -1839,7 +1819,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGER3) {
     for (unsigned int k=0; k<ndot; k++)
       y[i].fastAccessDx(k) = this->urand.number();
   }
-  ScalarType alpha = this->urand.number();
+  lScalarType alpha = this->urand.number();
 
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A1[0], m);
@@ -1859,23 +1839,23 @@ TYPED_TEST_P(FadBLASUnitTests, testGER3) {
 // Tests constant x
 TYPED_TEST_P(FadBLASUnitTests, testGER4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // GER is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), A4(m*n,ndot),
+  lVectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), A4(m*n,ndot),
     A5(m*n,ndot), x(m,ndot), y(n,ndot);
-  std::vector<ScalarType> xx(m);
+  std::vector<lScalarType> xx(m);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       A1[i+j*m] = FadType(ndot, val);
       A2[i+j*m] = FadType(ndot, val);
       A3[i+j*m] = FadType(ndot, val);
@@ -1931,23 +1911,23 @@ TYPED_TEST_P(FadBLASUnitTests, testGER4) {
 // Tests constant y
 TYPED_TEST_P(FadBLASUnitTests, testGER5) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // GER is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), A4(m*n,ndot),
+  lVectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), A4(m*n,ndot),
     A5(m*n,ndot), x(m,ndot), y(n,ndot);
-  std::vector<ScalarType> yy(n);
+  std::vector<lScalarType> yy(n);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       A1[i+j*m] = FadType(ndot, val);
       A2[i+j*m] = FadType(ndot, val);
       A3[i+j*m] = FadType(ndot, val);
@@ -2003,23 +1983,23 @@ TYPED_TEST_P(FadBLASUnitTests, testGER5) {
 // Tests constant x and y
 TYPED_TEST_P(FadBLASUnitTests, testGER6) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // GER is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), A4(m*n,ndot),
+  lVectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), A4(m*n,ndot),
     A5(m*n,ndot), x(m,ndot), y(n,ndot);
-  std::vector<ScalarType> xx(n), yy(n);
+  std::vector<lScalarType> xx(n), yy(n);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       A1[i+j*m] = FadType(ndot, val);
       A2[i+j*m] = FadType(ndot, val);
       A3[i+j*m] = FadType(ndot, val);
@@ -2074,21 +2054,21 @@ TYPED_TEST_P(FadBLASUnitTests, testGER6) {
 // Tests constant A
 TYPED_TEST_P(FadBLASUnitTests, testGER7) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // GER is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), x(m,ndot), y(n,ndot);
+  lVectorType A1(m*n,ndot), A2(m*n,ndot), A3(m*n,ndot), x(m,ndot), y(n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       A1[i+j*m] = val;
       A2[i+j*m] = val;
       A3[i+j*m] = val;
@@ -2127,14 +2107,14 @@ TYPED_TEST_P(FadBLASUnitTests, testGER7) {
 // Tests all arguments
 TYPED_TEST_P(FadBLASUnitTests, testGEMM1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
+  lVectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -2158,7 +2138,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM1) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -2225,8 +2205,8 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM1) {
 // Tests different lda, ldb, ldc
 TYPED_TEST_P(FadBLASUnitTests, testGEMM2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
@@ -2235,7 +2215,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM2) {
   unsigned int lda = m+4;
   unsigned int ldb = l+4;
   unsigned int ldc = m+5;
-  VectorType A(lda*l,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
+  lVectorType A(lda*l,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
     C3(ldc*n,ndot);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -2260,7 +2240,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM2) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldc; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*ldc] = FadType(ndot, val);
       C2[i+j*ldc] = FadType(ndot, val);
       C3[i+j*ldc] = FadType(ndot, val);
@@ -2294,8 +2274,8 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM2) {
 // Tests different lda, ldb, ldc with transa
 TYPED_TEST_P(FadBLASUnitTests, testGEMM3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
@@ -2304,7 +2284,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM3) {
   unsigned int lda = l+3;
   unsigned int ldb = l+4;
   unsigned int ldc = m+5;
-  VectorType A(lda*m,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
+  lVectorType A(lda*m,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
     C3(ldc*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -2329,7 +2309,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM3) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldc; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*ldc] = FadType(ndot, val);
       C2[i+j*ldc] = FadType(ndot, val);
       C3[i+j*ldc] = FadType(ndot, val);
@@ -2363,8 +2343,8 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM3) {
 // Tests different lda, ldb, ldc with transb
 TYPED_TEST_P(FadBLASUnitTests, testGEMM4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
@@ -2373,7 +2353,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM4) {
   unsigned int lda = m+4;
   unsigned int ldb = n+4;
   unsigned int ldc = m+5;
-  VectorType A(lda*l,ndot), B(ldb*l,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
+  lVectorType A(lda*l,ndot), B(ldb*l,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
     C3(ldc*n,ndot);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -2398,7 +2378,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM4) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldc; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*ldc] = FadType(ndot, val);
       C2[i+j*ldc] = FadType(ndot, val);
       C3[i+j*ldc] = FadType(ndot, val);
@@ -2432,8 +2412,8 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM4) {
 // Tests different lda, ldb, ldc with transa and transb
 TYPED_TEST_P(FadBLASUnitTests, testGEMM5) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
@@ -2442,7 +2422,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM5) {
   unsigned int lda = l+3;
   unsigned int ldb = n+4;
   unsigned int ldc = m+5;
-  VectorType A(lda*m,ndot), B(ldb*l,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
+  lVectorType A(lda*m,ndot), B(ldb*l,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
     C3(ldc*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -2467,7 +2447,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM5) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldc; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*ldc] = FadType(ndot, val);
       C2[i+j*ldc] = FadType(ndot, val);
       C3[i+j*ldc] = FadType(ndot, val);
@@ -2501,14 +2481,14 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM5) {
 // Tests with constant C
 TYPED_TEST_P(FadBLASUnitTests, testGEMM6) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
+  lVectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -2532,7 +2512,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM6) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = val;
       C2[i+j*m] = val;
       C3[i+j*m] = val;
@@ -2593,14 +2573,14 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM6) {
 // Tests with constant alpha, beta
 TYPED_TEST_P(FadBLASUnitTests, testGEMM7) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
+  lVectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -2615,12 +2595,12 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM7) {
         B[i+j*l].fastAccessDx(k) = this->urand.number();
     }
   }
-  ScalarType alpha = this->urand.number();
-  ScalarType beta = this->urand.number();
+  lScalarType alpha = this->urand.number();
+  lScalarType beta = this->urand.number();
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -2687,16 +2667,16 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM7) {
 // Tests with constant A
 TYPED_TEST_P(FadBLASUnitTests, testGEMM8) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
+  lVectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
     C4(m*n,ndot), C5(m*n,ndot);
-  std::vector<ScalarType> a(m*l);
+  std::vector<lScalarType> a(m*l);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -2719,7 +2699,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM8) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -2818,16 +2798,16 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM8) {
 // Tests with constant B
 TYPED_TEST_P(FadBLASUnitTests, testGEMM9) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
+  lVectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
     C4(m*n,ndot), C5(m*n,ndot);
-  std::vector<ScalarType> b(l*n);
+  std::vector<lScalarType> b(l*n);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -2850,7 +2830,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM9) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -2949,16 +2929,16 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM9) {
 // Tests with constant A and B
 TYPED_TEST_P(FadBLASUnitTests, testGEMM10) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto l = this->l_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
+  lVectorType A(m*l,ndot), B(l*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
     C4(m*n,ndot), C5(m*n,ndot);
-  std::vector<ScalarType> a(m*l), b(l*n);
+  std::vector<lScalarType> a(m*l), b(l*n);
   for (unsigned int j=0; j<l; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -2980,7 +2960,7 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM10) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -3079,18 +3059,18 @@ TYPED_TEST_P(FadBLASUnitTests, testGEMM10) {
 // Tests all arguments, left side
 TYPED_TEST_P(FadBLASUnitTests, testSYMM1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
+  lVectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -3114,7 +3094,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM1) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -3159,18 +3139,18 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM1) {
 // Tests all arguments, right side
 TYPED_TEST_P(FadBLASUnitTests, testSYMM2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A(n*n,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
+  lVectorType A(n*n,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<n; i++) {
       A[i+j*n] = FadType(ndot, this->urand.number());
@@ -3194,7 +3174,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM2) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -3239,21 +3219,21 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM2) {
 // Tests different lda, ldb, ldc, left side
 TYPED_TEST_P(FadBLASUnitTests, testSYMM3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
   unsigned int lda = m+4;
   unsigned int ldb = m+5;
   unsigned int ldc = m+6;
-  VectorType A(lda*m,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
+  lVectorType A(lda*m,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
     C3(ldc*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -3278,7 +3258,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM3) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldc; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*ldc] = FadType(ndot, val);
       C2[i+j*ldc] = FadType(ndot, val);
       C3[i+j*ldc] = FadType(ndot, val);
@@ -3323,21 +3303,21 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM3) {
 // Tests different lda, ldb, ldc, right side
 TYPED_TEST_P(FadBLASUnitTests, testSYMM4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
   unsigned int lda = n+4;
   unsigned int ldb = m+5;
   unsigned int ldc = m+6;
-  VectorType A(lda*n,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
+  lVectorType A(lda*n,ndot), B(ldb*n,ndot), C1(ldc*n,ndot), C2(ldc*n,ndot),
     C3(ldc*n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<lda; i++) {
@@ -3362,7 +3342,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM4) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldc; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*ldc] = FadType(ndot, val);
       C2[i+j*ldc] = FadType(ndot, val);
       C3[i+j*ldc] = FadType(ndot, val);
@@ -3407,18 +3387,18 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM4) {
 // Tests with constant C
 TYPED_TEST_P(FadBLASUnitTests, testSYMM5) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
+  lVectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -3442,7 +3422,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM5) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = val;
       C2[i+j*m] = val;
       C3[i+j*m] = val;
@@ -3481,18 +3461,18 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM5) {
 // Tests with constant alpha, beta
 TYPED_TEST_P(FadBLASUnitTests, testSYMM6) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
+  lVectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -3507,12 +3487,12 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM6) {
         B[i+j*m].fastAccessDx(k) = this->urand.number();
     }
   }
-  ScalarType alpha = this->urand.number();
-  ScalarType beta = this->urand.number();
+  lScalarType alpha = this->urand.number();
+  lScalarType beta = this->urand.number();
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -3557,20 +3537,20 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM6) {
 // Tests with constant A
 TYPED_TEST_P(FadBLASUnitTests, testSYMM7) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
+  lVectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
     C4(m*n,ndot), C5(m*n,ndot);
-  std::vector<ScalarType> a(m*m);
+  std::vector<lScalarType> a(m*m);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -3593,7 +3573,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM7) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -3658,20 +3638,20 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM7) {
 // Tests with constant B
 TYPED_TEST_P(FadBLASUnitTests, testSYMM8) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
+  lVectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
     C4(m*n,ndot), C5(m*n,ndot);
-  std::vector<ScalarType> b(m*n);
+  std::vector<lScalarType> b(m*n);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -3694,7 +3674,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM8) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -3759,20 +3739,20 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM8) {
 // Tests with constant A and B
 TYPED_TEST_P(FadBLASUnitTests, testSYMM9) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
 
   // SYMM is apparently not defined in the BLAS for complex types
-  if (Teuchos::ScalarTraits<ScalarType>::isComplex)
+  if (Teuchos::ScalarTraits<lScalarType>::isComplex)
     return;
 
-  VectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
+  lVectorType A(m*m,ndot), B(m*n,ndot), C1(m*n,ndot), C2(m*n,ndot), C3(m*n,ndot),
     C4(m*n,ndot), C5(m*n,ndot);
-  std::vector<ScalarType> a(m*m), b(m*n);
+  std::vector<lScalarType> a(m*m), b(m*n);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -3794,7 +3774,7 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM9) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       C1[i+j*m] = FadType(ndot, val);
       C2[i+j*m] = FadType(ndot, val);
       C3[i+j*m] = FadType(ndot, val);
@@ -3859,13 +3839,13 @@ TYPED_TEST_P(FadBLASUnitTests, testSYMM9) {
 // Tests all arguments, left side
 TYPED_TEST_P(FadBLASUnitTests, testTRMM1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -3880,7 +3860,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM1) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = FadType(ndot, val);
       B2[i+j*m] = FadType(ndot, val);
       B3[i+j*m] = FadType(ndot, val);
@@ -3946,13 +3926,13 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM1) {
 // Tests all arguments, right side
 TYPED_TEST_P(FadBLASUnitTests, testTRMM2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(n*n,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(n*n,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<n; i++) {
       A[i+j*n] = FadType(ndot, this->urand.number());
@@ -3967,7 +3947,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM2) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = FadType(ndot, val);
       B2[i+j*m] = FadType(ndot, val);
       B3[i+j*m] = FadType(ndot, val);
@@ -4033,15 +4013,15 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM2) {
 // Tests all arguments, left side, different lda, ldb
 TYPED_TEST_P(FadBLASUnitTests, testTRMM3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
   unsigned int lda = m+4;
   unsigned int ldb = m+5;
-  VectorType A(lda*m,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
+  lVectorType A(lda*m,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<lda; i++) {
       A[i+j*lda] = FadType(ndot, this->urand.number());
@@ -4056,7 +4036,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM3) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldb; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*ldb] = FadType(ndot, val);
       B2[i+j*ldb] = FadType(ndot, val);
       B3[i+j*ldb] = FadType(ndot, val);
@@ -4122,15 +4102,15 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM3) {
 // Tests all arguments, right side, different lda, ldb
 TYPED_TEST_P(FadBLASUnitTests, testTRMM4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
   unsigned int lda = n+4;
   unsigned int ldb = m+5;
-  VectorType A(lda*n,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
+  lVectorType A(lda*n,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<lda; i++) {
       A[i+j*lda] = FadType(ndot, this->urand.number());
@@ -4145,7 +4125,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM4) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldb; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*ldb] = FadType(ndot, val);
       B2[i+j*ldb] = FadType(ndot, val);
       B3[i+j*ldb] = FadType(ndot, val);
@@ -4211,13 +4191,13 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM4) {
 // Tests constant alpha
 TYPED_TEST_P(FadBLASUnitTests, testTRMM5) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -4225,11 +4205,11 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM5) {
         A[i+j*m].fastAccessDx(k) = this->urand.number();
     }
   }
-  ScalarType alpha = this->urand.number();
+  lScalarType alpha = this->urand.number();
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = FadType(ndot, val);
       B2[i+j*m] = FadType(ndot, val);
       B3[i+j*m] = FadType(ndot, val);
@@ -4295,13 +4275,13 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM5) {
 // Tests constant B
 TYPED_TEST_P(FadBLASUnitTests, testTRMM6) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -4316,7 +4296,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM6) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = val;
       B2[i+j*m] = val;
       B3[i+j*m] = val;
@@ -4376,15 +4356,15 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM6) {
 // Tests constant A
 TYPED_TEST_P(FadBLASUnitTests, testTRMM7) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot),
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot),
     B4(m*n,ndot), B5(m*n,ndot);
-  std::vector<ScalarType> a(m*m);
+  std::vector<lScalarType> a(m*m);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -4398,7 +4378,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM7) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = FadType(ndot, val);
       B2[i+j*m] = FadType(ndot, val);
       B3[i+j*m] = FadType(ndot, val);
@@ -4496,13 +4476,13 @@ TYPED_TEST_P(FadBLASUnitTests, testTRMM7) {
 // Tests all arguments, left side
 TYPED_TEST_P(FadBLASUnitTests, testTRSM1) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       //A[i+j*m] = this->urand.number();
@@ -4519,7 +4499,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM1) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       // B1[i+j*m] = val;
       // B2[i+j*m] = val;
       // B3[i+j*m] = val;
@@ -4588,13 +4568,13 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM1) {
 // Tests all arguments, right side
 TYPED_TEST_P(FadBLASUnitTests, testTRSM2) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(n*n,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(n*n,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<n; i++) {
       A[i+j*n] = FadType(ndot, this->urand.number());
@@ -4609,7 +4589,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM2) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = FadType(ndot, val);
       B2[i+j*m] = FadType(ndot, val);
       B3[i+j*m] = FadType(ndot, val);
@@ -4675,15 +4655,15 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM2) {
 // Tests all arguments, left side, different lda, ldb
 TYPED_TEST_P(FadBLASUnitTests, testTRSM3) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
   unsigned int lda = m+4;
   unsigned int ldb = m+5;
-  VectorType A(lda*m,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
+  lVectorType A(lda*m,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<lda; i++) {
       A[i+j*lda] = FadType(ndot, this->urand.number());
@@ -4698,7 +4678,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM3) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldb; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*ldb] = FadType(ndot, val);
       B2[i+j*ldb] = FadType(ndot, val);
       B3[i+j*ldb] = FadType(ndot, val);
@@ -4764,15 +4744,15 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM3) {
 // Tests all arguments, right side, different lda, ldb
 TYPED_TEST_P(FadBLASUnitTests, testTRSM4) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
   unsigned int lda = n+4;
   unsigned int ldb = m+5;
-  VectorType A(lda*n,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
+  lVectorType A(lda*n,ndot), B1(ldb*n,ndot), B2(ldb*n,ndot), B3(ldb*n,ndot);
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<lda; i++) {
       A[i+j*lda] = FadType(ndot, this->urand.number());
@@ -4787,7 +4767,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM4) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<ldb; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*ldb] = FadType(ndot, val);
       B2[i+j*ldb] = FadType(ndot, val);
       B3[i+j*ldb] = FadType(ndot, val);
@@ -4853,13 +4833,13 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM4) {
 // Tests constant alpha
 TYPED_TEST_P(FadBLASUnitTests, testTRSM5) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -4867,11 +4847,11 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM5) {
         A[i+j*m].fastAccessDx(k) = this->urand.number();
     }
   }
-  ScalarType alpha = this->urand.number();
+  lScalarType alpha = this->urand.number();
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = FadType(ndot, val);
       B2[i+j*m] = FadType(ndot, val);
       B3[i+j*m] = FadType(ndot, val);
@@ -4937,13 +4917,13 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM5) {
 // Tests constant B
 TYPED_TEST_P(FadBLASUnitTests, testTRSM6) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       A[i+j*m] = FadType(ndot, this->urand.number());
@@ -4958,7 +4938,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM6) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = val;
       B2[i+j*m] = val;
       B3[i+j*m] = val;
@@ -5018,15 +4998,15 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM6) {
 // Tests constant A
 TYPED_TEST_P(FadBLASUnitTests, testTRSM7) {
   typedef decltype(this->fad) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
-  typedef Sacado::Fad::Vector<unsigned int,FadType> VectorType;
+  typedef typename Sacado::ScalarType<FadType>::type lScalarType;
+  typedef Sacado::Fad::Vector<unsigned int,FadType> lVectorType;
   auto m = this->m_;
   auto n = this->n_;
   auto ndot = this->ndot_;
 
-  VectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot),
+  lVectorType A(m*m,ndot), B1(m*n,ndot), B2(m*n,ndot), B3(m*n,ndot),
     B4(m*n,ndot), B5(m*n,ndot);
-  std::vector<ScalarType> a(m*m);
+  std::vector<lScalarType> a(m*m);
   for (unsigned int j=0; j<m; j++) {
     for (unsigned int i=0; i<m; i++) {
       a[i+j*m] = this->urand.number();
@@ -5040,7 +5020,7 @@ TYPED_TEST_P(FadBLASUnitTests, testTRSM7) {
 
   for (unsigned int j=0; j<n; j++) {
     for (unsigned int i=0; i<m; i++) {
-      ScalarType val = this->urand.number();
+      lScalarType val = this->urand.number();
       B1[i+j*m] = FadType(ndot, val);
       B2[i+j*m] = FadType(ndot, val);
       B3[i+j*m] = FadType(ndot, val);

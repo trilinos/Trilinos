@@ -66,6 +66,12 @@
     public:
       typedef HangingNodeAdapter<RefinePredicate> Base;
 
+      ~TransitionElementAdapter() override {
+        if( m_adaptedMeshVerifier ) {
+          delete m_adaptedMeshVerifier;
+        }
+      }
+
       TransitionElementAdapter(RefinePredicate& predicate_refine,
                                percept::PerceptMesh& eMesh,
                                UniformRefinerPatternBase & bp,
@@ -265,7 +271,7 @@
         return false;
       }
 
-      bool process_element(stk::mesh::Entity element, bool& did_change, int& nchange_1, int& nchange_2,
+      bool process_element(stk::mesh::Entity element, bool& did_change, int& /*nchange_1*/, int& nchange_2,
                            LocalSetType& selected_neighbors, bool check_only=false)
       {
         PerceptMesh& eMesh = Base::m_eMesh;
@@ -429,7 +435,7 @@
       }
 
 
-      bool enforce_transition_element_consistency(int iter)
+      bool enforce_transition_element_consistency(int /*iter*/)
       {
         // todo: sum values of fields before/after comm field data, check they are the same for locally owned...
         // double-check locally owned
@@ -545,7 +551,7 @@
           }
       }
 
-      virtual void refine()
+      virtual void refine() override
       {
 #if USE_ADAPT_PERFORMANCE_TESTING_CALLGRIND
   CALLGRIND_START_INSTRUMENTATION;
@@ -898,7 +904,7 @@
         return nmod_elements;
       }
 
-      virtual void unrefine() {
+      virtual void unrefine() override {
 
         stk::diag::Timer timerUnrefine_("TE_UnRef", Base::rootTimer());
         stk::diag::TimeBlock timerUnrefineBlock_(timerUnrefine_);
@@ -954,13 +960,13 @@
       }
 
       virtual void
-      doBreak(int num_registration_loops=1)
+      doBreak(int /*num_registration_loops*/=1) override
       {
         refine();
       }
 
       virtual void
-      unrefineTheseElements(ElementUnrefineCollection& elements_to_unref)
+      unrefineTheseElements(ElementUnrefineCollection& elements_to_unref) override
       {
         Base::unrefineTheseElements(elements_to_unref);
       }
@@ -1095,7 +1101,7 @@
         return val;
       }
 
-      bool checkTransitionElements1(bool checkMarks=false)
+      bool checkTransitionElements1(bool /*checkMarks*/=false)
       {
         PerceptMesh& eMesh = Base::m_eMesh;
         bool val = true;
@@ -1235,7 +1241,7 @@
         return val;
       }
 
-      bool checkTransitionElementsAfterEnforce1(bool checkMarks=false)
+      bool checkTransitionElementsAfterEnforce1(bool /*checkMarks*/=false)
       {
         PerceptMesh& eMesh = Base::m_eMesh;
         bool val = true;

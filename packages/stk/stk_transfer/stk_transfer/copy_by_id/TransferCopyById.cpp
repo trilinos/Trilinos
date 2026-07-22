@@ -35,8 +35,8 @@
 #include "TransferCopyById.hpp"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/diag/SlibDiagWriter.hpp>
-#include <sstream>
+#include <cstring>
+#include <cstddef>
 
 namespace stk {
 namespace transfer {
@@ -72,6 +72,24 @@ void TransferCopyById::setup_translators()
                         &translateDouble };
 }
 
+void byte_copy(const int bytesPerScalar, const int scalarByteStride,
+               const void * f_dataA, const int numSrcBytes,
+               void * f_dataB, const int numRcvBytes)
+{
+  const std::byte* srcValueBytes = reinterpret_cast<const std::byte*>(f_dataA);
+  std::byte* rcvValueBytes = reinterpret_cast<std::byte*>(f_dataB);
+
+  int numBytes = std::min(numSrcBytes, numRcvBytes);
+  while (numBytes) {
+    for (int scalarByteIdx = 0; scalarByteIdx < bytesPerScalar; ++scalarByteIdx) {
+      rcvValueBytes[scalarByteIdx] = srcValueBytes[scalarByteIdx];
+    }
+    numBytes -= bytesPerScalar;
+    srcValueBytes += bytesPerScalar;
+    rcvValueBytes += scalarByteStride;
+  }
+}
+
 void TransferCopyById::local_copy(const Mesh_ID key)
 {
   for (unsigned f=0 ; f<m_numFields ; ++f) {
@@ -86,10 +104,24 @@ void TransferCopyById::local_copy(const Mesh_ID key)
         STK_ThrowRequireMsg(this_field_size_a == this_field_size_b, 
                         "field_size_a " << this_field_size_a << " field_size_b " << this_field_size_b);
       }
-      std::memcpy(f_dataB, f_dataA, fsize);
+
+      int numSrcBytes = m_mesha.num_bytes(key,f);
+      int numRcvBytes = m_meshb.num_bytes(key,f);
+      const int bytesPerScalar = m_meshb.bytes_per_scalar(key,f);
+      const int scalarByteStride = m_meshb.scalar_byte_stride(key,f);
+
+      byte_copy(bytesPerScalar, scalarByteStride, f_dataA, numSrcBytes, f_dataB, numRcvBytes);
     } else {
       DataTypeKey::data_t sentDataType = m_sendFieldDataTypes[f];
-      m_dataTranslators[sentDataType]->translate(f_dataA, this_field_size_a, m_recvFieldDataTypes[f], f_dataB, this_field_size_b);
+
+      int numSrcComponents = m_mesha.num_components(key,f);
+      int srcComponentStride = m_mesha.component_stride(key,f);
+
+      int numRcvComponents = m_meshb.num_components(key,f);
+      int rcvComponentStride = m_meshb.component_stride(key,f);
+
+      m_dataTranslators[sentDataType]->translate(f_dataA, numSrcComponents, srcComponentStride, m_recvFieldDataTypes[f],
+                                                 f_dataB, numRcvComponents, rcvComponentStride);
     }
   }
 }
@@ -99,29 +131,41 @@ void TransferCopyById::pack_fields(const int target_proc, const Mesh_ID key, Com
   commSparse.send_buffer(target_proc).pack<Mesh_ID>(key);
 
   for (unsigned f=0; f<m_numFields; ++f)  {
-    const unsigned this_field_size = m_mesha.field_data_size(key,f);
-    const uint8_t * f_data = reinterpret_cast<const uint8_t *>(m_mesha.field_data(key,f));
+    unsigned numBytes = m_mesha.num_bytes(key,f);
+    uint8_t * f_data = reinterpret_cast<uint8_t *>(m_mesha.field_data(key,f));
 
     unsigned sendFieldSize = 0;
 
     if(m_fieldCompatibility[f]) {
-      sendFieldSize = this_field_size;
+      sendFieldSize = numBytes;
     } else {
-      DataTypeKey dataTranslator(m_sendFieldDataTypes[f], this_field_size);
+      DataTypeKey dataTranslator(m_sendFieldDataTypes[f], numBytes);
       sendFieldSize = dataTranslator.m_value;
     }
     commSparse.send_buffer(target_proc).pack<unsigned>(sendFieldSize);
 
-    for (unsigned index=0 ; index<this_field_size ; ++index) {
-      commSparse.send_buffer(target_proc).pack<uint8_t>(f_data[index]);
+    const int bytesPerScalar = m_mesha.bytes_per_scalar(key,f);
+
+    while (numBytes) {
+      for (int scalarByteIdx = 0; scalarByteIdx < bytesPerScalar; ++scalarByteIdx) {
+        commSparse.send_buffer(target_proc).pack<uint8_t>(f_data[scalarByteIdx]);
+      }
+      numBytes -= bytesPerScalar;
+      f_data += bytesPerScalar;
     }
   }
 }
 
 void TransferCopyById::initialize_commsparse_buffers()
 {
+  m_mesha.acquire_field_data();
+  m_meshb.acquire_field_data();
+
   pack_commsparse();
   m_commSparse.allocate_buffers();
+
+  m_mesha.release_field_data();
+  m_meshb.release_field_data();
 }
 
 void TransferCopyById::pack_commsparse()
@@ -156,17 +200,27 @@ void TransferCopyById::pack_send_fields(CommSparse& commSparse)
 
 void TransferCopyById::unpack_and_copy_fields(CommBuffer& recvBuffer, CopyTransferUnpackInfo& unpackInfo)
 {
-  unsigned fsize = std::min(unpackInfo.fieldSize, unpackInfo.sentDataTypeKey);
+  unsigned f = unpackInfo.fieldIndex;
+  Mesh_ID key = unpackInfo.key;
+
+  unsigned fsize = std::min(m_meshb.field_data_size(key,f), unpackInfo.sentDataTypeKey);
   unpackInfo.buffer.resize(unpackInfo.sentDataTypeKey);
 
   for (unsigned index = 0 ; index < unpackInfo.sentDataTypeKey; ++index) {
     recvBuffer.unpack<uint8_t>(unpackInfo.buffer[index]);
   }
-  std::memcpy(unpackInfo.fieldData, unpackInfo.buffer.data(), fsize);
+
+  const int bytesPerScalar = m_meshb.bytes_per_scalar(key,f);
+  const int scalarByteStride = m_meshb.scalar_byte_stride(key,f);
+
+  byte_copy(bytesPerScalar, scalarByteStride, unpackInfo.buffer.data(), unpackInfo.sentDataTypeKey, unpackInfo.fieldData, fsize);
 }
 
 void TransferCopyById::unpack_and_copy_fields_with_compatibility(CommBuffer& recvBuffer, CopyTransferUnpackInfo& unpackInfo)
 {
+  unsigned f = unpackInfo.fieldIndex;
+  Mesh_ID key = unpackInfo.key;
+
   DataTypeKey unpackedData(unpackInfo.sentDataTypeKey);
   DataTypeKey::data_t sentDataType = unpackedData.get_data_type();
   unsigned remoteFieldSize = unpackedData.get_data_length();
@@ -176,8 +230,15 @@ void TransferCopyById::unpack_and_copy_fields_with_compatibility(CommBuffer& rec
   for(unsigned index = 0 ; index < remoteFieldSize; ++index) {
     recvBuffer.unpack<uint8_t>(unpackInfo.buffer[index]);
   }
-  m_dataTranslators[sentDataType]->translate(unpackInfo.buffer.data(), remoteFieldSize, m_recvFieldDataTypes[unpackInfo.fieldIndex], 
-                                             unpackInfo.fieldData, unpackInfo.fieldSize);
+
+  int numSrcComponents = m_dataTranslators[sentDataType]->get_src_component_size(remoteFieldSize);
+  int srcComponentStride = 1;
+
+  int numRcvComponents = m_meshb.num_components(key,f);
+  int rcvComponentStride = m_meshb.component_stride(key,f);
+
+  m_dataTranslators[sentDataType]->translate(unpackInfo.buffer.data(), numSrcComponents, srcComponentStride, m_recvFieldDataTypes[unpackInfo.fieldIndex],
+                                             unpackInfo.fieldData, numRcvComponents, rcvComponentStride);
 }
 
 void TransferCopyById::unpack_fields(MeshIDSet & remoteKeys, const int recv_proc, CommBuffer& recvBuffer)
@@ -199,7 +260,7 @@ void TransferCopyById::unpack_fields(MeshIDSet & remoteKeys, const int recv_proc
 
     recvBuffer.unpack<unsigned>(sentDataTypeKey);
 
-    CopyTransferUnpackInfo unpackInfo(tmpBuffer, f_data, sentDataTypeKey, m_meshb.field_data_size(key,f), f);
+    CopyTransferUnpackInfo unpackInfo(tmpBuffer, f_data, sentDataTypeKey, key, f);
 
     if(m_fieldCompatibility[f]) {
       unpack_and_copy_fields(recvBuffer, unpackInfo);

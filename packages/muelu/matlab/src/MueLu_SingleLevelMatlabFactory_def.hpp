@@ -19,7 +19,6 @@
 #include "MueLu_MatlabUtils_decl.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
-#include "mex.h"
 
 namespace MueLu {
 
@@ -79,7 +78,6 @@ std::string SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
 
 }  // namespace MueLu
 
-#define MUELU_SINGLELEVELMATLABFACTORY_SHORT
 #endif  // HAVE_MUELU_MATLAB
 
 #endif  // MUELU_SINGLELEVELMATLABFACTORY_DEF_HPP

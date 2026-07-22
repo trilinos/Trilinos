@@ -4,10 +4,10 @@
 # to and then run from the directory containing the ROL repository.
 
 
-# - Users of this script should check that the variables below are defined 
+# - Users of this script should check that the variables below are defined
 #   properly.
 ##############################################################################
-TRILINOS_VERSION="14.5"
+TRILINOS_VERSION="15.1"
 REPO_NAME="ROL-Trilinos"
 
 LLVM_PREFIX=$(spack location -i llvm)
@@ -15,7 +15,7 @@ LLVM_VERSION=$(echo ${LLVM_PREFIX} | awk -F[\-\-] '{print $5}')
 GCC_PREFIX=$(spack location -i gcc)
 ##############################################################################
 
-## Other prerequisites: 
+## Other prerequisites:
 
 # * Binder (after the changes on its smart_holder branch)
 if [ ! command -v binder &> /dev/null ]
@@ -54,23 +54,20 @@ cmake -G Ninja \
 -D CMAKE_INSTALL_PREFIX:PATH=install \
 ./${REPO_NAME} -B./build
 
-## Step 2: Run Binder.
-make -C build
-
-## Step 3: Create the reduced tarball.
+## Step 2: Create the reduced tarball.
 make package_source -C build
 TARBALL_NAME="trilinos-${TRILINOS_VERSION}-Source"
 
-## Step 4: Unpack the reduced tarball.
+## Step 3: Unpack the reduced tarball.
 [ -d ${TARBALL_NAME} ] && rm -rf ${TARBALL_NAME}
 tar -zxf "build/${TARBALL_NAME}.tar.gz"
-mv ${TARBALL_NAME} pyrol 
+mv ${TARBALL_NAME} pyrol
 
-## Step 5: Create an SDist from the tarball.
+## Step 4: Create an SDist from the tarball.
 python -m pipx run build --sdist pyrol
 cp -r pyrol/dist/* .
 
-## Step 6: Clean up.
+## Step 5: Clean up.
 rm -rf build
 rm -rf ${REPO_NAME}/packages/rol/pyrol/binder
 rm -rf pyrol

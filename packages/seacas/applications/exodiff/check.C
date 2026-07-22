@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,35 +7,35 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
+#include <smart_assert.h>
 #include <vector>
 
 #include "ED_SystemInterface.h"
 #include "Tolerance.h"
 #include "assembly.h"
-#include "exoII_read.h"
 #include "exo_block.h"
+#include "exo_read.h"
 #include "exodusII.h"
-#include "fmt/ostream.h"
-#include "fmt/ranges.h"
 #include "node_set.h"
 #include "side_set.h"
-#include "smart_assert.h"
 #include "stringx.h"
 
 namespace {
 
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::vector<INT> &node_map,
+  bool Check_Nodal(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
                    const INT *id_map, bool check_only);
   template <typename INT>
-  bool Check_Element_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+  bool Check_Element_Block(Exo_Read<INT> &file1, Exo_Read<INT> &file2,
                            const std::vector<INT> &elmt_map, const std::vector<INT> &node_map);
   template <typename INT>
-  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &node_map, bool check_only);
+  bool Check_Nodeset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
+                     bool check_only);
   template <typename INT>
-  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &elmt_map, bool check_only);
+  bool Check_Sideset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &elmt_map,
+                     bool check_only);
 
   template <typename INT>
   bool Check_Element_Block_Params(const Exo_Block<INT> *block1, const Exo_Block<INT> *block2);
@@ -43,13 +43,13 @@ namespace {
   bool Check_Element_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
                                         const std::vector<INT> &elmt_map,
                                         const std::vector<INT> &node_map);
-  template <typename INT> bool Check_Assembly(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
+  template <typename INT> bool Check_Assembly(Exo_Read<INT> &file1, Exo_Read<INT> &file2);
   template <typename INT>
   bool Check_Assembly_Params(const Assembly<INT> *assembly1, const Assembly<INT> *assembly2);
   bool close_compare(const std::string &st1, const std::string &st2);
 } // namespace
 
-template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
+template <typename INT> bool Check_Global(Exo_Read<INT> &file1, Exo_Read<INT> &file2)
 {
   bool is_same = true;
   if (file1.Dimension() != file2.Dimension()) {
@@ -82,7 +82,7 @@ template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT
 }
 
 template <typename INT>
-void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool check_only,
+void Check_Compatible_Meshes(Exo_Read<INT> &file1, Exo_Read<INT> &file2, bool check_only,
                              const std::vector<INT> &node_map, const std::vector<INT> &elmt_map,
                              const INT *node_id_map)
 {
@@ -124,7 +124,7 @@ void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, boo
 
 namespace {
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::vector<INT> &node_map,
+  bool Check_Nodal(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
                    const INT *id_map, bool check_only)
   {
     bool is_same = true;
@@ -165,7 +165,8 @@ namespace {
         double dx = interFace.coord_tol.Delta(x1[n], x2[n2]);
         if (dx > interFace.coord_tol.value) {
           fmt::print("   x coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                     interFace.coord_tol.abrstr(), x1[n], x2[n2], dx, (size_t)id_map[n]);
+                     interFace.coord_tol.abrstr(), x1[n], x2[n2], dx,
+                     static_cast<size_t>(id_map[n]));
           is_same = false;
         }
         norm = (x1[n] - x2[n2]) * (x1[n] - x2[n2]);
@@ -174,7 +175,8 @@ namespace {
           double dy = interFace.coord_tol.Delta(y1[n], y2[n2]);
           if (dy > interFace.coord_tol.value) {
             fmt::print("   y coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                       interFace.coord_tol.abrstr(), y1[n], y2[n2], dy, (size_t)id_map[n]);
+                       interFace.coord_tol.abrstr(), y1[n], y2[n2], dy,
+                       static_cast<size_t>(id_map[n]));
             is_same = false;
           }
           norm += (y1[n] - y2[n2]) * (y1[n] - y2[n2]);
@@ -184,7 +186,8 @@ namespace {
           double dz = interFace.coord_tol.Delta(z1[n], z2[n2]);
           if (dz > interFace.coord_tol.value) {
             fmt::print("   z coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                       interFace.coord_tol.abrstr(), z1[n], z2[n2], dz, (size_t)id_map[n]);
+                       interFace.coord_tol.abrstr(), z1[n], z2[n2], dz,
+                       static_cast<size_t>(id_map[n]));
             is_same = false;
           }
           norm += (z1[n] - z2[n2]) * (z1[n] - z2[n2]);
@@ -204,7 +207,7 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Element_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+  bool Check_Element_Block(Exo_Read<INT> &file1, Exo_Read<INT> &file2,
                            const std::vector<INT> &elmt_map, const std::vector<INT> &node_map)
   {
     bool is_same = true;
@@ -244,7 +247,7 @@ namespace {
     return is_same;
   }
 
-  template <typename INT> bool Check_Assembly(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
+  template <typename INT> bool Check_Assembly(Exo_Read<INT> &file1, Exo_Read<INT> &file2)
   {
     bool is_same = true;
     if (file1.Num_Assembly() != file2.Num_Assembly()) {
@@ -316,34 +319,64 @@ namespace {
     SMART_ASSERT(block2->Size() == 0 || block2->Num_Nodes_per_Element() == 0 || !conn2.empty());
 
     if (interFace.map_flag == MapType::FILE_ORDER || elmt_map.empty()) {
-      size_t node_count = block1->Size() * block1->Num_Nodes_per_Element();
-      SMART_ASSERT(node_count == block2->Size() * block2->Num_Nodes_per_Element());
+      SMART_ASSERT(block1->Size() == block2->Size());
+      SMART_ASSERT(block1->Num_Nodes_per_Element() == block2->Num_Nodes_per_Element());
+      size_t num_element = block1->Size();
+      size_t nnpe        = block1->Num_Nodes_per_Element();
 
       if (interFace.map_flag != MapType::FILE_ORDER && !node_map.empty()) {
-        for (size_t e = 0; e < node_count; ++e) {
-          if (node_map[conn1[e] - 1] + 1 != conn2[e]) {
-            size_t elem = e / block2->Num_Nodes_per_Element();
-            size_t node = e % block2->Num_Nodes_per_Element();
-            Warning(
-                fmt::format(".. Connectivities in block id {} are not the same.\n"
-                            "                  First difference is node {} of local element {}\n",
-                            block1->Id(), node + 1, elem + 1));
-            is_same = false;
-            break;
+        for (size_t e = 0; is_same && e < num_element; ++e) {
+          for (size_t n = 0; is_same && n < nnpe; ++n) {
+            if (node_map[conn1[e * nnpe + n] - 1] + 1 != conn2[e * nnpe + n]) {
+              bool permuted = false;
+              if (interFace.allowPermutation) {
+                // Mismatch in ordered connectivity for this element... See if a permutation
+                // matches...
+                std::vector<INT> e1_conn(nnpe);
+                for (size_t i = 0; i < nnpe; i++) {
+                  e1_conn[i] = node_map[conn1[e * nnpe + i] - 1] + 1;
+                }
+                permuted = std::is_permutation(e1_conn.begin(), e1_conn.end(), &conn2[e],
+                                               &conn2[e + nnpe]);
+              }
+              if (!permuted) {
+                const std::string permit_permute =
+                    interFace.allowPermutation ? " (or permuted)" : "";
+                Warning(fmt::format(
+                    fmt::runtime(
+                        ".. Connectivities in block id {} are not the same{}.\n"
+                        "                     First difference is node {} of local element {}\n"),
+                    block1->Id(), permit_permute, n + 1, e + 1));
+                is_same = false;
+                break;
+              }
+            }
           }
         }
       }
       else {
-        for (size_t e = 0; e < node_count; ++e) {
-          if (conn1[e] != conn2[e]) {
-            size_t elem = e / block2->Num_Nodes_per_Element();
-            size_t node = e % block2->Num_Nodes_per_Element();
-            Warning(
-                fmt::format(".. Connectivities in block id {} are not the same.\n"
-                            "                  First difference is node {} of local element {}\n",
-                            block1->Id(), node + 1, elem + 1));
-            is_same = false;
-            break;
+        for (size_t e = 0; is_same && e < num_element; ++e) {
+          for (size_t n = 0; is_same && n < nnpe; ++n) {
+            if (conn1[e * nnpe + n] != conn2[e * nnpe + n]) {
+              bool permuted = false;
+              if (interFace.allowPermutation) {
+                // Mismatch in ordered connectivity for this element... See if a permutation
+                // matches...
+                permuted = std::is_permutation(&conn1[e * nnpe], &conn1[e * nnpe + nnpe],
+                                               &conn2[e * nnpe], &conn2[e * nnpe + nnpe]);
+              }
+              if (!permuted) {
+                const std::string permit_permute =
+                    interFace.allowPermutation ? " (or permuted)" : "";
+                Warning(fmt::format(
+                    fmt::runtime(
+                        ".. Connectivities in block id {} are not the same{}.\n"
+                        "                     First difference is node {} of local element {}\n"),
+                    block1->Id(), permit_permute, n + 1, e + 1));
+                is_same = false;
+                break;
+              }
+            }
           }
         }
       }
@@ -363,13 +396,31 @@ namespace {
             auto   n1     = conn1[off1];
             auto   map_n1 = node_map.empty() ? n1 : node_map[n1 - 1] + 1;
             if (map_n1 != conn2[off2]) {
-              Warning(
-                  fmt::format(".. Connectivities in block id {} are not the same.\n"
-                              "                  First difference is node {} of local element {} "
-                              "(file1) {} (file2)\n",
-                              block1->Id(), n + 1, e1 + 1, e2 + 1));
-              is_same = false;
-              break;
+              bool permuted = false;
+              if (interFace.allowPermutation) {
+                // Mismatch in ordered connectivity for this element... See if a permutation
+                // matches...
+                std::vector<INT> e1_conn(nnpe);
+                for (size_t i = 0; i < nnpe; i++) {
+                  n1         = conn1[off1];
+                  map_n1     = node_map.empty() ? n1 : node_map[n1 - 1] + 1;
+                  e1_conn[i] = map_n1;
+                }
+                permuted = std::is_permutation(e1_conn.begin(), e1_conn.end(), &conn2[e2 * nnpe],
+                                               &conn2[e2 * nnpe + nnpe]);
+              }
+              if (!permuted) {
+                const std::string permit_permute =
+                    interFace.allowPermutation ? " (or permuted)" : "";
+                Warning(fmt::format(
+                    fmt::runtime(
+                        ".. Connectivities in block id {} are not the same{}.\n"
+                        "                     First difference is node {} of local element {} "
+                        "(file1) {} (file2)\n"),
+                    block1->Id(), n + 1, e1 + 1, e2 + 1));
+                is_same = false;
+                break;
+              }
             }
           }
         }
@@ -479,8 +530,8 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &node_map, bool /*unused*/)
+  bool Check_Nodeset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &node_map,
+                     bool /*unused*/)
   {
     // Currently don't set diff flag for most of these since we
     // can continue (somewhat) with these differences...
@@ -605,8 +656,8 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                     const std::vector<INT> &elmt_map, bool /*unused*/)
+  bool Check_Sideset(Exo_Read<INT> &file1, Exo_Read<INT> &file2, const std::vector<INT> &elmt_map,
+                     bool /*unused*/)
   {
     // Currently don't set diff flag for most of these since we
     // can continue (somewhat) with these differences...
@@ -781,13 +832,13 @@ namespace {
   }
 } // namespace
 
-template bool Check_Global(ExoII_Read<int> &file1, ExoII_Read<int> &file2);
-template void Check_Compatible_Meshes(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
-                                      bool check_only, const std::vector<int> &node_map,
+template bool Check_Global(Exo_Read<int> &file1, Exo_Read<int> &file2);
+template void Check_Compatible_Meshes(Exo_Read<int> &file1, Exo_Read<int> &file2, bool check_only,
+                                      const std::vector<int> &node_map,
                                       const std::vector<int> &elmt_map, const int *node_id_map);
 
-template bool Check_Global(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2);
-template void Check_Compatible_Meshes(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
+template bool Check_Global(Exo_Read<int64_t> &file1, Exo_Read<int64_t> &file2);
+template void Check_Compatible_Meshes(Exo_Read<int64_t> &file1, Exo_Read<int64_t> &file2,
                                       bool check_only, const std::vector<int64_t> &node_map,
                                       const std::vector<int64_t> &elmt_map,
                                       const int64_t              *node_id_map);

@@ -1,8 +1,6 @@
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Experimental)
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
 
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_gcrodr_hb_test
@@ -12,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestGCRODRFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/GCRODR
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES sherman5.hb
     EXEDEPS Tpetra_gcrodr_hb_test
     )
@@ -26,9 +24,8 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
         "--verbose --filename=mhd1280b.cua"
       )
 
-    ASSERT_DEFINED(Anasazi_SOURCE_DIR)
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraGCRODRComplexFiles
-      SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+      SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua 
       EXEDEPS Tpetra_gcrodr_complex_hb
     )
@@ -48,6 +45,3 @@ IF(${PACKAGE_NAME}_ENABLE_Experimental)
   )
 
 ENDIF() # ${PACKAGE_NAME}_ENABLE_Experimental
-
-ENDIF()
-

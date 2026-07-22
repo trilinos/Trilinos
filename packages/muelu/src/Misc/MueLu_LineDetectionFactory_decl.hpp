@@ -24,7 +24,7 @@
 namespace MueLu {
 
 /*!
-  @class LineDetectionFactory class.
+  @class LineDetectionFactory
   @brief Factory for building line detection information
 */
 

@@ -37,19 +37,17 @@ StkMeshWriter::create_part_verts(std::shared_ptr<nonconformal::impl::Nonconforma
 
   m_bulkDataOut.modification_end();
 
-  // TODO: is it legal to modify a Stk Field inside a modification
-  //       cycle
-  const stk::mesh::FieldBase& coordField = *(m_metaDataOut.coordinate_field());
   int entityIdx                          = 0;
+  auto coordFieldData = m_metaDataOut.coordinate_field()->data<double, stk::mesh::ReadWrite>();
   for (auto& vert : meshIn->get_vertices())
     if (vert)
     {
-      double* coords  = static_cast<double*>(stk::mesh::field_data(coordField, entities[entityIdx]));
+      auto coords = coordFieldData.entity_values(entities[entityIdx]);
       utils::Point pt = vert->get_point_orig(0);
 
-      coords[0]               = pt.x;
-      coords[1]               = pt.y;
-      coords[2]               = pt.z;
+      coords(0_comp)               = pt.x;
+      coords(1_comp)               = pt.y;
+      coords(2_comp)               = pt.z;
       (*stkVerts)(vert, 0, 0) = entities[entityIdx];
 
       entityIdx++;
@@ -108,6 +106,7 @@ void StkMeshWriter::write_gid_field(std::shared_ptr<nonconformal::impl::Nonconfo
   auto& meshInElsToMesh1Els          = *(nonconformalAbstract->get_mesh1_classification());
   auto& meshInElsToMesh2Els          = *(nonconformalAbstract->get_mesh2_classification());
 
+  auto m_gidFieldData = m_gidField->data<stk::mesh::ReadWrite>();
   int entityIdx = 0;
   for (auto& el : meshIn->get_elements())
     if (el)
@@ -118,12 +117,12 @@ void StkMeshWriter::write_gid_field(std::shared_ptr<nonconformal::impl::Nonconfo
       auto stkFaceL = (*pmesh1.stkEls)(meshElL, 0, 0);
       auto stkFaceR = (*pmesh2.stkEls)(meshElR, 0, 0);
 
-      VertIdType* gidField = stk::mesh::field_data(*m_gidField, stkEl);
+      auto gidField = m_gidFieldData.entity_values(stkEl);
       // Note: stk local face ids are zero-based, but Exodus is 1-based,
-      gidField[0] = m_bulkDataIn.identifier(stkFaceL.element);
-      gidField[1] = stkFaceL.side + 1;
-      gidField[2] = m_bulkDataIn.identifier(stkFaceR.element);
-      gidField[3] = stkFaceR.side + 1;
+      gidField(0_comp) = m_bulkDataIn.identifier(stkFaceL.element);
+      gidField(1_comp) = stkFaceL.side + 1;
+      gidField(2_comp) = m_bulkDataIn.identifier(stkFaceR.element);
+      gidField(3_comp) = stkFaceR.side + 1;
 
       entityIdx++;
     }

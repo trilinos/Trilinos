@@ -101,8 +101,9 @@ void check_shell_side_beam_2_on_device()
 
   stk::topology t = stk::topology::SHELL_SIDE_BEAM_2;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_SIDE_BEAM_2>::num_nodes;
+  EXPECT_EQ(2u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -132,7 +133,7 @@ void check_shell_side_beam_2_on_device()
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
@@ -207,8 +208,9 @@ void check_shell_side_beam_3_on_device()
 
   stk::topology t = stk::topology::SHELL_SIDE_BEAM_3;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_SIDE_BEAM_3>::num_nodes;
+  EXPECT_EQ(3u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -238,7 +240,7 @@ void check_shell_side_beam_3_on_device()
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);

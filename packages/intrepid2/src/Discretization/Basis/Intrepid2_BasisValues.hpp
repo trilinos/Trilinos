@@ -31,18 +31,21 @@
 
 namespace Intrepid2
 {
-  template<class Scalar, typename ExecSpaceType>
+  template<class Scalar, typename DeviceType>
   class BasisValues
   {
-    using TensorDataType = TensorData<Scalar,ExecSpaceType>;
-    using VectorDataType = VectorData<Scalar,ExecSpaceType>;
+  public:
+    using value_type = Scalar;
+  private:
+    using TensorDataType = TensorData<Scalar,DeviceType>;
+    using VectorDataType = VectorData<Scalar,DeviceType>;
     
     Kokkos::Array<TensorDataType,Parameters::MaxTensorComponents> tensorDataFamilies_;
     VectorDataType vectorData_;
     
     int numTensorDataFamilies_ = -1;
     
-    Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter_;
+    Kokkos::View<ordinal_type*,DeviceType> ordinalFilter_;
   public:
     //! Constructor for scalar-valued BasisValues with a single family of values.
     BasisValues(TensorDataType tensorData)
@@ -76,8 +79,8 @@ namespace Intrepid2
     
     
     //! copy-like constructor for differing execution spaces.  This does a deep copy of underlying views.
-    template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
-    BasisValues(const BasisValues<Scalar,OtherExecSpaceType> &basisValues)
+    template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<DeviceType, OtherDeviceType>::value>::type>
+    BasisValues(const BasisValues<Scalar,OtherDeviceType> &basisValues)
     :
     vectorData_(basisValues.vectorData()),
     numTensorDataFamilies_(basisValues.numTensorDataFamilies())
@@ -85,16 +88,16 @@ namespace Intrepid2
       auto otherFamilies = basisValues.tensorDataFamilies();
       for (int family=0; family<numTensorDataFamilies_; family++)
       {
-        tensorDataFamilies_[family] = TensorData<Scalar,ExecSpaceType>(otherFamilies[family]);
+        tensorDataFamilies_[family] = TensorData<Scalar,DeviceType>(otherFamilies[family]);
       }
       auto otherOrdinalFilter = basisValues.ordinalFilter();
-      ordinalFilter_ = Kokkos::View<ordinal_type*,ExecSpaceType>("BasisValues::ordinalFilter_",otherOrdinalFilter.extent(0));
+      ordinalFilter_ = Kokkos::View<ordinal_type*,DeviceType>("BasisValues::ordinalFilter_",otherOrdinalFilter.extent(0));
       
       Kokkos::deep_copy(ordinalFilter_, otherOrdinalFilter);
     }
     
     //! field start and length must align with families in vectorData_ or tensorDataFamilies_ (whichever is valid).
-    BasisValues<Scalar,ExecSpaceType> basisValuesForFields(const int &fieldStartOrdinal, const int &numFields)
+    BasisValues<Scalar,DeviceType> basisValuesForFields(const int &fieldStartOrdinal, const int &numFields)
     {
       int familyStartOrdinal = -1, familyEndOrdinal = -1;
       const int familyCount = this->numFamilies();
@@ -118,12 +121,12 @@ namespace Intrepid2
         {
           tensorDataFamilies[i-familyStartOrdinal] = tensorDataFamilies_[i];
         }
-        return BasisValues<Scalar,ExecSpaceType>(tensorDataFamilies);
+        return BasisValues<Scalar,DeviceType>(tensorDataFamilies);
       }
       else
       {
         const int componentCount = vectorData_.numComponents();
-        std::vector< std::vector<TensorData<Scalar,ExecSpaceType> > > vectorComponents(numFamiliesInFieldSpan, std::vector<TensorData<Scalar,ExecSpaceType> >(componentCount));
+        std::vector< std::vector<TensorData<Scalar,DeviceType> > > vectorComponents(numFamiliesInFieldSpan, std::vector<TensorData<Scalar,DeviceType> >(componentCount));
         for (int i=familyStartOrdinal; i<=familyEndOrdinal; i++)
         {
           for (int j=0; j<componentCount; j++)
@@ -131,7 +134,7 @@ namespace Intrepid2
             vectorComponents[i-familyStartOrdinal][j] = vectorData_.getComponent(i,j);
           }
         }
-        return BasisValues<Scalar,ExecSpaceType>(vectorComponents);
+        return BasisValues<Scalar,DeviceType>(vectorComponents);
       }
     }
     
@@ -247,15 +250,45 @@ namespace Intrepid2
       }
     }
     
-    //! operator() for (F,P,D) vector data; throws an exception if this is not a vector-valued container
+    //! operator() for (F,P,D) vector data
     KOKKOS_INLINE_FUNCTION
     Scalar operator()(const int &fieldOrdinal, const int &pointOrdinal, const int &dim) const
     {
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(! vectorData_.isValid(), std::invalid_argument, "VectorData object not initialized!");
-#endif
-      const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
-      return vectorData_(tensorFieldOrdinal, pointOrdinal, dim);
+      if (vectorData_.isValid())
+      {
+        const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
+        return vectorData_(tensorFieldOrdinal, pointOrdinal, dim);
+      }
+      else
+      {
+        const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
+        if (numTensorDataFamilies_ == 1)
+        {
+  #ifdef HAVE_INTREPID2_DEBUG
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(! tensorDataFamilies_[0].isValid(), std::invalid_argument, "TensorData object not initialized!");
+  #endif
+          return tensorDataFamilies_[0](tensorFieldOrdinal, pointOrdinal, dim);
+        }
+        else
+        {
+          int familyForField = -1;
+          int previousFamilyEnd = -1;
+          int fieldAdjustment = 0;
+          // this loop is written in such a way as to avoid branching for CUDA performance
+          for (int family=0; family<numTensorDataFamilies_; family++)
+          {
+            const int familyFieldCount = tensorDataFamilies_[family].extent_int(0);
+            const bool fieldInRange    = (tensorFieldOrdinal > previousFamilyEnd) && (tensorFieldOrdinal <= previousFamilyEnd + familyFieldCount);
+            familyForField = fieldInRange ? family : familyForField;
+            fieldAdjustment = fieldInRange ? previousFamilyEnd + 1 : fieldAdjustment;
+            previousFamilyEnd += familyFieldCount;
+          }
+  #ifdef HAVE_INTREPID2_DEBUG
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( familyForField == -1, std::invalid_argument, "fieldOrdinal appears to be out of range");
+  #endif
+          return tensorDataFamilies_[familyForField](tensorFieldOrdinal-fieldAdjustment,pointOrdinal,dim);
+        }
+      }
     }
     
     //! operator() for (C,F,P,D) data, which arises in CVFEM; at present unimplemented, and only declared here to allow a generic setJacobian() method in CellTools to compile.
@@ -327,16 +360,22 @@ namespace Intrepid2
       }
     }
     
-    void setOrdinalFilter(Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter)
+    void setOrdinalFilter(Kokkos::View<ordinal_type*,DeviceType> ordinalFilter)
     {
       ordinalFilter_ = ordinalFilter;
     }
     
-    Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter() const
+    Kokkos::View<ordinal_type*,DeviceType> ordinalFilter() const
     {
       return ordinalFilter_;
     }
   };
-}
+
+  template<class Scalar, typename DeviceType>
+  KOKKOS_INLINE_FUNCTION unsigned rank(const BasisValues<Scalar,DeviceType> &basisValues)
+  {
+    return basisValues.rank();
+  }
+} // namespace Intrepid2
 
 #endif /* Intrepid2_BasisValues_h */

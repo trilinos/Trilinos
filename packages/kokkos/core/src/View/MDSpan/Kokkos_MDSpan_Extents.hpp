@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_IMPL_PUBLIC_INCLUDE
 static_assert(false,
@@ -37,9 +24,6 @@ struct ViewDimension;
 
 template <class T, class Dim>
 struct ViewDataType;
-}  // namespace Kokkos::Impl
-
-namespace Kokkos::Experimental::Impl {
 
 // A few things to note --
 // - mdspan allows for 0-rank extents similarly to View, so we don't need
@@ -106,6 +90,20 @@ struct DataTypeFromExtents {
   // Will cause a compile error if it is malformed (i.e. dynamic after static)
   using type = typename ::Kokkos::Impl::ViewDataType<T, dimension_type>::type;
 };
-}  // namespace Kokkos::Experimental::Impl
+
+template <class Extents, class VM, std::size_t... Indices>
+constexpr KOKKOS_INLINE_FUNCTION auto extents_from_view_mapping_impl(
+    const VM &view_mapping, std::index_sequence<Indices...>) {
+  return Extents{view_mapping.extent(Indices)...};
+}
+
+template <class Extents, class VM>
+constexpr KOKKOS_INLINE_FUNCTION auto extents_from_view_mapping(
+    const VM &view_mapping) {
+  static_assert(Extents::rank() == VM::Rank);
+  return extents_from_view_mapping_impl<Extents>(
+      view_mapping, std::make_index_sequence<Extents::rank()>{});
+}
+}  // namespace Kokkos::Impl
 
 #endif  // KOKKOS_EXPERIMENTAL_MDSPAN_EXTENTS_HPP

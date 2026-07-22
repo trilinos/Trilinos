@@ -88,6 +88,10 @@ public:
   typedef Kokkos::View<SLUD::int_t*, HostExecSpaceType>   host_ordinal_type_array;
   typedef Kokkos::View<slu_type*,    HostExecSpaceType>   host_value_type_array;
 
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type>                          map_type;
+
   /// \name Constructor/Destructor methods
   //@{
 
@@ -246,6 +250,14 @@ private:
   bool loadA_impl(EPhase current_phase);
 
 
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
+
+
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
     SLUD::SuperMatrix A;
@@ -277,7 +289,7 @@ private:
 
     Teuchos::Array<magnitude_type> R, C;       // equilibration scalings
     Teuchos::Array<magnitude_type> R1, C1;     // row-permutation scalings
-    Teuchos::Array<SLUD::int_t>    perm_r, perm_c;
+    Teuchos::Array<SLUD::perm_int_t> perm_r, perm_c;
 
     SLUD::DiagScale_t equed;    ///< Whether/what kind of equilibration to use/has been used
     bool rowequ, colequ;        ///< whether row/col equilibration has been applied to AC
@@ -288,6 +300,7 @@ private:
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU_DIST
   host_value_type_array nzvals_view_;
+  host_value_type_array nzvals_temp_;
   /// Stores the row indices of the nonzero entries
   host_ordinal_type_array colind_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
@@ -298,18 +311,20 @@ private:
   mutable Teuchos::Array<slu_type> xvals_;
 
   /// \c true if this processor is in SuperLU_DISTS's 2D process grid
+  int myRank;
+  int numProcs;
   bool in_grid_;
   bool same_symbolic_;
   bool force_symbfact_;
   mutable bool same_solve_struct_; // may be modified in solve_impl, but still `logically const'
 
   /// Maps rows of the matrix to processors in the SuperLU_DIST processor grid
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
-                                 global_ordinal_type,
-                                 node_type> > superlu_rowmap_;
+  Teuchos::RCP<const map_type> superlu_rowmap_;
+  Teuchos::RCP<const map_type> superlu_contig_rowmap_;
+  Teuchos::RCP<const map_type> superlu_contig_colmap_;
 
   bool is_contiguous_;
-
+  int debug_level_;
 };                              // End class Superludist
 
 

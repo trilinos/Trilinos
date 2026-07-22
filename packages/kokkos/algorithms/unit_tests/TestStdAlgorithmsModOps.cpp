@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <TestStdAlgorithmsCommon.hpp>
 
@@ -29,12 +16,17 @@ struct MyMovableType {
   int m_value = 11;
 
   MyMovableType() = default;
+
+  MyMovableType(const MyMovableType&) = delete;
+
   MyMovableType(MyMovableType&& other) {
     if (this != &other) {
       m_value       = other.m_value;
       other.m_value = -2;
     }
   }
+
+  MyMovableType& operator=(const MyMovableType&) = delete;
 
   MyMovableType& operator=(MyMovableType&& other) {
     if (this != &other) {
@@ -43,23 +35,25 @@ struct MyMovableType {
     }
     return *this;
   }
+
+  ~MyMovableType() = default;
 };
 
 TEST(std_algorithms_mod_ops_test, move) {
   MyMovableType a;
   using move_t = decltype(std::move(a));
-  static_assert(std::is_rvalue_reference<move_t>::value);
+  static_assert(std::is_rvalue_reference_v<move_t>);
 
   // move constr
   MyMovableType b(std::move(a));
   ASSERT_EQ(b.m_value, 11);
-  ASSERT_EQ(a.m_value, -2);
+  ASSERT_EQ(a.m_value, -2);  // NOLINT(bugprone-use-after-move)
 
   // move assign
   MyMovableType c;
   c = std::move(b);
   ASSERT_EQ(c.m_value, 11);
-  ASSERT_EQ(b.m_value, -4);
+  ASSERT_EQ(b.m_value, -4);  // NOLINT(bugprone-use-after-move)
 }
 
 template <class ViewType>
@@ -70,7 +64,7 @@ struct StdAlgoModSeqOpsTestMove {
   void operator()(const int index) const {
     typename ViewType::value_type a{11};
     using move_t = decltype(std::move(a));
-    static_assert(std::is_rvalue_reference<move_t>::value);
+    static_assert(std::is_rvalue_reference_v<move_t>);
     m_view(index) = std::move(a);
   }
 

@@ -1,30 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-// USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
-//
-// ***********************************************************************
+// Copyright 2006 NTESS and the Sacado contributors.
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// *****************************************************************************
 // @HEADER
 
 #pragma once
@@ -124,7 +104,7 @@ void init_fad(const V1& v1, const V2& v2, const V3& v3, const V4& v4,
   Kokkos::deep_copy( v3, v3_h );
   Kokkos::deep_copy( v4, v4_h );
 
-  Kokkos::deep_copy(typename V5::array_type(v5), 0.0);
+  Kokkos::deep_copy(typename V5::type(v5), 0.0);
 }
 
 template <typename V1, typename V2, typename V3, typename V4, typename V5>
@@ -186,7 +166,7 @@ void init_array(const V1& v1, const V2& v2, const V3& v3, const V4& v4,
   Kokkos::deep_copy( v3, v3_h );
   Kokkos::deep_copy( v4, v4_h );
 
-  Kokkos::deep_copy(typename V5::array_type(v5), 0.0);
+  Kokkos::deep_copy(typename V5::type(v5), 0.0);
 }
 
 template <typename View1, typename View2>
@@ -194,8 +174,8 @@ typename std::enable_if< !Kokkos::is_view_fad<View2>::value, bool>::type
 check(const View1& v_gold, const View2& v, const double tol)
 {
   // Copy to host
-  typename View1::HostMirror v_gold_h = Kokkos::create_mirror_view(v_gold);
-  typename View2::HostMirror v_h      = Kokkos::create_mirror_view(v);
+  typename View1::host_mirror_type v_gold_h = Kokkos::create_mirror_view(v_gold);
+  typename View2::host_mirror_type v_h      = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(v_gold_h, v_gold);
   Kokkos::deep_copy(v_h, v);
 
@@ -230,8 +210,8 @@ typename std::enable_if< Kokkos::is_view_fad<View2>::value, bool>::type
 check(const View1& v_gold, const View2& v, const double tol)
 {
   // Copy to host
-  typename View1::HostMirror v_gold_h = Kokkos::create_mirror_view(v_gold);
-  typename View2::HostMirror v_h      = Kokkos::create_mirror_view(v);
+  typename View1::host_mirror_type v_gold_h = Kokkos::create_mirror_view(v_gold);
+  typename View2::host_mirror_type v_h      = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(v_gold_h, v_gold);
   Kokkos::deep_copy(v_h, v);
 

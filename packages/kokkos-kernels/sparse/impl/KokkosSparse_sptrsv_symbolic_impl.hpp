@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
 #define KOKKOSSPARSE_IMPL_SPTRSV_SYMBOLIC_HPP_
@@ -20,12 +7,12 @@
 /// \brief Implementation(s) of sparse triangular solve.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_sptrsv_handle.hpp>
 
-//#define TRISOLVE_SYMB_TIMERS
-//#define LVL_OUTPUT_INFO
-//#define CHAIN_LVL_OUTPUT_INFO
+// #define TRISOLVE_SYMB_TIMERS
+// #define LVL_OUTPUT_INFO
+// #define CHAIN_LVL_OUTPUT_INFO
 
 // TODO Pass values array and store diagonal entries - should this always be
 // done or optional?
@@ -56,8 +43,7 @@ void print_view1d_symbolic(const ViewType dv, size_t range = 0) {
 //     call single_block(s,e)
 
 template <class TriSolveHandle, class NPLViewType>
-void symbolic_chain_phase(TriSolveHandle& thandle,
-                          const NPLViewType& nodes_per_level) {
+void symbolic_chain_phase(TriSolveHandle& thandle, const NPLViewType& nodes_per_level) {
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_chain_total;
 #endif
@@ -101,11 +87,9 @@ void symbolic_chain_phase(TriSolveHandle& thandle,
       if (chain_state == 1) {
         num_chain_entries += 1;
         if (chainlinks_length == 0) {
-          h_chain_ptr(num_chain_entries) =
-              h_chain_ptr(num_chain_entries - 1) + 1;
+          h_chain_ptr(num_chain_entries) = h_chain_ptr(num_chain_entries - 1) + 1;
         } else {
-          h_chain_ptr(num_chain_entries) =
-              h_chain_ptr(num_chain_entries - 1) + chainlinks_length;
+          h_chain_ptr(num_chain_entries) = h_chain_ptr(num_chain_entries - 1) + chainlinks_length;
         }
         chainlinks_length = 0;  // reset
         chain_state       = 0;  // reset
@@ -119,8 +103,7 @@ void symbolic_chain_phase(TriSolveHandle& thandle,
         }
 
         num_chain_entries += 1;
-        h_chain_ptr(num_chain_entries) =
-            h_chain_ptr(num_chain_entries - 1) + chainlinks_length;
+        h_chain_ptr(num_chain_entries) = h_chain_ptr(num_chain_entries - 1) + chainlinks_length;
 
         num_chain_entries += 1;
         h_chain_ptr(num_chain_entries) = h_chain_ptr(num_chain_entries - 1) + 1;
@@ -132,8 +115,7 @@ void symbolic_chain_phase(TriSolveHandle& thandle,
     thandle.set_num_chain_entries(num_chain_entries);
 
 #ifdef CHAIN_LVL_OUTPUT_INFO
-    std::cout << "  num_chain_entries = " << thandle.get_num_chain_entries()
-              << std::endl;
+    std::cout << "  num_chain_entries = " << thandle.get_num_chain_entries() << std::endl;
     for (size_type i = 0; i < num_chain_entries + 1; ++i) {
       std::cout << "chain_ptr(" << i << "): " << h_chain_ptr(i) << std::endl;
     }
@@ -141,16 +123,13 @@ void symbolic_chain_phase(TriSolveHandle& thandle,
   }
 
 #ifdef TRISOLVE_SYMB_TIMERS
-  std::cout << "  Symbolic Chain Phase Total Time: "
-            << timer_sym_chain_total.seconds() << std::endl;
-  ;
+  std::cout << "  Symbolic Chain Phase Total Time: " << timer_sym_chain_total.seconds() << std::endl;
 #endif
 }  // end symbolic_chain_phase
 
-template <class ExecSpaceIn, class TriSolveHandle, class RowMapType,
-          class EntriesType>
-void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
-                        const RowMapType drow_map, const EntriesType dentries) {
+template <class ExecSpaceIn, class TriSolveHandle, class RowMapType, class EntriesType>
+void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMapType drow_map,
+                        const EntriesType dentries) {
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_lowertri_total;
   Kokkos::Timer timer;
@@ -167,10 +146,8 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
 
     typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
 
-    typedef
-        typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
-    typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror
-        HostSignedEntriesType;
+    typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
+    typedef typename TriSolveHandle::signed_nnz_lno_view_t::host_mirror_type HostSignedEntriesType;
 
     typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
 
@@ -188,20 +165,18 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
     auto nodes_per_level               = thandle.get_host_nodes_per_level();
 
     // get device view - will deep_copy to it at end of this host routine
-    DeviceEntriesType dnodes_grouped_by_level =
-        thandle.get_nodes_grouped_by_level();
-    auto nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
+    DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
+    auto nodes_grouped_by_level               = thandle.get_host_nodes_grouped_by_level();
 
     DeviceSignedEntriesType dlevel_list = thandle.get_level_list();
-    HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
+    HostSignedEntriesType level_list    = Kokkos::create_mirror_view(dlevel_list);
     Kokkos::deep_copy(space, level_list, dlevel_list);
 
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
-    space.fence();  // wait for deep copy write to land
-    typename DeviceEntriesType::HostMirror level_ptr(
-        "lp", nrows + 1);  // temp View used for index bookkeeping
+    space.fence();                                                            // wait for deep copy write to land
+    typename DeviceEntriesType::host_mirror_type level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
     for (size_type i = 0; i < nrows; ++i) {
       signed_integral_t l = 0;
@@ -236,25 +211,20 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
 
     // Output check
 #ifdef LVL_OUTPUT_INFO
-    std::cout << "  set symbolic complete: " << thandle.is_symbolic_complete()
-              << std::endl;
+    std::cout << "  set symbolic complete: " << thandle.is_symbolic_complete() << std::endl;
     std::cout << "  set num levels: " << thandle.get_num_levels() << std::endl;
 
     std::cout << "  lower_tri_symbolic result: " << std::endl;
     for (size_type i = 0; i < node_count; ++i) {
-      std::cout << "node: " << i << "  level_list = " << level_list(i)
-                << std::endl;
+      std::cout << "node: " << i << "  level_list = " << level_list(i) << std::endl;
     }
 
     for (size_type i = 0; i < level; ++i) {
-      std::cout << "level: " << i
-                << "  nodes_per_level = " << nodes_per_level(i) << std::endl;
+      std::cout << "level: " << i << "  nodes_per_level = " << nodes_per_level(i) << std::endl;
     }
 
     for (size_type i = 0; i < node_count; ++i) {
-      std::cout << "i: " << i
-                << "  nodes_grouped_by_level = " << nodes_grouped_by_level(i)
-                << std::endl;
+      std::cout << "i: " << i << "  nodes_grouped_by_level = " << nodes_grouped_by_level(i) << std::endl;
     }
 #endif
 
@@ -272,25 +242,15 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
       std::cout << "  npl.extent = " << nodes_per_level.extent(0) << std::endl;
       long check_count = 0;
       Kokkos::parallel_reduce(
-          "check_count host",
-          Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(
-              0, nodes_per_level.extent(0)),
-          KOKKOS_LAMBDA(const long i, long& update) {
-            update += nodes_per_level(i);
-          },
-          check_count);
+          "check_count host", Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, nodes_per_level.extent(0)),
+          KOKKOS_LAMBDA(const long i, long& update) { update += nodes_per_level(i); }, check_count);
       std::cout << "  host check_count= " << check_count << std::endl;
 
       space.fence();    // wait for deep copy writes to land
       check_count = 0;  // reset
       Kokkos::parallel_reduce(
-          "check_count device",
-          Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>(
-              0, dnodes_per_level.extent(0)),
-          KOKKOS_LAMBDA(const long i, long& update) {
-            update += dnodes_per_level(i);
-          },
-          check_count);
+          "check_count device", Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>(0, dnodes_per_level.extent(0)),
+          KOKKOS_LAMBDA(const long i, long& update) { update += dnodes_per_level(i); }, check_count);
       std::cout << "  devicecheck_count= " << check_count << std::endl;
     }
 #endif
@@ -305,7 +265,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
     using size_type           = typename TriSolveHandle::size_type;
     using signed_integral_t   = typename TriSolveHandle::signed_integral_t;
     using integer_view_t      = typename TriSolveHandle::integer_view_t;
-    using integer_view_host_t = typename integer_view_t::HostMirror;
+    using integer_view_host_t = typename integer_view_t::host_mirror_type;
 
     // rowptr: pointer to begining of each row (CRS)
     auto row_map = Kokkos::create_mirror_view(drow_map);
@@ -373,7 +333,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
         work_offset_host(s) = 0;
       }
     } else {
-//#define profile_supernodal_etree
+// #define profile_supernodal_etree
 #ifdef profile_supernodal_etree
       // min, max, tot size of supernodes
       signed_integral_t max_nsrow = 0;
@@ -398,9 +358,8 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
       auto dag         = thandle.get_supernodal_dag();
       auto dag_row_map = dag.row_map;
       auto dag_entries = dag.entries;
-      bool use_dag =
-          (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG ||
-           thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+      bool use_dag     = (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                      thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
       for (size_type s = 0; s < nsuper; s++) {
         if (use_dag) {
           for (size_type e = dag_row_map(s); e < dag_row_map(s + 1); e++) {
@@ -499,12 +458,9 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
           diag_kernel_type_by_level(level) = 3;
         }
 #ifdef profile_supernodal_etree
-        std::cout << level << " : num_leave=" << num_leave
-                  << ", nsrow=" << min_nsrow << ", " << avg_nsrow << ", "
-                  << max_nsrow << ", nscol=" << min_nscol << ", " << avg_nscol
-                  << ", " << max_nscol
-                  << ", kernel_type=" << diag_kernel_type_by_level(level) << "("
-                  << size_unblocked << ","
+        std::cout << level << " : num_leave=" << num_leave << ", nsrow=" << min_nsrow << ", " << avg_nsrow << ", "
+                  << max_nsrow << ", nscol=" << min_nscol << ", " << avg_nscol << ", " << max_nscol
+                  << ", kernel_type=" << diag_kernel_type_by_level(level) << "(" << size_unblocked << ","
                   << thandle.get_supernode_size_blocked() << ")" << std::endl;
         if (level == 0) {
           max_nleave = num_leave;
@@ -543,14 +499,11 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
       }
 #ifdef profile_supernodal_etree
       std::cout << "   * number of supernodes = " << nsuper << std::endl;
-      std::cout << "   * supernodal rows: min = " << min_nsrow
-                << "\t max = " << max_nsrow << "\t avg = " << tot_nsrow / nsuper
-                << std::endl;
-      std::cout << "   * supernodal cols: min = " << min_nscol
-                << "\t max = " << max_nscol << "\t avg = " << tot_nscol / nsuper
-                << std::endl;
-      std::cout << "   * numer of leaves: min = " << min_nleave
-                << "\t max = " << max_nleave
+      std::cout << "   * supernodal rows: min = " << min_nsrow << "\t max = " << max_nsrow
+                << "\t avg = " << tot_nsrow / nsuper << std::endl;
+      std::cout << "   * supernodal cols: min = " << min_nscol << "\t max = " << max_nscol
+                << "\t avg = " << tot_nscol / nsuper << std::endl;
+      std::cout << "   * numer of leaves: min = " << min_nleave << "\t max = " << max_nleave
                 << "\t avg = " << tot_nleave / level << std::endl;
       std::cout << "   * level = " << level << std::endl;
 #endif
@@ -579,8 +532,7 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
     Kokkos::deep_copy(space, dkernel_type_by_level, kernel_type_by_level);
     // > diagonal
     integer_view_t ddiag_kernel_type_by_level = thandle.get_diag_kernel_type();
-    Kokkos::deep_copy(space, ddiag_kernel_type_by_level,
-                      diag_kernel_type_by_level);
+    Kokkos::deep_copy(space, ddiag_kernel_type_by_level, diag_kernel_type_by_level);
 
     // deep copy to device (of scheduling info)
     Kokkos::deep_copy(space, dnodes_grouped_by_level, nodes_grouped_by_level);
@@ -596,16 +548,13 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle,
 #endif
 
 #ifdef TRISOLVE_SYMB_TIMERS
-  std::cout << "  Symbolic (lower tri) Total Time: "
-            << timer_sym_lowertri_total.seconds() << std::endl;
-  ;
+  std::cout << "  Symbolic (lower tri) Total Time: " << timer_sym_lowertri_total.seconds() << std::endl;
 #endif
 }  // end lower_tri_symbolic
 
-template <class ExecutionSpace, class TriSolveHandle, class RowMapType,
-          class EntriesType>
-void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
-                        const RowMapType drow_map, const EntriesType dentries) {
+template <class ExecutionSpace, class TriSolveHandle, class RowMapType, class EntriesType>
+void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const RowMapType drow_map,
+                        const EntriesType dentries) {
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_uppertri_total;
   Kokkos::Timer timer;
@@ -620,10 +569,8 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
 
     typedef typename TriSolveHandle::size_type size_type;
     typedef typename TriSolveHandle::nnz_lno_view_t DeviceEntriesType;
-    typedef
-        typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
-    typedef typename TriSolveHandle::signed_nnz_lno_view_t::HostMirror
-        HostSignedEntriesType;
+    typedef typename TriSolveHandle::signed_nnz_lno_view_t DeviceSignedEntriesType;
+    typedef typename TriSolveHandle::signed_nnz_lno_view_t::host_mirror_type HostSignedEntriesType;
     typedef typename TriSolveHandle::signed_integral_t signed_integral_t;
 
     //  size_type nrows = thandle.get_nrows();
@@ -641,20 +588,18 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
     auto nodes_per_level               = thandle.get_host_nodes_per_level();
 
     // get device view - will deep_copy to it at end of this host routine
-    DeviceEntriesType dnodes_grouped_by_level =
-        thandle.get_nodes_grouped_by_level();
-    auto nodes_grouped_by_level = thandle.get_host_nodes_grouped_by_level();
+    DeviceEntriesType dnodes_grouped_by_level = thandle.get_nodes_grouped_by_level();
+    auto nodes_grouped_by_level               = thandle.get_host_nodes_grouped_by_level();
 
     DeviceSignedEntriesType dlevel_list = thandle.get_level_list();
-    HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
+    HostSignedEntriesType level_list    = Kokkos::create_mirror_view(dlevel_list);
     Kokkos::deep_copy(space, level_list, dlevel_list);
 
     signed_integral_t level = 0;
     size_type node_count    = 0;
 
-    space.fence();  // Wait for deep copy writes to land
-    typename DeviceEntriesType::HostMirror level_ptr(
-        "lp", nrows + 1);  // temp View used for index bookkeeping
+    space.fence();                                                            // Wait for deep copy writes to land
+    typename DeviceEntriesType::host_mirror_type level_ptr("lp", nrows + 1);  // temp View used for index bookkeeping
     level_ptr(0) = 0;
     for (size_type ii = nrows; ii > 0; ii--) {
       size_type i = ii - 1;  // Avoid >= 0 comparison in for-loop to prevent
@@ -691,25 +636,20 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
 
     // Output check
 #ifdef LVL_OUTPUT_INFO
-    std::cout << "  set symbolic complete: " << thandle.is_symbolic_complete()
-              << std::endl;
+    std::cout << "  set symbolic complete: " << thandle.is_symbolic_complete() << std::endl;
     std::cout << "  set num levels: " << thandle.get_num_levels() << std::endl;
 
     std::cout << "  upper_tri_symbolic result: " << std::endl;
     for (size_type i = 0; i < node_count; ++i) {
-      std::cout << "node: " << i << "  level_list = " << level_list(i)
-                << std::endl;
+      std::cout << "node: " << i << "  level_list = " << level_list(i) << std::endl;
     }
 
     for (size_type i = 0; i < level; ++i) {
-      std::cout << "level: " << i
-                << "  nodes_per_level = " << nodes_per_level(i) << std::endl;
+      std::cout << "level: " << i << "  nodes_per_level = " << nodes_per_level(i) << std::endl;
     }
 
     for (size_type i = 0; i < node_count; ++i) {
-      std::cout << "i: " << i
-                << "  nodes_grouped_by_level = " << nodes_grouped_by_level(i)
-                << std::endl;
+      std::cout << "i: " << i << "  nodes_grouped_by_level = " << nodes_grouped_by_level(i) << std::endl;
     }
 #endif
 
@@ -727,25 +667,15 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
       std::cout << "  npl.extent = " << nodes_per_level.extent(0) << std::endl;
       long check_count = 0;
       Kokkos::parallel_reduce(
-          "check_count host",
-          Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(
-              0, nodes_per_level.extent(0)),
-          KOKKOS_LAMBDA(const long i, long& update) {
-            update += nodes_per_level(i);
-          },
-          check_count);
+          "check_count host", Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, nodes_per_level.extent(0)),
+          KOKKOS_LAMBDA(const long i, long& update) { update += nodes_per_level(i); }, check_count);
       std::cout << "  host check_count= " << check_count << std::endl;
 
       space.fence();    // wait for deep copy writes to land
       check_count = 0;  // reset
       Kokkos::parallel_reduce(
-          "check_count device",
-          Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>(
-              0, dnodes_per_level.extent(0)),
-          KOKKOS_LAMBDA(const long i, long& update) {
-            update += dnodes_per_level(i);
-          },
-          check_count);
+          "check_count device", Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>(0, dnodes_per_level.extent(0)),
+          KOKKOS_LAMBDA(const long i, long& update) { update += dnodes_per_level(i); }, check_count);
       std::cout << "  devicecheck_count= " << check_count << std::endl;
     }
 #endif
@@ -761,7 +691,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
 
     using signed_integral_t   = typename TriSolveHandle::signed_integral_t;
     using integer_view_t      = typename TriSolveHandle::integer_view_t;
-    using integer_view_host_t = typename integer_view_t::HostMirror;
+    using integer_view_host_t = typename integer_view_t::host_mirror_type;
 
     // rowptr: pointer to begining of each row (CRS)
     auto row_map = Kokkos::create_mirror_view(drow_map);
@@ -800,10 +730,9 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
       // Set up level sets: going through supernodal column one at a time from 1
       // to nsuper
       for (size_type s = 0; s < nsuper; s++) {
-        nodes_per_level(s) = 1;  // # of nodes per level
-        nodes_grouped_by_level(s) =
-            nsuper - 1 - s;              // only one task per level (task id)
-        level_list(nsuper - 1 - s) = s;  // map task id to level
+        nodes_per_level(s)         = 1;               // # of nodes per level
+        nodes_grouped_by_level(s)  = nsuper - 1 - s;  // only one task per level (task id)
+        level_list(nsuper - 1 - s) = s;               // map task id to level
 
         size_type row           = supercols[s];
         signed_integral_t lwork = row_map(row + 1) - row_map(row);
@@ -849,9 +778,8 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
       auto dag         = thandle.get_supernodal_dag();
       auto dag_row_map = dag.row_map;
       auto dag_entries = dag.entries;
-      bool use_dag =
-          (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG ||
-           thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
+      bool use_dag     = (thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_DAG ||
+                      thandle.get_algorithm() == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG);
       if (use_dag) {
         for (size_type s = 0; s < nsuper; s++) {
           for (size_type e = dag_row_map(s); e < dag_row_map(s + 1); e++) {
@@ -872,8 +800,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
 
       size_type nrows = thandle.get_nrows();
       integer_view_host_t inverse_nodes_per_level("nodes_per_level", nrows);
-      integer_view_host_t inverse_nodes_grouped_by_level(
-          "nodes_grouped_by_level", nrows);
+      integer_view_host_t inverse_nodes_grouped_by_level("nodes_grouped_by_level", nrows);
 
       size_type num_done = 0;
       size_type level    = 0;
@@ -974,14 +901,11 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
       }
 #ifdef profile_supernodal_etree
       std::cout << "   * number of supernodes = " << nsuper << std::endl;
-      std::cout << "   * supernodal rows: min = " << min_nsrow
-                << "\t max = " << max_nsrow << "\t avg = " << tot_nsrow / nsuper
-                << std::endl;
-      std::cout << "   * supernodal cols: min = " << min_nscol
-                << "\t max = " << max_nscol << "\t avg = " << tot_nscol / nsuper
-                << std::endl;
-      std::cout << "   * numer of leaves: min = " << min_nleave
-                << "\t max = " << max_nleave
+      std::cout << "   * supernodal rows: min = " << min_nsrow << "\t max = " << max_nsrow
+                << "\t avg = " << tot_nsrow / nsuper << std::endl;
+      std::cout << "   * supernodal cols: min = " << min_nscol << "\t max = " << max_nscol
+                << "\t avg = " << tot_nscol / nsuper << std::endl;
+      std::cout << "   * numer of leaves: min = " << min_nleave << "\t max = " << max_nleave
                 << "\t avg = " << tot_nleave / level << std::endl;
       std::cout << "   * level = " << level << std::endl;
 #endif
@@ -990,9 +914,8 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
       num_done            = 0;
       size_type num_level = level;
       for (level = 0; level < num_level; level++) {
-        signed_integral_t num_leave =
-            inverse_nodes_per_level(num_level - level - 1);
-        nodes_per_level(level) = num_leave;
+        signed_integral_t num_leave = inverse_nodes_per_level(num_level - level - 1);
+        nodes_per_level(level)      = num_leave;
         // printf( " -> nodes_per_level(%d -> %d) = %d\n",num_level-level-1,
         // level, num_leave );
 
@@ -1001,8 +924,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
         for (signed_integral_t task = 0; task < num_leave; task++) {
           // signed_integral_t s = inverse_nodes_grouped_by_level (nsuper -
           // (num_done+task) - 1);
-          signed_integral_t s = inverse_nodes_grouped_by_level(
-              nsuper - (num_done + num_leave - 1 - task) - 1);
+          signed_integral_t s = inverse_nodes_grouped_by_level(nsuper - (num_done + num_leave - 1 - task) - 1);
 
           nodes_grouped_by_level(num_done + task) = s;
           level_list(s)                           = level;
@@ -1070,9 +992,7 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle,
 #endif
 
 #ifdef TRISOLVE_SYMB_TIMERS
-  std::cout << "  Symbolic (upper tri) Total Time: "
-            << timer_sym_uppertri_total.seconds() << std::endl;
-  ;
+  std::cout << "  Symbolic (upper tri) Total Time: " << timer_sym_uppertri_total.seconds() << std::endl;
 #endif
 }  // end upper_tri_symbolic
 

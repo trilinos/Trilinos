@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 // Note: Luc Berger-Vergiat 10/25/21
 //       Only include this test if compiling
 //       the cuda sparse tests and cuSPARSE
@@ -41,11 +28,11 @@ void test_rocblas_safe_call() {
   bool caught_exception = false;
 
   rocblas_status myStatus = rocblas_status_success;
-  KOKKOS_ROCBLAS_SAFE_CALL_IMPL(myStatus);
+  KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(myStatus);
 
   try {
     myStatus = rocblas_status_internal_error;
-    KOKKOS_ROCBLAS_SAFE_CALL_IMPL(myStatus);
+    KOKKOSBLAS_IMPL_ROCBLAS_SAFE_CALL(myStatus);
   } catch (std::runtime_error& e) {
     caught_exception = true;
   }
@@ -58,8 +45,7 @@ void test_rocblas_safe_call() {
 // fails it throws an error with the
 // KOKKOS_ROCBLAS_SAFE_CALL_IMPL macro
 void test_rocblas_singleton() {
-  KokkosBlas::Impl::RocBlasSingleton& s =
-      KokkosBlas::Impl::RocBlasSingleton::singleton();
+  KokkosBlas::Impl::RocBlasSingleton& s = KokkosBlas::Impl::RocBlasSingleton::singleton();
   (void)s;
 }
 

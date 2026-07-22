@@ -1,8 +1,32 @@
+set(REQUIRED_HEADERS umfpack.h amd.h )
+set(REQUIRED_LIBS_NAMES umfpack amd )
+set(IMPORTED_TARGETS_FOR_ALL_LIBS SuiteSparse::UMFPACK )
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( UMFPACK
-  REQUIRED_HEADERS umfpack.h amd.h
-  REQUIRED_LIBS_NAMES umfpack amd
-  )
+tribits_tpl_allow_pre_find_package(UMFPACK  UMFPACK_ALLOW_PREFIND)
+
+if (UMFPACK_ALLOW_PREFIND)
+  message("-- Using find_package(UMFPACK ...) ...")
+  find_package(UMFPACK)
+  if (UMFPACK_FOUND)
+    message("-- Found UMFPACK_DIR='${UMFPACK_DIR}'")
+    message("-- Generating UMFPACK::all_libs and UMFPACKConfig.cmake")
+    tribits_extpkg_create_imported_all_libs_target_and_config_file(UMFPACK
+      INNER_FIND_PACKAGE_NAME  UMFPACK
+      IMPORTED_TARGETS_FOR_ALL_LIBS  ${IMPORTED_TARGETS_FOR_ALL_LIBS} )
+  endif()
+endif()
+
+if (NOT TARGET UMFPACK::all_libs)
+
+  set(UMFPACK_INCLUDE_DIRS_DEFAULT "/usr/include/suitesparse")
+  set(UMFPACK_INCLUDE_DIRS "${UMFPACK_INCLUDE_DIRS_DEFAULT}" CACHE PATH
+    "Default path to find UMFPACK include files")
+
+  tribits_tpl_find_include_dirs_and_libraries( UMFPACK
+    REQUIRED_HEADERS ${REQUIRED_HEADERS}
+    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} )
+endif()
+
 
 # Amesos2 has Umfpack wrappers which depend on being able to
 # send complex as Real-Im as a single array.

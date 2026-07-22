@@ -70,7 +70,7 @@ TEST( stk_topology, invalid_topology)
 
 void check_invalid_on_device()
 {
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     stk::topology t = stk::topology::INVALID_TOPOLOGY;
 

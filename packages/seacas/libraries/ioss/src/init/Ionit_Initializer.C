@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,8 +9,11 @@
 #include "Ioss_CodeTypes.h"
 
 #if defined(SEACAS_HAVE_EXODUS)
+#include "exodus/Ioex_ChangeSet.h"
 #include "exodus/Ioex_IOFactory.h"
+#if defined(SEACAS_HAVE_EXONULL)
 #include "exonull/Ioexnl_IOFactory.h"
+#endif
 #endif
 
 #include "gen_struc/Iogs_DatabaseIO.h"
@@ -34,6 +37,10 @@
 #include "faodel/Iofaodel_DatabaseIO.h"
 #endif
 
+#if defined(SEACAS_HAVE_S3)
+#include "s3/Ios3_DatabaseIO.h"
+#endif
+
 #if defined(SEACAS_HAVE_CGNS)
 #include "cgns/Iocgns_IOFactory.h"
 #endif
@@ -46,6 +53,9 @@
 #include "visualization/exodus/Iovs_exodus_IOFactory.h"
 
 #include "Ioss_IOFactory.h"
+
+#include "Ioss_ChangeSetFactory.h"
+#include "Ioss_DynamicTopologyBroker.h"
 
 namespace {
 #if defined(IOSS_THREADSAFE)
@@ -72,13 +82,19 @@ namespace Ioss::Init {
 
 #if defined(SEACAS_HAVE_EXODUS)
     Ioex::IOFactory::factory(); // Exodus
+    Ioex::ChangeSetFactory::factory();
+#if defined(SEACAS_HAVE_EXONULL)
     Ioexnl::IOFactory::factory();
+#endif
 #endif
 #if defined(SEACAS_HAVE_PAMGEN)
     Iopg::IOFactory::factory(); // Pamgen
 #endif
 #if defined(SEACAS_HAVE_FAODEL)
     Iofaodel::IOFactory::factory();
+#endif
+#if defined(SEACAS_HAVE_S3)
+    Ios3::IOFactory::factory();
 #endif
 #if defined(SEACAS_HAVE_CGNS)
     Iocgns::IOFactory::factory();
@@ -94,6 +110,8 @@ namespace Ioss::Init {
     Iogs::IOFactory::factory(); // Structured Mesh Generator
     Ionull::IOFactory::factory();
     Ioss::StorageInitializer();
+    Ioss::DynamicTopologyBroker::broker();
+    Ioss::ChangeSetFactory::factory();
     Ioss::Initializer();
     Iotr::Initializer();
 #ifdef HAVE_SEACASIOSS_ADIOS2

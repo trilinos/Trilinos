@@ -1,23 +1,15 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef TESTREALLOC_HPP_
 #define TESTREALLOC_HPP_
 
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 namespace TestViewRealloc {
 
@@ -144,6 +136,11 @@ void impl_testRealloc() {
     EXPECT_EQ(oldPointer, newPointer);
   }
 }
+struct NoDefaultConstructor {
+  int value;
+  KOKKOS_FUNCTION
+  NoDefaultConstructor(int x) : value(x) {}
+};
 
 template <class DeviceType>
 void testRealloc() {
@@ -153,6 +150,14 @@ void testRealloc() {
   {
     impl_testRealloc<DeviceType,
                      WithoutInitializing>();  // without data initialization
+  }
+  // Check #6992 fix (no default initialization in realloc without initializing)
+  {
+    using view_type = Kokkos::View<NoDefaultConstructor*, DeviceType>;
+    view_type view_1d_no_default(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "view_1d_no_default"),
+        5);
+    realloc_dispatch(WithoutInitializing{}, view_1d_no_default, 3);
   }
 }
 

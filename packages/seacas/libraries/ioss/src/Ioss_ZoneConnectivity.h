@@ -10,23 +10,12 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <iosfwd>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
 #include "ioss_export.h"
-
-#if defined(SEACAS_HAVE_CGNS) && !defined(BUILT_IN_SIERRA)
-#include <cgnstypes.h>
-
-using IOSS_ZC_INT = cgsize_t;
-#else
-// If this is not being built with CGNS, then default to using 32-bit integers.
-// Currently there is no way to input/output a structured mesh without CGNS,
-// so this block is simply to get things to compile and probably has no use.
-using IOSS_ZC_INT = int;
-#endif
 
 namespace Ioss {
   class Region;
@@ -86,7 +75,7 @@ namespace Ioss {
     IOSS_NODISCARD bool has_faces() const;
     IOSS_NODISCARD bool retain_original() const; // True if need to retain in parallel decomp
 
-    IOSS_NODISCARD std::array<IOSS_ZC_INT, 9> transform_matrix() const;
+    IOSS_NODISCARD std::array<int, 9> transform_matrix() const;
     IOSS_NODISCARD Ioss::IJK_t transform(const Ioss::IJK_t &index_1) const;
     IOSS_NODISCARD Ioss::IJK_t inverse_transform(const Ioss::IJK_t &index_1) const;
 

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file KokkosLapack_svd.hpp
 /// \brief Singular Value Decomposition (SVD)
@@ -58,36 +45,21 @@ namespace KokkosLapack {
 /// vectors of A.
 ///
 // clang-format on
-template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix,
-          class VMatrix>
-void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[],
-         const AMatrix& A, const SVector& S, const UMatrix& U,
-         const VMatrix& Vt) {
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename AMatrix::memory_space>::accessible);
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename SVector::memory_space>::accessible);
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename UMatrix::memory_space>::accessible);
-  static_assert(
-      Kokkos::SpaceAccessibility<ExecutionSpace,
-                                 typename VMatrix::memory_space>::accessible);
-  static_assert(Kokkos::is_view<AMatrix>::value,
-                "KokkosLapack::svd: A must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<SVector>::value,
-                "KokkosLapack::svd: S must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<UMatrix>::value,
-                "KokkosLapack::svd: U must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<VMatrix>::value,
-                "KokkosLapack::svd: Vt must be a Kokkos::View.");
+template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix, class VMatrix>
+void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[], const AMatrix& A, const SVector& S,
+         const UMatrix& U, const VMatrix& Vt) {
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AMatrix::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename SVector::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename UMatrix::memory_space>::accessible);
+  static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename VMatrix::memory_space>::accessible);
+  static_assert(Kokkos::is_view<AMatrix>::value, "KokkosLapack::svd: A must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<SVector>::value, "KokkosLapack::svd: S must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<UMatrix>::value, "KokkosLapack::svd: U must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<VMatrix>::value, "KokkosLapack::svd: Vt must be a Kokkos::View.");
   static_assert(AMatrix::rank() == 2, "KokkosLapack::svd: A must have rank 2.");
   static_assert(SVector::rank() == 1, "KokkosLapack::svd: S must have rank 1.");
   static_assert(UMatrix::rank() == 2, "KokkosLapack::svd: U must have rank 2.");
-  static_assert(VMatrix::rank() == 2,
-                "KokkosLapack::svd: Vt must have rank 2.");
+  static_assert(VMatrix::rank() == 2, "KokkosLapack::svd: Vt must have rank 2.");
 
   int64_t m     = A.extent(0);
   int64_t n     = A.extent(1);
@@ -102,40 +74,32 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[],
 
   // Check the jobu and jobvt control flags
   // The only valid options there are 'A', 'S', 'O' and 'N'
-  const bool is_jobu_invalid =
-      !((jobu[0] == 'A') || (jobu[0] == 'a') || (jobu[0] == 'S') ||
-        (jobu[0] == 's') || (jobu[0] == 'O') || (jobu[0] == 'o') ||
-        (jobu[0] == 'N') || (jobu[0] == 'n'));
+  const bool is_jobu_invalid = !((jobu[0] == 'A') || (jobu[0] == 'a') || (jobu[0] == 'S') || (jobu[0] == 's') ||
+                                 (jobu[0] == 'O') || (jobu[0] == 'o') || (jobu[0] == 'N') || (jobu[0] == 'n'));
 
-  const bool is_jobvt_invalid =
-      !((jobvt[0] == 'A') || (jobvt[0] == 'a') || (jobvt[0] == 'S') ||
-        (jobvt[0] == 's') || (jobvt[0] == 'O') || (jobvt[0] == 'o') ||
-        (jobvt[0] == 'N') || (jobvt[0] == 'n'));
+  const bool is_jobvt_invalid = !((jobvt[0] == 'A') || (jobvt[0] == 'a') || (jobvt[0] == 'S') || (jobvt[0] == 's') ||
+                                  (jobvt[0] == 'O') || (jobvt[0] == 'o') || (jobvt[0] == 'N') || (jobvt[0] == 'n'));
 
   if (is_jobu_invalid && is_jobvt_invalid) {
     std::ostringstream oss;
     oss << "KokkosLapack::svd: both jobu and jobvt are invalid!\n"
-        << "Possible values are A, S, O or N, submitted values are " << jobu[0]
-        << " and " << jobvt[0] << "\n";
+        << "Possible values are A, S, O or N, submitted values are " << jobu[0] << " and " << jobvt[0] << "\n";
     KokkosKernels::Impl::throw_runtime_exception(oss.str());
   }
   if (is_jobu_invalid) {
     std::ostringstream oss;
     oss << "KokkosLapack::svd: jobu is invalid!\n"
-        << "Possible values are A, S, O or N, submitted value is " << jobu[0]
-        << "\n";
+        << "Possible values are A, S, O or N, submitted value is " << jobu[0] << "\n";
     KokkosKernels::Impl::throw_runtime_exception(oss.str());
   }
   if (is_jobvt_invalid) {
     std::ostringstream oss;
     oss << "KokkosLapack::svd: jobvt is invalid!\n"
-        << "Possible values are A, S, O or N, submitted value is " << jobvt[0]
-        << "\n";
+        << "Possible values are A, S, O or N, submitted value is " << jobvt[0] << "\n";
     KokkosKernels::Impl::throw_runtime_exception(oss.str());
   }
 
-  if (((jobu[0] == 'O') || (jobu[0] == 'o')) &&
-      ((jobvt[0] == 'O') || (jobvt[0] == 'o'))) {
+  if (((jobu[0] == 'O') || (jobu[0] == 'o')) && ((jobvt[0] == 'O') || (jobvt[0] == 'o'))) {
     std::ostringstream oss;
     oss << "KokkosLapack::svd: jobu and jobvt cannot be O at the same time!\n";
     KokkosKernels::Impl::throw_runtime_exception(oss.str());
@@ -148,23 +112,34 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[],
   std::ostringstream os;
   if (S.extent_int(0) != rankA) {
     is_extent_invalid = true;
-    os << "KokkosLapack::svd: S has extent " << S.extent(0) << ", instead of "
-       << rankA << ".\n";
+    os << "KokkosLapack::svd: S has extent " << S.extent(0) << ", instead of " << rankA << ".\n";
   }
-  if ((jobu[0] == 'A') || (jobu[0] == 'a') || (jobu[0] == 'S') ||
-      (jobu[0] == 's')) {
+  if ((jobu[0] == 'A') || (jobu[0] == 'a')) {
     if (U.extent_int(0) != m || U.extent_int(1) != m) {
       is_extent_invalid = true;
-      os << "KokkosLapack::svd: U has extents (" << U.extent(0) << ", "
-         << U.extent(1) << ") instead of (" << m << ", " << m << ").\n";
+      os << "KokkosLapack::svd: U has extents (" << U.extent(0) << ", " << U.extent(1) << ") instead of (" << m << ", "
+         << m << ").\n";
     }
   }
-  if ((jobvt[0] == 'A') || (jobvt[0] == 'a') || (jobvt[0] == 'S') ||
-      (jobvt[0] == 's')) {
+  if ((jobu[0] == 'S') || (jobu[0] == 's')) {
+    if (U.extent_int(0) != m || U.extent_int(1) != std::min(m, n)) {
+      is_extent_invalid = true;
+      os << "KokkosLapack::svd: U has extents (" << U.extent(0) << ", " << U.extent(1) << ") instead of (" << m << ", "
+         << std::min(m, n) << ").\n";
+    }
+  }
+  if ((jobvt[0] == 'A') || (jobvt[0] == 'a')) {
     if (Vt.extent_int(0) != n || Vt.extent_int(1) != n) {
       is_extent_invalid = true;
-      os << "KokkosLapack::svd: V has extents (" << Vt.extent(0) << ", "
-         << Vt.extent(1) << ") instead of (" << n << ", " << n << ").\n";
+      os << "KokkosLapack::svd: V has extents (" << Vt.extent(0) << ", " << Vt.extent(1) << ") instead of (" << n
+         << ", " << n << ").\n";
+    }
+  }
+  if ((jobvt[0] == 'S') || (jobvt[0] == 's')) {
+    if (Vt.extent_int(0) != std::min(m, n) || Vt.extent_int(1) != n) {
+      is_extent_invalid = true;
+      os << "KokkosLapack::svd: V has extents (" << Vt.extent(0) << ", " << Vt.extent(1) << ") instead of ("
+         << std::min(m, n) << ", " << n << ").\n";
     }
   }
   if (is_extent_invalid) {
@@ -172,42 +147,42 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[],
   }
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
-  if (std::is_same_v<ExecutionSpace, Kokkos::Cuda> &&
-      (A.extent(0) < A.extent(1))) {
+  if (std::is_same_v<ExecutionSpace, Kokkos::Cuda> && (A.extent(0) < A.extent(1))) {
     throw std::runtime_error(
-        "CUSOLVER does not support SVD for matrices with more columns "
-        "than rows, you can transpose you matrix first then compute "
-        "SVD of that transpose: At=VSUt, and swap the output U and Vt"
-        " and transpose them to recover the desired SVD.");
+        "KokkosLapack::svd: CUSOLVER does not support SVD for matrices"
+        " with more columns than rows, you can transpose you matrix first"
+        " then compute SVD of that transpose: At=VSUt, and swap the output"
+        " U and Vt and transpose them to recover the desired SVD.");
   }
 #endif
 
-  using AMatrix_Internal = Kokkos::View<
-      typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
-      typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  // Do some more checks on SVector before picking a unique layout for it
+  // as it is a rank-1 view.
+  if constexpr (std::is_same_v<typename SVector::array_layout, Kokkos::LayoutStride>) {
+    if (!S.span_is_contiguous()) {
+      throw std::runtime_error("KokkosLapack::svd: S does not have a contiguous span.");
+    }
+  }
 
-  using SVector_Internal = Kokkos::View<
-      typename SVector::non_const_value_type*, typename SVector::array_layout,
-      typename SVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using AMatrix_Internal = Kokkos::View<typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
+                                        typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  using UMatrix_Internal = Kokkos::View<
-      typename UMatrix::non_const_value_type**, typename UMatrix::array_layout,
-      typename UMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using SVector_Internal = Kokkos::View<typename SVector::non_const_value_type*, Kokkos::LayoutLeft,
+                                        typename SVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  using VMatrix_Internal = Kokkos::View<
-      typename VMatrix::non_const_value_type**, typename VMatrix::array_layout,
-      typename VMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UMatrix_Internal = Kokkos::View<typename UMatrix::non_const_value_type**, typename UMatrix::array_layout,
+                                        typename UMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  using VMatrix_Internal = Kokkos::View<typename VMatrix::non_const_value_type**, typename VMatrix::array_layout,
+                                        typename VMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   AMatrix_Internal A_i  = A;
   SVector_Internal S_i  = S;
   UMatrix_Internal U_i  = U;
   VMatrix_Internal Vt_i = Vt;
 
-  KokkosLapack::Impl::SVD<ExecutionSpace, AMatrix_Internal, SVector_Internal,
-                          UMatrix_Internal, VMatrix_Internal>::svd(space, jobu,
-                                                                   jobvt, A_i,
-                                                                   S_i, U_i,
-                                                                   Vt_i);
+  KokkosLapack::Impl::SVD<ExecutionSpace, AMatrix_Internal, SVector_Internal, UMatrix_Internal, VMatrix_Internal>::svd(
+      space, jobu, jobvt, A_i, S_i, U_i, Vt_i);
 }
 
 // clang-format off
@@ -235,8 +210,8 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[],
 ///
 // clang-format on
 template <class AMatrix, class SVector, class UMatrix, class VMatrix>
-void svd(const char jobu[], const char jobvt[], const AMatrix& A,
-         const SVector& S, const UMatrix& U, const VMatrix& Vt) {
+void svd(const char jobu[], const char jobvt[], const AMatrix& A, const SVector& S, const UMatrix& U,
+         const VMatrix& Vt) {
   typename AMatrix::execution_space space{};
   svd(space, jobu, jobvt, A, S, U, Vt);
 }

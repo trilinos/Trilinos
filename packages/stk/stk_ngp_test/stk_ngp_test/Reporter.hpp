@@ -49,19 +49,40 @@ class Reporter {
   Reporter(int numReports) : reporter(numReports) {}
   void clear() { reporter.clear(); }
   void resize(int n) { reporter.resize(n); }
-  int get_capacity() const { return reporter.getCapacity(); }
+  int get_capacity() const {
+#if KOKKOS_VERSION >= 50000
+    return reporter.capacity();
+#else
+    return reporter.getCapacity();
+#endif
+  }
+
 
   int report_failures(std::ostream& out = std::cout) {
-    int numAttemptedReports = reporter.getNumReportAttempts();
-    int numReports = reporter.getNumReports();
+    int numAttemptedReports =
+#if KOKKOS_VERSION >= 50000
+      reporter.num_report_attempts();
+#else
+      reporter.getNumReportAttempts();
+#endif
+
+    int numReports =
+#if KOKKOS_VERSION >= 50000
+      reporter.num_reports();
+#else
+      reporter.getNumReports();
+#endif
 
     if (numAttemptedReports != 0) {
       out << "In test " << get_gtest_name() << ", " << numAttemptedReports << " failures occurred." << std::endl
           << "    Limited summary of failures: " << std::endl;
-
+#if KOKKOS_VERSION >= 50000
+      [[maybe_unused]] auto [failureWorkIndices, failures] = reporter.get_reports();
+#else
       std::vector<ReportT> failures;
       std::vector<int> failureWorkIndices;
       reporter.getReports(failureWorkIndices, failures);
+#endif
 
       for (int i = 0; i < numReports; ++i) {
         auto&& failure = failures[i];

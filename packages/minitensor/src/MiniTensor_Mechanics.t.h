@@ -654,7 +654,3 @@ check_strong_ellipticity(Tensor4<T, N> const & A)
 } // namespace minitensor
 
 #endif // MiniTensor_Mechanics_t_h
-
-
-
-

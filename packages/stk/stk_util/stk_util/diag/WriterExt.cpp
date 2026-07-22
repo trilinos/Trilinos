@@ -33,7 +33,6 @@
 // 
 
 #include "stk_util/diag/WriterExt.hpp"
-#include "stk_util/diag/String.hpp"      // for Identifier, String
 #include "stk_util/diag/StringUtil.hpp"  // for demangle
 #include "stk_util/parallel/MPI.hpp"     // for Loc
 #include "stk_util/stk_config.h"         // for STK_HAS_MPI
@@ -49,28 +48,6 @@ operator<<(
 {
   if (dout.shouldPrint())
     dout << sierra::demangle(t.name());
-  return dout;
-}
-
-
-Writer &
-operator<<(
-  Writer &                      dout,
-  const sierra::String &        s)
-{
-  if (dout.shouldPrint()) 
-    dout << s.c_str();
-  return dout;
-}
-
-
-Writer &
-operator<<(
-  Writer &                      dout,
-  const sierra::Identifier &    s)
-{
-  if (dout.shouldPrint())
-    dout << s.c_str();
   return dout;
 }
 

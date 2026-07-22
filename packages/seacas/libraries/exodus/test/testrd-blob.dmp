@@ -16,13 +16,13 @@ num_node_sets = 0
 num_side_sets = 0
 after ex_get_blob(exoid, &blobs[i]), error = 0
 Blob named 'Tempus' has id 100. It contains 10 entries.
-	
+
 after ex_get_blob(exoid, &blobs[i]), error = 0
 Blob named 'IOSS' has id 200. It contains 20 entries.
-	
+
 after ex_get_blob(exoid, &blobs[i]), error = 0
 Blob named 'Solver' has id 300. It contains 15 entries.
-	
+
 after ex_get_blobs(exoid, blb), error = 0
 Blob named 'Tempus' has id 100. It contains 10 entries.
 Blob named 'IOSS' has id 200. It contains 20 entries.

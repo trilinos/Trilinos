@@ -46,6 +46,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/DeviceAwareMPI.hpp>
 
 #include <stk_unit_test_utils/getOption.h>
 
@@ -85,6 +86,20 @@ typedef std::vector<std::pair<Ident,Ident>> LocalSearchResults;
 namespace stk {
 namespace unit_test_util {
 
+inline
+bool can_run_device_tests(MPI_Comm comm)
+{
+  const int numProcs = stk::parallel_machine_size(comm);
+  if (numProcs == 1) {
+    return true;
+  }
+#ifdef STK_ENABLE_GPU
+  return stk::have_device_aware_mpi();
+#else
+  return true;
+#endif
+}
+
 template<class VolumeType>
 VolumeType generateBoundingVolume(double x, double y, double z, double radius);
 
@@ -123,6 +138,55 @@ template <typename VolumeType>
 std::pair<VolumeType, IdentProc> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
 {
   return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), IdentProc(id,proc));
+}
+
+template<class BoxType>
+KOKKOS_FUNCTION
+BoxType device_generateBox(double x, double y, double z, double radius);
+
+template<>
+KOKKOS_INLINE_FUNCTION
+Point device_generateBox<Point>(double x, double y, double z, double /*radius*/)
+{
+  return Point(x,y,z);
+}
+
+template<>
+KOKKOS_INLINE_FUNCTION
+Sphere device_generateBox<Sphere>(double x, double y, double z, double radius)
+{
+  return Sphere(Point(x, y, z), radius);
+}
+
+template<>
+KOKKOS_INLINE_FUNCTION
+StkBox device_generateBox<StkBox>(double x, double y, double z, double radius)
+{
+  Point min_corner(x-radius, y-radius, z-radius);
+  Point max_corner(x+radius, y+radius, z+radius);
+  return StkBox(min_corner, max_corner);
+}
+
+template <typename BoxType, typename IdentProcType>
+KOKKOS_FUNCTION
+stk::search::BoxIdentProc<BoxType, IdentProcType> device_generateBoxIdentProc(double x, double y, double z,
+                                                                              double radius, int id, int proc)
+{
+  return stk::search::BoxIdentProc<BoxType, IdentProcType>{device_generateBox<BoxType>(x, y, z, radius),
+                                                           IdentProcType{id, proc}};
+}
+
+template <typename BoxType, typename IdentType>
+KOKKOS_FUNCTION
+stk::search::BoxIdent<BoxType, IdentType> device_generateBoxIdent(double x, double y, double z,
+                                                                  double radius, IdentType id)
+{
+  return stk::search::BoxIdent<BoxType, IdentType>{device_generateBox<BoxType>(x, y, z, radius), id};
+}
+
+template <typename BoxIdent>
+auto box_ident_to_pair(BoxIdent const& ident) {
+  return std::make_pair(ident.box, ident.ident);
 }
 
 //======================
@@ -210,117 +274,6 @@ inline void printPeformanceStats(double elapsedTime, MPI_Comm comm)
 
     }
 }
-
-namespace simple_fields {
-
-template<class VolumeType>
-VolumeType generateBoundingVolume(double x, double y, double z, double radius);
-
-template<>
-inline
-Point generateBoundingVolume<Point>(double x, double y, double z, double /*radius*/)
-{
-  return Point(x,y,z);
-}
-
-template<>
-inline
-Sphere generateBoundingVolume<Sphere>(double x, double y, double z, double radius)
-{
-  return Sphere(Point(x,y,z),radius);
-}
-
-//       ------------
-//      |            |
-//      |      radius|
-//      |      ------|
-//      |            |
-//      |            |
-//       ------------
-// width = 2*radius
-template<>
-inline
-StkBox generateBoundingVolume< StkBox >(double x, double y, double z, double radius)
-{
-  Point min_corner(x-radius,y-radius,z-radius);
-  Point max_corner(x+radius,y+radius,z+radius);
-  return StkBox(min_corner,max_corner);
-}
-
-template <typename VolumeType>
-std::pair<VolumeType, IdentProc> generateBoundingVolume(double x, double y, double z, double radius, int id, int proc)
-{
-  return std::make_pair(generateBoundingVolume<VolumeType>(x,y,z,radius), IdentProc(id,proc));
-}
-
-
-template<class BoxType>
-KOKKOS_FUNCTION
-BoxType device_generateBox(double x, double y, double z, double radius);
-
-template<>
-KOKKOS_INLINE_FUNCTION
-Point device_generateBox<Point>(double x, double y, double z, double /*radius*/)
-{
-  return Point(x,y,z);
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-Sphere device_generateBox<Sphere>(double x, double y, double z, double radius)
-{
-  return Sphere(Point(x, y, z), radius);
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-StkBox device_generateBox<StkBox>(double x, double y, double z, double radius)
-{
-  Point min_corner(x-radius, y-radius, z-radius);
-  Point max_corner(x+radius, y+radius, z+radius);
-  return StkBox(min_corner, max_corner);
-}
-
-template <typename BoxType, typename IdentProcType>
-KOKKOS_FUNCTION
-stk::search::BoxIdentProc<BoxType, IdentProcType> device_generateBoxIdentProc(double x, double y, double z,
-                                                                              double radius, int id, int proc)
-{
-  return stk::search::BoxIdentProc<BoxType, IdentProcType>{device_generateBox<BoxType>(x, y, z, radius),
-                                                           IdentProcType{id, proc}};
-}
-
-template <typename BoxType, typename IdentType>
-KOKKOS_FUNCTION
-stk::search::BoxIdent<BoxType, IdentType> device_generateBoxIdent(double x, double y, double z,
-                                                                  double radius, IdentType id)
-{
-  return stk::search::BoxIdent<BoxType, IdentType>{device_generateBox<BoxType>(x, y, z, radius), id};
-}
-
-template <typename BoxIdent>
-auto box_ident_to_pair(BoxIdent const& ident) {
-  return std::make_pair(ident.box, ident.ident);
-}
-
-//======================
-
-inline size_t getGoldValueForTest()
-{
-  return stk::unit_test_util::getGoldValueForTest();
-}
-
-inline void gatherResultstoProcZero(MPI_Comm comm, SearchResults& boxIdPairResults)
-{
-  stk::unit_test_util::gatherResultstoProcZero(comm, boxIdPairResults);
-}
-
-inline void printPeformanceStats(double elapsedTime, MPI_Comm comm)
-{
-  stk::unit_test_util::printPeformanceStats(elapsedTime, comm);
-}
-
-} // namespace simple_fields
 
 } // namespace unit_test_util
 } // namespace stk

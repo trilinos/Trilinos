@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
+#ifndef KOKKOSBLAS2_GEMV_ETI_SPEC_DECL_HPP_
+#define KOKKOSBLAS2_GEMV_ETI_SPEC_DECL_HPP_
+namespace KokkosBlas {
+namespace Impl {
+@BLAS2_GEMV_ETI_DECL_BLOCK@
+} //IMPL 
+} //Kokkos
+#endif

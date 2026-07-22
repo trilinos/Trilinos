@@ -20,9 +20,22 @@
 
 namespace MueLu {
 
+NoFactory::NoFactory() = default;
+
+NoFactory::~NoFactory() = default;
+
+const RCP<const NoFactory> NoFactory::getRCP() {
+  if (noFactory_.is_null())
+    noFactory_ = rcp(new NoFactory());
+
+  return noFactory_;
+}
+
 const NoFactory* NoFactory::get() {
   return getRCP().get();
 }
+
+void NoFactory::CallDeclareInput(Level& /* requestedLevel */) const {}
 
 RCP<const NoFactory> NoFactory::noFactory_ = Teuchos::null;
 

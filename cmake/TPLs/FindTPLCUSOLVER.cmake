@@ -1,17 +1,6 @@
 
-IF (NOT TPL_ENABLE_CUDA)
-  MESSAGE(FATAL_ERROR "\nCUSOLVER: This TPL requires CUDA")
-ELSE()
-  find_library(CUDA_cusolver_LIBRARY
-    cusolver
-    HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib
-  )
-  IF(CUDA_cusolver_LIBRARY STREQUAL "CUDA_cusolver_LIBRARY-NOTFOUND") 
-    MESSAGE(FATAL_ERROR "\nCUSOLVER: could not find cusolver library.")
-  ENDIF()
-  SET(TPL_CUSOLVER_LIBRARIES ${CUDA_cusolver_LIBRARY})
-ENDIF()
-
-tribits_tpl_find_include_dirs_and_libraries(CUSOLVER  REQUIRED_LIBS_NAMES  cusparse)
-
-unset(TPL_CUSOLVER_LIBRARIES)
+tribits_extpkg_create_imported_all_libs_target_and_config_file( CUSOLVER
+  INNER_FIND_PACKAGE_NAME  CUDAToolkit
+  IMPORTED_TARGETS_FOR_ALL_LIBS  CUDA::cusolver )
+# Above, the CUDA TPL should have already found CUDAToolkit so we just need to
+# grab the target from it to form the CUSPARSE::all_libs target.

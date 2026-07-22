@@ -1,23 +1,16 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef TESTVIEWSUBVIEW_HPP_
 #define TESTVIEWSUBVIEW_HPP_
 #include <gtest/gtest.h>
 
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.core_impl;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 #include <sstream>
 #include <iostream>
 #include <type_traits>
@@ -26,6 +19,7 @@
 
 //------------------------------------------------------------------------------
 
+// NOLINTBEGIN(bugprone-reserved-identifier)
 template <class...>
 struct _kokkos____________________static_test_failure_____;
 
@@ -77,6 +71,7 @@ struct static_expect_same {
           Expected, _kokkos__________actual_type_was__, Actual>,
       Expected, Actual>::type;
 };
+// NOLINTEND(bugprone-reserved-identifier)
 
 //------------------------------------------------------------------------------
 
@@ -148,7 +143,7 @@ void test_auto_1d() {
   const size_type numCols = 3;
 
   mv_type X = getView<Layout, Space>::get(numRows, numCols);
-  typename mv_type::HostMirror X_h = Kokkos::create_mirror_view(X);
+  typename mv_type::host_mirror_type X_h = Kokkos::create_mirror_view(X);
 
   fill_2D<mv_type, Space> f1(X, ONE);
 #if (HIP_VERSION_MAJOR == 5) && (HIP_VERSION_MINOR == 3)
@@ -401,7 +396,7 @@ void test_left_0() {
 template <class Space>
 void test_left_1(bool use_constr) {
   using view_type =
-      Kokkos::View<int*** * [2][3][4][5], Kokkos::LayoutLeft, Space>;
+      Kokkos::View<int**** [2][3][4][5], Kokkos::LayoutLeft, Space>;
 
   if (Kokkos::SpaceAccessibility<Kokkos::HostSpace,
                                  typename Space::memory_space>::accessible) {
@@ -702,7 +697,7 @@ void test_right_0() {
 template <class Space>
 void test_right_1(bool use_constr) {
   using view_type =
-      Kokkos::View<int*** * [2][3][4][5], Kokkos::LayoutRight, Space>;
+      Kokkos::View<int**** [2][3][4][5], Kokkos::LayoutRight, Space>;
 
   if (Kokkos::SpaceAccessibility<Kokkos::HostSpace,
                                  typename Space::memory_space>::accessible) {
@@ -866,10 +861,10 @@ struct FillView_3D {
   using view_t = Kokkos::View<int***, Layout, Space>;
   using rank_t = Kokkos::Rank<
       view_t::rank,
-      std::is_same<Layout, Kokkos::LayoutLeft>::value ? Kokkos::Iterate::Left
-                                                      : Kokkos::Iterate::Right,
-      std::is_same<Layout, Kokkos::LayoutLeft>::value ? Kokkos::Iterate::Left
-                                                      : Kokkos::Iterate::Right>;
+      std::is_same_v<Layout, Kokkos::LayoutLeft> ? Kokkos::Iterate::Left
+                                                 : Kokkos::Iterate::Right,
+      std::is_same_v<Layout, Kokkos::LayoutLeft> ? Kokkos::Iterate::Left
+                                                 : Kokkos::Iterate::Right>;
   using policy_t = Kokkos::MDRangePolicy<exec_t, rank_t>;
 
   view_t a;
@@ -894,10 +889,10 @@ struct FillView_4D {
   using view_t = Kokkos::View<int****, Layout, Space>;
   using rank_t = Kokkos::Rank<
       view_t::rank,
-      std::is_same<Layout, Kokkos::LayoutLeft>::value ? Kokkos::Iterate::Left
-                                                      : Kokkos::Iterate::Right,
-      std::is_same<Layout, Kokkos::LayoutLeft>::value ? Kokkos::Iterate::Left
-                                                      : Kokkos::Iterate::Right>;
+      std::is_same_v<Layout, Kokkos::LayoutLeft> ? Kokkos::Iterate::Left
+                                                 : Kokkos::Iterate::Right,
+      std::is_same_v<Layout, Kokkos::LayoutLeft> ? Kokkos::Iterate::Left
+                                                 : Kokkos::Iterate::Right>;
   using policy_t = Kokkos::MDRangePolicy<exec_t, rank_t>;
 
   view_t a;
@@ -923,10 +918,10 @@ struct FillView_5D {
   using view_t = Kokkos::View<int*****, Layout, Space>;
   using rank_t = Kokkos::Rank<
       view_t::rank,
-      std::is_same<Layout, Kokkos::LayoutLeft>::value ? Kokkos::Iterate::Left
-                                                      : Kokkos::Iterate::Right,
-      std::is_same<Layout, Kokkos::LayoutLeft>::value ? Kokkos::Iterate::Left
-                                                      : Kokkos::Iterate::Right>;
+      std::is_same_v<Layout, Kokkos::LayoutLeft> ? Kokkos::Iterate::Left
+                                                 : Kokkos::Iterate::Right,
+      std::is_same_v<Layout, Kokkos::LayoutLeft> ? Kokkos::Iterate::Left
+                                                 : Kokkos::Iterate::Right>;
   using policy_t = Kokkos::MDRangePolicy<exec_t, rank_t>;
 
   view_t a;
@@ -1020,11 +1015,11 @@ struct CheckSubviewCorrectness_2D_3D {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& ii, int& e) const {
-    const int i1 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i1 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? ii % b.extent(0)
                        : ii / b.extent(1);
 
-    const int i2 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i2 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? ii / b.extent(0)
                        : ii % b.extent(1);
 
@@ -1055,15 +1050,15 @@ struct CheckSubviewCorrectness_3D_3D {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& ii, int& e) const {
-    const int i0 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i0 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? ii % b.extent(0)
                        : ii / (b.extent(1) * b.extent(2));
 
-    const int i1 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i1 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? (ii / b.extent(0)) % b.extent(1)
                        : (ii / b.extent(2)) % b.extent(1);
 
-    const int i2 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i2 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? ii / (b.extent(0) * b.extent(1))
                        : ii % b.extent(2);
 
@@ -1094,21 +1089,21 @@ struct CheckSubviewCorrectness_3D_4D {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& ii, int& e) const {
-    const int i = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i = std::is_same_v<layout, Kokkos::LayoutLeft>
                       ? ii % b.extent(0)
                       : ii / (b.extent(1) * b.extent(2));
 
-    const int j = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int j = std::is_same_v<layout, Kokkos::LayoutLeft>
                       ? (ii / b.extent(0)) % b.extent(1)
                       : (ii / b.extent(2)) % b.extent(1);
 
-    const int k = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int k = std::is_same_v<layout, Kokkos::LayoutLeft>
                       ? ii / (b.extent(0) * b.extent(1))
                       : ii % b.extent(2);
 
     int i0, i1, i2, i3;
 
-    if (std::is_same<layout, Kokkos::LayoutLeft>::value) {
+    if (std::is_same_v<layout, Kokkos::LayoutLeft>) {
       i0 = i + offset_0;
       i1 = j;
       i2 = k + offset_2;
@@ -1152,15 +1147,15 @@ struct CheckSubviewCorrectness_3D_5D {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int& ii, int& e) const {
-    const int i2 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i2 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? ii % b.extent(0)
                        : ii / (b.extent(1) * b.extent(2));
 
-    const int i3 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i3 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? (ii / b.extent(0)) % b.extent(1)
                        : (ii / b.extent(2)) % b.extent(1);
 
-    const int i4 = std::is_same<layout, Kokkos::LayoutLeft>::value
+    const int i4 = std::is_same_v<layout, Kokkos::LayoutLeft>
                        ? ii / (b.extent(0) * b.extent(1))
                        : ii % b.extent(2);
 
@@ -1267,56 +1262,56 @@ template <class Space, class LayoutSub, class Layout, class LayoutOrg,
 void test_2d_subview_3d_impl_layout() {
   test_2d_subview_3d_impl_type<Space, int[N0][N1][N2], int[N1][N2], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, int[N0][N1][N2], int * [N2], LayoutSub,
+  test_2d_subview_3d_impl_type<Space, int[N0][N1][N2], int* [N2], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
   test_2d_subview_3d_impl_type<Space, int[N0][N1][N2], int**, LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
 
-  test_2d_subview_3d_impl_type<Space, int * [N1][N2], int[N1][N2], LayoutSub,
+  test_2d_subview_3d_impl_type<Space, int* [N1][N2], int[N1][N2], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, int * [N1][N2], int * [N2], LayoutSub,
+  test_2d_subview_3d_impl_type<Space, int* [N1][N2], int* [N2], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, int * [N1][N2], int**, LayoutSub, Layout,
+  test_2d_subview_3d_impl_type<Space, int* [N1][N2], int**, LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
 
-  test_2d_subview_3d_impl_type<Space, int* * [N2], int[N1][N2], LayoutSub,
+  test_2d_subview_3d_impl_type<Space, int** [N2], int[N1][N2], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, int* * [N2], int * [N2], LayoutSub,
-                               Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, int* * [N2], int**, LayoutSub, Layout,
+  test_2d_subview_3d_impl_type<Space, int** [N2], int* [N2], LayoutSub, Layout,
+                               LayoutOrg, MemTraits>();
+  test_2d_subview_3d_impl_type<Space, int** [N2], int**, LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
 
   test_2d_subview_3d_impl_type<Space, int***, int[N1][N2], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, int***, int * [N2], LayoutSub, Layout,
+  test_2d_subview_3d_impl_type<Space, int***, int* [N2], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
   test_2d_subview_3d_impl_type<Space, int***, int**, LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
 
   test_2d_subview_3d_impl_type<Space, const int[N0][N1][N2], const int[N1][N2],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, const int[N0][N1][N2], const int * [N2],
+  test_2d_subview_3d_impl_type<Space, const int[N0][N1][N2], const int* [N2],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
   test_2d_subview_3d_impl_type<Space, const int[N0][N1][N2], const int**,
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
 
-  test_2d_subview_3d_impl_type<Space, const int * [N1][N2], const int[N1][N2],
+  test_2d_subview_3d_impl_type<Space, const int* [N1][N2], const int[N1][N2],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, const int * [N1][N2], const int * [N2],
+  test_2d_subview_3d_impl_type<Space, const int* [N1][N2], const int* [N2],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, const int * [N1][N2], const int**,
+  test_2d_subview_3d_impl_type<Space, const int* [N1][N2], const int**,
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
 
-  test_2d_subview_3d_impl_type<Space, const int* * [N2], const int[N1][N2],
+  test_2d_subview_3d_impl_type<Space, const int** [N2], const int[N1][N2],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, const int* * [N2], const int * [N2],
+  test_2d_subview_3d_impl_type<Space, const int** [N2], const int* [N2],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, const int* * [N2], const int**, LayoutSub,
+  test_2d_subview_3d_impl_type<Space, const int** [N2], const int**, LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
 
   test_2d_subview_3d_impl_type<Space, const int***, const int[N1][N2],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_2d_subview_3d_impl_type<Space, const int***, const int * [N2], LayoutSub,
+  test_2d_subview_3d_impl_type<Space, const int***, const int* [N2], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
   test_2d_subview_3d_impl_type<Space, const int***, const int**, LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
@@ -1349,54 +1344,54 @@ template <class Space, class LayoutSub, class Layout, class LayoutOrg,
 void test_3d_subview_5d_impl_layout() {
   test_3d_subview_5d_impl_type<Space, int[N0][N1][N2][N3][N4], int[N2][N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int[N0][N1][N2][N3][N4], int * [N3][N4],
+  test_3d_subview_5d_impl_type<Space, int[N0][N1][N2][N3][N4], int* [N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int[N0][N1][N2][N3][N4], int* * [N4],
+  test_3d_subview_5d_impl_type<Space, int[N0][N1][N2][N3][N4], int** [N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
   test_3d_subview_5d_impl_type<Space, int[N0][N1][N2][N3][N4], int***,
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
 
-  test_3d_subview_5d_impl_type<Space, int * [N1][N2][N3][N4], int[N2][N3][N4],
+  test_3d_subview_5d_impl_type<Space, int* [N1][N2][N3][N4], int[N2][N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int * [N1][N2][N3][N4], int * [N3][N4],
+  test_3d_subview_5d_impl_type<Space, int* [N1][N2][N3][N4], int* [N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int * [N1][N2][N3][N4], int* * [N4],
+  test_3d_subview_5d_impl_type<Space, int* [N1][N2][N3][N4], int** [N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int * [N1][N2][N3][N4], int***, LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int* [N1][N2][N3][N4], int***, LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
 
-  test_3d_subview_5d_impl_type<Space, int* * [N2][N3][N4], int[N2][N3][N4],
+  test_3d_subview_5d_impl_type<Space, int** [N2][N3][N4], int[N2][N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int* * [N2][N3][N4], int * [N3][N4],
+  test_3d_subview_5d_impl_type<Space, int** [N2][N3][N4], int* [N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int* * [N2][N3][N4], int* * [N4],
-                               LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int* * [N2][N3][N4], int***, LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int** [N2][N3][N4], int** [N4], LayoutSub,
+                               Layout, LayoutOrg, MemTraits>();
+  test_3d_subview_5d_impl_type<Space, int** [N2][N3][N4], int***, LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
 
-  test_3d_subview_5d_impl_type<Space, int** * [N3][N4], int[N2][N3][N4],
+  test_3d_subview_5d_impl_type<Space, int*** [N3][N4], int[N2][N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int** * [N3][N4], int * [N3][N4],
-                               LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int** * [N3][N4], int* * [N4], LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int*** [N3][N4], int* [N3][N4], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int** * [N3][N4], int***, LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int*** [N3][N4], int** [N4], LayoutSub,
+                               Layout, LayoutOrg, MemTraits>();
+  test_3d_subview_5d_impl_type<Space, int*** [N3][N4], int***, LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
 
-  test_3d_subview_5d_impl_type<Space, int*** * [N4], int[N2][N3][N4], LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int**** [N4], int[N2][N3][N4], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int*** * [N4], int * [N3][N4], LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int**** [N4], int* [N3][N4], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int*** * [N4], int* * [N4], LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int**** [N4], int** [N4], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int*** * [N4], int***, LayoutSub, Layout,
+  test_3d_subview_5d_impl_type<Space, int**** [N4], int***, LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
 
   test_3d_subview_5d_impl_type<Space, int*****, int[N2][N3][N4], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int*****, int * [N3][N4], LayoutSub,
+  test_3d_subview_5d_impl_type<Space, int*****, int* [N3][N4], LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, int*****, int* * [N4], LayoutSub, Layout,
+  test_3d_subview_5d_impl_type<Space, int*****, int** [N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
   test_3d_subview_5d_impl_type<Space, int*****, int***, LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
@@ -1405,66 +1400,64 @@ void test_3d_subview_5d_impl_layout() {
                                const int[N2][N3][N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
   test_3d_subview_5d_impl_type<Space, const int[N0][N1][N2][N3][N4],
-                               const int * [N3][N4], LayoutSub, Layout,
+                               const int* [N3][N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
   test_3d_subview_5d_impl_type<Space, const int[N0][N1][N2][N3][N4],
-                               const int* * [N4], LayoutSub, Layout, LayoutOrg,
+                               const int** [N4], LayoutSub, Layout, LayoutOrg,
                                MemTraits>();
   test_3d_subview_5d_impl_type<Space, const int[N0][N1][N2][N3][N4],
                                const int***, LayoutSub, Layout, LayoutOrg,
                                MemTraits>();
 
-  test_3d_subview_5d_impl_type<Space, const int * [N1][N2][N3][N4],
+  test_3d_subview_5d_impl_type<Space, const int* [N1][N2][N3][N4],
                                const int[N2][N3][N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int * [N1][N2][N3][N4],
-                               const int * [N3][N4], LayoutSub, Layout,
+  test_3d_subview_5d_impl_type<Space, const int* [N1][N2][N3][N4],
+                               const int* [N3][N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int * [N1][N2][N3][N4],
-                               const int* * [N4], LayoutSub, Layout, LayoutOrg,
+  test_3d_subview_5d_impl_type<Space, const int* [N1][N2][N3][N4],
+                               const int** [N4], LayoutSub, Layout, LayoutOrg,
                                MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int * [N1][N2][N3][N4],
-                               const int***, LayoutSub, Layout, LayoutOrg,
-                               MemTraits>();
-
-  test_3d_subview_5d_impl_type<Space, const int* * [N2][N3][N4],
-                               const int[N2][N3][N4], LayoutSub, Layout,
-                               LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int* * [N2][N3][N4],
-                               const int * [N3][N4], LayoutSub, Layout,
-                               LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int* * [N2][N3][N4],
-                               const int* * [N4], LayoutSub, Layout, LayoutOrg,
-                               MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int* * [N2][N3][N4], const int***,
+  test_3d_subview_5d_impl_type<Space, const int* [N1][N2][N3][N4], const int***,
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
 
-  test_3d_subview_5d_impl_type<Space, const int** * [N3][N4],
+  test_3d_subview_5d_impl_type<Space, const int** [N2][N3][N4],
                                const int[N2][N3][N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int** * [N3][N4],
-                               const int * [N3][N4], LayoutSub, Layout,
+  test_3d_subview_5d_impl_type<Space, const int** [N2][N3][N4],
+                               const int* [N3][N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int** * [N3][N4], const int* * [N4],
-                               LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int** * [N3][N4], const int***,
+  test_3d_subview_5d_impl_type<Space, const int** [N2][N3][N4],
+                               const int** [N4], LayoutSub, Layout, LayoutOrg,
+                               MemTraits>();
+  test_3d_subview_5d_impl_type<Space, const int** [N2][N3][N4], const int***,
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
 
-  test_3d_subview_5d_impl_type<Space, const int*** * [N4],
+  test_3d_subview_5d_impl_type<Space, const int*** [N3][N4],
                                const int[N2][N3][N4], LayoutSub, Layout,
                                LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int*** * [N4], const int * [N3][N4],
+  test_3d_subview_5d_impl_type<Space, const int*** [N3][N4],
+                               const int* [N3][N4], LayoutSub, Layout,
+                               LayoutOrg, MemTraits>();
+  test_3d_subview_5d_impl_type<Space, const int*** [N3][N4], const int** [N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int*** * [N4], const int* * [N4],
+  test_3d_subview_5d_impl_type<Space, const int*** [N3][N4], const int***,
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int*** * [N4], const int***,
+
+  test_3d_subview_5d_impl_type<Space, const int**** [N4], const int[N2][N3][N4],
+                               LayoutSub, Layout, LayoutOrg, MemTraits>();
+  test_3d_subview_5d_impl_type<Space, const int**** [N4], const int* [N3][N4],
+                               LayoutSub, Layout, LayoutOrg, MemTraits>();
+  test_3d_subview_5d_impl_type<Space, const int**** [N4], const int** [N4],
+                               LayoutSub, Layout, LayoutOrg, MemTraits>();
+  test_3d_subview_5d_impl_type<Space, const int**** [N4], const int***,
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
 
   test_3d_subview_5d_impl_type<Space, const int*****, const int[N2][N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int*****, const int * [N3][N4],
+  test_3d_subview_5d_impl_type<Space, const int*****, const int* [N3][N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
-  test_3d_subview_5d_impl_type<Space, const int*****, const int* * [N4],
+  test_3d_subview_5d_impl_type<Space, const int*****, const int** [N4],
                                LayoutSub, Layout, LayoutOrg, MemTraits>();
   test_3d_subview_5d_impl_type<Space, const int*****, const int***, LayoutSub,
                                Layout, LayoutOrg, MemTraits>();
@@ -2109,7 +2102,7 @@ void test_unmanaged_subview_reset() {
 
 template <std::underlying_type_t<Kokkos::MemoryTraitsFlags> MTF>
 struct TestSubviewMemoryTraitsConstruction {
-  void operator()() const noexcept {
+  void operator()() const {
     using memory_traits_type = Kokkos::MemoryTraits<MTF>;
     using view_type =
         Kokkos::View<double*, Kokkos::HostSpace, memory_traits_type>;
@@ -2195,16 +2188,18 @@ struct get_view_type<Kokkos::View<T, Args...>> {
   using type = T;
 };
 
+// NOLINTBEGIN(bugprone-reserved-identifier)
 template <class T>
 struct
     ___________________________________TYPE_DISPLAY________________________________________;
 #define TYPE_DISPLAY(...)                                                                           \
   typename ___________________________________TYPE_DISPLAY________________________________________< \
       __VA_ARGS__>::type notdefined;
+// NOLINTEND(bugprone-reserved-identifier)
 
 template <class Space, class Layout>
 struct TestSubviewStaticSizes {
-  Kokkos::View<int * [10][5][2], Layout, Space> a;
+  Kokkos::View<int* [10][5][2], Layout, Space> a;
   Kokkos::View<int[6][7][8], Layout, Space> b;
 
   KOKKOS_INLINE_FUNCTION
@@ -2231,7 +2226,7 @@ struct TestSubviewStaticSizes {
 
     auto sub_a_4 = Kokkos::subview(a, Kokkos::ALL, 0, Kokkos::ALL, Kokkos::ALL);
     typename static_expect_same<
-        /* expected */ int * [5][2],
+        /* expected */ int* [5][2],
         /*  actual  */ typename get_view_type<decltype(sub_a_4)>::type>::type
         test_4 = 0;
 
@@ -2253,14 +2248,14 @@ struct TestSubviewStaticSizes {
     auto sub_a_7 = Kokkos::subview(a, Kokkos::ALL, 0, Kokkos::make_pair(0, 1),
                                    Kokkos::ALL);
     typename static_expect_same<
-        /* expected */ int* * [2],
+        /* expected */ int** [2],
         /*  actual  */ typename get_view_type<decltype(sub_a_7)>::type>::type
         test_7 = 0;
 
     auto sub_a_8 =
         Kokkos::subview(a, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
     typename static_expect_same<
-        /* expected */ int * [10][5][2],
+        /* expected */ int* [10][5][2],
         /*  actual  */ typename get_view_type<decltype(sub_a_8)>::type>::type
         test_8 = 0;
 
@@ -2279,7 +2274,7 @@ struct TestSubviewStaticSizes {
     auto sub_b_3 =
         Kokkos::subview(b, Kokkos::make_pair(2, 3), Kokkos::ALL, Kokkos::ALL);
     typename static_expect_same<
-        /* expected */ int * [7][8],
+        /* expected */ int* [7][8],
         /*  actual  */ typename get_view_type<decltype(sub_b_3)>::type>::type
         test_11 = 0;
 
@@ -2294,11 +2289,10 @@ template <class Space>
 struct TestExtentsStaticTests {
   using test1 = typename static_expect_same<
       /* expected */
-      Kokkos::Experimental::Extents<Kokkos::Experimental::dynamic_extent,
-                                    Kokkos::Experimental::dynamic_extent, 1, 2,
-                                    3>,
+      Kokkos::Experimental::Extents<Kokkos::dynamic_extent,
+                                    Kokkos::dynamic_extent, 1, 2, 3>,
       /* actual */
-      typename Kokkos::Impl::ParseViewExtents<double* * [1][2][3]>::type>::type;
+      typename Kokkos::Impl::ParseViewExtents<double** [1][2][3]>::type>::type;
 
   using test2 = typename static_expect_same<
       /* expected */
@@ -2318,6 +2312,56 @@ struct TestExtentsStaticTests {
       /* actual */
       typename Kokkos::Impl::ParseViewExtents<double>::type>::type;
 };
+
+template <class ExecutionSpace, class RankType, std::size_t... Is>
+void test_subview_extents_helper_index(std::index_sequence<Is...>) {
+  using view_type =
+      Kokkos::View<RankType, typename ExecutionSpace::memory_space>;
+  view_type v("v", ((Is * 0) + 1)...);
+
+  auto sv = Kokkos::subview(v, (Is * 0)...);
+  ASSERT_DEATH({ auto sv_fail = Kokkos::subview(v, ((Is * 0) + 1)...); },
+               "Kokkos::subview bounds error");
+}
+
+template <class ExecutionSpace, class RankType, std::size_t... Is>
+void test_subview_extents_helper_range(std::index_sequence<Is...>) {
+  using view_type =
+      Kokkos::View<RankType, typename ExecutionSpace::memory_space>;
+  view_type v("v", 1, ((Is * 0) + 1)...);
+
+  auto sv = Kokkos::subview(v, std::pair{0, 1}, (Is * 0)...);
+  ASSERT_DEATH(
+      {
+        auto sv_fail = Kokkos::subview(v, std::pair{0, 2}, (Is * 0)...);
+      },
+      "Kokkos::subview bounds error");
+  ASSERT_DEATH(
+      {
+        auto sv_fail = Kokkos::subview(v, Kokkos::pair{0, 2}, (Is * 0)...);
+      },
+      "Kokkos::subview bounds error");
+}
+
+template <int rank>
+struct DynamicRank {
+  using type = typename DynamicRank<rank - 1>::type*;
+};
+
+template <>
+struct DynamicRank<0> {
+  using type = int;
+};
+
+template <int rank, class ExecutionSpace>
+void test_subview_extents() {
+  test_subview_extents_helper_index<ExecutionSpace,
+                                    typename DynamicRank<rank>::type>(
+      std::make_index_sequence<rank>());
+  test_subview_extents_helper_range<ExecutionSpace,
+                                    typename DynamicRank<rank>::type>(
+      std::make_index_sequence<rank - 1>());
+}
 
 }  // namespace TestViewSubview
 

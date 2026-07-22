@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOS_ALGORITHMS_UNITTESTS_TEST_RANDOM_HPP
 #define KOKKOS_ALGORITHMS_UNITTESTS_TEST_RANDOM_HPP
@@ -21,10 +8,18 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
-#include <Kokkos_DynRankView.hpp>
 #include <Kokkos_Timer.hpp>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+import kokkos.dyn_rank_view;
+import kokkos.random;
+#else
 #include <Kokkos_Core.hpp>
+#include <Kokkos_DynRankView.hpp>
 #include <Kokkos_Random.hpp>
+#endif
+#include <impl/Kokkos_Half_FloatingPointWrapper.hpp>
 #include <cmath>
 #include <chrono>
 #include <vector>
@@ -75,16 +70,6 @@ struct RandomProperties {
     return *this;
   }
 };
-
-// FIXME_OPENMPTARGET: Need this for OpenMPTarget because contra to the standard
-// llvm requires the binary operator defined not just the +=
-KOKKOS_INLINE_FUNCTION
-RandomProperties operator+(const RandomProperties& org,
-                           const RandomProperties& add) {
-  RandomProperties val = org;
-  val += add;
-  return val;
-}
 
 template <class GeneratorPool, class Scalar>
 struct test_random_functor {
@@ -281,7 +266,7 @@ struct test_random_scalar {
       double covariance_eps =
           result.covariance / num_draws / 2 / variance_expect;
 #if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
-      if (!std::is_same<Scalar, Kokkos::Experimental::bhalf_t>::value) {
+      if (!std::is_same_v<Scalar, Kokkos::Experimental::bhalf_t>) {
 #endif
         EXPECT_LT(std::abs(mean_eps), tolerance);
         EXPECT_LT(std::abs(variance_eps), 1.5 * tolerance);
@@ -312,7 +297,7 @@ struct test_random_scalar {
           (result.covariance / HIST_DIM1D - covariance_expect) / mean_expect;
 
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
-      if (std::is_same<Scalar, Kokkos::Experimental::half_t>::value) {
+      if (std::is_same_v<Scalar, Kokkos::Experimental::half_t>) {
         mean_eps_expect       = 0.0003;
         variance_eps_expect   = 1.0;
         covariance_eps_expect = 5.0e4;
@@ -320,7 +305,7 @@ struct test_random_scalar {
 #endif
 
 #if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
-      if (!std::is_same<Scalar, Kokkos::Experimental::bhalf_t>::value) {
+      if (!std::is_same_v<Scalar, Kokkos::Experimental::bhalf_t>) {
 #endif
         EXPECT_LT(std::abs(mean_eps), mean_eps_expect);
         EXPECT_LT(std::abs(variance_eps), variance_eps_expect);
@@ -358,13 +343,13 @@ struct test_random_scalar {
           (result.covariance / HIST_DIM1D - covariance_expect) / mean_expect;
 
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
-      if (std::is_same<Scalar, Kokkos::Experimental::half_t>::value) {
+      if (std::is_same_v<Scalar, Kokkos::Experimental::half_t>) {
         variance_factor = 7;
       }
 #endif
 
 #if defined(KOKKOS_BHALF_T_IS_FLOAT) && !KOKKOS_BHALF_T_IS_FLOAT
-      if (!std::is_same<Scalar, Kokkos::Experimental::bhalf_t>::value) {
+      if (!std::is_same_v<Scalar, Kokkos::Experimental::bhalf_t>) {
 #endif
         EXPECT_LT(std::abs(mean_eps), tolerance);
         EXPECT_LT(std::abs(variance_eps), variance_factor);
@@ -479,13 +464,19 @@ struct generate_random_stream {
   ViewType vals;
   GeneratorPool rand_pool;
   int samples;
+  bool use_specific_gen;
 
-  generate_random_stream(ViewType vals_, GeneratorPool rand_pool_, int samples_)
-      : vals(vals_), rand_pool(rand_pool_), samples(samples_) {}
+  generate_random_stream(ViewType vals_, GeneratorPool rand_pool_, int samples_,
+                         bool use_specific_gen_)
+      : vals(vals_),
+        rand_pool(rand_pool_),
+        samples(samples_),
+        use_specific_gen(use_specific_gen_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(int i) const {
-    typename GeneratorPool::generator_type rand_gen = rand_pool.get_state();
+    typename GeneratorPool::generator_type rand_gen =
+        use_specific_gen ? rand_pool.get_state(i) : rand_pool.get_state();
 
     for (int k = 0; k < samples; k++) vals(i, k) = rand_gen.urand64();
 
@@ -506,9 +497,9 @@ void test_duplicate_stream() {
   Pool rand_pool(42);
   ViewType vals_d("Vals", n_streams, samples);
 
-  Kokkos::parallel_for(
-      Kokkos::RangePolicy<ExecutionSpace>(0, n_streams),
-      generate_random_stream<ExecutionSpace, Pool>(vals_d, rand_pool, samples));
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0, n_streams),
+                       generate_random_stream<ExecutionSpace, Pool>(
+                           vals_d, rand_pool, samples, false));
 
   auto vals_h =
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, vals_d);
@@ -537,6 +528,68 @@ void test_duplicate_stream() {
     while (k < samples && vals_h(idx1, k) == vals_h(idx2, k)) k++;
     ASSERT_LT(k, samples) << "Duplicate streams found";
   }
+}
+
+template <class ExecutionSpace, class GeneratorPool>
+struct compare_random_streams {
+  using ViewType = Kokkos::View<uint64_t**, ExecutionSpace>;
+
+  ViewType vals;
+  GeneratorPool rand_pool;
+  int samples;
+
+  compare_random_streams(ViewType vals_, GeneratorPool rand_pool_, int samples_)
+      : vals(vals_), rand_pool(rand_pool_), samples(samples_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(int i, std::size_t& mismatches) const {
+    // this is problematic: on a GPU when launching with more than a single
+    // thread the generator returned is in principle random, using atomic
+    // locks to acquire a state.
+    // but we only launch it with a single thread so its ok.
+    typename GeneratorPool::generator_type rand_gen = rand_pool.get_state(i);
+
+    for (int k = 0; k < samples; k++)
+      if (vals(i, k) != rand_gen.urand64()) mismatches++;
+
+    rand_pool.free_state(rand_gen);
+  }
+};
+
+template <class ExecutionSpace, class Pool, class... Args>
+void test_async_initialization(Args... args) {
+  // using 2D View here to reuse functions from other test
+  using ViewType = Kokkos::View<uint64_t**, ExecutionSpace>;
+
+  int samples = 123456;
+
+  // use default execution space instance to generate reference values
+  Pool rand_pool_A(args...);
+
+  ViewType vals_d("Vals", 1, samples);
+  // create two, distinct ExecutionSpace instances
+  auto instances =
+      Kokkos::Experimental::partition_space(ExecutionSpace{}, 1, 1);
+  // use first instance to initialize values of vals_d
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<ExecutionSpace>(instances.at(0), 0, 1),
+      generate_random_stream<ExecutionSpace, Pool>(vals_d, rand_pool_A, samples,
+                                                   true));
+  instances.at(0).fence();
+
+  // use second instance to initialize another Pool using the same seed
+  Pool rand_pool_B(instances.at(1), args...);
+
+  std::size_t mismatches;
+  // compare values in stream of rand_pool_B with vals_d
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<ExecutionSpace>(instances.at(1), 0, 1),
+      compare_random_streams<ExecutionSpace, Pool>(vals_d, rand_pool_B,
+                                                   samples),
+      mismatches);
+
+  EXPECT_EQ(mismatches, 0lu) << "Stream from async constructed pool does not "
+                                "match stream from default constructed pool";
 }
 
 }  // namespace AlgoRandomImpl
@@ -581,15 +634,8 @@ TEST(TEST_CATEGORY, Random_XorShift1024_0) {
 
 TEST(TEST_CATEGORY, Multi_streams) {
   using ExecutionSpace = TEST_EXECSPACE;
-#ifdef KOKKOS_ENABLE_OPENMPTARGET
-  if constexpr (std::is_same_v<ExecutionSpace,
-                               Kokkos::Experimental::OpenMPTarget>) {
-    GTEST_SKIP() << "Libomptarget error";  // FIXME_OPENMPTARGET
-  }
-#endif
-
 #if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_IMPL_ARCH_NVIDIA_GPU)
-  if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Experimental::SYCL>) {
+  if constexpr (std::is_same_v<ExecutionSpace, Kokkos::SYCL>) {
     GTEST_SKIP() << "Failing on NVIDIA GPUs";  // FIXME_SYCL
   }
 #endif
@@ -599,6 +645,13 @@ TEST(TEST_CATEGORY, Multi_streams) {
 
   AlgoRandomImpl::test_duplicate_stream<ExecutionSpace, Pool64>();
   AlgoRandomImpl::test_duplicate_stream<ExecutionSpace, Pool1024>();
+
+  // Test with construction from seed
+  AlgoRandomImpl::test_async_initialization<ExecutionSpace, Pool64>(42);
+  AlgoRandomImpl::test_async_initialization<ExecutionSpace, Pool1024>(42);
+  // Test with construction from seed and num_states
+  AlgoRandomImpl::test_async_initialization<ExecutionSpace, Pool64>(42, 1);
+  AlgoRandomImpl::test_async_initialization<ExecutionSpace, Pool1024>(42, 1);
 }
 
 }  // namespace Test

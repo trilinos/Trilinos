@@ -68,112 +68,14 @@ template <int DIM>
 class TriFixtureImpl
 {
  public:
-  typedef double                   Scalar;
-  typedef Field<Scalar, Cartesian> CoordFieldType;
-
-  /**
-   * Set up meta data to support this fixture. Meta data is left uncommitted
-   * to allow additional modifications by the client.
-   */
-  // The nz argument is ignored, only here to allow use in templated functions that also operate on 3D fixtures
-  TriFixtureImpl(MetaData& meta, BulkData& bulk, size_t nx, size_t ny, size_t nz, size_t nid_start, size_t eid_start);
-
-  TriFixtureImpl(stk::ParallelMachine pm,
-                 size_t nx,
-                 size_t ny,
-                 stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA);
-
-  TriFixtureImpl(stk::ParallelMachine pm,
-                 size_t nx,
-                 size_t ny,
-                 const std::string& coordsName,
-                 stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA);
-
-  const int         m_spatial_dimension;
-
- private:
-  std::shared_ptr<BulkData> m_bulk_p;
-
- public:
-  const size_t      m_nx;
-  const size_t      m_ny;
-  MetaData &        m_meta;
-  BulkData &        m_bulk_data;
-  PartVector        m_elem_parts;
-  PartVector        m_node_parts;
-  CoordFieldType &  m_coord_field ;
-  const size_t      m_node_id_start = 1;
-  const size_t      m_elem_id_start = 1;
-  stk::topology     m_elem_topology;
-  stk::topology     m_face_topology;
-
-  size_t num_nodes() const {
-    return (m_nx+1)*(m_ny+1);
+  static std::string name() { 
+    if constexpr ( DIM == 2 ) {
+      return "TriFixture";
+    }
+    else {
+      return "TriShellFixture";
+    }
   }
-
-  size_t num_elements() const {
-    return 2*(m_nx)*(m_ny);
-  }
-
-  /**
-   * Thinking in terms of a 3D grid of nodes, get the id of the node in
-   * the (x, y, z) position.
-   */
-  EntityId node_id( size_t x , size_t y ) const  {
-    return m_node_id_start + x + ( m_nx + 1 ) * y;
-  }
-
-  /**
-   * Thinking in terms of a 3D grid of nodes, get the node in the (x, y, z)
-   * position. Return NULL if this process doesn't know about this node.
-   */
-  Entity node( size_t x , size_t y ) const {
-    return m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id(x, y) );
-  }
-
-  /**
-   * Thinking in terms of a 3D grid of nodes, compute the (x, y, z) position
-   * of a node given it's id.
-   */
-  void node_x_y( EntityId entity_id, size_t &x , size_t &y ) const;
-
-  /**
-   * Thinking in terms of a 3D grid of elements, compute the (x, y, z) position
-   * of an element given it's id.
-   */
-  void quad_x_y( EntityId entity_id, size_t &x , size_t &y ) const;
-
-  /**
-   * Create the mesh (into m_bulk_data).
-   */
-  void generate_mesh(const CoordinateMapping & coordMap = CartesianCoordinateMapping());
-
-  void generate_mesh( std::vector<size_t> & element_ids_on_this_processor, const CoordinateMapping & coordMap = CartesianCoordinateMapping());
-
- private:
-  typedef std::multimap<EntityId, int> NodeToProcsMMap;
-
-  NodeToProcsMMap m_nodes_to_procs;
-
-  TriFixtureImpl();
-  TriFixtureImpl( const TriFixtureImpl &);
-  TriFixtureImpl & operator=(const TriFixtureImpl &);
-
-  void fill_node_map( int proc_rank);
-};
-
-} // impl
-
-using TriFixture = impl::TriFixtureImpl<2>;
-using TriShellFixture = impl::TriFixtureImpl<3>;
-
-namespace simple_fields {
-namespace impl {
-
-template <int DIM>
-class TriFixtureImpl
-{
- public:
   typedef double        Scalar;
   typedef Field<Scalar> CoordFieldType;
 
@@ -272,8 +174,6 @@ class TriFixtureImpl
 
 using TriFixture = impl::TriFixtureImpl<2>;
 using TriShellFixture = impl::TriFixtureImpl<3>;
-
-} // namespace simple_fields
 
 } // fixtures
 } // mesh

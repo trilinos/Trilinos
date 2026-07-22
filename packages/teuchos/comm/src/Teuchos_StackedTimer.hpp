@@ -1,40 +1,10 @@
 // @HEADER
-// ***********************************************************************
-//
+// *****************************************************************************
 //                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ***********************************************************************
+// Copyright 2004 NTESS and the Teuchos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
 
 #ifndef TEUCHOS_STACKED_TIMER_HPP
@@ -46,14 +16,24 @@
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_EnvVariables.hpp"
 #include "Teuchos_PerformanceMonitorBase.hpp"
+#include "Teuchos_Behavior.hpp"
+#include "TeuchosComm_config.h" // for HAVE_TEUCHOSCOMM_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+#include "checkpoint/checkpoint.h"
+#endif
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+#include "Kokkos_Core.hpp"
+#endif
 #include <string>
 #include <vector>
+#include <stack>
 #include <cassert>
 #include <chrono>
 #include <climits>
-#include <cstdlib> // for std::getenv and atoi
-#include <ctime> // for timestamp support
+#include <cstdlib> // for atoi
+#include <ctime>   // for timestamp support
 #include <iostream>
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
@@ -86,7 +66,36 @@ public:
 
   using Clock = std::chrono::high_resolution_clock;
 
-  BaseTimer() : accumulation_(0.0), count_started_(0), count_updates_(0), running_(false) {}
+  BaseTimer() : accumulation_(0.0), accumulationSquared_(0.0), count_started_(0), count_updates_(0), running_(false) {}
+
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+  /// For serialization only
+  explicit BaseTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) {}
+
+  /// Macro for serialization only
+  magistrate_virtual_serialize_root()
+
+  /// Serialize object with magistrate
+  template<typename Serializer>
+  void serialize(Serializer& s) {
+
+    // Timers must be stopped when storing data
+    if (s.isPacking()) {
+      TEUCHOS_ASSERT(!running_);
+    }
+
+    // Don't serialize start_time_ or running_, these are only used
+    // when timer is running.
+    s | accumulation_
+      | accumulationSquared_
+      | count_started_
+      | count_updates_;
+
+    if (s.isUnpacking()) {
+      running_ = false;
+    }
+  }
+#endif
 
   /// Start a currently stopped timer
   void start(){
@@ -102,7 +111,9 @@ public:
   void stop(){
     if (!running_)
       error_out("Base_Timer:stop Failed timer not running");
-    accumulation_ += std::chrono::duration_cast<std::chrono::duration<double>>(Clock::now() - start_time_).count();
+    auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(Clock::now() - start_time_).count();
+    accumulation_ += elapsed;
+    accumulationSquared_ += elapsed*elapsed;
     running_ = false;
   }
 
@@ -113,7 +124,10 @@ public:
   double accumulatedTime() const {return accumulation_;}
 
   /// Setter for accumulated time
-  void setAccumulatedTime(double accum=0)  {accumulation_=accum;}
+  void setAccumulatedTime(double accum = 0) { accumulation_ = accum; }
+
+  /// Setter for squared accumulated time
+  void setAccumulatedTimeSquared(double accumSq=0)  {accumulationSquared_=accumSq;}
 
   /**
    * \brief return the average time per item updated
@@ -142,6 +156,22 @@ public:
   double accumulatedTimePerTimerCall() const {
     if (count_started_> 0) {
       return accumulation_/count_started_;
+    } else {
+      return 0;
+    }
+  }
+
+  /**
+   * \brief return the std dev in time per timer start/stop
+   *
+   * This returns the standard deviation in time that the code spends between
+   * a call to start and stop.  If it is running than it will not include the current time
+   * @return std dev in time per start/stop pair
+   */
+  double timePerCallStdDev() const {
+    if (count_started_ > 0) {
+      double mean = accumulatedTimePerTimerCall();
+      return sqrt(std::max<double>(accumulationSquared_ / count_started_ - mean*mean, 0.0));
     } else {
       return 0;
     }
@@ -183,9 +213,16 @@ public:
   { count_updates_ = num_updates; }
 
   struct TimeInfo {
-    TimeInfo():time(0.0), count(0), updates(0), running(false){}
-    TimeInfo(BaseTimer* t): time(t->accumulation_), count(t->count_started_), updates(t->count_updates_), running(t->running()) {}
+    TimeInfo():time(0.0), stdDev(0.0), count(0), updates(0), running(false){}
+    TimeInfo(BaseTimer* t): time(t->accumulation_), stdDev(t->timePerCallStdDev()), count(t->count_started_), updates(t->count_updates_), running(t->running()) {}
+    bool operator ==(const TimeInfo& ti) const
+    {return (time == ti.time) &&
+            (stdDev == ti.stdDev) &&
+            (count == ti.count) &&
+            (updates == ti.updates) &&
+            (running == ti.running);}
     double time;
+    double stdDev;
     unsigned long count;
     unsigned long long updates;
     bool running;
@@ -193,6 +230,7 @@ public:
 
 protected:
   double accumulation_;       // total time
+  double accumulationSquared_;  // Sum of squares of elapsed times
   unsigned long count_started_; // Number of times this timer has been started
   unsigned long long count_updates_; // Total count of items updated during this timer
   Clock::time_point start_time_;
@@ -261,7 +299,6 @@ protected:
     {
       if ( start_timer )
         BaseTimer::start();
-
     }
 
     /// Copy constructor
@@ -271,6 +308,37 @@ protected:
       for (unsigned i=0;i<sub_timers_.size();++i)
         sub_timers_[i].parent_ = this;
     }
+
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+    /// For serialization only
+    LevelTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) : parent_(nullptr) {}
+
+    // For serialization
+    magistrate_virtual_serialize_derived_from(Teuchos::BaseTimer)
+
+    /// For checkpointing with magistrate
+    template<typename Serializer>
+    void serialize(Serializer& s) {
+
+      s | level_;
+      s | name_;
+
+      // Manually handle the sub timers vector. The parent pointer
+      // needs to be registered before the object is constructed.
+      size_t sub_timer_size = sub_timers_.size();
+      s | sub_timer_size;
+
+      if (s.isUnpacking()) {
+        sub_timers_.resize(sub_timer_size);
+        for (auto& child : sub_timers_) {
+          child.parent_ = this;
+        }
+      }
+      for (size_t i=0; i < sub_timers_.size(); ++i) {
+        s | sub_timers_[i];
+      }
+    }
+#endif
 
     /**
      * Start a sub timer of a given name, create if doesn't exist
@@ -315,6 +383,11 @@ protected:
 
       std::string full_name = parent_name + my_name;
       return full_name;
+    }
+
+    std::string get_name() const {
+      std::string my_name(name_);
+      return my_name;
     }
 
     /**
@@ -446,7 +519,7 @@ protected:
      * @return pointer to BaseTimer (nullptr if none found)
      */
     const BaseTimer* findBaseTimer(const std::string &name) const;
-    
+
      /**
       * Return the time info for a given string
       * @param name input string to search for
@@ -476,34 +549,74 @@ public:
     if (start_base_timer)
       this->startBaseTimer();
 
-    auto check_verbose = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMERS");
+    auto check_verbose = Teuchos::getEnvironmentVariableValue("TEUCHOS_ENABLE_VERBOSE_TIMERS");
     if (check_verbose != nullptr)
       enable_verbose_ = true;
 
-    auto check_timestamp = std::getenv("TEUCHOS_ENABLE_VERBOSE_TIMESTAMP_LEVELS");
+    auto check_timestamp = Teuchos::getEnvironmentVariableValue("TEUCHOS_ENABLE_VERBOSE_TIMESTAMP_LEVELS");
     if (check_timestamp != nullptr) {
       verbose_timestamp_levels_ = std::atoi(check_timestamp);
     }
   }
 
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+  explicit StackedTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) {}
+
+  template<typename Serializer>
+  void serialize(Serializer& s) {
+    s | timer_;
+    s | enable_verbose_;
+    s | verbose_timestamp_levels_;
+    s | enable_timers_;
+
+    if (s.isUnpacking()) {
+      // Timer is always stopped before serializing
+      top_ = &timer_;
+      // Can't serialize an ostream pointer so just set to std::cout
+      verbose_ostream_ = Teuchos::rcpFromRef(std::cout);
+      global_mpi_aggregation_called_ = false;
+    }
+  }
+#endif
+
+  std::string name() {
+    return timer_.get_full_name();
+  }
+
   /**
    * Start the base level timer only
    */
-  void startBaseTimer() {
+  void startBaseTimer(const bool push_kokkos_profiling_region = true) {
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+    // Fence before starting timer to ignore async kernels started before this timer starts
+    if (Behavior::fenceTimers()) {
+      Kokkos::fence("timer_fence_begin_"+timer_.get_name());
+    }
+#endif
     timer_.BaseTimer::start();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-    ::Kokkos::Tools::pushRegion(timer_.get_full_name());
+    if (push_kokkos_profiling_region) {
+      ::Kokkos::Tools::pushRegion(timer_.get_name());
+    }
 #endif
   }
 
   /**
    * Stop the base level timer only
    */
-  void stopBaseTimer() {
-    timer_.BaseTimer::stop();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-    ::Kokkos::Tools::popRegion();
+  void stopBaseTimer(const bool pop_kokkos_profiling_region = true) {
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+    // Fence before stopping the timer to include async kokkos kernels launched within this timer
+    if (Behavior::fenceTimers()) {
+      Kokkos::fence("timer_fence_end_"+timer_.get_name());
+    }
 #endif
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+    if (pop_kokkos_profiling_region) {
+      ::Kokkos::Tools::popRegion();
+    }
+#endif
+    timer_.BaseTimer::stop();
   }
 
   /**
@@ -514,15 +627,22 @@ public:
   void start(const std::string name,
              const bool push_kokkos_profiling_region = true) {
     if (enable_timers_) {
-      if (top_ == nullptr)
+      if (top_ == nullptr) {
         top_ = timer_.start(name.c_str());
-      else
+      } else {
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+        // Fence before starting timer to ignore async kernels started before this timer starts
+        if (Behavior::fenceTimers()) {
+          Kokkos::fence("timer_fence_begin_"+name);
+        }
+#endif
         top_ = top_->start(name.c_str());
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-      if (push_kokkos_profiling_region) {
-        ::Kokkos::Tools::pushRegion(name);
-      }
+        if (push_kokkos_profiling_region) {
+          ::Kokkos::Tools::pushRegion(name);
+        }
 #endif
+      }
     }
     if (enable_verbose_) {
       if (!verbose_timestamp_levels_) {
@@ -553,15 +673,22 @@ public:
   void stop(const std::string &name,
             const bool pop_kokkos_profiling_region = true) {
     if (enable_timers_) {
-      if (top_)
-        top_ = top_->stop(name);
-      else
-        timer_.BaseTimer::stop();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-      if (pop_kokkos_profiling_region) {
-        ::Kokkos::Tools::popRegion();
-      }
+      if (top_) {
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+        // Fence before stopping the timer to include async kokkos kernels launched within this timer
+        if (Behavior::fenceTimers()) {
+          Kokkos::fence("timer_fence_end_"+name);
+        }
 #endif
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+        if (pop_kokkos_profiling_region) {
+          ::Kokkos::Tools::popRegion();
+        }
+#endif
+        top_ = top_->stop(name);
+      } else {
+        timer_.BaseTimer::stop();
+      }
     }
     if (enable_verbose_) {
       if (!verbose_timestamp_levels_) {
@@ -627,7 +754,7 @@ public:
      else
        return timer_.accumulatedTimePerTimerCall(name);
    }
-  
+
   /**
    * Return pointer to the BaseTimer corresponding to a given string (full string name)
    * @param name input string to search for
@@ -661,20 +788,21 @@ public:
 
       @param output_fraction Print the timer fractions within a level.
       @param output_total_updates Print the updates counter.
-      @param output_historgram Print the histogram.
+      @param output_histogram Print the histogram.
       @param output_minmax Print the min max and standard deviation across MPI processes.
-      @param num_histogram The number of equally size bickets to use in the histogram.
+      @param num_histogram The number of equally size buckets to use in the histogram.
       @param max_level The number of levels in the stacked timer to print (default prints all levels).
       @param print_warnings Print any relevant warnings on stacked timer use.
-      @param align_columns Output will align the columsn of stacked timer data.
+      @param align_columns Output will align the columns of stacked timer data.
       @param print_names_before_values If set to true, writes the timer names before values.
       @param drop_time If a timer has a total time less that this value, the timer will not be printed and the total time of that timer will be added to the Remainder. Useful for ignoring negligible timers. Default is -1.0 to force printing of all timers even if they have zero accumulated time.
+      @param output_per_proc_stddev Output the minimum and maximum across MPI processes of the per call standard deviation.
    */
   struct OutputOptions {
     OutputOptions() : output_fraction(false), output_total_updates(false), output_histogram(false),
                       output_minmax(false), output_proc_minmax(false), num_histogram(10), max_levels(INT_MAX),
                       print_warnings(true), align_columns(false), print_names_before_values(true),
-                      drop_time(-1.0) {}
+                      drop_time(-1.0), output_per_proc_stddev(false) {}
     bool output_fraction;
     bool output_total_updates;
     bool output_histogram;
@@ -686,6 +814,7 @@ public:
     bool align_columns;
     bool print_names_before_values;
     double drop_time;
+    bool output_per_proc_stddev;
   };
 
   /**
@@ -794,6 +923,29 @@ public:
    */
   bool isTimer(const std::string& flat_timer_name);
 
+  /**
+   * Stops all running timers and returns a stack of timer names that
+   * were actively running when this method was called. This function
+   * is used to pause the timers for operations like checkpointing the
+   * timer data. The returned stack can be used to restore the state
+   * of the StackedTimer prior to this call with
+   * startTimers(my_stack).
+   *
+   * @return a stack of timers that were running when this function was called.
+   */
+  std::stack<std::string> stopAllTimers();
+
+  /**
+   * Start a set of timers using a stack of timer labels. Typically
+   * used in conjunction with stopAllTimers() to recover the state of
+   * a StackedTimer after pausing for checkpoint operations. This
+   * assumes the timer is not currently running.
+   *
+   * @param[in] timers_to_start A stack of timers to start.
+   */
+  void startTimers(std::stack<std::string> timers_to_start);
+
+
 protected:
   /// Current level running
   LevelTimer *top_;
@@ -809,6 +961,8 @@ protected:
   Array<double> sum_;
   Array<double> sum_sq_;
   Array<Array<int>> hist_;
+  Array<double> per_proc_stddev_min_;
+  Array<double> per_proc_stddev_max_;
   Array<unsigned long> count_;
   Array<unsigned long long> updates_;
   Array<int> active_;

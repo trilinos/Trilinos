@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // @Kokkos_Feature_Level_Required:12
 // Unit test for hierarchical parallelism
@@ -20,7 +7,12 @@
 // contributions of paticipating processing units corresponds to expected value
 // Use a scratch pad memory for each team
 #include <gtest/gtest.h>
+#include <Kokkos_Macros.hpp>
+#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
+import kokkos.core;
+#else
 #include <Kokkos_Core.hpp>
+#endif
 
 namespace Test {
 
@@ -75,7 +67,8 @@ struct ThreadScratch {
             .set_scratch_size(scratch_level, Kokkos::PerThread(scratchSize));
 
     int max_team_size = policy.team_size_max(*this, Kokkos::ParallelForTag());
-    v                 = data_t("Matrix", pN, max_team_size);
+    ASSERT_GT(max_team_size, 0);
+    v = data_t("Matrix", pN, max_team_size);
 
     Kokkos::parallel_for(
         "Test12a_ThreadScratch",
@@ -87,7 +80,7 @@ struct ThreadScratch {
     auto v_H = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
 
     size_t check   = 0;
-    const size_t s = pN * sX * sY;
+    const size_t s = static_cast<size_t>(pN) * sX * sY;
     for (int n = 0; n < pN; ++n)
       for (int m = 0; m < max_team_size; ++m) {
         check += v_H(n, m);
@@ -96,24 +89,18 @@ struct ThreadScratch {
   }
 };
 
+KOKKOS_IMPL_DISABLE_UNREACHABLE_WARNINGS_PUSH()
 TEST(TEST_CATEGORY, IncrTest_12a_ThreadScratch) {
-  ThreadScratch<TEST_EXECSPACE> test;
 #ifdef KOKKOS_ENABLE_OPENACC  // FIXME_OPENACC
   GTEST_SKIP() << "skipping since scratch memory is not yet implemented in the "
                   "OpenACC backend";
 #endif
-  // FIXME_OPENMPTARGET - team_size has to be a multiple of 32 for the tests to
-  // pass in the Release and RelWithDebInfo builds. Does not need the team_size
-  // to be a multiple of 32 for the Debug builds.
-#ifdef KOKKOS_ENABLE_OPENMPTARGET
-  test.run(1, 32, 9);
-  test.run(2, 64, 22);
-  test.run(14, 128, 321);
-#else
+
+  ThreadScratch<TEST_EXECSPACE> test;
   test.run(1, 55, 9);
   test.run(2, 4, 22);
   test.run(14, 277, 321);
-#endif
 }
+KOKKOS_IMPL_DISABLE_UNREACHABLE_WARNINGS_POP()
 
 }  // namespace Test

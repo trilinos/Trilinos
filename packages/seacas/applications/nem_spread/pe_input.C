@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -243,13 +243,13 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
             /* "{" defines the beginning of the group designator */
             cptr2 = strchr(cptr, '{');
             if (cptr2 == nullptr) {
-              fmt::print(stderr, "fatal: list start designator \"{\" not found");
+              fmt::print(stderr, fmt::runtime("fatal: list start designator \"{\" not found"));
               exit(1);
             }
             cptr2++;
             cptr3 = strchr(cptr, '}');
             if (cptr3 == nullptr) {
-              fmt::print(stderr, "fatal: list end designator \"}\" not found");
+              fmt::print(stderr, fmt::runtime("fatal: list end designator \"}\" not found"));
               exit(1);
             }
             *cptr3 = '\0';
@@ -434,8 +434,7 @@ int read_pexoII_info(NemSpread<T, INT> &spreader, const char *filename)
             cptr++;
 
             /* allocate memory for to hold the values */
-            PIO_Info.Dsk_List = reinterpret_cast<int *>(
-                array_alloc(__FILE__, __LINE__, 1, PIO_Info.Dsk_List_Cnt, sizeof(int)));
+            PIO_Info.Dsk_List.resize(PIO_Info.Dsk_List_Cnt);
             for (i = 0; i < (PIO_Info.Dsk_List_Cnt - 1); i++) {
               sscanf(cptr, "%d", &(PIO_Info.Dsk_List[i]));
               cptr = strtok(nullptr, ", \t;");

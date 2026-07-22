@@ -16,6 +16,7 @@
 #include "Xpetra_IO.hpp"
 
 #include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory_decl.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -23,6 +24,12 @@
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CoordinatesTransferFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~CoordinatesTransferFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
@@ -143,6 +150,9 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     fineCoords               = Get<RCP<xdMV> >(fineLevel, "Coordinates");
     RCP<const Map> coarseMap = Get<RCP<const Map> >(fineLevel, "CoarseMap");
 
+    RCP<const Map> coarseCoordMap;
+    RCP<const Map> uniqueMap = fineCoords->getMap();
+
     // coarseMap is being used to set up the domain map of tentative P, and therefore, the row map of Ac
     // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
     // logical blocks in the matrix
@@ -150,31 +160,20 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
       blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
 
-    RCP<const Map> coarseCoordMap;
-    RCP<const Map> uniqueMap = fineCoords->getMap();
-    if (blkSize > 1) {
-      // If the block size is greater than one, we need to create a coarse coordinate map
-      // FIXME: The amalgamation should really be done on device.
-      GO indexBase                     = coarseMap->getIndexBase();
-      ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
-      size_t numElements               = elementAList.size() / blkSize;
-      Array<GO> elementList(numElements);
+    if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+      blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
 
-      // Amalgamate the map
-      for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
-        elementList[i] = (elementAList[i * blkSize] - indexBase) / blkSize + indexBase;
-
-      {
-        SubFactoryMonitor sfm(*this, "MapFactory: coarseCoordMap", fineLevel);
-        coarseCoordMap = MapFactory ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
-      }
-    } else {
-      // If the block size is one, we can just use the coarse map for coordinates
+    if (blkSize == 1) {
+      // Scalar system
+      // No amalgamation required, we can use the coarseMap
       coarseCoordMap = coarseMap;
+    } else {
+      // Vector system
+      AmalgamationFactory::AmalgamateMap(rcp_dynamic_cast<const StridedMap>(coarseMap), coarseCoordMap);
     }
 
     // Build the coarseCoords MultiVector
-    coarseCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+    coarseCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coarseCoordMap, fineCoords->getNumVectors(), false);
 
     RCP<Aggregates> aggregates;
     bool aggregatesCrossProcessors;
@@ -187,7 +186,7 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
       RCP<const Map> nonUniqueMap = aggregates->GetMap();
       RCP<const Import> importer  = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
-      ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
+      ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(nonUniqueMap, fineCoords->getNumVectors(), false);
       ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
     }
 
@@ -196,8 +195,8 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    auto fineCoordsView   = ghostedCoords->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto fineCoordsView   = ghostedCoords->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto coarseCoordsView = coarseCoords->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
     // Fill in coarse coordinates
     {

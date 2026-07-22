@@ -68,7 +68,7 @@ public:
     enum_info[i].value = static_cast<long>( v );
   }
 
-  void construct( void * v , std::size_t n ) const
+  void construct(void* v, std::size_t n) const override
   {
     const T init = static_cast<T>( enum_info.front().value );
     T * x = reinterpret_cast<T*>(v);
@@ -76,9 +76,9 @@ public:
     while ( x_end != x ) { *x++ = init ; }
   }
 
-  void destroy( void * v , std::size_t n ) const {}
+  void destroy( void * /*v*/ , std::size_t /*n*/ ) const override {}
 
-  void copy( void * vx , const void * vy , std::size_t n ) const
+  void copy(void* vx, const void* vy, std::size_t n) const override
   {
     const T * y = reinterpret_cast<const T*>(vy);
     T * x = reinterpret_cast<T*>(vx);
@@ -86,7 +86,7 @@ public:
     while ( x_end != x ) { *x++ = *y++ ; }
   }
 
-  void max( void * vx , const void * vy , std::size_t n ) const
+  void max(void* vx, const void* vy, std::size_t n) const override
   {
     const T * y = reinterpret_cast<const T*>(vy);
     T * x = reinterpret_cast<T*>(vx);
@@ -94,7 +94,7 @@ public:
     for ( ; x_end != x ; ++x , ++y ) { if ( *x < *y ) { *x = *y ; } }
   }
 
-  void min( void * vx , const void * vy , std::size_t n ) const
+  void min(void* vx, const void* vy, std::size_t n) const override
   {
     const T * y = reinterpret_cast<const T*>(vy);
     T * x = reinterpret_cast<T*>(vx);
@@ -114,7 +114,7 @@ public:
     }
   }
 
-  void print( std::ostream & s , const void * v , std::size_t n ) const
+  void print(std::ostream& s, const void* v, std::size_t n) const override
   {
     if ( n ) {
       const T * x = reinterpret_cast<const T*>(v);
@@ -124,29 +124,25 @@ public:
     }
   }
 
-  void pack( CommBuffer & buf , const void * v , std::size_t n ) const
+  void pack(CommBuffer& buf, const void* v, std::size_t n) const override
   {
     const T * x = reinterpret_cast<const T*>(v);
     buf.pack<T>( x , n );
   }
 
-  void unpack( CommBuffer & buf , void * v , std::size_t n ) const
+  void unpack(CommBuffer& buf, void* v, std::size_t n) const override
   {
     T * x = reinterpret_cast<T*>(v);
     buf.unpack<T>( x , n );
   }
 
-  void sum( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  void sum(void*, const void*, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 
-  void bit_and( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  void bit_and(void*, const void*, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 
-  void bit_or( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  void bit_or(void*, const void*, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 
-  void bit_xor( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  void bit_xor(void*, const void*, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 };
 
 }

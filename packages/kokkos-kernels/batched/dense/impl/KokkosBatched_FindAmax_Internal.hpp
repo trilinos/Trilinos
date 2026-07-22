@@ -1,20 +1,7 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-#ifndef __KOKKOSBATCHED_FIND_AMAX_INTERNAL_HPP__
-#define __KOKKOSBATCHED_FIND_AMAX_INTERNAL_HPP__
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+#ifndef KOKKOSBATCHED_FIND_AMAX_INTERNAL_HPP
+#define KOKKOSBATCHED_FIND_AMAX_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -27,9 +14,7 @@ namespace KokkosBatched {
 /// =====================
 struct SerialFindAmaxInternal {
   template <typename ValueType, typename IntType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const int m,
-                                           const ValueType *KOKKOS_RESTRICT A,
-                                           const int as0,
+  KOKKOS_INLINE_FUNCTION static int invoke(const int m, const ValueType *KOKKOS_RESTRICT A, const int as0,
                                            /**/ IntType *KOKKOS_RESTRICT idx) {
     ValueType max_val(A[0]);
     IntType val_loc(0);
@@ -50,14 +35,11 @@ struct SerialFindAmaxInternal {
 /// ========================
 struct TeamVectorFindAmaxInternal {
   template <typename MemberType, typename ValueType, typename IntType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member,
-                                           const int m,
-                                           const ValueType *KOKKOS_RESTRICT A,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const ValueType *KOKKOS_RESTRICT A,
                                            const int as0,
                                            /**/ IntType *KOKKOS_RESTRICT idx) {
     if (m > 0) {
-      using reducer_value_type =
-          typename Kokkos::MaxLoc<ValueType, IntType>::value_type;
+      using reducer_value_type = typename Kokkos::MaxLoc<ValueType, IntType>::value_type;
       reducer_value_type value{};
       Kokkos::MaxLoc<ValueType, IntType> reducer_value(value);
       Kokkos::parallel_reduce(

@@ -1,6 +1,8 @@
 
 STK_SUBPACKAGE(Middle_mesh_util)
 
+message("STKMiddle_mesh_util")
+
 ADD_SUBDIRECTORY(stk_middle_mesh_util)
 
 STK_SUBPACKAGE_POSTPROCESS()

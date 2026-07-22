@@ -17,6 +17,7 @@ from contextlib import contextmanager
 
 ACCESS = os.getenv("ACCESS", "@ACCESSDIR@")
 sys.path.append(os.path.join(ACCESS, "lib"))
+sys.path.append(os.path.join(ACCESS, "lib64"))
 import exodus as exo
 
 
@@ -58,6 +59,19 @@ class TestExodus(unittest.TestCase):
         with self.assertRaises(AssertionError):
             with exo.exodus(self.temp_exo_path, mode="r"):
                 self.assertFalse(True)
+
+    def test_ex_init_params(self):
+        ex_pars = exo.ex_init_params(
+            num_dim=2,
+            num_nodes=9,
+            num_elem=4,
+            num_elem_blk=1,
+            num_assembly=0,
+            num_blob=0,
+        )
+        new_temp_exo_path = os.path.join(self.tempdir.name, "newexodusfile.e")
+        with exo.exodus(new_temp_exo_path, mode="w+", init_params=ex_pars) as exo_file:
+            exo_file.summarize()
 
     def test_copy_opened_in_append_mode(self):
         new = exo.assembly(

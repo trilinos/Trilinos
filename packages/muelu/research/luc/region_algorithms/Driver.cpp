@@ -221,7 +221,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
         << "Forming the prolongator" << std::endl;
 
     MueLu::Level fineLevel, coarseLevel;
-    RCP<Xpetra::Matrix<SC, LO, GO, NO> > matA = MueLu::TpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(regA);
+    RCP<Xpetra::Matrix<SC, LO, GO, NO> > matA = Xpetra::toXpetra(regA);
     createTwoLevelHierarchy<SC, LO, GO, NO>(fineLevel, coarseLevel, matA);
 
     // Now the prolongator needs to be created

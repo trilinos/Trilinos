@@ -36,15 +36,16 @@
 #define STK_MESH_DESTROY_ELEMENTS_HPP
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Selector.hpp>
 
 namespace stk {
 namespace mesh {
 
+class BulkData;
+class Selector;
+
 void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy);
-void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete);
-void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete);
+void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, const stk::mesh::Selector& orphansToDelete);
+void destroy_elements_no_mod_cycle(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, const stk::mesh::Selector& orphansToDelete);
 void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank conRank);
 
 }} // namespace stk::mesh

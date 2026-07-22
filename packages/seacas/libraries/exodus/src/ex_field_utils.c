@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,7 +9,6 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 #include <assert.h>
-#include <math.h>
 #define _GNU_SOURCE
 #include <string.h>
 
@@ -27,7 +26,7 @@ static char *my_strsep(char **stringp, const char *delim)
   }
   return rv;
 }
-static size_t my_strlcat(char *restrict dst, const char *restrict src, size_t maxlen)
+static size_t my_strlcat(char *dst, const char *src, size_t maxlen)
 {
   const size_t srclen = strlen(src);
   const size_t dstlen = strlen(dst);
@@ -43,19 +42,25 @@ static size_t my_strlcat(char *restrict dst, const char *restrict src, size_t ma
   return dstlen + srclen;
 }
 
-static int number_width(const size_t number)
+static int number_width(size_t number)
 {
+  /* Could use `(int)floor(log10(number)) + 1`, but that requires math library... */
   if (number == 0) {
     return 1;
   }
-  int width = (int)floor(log10(number)) + 1;
-  return width;
+  int count = 0;
+  // Iterate till n has digits remaining
+  while (number != 0) {
+    number /= 10;
+    ++count;
+  }
+  return count;
 }
 
 static void verify_valid_component(int component, size_t cardinality, size_t suffix_size)
 {
   assert(cardinality == suffix_size);
-  assert(component - 1 < suffix_size);
+  assert(component - 1 < (int)suffix_size);
 }
 
 const char *ex_component_field_name(ex_field *field, int component[EX_MAX_FIELD_NESTING])
@@ -71,7 +76,7 @@ const char *ex_component_field_name(ex_field *field, int component[EX_MAX_FIELD_
   }
 
   // Build up name incrementally which makes it easier to handle an empty component_separator...
-  sprintf(field_name, "%s", field->name);
+  snprintf(field_name, EX_MAX_NAME + 1, "%s", field->name);
 
   for (int i = 0; i < field->nesting; i++) {
     if (field->component_separator[i]) {
@@ -325,10 +330,10 @@ const char *ex_field_component_suffix(ex_field *field, int nest_level, int compo
   case EX_FIELD_TYPE_SEQUENCE: {
     // Suffices are just 1...#components.
     static char user_suffix[32];
-    static char format[8];
+    static char format[32];
     int         width = number_width(field->cardinality[nest_level]);
-    sprintf(format, "%c%d%dd", '%', 0, width);
-    sprintf(user_suffix, format, component);
+    snprintf(format, 32, "%c%d%dd", '%', 0, width);
+    snprintf(user_suffix, 32, format, component);
     return user_suffix;
   }
 
@@ -336,10 +341,10 @@ const char *ex_field_component_suffix(ex_field *field, int nest_level, int compo
   case EX_QUADRATURE: {
     // Suffices are just 0...#components-1.
     static char user_suffix[32];
-    static char format[8];
+    static char format[32];
     int         width = number_width(field->cardinality[nest_level]);
-    sprintf(format, "%c%d%dd", '%', 0, width);
-    sprintf(user_suffix, format, component - 1);
+    snprintf(format, 32, "%c%d%dd", '%', 0, width);
+    snprintf(user_suffix, 32, format, component - 1);
     return user_suffix;
   }
 

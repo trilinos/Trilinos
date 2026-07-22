@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -59,13 +59,14 @@ namespace SEAMS {
     }
 
     double value = 0.0;
-    int    cols  = arr->cols;
-    int    rows  = arr->rows;
+    auto   cols  = arr->cols;
+    auto   rows  = arr->rows;
     if (row >= 0 && row < rows && col >= 0 && col < cols) {
       if (row != static_cast<int>(row) || col != static_cast<int>(col)) {
         value = array_interpolate(arr, row, col);
       }
       else {
+
         int irow   = row;
         int icol   = col;
         int offset = irow * cols + icol;
@@ -81,7 +82,7 @@ namespace SEAMS {
   array *array_add(const array *a, const array *b)
   {
     auto array_data = aprepro->make_array(a->rows, a->cols);
-    for (int i = 0; i < a->rows * a->cols; i++) {
+    for (size_t i = 0; i < a->rows * a->cols; i++) {
       array_data->data[i] = a->data[i] + b->data[i];
     }
     return array_data;
@@ -91,7 +92,7 @@ namespace SEAMS {
   {
     auto array_data = aprepro->make_array(a->rows, a->cols);
 
-    for (int i = 0; i < a->rows * a->cols; i++) {
+    for (size_t i = 0; i < a->rows * a->cols; i++) {
       array_data->data[i] = a->data[i] - b->data[i];
     }
     return array_data;
@@ -101,7 +102,7 @@ namespace SEAMS {
   {
     auto array_data = aprepro->make_array(a->rows, a->cols);
 
-    for (int i = 0; i < a->rows * a->cols; i++) {
+    for (size_t i = 0; i < a->rows * a->cols; i++) {
       array_data->data[i] = a->data[i] * s;
     }
 
@@ -115,10 +116,10 @@ namespace SEAMS {
 
     auto array_data = aprepro->make_array(a->rows, b->cols);
 
-    for (int i = 0; i < b->cols; i++) {
-      for (int j = 0; j < a->rows; j++) {
+    for (size_t i = 0; i < b->cols; i++) {
+      for (size_t j = 0; j < a->rows; j++) {
         double sum = 0.0;
-        for (int k = 0; k < a->cols; k++) {
+        for (size_t k = 0; k < a->cols; k++) {
           sum += a->data[j * ac + k] * b->data[k * bc + i];
         }
         array_data->data[j * bc + i] = sum;

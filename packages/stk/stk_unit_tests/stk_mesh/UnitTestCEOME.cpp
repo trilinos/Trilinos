@@ -99,8 +99,8 @@ using stk::mesh::EntityId;
 using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
-using stk::mesh::fixtures::simple_fields::RingFixture;
-using stk::mesh::fixtures::simple_fields::BoxFixture;
+using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::BoxFixture;
 
 void printMemoryStats(MPI_Comm comm)
 {
@@ -184,7 +184,6 @@ TEST(CEOME, change_entity_owner_2Elem2ProcMove)
 
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester bulk(meta, pm);
 
   stk::mesh::EntityVector elems;
@@ -225,7 +224,6 @@ TEST(CEOME, change_entity_owner_2Elem2ProcFlip)
   }
   const int spatial_dimension = 2;
   stk::mesh::MetaData meta(spatial_dimension);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
 
   CEOUtils::fillMeshfor2Elem2ProcFlipAndTest(mesh, meta);
@@ -281,7 +279,6 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveRight)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  meta_data.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
@@ -334,7 +331,6 @@ TEST(CEOME, change_entity_owner_3Elem2ProcMoveLeft)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  meta_data.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
@@ -379,7 +375,6 @@ TEST(CEOME, TwoElemGiveAllEntitiesToOneProcAndCheckParts)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta(spatial_dim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
@@ -444,7 +439,6 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
-  meta_data.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
@@ -462,10 +456,11 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
-    *elem_field_data_node5 = 5.0;
-    double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
-    *elem_field_data_node6 = 6.0;
+    auto elemFieldData = elem_field->data<double, stk::mesh::ReadWrite>();
+    auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
+    elemFieldDataNode5(0_comp) = 5.0;
+    auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
+    elemFieldDataNode6(0_comp) = 6.0;
   }
 
   std::vector<EntityProc> change;
@@ -511,12 +506,15 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+    auto elemFieldData = elem_field->data<double, stk::mesh::ReadWrite>();
+    auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
+    elemFieldDataNode5(0_comp) = 5.0;
+    auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
+    elemFieldDataNode6(0_comp) = 6.0;
     const double expectedNode5Data = 5.0;
-    EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
-    double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
     const double expectedNode6Data = 6.0;
-    EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
+    EXPECT_EQ( expectedNode5Data, elemFieldDataNode5(0_comp) );
+    EXPECT_EQ( expectedNode6Data, elemFieldDataNode6(0_comp) );
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -531,12 +529,15 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+    auto elemFieldData = elem_field->data<double, stk::mesh::ReadWrite>();
+    auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
+    elemFieldDataNode5(0_comp) = 5.0;
+    auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
+    elemFieldDataNode6(0_comp) = 6.0;
     const double expectedNode5Data = 5.0;
-    EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
-    double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
     const double expectedNode6Data = 6.0;
-    EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
+    EXPECT_EQ( expectedNode5Data, elemFieldDataNode5(0_comp) );
+    EXPECT_EQ( expectedNode6Data, elemFieldDataNode6(0_comp) );
   }
 
 }
@@ -568,7 +569,6 @@ TEST(CEOME, change_entity_owner_8Elem4ProcMoveTop)
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
 
   CEOUtils::fillMeshfor8Elem4ProcMoveTopAndTest(mesh, meta);
@@ -627,7 +627,6 @@ TEST(CEOME, change_entity_owner_4Elem4ProcRotate)
 
   unsigned spatialDim = 2;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
   const int p_rank = mesh.parallel_rank();
   CEOUtils::fillMeshfor4Elem4ProcRotateAndTest(mesh, meta);
@@ -708,7 +707,6 @@ TEST(CEOME, change_entity_owner_3Elem4Proc1Edge3D)
 
   unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
-  meta.use_simple_fields();
   stk::unit_test_util::BulkDataTester mesh(meta, pm);
   const int p_rank = mesh.parallel_rank();
   CEOUtils::fillMeshfor3Elem4Proc1Edge3DAndTest(mesh, meta);
@@ -763,7 +761,6 @@ TEST(CEOME, test_node_ownership_change_that_causes_ghosted_node_to_be_marked_as_
   if(psize == 2)
   {
     stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    stkMeshIoBroker.use_simple_fields();
     const std::string generatedMeshSpecification = "generated:1x2x2";
     stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
     stkMeshIoBroker.create_input_mesh();

@@ -22,7 +22,6 @@ TEST(ElementGraph, RefinedQuad)
     stk::mesh::Part &quad_part = meta.declare_part_with_topology("Quads", stk::topology::QUADRILATERAL_4_2D);
     stk::mesh::Part &skin = meta.declare_part_with_topology("Edges", stk::topology::LINE_2);
     stk::io::put_io_part_attribute(skin);
-    stk::mesh::PartVector skin_parts = {&skin};
     stk::mesh::Part &active = meta.declare_part("active");
 
     stk::mesh::Field<double> & node_coord = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
@@ -94,6 +93,7 @@ TEST(ElementGraph, RefinedQuad)
       nodes_to_create = nodes;
     }
 
+    auto coordData = node_coord.data<stk::mesh::ReadWrite>();
     for(unsigned i = 0; i < nodes_to_create.size(); ++i)
     {
       stk::mesh::Entity const node = mesh.get_entity(stk::topology::NODE_RANK, nodes_to_create[i]);
@@ -102,11 +102,11 @@ TEST(ElementGraph, RefinedQuad)
         mesh.add_node_sharing(node,1-my_proc_id);
       }
 
-      double * const coord = stk::mesh::field_data(node_coord, node);
+      auto coord = coordData.entity_values(node);
       int index = static_cast<int>(nodes_to_create[i])-1;
 
-      coord[0] = node_coords[index][0];
-      coord[1] = node_coords[index][1];
+      coord(0_comp) = node_coords[index][0];
+      coord(1_comp) = node_coords[index][1];
     }
 
     mesh.modification_end();

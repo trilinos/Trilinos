@@ -34,7 +34,7 @@
     static double m_min_spacing_factor = 0.05;
 
     double NodeRegistry::spacing_edge(std::vector<stk::mesh::Entity>& nodes,
-                                      unsigned iv0, unsigned iv1, unsigned nsz, unsigned nsp,  double lspc[8][3], double den_xyz[3], double *coord[8])
+                                      unsigned iv0, unsigned iv1, unsigned nsz, unsigned /*nsp*/,  double /*lspc*/[8][3], double /*den_xyz*/[3], double */*coord*/[8])
     {
       VERIFY_OP_ON(nsz, ==, 2, "hmmm");
       SubDimCell_SDCEntityType subDimEntity(&m_eMesh);
@@ -106,7 +106,7 @@
       return candidate_alpha;
     }
 
-    static void normalize_spacing_0(unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3])
+    static void normalize_spacing_0(unsigned nsz, unsigned nsp, double spc[8][3], double /*den_xyz*/[3])
     {
       for (unsigned isp = 0; isp < nsp; isp++)
         {
@@ -174,7 +174,7 @@
     }
 
 
-    void NodeRegistry::normalize_spacing(stk::mesh::Entity element, std::vector<stk::mesh::Entity> &nodes,
+    void NodeRegistry::normalize_spacing(stk::mesh::Entity /*element*/, std::vector<stk::mesh::Entity> &nodes,
                                          unsigned nsz, unsigned nsp, double spc[8][3], double den_xyz[3], double *coord[8])
     {
       s_nsz_parent = nsz;
@@ -1066,7 +1066,7 @@
     }
 
     void NodeRegistry::
-    beginRegistration(int ireg, int nreg)
+    beginRegistration(int /*ireg*/, int /*nreg*/)
     {
       m_nodes_to_ghost.resize(0);
       m_pseudo_entities.clear();
@@ -1076,7 +1076,7 @@
     }
 
     void NodeRegistry::
-    endRegistration(int ireg, int nreg)
+    endRegistration(int /*ireg*/, int /*nreg*/)
     {
       if (m_debug)
         std::cout << "P[" << m_eMesh.get_rank() << "] tmp NodeRegistry::endRegistration start" << std::endl;
@@ -1102,7 +1102,7 @@
     }
 
     void NodeRegistry::
-    beginCheckForRemote(int ireg, int nreg)
+    beginCheckForRemote(int /*ireg*/, int /*nreg*/)
     {
       m_state = NRS_START_CHECK_FOR_REMOTE;
       if (m_debug)
@@ -1110,7 +1110,7 @@
     }
 
     void NodeRegistry::
-    endCheckForRemote(int ireg, int nreg)
+    endCheckForRemote(int /*ireg*/, int /*nreg*/)
     {
       if (m_debug)
         std::cout << "P[" << m_eMesh.get_rank() << "] tmp NodeRegistry::endCheckForRemote start " << std::endl;
@@ -1129,7 +1129,7 @@
     }
 
     void NodeRegistry::
-    beginGetFromRemote(int ireg, int nreg)
+    beginGetFromRemote(int /*ireg*/, int /*nreg*/)
     {
       m_state = NRS_START_GET_FROM_REMOTE;
       if (m_debug)
@@ -1137,7 +1137,7 @@
     }
 
     void NodeRegistry::
-    endGetFromRemote(int ireg, int nreg)
+    endGetFromRemote(int /*ireg*/, int /*nreg*/)
     {
       if (m_debug)
         std::cout << "P[" << m_eMesh.get_rank() << "] tmp NodeRegistry::endGetFromRemote start " << std::endl;
@@ -1544,7 +1544,7 @@
 
     /// Replace element ownership
     /// When remeshing during unrefinement, replace ownership of sub-dim entities by non-deleted elements
-    bool NodeRegistry::replaceElementOwnership(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes_notUsed,const CellTopologyData * const bucket_topo_data)
+    bool NodeRegistry::replaceElementOwnership(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool /*needNodes_notUsed*/,const CellTopologyData * const bucket_topo_data)
     {
       SubDimCell_SDCEntityType subDimEntity(&m_eMesh);
       getSubDimEntity(subDimEntity, element, needed_entity_rank.first, iSubDimOrd,bucket_topo_data);
@@ -1582,7 +1582,7 @@
     }
 
     /// initialize to empty
-    bool NodeRegistry::initializeEmpty(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes_notUsed,const CellTopologyData * const bucket_topo_data)
+    bool NodeRegistry::initializeEmpty(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool /*needNodes_notUsed*/,const CellTopologyData * const bucket_topo_data)
     {
       bool needNodes = false;
       bool ret_val = false;
@@ -1746,7 +1746,7 @@
  *   array.
  */
 
-    bool NodeRegistry::checkForRemote(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool needNodes_notUsed,
+    bool NodeRegistry::checkForRemote(const stk::mesh::Entity element, NeededEntityType& needed_entity_rank, unsigned iSubDimOrd, bool /*needNodes_notUsed*/,
                                       const CellTopologyData * const bucket_topo_data)
     {
       EXCEPTWATCH;
@@ -2825,7 +2825,7 @@
         }
     }
 
-    void NodeRegistry::cleanInvalidNodes(bool debug)
+    void NodeRegistry::cleanInvalidNodes(bool /*debug*/)
     {
       SubDimCellToDataMap::iterator iter;
       std::vector<SubDimCellToDataMap::iterator> to_delete;
@@ -2944,7 +2944,7 @@
     //   cleanup of cached transactions are performed, then we find these by seeing if our element id's are
     //   no longer in the stk_mesh db.
 
-    void NodeRegistry::clear_element_owner_data_phase_2(bool resize_nodeId_data, bool mod_begin_end, SetOfEntities* elemsToBeDeleted)
+    void NodeRegistry::clear_element_owner_data_phase_2(bool resize_nodeId_data, bool mod_begin_end, SetOfEntities* /*elemsToBeDeleted*/)
     {
       if (mod_begin_end)
         {

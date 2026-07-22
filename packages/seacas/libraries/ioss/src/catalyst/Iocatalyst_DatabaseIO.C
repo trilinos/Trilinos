@@ -39,7 +39,6 @@
 #include <cstdlib>
 #include <fmt/ostream.h>
 #include <map>
-#include <cstdlib>
 
 #include <catalyst.hpp>
 #include <catalyst/Iocatalyst_DatabaseIO.h>
@@ -72,6 +71,8 @@ namespace Iocatalyst {
     inline static const std::string CATCONDNODE        = "CATALYST_CONDUIT_NODE";
     inline static const std::string CATDUMPDIR         = "CATALYST_DATA_DUMP_DIRECTORY";
     inline static const std::string CATREADTIMESTEP    = "CATALYST_READER_TIME_STEP";
+    inline static const std::string CELLIDS            = "cell_ids";
+    inline static const std::string CELLNODEIDS        = "cell_node_ids";
     inline static const std::string COMPONENTCOUNT     = "component_count";
     inline static const std::string COMPONENTDEGREE    = "component_degree";
     inline static const std::string COUNT              = "count";
@@ -103,7 +104,6 @@ namespace Iocatalyst {
     inline static const std::string NIGLOBAL           = "ni_global";
     inline static const std::string NJGLOBAL           = "nj_global";
     inline static const std::string NKGLOBAL           = "nk_global";
-    inline static const std::string NODEBLOCKONE       = "nodeblock_1";
     inline static const std::string IDS                = "ids";
     inline static const std::string INDEX              = "index";
     inline static const std::string OFFSET_I           = "offset_i";
@@ -356,13 +356,23 @@ namespace Iocatalyst {
       return true;
     }
 
+    std::vector<double> getTime()
+    {
+      std::vector<double> times;
+      auto               &node = this->DBNode;
+      if (node.has_path(getTimePath())) {
+        times.push_back(node[getTimePath()].as_float64());
+      }
+      return times;
+    }
+
     int64_t putField(const std::string &containerName, const Ioss::GroupingEntity *entityGroup,
                      const Ioss::Field &field, void *data, size_t data_size, bool deep_copy)
     {
       const auto groupName      = getName(entityGroup);
       const auto num_to_get     = field.verify(data_size);
       const auto num_components = field.raw_storage()->component_count();
-      if (num_to_get > 0) {
+      if (num_to_get >= 0) {
         auto &&node = this->DBNode[getFieldPath(containerName, groupName, field.get_name())];
         node[detail::ROLE].set(static_cast<std::int8_t>(field.get_role()));
         node[detail::TYPE].set(static_cast<std::int8_t>(field.get_type()));
@@ -588,16 +598,56 @@ namespace Iocatalyst {
 
     std::string getTimePath() { return detail::DATABASE + detail::FS + detail::TIME; }
 
+    int64_t getStructuredBlockIDS(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
+                                  void *data, size_t data_size)
+    {
+      auto num_to_get = field.verify(data_size);
+
+      if (num_to_get > 0) {
+        switch (field.get_type()) {
+        case Ioss::Field::BasicType::INT32:
+          copyIDS(sb, field, reinterpret_cast<int32_t *>(data));
+          break;
+
+        case Ioss::Field::BasicType::INT64:
+          copyIDS(sb, field, reinterpret_cast<int64_t *>(data));
+          break;
+        default:
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR in {}: {} ({}), unsupported field type: {}\n", __func__,
+                     field.get_name(), num_to_get, field.type_string());
+          IOSS_ERROR(errmsg);
+        }
+      }
+      return num_to_get;
+    }
+
+    template <typename INT_t>
+    void copyIDS(const Ioss::StructuredBlock *sb, const Ioss::Field &field, INT_t *data)
+    {
+      if (field.get_name() == detail::CELLIDS) {
+        sb->get_cell_ids(data, true);
+      }
+      else {
+        sb->get_cell_node_ids(data, true);
+      }
+    }
+
     Ioss::Map &get_node_map(const Ioss::DatabaseIO *dbase) const
     {
       if (this->NodeMap.defined()) {
         return this->NodeMap;
       }
 
-      auto nbone_path = detail::NODEBLOCKS + detail::FS + detail::NODEBLOCKONE + detail::FS +
-                        detail::FIELDS + detail::FS + detail::IDS;
-      auto &&idsNode  = this->DBNode[nbone_path];
-      auto   node_ids = const_cast<void *>(idsNode[detail::VALUE].element_ptr(0));
+      if (this->DBNode[detail::NODEBLOCKS].number_of_children() == 0) {
+        std::ostringstream errmsg;
+        fmt::print(errmsg, "ERROR in {} no nodeblocks found, unable to create NodeMap\n", __func__);
+        IOSS_ERROR(errmsg);
+      }
+
+      auto &&idsNode = this->DBNode[detail::NODEBLOCKS][0][detail::FIELDS][detail::IDS];
+
+      auto node_ids = const_cast<void *>(idsNode[detail::VALUE].element_ptr(0));
       this->NodeMap.set_size(idsNode[detail::COUNT].as_int64());
       if (idsNode[detail::TYPE].as_int8() == Ioss::Field::BasicType::INT32) {
         this->NodeMap.set_map(reinterpret_cast<int32_t *>(node_ids),
@@ -722,11 +772,7 @@ namespace Iocatalyst {
     bool addProperties(conduit_cpp::Node parent, GroupingEntityT *entityGroup)
     {
       Ioss::NameList names;
-      // skip implicit properties.
-      entityGroup->property_describe(Ioss::Property::INTERNAL, &names);
-      entityGroup->property_describe(Ioss::Property::EXTERNAL, &names);
-      entityGroup->property_describe(Ioss::Property::ATTRIBUTE, &names);
-      entityGroup->property_describe(Ioss::Property::IMPLICIT, &names);
+      entityGroup->property_describe(&names);
 
       auto &&propertiesNode = parent[detail::PROPERTIES];
       for (const auto &name : names) {
@@ -752,9 +798,11 @@ namespace Iocatalyst {
           node[detail::VALUE].set(property.get_vec_double());
           break;
 
-        case Ioss::Property::BasicType::POINTER:
-        case Ioss::Property::BasicType::INVALID:
-        default: return false;
+        case Ioss::Property::BasicType::POINTER: break;
+
+        case Ioss::Property::BasicType::INVALID: break;
+
+        default: break;
         }
       }
       return true;
@@ -1112,12 +1160,7 @@ namespace Iocatalyst {
       auto &&child = parent[idx];
       auto block = detail::createEntityGroup<Ioss::StructuredBlock>(child, region->get_database());
       region->add(block);
-      auto parent = block->get_node_block().get_property(detail::IOSSCONTAINEDIN);
       this->readProperties(child[detail::PROPERTIES], block);
-      this->readProperties(
-          child[getName(&block->get_node_block()) + detail::FS + detail::PROPERTIES],
-          &block->get_node_block());
-      block->get_node_block().property_add(parent);
 
       // read fields (meta-data only)
       this->readFields(child[detail::FIELDS], block);
@@ -1249,13 +1292,20 @@ namespace Iocatalyst {
         if (pm.exists(detail::CATREADTIMESTEP)) {
           timestep = pm.get(detail::CATREADTIMESTEP).get_int();
         }
-        else if(const char* ts = std::getenv(detail::CATREADTIMESTEP.c_str())) {
+        else if (const char *ts = std::getenv(detail::CATREADTIMESTEP.c_str())) {
           timestep = std::stoi(std::string(ts));
         }
+
+        int proc_count = util().parallel_size();
+        int my_proc    = util().parallel_rank();
+        if (properties.exists("processor_count") && properties.exists("my_processor")) {
+          proc_count = properties.get("processor_count").get_int();
+          my_proc    = properties.get("my_processor").get_int();
+        }
+
         std::ostringstream path;
         path << get_catalyst_dump_dir() << detail::EXECUTE_INVC << timestep
-             << detail::PARAMS_CONDUIT_BIN << util().parallel_size() << detail::DOT
-             << util().parallel_rank();
+             << detail::PARAMS_CONDUIT_BIN << proc_count << detail::DOT << my_proc;
         auto &root  = this->Impl->root();
         auto &dbase = this->Impl->databaseNode();
         conduit_node_load(conduit_cpp::c_node(&root), path.str().c_str(), "conduit_bin");
@@ -1381,6 +1431,12 @@ namespace Iocatalyst {
 
     auto &impl = (*this->Impl.get());
     impl.readTime(region);
+  }
+
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    auto &impl = (*this->Impl.get());
+    return impl.getTime();
   }
 
   void *DatabaseIO::get_catalyst_conduit_node()
@@ -1672,6 +1728,9 @@ namespace Iocatalyst {
     auto       &impl      = (*this->Impl.get());
     if (impl.hasField(blockPath, sb, field.get_name())) {
       return impl.getField(blockPath, sb, field, data, data_size);
+    }
+    else if (field.get_name() == detail::CELLIDS || field.get_name() == detail::CELLNODEIDS) {
+      return impl.getStructuredBlockIDS(sb, field, data, data_size);
     }
     else if ((field.get_name() == detail::MESHMODCO) &&
              (impl.hasField(blockPath, sb, detail::MESHMODCOX) &&

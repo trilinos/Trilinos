@@ -214,15 +214,15 @@ TEST_F(MeshScatterFromRootTester, DifferentComms)
     for (int i = 1; i < utils::impl::comm_size(MPI_COMM_WORLD); ++i)
     {
       int color = utils::impl::comm_rank(MPI_COMM_WORLD) == rootRank ? MPI_UNDEFINED : 0;
-      MPI_Comm meshComm;
-      MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
-      setup(MPI_COMM_WORLD, meshComm, rootRank, spec);
+      MPI_Comm meshCommTest;
+      MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshCommTest);
+      setup(MPI_COMM_WORLD, meshCommTest, rootRank, spec);
 
       auto destRankField = get_dest_rank_field(meshSerial, linspace(0, 1, i + 1), rootRank);
       runtest(destRankField, 1e-13);
 
-      if (meshComm != MPI_COMM_NULL)
-        MPI_Comm_free(&meshComm);
+      if (meshCommTest != MPI_COMM_NULL)
+        MPI_Comm_free(&meshCommTest);
     }
   }
 }

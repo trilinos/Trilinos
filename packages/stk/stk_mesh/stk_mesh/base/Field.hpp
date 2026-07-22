@@ -38,7 +38,7 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/LegacyFieldTraits.hpp>
+#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include <iomanip>
@@ -74,8 +74,8 @@ namespace mesh {
  *       using CoordFieldType stk::mesh::Field<double> CoordFieldType;
  *       CoordFieldType& coord_field = meta.declare_field<double>("<name>", <num_states>);
  *
- *   - Field restrictions: Defines the set of entities that have a field and the dimensions of the
- *     field (maximum of 7 dimensions).  FieldRestrictions are applied to Parts and entities pick
+ *   - Field restrictions: Defines the set of entities that have a field and the memory layout of
+ *     the data (e.g. a vector-3).  FieldRestrictions are applied to Parts and entities pick
  *     up the field by being placed in the associated part. Also, FieldRestrictions allow the same
  *     Field to be applied to different ranks of entities. E.g., you could apply a velocity Field
  *     to both Faces and Edges through two different FieldRestrictions for each of the different ranks.
@@ -137,45 +137,31 @@ namespace mesh {
  *   - stk_mesh/base/FieldParallel - Free functions for some parallel operations
  *   - stk_mesh/base/FieldRestriction - Defines FieldRestriction class
  *   - stk_mesh/base/FieldState - Defines enums to refer to field states
- *   - stk_mesh/base/FieldTraits - Defines API for querying field-types
- *   - stk_mesh/base/CoordinateSystems - Defines common ArrayDimTags (used for defining Field types)
- *   - stk_mesh/base/TopologyDimensions - Contains useful Field types / ArrayDimTags for setting up field relations
  *   - Type-related in ArrayDim, DataTraits
  *
  * - TODO Describe relationship with Buckets
  */
-// Implementation Details:
-// The template arguments below describe the field type. Scalar is the scalar
-// type of data contained by the field. The TagN describe each dimension of the
-// Field, these are expected to be ArrayDimTags. Unused dimensions can be ignored.
-template< typename Scalar , class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
-          class Tag5 , class Tag6 , class Tag7 >
+
+template <typename T, Layout HostLayout>
 class Field : public FieldBase {
 public:
-  using value_type = Scalar;
+  using value_type = T;
+  static constexpr Layout host_layout = HostLayout;
+  static constexpr Layout device_layout = DefaultDeviceLayout;
 
-  Field(
-       MetaData                   * arg_mesh_meta_data ,
-       stk::topology::rank_t        arg_entity_rank ,
-       unsigned                     arg_ordinal ,
-       const std::string          & arg_name ,
-       const DataTraits           & arg_traits ,
-       unsigned                     arg_rank,
-       const shards::ArrayDimTag  * const * arg_dim_tags,
-       unsigned                     arg_number_of_states ,
-       FieldState                   arg_this_state
-       )
-    : FieldBase(arg_mesh_meta_data,
-        arg_entity_rank,
-        arg_ordinal,
-        arg_name,
-        arg_traits,
-        arg_rank,
-        arg_dim_tags,
-        arg_number_of_states,
-        arg_this_state
-        )
-  {}
+  Field(MetaData* meta,
+        stk::topology::rank_t entityRank,
+        unsigned ordinal,
+        unsigned rankedOrdinal,
+        const std::string& name,
+        const DataTraits& dataTraits,
+        unsigned numberOfStates,
+        FieldState thisState)
+    : FieldBase(meta, entityRank, ordinal, rankedOrdinal, name, dataTraits, numberOfStates, thisState,
+                host_layout, device_layout,
+                new FieldData<T, stk::ngp::HostSpace, HostLayout>(entityRank, ordinal, dataTraits))
+  {
+  }
 
   /** \brief  Query this field for a given field state. */
   Field & field_of_state( FieldState input_state ) const {
@@ -186,27 +172,31 @@ public:
 #endif
   }
 
-  virtual ~Field(){}
+  virtual ~Field() override = default;
 
-  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const override
+  virtual std::ostream& print_data(std::ostream& out, const MeshIndex& mi) const override
   {
-    const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
-    Scalar* casted_data = reinterpret_cast<Scalar*>(data);
+    // Don't trigger any syncs or updates, since this can be called for debugging inside mesh modification
+    auto fieldData = data<ConstUnsynchronized>();
+    auto fieldValues = fieldData.entity_values(mi);
+
     auto previousPrecision = out.precision();
-    constexpr auto thisPrecision = std::numeric_limits<Scalar>::digits10;
+    constexpr auto thisPrecision = std::numeric_limits<T>::digits10;
 
     out << "{";
-    for (unsigned i = 0; i < num_scalar_values; ++i) {
-      if constexpr (sizeof(Scalar) == 1) {
-        if constexpr (std::is_signed_v<Scalar>) {
-          out << std::setprecision(thisPrecision) << static_cast<int>(casted_data[i]) << " ";
+    for (stk::mesh::CopyIdx copy : fieldValues.copies()) {
+      for (stk::mesh::ComponentIdx component : fieldValues.components()) {
+        if constexpr (sizeof(T) == 1) {  // std::cout of char types insist on printing character and not numerical value
+          if constexpr (std::is_signed_v<T>) {
+            out << std::setprecision(thisPrecision) << static_cast<int>(fieldValues(copy, component)) << " ";
+          }
+          else {
+            out << std::setprecision(thisPrecision) << static_cast<unsigned>(fieldValues(copy, component)) << " ";
+          }
         }
         else {
-          out << std::setprecision(thisPrecision) << static_cast<unsigned>(casted_data[i]) << " ";
+          out << std::setprecision(thisPrecision) << fieldValues(copy, component) << " ";
         }
-      }
-      else {
-        out << std::setprecision(thisPrecision) << casted_data[i] << " ";
       }
     }
     out << "}";
@@ -215,7 +205,8 @@ public:
     return out;
   }
 
-  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const override
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo, const std::string fieldName = "",
+                            const EntityRank fieldRank = InvalidEntityRank) const override
   {
     FieldBase * f[MaximumFieldStates] {nullptr};
 
@@ -228,12 +219,15 @@ public:
       "_STKFS_NM4"
     };
 
+    std::string clonedFieldName = (fieldName == "") ? name() : fieldName;
+    EntityRank  clonedFieldRank = (fieldRank == InvalidEntityRank) ? entity_rank() : fieldRank;
+
     for (unsigned i = 0 ; i < 6 ; ++i) {
-      const int len_name   = name().size();
+      const int len_name   = clonedFieldName.size();
       const int len_suffix = std::strlen(reserved_state_suffix[i]);
       const int offset     = len_name - len_suffix ;
       if ( 0 <= offset ) {
-        const char * const name_suffix = name().c_str() + offset;
+        [[maybe_unused]] const char * const name_suffix = clonedFieldName.c_str() + offset;
         STK_ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
                         "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
                         reserved_state_suffix[i] << "\"");
@@ -242,30 +236,37 @@ public:
 
     std::string fieldNames[MaximumFieldStates];
 
-    fieldNames[0] = name();
+    fieldNames[0] = clonedFieldName;
 
     if (number_of_states() == 2) {
-      fieldNames[1] = name();
+      fieldNames[1] = clonedFieldName;
       fieldNames[1].append(reserved_state_suffix[0]);
     }
     else {
       for (unsigned i = 1; i < number_of_states(); ++i) {
-        fieldNames[i] = name();
+        fieldNames[i] = clonedFieldName;
         fieldNames[i].append(reserved_state_suffix[i]);
       }
     }
 
     for (unsigned i = 0; i < number_of_states(); ++i) {
       f[i] = new Field(&fieldRepo.mesh_meta_data(),
-                       entity_rank(),
+                       clonedFieldRank,
                        fieldRepo.get_fields().size(),
+                       fieldRepo.get_fields(clonedFieldRank).size(),
                        fieldNames[i],
                        data_traits(),
-                       m_field_rank,
-                       m_dim_tags,
                        number_of_states(),
                        static_cast<FieldState>(i));
+
       fieldRepo.add_field(f[i]);
+    }
+
+    const InitValsViewType& initVals = get_initial_value_bytes();
+    f[0]->m_initial_value = FieldBase::InitValsViewType("Init-Vals-"+name(), initVals.extent(0));
+
+    for(unsigned j=0; j<initVals.extent(0); ++j) {
+      f[0]->m_initial_value(j) = initVals(j);
     }
 
     for (unsigned i = 0 ; i < number_of_states() ; ++i) {
@@ -275,6 +276,76 @@ public:
     return f[0];
   }
 
+  template <typename Space, typename Enable = void>
+  struct LayoutSelector {
+    static constexpr Layout layout = device_layout;
+  };
+
+  template <typename Enable>
+  struct LayoutSelector<stk::ngp::HostSpace, Enable> {
+    static constexpr Layout layout = host_layout;
+  };
+
+
+  // Acquire a temporary copy of a FieldData object to access your data in the desired memory space.
+  // It is best to acquire it right before using it in a computational algorithm, and then let it go
+  // out of scope and be destroyed when you are finished with it.  The lifetime of this object cannot
+  // overlap with one for the same Field in the opposite memory space.  Lifetimes can overlap in the
+  // same memory space, but you must remember to always reacquire this object after a mesh modification.
+  // Debug builds will trap these errors.  The two template parameters are:
+  //
+  //   FieldAccessTag : Optional tag indicating how you will access the data.  Options are:
+
+  //     - stk::mesh::ReadOnly      : Sync data to memory space and do not mark modified; Disallow modification [default]
+  //     - stk::mesh::ReadWrite     : Sync data to memory space and mark modified; Allow modification
+  //     - stk::mesh::OverwriteAll  : Do not sync data and mark modified; Allow modification
+
+  //     - stk::mesh::Unsynchronized       : Do not sync data and do not mark modified; Allow modification
+  //     - stk::mesh::ConstUnsynchronized  : Do not sync data and do not mark modified; Disallow modification
+  //
+  //     This will control automatic synchronization between memory spaces so that you are guaranteed
+  //     to be using up-to-date data wherever accessed.  The Unsynchronized variants are intended for
+  //     users who must store persistent copies of their FieldData objects.  You must call the above
+  //     synchronize() function before running your algorithm that uses your persistent copy, with the
+  //     same access tag and memory space that you would otherwise have used, to get the data movement
+  //     correct.  Do not use the Unsynchronized access tags for normal workflows.
+  //
+  //   Space : Optional struct that defines the Kokkos memory space and execution space that you want
+  //     to access.  It can be either a stk::ngp::HostSpace or an arbitrary device-space struct of your
+  //     choosing.  STK provides a stk::ngp::DeviceSpace struct for you if you want to use it on device.
+  //     The default template parameter is stk::ngp::HostSpace.
+  //
+  // Some sample usage for a Field<double> instance:
+  //
+  //   auto fieldData = myField.data();                       <-- Read-only access to host data
+  //   auto fieldData = myField.data<stk::mesh::ReadWrite>(); <-- Read-write access to host data
+  //   auto fieldData = myField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  <-- Read-only access to device data
+  //   auto fieldData = myField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(); <-- Read-write access to device data
+
+  template <FieldAccessTag FieldAccess = ReadOnly,
+            typename Space = stk::ngp::HostSpace>
+  typename FieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout>::FieldDataType
+  data(
+       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+  {
+    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout>(file, line);
+  }
+
+
+  // This is the same as described above, except you can pass in a custom execution space argument
+  // that will be used to run any data syncing or updating after a mesh modification that may
+  // be necessary.  This is intended for asynchronous execution.
+
+  template <FieldAccessTag FieldAccess = ReadOnly,
+            typename Space = stk::ngp::HostSpace,
+            typename ExecSpace = stk::ngp::ExecSpace>
+  typename AsyncFieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>::FieldDataType
+  data(const ExecSpace& execSpace,
+       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
+  {
+    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>(execSpace, file, line);
+  }
+
 private:
 
 #ifndef DOXYGEN_COMPILE
@@ -282,6 +353,7 @@ private:
   Field( const Field & );
   Field & operator = ( const Field & );
 #endif /* DOXYGEN_COMPILE */
+
 };
 
 } // namespace mesh

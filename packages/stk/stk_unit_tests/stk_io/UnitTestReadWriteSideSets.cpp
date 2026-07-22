@@ -33,7 +33,6 @@ protected:
     const std::string fileName("meshSubset.g");
     stk::mesh::Selector meshSubsetSelector = create_block_subset_selector({blockToExclude});
     stk::io::StkMeshIoBroker stkIo;
-    stkIo.use_simple_fields();
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
     stkIo.set_output_selector(outputFileIndex, stk::topology::ELEM_RANK, meshSubsetSelector);
@@ -85,14 +84,14 @@ class StkIoSideset : public stk::io::unit_test::IOMeshFixture
 protected:
   using VecField = stk::mesh::Field<double>;
 
-  void set_face_field_data(VecField& ssField, stk::mesh::Entity face)
+  void set_face_field_data(stk::mesh::FieldData<double>& ssFieldData, stk::mesh::Entity face)
   {
-    const stk::mesh::Entity* faceNodes = get_bulk().begin_nodes(face);
-    unsigned numFaceNodes = get_bulk().num_nodes(face);
-    EXPECT_EQ(numFaceNodes, stk::mesh::field_scalars_per_entity(ssField, face));
-    double* fieldData = stk::mesh::field_data(ssField, face);
-    for (unsigned n=0; n<numFaceNodes; ++n) {
-      fieldData[n] = static_cast<double>(get_bulk().identifier(faceNodes[n]));
+    const stk::mesh::ConnectedEntities faceNodes = get_bulk().get_connected_entities(face, stk::topology::NODE_RANK);
+    const int numFaceNodes = faceNodes.size();
+    auto ssFieldValues = ssFieldData.entity_values(face);
+    EXPECT_EQ(numFaceNodes, ssFieldValues.num_components());
+    for (stk::mesh::ComponentIdx n : ssFieldValues.components()) {
+      ssFieldValues(n) = static_cast<double>(get_bulk().identifier(faceNodes[n]));
     }
   }
 
@@ -101,25 +100,27 @@ protected:
                                           unsigned expectedNumFaces)
   {
     const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-    stk::mesh::Part* surface1 = meta.get_part("surface_1");
-    ASSERT_TRUE(surface1 != nullptr);
+    stk::mesh::Part* surface1Extracted = meta.get_part("surface_1");
+    ASSERT_TRUE(surface1Extracted != nullptr);
 
-    stk::mesh::FieldBase* ssField = meta.get_field(meta.side_rank(), ssFieldName);
-    ASSERT_TRUE(ssField != nullptr);
+    stk::mesh::FieldBase* ssFieldExtracted = meta.get_field(meta.side_rank(), ssFieldName);
+    ASSERT_TRUE(ssFieldExtracted != nullptr);
 
-    stk::mesh::Selector selector(*ssField & meta.locally_owned_part());
+    stk::mesh::Selector selector(*ssFieldExtracted & meta.locally_owned_part());
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(bulk, meta.side_rank(), selector, faces);
     EXPECT_EQ(expectedNumFaces, faces.size());
 
+    auto ssFieldData = ssFieldExtracted->data<double>();
     for(stk::mesh::Entity face : faces) {
-      unsigned numFaceNodes = bulk.num_nodes(face);
-      unsigned numScalars = stk::mesh::field_scalars_per_entity(*ssField, face);
+      stk::mesh::ConnectedEntities faceNodes = bulk.get_connected_entities(face, stk::topology::NODE_RANK);
+      unsigned numFaceNodes = faceNodes.size();
+      auto ssFieldValues = ssFieldData.entity_values(face);
+      unsigned numScalars = ssFieldValues.num_components();
       ASSERT_TRUE(numFaceNodes <= numScalars);
-      const stk::mesh::Entity* faceNodes = bulk.begin_nodes(face);
-      const double* fieldData = static_cast<const double*>(stk::mesh::field_data(*ssField, face));
       for(unsigned n=0; n<numFaceNodes; ++n) {
-        EXPECT_NEAR(fieldData[n], static_cast<double>(bulk.identifier(faceNodes[n])), 1.e-6);
+        stk::mesh::ComponentIdx nidx(n);
+        EXPECT_NEAR(ssFieldValues(nidx), static_cast<double>(bulk.identifier(faceNodes[n])), 1.e-6);
       }
     }
   }
@@ -168,19 +169,20 @@ protected:
     }
   }
 
-  void set_coords(stk::mesh::BulkData& bulk, VecField& coordField,
+  void set_coords(stk::mesh::BulkData& bulk, VecField& coordFieldArg,
                   const stk::mesh::EntityIdVector& nodeIds,
                   const std::vector<double>& coords)
   {
     const unsigned spatialDim = bulk.mesh_meta_data().spatial_dimension();
     ASSERT_EQ(coords.size(), spatialDim*nodeIds.size());
     unsigned offset = 0;
+    auto coordFieldData = coordFieldArg.data<stk::mesh::ReadWrite>();
     for(stk::mesh::EntityId id : nodeIds) {
       stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id);
       ASSERT_TRUE(bulk.is_valid(node));
-      double* coordData = stk::mesh::field_data(coordField, node);
-      for(unsigned d=0; d<spatialDim; ++d) {
-        coordData[d] = coords[offset++];
+      auto coordData = coordFieldData.entity_values(node);
+      for(stk::mesh::ComponentIdx d=0_comp; d<static_cast<int>(spatialDim); ++d) {
+        coordData(d) = coords[offset++];
       }
     }
   }
@@ -229,7 +231,8 @@ protected:
     stk::mesh::ConnectivityOrdinal faceOrd = 0;
     stk::mesh::Entity face11 = get_bulk().declare_element_side(elem1, faceOrd, quadFaceParts);
     EXPECT_EQ(stk::topology::QUAD_4, get_bulk().bucket(face11).topology());
-    set_face_field_data(*ssField, face11);
+    auto ssFieldData = ssField->data<stk::mesh::ReadWrite>();
+    set_face_field_data(ssFieldData, face11);
   }
 
   void create_tet_with_face()
@@ -246,7 +249,8 @@ protected:
     stk::mesh::ConnectivityOrdinal faceOrd = 0;
     stk::mesh::Entity face21 = get_bulk().declare_element_side(elem2, faceOrd, triFaceParts);
     EXPECT_EQ(stk::topology::TRI_3, get_bulk().bucket(face21).topology());
-    set_face_field_data(*ssField, face21);
+    auto ssFieldData = ssField->data<stk::mesh::ReadWrite>();
+    set_face_field_data(ssFieldData, face21);
   }
 
   void setup_mesh_hex_tet_quad_tri()
@@ -341,7 +345,7 @@ TEST_F(StkIoSideset, field_TriAndQuadSides_restart)
   test_write_then_read(isRestart);
 }
 
-TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
+TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_externalFile)
 {
     std::vector<std::string> filesToTest = {
                                             "AA.e", "ADeDB.e", "ADeLB.e", "ADReA.e", "AefA.e",  "AL.e",
@@ -360,7 +364,7 @@ TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
     }
 }
 
-TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet)
+TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet_externalFile)
 {
     std::vector<std::string> filesToTest = { "ALefRA.e" };
 
@@ -429,8 +433,7 @@ void test_output_sideset(stk::unit_test_util::sideset::BulkDataTester &bulk,
   stk::unit_test_util::sideset::write_exo_file(bulk, outputFileName);
 
   auto meta2 = std::make_shared<stk::mesh::MetaData>();
-  meta2->use_simple_fields();
-  stk::unit_test_util::sideset::BulkDataTester bulk2(meta2, bulk.parallel());
+  stk::unit_test_util::sideset::BulkDataTester bulk2(*meta2, bulk.parallel());
   stk::unit_test_util::sideset::read_exo_file(bulk2, outputFileName, readMode);
   EXPECT_NO_THROW(stk::unit_test_util::sideset::compare_sidesets(outputFileName, bulk, bulk2));
 }
@@ -491,15 +494,14 @@ void test_create_and_write_new_sideset(stk::ParallelMachine pm,
                                        const stk::unit_test_util::sideset::ElemIdSideVector &newSideSet)
 {
   auto meta = std::make_shared<stk::mesh::MetaData>(3);
-  meta->use_simple_fields();
-  stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+  stk::unit_test_util::sideset::BulkDataTester bulk(*meta, pm);
   stk::mesh::PartVector parts = create_parts(*meta);
 
   load_mesh_with_no_sidesets(bulk, inputFileName);
   test_create_and_write_new_sideset(bulk, parts, newSideSet, outputFileName);
 }
 
-TEST(StkIo, create_and_write_new_sideset)
+TEST(StkIo, create_and_write_new_sideset_externalFile)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -552,8 +554,7 @@ void test_read_and_modify_sideset(stk::ParallelMachine pm,
                                   const stk::unit_test_util::sideset::ElemIdSideVector &expectedOutputElemIdSides)
 {
     auto meta = std::make_shared<stk::mesh::MetaData>();
-    meta->use_simple_fields();
-    stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+    stk::unit_test_util::sideset::BulkDataTester bulk(*meta, pm);
     int inputId = 1;
 
     read_and_test_preexisting_sidesets(bulk, inputFileName, inputId, expectedInputElemIdSides);
@@ -563,7 +564,7 @@ void test_read_and_modify_sideset(stk::ParallelMachine pm,
     test_output_sideset(bulk, outputFileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
 }
 
-TEST(StkIo, modify_sideset)
+TEST(StkIo, modify_sideset_externalFile)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -577,7 +578,32 @@ TEST(StkIo, modify_sideset)
   }
 }
 
-TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
+TEST(StkIo, skinned_sideset_from_badly_named_element_block)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  if(stk::parallel_machine_size(pm) > 1) GTEST_SKIP();
+
+  std::string meshDesc = "textmesh: 0,1,HEX_8,1,2,3,4,5,6,7,8, shell_a"
+                         "|coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1"
+                         "|sideset:name=surface_skinned_shell_a; data=1,1";
+
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  EXPECT_NO_THROW(stk::io::fill_mesh(meshDesc, *bulk));
+
+  std::string fileName("missing_skinned_shell.g");
+  stk::io::write_mesh(fileName, *bulk);
+
+  std::shared_ptr<stk::mesh::BulkData> bulk2 = build_mesh_no_simple_fields(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::unit_test_util::sideset::read_exo_file(*bulk2, fileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
+  stk::unit_test_util::sideset::SideSetIdAndElemIdSidesVector expectedInputSideset{ {1, {{1, 0}}} };
+  stk::unit_test_util::sideset::compare_sidesets(fileName, *bulk2, expectedInputSideset);
+  
+  unlink(fileName.c_str());
+}
+
+TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA_externalFile)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -586,8 +612,7 @@ TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
   if(p_size == 2)
   {
       auto meta = std::make_shared<stk::mesh::MetaData>(3);
-      meta->use_simple_fields();
-      stk::unit_test_util::sideset::BulkDataTester bulk(meta, pm);
+      stk::unit_test_util::sideset::BulkDataTester bulk(*meta, pm);
 
       stk::mesh::PartVector parts = create_parts(*meta);
       load_mesh_with_no_sidesets(bulk, "AA.e");
@@ -718,30 +743,26 @@ void check_shell_edge_side(const stk::mesh::BulkData& bulk, stk::mesh::Connectiv
   EXPECT_EQ(expectedZeroBasedOrd, ords[0]);
 }
 
-TEST(ShellSideSidesets, DISABLED_create3DEdgesFromShellSides)
+TEST(ShellSideSidesets, create3DEdgesFromShellSides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
-  std::string meshDesc = "textmesh: 0,1,SHELL_QUAD_4,1,2,3,4 |coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0 |sideset:name=surface_1; data=1,3";
+  std::string meshDesc = "textmesh: 0,1,SHELL_QUAD_4,1,2,3,4 |coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0 |sideset:name=surface_1; data=1,3; split=topology";
 
   const unsigned spatialDim = 3;
   std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
-  std::cout<<"reading mesh from textmesh"<<std::endl;
   EXPECT_NO_THROW(stk::io::fill_mesh(meshDesc, *bulk));
 
-  std::cout<<"checking mesh created from textmesh:"<<std::endl;
   stk::mesh::ConnectivityOrdinal expectedSideOrdinal = 3;
   check_shell_edge_side(*bulk, expectedSideOrdinal);
 
   std::string fileName("shell_edge_side.g");
-  std::cout<<"writing mesh"<<std::endl;
   stk::io::write_mesh(fileName, *bulk);
  
   std::shared_ptr<stk::mesh::BulkData> bulk2 = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
-  std::cout<<"reading mesh from file"<<std::endl;
   EXPECT_NO_THROW(stk::io::fill_mesh(fileName, *bulk2));
+  unlink(fileName.c_str());
 
-  std::cout<<"checking mesh written-then-read from stk-io:"<<std::endl;
   check_shell_edge_side(*bulk2, expectedSideOrdinal);
 }
 

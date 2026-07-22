@@ -33,7 +33,13 @@
 // 
 
 #include "gtest/gtest.h"
+#include <stk_util/stk_config.h>
 #include <stk_util/parallel/ParallelComm.hpp>
+
+#if defined(STK_HAS_MPI) && defined(STK_HAVE_STKIO)
+#include "stk_unit_test_utils/MeshFixture.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#endif
 
 namespace {
 
@@ -282,6 +288,202 @@ TEST_F(TestCommBuffer, pack_unpack_vector_string)
 
   check_unpack(goldstr);
 }
+
+#if defined(STK_HAS_MPI) && defined(STK_HAVE_STKIO)
+
+class TestCommBufferWithMesh : public TestCommBuffer, public stk::unit_test_util::MeshFixtureNoTest
+{
+public:
+  template <typename T, stk::mesh::Layout DataLayout>
+  std::pair<stk::mesh::Field<T, DataLayout>*, stk::mesh::Field<T, DataLayout>*>
+  build_two_element_mesh_with_vector_fields(const std::vector<T>& initValsPack, const std::vector<T>& initValsUnpack)
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    auto& fieldPack = get_meta().declare_field<T, DataLayout>(stk::topology::ELEM_RANK, "elemFieldPack");
+    auto& fieldUnpack = get_meta().declare_field<T, DataLayout>(stk::topology::ELEM_RANK, "elemFieldUnpack");
+    stk::mesh::put_field_on_mesh(fieldPack, get_meta().universal_part(), initValsPack.size(), initValsPack.data());
+    stk::mesh::put_field_on_mesh(fieldUnpack, get_meta().universal_part(), initValsUnpack.size(), initValsUnpack.data());
+    stk::io::fill_mesh("generated:1x1x2", get_bulk());
+    return std::make_pair(&fieldPack, &fieldUnpack);
+  }
+
+  template<typename T, typename EntityValuesType>
+  typename std::enable_if<std::is_floating_point<T>::value>::type
+  check_unpack(const std::vector<T>& gold, EntityValuesType& entityValuesUnpack)
+  {
+    buf.unpack(entityValuesUnpack.pointer(), entityValuesUnpack.num_components(), entityValuesUnpack.component_stride());
+    for (stk::mesh::ComponentIdx component : entityValuesUnpack.components()) {
+      EXPECT_DOUBLE_EQ(gold[component], entityValuesUnpack(component));
+    }
+  }
+
+  template<typename T, typename EntityBytesType>
+  typename std::enable_if<std::is_floating_point<T>::value>::type
+  check_unpack_bytes(const std::vector<T>& gold, EntityBytesType& entityBytesUnpack)
+  {
+    buf.unpack_bytes(entityBytesUnpack.pointer(), entityBytesUnpack.num_bytes(), entityBytesUnpack.bytes_per_scalar(),
+                     entityBytesUnpack.scalar_byte_stride());
+
+    const std::byte* goldBytes = reinterpret_cast<const std::byte*>(gold.data());
+    for (stk::mesh::ByteIdx byte : entityBytesUnpack.bytes()) {
+      EXPECT_EQ(goldBytes[byte], entityBytesUnpack(byte));
+    }
+  }
+
+  template<typename T, typename EntityValuesType>
+  typename std::enable_if<std::is_floating_point<T>::value>::type
+  check_peek(const std::vector<T>& gold, EntityValuesType& entityValuesUnpack)
+  {
+    buf.peek(entityValuesUnpack.pointer(), entityValuesUnpack.num_components(), entityValuesUnpack.component_stride());
+    for (stk::mesh::ComponentIdx component : entityValuesUnpack.components()) {
+      EXPECT_DOUBLE_EQ(gold[component], entityValuesUnpack(component));
+    }
+  }
+
+  template<typename T, typename EntityBytesType>
+  typename std::enable_if<std::is_floating_point<T>::value>::type
+  check_peek_bytes(const std::vector<T>& gold, EntityBytesType& entityBytesUnpack)
+  {
+    buf.peek_bytes(entityBytesUnpack.pointer(), entityBytesUnpack.num_bytes(), entityBytesUnpack.bytes_per_scalar(),
+                   entityBytesUnpack.scalar_byte_stride());
+
+    const std::byte* goldBytes = reinterpret_cast<const std::byte*>(gold.data());
+    for (stk::mesh::ByteIdx byte : entityBytesUnpack.bytes()) {
+      EXPECT_EQ(goldBytes[byte], entityBytesUnpack(byte));
+    }
+  }
+
+};
+
+TEST_F(TestCommBufferWithMesh, pack_layout_right_entity_values)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) GTEST_SKIP();
+
+  std::vector<double> initValsPack {1.0, 2.0, 3.0};
+  std::vector<double> initValsUnpack(3);
+  auto [fieldPack, fieldUnpack] = build_two_element_mesh_with_vector_fields<double, stk::mesh::Layout::Right>(initValsPack,
+                                                                                                              initValsUnpack);
+  const stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
+  const stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+
+  auto fieldDataPack = fieldPack->data();
+  auto entityValuesPack1 = fieldDataPack.entity_values(elem1);
+  auto entityValuesPack2 = fieldDataPack.entity_values(elem2);
+
+  pack([=](stk::CommBuffer& buffer) {
+    buffer.pack(entityValuesPack1.pointer(), entityValuesPack1.num_components(), entityValuesPack1.component_stride());
+    buffer.pack(entityValuesPack2.pointer(), entityValuesPack2.num_components(), entityValuesPack2.component_stride());
+  });
+
+  buf.reset();
+
+  auto fieldDataUnpack = fieldPack->data<stk::mesh::ReadWrite>();
+  auto entityValuesUnpack1 = fieldDataUnpack.entity_values(elem1);
+  auto entityValuesUnpack2 = fieldDataUnpack.entity_values(elem1);
+  check_peek(initValsPack, entityValuesUnpack1);
+  check_unpack(initValsPack, entityValuesUnpack1);
+  check_peek(initValsPack, entityValuesUnpack2);
+  check_unpack(initValsPack, entityValuesUnpack2);
+}
+
+TEST_F(TestCommBufferWithMesh, pack_layout_left_entity_values)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) GTEST_SKIP();
+
+  std::vector<double> initValsPack {1.0, 2.0, 3.0};
+  std::vector<double> initValsUnpack(3);
+  auto [fieldPack, fieldUnpack] = build_two_element_mesh_with_vector_fields<double, stk::mesh::Layout::Left>(initValsPack,
+                                                                                                             initValsUnpack);
+  const stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
+  const stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+
+  auto fieldDataPack = fieldPack->data();
+  auto entityValuesPack1 = fieldDataPack.entity_values(elem1);
+  auto entityValuesPack2 = fieldDataPack.entity_values(elem2);
+
+  pack([=](stk::CommBuffer& buffer) {
+    buffer.pack(entityValuesPack1.pointer(), entityValuesPack1.num_components(), entityValuesPack1.component_stride());
+    buffer.pack(entityValuesPack2.pointer(), entityValuesPack2.num_components(), entityValuesPack2.component_stride());
+  });
+
+  buf.reset();
+
+  auto fieldDataUnpack = fieldPack->data<stk::mesh::ReadWrite>();
+  auto entityValuesUnpack1 = fieldDataUnpack.entity_values(elem1);
+  auto entityValuesUnpack2 = fieldDataUnpack.entity_values(elem1);
+  check_peek(initValsPack, entityValuesUnpack1);
+  check_unpack(initValsPack, entityValuesUnpack1);
+  check_peek(initValsPack, entityValuesUnpack2);
+  check_unpack(initValsPack, entityValuesUnpack2);
+}
+
+TEST_F(TestCommBufferWithMesh, pack_layout_right_entity_bytes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) GTEST_SKIP();
+
+  std::vector<double> initValsPack {1.0, 2.0, 3.0};
+  std::vector<double> initValsUnpack(3);
+  auto [fieldPack, fieldUnpack] = build_two_element_mesh_with_vector_fields<double, stk::mesh::Layout::Right>(initValsPack,
+                                                                                                              initValsUnpack);
+  const stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
+  const stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+
+  auto fieldBytesPack = fieldPack->data_bytes<const std::byte>();
+  auto entityBytesPack1 = fieldBytesPack.entity_bytes<stk::mesh::Layout::Right>(elem1);
+  auto entityBytesPack2 = fieldBytesPack.entity_bytes<stk::mesh::Layout::Right>(elem2);
+
+  pack([=](stk::CommBuffer& buffer) {
+    buffer.pack_bytes(entityBytesPack1.pointer(), entityBytesPack1.num_bytes(), entityBytesPack1.bytes_per_scalar(),
+                      entityBytesPack1.scalar_byte_stride());
+    buffer.pack_bytes(entityBytesPack2.pointer(), entityBytesPack2.num_bytes(), entityBytesPack2.bytes_per_scalar(),
+                      entityBytesPack2.scalar_byte_stride());
+  });
+
+  buf.reset();
+
+  auto fieldBytesUnpack = fieldPack->data_bytes<std::byte>();
+  auto entityBytesUnpack1 = fieldBytesUnpack.entity_bytes(elem1);
+  auto entityBytesUnpack2 = fieldBytesUnpack.entity_bytes(elem2);
+  check_peek_bytes(initValsPack, entityBytesUnpack1);
+  check_unpack_bytes(initValsPack, entityBytesUnpack1);
+  check_peek_bytes(initValsPack, entityBytesUnpack2);
+  check_unpack_bytes(initValsPack, entityBytesUnpack2);
+}
+
+TEST_F(TestCommBufferWithMesh, pack_layout_left_entity_bytes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) GTEST_SKIP();
+
+  std::vector<double> initValsPack {1.0, 2.0, 3.0};
+  std::vector<double> initValsUnpack(3);
+  auto [fieldPack, fieldUnpack] = build_two_element_mesh_with_vector_fields<double, stk::mesh::Layout::Left>(initValsPack,
+                                                                                                             initValsUnpack);
+  const stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
+  const stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
+
+  auto fieldBytesPack = fieldPack->data_bytes<const std::byte>();
+  auto entityBytesPack1 = fieldBytesPack.entity_bytes<stk::mesh::Layout::Left>(elem1);
+  auto entityBytesPack2 = fieldBytesPack.entity_bytes<stk::mesh::Layout::Left>(elem2);
+
+  pack([=](stk::CommBuffer& buffer) {
+    buffer.pack_bytes(entityBytesPack1.pointer(), entityBytesPack1.num_bytes(), entityBytesPack1.bytes_per_scalar(),
+                      entityBytesPack1.scalar_byte_stride());
+    buffer.pack_bytes(entityBytesPack2.pointer(), entityBytesPack2.num_bytes(), entityBytesPack2.bytes_per_scalar(),
+                      entityBytesPack2.scalar_byte_stride());
+  });
+
+  buf.reset();
+
+  auto fieldBytesUnpack = fieldPack->data_bytes<std::byte>();
+  auto entityBytesUnpack1 = fieldBytesUnpack.entity_bytes(elem1);
+  auto entityBytesUnpack2 = fieldBytesUnpack.entity_bytes(elem2);
+  check_peek_bytes(initValsPack, entityBytesUnpack1);
+  check_unpack_bytes(initValsPack, entityBytesUnpack1);
+  check_peek_bytes(initValsPack, entityBytesUnpack2);
+  check_unpack_bytes(initValsPack, entityBytesUnpack2);
+}
+
+#endif // have MPI and STKIO
 
 }
 

@@ -1,25 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
+// #include "KokkosBatched_Vector.hpp"
 
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Serial_Impl.hpp"
@@ -71,28 +58,26 @@ struct Functor_TestBatchedTeamLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_lu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize), a1("a1", N, BlkSize, BlkSize);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(
-      13718);
+  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
   Kokkos::fill_random(a0, random, value_type(1.0));
 
   Kokkos::fence();
 
   Kokkos::deep_copy(a1, a0);
 
-  Functor_TestBatchedTeamLU<DeviceType, ViewType, Algo::LU::Unblocked>(a0)
-      .run();
+  Functor_TestBatchedTeamLU<DeviceType, ViewType, Algo::LU::Unblocked>(a0).run();
   Functor_TestBatchedTeamLU<DeviceType, ViewType, AlgoTagType>(a1).run();
 
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror a0_host = Kokkos::create_mirror_view(a0);
-  typename ViewType::HostMirror a1_host = Kokkos::create_mirror_view(a1);
+  typename ViewType::host_mirror_type a0_host = Kokkos::create_mirror_view(a0);
+  typename ViewType::host_mirror_type a1_host = Kokkos::create_mirror_view(a1);
 
   Kokkos::deep_copy(a0_host, a0);
   Kokkos::deep_copy(a1_host, a1);
@@ -117,27 +102,21 @@ template <typename DeviceType, typename ValueType, typename AlgoTagType>
 int test_batched_team_lu() {
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType>
-        ViewType;
-    Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(0,
-                                                                          10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutLeft, DeviceType> ViewType;
+    Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(
-          1024, i);
+      Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(1024, i);
     }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
-    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType>
-        ViewType;
-    Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(0,
-                                                                          10);
+    typedef Kokkos::View<ValueType ***, Kokkos::LayoutRight, DeviceType> ViewType;
+    Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(0, 10);
     for (int i = 0; i < 10; ++i) {
       // printf("Testing: LayoutLeft,  Blksize %d\n", i);
-      Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(
-          1024, i);
+      Test::TeamLU::impl_test_batched_lu<DeviceType, ViewType, AlgoTagType>(1024, i);
     }
   }
 #endif

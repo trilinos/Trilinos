@@ -123,7 +123,9 @@
       <Parameter name="Output Frequency"      type="int"    value="10"    />
       <Parameter name="Verbosity"             type="int"    value="100"   />
       <!-- Pseudo Block CG -->
+      <!--
       <Parameter name="Assert Positive Definiteness" type="bool" value="false" />
+      -->
       <!-- Block GMRES -->
       <!--
       <Parameter name="Num Blocks"            type="int"    value="40"    />

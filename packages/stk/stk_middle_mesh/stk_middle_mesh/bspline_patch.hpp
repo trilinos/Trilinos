@@ -36,7 +36,7 @@ class BSplinePatch : public SurfacePatch
 
     Point eval_point(const double x, const double y) override;
 
-    void eval_deriv(const double x, const double y, double derivs[2]) override
+    void eval_deriv([[maybe_unused]] const double x, [[maybe_unused]] const double y, [[maybe_unused]] double derivs[2]) override
     {
       throw std::runtime_error("BSplinePatch derivative not implemented yet");
     }

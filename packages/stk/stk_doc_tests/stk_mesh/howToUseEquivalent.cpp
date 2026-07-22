@@ -13,7 +13,7 @@
 namespace
 {
 
-class MeshWithSide : public stk::unit_test_util::simple_fields::MeshFixture { };
+class MeshWithSide : public stk::unit_test_util::MeshFixture { };
 
 //-BEGIN
 TEST_F(MeshWithSide, whenCheckingSideEquivalency_returnsCorrectPermutation)

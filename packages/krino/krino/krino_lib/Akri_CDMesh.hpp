@@ -69,8 +69,13 @@ public:
 
   virtual ~CDMesh();
 
-  static bool decomposition_needs_update(const InterfaceGeometry & interfaceGeometry,
-      const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs);
+  static CDMesh & get_decomposed_mesh(stk::mesh::BulkData & mesh);
+  static const CDMesh & get_decomposed_mesh(const stk::mesh::BulkData & mesh);
+  static bool has_decomposed_mesh(const stk::mesh::BulkData & mesh);
+  static CDMesh & create_decomposed_mesh(stk::mesh::BulkData & mesh);
+  static void clear_decomposed_mesh(stk::mesh::BulkData & mesh);
+
+  static bool decomposition_needs_update(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
   static void handle_possible_failed_time_step( stk::mesh::BulkData & mesh, const int step_count );
   static int decompose_mesh( stk::mesh::BulkData & mesh,
       const InterfaceGeometry & interfaceGeometry,
@@ -78,13 +83,12 @@ public:
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs = {} );
   static void reset_mesh_to_original_undecomposed_state(stk::mesh::BulkData & mesh);
   static void nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const InterfaceGeometry & interfaceGeometry);
-  static void mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const RefinementSupport & refinementSupport, const InterfaceGeometry & interfaceGeometry, const int num_refinements);
   static void fixup_adapted_element_parts(stk::mesh::BulkData & mesh);
   static void rebuild_from_restart_mesh(stk::mesh::BulkData & mesh);
   static void prepare_for_resnapping(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
   void rebuild_after_rebalance_or_failed_step();
 
-  static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
+  int decompose_mesh(const InterfaceGeometry & interfaceGeometry, const int stashStepCount);
 
   void snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
@@ -111,7 +115,7 @@ public:
   const CDFEM_Support & get_cdfem_support() const { return my_cdfem_support; }
   CDFEM_Support & get_cdfem_support() { return my_cdfem_support; }
   bool need_nodes_for_prolongation() const { return INTERPOLATION != get_prolongation_model() && was_mesh_previously_decomposed(); }
-  bool need_facets_for_prolongation() const { return ALE_NEAREST_POINT == get_prolongation_model() && was_mesh_previously_decomposed(); }
+  bool need_facets_for_prolongation() const { return ALE_CLOSEST_POINT == get_prolongation_model() && was_mesh_previously_decomposed(); }
   Prolongation_Model get_prolongation_model() const { return my_cdfem_support.get_prolongation_model(); }
   Edge_Interpolation_Model get_edge_interpolation_model() const { return my_cdfem_support.get_edge_interpolation_model(); }
   const std::vector<InterfaceID> & all_interface_ids(const std::vector<Surface_Identifier> & surfaceIdentifiers) const;
@@ -208,7 +212,6 @@ public:
 
 public: // for unit testing
   void update_adaptivity_parent_entities();
-  void determine_conformal_parts(stk::mesh::Entity entity, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
   void clear();
 
 private:
@@ -233,13 +236,9 @@ private:
   void sync_node_scores_on_constrained_nodes();
   void parallel_sync_node_scores_on_shared_nodes();
 
-  bool decomposition_has_changed(const InterfaceGeometry & interfaceGeometry);
+  bool decomposition_has_changed(const InterfaceGeometry & interfaceGeometry) const;
   bool elem_io_part_changed(const ElementObj & elem) const;
-  void determine_nonconformal_parts(stk::mesh::Entity entity, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  void determine_conformal_parts(const stk::mesh::PartVector & current_parts, const stk::mesh::EntityRank entity_rank, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  void determine_child_conformal_parts(stk::topology topology, const stk::mesh::PartVector & parent_parts, const PhaseTag & phase, stk::mesh::PartVector & child_parts) const;
   void determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  bool element_side_should_be_active(const stk::mesh::Entity side) const;
   void stash_field_data(const int step_count) const;
   void stash_nodal_field_data() const;
   void stash_elemental_field_data() const;
@@ -276,10 +275,8 @@ private:
   double get_maximum_cdfem_displacement() const;
 
   void add_possible_interface_sides(std::vector<SideDescription> & sideRequests) const;
-  bool check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes) const;
+  bool check_element_side_parts(const stk::mesh::Entity elem, const unsigned sideId) const;
   void update_element_side_parts();
-
-  void parallel_communicate_elemental_death_fields() const;
 
   void generate_sorted_child_elements();
   void cache_node_ids();
@@ -306,8 +303,6 @@ private:
   RefinementSupport & myRefinementSupport;
   typedef std::unordered_map<stk::mesh::EntityId, const SubElementMeshNode*> NodeMap;
   NodeMap mesh_node_map;
-
-  static std::unique_ptr<CDMesh> the_new_mesh;
 
   std::unordered_map<stk::mesh::EntityId, std::vector<stk::mesh::EntityId> > my_periodic_node_id_map;
 

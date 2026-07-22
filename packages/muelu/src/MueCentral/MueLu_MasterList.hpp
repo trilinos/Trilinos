@@ -20,7 +20,7 @@
 namespace MueLu {
 
 /*!
-  @class MasterList class.
+  @class MasterList
   @brief Static class that holds the complete list of valid MueLu parameters.
 
   This class creates a ParameterList that is used to validate user-supplied ParameterLists.  This same list
@@ -97,7 +97,7 @@ class MasterList {
 };
 
 /*!
-  @class DefaultProblemStrings class.
+  @class DefaultProblemStrings
   @brief Helper class to initialize DefaultProblemTypeLists_ in class MasterList.
 */
 template <typename T, typename U>

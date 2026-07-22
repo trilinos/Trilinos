@@ -19,6 +19,9 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~SmootherFactory() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SmootherFactory(RCP<SmootherPrototype> preAndPostSmootherPrototype) {
   SetSmootherPrototypes(preAndPostSmootherPrototype);
 }

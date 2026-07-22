@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef TPETRA_DETAILS_EXECUTIONSPACESUSER_HPP
 #define TPETRA_DETAILS_EXECUTIONSPACESUSER_HPP
 
@@ -23,7 +32,7 @@ namespace Spaces {
    call to retrieve the owned spaces, if they want to use them.
  */
 class User {
-public:
+ public:
 #ifdef KOKKOS_ENABLE_CUDA
 
   /**
@@ -55,11 +64,11 @@ public:
   space_instance(const Spaces::Priority &priority) const {
     return cudaSlot.space_instance(priority);
   }
-#endif // KOKKOS_ENABLE_CUDA
+#endif  // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_SERIAL
   template <typename ExecSpace,
-            Spaces::Priority priority = Spaces::Priority::medium,
+            Spaces::Priority priority   = Spaces::Priority::medium,
             Spaces::IsSerial<ExecSpace> = true>
   Teuchos::RCP<const ExecSpace> space_instance() const {
     return serialSlot.space_instance<priority>();
@@ -69,11 +78,11 @@ public:
   space_instance(const Spaces::Priority &priority) const {
     return serialSlot.space_instance(priority);
   }
-#endif // KOKKOS_ENABLE_SERIAL
+#endif  // KOKKOS_ENABLE_SERIAL
 
 #ifdef KOKKOS_ENABLE_OPENMP
   template <typename ExecSpace,
-            Spaces::Priority priority = Spaces::Priority::medium,
+            Spaces::Priority priority   = Spaces::Priority::medium,
             Spaces::IsOpenMP<ExecSpace> = true>
   Teuchos::RCP<const ExecSpace> space_instance() const {
     return openMPSlot.space_instance<priority>();
@@ -83,12 +92,12 @@ public:
   space_instance(const Spaces::Priority &priority) const {
     return openMPSlot.space_instance(priority);
   }
-#endif // KOKKOS_ENABLE_OPENMP
+#endif  // KOKKOS_ENABLE_OPENMP
 
 #ifdef KOKKOS_ENABLE_HIP
   template <typename ExecSpace,
             Spaces::Priority priority = Spaces::Priority::medium,
-            Spaces::IsHIP<ExecSpace> = true>
+            Spaces::IsHIP<ExecSpace>  = true>
   Teuchos::RCP<const ExecSpace> space_instance() const {
     return HIPSlot.space_instance<priority>();
   }
@@ -97,7 +106,7 @@ public:
   space_instance(const Spaces::Priority &priority) const {
     return HIPSlot.space_instance(priority);
   }
-#endif // KOKKOS_ENABLE_HIP
+#endif  // KOKKOS_ENABLE_HIP
 
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename ExecSpace,
@@ -111,7 +120,7 @@ public:
   space_instance(const Spaces::Priority &priority) const {
     return SYCLSlot.space_instance(priority);
   }
-#endif // KOKKOS_ENABLE_SYCL
+#endif  // KOKKOS_ENABLE_SYCL
 
 #ifdef KOKKOS_ENABLE_SERIAL
   Slot<Kokkos::Serial> serialSlot;
@@ -129,9 +138,9 @@ public:
   Slot<Kokkos::Experimental::SYCL> SYCLSlot;
 #endif
 
-}; // User
-} // namespace Spaces
-} // namespace Details
-} // namespace Tpetra
+};  // User
+}  // namespace Spaces
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_EXECUTIONSPACESUSER_HPP
+#endif  // TPETRA_DETAILS_EXECUTIONSPACESUSER_HPP

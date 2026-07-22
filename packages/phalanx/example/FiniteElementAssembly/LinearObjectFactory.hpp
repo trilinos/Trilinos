@@ -1,10 +1,20 @@
+// @HEADER
+// *****************************************************************************
+//        Phalanx: A Partial Differential Equation Field Evaluation 
+//       Kernel for Flexible Management of Complex Dependency Chains
+//
+// Copyright 2008 NTESS and the Phalanx contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef PHALANX_EXAMPLE_LINEAR_OBJECT_FACTORY_HPP
 #define PHALANX_EXAMPLE_LINEAR_OBJECT_FACTORY_HPP
 
 #include <utility>
 #include "Mesh.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
+#include "KokkosSparse_StaticCrsGraph.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
@@ -124,7 +134,7 @@ namespace phx_example {
     { return Kokkos::View<double*,PHX::Device>(name,num_dofs_); }
     
     local_matrix_type createJacobianMatrix(const std::string& name) const
-    { return local_matrix_type(name,graph_); }
+    { return local_matrix_type(name,graph_,KokkosSparse::maximum_entry(graph_)+1); }
 
 
     // ****************************************************

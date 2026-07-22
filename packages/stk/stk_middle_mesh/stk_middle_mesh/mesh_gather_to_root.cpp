@@ -271,7 +271,7 @@ void MeshGatherToRoot::unpack_info(utils::impl::ParallelExchange<ElementInfo>& e
 
     for (auto& elInfo : recvBuf)
     {
-      std::array<MeshEntityPtr, 4> edges;
+      std::array<MeshEntityPtr, 4> edges = {0};
       for (int i = 0; i < 4; ++i)
         if (elInfo.edgeOwnerRanks[i] != -1)
         {

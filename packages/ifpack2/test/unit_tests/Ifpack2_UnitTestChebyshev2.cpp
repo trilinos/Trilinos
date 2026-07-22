@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-
 /*! \file Ifpack2_UnitTestChebyshev2.cpp
 \brief A convergence test for Ifpack2::Chebyshev.
 \author Mark Hoemmen
@@ -62,7 +61,7 @@ implementation (which Ifpack2 imitates) been tested in the field.
 // can't find the Ifpack2::Details::Chebyshev methods.
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 #include "Ifpack2_Details_Chebyshev_def.hpp"
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#endif  // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 namespace {
 
@@ -74,25 +73,25 @@ namespace {
 ///
 /// This class requires that the matrix A be symmetric
 /// (resp. Hermitian) positive definite.
-template<class ScalarType, class MV, class MAT>
+template <class ScalarType, class MV, class MAT>
 class CG {
-public:
+ public:
   typedef ScalarType ST;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename STS::magnitudeType MT;
   typedef Tpetra::Vector<typename MV::scalar_type,
                          typename MV::local_ordinal_type,
                          typename MV::global_ordinal_type,
-                         typename MV::node_type> V;
+                         typename MV::node_type>
+      V;
   /// Constructor.
   ///
   /// \param A [in] The matrix A in the linear system to solve.
   ///   A must be symmetric (resp. Hermitian) positive definite.
-  CG (Teuchos::RCP<const MAT> A) :
-    A_ (A),
-    D_ (getDiagonal (*A)),
-    numIters_ (1)
-  {}
+  CG(Teuchos::RCP<const MAT> A)
+    : A_(A)
+    , D_(getDiagonal(*A))
+    , numIters_(1) {}
 
   /// Constructor with parameters.
   ///
@@ -100,12 +99,11 @@ public:
   ///   A must be symmetric (resp. Hermitian) positive definite.
   /// \param params [in/out] On input: the parameters.  On output:
   ///   filled with the current parameter settings.
-  CG (Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params) :
-    A_ (A),
-    D_ (getDiagonal (*A)),
-    numIters_ (1)
-  {
-    setParameters (params);
+  CG(Teuchos::RCP<const MAT> A, Teuchos::ParameterList& params)
+    : A_(A)
+    , D_(getDiagonal(*A))
+    , numIters_(1) {
+    setParameters(params);
   }
 
   /// \brief Set (or reset) parameters.
@@ -114,14 +112,14 @@ public:
   /// - "relaxation: sweeps" (\c int): numIters, the number of iterations.
   ///
   /// \pre numIters >= 0
-  void setParameters (Teuchos::ParameterList& plist) {
+  void setParameters(Teuchos::ParameterList& plist) {
     int numIters = numIters_;
-    if (plist.isParameter ("chebyshev: degree")) {
-      numIters = plist.get<int> ("chebyshev: degree");
-    } else if (plist.isParameter ("CG: iterations")) {
-      numIters = plist.get<int> ("CG: iterations");
+    if (plist.isParameter("chebyshev: degree")) {
+      numIters = plist.get<int>("chebyshev: degree");
+    } else if (plist.isParameter("CG: iterations")) {
+      numIters = plist.get<int>("CG: iterations");
     } else {
-      numIters = plist.get ("relaxation: sweeps", numIters);
+      numIters = plist.get("relaxation: sweeps", numIters);
     }
     numIters_ = numIters;
   }
@@ -132,47 +130,46 @@ public:
   /// \param x [in] Initial guess(es) for the linear system to solve.
   ///
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
-  MT apply (const MV& b, MV& x) {
-    return leftScaledCG (*A_, b, x, numIters_, *D_);
+  MT apply(const MV& b, MV& x) {
+    return leftScaledCG(*A_, b, x, numIters_, *D_);
   }
 
-private:
+ private:
   Teuchos::RCP<const MAT> A_;
   Teuchos::RCP<const V> D_;
   int numIters_;
 
   //! r = b - A * x
   static void
-  computeResidual (MV& r, const MV& b, const MAT& A, const MV& x,
-                   const Teuchos::ETransp mode = Teuchos::NO_TRANS)
-  {
+  computeResidual(MV& r, const MV& b, const MAT& A, const MV& x,
+                  const Teuchos::ETransp mode = Teuchos::NO_TRANS) {
     r = b;
-    A.apply (x, r, mode, -STS::one(), STS::one());
+    A.apply(x, r, mode, -STS::one(), STS::one());
   }
 
   //! z = D_inv * r, = D \ r.
-  static void solve (MV& z, const V& D_inv, const MV& r) {
-    z.elementWiseMultiply (STS::one(), D_inv, r, STS::zero());
+  static void solve(MV& z, const V& D_inv, const MV& r) {
+    z.elementWiseMultiply(STS::one(), D_inv, r, STS::zero());
   }
 
   //! Get a copy of the diagonal of the matrix, as a row Map vector.
-  static Teuchos::RCP<V> getDiagonal (const MAT& A) {
-    Teuchos::RCP<V> D (new V (A.getGraph ()->getRowMap ()));
-    A.getLocalDiagCopy (*D);
+  static Teuchos::RCP<V> getDiagonal(const MAT& A) {
+    Teuchos::RCP<V> D(new V(A.getGraph()->getRowMap()));
+    A.getLocalDiagCopy(*D);
 
     typedef typename V::scalar_type scalar_type;
     typedef typename V::mag_type mag_type;
 
-    const scalar_type ONE = STS::one ();
-    const mag_type min_val_abs = STS::magnitude (STS::eps ());
-    Teuchos::ArrayRCP<scalar_type> D_0 = D->getDataNonConst (0);
-    scalar_type* const D_0_raw = D_0.getRawPtr ();
-    const size_t lclNumRows = D->getLocalLength ();
+    const scalar_type ONE              = STS::one();
+    const mag_type min_val_abs         = STS::magnitude(STS::eps());
+    Teuchos::ArrayRCP<scalar_type> D_0 = D->getDataNonConst(0);
+    scalar_type* const D_0_raw         = D_0.getRawPtr();
+    const size_t lclNumRows            = D->getLocalLength();
 
     for (size_t i = 0; i < lclNumRows; ++i) {
       const scalar_type D_0i = D_0_raw[i];
-      if (STS::magnitude (D_0i) < min_val_abs) {
-        D_0_raw[i] = STS::eps ();
+      if (STS::magnitude(D_0i) < min_val_abs) {
+        D_0_raw[i] = STS::eps();
       } else {
         D_0_raw[i] = ONE / D_0i;
       }
@@ -196,19 +193,18 @@ private:
   ///
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
   static MT
-  leftScaledCG (const MAT& A,
-                const MV& B,
-                MV& X,
-                const int numIters,
-                const V& D_inv)
-  {
-    Teuchos::Array<MT> norms (B.getNumVectors ());
-    for (size_t j = 0; j < B.getNumVectors (); ++j) {
-      Teuchos::RCP<const V> b_j = B.getVector (j);
-      Teuchos::RCP<V> x_j = X.getVectorNonConst (j);
-      norms[j] = oneVecLeftScaledCG (A, *b_j, *x_j, numIters, D_inv);
+  leftScaledCG(const MAT& A,
+               const MV& B,
+               MV& X,
+               const int numIters,
+               const V& D_inv) {
+    Teuchos::Array<MT> norms(B.getNumVectors());
+    for (size_t j = 0; j < B.getNumVectors(); ++j) {
+      Teuchos::RCP<const V> b_j = B.getVector(j);
+      Teuchos::RCP<V> x_j       = X.getVectorNonConst(j);
+      norms[j]                  = oneVecLeftScaledCG(A, *b_j, *x_j, numIters, D_inv);
     }
-    return *std::max_element (norms.begin (), norms.end ());
+    return *std::max_element(norms.begin(), norms.end());
   }
 
   /// Solve Ax=b for x with CG, using diagonal left preconditioning.
@@ -226,44 +222,45 @@ private:
   ///
   /// \return Max (over all columns) absolute residual 2-norm after iterating.
   static MT
-  oneVecLeftScaledCG (const MAT& A,
-                      const V& b,
-                      V& x,
-                      const int numIters,
-                      const V& D_inv)
-  {
-    const ST one = STS::one ();
-    V r (b.getMap ());
-    V p (b.getMap ());
-    V q (b.getMap ());
-    V z (b.getMap ());
+  oneVecLeftScaledCG(const MAT& A,
+                     const V& b,
+                     V& x,
+                     const int numIters,
+                     const V& D_inv) {
+    const ST one = STS::one();
+    V r(b.getMap());
+    V p(b.getMap());
+    V q(b.getMap());
+    V z(b.getMap());
 
     ST alpha, beta, rho;
     // We don't actually need to assign to rho_prev here,
     // but doing so silences a GCC 4.4.6 compiler warning.
-    ST rho_prev = STS::zero ();
-    computeResidual (r, b, A, x); // r = b - A*x
+    ST rho_prev = STS::zero();
+    computeResidual(r, b, A, x);  // r = b - A*x
     for (int i = 0; i < numIters; ++i) {
-      solve (z, D_inv, r); // z = D_inv * r, that is, D \ r.
-      rho = r.dot (z); // rho = r^T z; not sure if the order is right for complex arithmetic.
+      solve(z, D_inv, r);  // z = D_inv * r, that is, D \ r.
+      rho = r.dot(z);      // rho = r^T z; not sure if the order is right for complex arithmetic.
       if (i == 0) {
         p = z;
       } else {
         beta = rho / rho_prev;
-        p.update (one, z, beta); // p = z + beta*p
+        p.update(one, z, beta);  // p = z + beta*p
       }
-      A.apply (p, q);
-      const ST p_dot_q = p.dot (q); // p_dot_q = p^T q; not sure if the order is right for complex arithmetic.
-      alpha = rho / p_dot_q;
-      x.update (+alpha, p, one); // x = x + alpha*p
-      r.update (-alpha, q, one); // r = r - alpha*q
+      A.apply(p, q);
+      const ST p_dot_q = p.dot(q);  // p_dot_q = p^T q; not sure if the order is right for complex arithmetic.
+      alpha            = rho / p_dot_q;
+      x.update(+alpha, p, one);  // x = x + alpha*p
+      r.update(-alpha, q, one);  // r = r - alpha*q
       rho_prev = rho;
     }
 
     const bool computeResidualNorm = true;
     if (computeResidualNorm) {
-      computeResidual (r, b, A, x);
-      return r.norm2 ();
+      computeResidual(r, b, A, x);
+      return r.norm2();
+    } else {
+      return -Teuchos::ScalarTraits<MT>::one();
     }
   }
 };
@@ -274,32 +271,29 @@ private:
 
 // They have long names so I don't confuse them with the shorter-named
 // actual options in the body of the test.
-int numberOfIterations = 50;
+int numberOfIterations              = 50;
 int numberOfEigenanalysisIterations = 15;
-int localNumberOfRows = 10000;
+int localNumberOfRows               = 10000;
 
-} // namespace (anonymous)
+}  // namespace
 
-
-TEUCHOS_STATIC_SETUP()
-{
-  Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP ();
-  clp.setOption ("numIters", &numberOfIterations,
-                 "Number of Chebyshev iterations");
-  clp.setOption ("numEigIters", &numberOfEigenanalysisIterations,
-                 "Number of iterations of eigenvalue analysis (e.g., power method)");
-  clp.setOption ("localNumRows", &localNumberOfRows,
-                 "Number of rows per process in the sparse matrix.");
+TEUCHOS_STATIC_SETUP() {
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
+  clp.setOption("numIters", &numberOfIterations,
+                "Number of Chebyshev iterations");
+  clp.setOption("numEigIters", &numberOfEigenanalysisIterations,
+                "Number of iterations of eigenvalue analysis (e.g., power method)");
+  clp.setOption("localNumRows", &localNumberOfRows,
+                "Number of rows per process in the sparse matrix.");
 }
 
-
-TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
-{
+TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence) {
   // We are now in a class method declared by the above macro, and
   // that method has these input arguments:
   // Teuchos::FancyOStream& out, bool& success
 
-  using Tpetra::global_size_t;
+  using std::cout;
+  using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
@@ -308,8 +302,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
-  using std::cout;
-  using std::endl;
+  using Tpetra::global_size_t;
 
   // Typedefs for basic Tpetra template parameters.
   typedef Tpetra::MultiVector<>::scalar_type ST;
@@ -327,92 +320,90 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
 
-  const ST zero = STS::zero ();
-  const ST one = STS::one ();
-  const ST two = one + one;
+  const ST zero = STS::zero();
+  const ST one  = STS::one();
+  const ST two  = one + one;
 
   // Prepare arguments for creating the Map.
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
-  const size_t localNumRows = as<size_t> (localNumberOfRows);
-  const global_size_t globalNumRows = localNumRows * comm->getSize ();
-  const GO indexBase = 0;
-  const Tpetra::LocalGlobal lg = Tpetra::GloballyDistributed;
+  RCP<const Comm<int> > comm        = Teuchos::DefaultComm<int>::getComm();
+  const size_t localNumRows         = as<size_t>(localNumberOfRows);
+  const global_size_t globalNumRows = localNumRows * comm->getSize();
+  const GO indexBase                = 0;
+  const Tpetra::LocalGlobal lg      = Tpetra::GloballyDistributed;
 
   // Create the row Map of the matrix, and the matrix's other Maps.
-  RCP<const map_type> rowMap (new map_type (globalNumRows, indexBase, comm, lg));
-  RCP<const map_type> rangeMap = rowMap;
+  RCP<const map_type> rowMap(new map_type(globalNumRows, indexBase, comm, lg));
+  RCP<const map_type> rangeMap  = rowMap;
   RCP<const map_type> domainMap = rowMap;
 
   // Create the matrix, with static profile.
-  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3));
+  RCP<crs_matrix_type> A(new crs_matrix_type(rowMap, 3));
 
   // Fill the matrix.
-  Array<GO> cols (3);
-  Array<ST> vals (3);
-  for (GO globalRow = rowMap->getMinGlobalIndex ();
-       globalRow <= rowMap->getMaxGlobalIndex (); ++globalRow) {
+  Array<GO> cols(3);
+  Array<ST> vals(3);
+  for (GO globalRow = rowMap->getMinGlobalIndex();
+       globalRow <= rowMap->getMaxGlobalIndex(); ++globalRow) {
     size_t numEntries = 3;
-    if (globalRow == rowMap->getMinAllGlobalIndex ()) {
+    if (globalRow == rowMap->getMinAllGlobalIndex()) {
       numEntries = 2;
-      cols[0] = globalRow;
-      cols[1] = globalRow+1;
-      vals[0] = two;
-      vals[1] = -one;
-    }
-    else if (globalRow == rowMap->getMaxAllGlobalIndex ()) {
+      cols[0]    = globalRow;
+      cols[1]    = globalRow + 1;
+      vals[0]    = two;
+      vals[1]    = -one;
+    } else if (globalRow == rowMap->getMaxAllGlobalIndex()) {
       numEntries = 2;
-      cols[0] = globalRow-1;
-      cols[1] = globalRow;
-      vals[0] = -one;
-      vals[1] = two;
-    }
-    else {
+      cols[0]    = globalRow - 1;
+      cols[1]    = globalRow;
+      vals[0]    = -one;
+      vals[1]    = two;
+    } else {
       numEntries = 3;
-      cols[0] = globalRow-1;
-      cols[1] = globalRow;
-      cols[2] = globalRow+1;
-      vals[0] = -one;
-      vals[1] = two;
-      vals[2] = -one;
+      cols[0]    = globalRow - 1;
+      cols[1]    = globalRow;
+      cols[2]    = globalRow + 1;
+      vals[0]    = -one;
+      vals[1]    = two;
+      vals[2]    = -one;
     }
-    ArrayView<const GO> colsView = cols.view (0, numEntries);
-    ArrayView<const ST> valsView = vals.view (0, numEntries);
-    A->insertGlobalValues (globalRow, colsView, valsView);
+    ArrayView<const GO> colsView = cols.view(0, numEntries);
+    ArrayView<const ST> valsView = vals.view(0, numEntries);
+    A->insertGlobalValues(globalRow, colsView, valsView);
   }
-  A->fillComplete (domainMap, rangeMap);
+  A->fillComplete(domainMap, rangeMap);
 
   // See James Demmel, "Applied Numerical Linear Algebra," SIAM,
   // pp. 267-8.  The eigenvalue approximations apply to the N x N
   // matrix with typical row (-1, 2, -1), representing the
   // discretization of the 1-D Poisson equation with Dirichlet
   // boundary conditions.
-  const ST pi = acos (-1.0);
-  const ST N = as<ST> (globalNumRows);
-  const ST lambdaMax = two * (one - cos ((pi*N) / (N+one)));
+  const ST pi        = acos(-1.0);
+  const ST N         = as<ST>(globalNumRows);
+  const ST lambdaMax = two * (one - cos((pi * N) / (N + one)));
   const ST lambdaMin = (pi / N) * (pi / N);
-  ST eigRatio = lambdaMax / lambdaMin;
+  ST eigRatio        = lambdaMax / lambdaMin;
   const int numIters = numberOfIterations;
-  int numEigIters = numberOfEigenanalysisIterations;
+  int numEigIters    = numberOfEigenanalysisIterations;
 
   // Set up the linear system to solve.
-  V x_exact (domainMap), x (domainMap), b (rangeMap);
-  x_exact.randomize ();
-  A->apply (x_exact, b);
-  x.putScalar (zero);
+  V x_exact(domainMap), x(domainMap), b(rangeMap);
+  x_exact.randomize();
+  A->apply(x_exact, b);
+  x.putScalar(zero);
 
-  V r (rangeMap); // for storing residual vector(s).
-  Array<MT> norms (b.getNumVectors ());
+  V r(rangeMap);  // for storing residual vector(s).
+  Array<MT> norms(b.getNumVectors());
 
   // Compute max initial absolute residual 2-norm.
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  const MT maxInitResNorm = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  const MT maxInitResNorm = *std::max_element(norms.begin(), norms.end());
 
   // Make an output stream that only prints on Proc 0.
   // The usual 'out' stream in unit tests only prints if the test failed.
   Teuchos::oblackholestream blackHole;
-  std::ostream& os2 = (comm->getRank () == 0) ? cout : blackHole;
+  std::ostream& os2 = (comm->getRank() == 0) ? cout : blackHole;
 
   os2 << std::scientific;
   os2 << endl
@@ -431,18 +422,18 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // Ifpack2, Ifpack, and ML.  For this first pass, we only set the
   // max eigenvalue.  Below, we'll experiment with also setting the
   // min eigenvalue and the min / max eigenvalue ratio.
-  params.set ("chebyshev: eigenvalue max iterations", numEigIters);
-  params.set ("chebyshev: degree", numIters);
-  params.set ("chebyshev: max eigenvalue", lambdaMax);
+  params.set("chebyshev: eigenvalue max iterations", numEigIters);
+  params.set("chebyshev: degree", numIters);
+  params.set("chebyshev: max eigenvalue", lambdaMax);
 
   // Create the operators: Ifpack2, 4th-kind Chebyshev, textbook Chebyshev, and custom CG.
-  prec_type ifpack2Cheby (A);
-  Ifpack2::Details::Chebyshev<ST, MV> myCheby (A);
+  prec_type ifpack2Cheby(A);
+  Ifpack2::Details::Chebyshev<ST, MV> myCheby(A);
 
-  prec_type ifpack2FourthCheby (A);
-  Ifpack2::Details::Chebyshev<ST, MV> myFourthKindCheby (A);
+  prec_type ifpack2FourthCheby(A);
+  Ifpack2::Details::Chebyshev<ST, MV> myFourthKindCheby(A);
 
-  CG<ST, MV, crs_matrix_type> cg (A);
+  CG<ST, MV, crs_matrix_type> cg(A);
 
   // Residual 2-norms for comparison.
   MT maxResNormIfpack2, maxResNormFourthKind, maxResNormTextbook, maxResNormCg;
@@ -453,42 +444,42 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   ////////////////////////////////////////////////////////////////////
 
   // Run Ifpack2's version of Chebyshev.
-  ifpack2Cheby.setParameters (params);
-  ifpack2Cheby.initialize ();
-  ifpack2Cheby.compute ();
-  ifpack2Cheby.apply (b, x);
+  ifpack2Cheby.setParameters(params);
+  ifpack2Cheby.initialize();
+  ifpack2Cheby.compute();
+  ifpack2Cheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormIfpack2 = *std::max_element(norms.begin(), norms.end());
 
   // Run Ifpack2's 4th-kind Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "fourth");
-  ifpack2FourthCheby.setParameters (params);
-  ifpack2FourthCheby.initialize ();
-  ifpack2FourthCheby.compute ();
-  ifpack2FourthCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters(params);
+  ifpack2FourthCheby.initialize();
+  ifpack2FourthCheby.compute();
+  ifpack2FourthCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormFourthKind = *std::max_element(norms.begin(), norms.end());
 
   // Run our custom version of Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "textbook");
-  myCheby.setParameters (params);
-  myCheby.compute ();
-  (void) myCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "textbook");
+  myCheby.setParameters(params);
+  myCheby.compute();
+  (void)myCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormTextbook = *std::max_element(norms.begin(), norms.end());
 
   // Run CG, just to compare.
-  x.putScalar (zero); // Reset the initial guess(es).
-  cg.setParameters (params);
-  maxResNormCg = cg.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  cg.setParameters(params);
+  maxResNormCg = cg.apply(b, x);
 
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin and eigRatio:" << endl
@@ -503,46 +494,46 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   ////////////////////////////////////////////////////////////////////
 
   // Reset parameters.
-  params.set ("chebyshev: algorithm", "first");
-  params.set ("chebyshev: min eigenvalue", lambdaMin);
-  params.set ("chebyshev: ratio eigenvalue", eigRatio);
+  params.set("chebyshev: algorithm", "first");
+  params.set("chebyshev: min eigenvalue", lambdaMin);
+  params.set("chebyshev: ratio eigenvalue", eigRatio);
 
   // Run Ifpack2's version of Chebyshev.
-  ifpack2Cheby.setParameters (params);
-  ifpack2Cheby.initialize ();
-  ifpack2Cheby.compute ();
-  ifpack2Cheby.apply (b, x);
+  ifpack2Cheby.setParameters(params);
+  ifpack2Cheby.initialize();
+  ifpack2Cheby.compute();
+  ifpack2Cheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormIfpack2 = *std::max_element(norms.begin(), norms.end());
 
   // Run 4th-kind Chebyshev
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "fourth");
-  ifpack2FourthCheby.setParameters (params);
-  ifpack2FourthCheby.compute ();
-  ifpack2FourthCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters(params);
+  ifpack2FourthCheby.compute();
+  ifpack2FourthCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormFourthKind = *std::max_element(norms.begin(), norms.end());
 
   // Run our custom version of Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "textbook");
-  myCheby.setParameters (params);
-  myCheby.compute ();
-  (void) myCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "textbook");
+  myCheby.setParameters(params);
+  myCheby.compute();
+  (void)myCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormTextbook = *std::max_element(norms.begin(), norms.end());
 
   // Run CG, just to compare.
-  x.putScalar (zero); // Reset the initial guess(es).
-  cg.setParameters (params);
-  maxResNormCg = cg.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  cg.setParameters(params);
+  maxResNormCg = cg.apply(b, x);
 
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", lambdaMin = " << lambdaMin << ", eigRatio = " << eigRatio << endl
@@ -552,12 +543,12 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters.
-  params.set ("chebyshev: algorithm", "first");
+  params.set("chebyshev: algorithm", "first");
   // ParameterList is NOT a delta.  That is, if we remove these
   // parameters from the list, setParameters() will use default
   // values, rather than letting the current settings remain.
-  params.remove ("chebyshev: min eigenvalue", false);
-  params.remove ("chebyshev: ratio eigenvalue", false);
+  params.remove("chebyshev: min eigenvalue", false);
+  params.remove("chebyshev: ratio eigenvalue", false);
 
   ////////////////////////////////////////////////////////////////////
   // Test 3: set lambdaMax exactly, and set eigRatio = 20 (ML's
@@ -565,49 +556,49 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   ////////////////////////////////////////////////////////////////////
 
   // Set new parameter values.
-  eigRatio = Teuchos::as<ST> (20);
-  params.set ("chebyshev: ratio eigenvalue", eigRatio);
+  eigRatio = Teuchos::as<ST>(20);
+  params.set("chebyshev: ratio eigenvalue", eigRatio);
 
   //
   // Run each version of Chebyshev and compare their results.
   //
   // Run Ifpack2's version of Chebyshev.
-  ifpack2Cheby.setParameters (params);
-  ifpack2Cheby.initialize ();
-  ifpack2Cheby.compute ();
-  ifpack2Cheby.apply (b, x);
+  ifpack2Cheby.setParameters(params);
+  ifpack2Cheby.initialize();
+  ifpack2Cheby.compute();
+  ifpack2Cheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
-  
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormIfpack2 = *std::max_element(norms.begin(), norms.end());
+
   // Run Ifpack2's 4th-kind Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "fourth");
-  ifpack2FourthCheby.setParameters (params);
-  ifpack2FourthCheby.initialize ();
-  ifpack2FourthCheby.compute ();
-  ifpack2FourthCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters(params);
+  ifpack2FourthCheby.initialize();
+  ifpack2FourthCheby.compute();
+  ifpack2FourthCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormFourthKind = *std::max_element(norms.begin(), norms.end());
 
   // Run our custom version of Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "textbook");
-  myCheby.setParameters (params);
-  myCheby.compute ();
-  (void) myCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "textbook");
+  myCheby.setParameters(params);
+  myCheby.compute();
+  (void)myCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormTextbook = *std::max_element(norms.begin(), norms.end());
 
   // Run CG, just to compare.
-  x.putScalar (zero); // Reset the initial guess(es).
-  cg.setParameters (params);
-  maxResNormCg = cg.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  cg.setParameters(params);
+  maxResNormCg = cg.apply(b, x);
 
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
@@ -617,55 +608,55 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters.
-  params.set ("chebyshev: algorithm", "first");
+  params.set("chebyshev: algorithm", "first");
 
   ////////////////////////////////////////////////////////////////////
   // Test 4: set lambdaMax exactly, and set eigRatio = 30 (Ifpack's
   // default).
   ////////////////////////////////////////////////////////////////////
-  eigRatio = Teuchos::as<ST> (30);
-  params.set ("chebyshev: ratio eigenvalue", eigRatio);
+  eigRatio = Teuchos::as<ST>(30);
+  params.set("chebyshev: ratio eigenvalue", eigRatio);
 
   //
   // Run each version of Chebyshev and compare their results.
   //
   // Run Ifpack2's version of Chebyshev.
-  ifpack2Cheby.setParameters (params);
-  ifpack2Cheby.initialize ();
-  ifpack2Cheby.compute ();
-  ifpack2Cheby.apply (b, x);
+  ifpack2Cheby.setParameters(params);
+  ifpack2Cheby.initialize();
+  ifpack2Cheby.compute();
+  ifpack2Cheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormIfpack2 = *std::max_element(norms.begin(), norms.end());
 
   // Run Ifpack2's 4th-kind Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "fourth");
-  ifpack2FourthCheby.setParameters (params);
-  ifpack2FourthCheby.initialize ();
-  ifpack2FourthCheby.compute ();
-  ifpack2FourthCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters(params);
+  ifpack2FourthCheby.initialize();
+  ifpack2FourthCheby.compute();
+  ifpack2FourthCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormFourthKind = *std::max_element(norms.begin(), norms.end());
 
   // Run our custom version of Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "textbook");
-  myCheby.setParameters (params);
-  myCheby.compute ();
-  (void) myCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "textbook");
+  myCheby.setParameters(params);
+  myCheby.compute();
+  (void)myCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormTextbook = *std::max_element(norms.begin(), norms.end());
 
   // Run CG, just to compare.
-  x.putScalar (zero); // Reset the initial guess(es).
-  cg.setParameters (params);
-  maxResNormCg = cg.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  cg.setParameters(params);
+  maxResNormCg = cg.apply(b, x);
 
   os2 << "Results with lambdaMax = " << lambdaMax
       << ", default lambdaMin, eigRatio = " << eigRatio << endl
@@ -675,8 +666,8 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
       << "- CG:                         " << maxResNormCg / maxInitResNorm << endl;
 
   // Reset parameters to their original values.
-  params.set ("chebyshev: algorithm", "first");
-  params.remove ("chebyshev: ratio eigenvalue", false);
+  params.set("chebyshev: algorithm", "first");
+  params.remove("chebyshev: ratio eigenvalue", false);
   eigRatio = lambdaMax / lambdaMin;
 
   ////////////////////////////////////////////////////////////////////
@@ -684,50 +675,51 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // smoother do eigenanalysis to estimate lambdaMax.
   ////////////////////////////////////////////////////////////////////
 
-  params.remove ("chebyshev: min eigenvalue", false);
-  params.remove ("chebyshev: max eigenvalue", false);
-  params.remove ("chebyshev: ratio eigenvalue", false);
+  params.remove("chebyshev: min eigenvalue", false);
+  params.remove("chebyshev: max eigenvalue", false);
+  params.remove("chebyshev: ratio eigenvalue", false);
 
   // Run Ifpack2's version of Chebyshev.
-  ifpack2Cheby.setParameters (params);
-  ifpack2Cheby.initialize ();
-  ifpack2Cheby.compute ();
-  ifpack2Cheby.apply (b, x);
+  ifpack2Cheby.setParameters(params);
+  ifpack2Cheby.initialize();
+  ifpack2Cheby.compute();
+  ifpack2Cheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormIfpack2 = *std::max_element(norms.begin(), norms.end());
 
   // Run Ifpack2's 4th-kind Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "fourth");
-  ifpack2FourthCheby.setParameters (params);
-  ifpack2FourthCheby.initialize ();
-  ifpack2FourthCheby.compute ();
-  ifpack2FourthCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters(params);
+  ifpack2FourthCheby.initialize();
+  ifpack2FourthCheby.compute();
+  ifpack2FourthCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormFourthKind = *std::max_element(norms.begin(), norms.end());
 
   // Run our custom version of Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "textbook");
-  myCheby.setParameters (params);
-  myCheby.compute ();
-  (void) myCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "textbook");
+  myCheby.setParameters(params);
+  myCheby.compute();
+  (void)myCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormTextbook = *std::max_element(norms.begin(), norms.end());
 
   // Run CG, just to compare.
-  x.putScalar (zero); // Reset the initial guess(es).
-  cg.setParameters (params);
-  maxResNormCg = cg.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  cg.setParameters(params);
+  maxResNormCg = cg.apply(b, x);
 
   os2 << "Results with default lambdaMax, lambdaMin, and eigRatio, "
-    "with numEigIters = " << numEigIters << ":" << endl
+         "with numEigIters = "
+      << numEigIters << ":" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
       << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
@@ -735,10 +727,10 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
 
   // Print the computed max and min eigenvalues, and other details.
   os2 << endl;
-  myCheby.print (os2);
+  myCheby.print(os2);
 
   // Reset parameters.
-  params.set ("chebyshev: algorithm", "first");
+  params.set("chebyshev: algorithm", "first");
 
   ////////////////////////////////////////////////////////////////////
   // Test 6: Clear lambdaMax, lambdaMin, and eigRatio.  Let the
@@ -746,52 +738,53 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // iterations.
   ////////////////////////////////////////////////////////////////////
 
-  params.remove ("chebyshev: min eigenvalue", false);
-  params.remove ("chebyshev: max eigenvalue", false);
-  params.remove ("chebyshev: ratio eigenvalue", false);
+  params.remove("chebyshev: min eigenvalue", false);
+  params.remove("chebyshev: max eigenvalue", false);
+  params.remove("chebyshev: ratio eigenvalue", false);
   numEigIters = 2 * numEigIters;
-  params.set ("chebyshev: eigenvalue max iterations", numEigIters);
+  params.set("chebyshev: eigenvalue max iterations", numEigIters);
 
   // Run Ifpack2's version of Chebyshev.
-  ifpack2Cheby.setParameters (params);
-  ifpack2Cheby.initialize ();
-  ifpack2Cheby.compute ();
-  ifpack2Cheby.apply (b, x);
+  ifpack2Cheby.setParameters(params);
+  ifpack2Cheby.initialize();
+  ifpack2Cheby.compute();
+  ifpack2Cheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormIfpack2 = *std::max_element(norms.begin(), norms.end());
 
   // Run Ifpack2's 4th-kind Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "fourth");
-  ifpack2FourthCheby.setParameters (params);
-  ifpack2FourthCheby.initialize ();
-  ifpack2FourthCheby.compute ();
-  ifpack2FourthCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "fourth");
+  ifpack2FourthCheby.setParameters(params);
+  ifpack2FourthCheby.initialize();
+  ifpack2FourthCheby.compute();
+  ifpack2FourthCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormFourthKind = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormFourthKind = *std::max_element(norms.begin(), norms.end());
 
   // Run our custom version of Chebyshev.
-  x.putScalar (zero); // Reset the initial guess(es).
-  params.set ("chebyshev: algorithm", "textbook");
-  myCheby.setParameters (params);
-  myCheby.compute ();
-  (void) myCheby.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  params.set("chebyshev: algorithm", "textbook");
+  myCheby.setParameters(params);
+  myCheby.compute();
+  (void)myCheby.apply(b, x);
   r = b;
-  A->apply (x, r, Teuchos::NO_TRANS, -one, one);
-  r.norm2 (norms ());
-  maxResNormTextbook = *std::max_element (norms.begin (), norms.end ());
+  A->apply(x, r, Teuchos::NO_TRANS, -one, one);
+  r.norm2(norms());
+  maxResNormTextbook = *std::max_element(norms.begin(), norms.end());
 
   // Run CG, just to compare.
-  x.putScalar (zero); // Reset the initial guess(es).
-  cg.setParameters (params);
-  maxResNormCg = cg.apply (b, x);
+  x.putScalar(zero);  // Reset the initial guess(es).
+  cg.setParameters(params);
+  maxResNormCg = cg.apply(b, x);
 
   os2 << "Results with default lambdaMax, lambdaMin, and eigRatio, "
-    "with numEigIters = " << numEigIters << ":" << endl
+         "with numEigIters = "
+      << numEigIters << ":" << endl
       << "- Ifpack2::Chebyshev:         " << maxResNormIfpack2 / maxInitResNorm << endl
       << "- 4th-kind Chebyshev:         " << maxResNormFourthKind / maxInitResNorm << endl
       << "- Textbook Chebyshev:         " << maxResNormTextbook / maxInitResNorm << endl
@@ -803,35 +796,33 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // than the textbook version.  We give "wiggle room" of four digits
   // for defining "no worse than."
   if (numEigIters >= 15) {
-    const MT tol = Teuchos::as<MT> (1.0e-4);
+    const MT tol = Teuchos::as<MT>(1.0e-4);
     // Avoid division by zero when computing relative accuracy.
-    MT relDiff = maxResNormTextbook == zero ?
-      STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) :
-      STS::magnitude (maxResNormIfpack2 - maxResNormTextbook) / maxResNormTextbook;
+    MT relDiff = maxResNormTextbook == zero ? STS::magnitude(maxResNormIfpack2 - maxResNormTextbook) : STS::magnitude(maxResNormIfpack2 - maxResNormTextbook) / maxResNormTextbook;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      maxResNormIfpack2 > maxResNormTextbook && relDiff > tol,
-      std::runtime_error,
-      "After " << numIters << " iterations of Chebyshev, with lambdaMax = "
-      << lambdaMax << " and default lambdaMin and eigRatio, Ifpack2::Chebyshev "
-      "does quite a bit worse than the textbook version of the algorithm.  The "
-      "former has a max relative residual norm of " << maxResNormIfpack2 << ", "
-      "and the latter of " << maxResNormTextbook << ".");
-    relDiff = maxResNormTextbook == zero ?
-      STS::magnitude (maxResNormFourthKind - maxResNormTextbook) :
-      STS::magnitude (maxResNormFourthKind - maxResNormTextbook) / maxResNormTextbook;
+        maxResNormIfpack2 > maxResNormTextbook && relDiff > tol,
+        std::runtime_error,
+        "After " << numIters << " iterations of Chebyshev, with lambdaMax = "
+                 << lambdaMax << " and default lambdaMin and eigRatio, Ifpack2::Chebyshev "
+                                 "does quite a bit worse than the textbook version of the algorithm.  The "
+                                 "former has a max relative residual norm of "
+                 << maxResNormIfpack2 << ", "
+                                         "and the latter of "
+                 << maxResNormTextbook << ".");
+    relDiff = maxResNormTextbook == zero ? STS::magnitude(maxResNormFourthKind - maxResNormTextbook) : STS::magnitude(maxResNormFourthKind - maxResNormTextbook) / maxResNormTextbook;
     TEUCHOS_TEST_FOR_EXCEPTION(
-      maxResNormFourthKind > maxResNormTextbook && relDiff > tol,
-      std::runtime_error,
-      "After " << numIters << " iterations of Chebyshev, with lambdaMax = "
-      << lambdaMax << " and default lambdaMin and eigRatio, 4th-kind Ifpack2::Chebyshev "
-      "does quite a bit worse than the textbook version of the algorithm.  The "
-      "former has a max relative residual norm of " << maxResNormFourthKind << ", "
-      "and the latter of " << maxResNormTextbook << ".");
+        maxResNormFourthKind > maxResNormTextbook && relDiff > tol,
+        std::runtime_error,
+        "After " << numIters << " iterations of Chebyshev, with lambdaMax = "
+                 << lambdaMax << " and default lambdaMin and eigRatio, 4th-kind Ifpack2::Chebyshev "
+                                 "does quite a bit worse than the textbook version of the algorithm.  The "
+                                 "former has a max relative residual norm of "
+                 << maxResNormFourthKind << ", "
+                                            "and the latter of "
+                 << maxResNormTextbook << ".");
   }
 
   // Print the computed max and min eigenvalues, and other details.
   os2 << endl;
-  myCheby.print (os2);
+  myCheby.print(os2);
 }
-
-

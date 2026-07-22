@@ -1,0 +1,11 @@
+#!/bin/bash
+
+module load aue/cmake/3.31.6
+module load aue/gcc/12.3.0
+module load aue/netlib-lapack/3.11.0-gcc-12.3.0
+
+export BLAS_LIBRARIES=${BLAS_LIBRARIES:-$BLAS_ROOT/lib64/libblas.so}
+export LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-$LAPACK_ROOT/lib64/liblapack.so}
+export TPL_BLAS_LIBRARIES=${BLAS_LIBRARIES:-$BLAS_ROOT/lib64/libblas.so}
+export TPL_LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-$LAPACK_ROOT/lib64/liblapack.so}
+

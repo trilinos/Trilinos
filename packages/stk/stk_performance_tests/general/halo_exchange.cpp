@@ -76,12 +76,12 @@ class ExactSolutionPoly : public ExactSolution
       }
     }
 
-    double get_exact_solution_xx(double x, double y) const override
+    double get_exact_solution_xx(double x, double /*y*/) const override
     {
       return get_Uxx(x);
     }
 
-    double get_exact_solution_yy(double x, double y) const override
+    double get_exact_solution_yy(double /*x*/, double y) const override
     {
       return get_Uxx(y);
     }
@@ -117,12 +117,12 @@ class ExactSolutionPeriodic : public ExactSolution
       return std::sin(m_betaX * x) + std::sin(m_betaY * y);
     }
 
-    double get_exact_solution_xx(double x, double y) const override
+    double get_exact_solution_xx(double /*x*/, double /*y*/) const override
     {
       throw std::runtime_error("unsupported function");
     }
 
-    double get_exact_solution_yy(double x, double y) const override
+    double get_exact_solution_yy(double /*x*/, double /*y*/) const override
     {
       throw std::runtime_error("unsupported function");
     }
@@ -547,23 +547,6 @@ class HeatEquationHalo
       }
 
       return val;
-    }
-
-    void local_periodic_communication()
-    {
-      for (int i=0; i < m_nptsPerDirection; ++i)
-        for (int g=1; g <= m_nghost; ++g)
-        {
-          m_sol[get_sol_idx(i, -g)] = m_sol[get_sol_idx(i, m_nptsPerDirection - g)];
-          m_sol[get_sol_idx(i, m_nptsPerDirection + g - 1)] = m_sol[get_sol_idx(i, g - 1)];
-        }
-
-      for (int j=0; j < m_nptsPerDirection; ++j)
-        for (int g=1; g <= m_nghost; ++g)
-        {
-          m_sol[get_sol_idx(-g, j)] = m_sol[get_sol_idx(m_nptsPerDirection - g, j)];
-          m_sol[get_sol_idx(m_nptsPerDirection + g - 1, j)] = m_sol[get_sol_idx(g - 1, j)];
-        }
     }
 
     void set_exact_ghost_values()
@@ -1203,7 +1186,7 @@ TEST(HeatEquationHaloTest, Exactness)
     double yMin = 0;
     double yMax = 1;
 
-    RunConfig config{MPI_COMM_WORLD, nptsPerDirection, nghost, stencilSize, exSol, xMin, xMax, yMin, yMax};
+    RunConfig config{MPI_COMM_WORLD, nptsPerDirection, nghost, stencilSize, exSol, xMin, xMax, yMin, yMax, 0.0};
 
     HeatEquationHaloSerial tester(config);
 

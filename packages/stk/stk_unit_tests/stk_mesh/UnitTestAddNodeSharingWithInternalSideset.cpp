@@ -14,7 +14,7 @@
 namespace
 {
 
-class TwoHexWithInternalSideset : public stk::unit_test_util::simple_fields::MeshFixture
+class TwoHexWithInternalSideset : public stk::unit_test_util::MeshFixture
 {
 protected:
   void create_mesh_with_internal_side()

@@ -1,51 +1,24 @@
-/*
 //@HEADER
 // ************************************************************************
 //
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
+//                        Kokkos v. 4.0
+//       Copyright (2022) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// Under the terms of Contract DE-NA0003525 with NTESS,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
+// See https://kokkos.org/LICENSE for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
-// ************************************************************************
 //@HEADER
-*/
 
 #ifndef KOKKOS_EXAMPLE_BELOS_SOLVE
 #define KOKKOS_EXAMPLE_BELOS_SOLVE
 
 // Tpetra
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -124,8 +97,8 @@ belos_solve(
   const int use_mean_based,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
-  const typename Kokkos::ArithTraits<SV>::mag_type tolerance =
-    Kokkos::ArithTraits<SV>::epsilon())
+  const typename KokkosKernels::ArithTraits<SV>::mag_type tolerance =
+    KokkosKernels::ArithTraits<SV>::epsilon())
 {
   typedef Tpetra::Operator<SM,LO,GO,N> OperatorType;
   typedef Tpetra::MultiVector<SV,LO,GO,N> VectorType;
@@ -267,8 +240,8 @@ belos_solve(
   const int use_mean_based,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
-  const typename Kokkos::ArithTraits<SV>::mag_type tolerance =
-    Kokkos::ArithTraits<SV>::epsilon())
+  const typename KokkosKernels::ArithTraits<SV>::mag_type tolerance =
+    KokkosKernels::ArithTraits<SV>::epsilon())
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                              "Belos solver requested but not compiled!");

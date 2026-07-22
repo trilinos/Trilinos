@@ -80,7 +80,7 @@ buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
     }
   }
   else {
-    std::string msg = "Error - NOX::Direction::Facotry::buildDirection() - Invalid choice for \"Method\" in \"Direction\" sublist!";
+    std::string msg = "Error - NOX::Direction::Factory::buildDirection() - Invalid choice for \"Method\" in \"Direction\" sublist!";
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
 

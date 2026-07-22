@@ -117,6 +117,16 @@ Part * PartRepository::get_part_by_name(const std::string &name) const
     return nullptr;
 }
 
+void PartRepository::rename(Part* part, const std::string& newName)
+{
+  const std::string& oldName = part->name();
+  auto iter = m_name_to_parts_map.find(oldName);
+  STK_ThrowRequireMsg(iter != m_name_to_parts_map.end(), "PartRepository::rename: Failed to find part with oldName="<<oldName);
+  m_name_to_parts_map.erase(oldName);
+  m_name_to_parts_map[newName] = part;
+  part->set_name(newName);
+}
+
 void PartRepository::add_part(Part* part)
 {
     m_all_parts.push_back(part);

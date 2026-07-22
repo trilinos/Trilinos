@@ -262,34 +262,37 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
     stk::mesh::FieldState state = m_field->state();
     STKIORequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
 
-    for (auto &field_part : m_fieldParts) {
-      // Get data at beginning of interval...
-      std::vector<double> values;
-      field_part.get_interpolated_field_data(sti, values);
-      
-      Ioss::GroupingEntity *io_entity = field_part.get_io_entity();
-      const Ioss::Field &io_field = io_entity->get_fieldref(m_dbName);
-      size_t field_component_count = io_field.transformed_storage()->component_count();
+    stk::mesh::field_data_execute<double, stk::mesh::OverwriteAll>(*m_field,
+      [&](auto& fieldData) {
+        for (auto &field_part : m_fieldParts) {
+          // Get data at beginning of interval...
+          std::vector<double> values;
+          field_part.get_interpolated_field_data(sti, values);
 
-      const stk::mesh::EntityRank rank = field_part.get_entity_rank();
-      std::vector<stk::mesh::Entity> entity_list = stk::io::get_input_entity_list(io_entity, rank, bulk);
-      
-      m_field->sync_to_host();
-      m_field->modify_on_host();
-      for (size_t i=0; i < entity_list.size(); ++i) {
-        if (bulk.is_valid(entity_list[i])) {
-          double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));
-          if (fld_data != nullptr) {
-            for(size_t j=0; j<field_component_count; ++j) {
-              fld_data[j] = values[i*field_component_count+j];
+          Ioss::GroupingEntity *io_entity = field_part.get_io_entity();
+          const Ioss::Field &io_field = io_entity->get_fieldref(m_dbName);
+          int field_component_count = io_field.transformed_storage()->component_count();
+
+          const stk::mesh::EntityRank rank = field_part.get_entity_rank();
+          std::vector<stk::mesh::Entity> entity_list = stk::io::get_input_entity_list(io_entity, rank, bulk);
+
+          for (size_t i=0; i < entity_list.size(); ++i) {
+            if (bulk.is_valid(entity_list[i]) && m_field->defined_on(entity_list[i])) {
+              auto fldValues = fieldData.entity_values(entity_list[i]);
+              STK_ThrowRequireMsg(fldValues.num_scalars() == field_component_count, "Size mis-match for field "<<m_field->name()<<", num-scalars = "<<fldValues.num_scalars()<<" but IO-field reports num-components = "<<field_component_count);
+
+              for(stk::mesh::ScalarIdx idx : fldValues.scalars()) {
+                fldValues(idx) = values[i*field_component_count+idx];
+              }
             }
+          }
+          if (m_oneTimeOnly) {
+            field_part.release_field_data();
           }
         }
       }
-      if (m_oneTimeOnly) {
-        field_part.release_field_data();
-      }
-    }
+    );
+
     time_read = sti.t_analysis;
   }
   if (m_oneTimeOnly) {
@@ -300,6 +303,11 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
   m_timeRestored = time_read;
 
   return time_read;
+}
+
+void MeshField::clear_field_parts()
+{
+  m_fieldParts.clear();
 }
 
 void MeshFieldPart::release_field_data()

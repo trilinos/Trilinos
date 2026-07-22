@@ -15,7 +15,7 @@
 #include <catalyst/Iocatalyst_CatalystManager.h>
 #include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst_tests/Iocatalyst_DatabaseIOTest.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 Iocatalyst_DatabaseIOTest::Iocatalyst_DatabaseIOTest()
 {
@@ -79,7 +79,9 @@ void Iocatalyst_DatabaseIOTest::runStructuredTest(const std::string &testName)
   EXPECT_TRUE(regionsAreEqual(cgnsFileName, catalystFileName, CGNS_DATABASE_TYPE));
 }
 
-void Iocatalyst_DatabaseIOTest::runUnstructuredTest(const std::string &testName)
+void Iocatalyst_DatabaseIOTest::runUnstructuredTest(const std::string &testName,
+                                                    bool               writeConnectivityRaw,
+                                                    const std::string &nodeBlockName)
 {
   std::string exodusFileName =
       testName + CATALYST_TEST_FILE_NP + std::to_string(part.size) + EXODUS_FILE_EXTENSION;
@@ -87,7 +89,9 @@ void Iocatalyst_DatabaseIOTest::runUnstructuredTest(const std::string &testName)
                                  std::to_string(part.size) + EXODUS_FILE_EXTENSION;
   Iocatalyst::BlockMeshSet::IOSSparams iop(exodusFileName, EXODUS_DATABASE_TYPE);
   bmSet.writeIOSSFile(iop);
-  iop.fileName = catalystFileName;
+  iop.fileName             = catalystFileName;
+  iop.nodeBlockName        = nodeBlockName;
+  iop.writeConnectivityRaw = writeConnectivityRaw;
   bmSet.writeCatalystIOSSFile(iop);
   checkZeroCopyFields(iop);
   EXPECT_TRUE(regionsAreEqual(exodusFileName, catalystFileName, EXODUS_DATABASE_TYPE));
@@ -196,11 +200,11 @@ Iocatalyst_DatabaseIOTest::getCatalystDatabaseFromConduit(conduit_cpp::Node    &
 Ioss::DatabaseIO *Iocatalyst_DatabaseIOTest::getDatabaseOnReadFromFileName(
     const std::string &fileName, const std::string &iossDatabaseType, Ioss::PropertyManager dbProps)
 {
-  Ioss::PropertyManager dbaseProps = Ioss::PropertyManager(dbProps);
-  auto                inputFileName = fileName;
-  Ioss::ParallelUtils pu;
-  int                 numRanks = pu.parallel_size();
-  int                 rank     = pu.parallel_rank();
+  Ioss::PropertyManager dbaseProps    = Ioss::PropertyManager(dbProps);
+  auto                  inputFileName = fileName;
+  Ioss::ParallelUtils   pu;
+  int                   numRanks = pu.parallel_size();
+  int                   rank     = pu.parallel_rank();
   if (iossDatabaseType == EXODUS_DATABASE_TYPE && numRanks > 1) {
     inputFileName += "." + std::to_string(numRanks) + "." + std::to_string(rank);
   }

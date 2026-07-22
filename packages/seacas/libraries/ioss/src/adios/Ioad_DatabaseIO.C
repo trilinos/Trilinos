@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -184,7 +184,7 @@ namespace Ioad {
       int df_count                     = 0;
       std::tie(sblock_count, df_count) = write_meta_data_sideblockcontainer(sblocks);
       Ioss::SideSet *new_entity        = const_cast<Ioss::SideSet *>(sset);
-      new_entity->property_add(Ioss::Property("entity_count", sblock_count));
+      new_entity->reset_entity_count(sblock_count);
       new_entity->property_add(Ioss::Property("distribution_factor_count", df_count));
     }
     return count;

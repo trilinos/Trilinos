@@ -31,7 +31,7 @@
 namespace
 {
 
-class SkinWithModification : public stk::unit_test_util::simple_fields::MeshFixture
+class SkinWithModification : public stk::unit_test_util::MeshFixture
 {
 protected:
   SkinWithModification() : boundaryPart(nullptr)
@@ -289,7 +289,7 @@ protected:
                  "1,2,QUAD_4_2D,4,3,5,6\n"
                  "0,3,QUAD_4_2D,21,22,3,4";
     }
-    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 
     get_bulk().modification_begin();
     put_entity_into_part(get_bulk(), 1, block1);
@@ -298,18 +298,18 @@ protected:
     get_bulk().modification_end();
   }
 
-  void put_entity_into_part(stk::mesh::BulkData &bulkData, stk::mesh::EntityId id, stk::mesh::Part& part)
+  void put_entity_into_part(stk::mesh::BulkData &bulkDataArg, stk::mesh::EntityId id, stk::mesh::Part& part)
   {
-    stk::mesh::Entity entity = bulkData.get_entity(stk::topology::ELEM_RANK, id);
-    if(bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
+    stk::mesh::Entity entity = bulkDataArg.get_entity(stk::topology::ELEM_RANK, id);
+    if(bulkDataArg.is_valid(entity) && bulkDataArg.bucket(entity).owned())
     {
-      bulkData.change_entity_parts(entity, stk::mesh::ConstPartVector{&part});
+      bulkDataArg.change_entity_parts(entity, stk::mesh::ConstPartVector{&part});
     }
   }
-  stk::mesh::Part& create_part_with_id(stk::mesh::MetaData &metaData, int id, stk::topology topology)
+  stk::mesh::Part& create_part_with_id(stk::mesh::MetaData &metaDataArg, int id, stk::topology topology)
   {
-    stk::mesh::Part& part = metaData.declare_part_with_topology("block_"+std::to_string(id), topology);
-    metaData.set_part_id(part, id);
+    stk::mesh::Part& part = metaDataArg.declare_part_with_topology("block_"+std::to_string(id), topology);
+    metaDataArg.set_part_id(part, id);
     return part;
   }
 
@@ -319,7 +319,7 @@ protected:
 class SkinAAWithModification : public SkinFileWithModification
 {
 protected:
-  virtual const std::string get_filename() { return "AA.e"; }
+  virtual const std::string get_filename() override { return "AA.e"; }
   const SideTestUtil::TestCase AAExterior =   {"AA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
   const SideTestUtil::TestCase AeAExterior =  {"AeA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
   const SideTestUtil::TestCase AefAExterior = {"AefA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
@@ -380,7 +380,7 @@ TEST_F(SkinAAWithModification, TestPartialCoincident2d)
 class SkinAWithModification : public SkinFileWithModification
 {
 protected:
-  virtual const std::string get_filename() { return "A.e"; }
+  virtual const std::string get_filename() override { return "A.e"; }
   const SideTestUtil::TestCase AExterior =   {"A.e",   1,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}}};
   const SideTestUtil::TestCase AeExterior =  {"Ae.e",  2,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {shellId1, 0}}};
   const SideTestUtil::TestCase AefExterior = {"Aef.e", 3,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {shellId1, 0}, {shellId2, 0}}};

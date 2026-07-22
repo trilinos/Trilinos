@@ -177,7 +177,7 @@ if test X${SEEK_MPI_COMPILERS} = Xyes; then
 #        F77=${MPI_F77}
 #      else
 #        echo "-----"
-#        echo "Cannot find MPI Fortan 77 compiler."
+#        echo "Cannot find MPI Fortran 77 compiler."
 #        echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH,"
 #        echo "or specify a path to top mpi directory (above bin) with --with-mpi=PATH,"
 #        echo "or specify a fortran 77 compiler using F77=<compiler>"

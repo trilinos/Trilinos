@@ -19,7 +19,7 @@
 namespace MueLu {
 
 /*!
-  @class PatternFactory class.
+  @class PatternFactory
   @brief Factory for building nonzero patterns for energy minimization.
   @ingroup MueLuTransferClasses
   */

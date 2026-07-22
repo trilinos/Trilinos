@@ -192,7 +192,11 @@ TEST(MeshBuilder, bulkdata_add_fmwk_data)
   builder.set_add_fmwk_data(true);
   std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
 
+#ifdef SIERRA_MIGRATION
   EXPECT_TRUE(bulk->add_fmwk_data());
+#else
+  EXPECT_FALSE(bulk->add_fmwk_data());
+#endif
 }
 
 TEST(MeshBuilder, bulkdata_add_fmwk_data_false)
