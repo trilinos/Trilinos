@@ -21,14 +21,6 @@
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
 
-#ifdef TEMPUS_ENABLE_EPETRA_STACK
-#include "../TestModels/CDR_Model.hpp"
-#ifdef Tempus_ENABLE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#endif
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 #include "../TestModels/CDR_Model_Tpetra.hpp"
 #include "Tpetra_Core.hpp"
@@ -360,80 +352,6 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   Teuchos::TimeMonitor::summarize();
 }
 
-#ifdef TEMPUS_ENABLE_EPETRA_STACK
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(EPI, CDR_Leja_lumped)
-{
-  // Create a communicator for Epetra objects
-  RCP<Epetra_Comm> comm;
-#ifdef Tempus_ENABLE_MPI
-  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  comm = rcp(new Epetra_SerialComm);
-#endif
-
-  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success, "Leja", true);
-
-  std::cout << "Running EPETRA" << std::endl;
-}
-
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(EPI, CDR_Leja)
-{
-  // Create a communicator for Epetra objects
-  RCP<Epetra_Comm> comm;
-#ifdef Tempus_ENABLE_MPI
-  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  comm = rcp(new Epetra_SerialComm);
-#endif
-
-  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success, "Leja", false);
-
-  std::cout << "Running EPETRA" << std::endl;
-}
-
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(EPI, CDR_Taylor_lumped)
-{
-  // Create a communicator for Epetra objects
-  RCP<Epetra_Comm> comm;
-#ifdef Tempus_ENABLE_MPI
-  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  comm = rcp(new Epetra_SerialComm);
-#endif
-
-  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success, "Taylor", true);
-
-  std::cout << "Running EPETRA" << std::endl;
-}
-
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(EPI, CDR_Taylor)
-{
-  // Create a communicator for Epetra objects
-  RCP<Epetra_Comm> comm;
-#ifdef Tempus_ENABLE_MPI
-  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  comm = rcp(new Epetra_SerialComm);
-#endif
-
-  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success, "Taylor", false);
-
-  std::cout << "Running EPETRA" << std::endl;
-}
-#endif
-
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 // ************************************************************
 // ************************************************************
@@ -449,8 +367,6 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja_lumped)
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
      comm, comm->getSize(), out, success, "Leja", true);
-
-  std::cout << "Running TPETRA" << std::endl;
 }
 
 // ************************************************************
@@ -467,8 +383,6 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja)
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
      comm, comm->getSize(), out, success, "Leja", false);
-
-  std::cout << "Running TPETRA" << std::endl;
 }
 
 // ************************************************************
@@ -485,8 +399,6 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor_lumped)
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
      comm, comm->getSize(), out, success, "Taylor", true);
-
-  std::cout << "Running TPETRA" << std::endl;
 }
 
 // ************************************************************
@@ -503,8 +415,6 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor)
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
      comm, comm->getSize(), out, success, "Taylor", false);
-
-  std::cout << "Running TPETRA" << std::endl;
 }
 #endif
 
