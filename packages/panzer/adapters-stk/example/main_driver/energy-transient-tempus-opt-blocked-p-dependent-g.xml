@@ -50,7 +50,7 @@
         <ParameterList name="Parameter Vector 0">
             <Parameter name="Number" type="int" value="1"/>
             <Parameter name="Parameter 0" type="string" value="S"/>
-            <Parameter name="Initial Value 0" type="double" value="0.0"/>
+            <Parameter name="Initial Value 0" type="double" value="1.0"/>
         </ParameterList>
         <ParameterList name="Parameter Vector 1">
             <Parameter name="Number" type="int" value="1"/>
@@ -66,6 +66,7 @@
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
          <Parameter name="Requires Cell Integral" type="bool" value="true"/>
+         <Parameter name="Request Derivatives" type="bool" value="true"/>
       </ParameterList>
       <ParameterList name="TEST_TEMPERATURE Integral">
          <Parameter name="Type" type="string" value="Functional"/>
@@ -74,13 +75,20 @@
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
          <Parameter name="Requires Cell Integral" type="bool" value="true"/>
       </ParameterList>
+<!--
       <ParameterList name="TEMPERATURE Point Value">
          <Parameter name="Type" type="string" value="Point Value"/>
          <Parameter name="Field Name" type="string" value="TEMPERATURE"/>
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
-         <Parameter name="Request Derivatives" type="bool" value="true"/>
       </ParameterList>
+      <ParameterList name="S^2_TEMPERATURE Point Value">
+         <Parameter name="Type" type="string" value="Point Value"/>
+         <Parameter name="Field Name" type="string" value="S^2_TEMPERATURE"/>
+         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
+         <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      </ParameterList>
+-->
     </ParameterList>
 
     <ParameterList name="Physics Blocks">
@@ -116,17 +124,16 @@
             <ParameterList name="Volume_Integral">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
-
+<!--
             <ParameterList name="SOURCE_TEMPERATURE">
                 <Parameter name="Type" type="string" value="Parameter"/>
                 <Parameter name="Parameter Name" type="string" value="S"/>
                 <Parameter name="Field Name" type="string" value="SOURCE_TEMPERATURE"/>
             </ParameterList>
-<!--
+-->
             <ParameterList name="SOURCE_TEMPERATURE">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
--->
             <ParameterList name="Heat Capacity">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
@@ -139,6 +146,14 @@
             <ParameterList name="HEAT_CAPACITY">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
+<!--
+            <ParameterList name="S^2_TEMPERATURE">
+                <Parameter name="Type" type="string" value="Product"/>
+                <Parameter name="Product Name" type="string" value="S^2_TEMPERATURE"/>
+                <Parameter name="Term Names" type="string" value="S,S,TEMPERATURE"/>
+            </ParameterList>
+-->
+
         </ParameterList>
 
         <ParameterList name="fluid model test">
@@ -196,9 +211,9 @@
             <Parameter name="Sideset ID" type="string" value="right"/>
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/>
             <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/>
-            <Parameter name="Strategy" type="string" value="Constant"/>
+            <Parameter name="Strategy" type="string" value="Parameter"/>
             <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="1.0"/>
+                <Parameter name="Parameter Name" type="string" value="S"/>
             </ParameterList>
         </ParameterList>
 
@@ -399,7 +414,7 @@
   <ParameterList name="Objective">
     <Parameter name="Sensitivity Method" type="string" value="Forward"/>
     <Parameter name="Parameter Name" type="string" value="S"/>
-    <Parameter name="Response Name" type="string" value="Value In Middle"/>
+    <Parameter name="Response Name" type="string" value="TEMPERATURE Integral"/>
     <Parameter name="Use FD Gradient" type="bool" value="False"/>
   </ParameterList>
 

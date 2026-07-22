@@ -104,6 +104,7 @@ buildAndRegisterEvaluators(const std::string& /* responseName */,
     allFields.insert(allFields.end(),physicsBlock.getProvidedDOFs().begin(),physicsBlock.getProvidedDOFs().end());
 
   // Add in tangent fields
+  // TODO BWR IS THIS ACTUALLY SUPPORTED CORRECTLY?
   if(addSolutionFields_)
     allFields.insert(allFields.end(),physicsBlock.getTangentFields().begin(),physicsBlock.getTangentFields().end());
 
