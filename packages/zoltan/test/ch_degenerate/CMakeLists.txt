@@ -38,7 +38,7 @@ ENDIF()
 
 
 # Build test arguments
-SET(ZOLTAN_TEST_ARGS --np ${ZOLTANNUMPROCS} --debug --mpiexec ${MPI_EXEC} --mpiexecarg ${MPI_EXEC_NUMPROCS_FLAG} --pkg )
+SET(ZOLTAN_TEST_ARGS --np ${ZOLTANNUMPROCS} --debug --mpiexec "${MPI_EXEC}" --mpiexecarg "${MPI_EXEC_NUMPROCS_FLAG}" --pkg )
 
 # Parallel Tests
 TRIBITS_ADD_ADVANCED_TEST(
