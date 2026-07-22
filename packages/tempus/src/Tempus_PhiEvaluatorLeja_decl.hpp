@@ -94,7 +94,7 @@ class PhiEvaluatorLeja
    /** \brief Constructs an evaluator with the supplied descriptive name.
     * @param name std::string stored as the evaluator name.
     */
-  PhiEvaluatorLeja<Scalar>(std::string name)
+  PhiEvaluatorLeja(std::string name)
     : PhiEvaluator<Scalar>(name),
       ddMethod_(0),
       leja_sf_(1.0),
@@ -116,7 +116,7 @@ class PhiEvaluatorLeja
     timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
 #endif
   }
-  PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("PhiEvaluatorLeja")
+  PhiEvaluatorLeja() : PhiEvaluatorLeja("PhiEvaluatorLeja")
   { }
 
   /// \name Basic PhiEvaluatorLeja Methods
