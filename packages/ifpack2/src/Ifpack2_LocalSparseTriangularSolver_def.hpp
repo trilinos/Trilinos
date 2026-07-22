@@ -351,7 +351,7 @@ void LocalSparseTriangularSolver<MatrixType>::
   using Teuchos::ParameterList;
   using Teuchos::RCP;
 
-  Details::TrisolverType::Enum trisolverType = typename node_type::execution_space().concurrency() > 1 ? Details::TrisolverType::KSPTRSV : Details::TrisolverType::Internal;
+  Details::TrisolverType::Enum trisolverType = std::is_same_v<typename node_type::execution_space, Kokkos::Serial> ? Details::TrisolverType::Internal : Details::TrisolverType::KSPTRSV;
   do {
     static const char typeName[] = "trisolver: type";
 
