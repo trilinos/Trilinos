@@ -10,6 +10,7 @@
 #ifndef IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 #define IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 
+#include "Kokkos_Macros.hpp"
 #include <sstream>    // ostringstream
 #include <stdexcept>  // runtime_error
 
