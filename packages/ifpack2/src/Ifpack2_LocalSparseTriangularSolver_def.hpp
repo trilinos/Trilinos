@@ -344,22 +344,20 @@ LocalSparseTriangularSolver<MatrixType>::
   }
 }
 
-namespace
-{
-template<typename MatrixType>
-constexpr bool is_host_type()
-{
+namespace {
+template <typename MatrixType>
+constexpr bool is_host_type() {
   using node_type = typename MatrixType::node_type;
   return std::is_same_v<typename node_type::execution_space, Kokkos::Serial>
 #ifdef KOKKOS_ENABLE_THREADS
-    || std::is_same_v<typename node_type::execution_space, Kokkos::Threads>
+         || std::is_same_v<typename node_type::execution_space, Kokkos::Threads>
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
-    || std::is_same_v<typename node_type::execution_space, Kokkos::OpenMP>
+         || std::is_same_v<typename node_type::execution_space, Kokkos::OpenMP>
 #endif
-  ;
+      ;
 }
-}
+}  // namespace
 
 template <class MatrixType>
 void LocalSparseTriangularSolver<MatrixType>::
