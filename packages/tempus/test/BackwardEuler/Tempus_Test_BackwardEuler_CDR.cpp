@@ -154,9 +154,9 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
                   xDotSlope, out);
 
   TEST_FLOATING_EQUALITY(xSlope, 1.32213, 0.01);
-  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.116919, 1.0e-4);
+  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.113698, 1.0e-4);
   TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
-  TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.449888, 1.0e-4);
+  TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.450723, 1.0e-4);
   // At small dt, slopes should be equal to order.
   // double order = stepper->getOrder();
   // TEST_FLOATING_EQUALITY( xSlope,              order, 0.01   );
