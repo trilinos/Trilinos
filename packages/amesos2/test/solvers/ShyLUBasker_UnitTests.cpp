@@ -550,8 +550,9 @@ namespace {
         const SCALAR zero = ST::zero();
         const SCALAR half  = one / two;
         Teuchos::Array<SCALAR> schur(numSchur*numSchur, zero);
+        // MPI-0 on comm (either serial or default) will compute Schur complement
+        // NOTE: with serial comm, every one has myRank == 0, and compute Schur complement independently
         if (myRank == 0) {
-          // NOTE: with serial comm, every one has myRank == 0, and compute Schur complement independently
           for( size_t i = 0; i < numSchur; ++i ){
             if (i > 0) {
               schur[i-1 + i*numSchur] = -half;
