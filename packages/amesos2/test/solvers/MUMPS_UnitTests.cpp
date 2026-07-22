@@ -628,8 +628,8 @@ namespace {
       // Parameters
       Teuchos::ParameterList amesos2_paramlist;
       amesos2_paramlist.setName("Amesos2");
-      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("MUMPS");
-      shylubasker_paramlist.set("PartialFacto", 2, "Partial Factorization");
+      Teuchos::ParameterList & mumps_paramlist = amesos2_paramlist.sublist("MUMPS");
+      mumps_paramlist.set("PartialFacto", 2, "Partial Factorization");
       // Schur part has odd row IDs
       Teuchos::Array<LO> schurPart(numGlobal);
       for( size_t i = 0; i < numGlobal; i++) {
@@ -638,9 +638,9 @@ namespace {
       }
       const size_t numSchur = numGlobal/2;
       Teuchos::Array<SCALAR> schurOut(numSchur*numSchur);
-      shylubasker_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
-      shylubasker_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
-      shylubasker_paramlist.set("verbose", true);
+      mumps_paramlist.set("SchurPart", (const LO*)schurPart.getRawPtr());
+      mumps_paramlist.set("SchurOut", (SCALAR*)schurOut.getRawPtr());
+      mumps_paramlist.set("verbose", true);
       solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
 
       // Perform Partial Facto to form Schur complement
