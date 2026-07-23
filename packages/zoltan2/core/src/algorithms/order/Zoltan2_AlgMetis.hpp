@@ -89,10 +89,26 @@ class AlgMetis : public Algorithm<Adapter>
         MetisIdxView metis_rowptr;
         MetisIdxView metis_colidx;
 
-        // Symmetrize (always for now)
-        KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<
-          Zoltan2OffsetView, Zoltan2EdgeView, MetisIdxView, MetisIdxView, Kokkos::HostSpace::execution_space>
-          (nVtx, zoltan2_rowptr, zoltan2_colidx, metis_rowptr, metis_colidx);
+        const bool doSymmetrize =
+          pl.is_null() ? true : pl->get<bool>("symmetrize", true);
+
+        if (doSymmetrize) {
+          // Symmetrize
+          KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<
+            Zoltan2OffsetView, Zoltan2EdgeView, MetisIdxView, MetisIdxView, Kokkos::HostSpace::execution_space>
+            (nVtx, zoltan2_rowptr, zoltan2_colidx, metis_rowptr, metis_colidx);
+        }
+        else {
+          // Skip symmetrization.  Assumes the graph is already suitable for METIS.
+          metis_rowptr = MetisIdxView("metis_rowptr", nVtx+1);
+          metis_colidx = MetisIdxView("metis_colidx", nNnz);
+
+          for (size_t i = 0; i < nVtx+1; ++i)
+            TPL_Traits<idx_t, offset_t>::ASSIGN(metis_rowptr(i), offsets[i]);
+
+          for (size_t k = 0; k < nNnz; ++k)
+            TPL_Traits<idx_t, gno_t>::ASSIGN(metis_colidx(k), edgeIds[k]);
+        }
 
         // Remove diagonals
         idx_t metis_nVtx=0;
