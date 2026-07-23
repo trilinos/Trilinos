@@ -16,6 +16,8 @@
 namespace Tpetra::Details {
 
 struct Ialltofewv {
+  struct State;
+
   struct Req {
     const void *sendbuf;
     const int *sendcounts;
@@ -33,6 +35,7 @@ struct Ialltofewv {
 
     bool devAccess;
     bool completed;
+    std::shared_ptr<State> state;
   };
 
   template <bool DevAccess>
@@ -68,6 +71,7 @@ struct Ialltofewv {
 
     req->devAccess = DevAccess;
     req->completed = false;
+    req->state.reset();
 #ifndef NDEBUG
     // {
     //   std::stringstream ss;
@@ -75,7 +79,7 @@ struct Ialltofewv {
     //   std::cerr << ss.str();
     // }
 #endif
-    return MPI_SUCCESS;
+    return start(*req);
   }
 
   int wait(Req &req);
@@ -87,10 +91,14 @@ struct Ialltofewv {
     std::shared_ptr<impl> pimpl;
 
     Cache();
+    Cache(const Cache &);
+    Cache &operator=(const Cache &);
     ~Cache();
   };
 
  private:
+  int start(Req &req);
+
   Cache cache_;
 
 };  // struct Ialltofewv
