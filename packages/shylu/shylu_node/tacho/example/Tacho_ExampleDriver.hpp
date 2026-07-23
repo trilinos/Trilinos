@@ -141,7 +141,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     } else {
       std::cout << "   Using non default Parameters " << std::endl;
       std::cout << "       # Streams:: " << nstreams
-                << (team_on_user_stream ? "(Team on stream-0)" : "(Team on default stream)") <<std::endl;
+                << (team_on_user_stream ? " (Team on stream-0)" : " (Team on default stream)") <<std::endl;
       std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
       std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
     }

@@ -477,6 +477,102 @@ template <typename T> struct BlasTeam {
         }
       }
     }
+
+    // TRSM with zero pivots
+    template <typename ConjType, typename MemberType>
+    static KOKKOS_INLINE_FUNCTION void trsm_defs_left_lower(MemberType &member, const ConjType &cjA, const char diag,
+                                                            const int m, const int n, const T alpha, const T *KOKKOS_RESTRICT A,
+                                                            const int as0, const int as1,
+                                                            /* */ T *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
+      const T one(1), zero(0);
+
+      if (alpha == zero)
+        set(member, m, n, zero, B, bs0, bs1);
+      else {
+        if (alpha != one)
+          scale(member, m, n, alpha, B, bs0, bs1);
+        if (m <= 0 || n <= 0)
+          return;
+
+        const bool use_unit_diag = diag == 'U' || diag == 'u';
+        for (int p = 0; p < m; ++p) {
+          const int iend = m - p - 1, jend = n;
+
+          const T *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
+
+          T *KOKKOS_RESTRICT b1t = B + p * bs0, *KOKKOS_RESTRICT B2 = iend ? B + (p + 1) * bs0 : NULL;
+
+          member.team_barrier();
+          const T alpha11 = cjA(A[p * as0 + p * as1]);
+          if (!use_unit_diag) {
+            if (alpha11 == zero) {
+              // zeroing out off-diagonals
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] = zero; });
+            } else {
+              // scaling with diagonals
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] /= alpha11; });
+            }
+            member.team_barrier();
+          }
+
+          if (use_unit_diag || alpha11 != zero) {
+            // skip updating with zero-diagonals (because all off-diagonals were zeroed out)
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
+                                   [&](const int &i) { B2[i * bs0 + j * bs1] -= cjA(a21[i * as0]) * b1t[j * bs1]; });
+            });
+          }
+        }
+      }
+    }
+
+    template <typename ConjType, typename MemberType>
+    static KOKKOS_INLINE_FUNCTION void trsm_defs_left_upper(MemberType &member, const ConjType &cjA, const char diag,
+                                                            const int m, const int n, const T alpha, const T *KOKKOS_RESTRICT A,
+                                                            const int as0, const int as1,
+                                                            /* */ T *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
+      const T one(1.0), zero(0.0);
+
+      // note that parallel range is different ( m*n vs m-1*n);
+      if (alpha == zero)
+        set(member, m, n, zero, B, bs0, bs1);
+      else {
+        if (alpha != one)
+          scale(member, m, n, alpha, B, bs0, bs1);
+        if (m <= 0 || n <= 0)
+          return;
+
+        const bool use_unit_diag = diag == 'U' || diag == 'u';
+        T *KOKKOS_RESTRICT B0 = B;
+        for (int p = (m - 1); p >= 0; --p) {
+          const int iend = p, jend = n;
+
+          const T *KOKKOS_RESTRICT a01 = A + p * as1;
+          /* */ T *KOKKOS_RESTRICT b1t = B + p * bs0;
+
+          member.team_barrier();
+          const T alpha11 = cjA(A[p * as0 + p * as1]);
+          if (!use_unit_diag) {
+            if (alpha11 == zero) {
+              // zeroing out off-diagonals
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] = zero; });
+            } else {
+              // scaling with diagonals
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] /= alpha11; });
+            }
+            member.team_barrier();
+          }
+
+          if (use_unit_diag || alpha11 != zero) {
+            // skip updating with zero-diagonals (because all off-diagonals were zeroed out)
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
+                                   [&](const int &i) { B0[i * bs0 + j * bs1] -= cjA(a01[i * as0]) * b1t[j * bs1]; });
+            });
+          }
+        }
+      }
+    }
   };
 
   template <typename MemberType>
@@ -534,18 +630,21 @@ template <typename T> struct BlasTeam {
       switch (trans) {
       case 'N':
       case 'n': {
+        // calling left  upper  trsm with incA=1 and lda=lda
         NoConjugate cjA;
         Impl::trsv_upper(member, cjA, diag, m, a, 1, lda, b, bs);
         break;
       }
       case 'T':
       case 't': {
+        // calling left "LOWER" trsm with incA=lda and lda=1
         NoConjugate cjA; // transpose is same as no-conjugate
         Impl::trsv_lower(member, cjA, diag, m, a, lda, 1, b, bs);
         break;
       }
       case 'C':
       case 'c': {
+        // calling left "LOWER" trsm with incA=lda and lda=1
         Conjugate cjA;
         Impl::trsv_lower(member, cjA, diag, m, a, lda, 1, b, bs);
         break;
@@ -819,18 +918,21 @@ template <typename T> struct BlasTeam {
         switch (trans) {
         case 'N':
         case 'n': {
+          // calling left upper trsm with incA=1 and lda=lda
           NoConjugate cjA;
           Impl::trsm_left_upper(member, cjA, diag, m, n, alpha, a, 1, lda, b, 1, ldb);
           break;
         }
         case 'T':
         case 't': {
+          // calling left "LOWER" trsm with incA=lda and lda=1
           NoConjugate cjA;
           Impl::trsm_left_lower(member, cjA, diag, m, n, alpha, a, lda, 1, b, 1, ldb);
           break;
         }
         case 'C':
         case 'c': {
+          // calling left "LOWER" trsm with incA=lda and lda=1
           Conjugate cjA;
           Impl::trsm_left_lower(member, cjA, diag, m, n, alpha, a, lda, 1, b, 1, ldb);
           break;
@@ -919,6 +1021,42 @@ template <typename T> struct BlasTeam {
           Kokkos::abort("trans is not valid (trsm(Right,Low))");
         }
       }
+    }
+  }
+
+  // TRSM with zero pivots
+  template <typename MemberType>
+  static KOKKOS_INLINE_FUNCTION void trsm_defs(MemberType &member, const char side, const char uplo, const char trans,
+                                               const char diag, const int m, const int n, const T alpha,
+                                               const T *KOKKOS_RESTRICT a, const int lda,
+                                               /* */ T *KOKKOS_RESTRICT b, const int ldb) {
+    ///
+    /// side left
+    ///
+    if (side == 'L' || side == 'l') {
+      if (uplo == 'U' || uplo == 'u') {
+        switch (trans) {
+        case 'T':
+        case 't': {
+          // calling left "LOWER" trsm with incA=lda and lda=1
+          NoConjugate cjA;
+          Impl::trsm_defs_left_lower(member, cjA, diag, m, n, alpha, a, lda, 1, b, 1, ldb);
+        }
+        case 'C':
+        case 'c': {
+          // calling left "LOWER" trsm with incA=lda and lda=1
+          Conjugate cjA;
+          Impl::trsm_defs_left_lower(member, cjA, diag, m, n, alpha, a, lda, 1, b, 1, ldb);
+          break;
+        }
+        default:
+          Kokkos::abort("no trans is not valid (trsm_defs)");
+        }
+      } else {
+        Kokkos::abort("lower is not valid (trsm_defs)");
+      }
+    } else {
+      Kokkos::abort("right is not valid (trsm_defs)");
     }
   }
 };
