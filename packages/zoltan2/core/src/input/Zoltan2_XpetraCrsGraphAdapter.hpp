@@ -198,7 +198,12 @@ public:
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
-  bool useDegreeAsVertexWeight(int idx) const override {return vertexDegreeWeight_[idx];}
+  bool useDegreeAsVertexWeight(int idx) const override {
+    if (idx < 0 || idx >= nWeightsPerVertex_) {
+      return false;
+    }
+    return vertexDegreeWeight_[idx];
+  }
 
   int getNumWeightsPerEdge() const override { return nWeightsPerEdge_;}
 
