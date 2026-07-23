@@ -246,7 +246,8 @@ namespace Amesos2 {
       this->returnValues_kokkos_view(nzval);
       this->returnRowPtr_kokkos_view(rowptr);
       this->returnColInd_kokkos_view(colind);
-      nnz = nzval.size();
+      size_t m = rowptr.extent(0)-1;
+      nnz = rowptr(m); //nzval.size(); // in case there are extra space in nzval or colind
       return;
     }
 

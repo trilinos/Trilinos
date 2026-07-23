@@ -41,6 +41,10 @@ namespace Amesos2
                               Teuchos::RCP<Vector>       X,
                               Teuchos::RCP<const Vector> B )
     : SolverCore<Amesos2::MUMPS,Matrix,Vector>(A, X, B)
+    , schur_size(0)
+    , schur_out_ptr(nullptr)
+    , only_forward_solve(false)
+    , only_backward_solve(false)
     , is_contiguous_(true)
   {
 
@@ -181,6 +185,17 @@ namespace Amesos2
       mumps_par.job = 2;
       function_map::mumps_c(&(mumps_par));
       MUMPS_ERROR();
+
+      if (schur_size > 0 && schur_out_ptr != nullptr) {
+        // copy schur out if the output pointer is valid (assuming enough space has been allocated)
+        // MUMPS returns the Schur complement in row-major
+        // So, we transpose it to store in column-major
+        for (size_t i = 0; i < schur_size; i++) {
+          for (size_t j = 0; j < schur_size; j++) {
+            schur_out_ptr[j+i*schur_size] = schur_out(i+j*schur_size);
+          }
+        }
+      }
     }
     return(0);
   }//end numericFactorization_impl()
@@ -189,7 +204,7 @@ namespace Amesos2
   template <class Matrix, class Vector>
   int
   MUMPS<Matrix,Vector>::solve_impl(
-                         const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
+                         const Teuchos::Ptr<      MultiVecAdapter<Vector> > X,
                          const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
     typedef FunctionMap<MUMPS,scalar_type> function_map;
@@ -236,6 +251,28 @@ namespace Amesos2
         mumps_par.rhs = xvals_.data();
       }
 
+      if (only_forward_solve || only_backward_solve) {
+        // do only forward or backward solve
+        if (only_forward_solve) {
+          mumps_par.icntl[25] = 1;
+        } else {
+          mumps_par.icntl[25] = 2;
+        }
+
+        // copy rhs to reduced-rhs
+        Kokkos::resize(schur_rhs, schur_size*nrhs);
+        size_t n = this->globalNumRows_;
+        size_t n2 = schur_size;
+        size_t n1 = n - n2;
+        for (size_t i = 0; i < n2; i++) {
+          for (size_t j = 0; j < nrhs; j++) schur_rhs[i+j*schur_size] = xvals_(n1+i, j);
+        }
+        mumps_par.redrhs = schur_rhs.data();
+      } else {
+        // forward solve, followed by backward solve
+        mumps_par.icntl[25] = 0;
+      }
+
       function_map::mumps_c(&(mumps_par));
       MUMPS_ERROR();
     }
@@ -243,6 +280,15 @@ namespace Amesos2
       #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
       #endif
+      if (only_forward_solve) {
+        // copy reduced-sol to sol
+        size_t n = this->globalNumRows_;
+        size_t n2 = schur_size;
+        size_t n1 = n - n2;
+        for (size_t i = 0; i < n2; i++) {
+          for (size_t j = 0; j < nrhs; j++) xvals_(n1+i, j) = schur_rhs[i+j*schur_size];
+        }
+      }
 
       Util::put_1d_data_helper_kokkos_view<MultiVecAdapter<Vector>,
         host_mv_view>::do_put(X, xvals_,
@@ -300,7 +346,50 @@ namespace Amesos2
         mumps_par.icntl[10] = parameterList->get<int>("ICNTL(11)", 0);
     }
     if(parameterList->isParameter("ICNTL(14)")){
-          mumps_par.icntl[13] = parameterList->get<int>("ICNTL(14)", 20);
+        mumps_par.icntl[13] = parameterList->get<int>("ICNTL(14)", 20);
+    }
+    /* For Partial factorization */
+    if(parameterList->isParameter("PartialFacto")) {
+        int partial_facto = parameterList->get<int>("PartialFacto");
+        if (partial_facto == 1 || partial_facto == 2) {
+          mumps_par.icntl[18] = 1; // centralized schur complement
+        }
+    }
+    if(parameterList->isParameter("SchurPart")) {
+      // copy schur-part to the internal view (in case the user-pointer go out of scope?)
+      auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
+      schur_size = 0;
+      for (global_size_type i=0; i<this->globalNumCols_; i++) {
+        if (schur_part_ptr[i] == 1) schur_size ++;
+      }
+      // allocate internal storage to store the schur complement (user may not want it and may not provide a valid pointer?)
+      Kokkos::resize(schur_part, schur_size);
+      Kokkos::resize(schur_out, schur_size*schur_size);
+      schur_size = 0;
+      for (global_size_type i=0; i<this->globalNumCols_; i++) {
+        if (schur_part_ptr[i] == 1) {
+          schur_part(schur_size) = i+1; // TODO: base-1 ??
+          schur_size ++;
+        }
+      }
+      mumps_par.size_schur = schur_size;
+      mumps_par.listvar_schur = schur_part.data();
+      mumps_par.schur = schur_out.data();
+    }
+    if(parameterList->isParameter("SchurOut")) {
+      // store schur-part to the internal view (if user wants the output, then the pointer should stay, so no need for internal view?)
+      schur_out_ptr = parameterList->get<scalar_type*>("SchurOut");
+    }
+    if(parameterList->isParameter("OnlyForwardSolve")) {
+      only_forward_solve = parameterList->get<bool>("OnlyForwardSolve");
+    }
+    if(parameterList->isParameter("OnlyBackwardSolve")) {
+      only_backward_solve = parameterList->get<bool>("OnlyBackwardSolve");
+    }
+
+    if(parameterList->isParameter("verbose")){
+      bool verbose = parameterList->get<bool>("verbose");
+      if (verbose) mumps_par.icntl[3] = 2;
     }
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
@@ -327,8 +416,23 @@ namespace Amesos2
        pl->set("ICNTL(9)",  1, "Transpose solve, if not 1" );
        pl->set("ICNTL(11)", 0, "Computes statistics for error analysis" );
        pl->set("ICNTL(14)", 20, "Percentage increase in the estimated working space" );
+
+       // For partial factorization
+       scalar_type *dummy_scalar_ptr;
+       const local_ordinal_type *dummy_ordinal_ptr;
+       pl->set("PartialFacto", 0,
+               "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
+       pl->set("SchurPart", dummy_ordinal_ptr,
+               "Specify rows/columns belonging to Schur complement for partial factorization");
+       pl->set("SchurOut", dummy_scalar_ptr,
+               "Store output Schur complement from partial factorization");
+       pl->set("OnlyForwardSolve", false,
+               "Perform only the forward substitution");
+       pl->set("OnlyBackwardSolve", false,
+               "Perform only the backward substitution");
+
+       pl->set("verbose", false, "Whether verbose");
        pl->set("IsContiguous", true, "Whether GIDs contiguous");
-      
        valid_params = pl;
     }
     
@@ -344,48 +448,42 @@ namespace Amesos2
     Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
     #endif
     if(MUMPS_MATRIX_LOAD == false || current_phase==NUMFACT)
-      {
-        // Only the root image needs storage allocated
-        if( !MUMPS_MATRIX_LOAD && this->root_ ){
-          Kokkos::resize(host_nzvals_view_, this->globalNumNonZeros_);
-          Kokkos::resize(host_rows_view_, this->globalNumNonZeros_);
-          Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
-        }
-  
-        local_ordinal_type nnz_ret = 0;
-        
-        #ifdef HAVE_AMESOS2_TIMERS
-        Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
-        #endif
-
-        Util::get_ccs_helper_kokkos_view<
-          MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
-          ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
-            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-            ARBITRARY,
-            this->rowIndexBase_);
-  
-        if( this->root_ ){
-                  TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != Teuchos::as<local_ordinal_type>(this->globalNumNonZeros_),
-                                std::runtime_error,
-                        "Did not get the expected number of non-zero vals");
-        }
-  
-        
-        if( this->root_ ){
-          ConvertToTriplet();
-        }
-        /* ch: In general, the matrix is loaded during the preordering phase.
-           However, if the matrix pattern has not changed during consecutive calls of numeric factorizations
-           we can reuse the previous symbolic factorization. In this case, the matrix is not loaded in the preordering phase,
-           because it is not called. Therefore, we need to load the matrix in the numeric factorization phase.
-         */
-          if (current_phase==PREORDERING){
-              MUMPS_MATRIX_LOAD_PREORDERING = true;
-          }
+    {
+      // Only the root image needs storage allocated
+      if( !MUMPS_MATRIX_LOAD && this->root_ ) {
+        Kokkos::resize(host_nzvals_view_, this->globalNumNonZeros_);
+        Kokkos::resize(host_rows_view_, this->globalNumNonZeros_);
+        Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
       }
-      
-      
+  
+      #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
+      #endif
+
+      local_ordinal_type nnz_ret = 0;
+      Util::get_ccs_helper_kokkos_view<
+        MatrixAdapter<Matrix>,host_value_type_view,host_ordinal_type_view,host_ordinal_type_view>
+        ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          ARBITRARY,
+          this->rowIndexBase_);
+
+      Teuchos::broadcast(*(this->getComm()), 0, &nnz_ret); // We only care about root's value
+      TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != Teuchos::as<local_ordinal_type>(this->globalNumNonZeros_),
+         std::runtime_error, "Did not get the expected number of non-zero vals");
+        
+      if( this->root_ ){
+        ConvertToTriplet();
+      }
+      /* ch: In general, the matrix is loaded during the preordering phase.
+         However, if the matrix pattern has not changed during consecutive calls of numeric factorizations
+         we can reuse the previous symbolic factorization. In this case, the matrix is not loaded in the preordering phase,
+         because it is not called. Therefore, we need to load the matrix in the numeric factorization phase.
+       */
+      if (current_phase==PREORDERING){
+        MUMPS_MATRIX_LOAD_PREORDERING = true;
+      }
+    }
     
     MUMPS_MATRIX_LOAD = true;
     return (true);
@@ -423,39 +521,35 @@ namespace Amesos2
       mumps_par.jcn = (MUMPS_INT*)malloc(mumps_par.nz * sizeof(MUMPS_INT));
     }
     if((mumps_par.a == NULL) || (mumps_par.irn == NULL) 
-       || (mumps_par.jcn == NULL))
-      {
-        return -1;
-      }
+       || (mumps_par.jcn == NULL)) {
+      return -1;
+    }
     /* Going from full CSC to full Triplet */
     /* Will have to add support for symmetric case*/
     local_ordinal_type tri_count = 0;
     local_ordinal_type i,j;
     local_ordinal_type max_local_ordinal = 0;
     
-    for(i = 0; i < (local_ordinal_type)this->globalNumCols_; i++)
-      {
-        for( j = host_col_ptr_view_(i); j < host_col_ptr_view_(i+1)-1; j++)
-          {
-            mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
-            mumps_par.irn[tri_count] = (MUMPS_INT)host_rows_view_(j)+1; //Fortran index
-            mumps_par.a[tri_count] = host_nzvals_view_(j);
-            
-            tri_count++;
-          }
-        
-        j = host_col_ptr_view_(i+1)-1;
+    for(i = 0; i < (local_ordinal_type)this->globalNumCols_; i++) {
+      for( j = host_col_ptr_view_(i); j < host_col_ptr_view_(i+1)-1; j++) {
         mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
         mumps_par.irn[tri_count] = (MUMPS_INT)host_rows_view_(j)+1; //Fortran index
         mumps_par.a[tri_count] = host_nzvals_view_(j);
 
         tri_count++;
-        
-        if(host_rows_view_(j) > max_local_ordinal)
-          {
-            max_local_ordinal = host_rows_view_(j);
-          }
       }
+
+      j = host_col_ptr_view_(i+1)-1;
+      mumps_par.jcn[tri_count] = (MUMPS_INT)i+1; //Fortran index
+      mumps_par.irn[tri_count] = (MUMPS_INT)host_rows_view_(j)+1; //Fortran index
+      mumps_par.a[tri_count] = host_nzvals_view_(j);
+
+      tri_count++;
+
+      if(host_rows_view_(j) > max_local_ordinal) {
+        max_local_ordinal = host_rows_view_(j);
+      }
+    }
     TEUCHOS_TEST_FOR_EXCEPTION(std::numeric_limits<MUMPS_INT>::max() <= max_local_ordinal,
                                std::runtime_error,
                                "Matrix index larger than MUMPS_INT");

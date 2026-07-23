@@ -363,7 +363,7 @@ namespace {
       // test-0 with default-comm, matrix will be gather to mpi-0 and only mpi-0 computes Schur complement
       // test-1 with serial-comm, all processes calls ShyLU-Basker and computes schur complement independently
       RCP<const Comm<int> > comm = (test == 0 ? Tpetra::getDefaultComm() :
-                                                Teuchos::rcp_dynamic_cast<const Comm<int>>(Teuchos::rcp(new Teuchos::SerialComm<int>())));
+                                                Teuchos::rcp_dynamic_cast<const Comm<int>>(rcp(new Teuchos::SerialComm<int>())));
       const size_t myRank = comm->getRank();
       const size_t numRanks = comm->getSize();
 
@@ -470,7 +470,7 @@ namespace {
       // test-0 with default-comm, matrix will be gather to mpi-0 and only mpi-0 computes Schur complement
       // test-1 with serial-comm, all processes calls ShyLU-Basker and computes schur complement independently
       RCP<const Comm<int> > comm = (test == 0 ? Tpetra::getDefaultComm() :
-                                                Teuchos::rcp_dynamic_cast<const Comm<int>>(Teuchos::rcp(new Teuchos::SerialComm<int>())));
+                                                Teuchos::rcp_dynamic_cast<const Comm<int>>(rcp(new Teuchos::SerialComm<int>())));
       const size_t myRank = comm->getRank();
 
       RCP<const Comm<int> > global_comm = Tpetra::getDefaultComm(); // just for printing
@@ -512,21 +512,6 @@ namespace {
       }
       A->fillComplete();
 
-      RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
-      RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
-
-      RCP<MV> X = rcp(new MV(dmnmap,numVecs));
-      RCP<MV> B = rcp(new MV(rngmap,numVecs));
-      RCP<MV> Xhat = rcp(new MV(dmnmap,numVecs));
-      X->setObjectLabel("X");
-      B->setObjectLabel("B");
-      Xhat->setObjectLabel("Xhat");
-      X->randomize();
-
-      A->apply(*X,*B);            // no transpose
-
-      Xhat->randomize();
-
       #ifdef KOKKOS_ENABLE_OPENMP
       int max_num_threads = Kokkos::OpenMP().concurrency();
       #else
@@ -535,7 +520,7 @@ namespace {
       if (max_num_threads > 1) {
         // Create ShyLU-Basker solver
         RCP<Amesos2::Solver<MAT,MV> > solver
-          = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B );
+          = Amesos2::create<MAT,MV>("ShyLUBasker", A );
 
         // Parameters
         Teuchos::ParameterList amesos2_paramlist;
@@ -557,16 +542,17 @@ namespace {
         shylubasker_paramlist.set("verbose", (global_comm->getRank() == 0 ? true : false));
         solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
 
-        // Solve A*Xhat = B for Xhat using the Basker solver
+        // Perform Partial Facto to compute Schur complement
         solver->symbolicFactorization();
         solver->numericFactorization();
 
-        // Check result of solve
+        // Check Schur complement
         const SCALAR zero = ST::zero();
         const SCALAR half  = one / two;
         Teuchos::Array<SCALAR> schur(numSchur*numSchur, zero);
+        // MPI-0 on comm (either serial or default) will compute Schur complement
+        // NOTE: with serial comm, every one has myRank == 0, and compute Schur complement independently
         if (myRank == 0) {
-          // NOTE: with serial comm, every one has myRank == 0, and compute Schur complement independently
           for( size_t i = 0; i < numSchur; ++i ){
             if (i > 0) {
               schur[i-1 + i*numSchur] = -half;
