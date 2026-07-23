@@ -488,11 +488,13 @@ void symmetric_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *han
                 "a contiguous layout (Left or Right, not Stride)");
 
   // Check compatibility of #vectors
-  if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosSparse::symmetric_gauss_seidel_apply: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (x_scalar_view_t::rank == 2) {
+    if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosSparse::symmetric_gauss_seidel_apply: "
+         << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -537,9 +539,13 @@ void symmetric_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *han
   Internal_alno_nnz_view_t_ const_a_l(entries.data(), entries.extent(0));
   Internal_ascalar_nnz_view_t_ const_a_v(values.data(), values.extent(0));
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
-                                            x_lhs_output_vec.extent(1));
-  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
+  size_t x_lhs_output_vec_r2{1}, y_rhs_input_vec_r2{1};
+  if constexpr (x_scalar_view_t::rank == 2) {
+    x_lhs_output_vec_r2 = x_lhs_output_vec.extent(1);
+    y_rhs_input_vec_r2  = y_rhs_input_vec.extent(1);
+  }
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec_r2);
+  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec_r2);
 
   using namespace KokkosSparse::Impl;
 
@@ -638,12 +644,14 @@ void symmetric_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHan
                                         bool init_zero_x_vector, bool update_y_vector,
                                         typename KernelHandle::nnz_scalar_t omega, int numIter) {
   // Check compatibility of dimensions at run time.
-  if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosSparse::symmetric_block_gauss_seidel_apply: Dimensions of X "
-          "and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (x_scalar_view_t::rank == 2) {
+    if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosSparse::symmetric_block_gauss_seidel_apply: Dimensions of X "
+            "and Y do not match: "
+         << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {
@@ -731,12 +739,14 @@ void forward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle 
                 "have a contiguous layout (Left or Right, not Stride)");
 
   // Check compatibility of dimensions at run time.
-  if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosSparse::forward_sweep_gauss_seidel_apply: Dimensions of X and "
-          "Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (x_scalar_view_t::rank == 2) {
+    if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosSparse::forward_sweep_gauss_seidel_apply: Dimensions of X and "
+            "Y do not match: "
+         << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -782,9 +792,14 @@ void forward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle 
   Internal_alno_nnz_view_t_ const_a_l(entries.data(), entries.extent(0));
   Internal_ascalar_nnz_view_t_ const_a_v(values.data(), values.extent(0));
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
-                                            x_lhs_output_vec.extent(1));
-  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
+  size_t x_lhs_output_vec_r2{1}, y_rhs_input_vec_r2{1};
+  if constexpr (x_scalar_view_t::rank == 2) {
+    x_lhs_output_vec_r2 = x_lhs_output_vec.extent(1);
+    y_rhs_input_vec_r2  = y_rhs_input_vec.extent(1);
+  }
+
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec_r2);
+  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec_r2);
 
   using namespace KokkosSparse::Impl;
 
@@ -882,12 +897,14 @@ void forward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename Kerne
                                             bool init_zero_x_vector, bool update_y_vector,
                                             typename KernelHandle::nnz_scalar_t omega, int numIter) {
   // Check compatibility of dimensions at run time.
-  if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosSparse::forward_sweep_block_gauss_seidel_apply: Dimensions of "
-          "X and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (x_scalar_view_t::rank == 2) {
+    if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosSparse::forward_sweep_block_gauss_seidel_apply: Dimensions of "
+            "X and Y do not match: "
+         << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   auto gsHandle = handle->get_point_gs_handle();
@@ -976,12 +993,14 @@ void backward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle
                 "have a contiguous layout (Left or Right, not Stride)");
 
   // Check compatibility of dimensions at run time.
-  if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosSparse::backward_sweep_gauss_seidel_apply: Dimensions of X "
-          "and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (x_scalar_view_t::rank == 2) {
+    if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosSparse::backward_sweep_gauss_seidel_apply: Dimensions of X "
+            "and Y do not match: "
+         << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   typedef typename KernelHandle::const_size_type c_size_t;
@@ -1027,9 +1046,14 @@ void backward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle
   Internal_alno_nnz_view_t_ const_a_l(entries.data(), entries.extent(0));
   Internal_ascalar_nnz_view_t_ const_a_v(values.data(), values.extent(0));
 
-  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0),
-                                            x_lhs_output_vec.extent(1));
-  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec.extent(1));
+  size_t x_lhs_output_vec_r2{1}, y_rhs_input_vec_r2{1};
+  if constexpr (x_scalar_view_t::rank == 2) {
+    x_lhs_output_vec_r2 = x_lhs_output_vec.extent(1);
+    y_rhs_input_vec_r2  = y_rhs_input_vec.extent(1);
+  }
+
+  Internal_xscalar_nnz_view_t_ nonconst_x_v(x_lhs_output_vec.data(), x_lhs_output_vec.extent(0), x_lhs_output_vec_r2);
+  Internal_yscalar_nnz_view_t_ const_y_v(y_rhs_input_vec.data(), y_rhs_input_vec.extent(0), y_rhs_input_vec_r2);
 
   using namespace KokkosSparse::Impl;
 
@@ -1128,12 +1152,14 @@ void backward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename Kern
                                              bool update_y_vector, typename KernelHandle::nnz_scalar_t omega,
                                              int numIter) {
   // Check compatibility of dimensions at run time.
-  if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosSparse::backward_sweep_block_gauss_seidel_apply: Dimensions "
-          "of X and Y do not match: "
-       << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (x_scalar_view_t::rank == 2) {
+    if (x_lhs_output_vec.extent(1) != y_rhs_input_vec.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosSparse::backward_sweep_block_gauss_seidel_apply: Dimensions "
+            "of X and Y do not match: "
+         << "X has " << x_lhs_output_vec.extent(1) << "columns, Y has " << y_rhs_input_vec.extent(1) << " columns.";
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
   auto gsHandle = handle->get_point_gs_handle();
   if (gsHandle->get_algorithm_type() == GS_CLUSTER) {

@@ -118,11 +118,13 @@ void iamax(const execution_space& space, const RV& R, const XMV& X,
                 "(we have to be able to write to its entries).");
 
   // Check compatibility of dimensions at run time.
-  if (X.extent(1) != R.extent(0)) {
-    std::ostringstream os;
-    os << "KokkosBlas::iamax (MV): Dimensions of R and X do not match: "
-       << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (XMV::rank == 2 && RV::rank == 1) {
+    if (X.extent(1) != R.extent(0)) {
+      std::ostringstream os;
+      os << "KokkosBlas::iamax (MV): Dimensions of R and X do not match: "
+         << "R: " << R.extent(0) << ", X: " << X.extent(0) << " x " << X.extent(1);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   using UnifiedXLayout  = typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;

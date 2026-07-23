@@ -16,7 +16,7 @@
 #include "KokkosSparse_LUPrec.hpp"
 #include "KokkosSparse_SortCrs.hpp"
 
-#include "Test_vector_fixtures.hpp"
+#include "KokkosKernels_TestMatrixUtils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -51,8 +51,13 @@ void run_test_par_ilut() {
                                                        typename device::memory_space, typename device::memory_space>;
 
   // Simple test fixture A
+  // clang-format off
   std::vector<std::vector<scalar_t>> A = {
-      {1., 6., 4., 7.}, {2., -5., 0., 8.}, {0.5, -3., 6., 0.}, {0.2, -0.5, -9., 0.}};
+      { 1.,   6.,  4., 7.},
+      { 2.,  -5.,  0., 8.},
+      {0.5,  -3.,  6., 0.},
+      {0.2, -0.5, -9., 0.}};
+  // clang-format on
 
   // Allocate device CRS views for A
   RowMapType row_map("row_map", 0);
@@ -144,17 +149,24 @@ void run_test_par_ilut() {
   // expected_U_candidates);
 
   // Use these fixtures to test full numeric
+  // clang-format off
   std::vector<std::vector<scalar_t>> expected_L_candidates = {
-      {1., 0., 0., 0.}, {2., 1., 0., 0.}, {0.50, 0.35, 1., 0.}, {0., 0., -1.32, 1.}};
+      {1.,    0.,     0., 0.},
+      {2.,    1.,     0., 0.},
+      {0.50,  0.35,   1., 0.},
+      {0.,    0.,  -1.32, 1.}};
+  // clang-format on
 
   check_matrix("L numeric", L_row_map, L_entries, L_values, expected_L_candidates);
 
+  // clang-format off
   std::vector<std::vector<scalar_t>> expected_U_candidates = {
-      {1., 6., 4., 7.},
-      {0., -17., -8., -6.},
-      {0., 0., 6.82, 0.},
-      {0., 0., 0., 0.}  // [3] = 0 for full alg, -2.62 for post-threshold only
+      {1.,  6.,    4.,  7.},
+      {0., -17.,  -8., -6.},
+      {0.,   0., 6.82,  0.},
+      {0.,   0.,   0.,  0.}  // [3] = 0 for full alg, -2.62 for post-threshold only
   };
+  // clang-format on
 
   check_matrix("U numeric", U_row_map, U_entries, U_values, expected_U_candidates);
 

@@ -5,7 +5,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 #include <KokkosBlas_util.hpp>
 #include <sstream>
 
@@ -15,7 +15,7 @@ namespace Impl {
 template <class ExecSpace, class RV, class XV, class YV, class size_type>
 struct Dot_MV_Functor {
   using Scalar   = typename RV::non_const_value_type;
-  using IPT      = Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>;
+  using IPT      = KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>;
   using dot_type = typename IPT::dot_type;
   using KAT      = KokkosKernels::ArithTraits<dot_type>;
 
@@ -45,7 +45,7 @@ struct Dot_MV_Functor {
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(t, begin, end),
         [&](size_type k, dot_type& update) {
-          Kokkos::Details::updateDot(update, x.access(k, xcol), y.access(k, ycol));
+          KokkosKernels::Details::updateDot(update, x.access(k, xcol), y.access(k, ycol));
         },
         localResult);
 

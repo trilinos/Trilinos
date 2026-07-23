@@ -5,7 +5,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 #include <KokkosBlas1_nrm2w_spec.hpp>
 #include <KokkosBlas_util.hpp>
 
@@ -26,7 +26,7 @@ struct V_Nrm2w_Functor {
   typedef typename XV::execution_space execution_space;
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
@@ -68,7 +68,7 @@ template <class ExecSpace, class RV, class XV, class size_type>
 struct Nrm2w_MV_Functor {
   typedef typename RV::non_const_value_type rvalue_type;
   typedef typename XV::non_const_value_type xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 

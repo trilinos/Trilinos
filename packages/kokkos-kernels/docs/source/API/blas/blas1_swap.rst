@@ -41,3 +41,20 @@ Type Requirements
 
   - ``std::is_same_v<typename YVector::value_type, typename YVector::non_const_value_type == true``
   - ``Kokkos::SpaceAccessibility<execution_space, typename YVector::memory_space>::accessible == true``
+
+Example
+=======
+
+.. literalinclude:: ../../../../example/docs/blas/KokkosBlas1_docs_swap.cpp
+  :language: c++
+
+output:
+
+.. code::
+
+   orignal values:
+      x: {0, 1, 2, 3, 4}
+      y: {9, 8, 7, 6, 5}
+   final values:
+      x: {9, 8, 7, 6, 5}
+      y: {0, 1, 2, 3, 4}

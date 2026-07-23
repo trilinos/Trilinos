@@ -10,8 +10,8 @@ set(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(KokkosKernels_VERSION_MAJOR 5)
-set(KokkosKernels_VERSION_MINOR 1)
-set(KokkosKernels_VERSION_PATCH 1)
+set(KokkosKernels_VERSION_MINOR 2)
+set(KokkosKernels_VERSION_PATCH 99)
 set(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
@@ -80,6 +80,7 @@ kokkoskernels_add_option("ENABLE_WARNINGS_AS_ERRORS" OFF BOOL
   "Whether warnings should be treated as errors. Default: OFF")
 
 include(cmake/kokkoskernels_warnings.cmake)
+include(cmake/kokkoskernels_windows.cmake)
 
 set(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL "Whether to build tests and examples against installation")
 if(KokkosKernels_INSTALL_TESTING)
@@ -90,6 +91,7 @@ if(KokkosKernels_INSTALL_TESTING)
   find_package(KokkosKernels REQUIRED)
   # Still need to figure out which backends
   include(cmake/kokkos_backends.cmake)
+  include(cmake/kokkoskernels_windows.cmake)  # /bigobj for heavy CUDA object files
   # Only build the tests
   # Assume that all components have been enabled
   kokkoskernels_add_test_directories(common/unit_test)
@@ -117,13 +119,13 @@ else()
         set(CMAKE_HIP_ARCHITECTURES ${Kokkos_HIP_ARCHITECTURES})
       endif()
     endif()
-    if(${Kokkos_VERSION} VERSION_GREATER_EQUAL "5.0.2")
+    if(${Kokkos_VERSION} VERSION_GREATER_EQUAL "4.7.02")
       message(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
-      if((${Kokkos_VERSION} VERSION_GREATER "5.1.99"))
+      if((${Kokkos_VERSION} VERSION_GREATER "5.2.99"))
         message(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
       endif()
     else()
-      message(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 5.0.2 or greater (found ${Kokkos_VERSION})")
+      message(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.7.02 or greater (found ${Kokkos_VERSION})")
     endif()
 
     if(KokkosKernels_ENABLE_COMPILER_WARNINGS)
@@ -132,6 +134,7 @@ else()
   endif()
 
   include(cmake/kokkos_backends.cmake)
+  include(cmake/kokkoskernels_windows.cmake)  # /bigobj for heavy CUDA object files
 
   #This will collect imported TPLs we need to export
   #in our config file

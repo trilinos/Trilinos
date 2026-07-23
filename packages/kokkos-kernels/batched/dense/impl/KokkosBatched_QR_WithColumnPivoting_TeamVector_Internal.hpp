@@ -6,6 +6,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosBlas_util.hpp"
 
 #include "KokkosBatched_FindAmax_Internal.hpp"
 #include "KokkosBatched_Dot.hpp"
@@ -83,7 +84,7 @@ struct TeamVectorQR_WithColumnPivotingInternal {
     norm_part1x2.partWithAL(norm, n, 0);
 
     // compute initial column norms (replaced by dot product)
-    TeamVectorDotInternal::invoke(member, m, n, A, as0, as1, A, as0, as1, norm, 1);
+    Impl::TeamVectorDotInternal::invoke(member, KokkosBlas::Impl::OpConj(), m, n, A, as0, as1, A, as0, as1, norm, 1);
     member.team_barrier();
 
     const bool finish_when_rank_found = (matrix_rank == -1);

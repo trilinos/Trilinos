@@ -53,6 +53,13 @@ endif()
 #Generate @X@ variables in the template X.hpp.in and X.cpp.in
 #files containing the list of all needed macros
 
+macro(gen_blas_eti_new FUNC_NAME SUBDIR)
+  kokkoskernels_generate_eti(${FUNC_NAME} ${SUBDIR}
+    COMPONENTS  blas
+    HEADER_LIST ETI_HEADERS
+    SOURCE_LIST SOURCES
+    TYPE_LISTS  FLOATS LAYOUTS EXEC_SPACES)
+endmacro()
 macro(gen_blas_eti FUNC_NAME SUBDIR)
   kokkoskernels_generate_eti(${FUNC_NAME} ${SUBDIR}
     COMPONENTS  blas
@@ -67,8 +74,8 @@ gen_blas_eti(Blas1_scal           scal)
 gen_blas_eti(Blas1_scal_mv        scal)
 gen_blas_eti(Blas1_dot            dot)
 gen_blas_eti(Blas1_dot_mv         dot)
-gen_blas_eti(Blas1_axpby          axpby)
-gen_blas_eti(Blas1_axpby_mv       axpby)
+gen_blas_eti_new(Blas1_axpby          axpby)
+gen_blas_eti_new(Blas1_axpby_mv       axpby)
 gen_blas_eti(Blas1_update         update)
 gen_blas_eti(Blas1_update_mv      update)
 gen_blas_eti(Blas1_sum            sum)

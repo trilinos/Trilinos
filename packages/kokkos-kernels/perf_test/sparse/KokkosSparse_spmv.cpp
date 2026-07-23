@@ -45,9 +45,11 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
 
   srand(17312837);
   matrix_type A;
-  if (filename)
-    A = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(filename);
-  else {
+  if (filename) {
+    A       = KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type>(filename);
+    numRows = A.numRows();
+    numCols = A.numCols();
+  } else {
     Offset nnz = 10 * numRows;
     // note: the help text says the bandwidth is fixed at 0.01 * numRows
     // CAVEAT:  small problem sizes are problematic, b/c of 0.01*numRows
@@ -73,8 +75,8 @@ int test_crs_matrix_singlevec(Ordinal numRows, Ordinal numCols, int test, const 
   // Performance Output
   double matrix_size =
       1.0 * ((test_data.nnz * (sizeof(Scalar) + sizeof(Ordinal)) + numRows * sizeof(Offset))) / 1024 / 1024;
-  double vector_size      = 2.0 * numRows * sizeof(Scalar) / 1024 / 1024;
-  double vector_readwrite = (test_data.nnz + numCols) * sizeof(Scalar) / 1024 / 1024;
+  double vector_size      = (numRows + numCols) * sizeof(Scalar) / 1024 / 1024;
+  double vector_readwrite = (numRows + numRows + numCols) * sizeof(Scalar) / 1024 / 1024;
 
   double problem_size = matrix_size + vector_size;
   printf(

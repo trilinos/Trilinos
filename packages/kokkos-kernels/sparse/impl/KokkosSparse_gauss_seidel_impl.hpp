@@ -876,8 +876,8 @@ class PointGaussSeidel {
       // handle->get_shmem_size(): this is set to 32128 bytes. If things do not
       // fit into shared memory, we allocate vectors in global memory and run
       // BigBlockTeam in Team_SGS functor.
-      size_t level_1_mem =
-          max_row_size * block_size * sizeof(nnz_scalar_t) + ((block_size / 8) + 1) * 8 * sizeof(nnz_lno_t);
+      size_t level_1_mem = max_row_size * static_cast<size_t>(block_size) * sizeof(nnz_scalar_t) +
+                           static_cast<size_t>((block_size / 8) + 1) * 8 * sizeof(nnz_lno_t);
       level_1_mem                = suggested_team_size * level_1_mem;
       size_t level_2_mem         = 0;
       nnz_lno_t num_values_in_l1 = max_row_size;
@@ -1220,7 +1220,7 @@ class PointGaussSeidel {
 
       scalar_persistent_work_view_t permuted_inverse_diagonal(
           Kokkos::view_alloc(my_exec_space, Kokkos::WithoutInitializing, "permuted_inverse_diagonal"),
-          num_rows * block_size);
+          num_rows * static_cast<size_t>(block_size));
       if (!have_diagonal_given) {
         Get_Matrix_Diagonals gmd(newxadj_, newadj_, permuted_adj_vals, permuted_inverse_diagonal, this->num_rows,
                                  rows_per_team, block_size, block_matrix_size);

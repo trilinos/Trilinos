@@ -388,9 +388,6 @@ class ThreadsInternal {
    */
   static void start(void (*)(ThreadsInternal &, const void *), const void *);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  static int in_parallel();
-#endif
   static void fence();
   static void fence(const std::string &);
   static void internal_fence();
@@ -531,12 +528,6 @@ class ThreadsInternal {
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-KOKKOS_DEPRECATED inline int Threads::in_parallel() {
-  return Impl::ThreadsInternal::in_parallel();
-}
-#endif
 
 inline void Threads::impl_initialize(InitializationSettings const &settings) {
   Impl::ThreadsInternal::initialize(

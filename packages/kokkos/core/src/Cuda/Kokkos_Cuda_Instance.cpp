@@ -12,11 +12,7 @@
 #ifdef KOKKOS_ENABLE_CUDA
 
 #include <Kokkos_Macros.hpp>
-#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
-import kokkos.core;
-#else
 #include <Kokkos_Core.hpp>
-#endif
 
 // #include <Cuda/Kokkos_Cuda_Error.hpp>
 // #include <Cuda/Kokkos_Cuda_BlockSize_Deduction.hpp>
@@ -213,6 +209,10 @@ void CudaInternal::print_configuration(std::ostream &s) const {
       << '\n'
       << "  Shared Memory per Block: "
       << human_memory_size(prop.sharedMemPerBlock) << '\n'
+      << "  Shared Memory per Block (Optin): "
+      << human_memory_size(prop.sharedMemPerBlockOptin) << '\n'
+      << "  Reserved Shared Memory per Block: "
+      << human_memory_size(prop.reservedSharedMemPerBlock) << '\n'
       << "  Can access system allocated memory: " << prop.pageableMemoryAccess
       << '\n'
       << "    via Address Translation Service: "
@@ -288,6 +288,11 @@ CudaInternal::CudaInternal(cudaStream_t stream) : m_stream(stream) {
   if (!constantMemReusablePerDevice[m_cudaDev])
     KOKKOS_IMPL_CUDA_SAFE_CALL(cuda_event_create_with_flags_wrapper(
         &constantMemReusablePerDevice[m_cudaDev], cudaEventDisableTiming));
+
+  // Accessing the mutex (for constant memory launch) through
+  // std::map::operator[] will ensure the mutex is default constructed (and
+  // initialized)
+  constantMemMutexPerDevice[m_cudaDev];
 
   //----------------------------------
   // Multiblock reduction uses scratch flags for counters
@@ -469,13 +474,7 @@ Cuda::size_type *cuda_internal_scratch_unified(const Cuda &instance,
 
 namespace Kokkos {
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-int Cuda::concurrency() {
-#else
-int Cuda::concurrency() const {
-#endif
-  return Impl::CudaInternal::concurrency();
-}
+int Cuda::concurrency() const { return Impl::CudaInternal::concurrency(); }
 
 void Cuda::impl_initialize(InitializationSettings const &settings) {
   const std::vector<int> &visible_devices = Impl::get_visible_devices();
@@ -522,33 +521,6 @@ void Cuda::impl_initialize(InitializationSettings const &settings) {
               << " , this will likely reduce potential performance."
               << std::endl;
   }
-
-  //----------------------------------
-
-#ifdef KOKKOS_ENABLE_CUDA_UVM
-  const char *env_force_device_alloc =
-      getenv("CUDA_MANAGED_FORCE_DEVICE_ALLOC");
-  bool force_device_alloc;
-  if (env_force_device_alloc == nullptr)
-    force_device_alloc = false;
-  else
-    force_device_alloc = std::stoi(env_force_device_alloc) != 0;
-
-  const char *env_visible_devices = getenv("CUDA_VISIBLE_DEVICES");
-  bool visible_devices_one        = true;
-  if (env_visible_devices == nullptr) visible_devices_one = false;
-
-  if (Kokkos::show_warnings() &&
-      (!visible_devices_one && !force_device_alloc)) {
-    std::cerr << R"warning(
-Kokkos::Cuda::initialize WARNING: Cuda is allocating into UVMSpace by default
-                                  without setting CUDA_MANAGED_FORCE_DEVICE_ALLOC=1 or
-                                  setting CUDA_VISIBLE_DEVICES.
-                                  This could on multi GPU systems lead to severe performance"
-                                  penalties.)warning"
-              << std::endl;
-  }
-#endif
 
   //----------------------------------
 
@@ -604,16 +576,10 @@ void Cuda::impl_finalize() {
   Impl::CudaInternal::default_instance = nullptr;
 }
 
-Cuda::~Cuda() { Impl::check_execution_space_destructor_precondition(name()); }
-
 Cuda::Cuda()
     : m_space_instance(
           (Impl::check_execution_space_constructor_precondition(name()),
            Impl::CudaInternal::default_instance)) {}
-
-KOKKOS_DEPRECATED Cuda::Cuda(cudaStream_t stream, bool manage_stream)
-    : Cuda(stream,
-           manage_stream ? Impl::ManageStream::yes : Impl::ManageStream::no) {}
 
 Cuda::Cuda(cudaStream_t stream, Impl::ManageStream manage_stream)
     : m_space_instance(
@@ -635,12 +601,6 @@ void Cuda::print_configuration(std::ostream &os, bool /*verbose*/) const {
   os << "Cuda Options:\n";
   os << "  KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE: ";
 #ifdef KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
-  os << "yes\n";
-#else
-  os << "no\n";
-#endif
-  os << "  KOKKOS_ENABLE_CUDA_UVM: ";
-#ifdef KOKKOS_ENABLE_CUDA_UVM
   os << "yes\n";
 #else
   os << "no\n";
