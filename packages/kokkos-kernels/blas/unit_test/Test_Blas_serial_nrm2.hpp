@@ -17,7 +17,7 @@ template <typename DeviceType, typename ViewType, typename AlgoTagType>
 struct Functor_TestBlasSerialNrm2 {
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::non_const_value_type;
-  using IPT             = Kokkos::Details::InnerProductSpaceTraits<value_type>;
+  using IPT             = KokkosKernels::Details::InnerProductSpaceTraits<value_type>;
   using norm_type       = typename IPT::mag_type;
   using norm_view_type  = Kokkos::View<norm_type *, execution_space>;
 
@@ -64,7 +64,7 @@ template <typename DeviceType, typename ViewType, typename AlgoTagType>
 struct Functor_TestBlasSerialNrm2MV {
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::non_const_value_type;
-  using IPT             = Kokkos::Details::InnerProductSpaceTraits<value_type>;
+  using IPT             = KokkosKernels::Details::InnerProductSpaceTraits<value_type>;
   using norm_type       = typename IPT::mag_type;
   using norm_view_type  = Kokkos::View<norm_type **, execution_space>;
 
@@ -117,7 +117,7 @@ void impl_test_blas_serial_nrm2(const int N, const int BlkSize) {
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::non_const_value_type;
   using ats             = KokkosKernels::ArithTraits<value_type>;
-  using IPT             = Kokkos::Details::InnerProductSpaceTraits<value_type>;
+  using IPT             = KokkosKernels::Details::InnerProductSpaceTraits<value_type>;
   using norm_type       = typename IPT::mag_type;
   using norm_view_type  = Kokkos::View<norm_type *, execution_space>;
 
@@ -154,7 +154,7 @@ void impl_test_blas_serial_nrm2mv(const int N, const int vecLength, const int nu
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::non_const_value_type;
   using ats             = KokkosKernels::ArithTraits<value_type>;
-  using IPT             = Kokkos::Details::InnerProductSpaceTraits<value_type>;
+  using IPT             = KokkosKernels::Details::InnerProductSpaceTraits<value_type>;
   using norm_type       = typename IPT::mag_type;
   using norm_view_type  = Kokkos::View<norm_type **, execution_space>;
 

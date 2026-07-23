@@ -40,13 +40,14 @@ class SYCL {
 
   using array_layout = LayoutLeft;
   using size_type    = memory_space::size_type;
+  using index_type   = memory_space::index_type;
 
   using scratch_memory_space = ScratchMemorySpace<SYCL>;
 
   SYCL(const SYCL&) = default;
-  SYCL(SYCL&& other) : SYCL(static_cast<const SYCL&>(other)) {}
+  SYCL(SYCL&& other) noexcept : SYCL(static_cast<const SYCL&>(other)) {}
   SYCL& operator=(const SYCL&) = default;
-  SYCL& operator=(SYCL&& other) {
+  SYCL& operator=(SYCL&& other) noexcept {
     return *this = static_cast<const SYCL&>(other);
   }
   ~SYCL();
@@ -64,16 +65,6 @@ class SYCL {
   //! \name Functions that all Kokkos devices must implement.
   //@{
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  KOKKOS_DEPRECATED KOKKOS_INLINE_FUNCTION static int in_parallel() {
-#if defined(__SYCL_DEVICE_ONLY__)
-    return true;
-#else
-    return false;
-#endif
-  }
-#endif
-
   /** \brief Wait until all dispatched functors complete. A noop for OpenMP. */
   static void impl_static_fence(const std::string& name);
 
@@ -88,11 +79,7 @@ class SYCL {
 
   static void impl_initialize(InitializationSettings const&);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  static int concurrency();
-#else
   int concurrency() const;
-#endif
 
   static const char* name();
 

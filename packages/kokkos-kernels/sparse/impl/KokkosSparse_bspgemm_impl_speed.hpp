@@ -483,7 +483,8 @@ void KokkosBSPGEMM<
     int num_chunks                             = this->concurrency;
 
     Kokkos::Timer timer1;
-    const size_t chunk_size = this->b_col_cnt * block_dim * block_dim + this->b_col_cnt / sizeof(scalar_t) + 1;
+    const size_t chunk_size =
+        this->b_col_cnt * static_cast<size_t>(block_dim) * block_dim + this->b_col_cnt / sizeof(scalar_t) + 1;
     pool_memory_space m_space(num_chunks, chunk_size, 0, my_pool_type);
     MyExecSpace().fence();
 

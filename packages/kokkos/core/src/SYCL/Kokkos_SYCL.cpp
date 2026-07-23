@@ -10,11 +10,7 @@
 #include <SYCL/Kokkos_SYCL.hpp>
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_Macros.hpp>
-#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
-import kokkos.core;
-#else
 #include <Kokkos_Core.hpp>
-#endif
 
 #include <impl/Kokkos_CheckUsage.hpp>
 #include <impl/Kokkos_DeviceManagement.hpp>
@@ -58,13 +54,7 @@ SYCL::SYCL(const sycl::queue& stream)
 #endif
 }
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-int SYCL::concurrency() {
-  return Impl::SYCLInternal::default_instance->m_maxConcurrency;
-}
-#else
 int SYCL::concurrency() const { return m_space_instance->m_maxConcurrency; }
-#endif
 
 const char* SYCL::name() { return "SYCL"; }
 

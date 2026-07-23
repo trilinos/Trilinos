@@ -4,6 +4,7 @@
 #ifndef KOKKOSBLAS1_SWAP_HPP_
 #define KOKKOSBLAS1_SWAP_HPP_
 
+#include <KokkosKernels_helpers.hpp>
 #include <KokkosBlas1_swap_spec.hpp>
 
 namespace KokkosBlas {

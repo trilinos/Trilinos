@@ -202,7 +202,7 @@ void doAllCoo2Crs(size_t m, size_t n) {
 
 TEST_F(TestCategory, sparse_coo2crs) {
 #if defined(KOKKOS_ENABLE_SYCL)
-  if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::Experimental::SYCL>) {
+  if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::SYCL>) {
     std::cout << "Not running coo2csr on SYCL execution space" << std::endl;
     return;
   }
@@ -236,7 +236,7 @@ TEST_F(TestCategory, sparse_coo2crs) {
 
 TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
 #if defined(KOKKOS_ENABLE_SYCL)
-  if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::Experimental::SYCL>) {
+  if constexpr (std::is_same_v<typename TestDevice::execution_space, Kokkos::SYCL>) {
     std::cout << "Not running coo2csr on SYCL execution space" << std::endl;
     return;
   }

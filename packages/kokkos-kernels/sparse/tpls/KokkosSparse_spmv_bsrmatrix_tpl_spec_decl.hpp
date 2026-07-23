@@ -263,6 +263,42 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 namespace KokkosSparse {
 namespace Impl {
 
+#if defined(CUSPARSE_VERSION) && (CUSPARSE_VERSION >= 12500)
+template <class AMatrix>
+void create_cusparse_bsr_descr(cusparseSpMatDescr_t* descr, const AMatrix& A) {
+  using offset_type = typename AMatrix::non_const_size_type;
+  using entry_type  = typename AMatrix::non_const_ordinal_type;
+  using value_type  = typename AMatrix::non_const_value_type;
+
+  static_assert(std::is_same_v<typename AMatrix::block_layout_type, Kokkos::LayoutRight>,
+                "KokkosSparse::BsrMatrix blocks must be layout-right for cuSPARSE");
+
+  void* rowOffsets = static_cast<void*>(const_cast<offset_type*>(A.graph.row_map.data()));
+  void* colIndices = static_cast<void*>(const_cast<entry_type*>(A.graph.entries.data()));
+  void* values     = static_cast<void*>(const_cast<value_type*>(A.values.data()));
+
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+      cusparseCreateBsr(descr, A.numRows(), A.numCols(), A.nnz(), A.blockDim(), A.blockDim(), rowOffsets, colIndices,
+                        values, cusparse_index_type_t_from<offset_type>(), cusparse_index_type_t_from<entry_type>(),
+                        CUSPARSE_INDEX_BASE_ZERO, cuda_data_type_from<value_type>(), CUSPARSE_ORDER_ROW));
+}
+
+template <class ViewType>
+cusparseDnMatDescr_t create_cusparse_layoutleft_dnmat(const ViewType& view) {
+  static_assert(ViewType::rank == 2, "cuSPARSE dense matrix descriptors require rank-2 views");
+  static_assert(std::is_same_v<typename ViewType::array_layout, Kokkos::LayoutLeft>,
+                "cuSPARSE BSR SpMM only instantiates LayoutLeft multivectors");
+
+  cusparseDnMatDescr_t descr;
+  void* values = static_cast<void*>(const_cast<typename ViewType::non_const_value_type*>(view.data()));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+      cusparseCreateDnMat(&descr, static_cast<int64_t>(view.extent(0)), static_cast<int64_t>(view.extent(1)),
+                          static_cast<int64_t>(view.stride(1)), values,
+                          cuda_data_type_from<typename ViewType::non_const_value_type>(), CUSPARSE_ORDER_COL));
+  return descr;
+}
+#endif
+
 template <class Handle, class AMatrix, class XVector, class YVector>
 void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
                        typename YVector::const_value_type& alpha, const AMatrix& A, const XVector& x,
@@ -286,6 +322,40 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode
     }
   }
 
+#if defined(CUSPARSE_VERSION) && (CUSPARSE_VERSION >= 12700)
+  const cudaDataType valueType = cuda_data_type_from<value_type>();
+  cusparseDnVecDescr_t vecX, vecY;
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), (void*)x.data(), valueType));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), (void*)y.data(), valueType));
+
+  cusparseSpMVAlg_t algo = CUSPARSE_SPMV_BSR_ALG1;
+  KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
+
+  if (handle->tpl_rank1) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data*>(handle->tpl_rank1);
+    if (!subhandle) throw std::runtime_error("KokkosSparse::spmv: subhandle is not set up for generic cuSPARSE BSR");
+    subhandle->set_exec_space(exec);
+  } else {
+    subhandle         = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
+    handle->tpl_rank1 = subhandle;
+
+    create_cusparse_bsr_descr(&subhandle->mat, A);
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(cusparseHandle, myCusparseOperation, &alpha,
+                                                                 subhandle->mat, vecX, &beta, vecY, valueType, algo,
+                                                                 &subhandle->bufferSize));
+#if (CUDA_VERSION >= 11020)
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMallocAsync(&subhandle->buffer, subhandle->bufferSize, exec.cuda_stream()));
+#else
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
+#endif
+  }
+
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMV(cusparseHandle, myCusparseOperation, &alpha, subhandle->mat, vecX,
+                                                    &beta, vecY, valueType, algo, subhandle->buffer));
+
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
+#else
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
   if (handle->tpl_rank1) {
@@ -337,6 +407,7 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode
                   "Trying to call cusparse[*]bsrmv with a scalar type not "
                   "float/double, nor complex of either!");
   }
+#endif
 }
 
 // Reference
@@ -390,6 +461,40 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char m
                     std::is_same_v<typename YVector::array_layout, Kokkos::LayoutLeft>,
                 "cuSPARSE requires both X and Y to be LayoutLeft.");
 
+#if defined(CUSPARSE_VERSION) && (CUSPARSE_VERSION >= 12500)
+  const cudaDataType valueType = cuda_data_type_from<value_type>();
+  cusparseDnMatDescr_t vecX    = create_cusparse_layoutleft_dnmat(x);
+  cusparseDnMatDescr_t vecY    = create_cusparse_layoutleft_dnmat(y);
+
+  cusparseSpMMAlg_t algo = CUSPARSE_SPMM_BSR_ALG1;
+  KokkosSparse::Impl::CuSparse10_SpMV_Data* subhandle;
+
+  if (handle->tpl_rank2) {
+    subhandle = dynamic_cast<KokkosSparse::Impl::CuSparse10_SpMV_Data*>(handle->tpl_rank2);
+    if (!subhandle) throw std::runtime_error("KokkosSparse::spmv: subhandle is not set up for generic cuSPARSE BSR");
+    subhandle->set_exec_space(exec);
+  } else {
+    subhandle         = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
+    handle->tpl_rank2 = subhandle;
+
+    create_cusparse_bsr_descr(&subhandle->mat, A);
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseSpMM_bufferSize(cusparseHandle, myCusparseOperation, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha,
+                                subhandle->mat, vecX, &beta, vecY, valueType, algo, &subhandle->bufferSize));
+#if (CUDA_VERSION >= 11020)
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMallocAsync(&subhandle->buffer, subhandle->bufferSize, exec.cuda_stream()));
+#else
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
+#endif
+  }
+
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMM(cusparseHandle, myCusparseOperation,
+                                                    CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, subhandle->mat, vecX,
+                                                    &beta, vecY, valueType, algo, subhandle->buffer));
+
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecX));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecY));
+#else
   KokkosSparse::Impl::CuSparse9_SpMV_Data* subhandle;
 
   if (handle->tpl_rank2) {
@@ -443,6 +548,7 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char m
                   "Trying to call cusparse[*]bsrmm with a scalar type not "
                   "float/double, nor complex of either!");
   }
+#endif
 }
 
 #define KOKKOSSPARSE_SPMV_CUSPARSE(SCALAR, ORDINAL, OFFSET, LAYOUT, SPACE)                                         \
@@ -802,17 +908,15 @@ void spmv_bsr_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode
     }                                                                                                             \
   };
 
-KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutRight,
-                            Kokkos::HIPSpace);
-KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft,
-                            Kokkos::HIPSpace);
+KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(float, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(double, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<float>, rocsparse_int, rocsparse_int, Kokkos::LayoutRight, Kokkos::HIPSpace)
+KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int, Kokkos::LayoutLeft, Kokkos::HIPSpace)
 KOKKOSSPARSE_SPMV_ROCSPARSE(Kokkos::complex<double>, rocsparse_int, rocsparse_int, Kokkos::LayoutRight,
-                            Kokkos::HIPSpace);
+                            Kokkos::HIPSpace)
 
 #undef KOKKOSSPARSE_SPMV_ROCSPARSE
 

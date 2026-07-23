@@ -18,7 +18,6 @@
 #include "KokkosSparse_findRelOffset.hpp"
 #include "KokkosSparse_StaticCcsGraph.hpp"
 #include "KokkosKernels_default_types.hpp"
-#include "KokkosKernels_Macros.hpp"
 
 namespace KokkosSparse {
 /// \class CcsMatrix

@@ -1,47 +1,85 @@
 This directory contains scripts useful for KokkosKernels.
 
-generate_sepecialization.bash
+generate_eti
 =============================
 
-This script generates .cpp source files for specializations of
-different kernels.  It is meant for developers, not for users.  Run it
-like this:
+This script generates stub files for new kernel functions with all necessary
+ETI (Explicit Template Instantiation) infrastructure. It is meant for
+developers adding new kernels to KokkosKernels.
 
-$ ./generate_specialization.bash ${KOKKOSKERNELS_SOURCE_DIRECTORY}
+Usage:
+$ ./generate_eti PACKAGE FUNCTION SIGNATURE [-d DIRECTORY] [-o] [-q]
 
-${KOKKOSKERNELS_SOURCE_DIRECTORY} must be an absolute path to the
-kokkos-kernels source directory in which you want to generate the
-files.  Once you generate the files and are ready to commit them,
+Where:
+  PACKAGE   : Package name (e.g., 'blas', 'sparse', 'graph')
+  FUNCTION  : Function name (e.g., 'axpby', 'gemm', 'spmv')
+  SIGNATURE : Function signature (REQUIRED)
+  -d        : Optional path to kokkos-kernels root (default: current directory)
+  -o        : Overwrite existing files
+  -q        : Quiet mode (suppress all output)
+
+Signature Format:
+  Specify parameters as comma-separated list: {dim}d{type}{mutability}_{name}
+  - dim: 0 (scalar), 1 (vector/1D), 2 (matrix/2D), 3+ (tensor)
+  - type: s (scalar/real/complex), i (integer), c (char)
+  - mutability: i (input/const), o (output), io (input-output)
+  - name: parameter name (REQUIRED)
+
+Signature Examples:
+  1dsi_x,1dso_y                                          - Simple: const input view x, output view y
+  0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y                    - axpby: scalars alpha, beta and views x, y
+  ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y   - gemv: char trans and typical gemv parameters
+
+Examples:
+$ ./generate_eti blas axpby "0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y"
+$ ./generate_eti lapack trtri "ci_uplo,ci_diag,2dsio_A"
+$ ./generate_eti sparse spmv "ci_mode,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y" -d /path/to/kokkos-kernels -q
+
+This creates:
+  - API header (src/KokkosBlas1_mynewfunc.hpp)
+  - Implementation header (impl/KokkosBlas1_mynewfunc_impl.hpp)
+  - Specialization header (impl/KokkosBlas1_mynewfunc_spec.hpp)
+  - ETI template files (eti/generated_specializations_*)
+  - TPL specialization files (tpls/*)
+  - Unit test stub (unit_test/Test_*)
+
+The generated files are stubs with TODO comments. You'll need to:
+  1. Implement the actual kernel logic in the *_impl.hpp file
+  2. Update the API documentation in the public header
+  3. Customize ETI macros for your specific template parameters
+  4. Implement unit tests
+  5. Add TPL implementations if desired
+
+Once you fill in the implementation and are ready to commit the files,
 just commit them to the repository.
 
 We chose this approach for the following reasons:
 
   1. It's harder to edit and maintain the equivalent code in CMake
-  2. If we make developers do this, rather than the configure process,
-     then we don't have to worry about shell script portability
+  2. Ensures consistency across all kernel implementations
+  3. Reduces boilerplate and potential errors when adding new kernels
+  4. Supports arbitrary function signatures via the SIGNATURE positional argument
 
-This approach has the following disadvantages:
+This approach has the following considerations:
 
-  1. Developers need to know that these are generated files, for
-     example, that editing them is a bad idea
-  2. Developers need to know when to regenerate the files
+  1. Developers need to know that some parts are generated stubs
+  2. The ETI macros may need customization based on your template parameters
+  3. Signature specification handles most common cases automatically
 
 If you maintain another software package (e.g., a Trilinos package or
-an application), and you want to add a Scalar type to the list of
-instantiations, advocate the approach of generating and storing those
-instantiations in your project's directories.  Use our script as a
-model for doing so (you may have to edit some paths in order to put
-the generated headers and source files in the right places).
+an application), and you want to add kernels with ETI support, use this
+script to generate stub files for your new kernel functions, then fill
+in the implementation details.
 
-This script uses the following files in this directory:
-
-  - generate_specialization_function.bash
-  - generate_specialization_type.bash
-  - header
+Testing generate_eti:
+  Run the unit tests with: python3 generate_eti_test
+  The test suite includes 45 tests across 11 test classes covering all
+  functions except main() and parse_command_line().
 
 snapshot.py
 ===========
 
 This script handles snapshots of kokkos-kernels into another project,
 e.g., Trilinos.
+
 

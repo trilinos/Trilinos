@@ -100,6 +100,8 @@ struct SPGEMM_SYMBOLIC<KernelHandle, a_size_view_t_, a_lno_view_t, b_size_view_t
                               transposeA, row_mapB, entriesB, transposeB, row_mapC);
         break;
       default: {
+        // Note: if algorithm type is SPGEMM_DEFAULT, KokkosSPGEMM's constructor will choose the
+        // correct implementation.
         KokkosSPGEMM<KernelHandle, a_size_view_t_, a_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t,
                      b_size_view_t_, b_lno_view_t, typename KernelHandle::in_scalar_nnz_view_t>
             kspgemm(handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB);

@@ -1093,7 +1093,7 @@ template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t
           typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
 template <typename a_r_view_t, typename a_n_view_t, typename b_oldrow_view_t, typename b_row_view_t>
 struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
-                    b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::PredicMaxRowNNZ {
+                    b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::PredictMaxRowNNZ {
   nnz_lno_t m;          // num rows
   a_r_view_t row_mapA;  // row pointers of a
   a_n_view_t entriesA;  // col
@@ -1112,10 +1112,10 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
    * \param row_end_indices_B_: row end indices of B
    * \param team_row_chunk_size_: the number of rows assigned to each team.
    */
-  PredicMaxRowNNZ(nnz_lno_t m_, a_r_view_t row_mapA_, a_n_view_t entriesA_,
+  PredictMaxRowNNZ(nnz_lno_t m_, a_r_view_t row_mapA_, a_n_view_t entriesA_,
 
-                  b_oldrow_view_t row_begins_B_, b_row_view_t row_end_indices_B_, nnz_lno_t team_row_chunk_size_,
-                  size_type *flops_per_row_ = NULL)
+                   b_oldrow_view_t row_begins_B_, b_row_view_t row_end_indices_B_, nnz_lno_t team_row_chunk_size_,
+                   size_type *flops_per_row_ = NULL)
       : m(m_),
         row_mapA(row_mapA_),
         entriesA(entriesA_),
@@ -1174,7 +1174,7 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
 template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
           typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
 struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
-                    b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::PredicMaxRowNNZIntersection {
+                    b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::PredictMaxRowNNZIntersection {
   const nnz_lno_t m, k;       // num rows
   const size_type *row_mapA;  // row pointers of a
   const nnz_lno_t *entriesA;  // col
@@ -1193,11 +1193,11 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
    * \param row_end_indices_B_: row end indices of B
    * \param team_row_chunk_size_: the number of rows assigned to each team.
    */
-  PredicMaxRowNNZIntersection(const nnz_lno_t m_, const nnz_lno_t k_, const size_type *row_mapA_,
-                              const nnz_lno_t *entriesA_,
+  PredictMaxRowNNZIntersection(const nnz_lno_t m_, const nnz_lno_t k_, const size_type *row_mapA_,
+                               const nnz_lno_t *entriesA_,
 
-                              const size_type *row_begins_B_, const size_type *row_end_indices_B_,
-                              const nnz_lno_t team_row_chunk_size_, nnz_lno_t *min_result_row_for_each_row_)
+                               const size_type *row_begins_B_, const size_type *row_end_indices_B_,
+                               const nnz_lno_t team_row_chunk_size_, nnz_lno_t *min_result_row_for_each_row_)
       : m(m_),
         k(k_),
         row_mapA(row_mapA_),
@@ -1961,11 +1961,11 @@ size_t KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
   int suggested_team_size       = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency, m);
 
-  PredicMaxRowNNZ<a_r_view_t, a_n_view_t, b_oldrow_view_t, b_r_view_t> pcnnnz(
+  PredictMaxRowNNZ<a_r_view_t, a_n_view_t, b_oldrow_view_t, b_r_view_t> pcnnnz(
       m, row_mapA_, entriesA_, row_pointers_begin_B, row_pointers_end_B, team_row_chunk_size, flops_per_row);
 
   typename b_oldrow_view_t::non_const_value_type rough_size = 0;
-  Kokkos::parallel_reduce("KokkosSparse::PredicMaxRowNNZ::STATIC",
+  Kokkos::parallel_reduce("KokkosSparse::PredictMaxRowNNZ::STATIC",
                           team_policy_t(m / team_row_chunk_size + 1, suggested_team_size, suggested_vector_size),
                           pcnnnz, rough_size);
   MyExecSpace().fence();
@@ -1977,7 +1977,7 @@ template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t
           typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
 
 struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
-                    b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::PredicMaxRowNNZ_p {
+                    b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::PredictMaxRowNNZ_p {
   const nnz_lno_t m;          // num rows
   const size_type *row_mapA;  // row pointers of a
   const nnz_lno_t *entriesA;  // col
@@ -1995,9 +1995,10 @@ struct KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
    * \param row_end_indices_B_: row end indices of B
    * \param team_row_chunk_size_: the number of rows assigned to each team.
    */
-  PredicMaxRowNNZ_p(const nnz_lno_t m_, const size_type *row_mapA_, const nnz_lno_t *entriesA_,
+  PredictMaxRowNNZ_p(const nnz_lno_t m_, const size_type *row_mapA_, const nnz_lno_t *entriesA_,
 
-                    const size_type *row_begins_B_, const size_type *row_end_indices_B_, nnz_lno_t team_row_chunk_size_)
+                     const size_type *row_begins_B_, const size_type *row_end_indices_B_,
+                     nnz_lno_t team_row_chunk_size_)
       : m(m_),
         row_mapA(row_mapA_),
         entriesA(entriesA_),
@@ -2063,10 +2064,10 @@ size_t KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_v
   int suggested_team_size       = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency, m);
 
-  PredicMaxRowNNZ_p pcnnnz(m, row_mapA_, entriesA_, row_pointers_begin_B, row_pointers_end_B, team_row_chunk_size);
+  PredictMaxRowNNZ_p pcnnnz(m, row_mapA_, entriesA_, row_pointers_begin_B, row_pointers_end_B, team_row_chunk_size);
 
   size_type rough_size = 0;
-  Kokkos::parallel_reduce("KokkosSparse::PredicMaxRowNNZ_P::STATIC",
+  Kokkos::parallel_reduce("KokkosSparse::PredictMaxRowNNZ_P::STATIC",
                           team_policy_t(m / team_row_chunk_size + 1, suggested_team_size, suggested_vector_size),
                           pcnnnz, rough_size);
   MyExecSpace().fence();
@@ -2091,11 +2092,11 @@ KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
   int suggested_team_size       = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency, m);
 
-  PredicMaxRowNNZIntersection pcnnnz(m, this->b_col_cnt, row_mapA_, entriesA_, row_pointers_begin_B, row_pointers_end_B,
-                                     team_row_chunk_size, min_result_row_for_each_row);
+  PredictMaxRowNNZIntersection pcnnnz(m, this->b_col_cnt, row_mapA_, entriesA_, row_pointers_begin_B,
+                                      row_pointers_end_B, team_row_chunk_size, min_result_row_for_each_row);
 
   nnz_lno_t rough_size = 0;
-  Kokkos::parallel_reduce("KokkosSparse::PredicMaxRowNNZIntersection::STATIC",
+  Kokkos::parallel_reduce("KokkosSparse::PredictMaxRowNNZIntersection::STATIC",
                           team_policy_t(m / team_row_chunk_size + 1, suggested_team_size, suggested_vector_size),
                           pcnnnz, rough_size);
   MyExecSpace().fence();

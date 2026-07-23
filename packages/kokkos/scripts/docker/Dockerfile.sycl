@@ -8,6 +8,7 @@ RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/
 
 RUN apt-get update && apt-get install -y \
         bc \
+        ca-certificates \
         wget \
         ccache \
         ninja-build \
@@ -60,7 +61,6 @@ RUN cd /tmp && git clone https://github.com/intel/llvm.git -b v6.2.0 --depth=1 &
       -DUR_BUILD_TESTS=OFF \
       -DUR_ENABLE_TRACING=ON \
       -DUR_BUILD_ADAPTER_CUDA=ON \
-      -DUR_BUILD_ADAPTER_OPENCL=ON \
       -DCMAKE_BUILD_TYPE=Release && \
     cmake --build build_ur -j 8 && \
     cp -r build_ur/lib/* /opt/intel/oneapi/compiler/${ONEAPI_VERSION}/lib/ && \

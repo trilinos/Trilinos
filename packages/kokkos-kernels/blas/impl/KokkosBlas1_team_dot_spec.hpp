@@ -7,7 +7,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_ArithTraits.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
 namespace KokkosBlas {
 namespace Experimental {
@@ -21,7 +21,7 @@ struct team_dot_tpl_spec_avail {
 // Unification and Specialization layer
 template <class TeamType, class XV, class YV, bool tpl_spec_avail = team_dot_tpl_spec_avail<XV, YV>::value>
 struct TeamDot {
-  typedef Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
   typedef typename IPT::dot_type dot_type;
 
   static KOKKOS_INLINE_FUNCTION dot_type team_dot(const TeamType& team, const XV& X, const YV& Y);
@@ -29,7 +29,7 @@ struct TeamDot {
 
 template <class TeamType, class XV, class YV>
 struct TeamDot<TeamType, XV, YV, false> {
-  typedef Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type> IPT;
   typedef typename IPT::dot_type dot_type;
 
   static KOKKOS_INLINE_FUNCTION dot_type team_dot(const TeamType& team, const XV& X, const YV& Y) {

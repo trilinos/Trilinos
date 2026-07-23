@@ -199,11 +199,6 @@ enum class Iterate {
   Right  // Right indices stride fastest
 };
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-template <typename Layout, class Enable = void>
-struct KOKKOS_DEPRECATED is_layouttiled : std::false_type {};
-#endif
-
 namespace Impl {
 // For use with view_copy
 template <typename... Layout>
@@ -234,12 +229,6 @@ struct layout_iterate_type_selector<Kokkos::LayoutStride> {
       Kokkos::Iterate::Default;
 };
 }  // namespace Impl
-
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-template <typename... Layout>
-using layout_iterate_type_selector KOKKOS_DEPRECATED =
-    Impl::layout_iterate_type_selector<Layout...>;
-#endif
 
 }  // namespace Kokkos
 
