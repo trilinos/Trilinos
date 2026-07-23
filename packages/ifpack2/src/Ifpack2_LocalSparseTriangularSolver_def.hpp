@@ -10,6 +10,7 @@
 #ifndef IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 #define IFPACK2_LOCALSPARSETRIANGULARSOLVER_DEF_HPP
 
+#include "Kokkos_Macros.hpp"
 #include <sstream>    // ostringstream
 #include <stdexcept>  // runtime_error
 
@@ -344,6 +345,21 @@ LocalSparseTriangularSolver<MatrixType>::
   }
 }
 
+namespace {
+template <typename MatrixType>
+constexpr bool is_host_type() {
+  using node_type = typename MatrixType::node_type;
+  return std::is_same_v<typename node_type::execution_space, Kokkos::Serial>
+#ifdef KOKKOS_ENABLE_THREADS
+         || std::is_same_v<typename node_type::execution_space, Kokkos::Threads>
+#endif
+#ifdef KOKKOS_ENABLE_OPENMP
+         || std::is_same_v<typename node_type::execution_space, Kokkos::OpenMP>
+#endif
+      ;
+}
+}  // namespace
+
 template <class MatrixType>
 void LocalSparseTriangularSolver<MatrixType>::
     setParameters(const Teuchos::ParameterList& pl) {
@@ -351,7 +367,7 @@ void LocalSparseTriangularSolver<MatrixType>::
   using Teuchos::ParameterList;
   using Teuchos::RCP;
 
-  Details::TrisolverType::Enum trisolverType = Details::TrisolverType::Internal;
+  Details::TrisolverType::Enum trisolverType = is_host_type<MatrixType>() ? Details::TrisolverType::Internal : Details::TrisolverType::KSPTRSV;
   do {
     static const char typeName[] = "trisolver: type";
 
