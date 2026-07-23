@@ -33,20 +33,19 @@ APPEND_SET(HEADERS
   Piro_SolverFactory_Def.hpp
   Piro_StratimikosUtils.hpp
   Piro_ConfigDefs.hpp
-  )
-APPEND_SET(SOURCES
-  Piro_ValidPiroParameters.cpp
-  Piro_StratimikosUtils.cpp
-  Piro_Version.cpp
-  )
-APPEND_SET(HEADERS
   Piro_MatrixFreeDecorator.hpp
   Piro_MatrixFreeDecorator_Def.hpp
   Piro_MatrixFreeLinearOp.hpp
   Piro_MatrixFreeLinearOp_Def.hpp
   Piro_ObserverBase.hpp
   Piro_ROL_ObserverBase.hpp
-  )
+)
+
+APPEND_SET(SOURCES
+  Piro_ValidPiroParameters.cpp
+  Piro_StratimikosUtils.cpp
+  Piro_Version.cpp
+)
 #
 # B.2) solvers
 #
@@ -92,8 +91,37 @@ IF (Piro_ENABLE_ROL)
     Piro_CustomLBFGSSecant.hpp)
 
   # Add rol/adapters/thyra directories if Rol is enabled
-  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/function)
-  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/vector)
+  TRIBITS_INCLUDE_DIRECTORIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/function
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../rol/adapters/thyra/src/vector
+  )
+
+  IF (Piro_ENABLE_HdsaLib)
+    APPEND_SET(HEADERS
+      Piro_HDSA_MD_ROL_Data_Interface.hpp
+      Piro_HDSA_MD_ROL_Elliptic_u_Prior_Interface.hpp
+      Piro_HDSA_MD_ROL_Elliptic_z_Prior_Interface.hpp)
+      
+    TRIBITS_INCLUDE_DIRECTORIES(
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/interfaces/hyperparameter_interfaces
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/interfaces/problem_interfaces
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/interfaces/ouu_interfaces
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/interfaces/transient_prior_interfaces
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/interfaces/u_prior_interfaces
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/interfaces/z_prior_interfaces
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/analysis/prior
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/analysis/posterior
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/analysis/auxiliary
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/pseudo_time_continuation/interfaces
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/pseudo_time_continuation/analysis
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/base/auxiliary
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/base/linear_algebra
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/base/vectors
+      ${HDSALIB_REPO_SOURCE_DIR}/src/trilinos_adapter/adapters
+      ${HDSALIB_REPO_SOURCE_DIR}/src/trilinos_adapter/core
+      ${HDSALIB_REPO_SOURCE_DIR}/interfaces/rol
+    )
+  ENDIF()
 ENDIF()
 #
 
@@ -103,10 +131,12 @@ ENDIF()
 APPEND_SET(HEADERS
   Piro_PerformSolve.hpp
   Piro_PerformSolve_Def.hpp
-  )
-APPEND_SET(SOURCES Piro_PerformSolve.cpp)
-APPEND_SET(HEADERS Piro_PerformAnalysis.hpp)
-APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
+  Piro_PerformAnalysis.hpp
+)
+APPEND_SET(SOURCES 
+  Piro_PerformSolve.cpp
+  Piro_PerformAnalysis.cpp
+)
 
 #
 # C) Define the targets for package's library(s)

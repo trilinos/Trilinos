@@ -7,6 +7,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Kokkos                packages/kokkos                   PT
   KokkosKernels         packages/kokkos-kernels           PT
   magistrate            packages/external/magistrate      EX
+  HdsaLib               packages/external/hdsalib         EX
   Teuchos               packages/teuchos                  PT
   RTOp                  packages/rtop                     PT
   Sacado                packages/sacado                   PT
@@ -103,6 +104,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SGM)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(UMR)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(TrilinosLinearSolvers)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(magistrate)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(HdsaLib)
 
 #
 # Disable certain packages on certain platforms.
