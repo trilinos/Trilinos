@@ -41,8 +41,8 @@ function bootstrap_modules() {
 
         module list
     elif [[ ${NODE_NAME:?} =~ ${container_regex} ]]; then
-	echo "Nothing done for bootstrap in a container"
-	module list
+        echo "Nothing done for bootstrap in a container"
+        module list
     elif [[ ${on_weaver} == "1" ]]; then
         module unload git
         module unload python
@@ -88,33 +88,45 @@ bootstrap=1
 
 original_args=$@
 
+# Handle --on_* options manually before getopt
+on_system_name=""
+manual_args=()
+for arg in "$@"; do
+    if [[ "$arg" =~ ^--on_.+ ]]; then
+        if [[ -n "$on_system_name" ]]; then
+            echo >&2 "PullRequestLinuxDriver.sh: --on_<systemName> option can only be specified once."
+            exit 1
+        fi
+        on_system_name="$arg"
+    else
+        manual_args+=("$arg")
+    fi
+done
+
 # Do POSIXLY_CORRECT option handling.
 ARGS=$(getopt -n PullRequestLinuxDriver.sh \
  --options '+x' \
- --longoptions on-rhel8,on_rhel8 \
- --longoptions on-weaver,on_weaver \
- --longoptions on-ats2,on_ats2 \
  --longoptions kokkos-develop \
  --longoptions extra-configure-args: \
- --longoptions no-bootstrap -- "${@}") || exit $?
+ --longoptions no-bootstrap -- "${manual_args[@]}") || true
 
 eval set -- "${ARGS}"
+
+# Check if getopt failed due to unrecognized options
+if [ $? -ne 0 ]; then
+    # If we have an on_system_name, the error might be from --on_* which we handle manually
+    if [[ -n "${on_system_name}" ]]; then
+        # This is expected, continue processing
+        :
+    else
+        # Real error from getopt
+        exit 1
+    fi
+fi
 
 while [ "$#" -gt 0 ]
 do
     case "${1}" in
-    (--on_weaver|--on-weaver)
-        on_weaver=1
-        shift
-        ;;
-    (--on_rhel8|--on-rhel8)
-        on_rhel8=1
-        shift
-        ;;
-    (--on_ats2|--on-ats2)
-        on_ats2=1
-        shift
-        ;;
     (--kokkos-develop)
         on_kokkos_develop=1
         shift
@@ -149,6 +161,27 @@ do
         ;;
     esac
 done
+
+# Handle --on_<systemName> option
+if [[ -n "${on_system_name}" ]]; then
+    system_name="${on_system_name#--on_}"
+    case "${system_name}" in
+        weaver)
+            on_weaver=1
+            ;;
+        rhel8)
+            on_rhel8=1
+            ;;
+        ats2)
+            on_ats2=1
+            ;;
+        *)
+            message_std "PRDriver> " "REMARK: Unrecognized system name '${system_name}' in option ${on_system_name}"
+            message_std "PRDriver> " "REMARK: Turning off environment bootstrapping because of unknown system"
+            bootstrap=0
+            ;;
+    esac
+fi
 
 # Set up Sandia PROXY environment vars
 envvar_set_or_create https_proxy 'http://proxy.sandia.gov:80'
@@ -253,7 +286,7 @@ test_cmd_options=(
     --jenkins-job-number=${BUILD_NUMBER:?}
     --req-mem-per-core=4.0
     --max-cores-allowed=${TRILINOS_MAX_CORES:=29}
-    --num-concurrent-tests=16
+    --num-concurrent-tests=${TRILINOS_NUM_CONCURRENT_TESTS:-16}
     --test-mode=${mode}
     --workspace-dir=${WORKSPACE:?}
     --filename-packageenables=${WORKSPACE:?}/packageEnables.cmake
@@ -279,7 +312,8 @@ then
 fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"framework"*
-    || ${GENCONFIG_BUILD_NAME} == *"compsim"* ]]
+    || ${GENCONFIG_BUILD_NAME} == *"compsim"*
+    || ${GENCONFIG_BUILD_NAME} == *"ats4"* ]]
 then
     test_cmd_options+=( "--skip-create-packageenables ")
 fi

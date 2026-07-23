@@ -241,8 +241,17 @@ TEST:  foreach $file (@inpfiles) {
                       $loop_np, $loop_np, $zdrive, $file, $zouterrfile);
     }
     else {
-      $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | $tee %s\n", 
-                      $loop_np, $zdrive, $file, $zouterrfile);
+      # Handle case where mpiexecarg contains multiple arguments (e.g., "run --ntasks")
+      if ($mpiexecarg =~ /\s+/) {
+        # mpiexecarg contains spaces, so it's multiple arguments
+        $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | $tee %s\n", 
+                        $loop_np, $zdrive, $file, $zouterrfile);
+      }
+      else {
+        # mpiexecarg is a single argument (traditional case)
+        $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | $tee %s\n", 
+                        $loop_np, $zdrive, $file, $zouterrfile);
+      }
     }
   }
   else {
