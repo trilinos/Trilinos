@@ -7,6 +7,7 @@
 // *****************************************************************************
 //@HEADER
 
+#include "Teuchos_LocalTestingHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -14,7 +15,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperExponentialEuler.hpp"
 
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 #include "../TestModels/CDR_Model_Tpetra.hpp"
@@ -46,7 +47,7 @@ using Tempus::SolutionState;
 // ************************************************************
 template <typename SC, typename Model, typename Comm>
 void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
-              bool& success)
+              bool& success, const std::string& caseName)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -55,11 +56,17 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 5;
-  double dt                = 0.2;
+
+  // Read params from .xml file
+  const std::string pListFile = "Tempus_ExponentialEuler_CDR.xml";
+  RCP<ParameterList> pList = getParametersFromXmlFile(pListFile);
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  double dt = pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .get<double>("Initial Time Step");
+  dt = 2. * dt;
+
   for (int n = 0; n < nTimeStepSizes; n++) {
-    // Read params from .xml file
-    RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_BackwardEuler_CDR.xml");
 
     // Create CDR Model
     RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
@@ -85,14 +92,56 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     model->set_W_factory(lowsFactory);
 
     // Set the step size
-    dt /= 2;
+    dt /= 2.;
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
+
+    // Only build the Jacobian (which is constant for this test), every 50 steps
+    pl->sublist("Demo Stepper").set("Operator Linearization Interval", 50);
+
+    // Update the PhiEvaluator parameters based on the PhiEvaluator type
+    auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
+    if (caseName == "Leja") {
+      phiList.set("PhiEvaluator Type", "Leja")
+             .set("Expansion Order", 60)
+             .set("Leja DD Method", 2)
+             .set("leja_tol", 1.e-11)
+             .set("leja_a", -50000.0)
+             .set("leja_b", 0.0)
+             .set("leja_c", 1000.0)
+             .set("Lump Mass Matrix", true);
+    }
+    else if (caseName == "Taylor") {
+      phiList.remove("Leja DD Method", false);
+      phiList.remove("leja_tol", false);
+      phiList.remove("leja_a", false);
+      phiList.remove("leja_b", false);
+      phiList.remove("leja_c", false);
+
+      phiList.set("PhiEvaluator Type", "Taylor")
+             .set("Expansion Order", 400)
+             .set("Lump Mass Matrix", true);
+
+    }
+    else if (caseName == "PFD") {
+      phiList.remove("Expansion Order", false);
+      phiList.remove("Leja DD Method", false);
+      phiList.remove("leja_tol", false);
+      phiList.remove("leja_a", false);
+      phiList.remove("leja_b", false);
+      phiList.remove("leja_c", false);
+
+      phiList.set("PhiEvaluator Type", "PFD")
+             .set("Lump Mass Matrix", false);
+    }
+
+    // Show information on setup:
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
+    integrator->describe(*(integrator->getOStream()), Teuchos::VERB_MEDIUM);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -118,8 +167,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
     if ((n == nTimeStepSizes - 1) && (commSize == 1)) {
-      std::ofstream ftmp("Tempus_BackwardEuler_CDR.dat");
-      ftmp << "TITLE=\"Backward Euler Solution to CDR\"\n"
+      std::ofstream ftmp("Tempus_ExponentialEuler_CDR_" + caseName + ".dat");
+      ftmp << "TITLE=\"Exponential Euler Solution to CDR\"\n"
            << "VARIABLES=\"z\",\"T\"\n";
       const double dx =
           std::fabs(left_end - right_end) / static_cast<double>(num_elements);
@@ -147,26 +196,22 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
   // Check the order and intercept
   double xSlope                        = 0.0;
-  double xDotSlope                     = 0.0;
+  //double xDotSlope                     = 0.0;
   RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
-  writeOrderError("Tempus_BackwardEuler_CDR-Error.dat", stepper, StepSize,
-                  solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
-                  xDotSlope, out);
+  //writeOrderError("Tempus_ExponentialEuler_CDR-Error.dat", stepper, StepSize,
+  //                solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
+  //                xDotSlope, out);
+  writeOrderError("Tempus_ExponentialEuler_CDR_" + caseName + "-Error.dat", stepper, StepSize,
+                  solutions, xErrorNorm, xSlope, out);
 
-  TEST_FLOATING_EQUALITY(xSlope, 1.32213, 0.01);
-  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.113698, 1.0e-4);
-  TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
-  TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.450723, 1.0e-4);
-  // At small dt, slopes should be equal to order.
-  // double order = stepper->getOrder();
-  // TEST_FLOATING_EQUALITY( xSlope,              order, 0.01   );
-  // TEST_FLOATING_EQUALITY( xDotSlope,           order, 0.01 );
+  // TODO: refine these tests once methods have settled down
+  TEST_COMPARE(xErrorNorm[nTimeStepSizes - 2], <, 1e-6);
 
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
   if (commSize == 1) {
     RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_BackwardEuler_CDR.xml");
+        getParametersFromXmlFile(pListFile);
     RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
     const int num_elements      = model_pl->get<int>("num elements");
     const double left_end       = model_pl->get<double>("left end");
@@ -174,7 +219,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     const Thyra::VectorBase<double>& x = *(solutions[solutions.size() - 1]);
 
-    std::ofstream ftmp("Tempus_BackwardEuler_CDR-Solution.dat");
+    std::ofstream ftmp("Tempus_ExponentialEuler_CDR_" + caseName + "-Solution.dat");
     for (int n = 0; n < num_elements + 1; n++) {
       const double dx =
           std::fabs(left_end - right_end) / static_cast<double>(num_elements);
@@ -190,7 +235,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(BackwardEuler, CDR_Tpetra)
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra_Taylor)
 {
   // Get default Tpetra template types
   using SC   = Tpetra::Vector<>::scalar_type;
@@ -200,8 +245,43 @@ TEUCHOS_UNIT_TEST(BackwardEuler, CDR_Tpetra)
 
   auto comm = Tpetra::getDefaultComm();
 
+  const std::string caseName = "Taylor";
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-      comm, comm->getSize(), out, success);
+     comm, comm->getSize(), out, success, caseName);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra_Leja)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  const std::string caseName = "Leja";
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, caseName);
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra_PFD)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  const std::string caseName = "PFD";
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+     comm, comm->getSize(), out, success, caseName);
 }
 #endif
 

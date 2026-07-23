@@ -1,0 +1,79 @@
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
+//
+// Copyright 2026 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
+
+#ifndef Tempus_PhiEvaluatorFactory_impl_hpp
+#define Tempus_PhiEvaluatorFactory_impl_hpp
+
+#include "Tempus_PhiEvaluator.hpp"
+#include "Tempus_PhiEvaluatorPFD.hpp"
+#include "Tempus_PhiEvaluatorLeja.hpp"
+#include "Tempus_PhiEvaluatorTaylor.hpp"
+//#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Tempus_PhiEvaluatorFactory.hpp"
+
+namespace Tempus {
+
+template <class Scalar>
+Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
+    std::string phiEvaluatorType,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  if (phiEvaluatorType == "") phiEvaluatorType = "PFD";
+  return this->createPhiEvaluator(phiEvaluatorType, Teuchos::null, model);
+}
+
+template <class Scalar>
+Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
+    Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  std::string phiEvaluatorType;
+  if (phiEvaluatorPL == Teuchos::null)
+    phiEvaluatorType = "PFD";
+  else
+    phiEvaluatorType = phiEvaluatorPL->get<std::string>("PhiEvaluator Type", "PFD");
+  return this->createPhiEvaluator(phiEvaluatorType, phiEvaluatorPL, model);
+}
+
+template <class Scalar>
+Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
+    std::string phiEvaluatorType,
+    Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  Teuchos::RCP<PhiEvaluator<Scalar>> phi;
+  if (phiEvaluatorType == "PFD") {
+    phi = createPhiEvaluatorPFD<Scalar>(phiEvaluatorPL);
+  }
+  else if (phiEvaluatorType == "Leja") {
+    phi = createPhiEvaluatorLeja<Scalar>(phiEvaluatorPL);
+  }
+  else if (phiEvaluatorType == "Taylor") {
+    phi = createPhiEvaluatorTaylor<Scalar>(phiEvaluatorPL);
+  }
+  else {
+    Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
+    out->setOutputToRootOnly(0);
+    Teuchos::OSTab ostab(out, 1, "PhiFactoryFactory::createPhiEvaluator");
+    *out << "Unknown PhiEvaluator Type!  ('" + phiEvaluatorType + "').\n"
+         << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "Unknown 'PhiEvaluator Type' = " << phiEvaluatorType);
+  }
+  if (model != Teuchos::null)
+  {
+    phi->setModel(model);
+    phi->initialize();
+  }
+  return phi;
+}
+
+}  // namespace Tempus
+#endif  // Tempus_PhiEvaluatorFactory_impl_hpp
