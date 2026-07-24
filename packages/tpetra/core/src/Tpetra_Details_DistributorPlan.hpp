@@ -40,9 +40,10 @@ namespace Details {
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on these values in your code.
 enum EDistributorSendType {
-  DISTRIBUTOR_ISEND,    // Use MPI_Isend (Teuchos::isend)
-  DISTRIBUTOR_SEND,     // Use MPI_Send (Teuchos::send)
-  DISTRIBUTOR_ALLTOALL  // Use MPI_Alltoall
+  DISTRIBUTOR_ISEND,      // Use MPI_Isend (Teuchos::isend)
+  DISTRIBUTOR_SEND,       // Use MPI_Send (Teuchos::send)
+  DISTRIBUTOR_ALLTOALL,   // Use MPI_Alltoall
+  DISTRIBUTOR_PERSISTENT  // Use persistent requests
 #if defined(HAVE_TPETRA_MPI)
   ,
   DISTRIBUTOR_IALLTOFEWV
