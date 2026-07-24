@@ -39,7 +39,7 @@ struct RepartitionUtilities {
 #undef MUELU_REPARTITIONFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
-  std::tuple<Array<GO>, GO> static ConstructGIDs(RCP<GOVector> decomposition);
+  std::tuple<Array<GO>, GO> static ConstructGIDs(RCP<const GOVector> decomposition);
 };
 
 }  // namespace MueLu
