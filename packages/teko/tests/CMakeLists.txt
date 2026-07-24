@@ -35,7 +35,6 @@ ELSE()
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tGraphLaplacian.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tBlockUpperTriInverseOp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tDiagonalPreconditionerFactory.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/tTpetraOperatorWrapper.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/tBlockedTpetraOperator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Tpetra/tStridedTpetraOperator.cpp
   )
