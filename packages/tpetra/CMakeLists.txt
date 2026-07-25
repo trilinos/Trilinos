@@ -1049,6 +1049,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED(Tpetra_INST_LONG_DOUBLE)
 GLOBAL_SET(HAVE_TPETRA_LONG_DOUBLE ${Tpetra_INST_LONG_DOUBLE})
 
+GLOBAL_SET(Tpetra_INST_HALF_DEFAULT OFF)
+
+# Set up the Tpetra_INST_LONG_DOUBLE option: whether to instantiate / test
+# Scalar = float.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_HALF
+  HAVE_TPETRA_INST_HALF
+  "Instantiate and/or test classes over Scalar = half.  This option is ${Tpetra_INST_HALF_DEFAULT} by default."
+  ${Tpetra_INST_HALF_DEFAULT}
+)
+ASSERT_DEFINED(Tpetra_INST_HALF)
+GLOBAL_SET(HAVE_TPETRA_KOKKOS_EXPERIMENTAL_HALF_T ${Tpetra_INST_HALF})
+
 # Make sure that it's OK to instantiate/test over Scalar = float.
 # Tpetra requires BLAS support for this case.  It presumes that a BLAS
 # could exist without float (S) support.  Furthermore, it presumes
@@ -1353,6 +1366,13 @@ ENDIF()
 #
 # Build list of Scalar types over which to instantiate / test.
 #
+IF(Tpetra_INST_HALF)
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "Kokkos::Experimental::half_t")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "Kokkos::Experimental::half_t")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "Kokkos::Experimental::half_t")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "Kokkos::Experimental::half_t")
+  GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
+ENDIF()
 IF(Tpetra_INST_FLOAT)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "float")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "float")
