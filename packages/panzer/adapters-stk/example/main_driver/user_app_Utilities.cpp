@@ -88,7 +88,13 @@ void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList&
       for(std::size_t i=0;i<eblocks.size();i++)
         wkst_descs.push_back(panzer::blockDescriptor(eblocks[i]));
 
-      me_factory.addResponse(name,wkst_descs,builder);
+      // TODO BWR DO WE WANT THIS?
+      const bool add_derivatives = lst.isParameter("Request Derivatives") ? lst.get<bool>("Request Derivatives") : false;
+      if (add_derivatives) {
+        me_factory.addResponseWithDerivatives(name,wkst_descs,builder);
+      } else {
+        me_factory.addResponse(name,wkst_descs,builder);
+      }
     }
     else if (lst.get<std::string>("Type") == "Point Value") {
       panzer::ProbeResponse_Builder<panzer::LocalOrdinal,panzer::GlobalOrdinal> builder;
@@ -105,7 +111,13 @@ void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList&
       for(std::size_t i=0;i<eblocks.size();i++)
         descriptors.push_back(panzer::blockDescriptor(eblocks[i]));
 
-      me_factory.addResponse("Value In Middle",descriptors,builder);
+      // TODO BWR DO WE WANT THIS?
+      const bool add_derivatives = lst.isParameter("Request Derivatives") ? lst.get<bool>("Request Derivatives") : false;
+      if (add_derivatives) {
+        me_factory.addResponseWithDerivatives("Value In Middle",descriptors,builder);
+      } else {
+        me_factory.addResponse("Value In Middle",descriptors,builder);
+      }
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Error: Response type of \"" << lst.get<std::string>("Type") << "\" is not supported!");
@@ -200,7 +212,7 @@ user_app::buildModelEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& input_
     return {physics,global_data,mesh,rLibrary,stkIOResponseLibrary,linObjFactory,globalIndexer};
 }
 
-Teuchos::RCP<Tempus::IntegratorBasic<double>>
+Teuchos::RCP<Tempus::IntegratorForwardSensitivity<double>>
 user_app::buildTimeIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
                               const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
                               Teuchos::RCP<Thyra::ModelEvaluator<double>> physics,
@@ -232,26 +244,24 @@ user_app::buildTimeIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_
   // disableRecursiveValidation() to avoid errors with arbitrary
   // names.
 
-  const bool doInitialization = false;
-  auto integrator = createIntegratorBasic<double>(tempus_pl, physics, doInitialization);
+  auto integrator = createIntegratorForwardSensitivity<double>(tempus_pl, physics);
 
   RCP<ParameterList> noxList = parameterList("Correct NOX Params");
   *noxList = tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true);
-  // noxList->print(std::cout);
   integrator->getStepper()->getSolver()->setParameterList(noxList);
   integrator->initialize();
 
   // Setting observers on tempus breaks the screen output of the
   // time steps! It replaces IntegratorObserverBasic which handles
   // IO. Is this at least documented?
-  {
-    RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
-    RCP<const panzer_stk::TempusObserverFactory> tof =
-      Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
-    tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
-    tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
-    integrator->setObserver(tempus_observers);
-  }
+  //{
+  //  RCP<Tempus::IntegratorObserverComposite<double>> tempus_observers = rcp(new Tempus::IntegratorObserverComposite<double>);
+  //  RCP<const panzer_stk::TempusObserverFactory> tof =
+  //    Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
+  //  tempus_observers->addObserver(Teuchos::rcp(new Tempus::IntegratorObserverBasic<double>));
+  //  tempus_observers->addObserver(tof->buildTempusObserver(mesh,globalIndexer,linObjFactory));
+  //  integrator->setObserver(tempus_observers);
+  //}
 
   RCP<Thyra::VectorBase<double>> x0 = physics->getNominalValues().get_x()->clone_v();
   integrator->initializeSolutionHistory(0.0, x0);

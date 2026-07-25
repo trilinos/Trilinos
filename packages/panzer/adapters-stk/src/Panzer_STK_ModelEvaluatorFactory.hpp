@@ -122,6 +122,11 @@ namespace panzer_stk {
     template <typename BuilderT>
     int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
 
+    /** \brief Add a response \f$g\f$ along with support for state and parameter derivatives \f$\frac{dg}{dx}\f$ and \f$\frac{dg}{dp}\f$, respectively.
+     */
+    template <typename BuilderT>
+    int addResponseWithDerivatives(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,BuilderT & builder);
+
     void buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const bool write_graphviz_file=false,
                         const std::string& graphviz_file_prefix="");
@@ -353,6 +358,22 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
     return panzer_me->addResponse(responseName,wkstDesc,builder);
   }
 #endif
+
+  TEUCHOS_ASSERT(false);
+  return -1;
+}
+
+template<typename ScalarT>
+template <typename BuilderT>
+int ModelEvaluatorFactory<ScalarT>::
+addResponseWithDerivatives(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,BuilderT & builder)
+{
+  typedef panzer::ModelEvaluator<double> PanzerME;
+
+  Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
+  if(panzer_me!=Teuchos::null) {
+    return panzer_me->addFlexibleResponse(responseName,wkstDesc,Teuchos::rcpFromRef(builder));
+  }
 
   TEUCHOS_ASSERT(false);
   return -1;
