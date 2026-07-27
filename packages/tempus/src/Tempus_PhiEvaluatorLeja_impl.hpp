@@ -897,8 +897,8 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int
     // A = Hm^k/(k)!
 
     // Compute next A = Hm^(k+1)/(k+1)!
-    Scalar scale = Scalar(1. / (k+1));
-    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, scale, Hm, A, 0.0);
+    const Scalar scale_k = Scalar(1. / (k+1));
+    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, scale_k, Hm, A, 0.0);
     A = Mtmp;
   }
   Ts += A;
