@@ -21,8 +21,15 @@
 
 namespace panzer {
 
+  /** \brief A PHX::TemplateManager holding one
+    * panzer::EquationSet<EvalT> per evaluation type in
+    * Traits::EvalTypes, accessible through the common
+    * panzer::EquationSetBase interface.
+    *
+    * \tparam Traits the traits class supplying the set of evaluation types to manage (e.g. panzer::Traits).
+    */
   template<typename Traits>
-  class EquationSet_TemplateManager : 
+  class EquationSet_TemplateManager :
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				panzer::EquationSetBase,
                                 panzer::EquationSet<_> > {

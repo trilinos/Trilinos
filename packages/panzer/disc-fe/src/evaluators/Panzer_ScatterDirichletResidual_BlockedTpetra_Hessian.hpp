@@ -22,26 +22,43 @@ namespace panzer {
 // **************************************************************
 // Hessian Specialization
 // **************************************************************
+
+/**
+ * \brief Hessian specialization of ScatterDirichletResidual_BlockedTpetra.
+ *
+ * Enforces Dirichlet boundary values at the affected degrees of
+ * freedom (overwriting, rather than accumulating into, the
+ * corresponding residual/matrix entries) while additionally
+ * propagating second-derivative (Hessian) information, so that
+ * Dirichlet BCs are correctly reflected in Hessian-vector products
+ * used by e.g. optimization or uncertainty quantification drivers.
+ */
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 class ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Hessian, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
+  /// \brief Construct with a blocked DOF manager only; scattered field names must be set later (e.g. via clone()).
   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
      : globalIndexer_(indexer) { }
-  
+
+  /// \brief Construct from a blocked DOF manager and a ParameterList describing the fields to scatter and the Dirichlet BC side set.
   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                   const Teuchos::ParameterList& p);
-  
+
+  /// \brief Looks up and caches the blocked Tpetra linear object container and field offsets needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
 
+  /// \brief Fetches the blocked Tpetra containers (residual/matrix/Dirichlet counter) to scatter into for the upcoming fill.
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
+  /// \brief Overwrites the Dirichlet-affected residual, matrix, and Hessian-vector-product entries for this workset with the scattered field values and their derivatives.
   void evaluateFields(typename TRAITS::EvalData workset);
- 
+
+  /// \brief Creates a copy of this evaluator configured from a new ParameterList, sharing the same blocked DOF manager.
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
