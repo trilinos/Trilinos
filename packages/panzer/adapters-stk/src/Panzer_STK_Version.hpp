@@ -15,7 +15,8 @@
 #include "PanzerAdaptersSTK_config.hpp"
 
 namespace panzer_stk {
-  
+
+  /// \brief Returns a human-readable string identifying the panzer_stk (STK mesh adapter) version being used.
   std::string version();
 
 }

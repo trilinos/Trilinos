@@ -18,6 +18,9 @@ namespace panzer_stk {
 
 class STK_Interface;
 
+/** This builds a parallel 2D mesh divided into a grid of element
+  * blocks, each of which is further subdivided across MPI ranks.
+  */
 class MultiBlockMeshFactory : public STK_MeshFactory {
 public:
    //! Constructor
@@ -27,6 +30,7 @@ public:
    ~MultiBlockMeshFactory();
 
    //! Build the mesh object
+   /// \param[in] parallelMach descriptor for the parallel machine to build this mesh on.
    Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
    virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;

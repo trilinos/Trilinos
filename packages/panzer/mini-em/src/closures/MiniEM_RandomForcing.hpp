@@ -31,13 +31,17 @@ namespace mini_em {
   using panzer::Point;
   using panzer::Dim;
 
-/** Random current source
+/** Computes a scalar- or vector-valued current source field with
+  * independent uniformly-distributed random values in
+  * [rangeMin,rangeMax] at each point (vector- or scalar-valued
+  * depending on whether the given DOF's basis is a vector basis).
   */
 template<typename EvalT, typename Traits>
 class RandomForcing : public panzer::EvaluatorWithBaseImpl<Traits>,
                       public PHX::EvaluatorDerived<EvalT, Traits>  {
 
 public:
+    /// \brief Constructor.
     RandomForcing(const std::string & name,
                   const panzer::IntegrationRule & ir,
                   const panzer::FieldLayoutLibrary & fl,
@@ -46,6 +50,7 @@ public:
                   const double & rangeMax,
                   const std::string& basisName="E_edge");
 
+    /// \brief Draws new random values for the forcing field for this workset, per the class description.
     void evaluateFields(typename Traits::EvalData d);
 
 

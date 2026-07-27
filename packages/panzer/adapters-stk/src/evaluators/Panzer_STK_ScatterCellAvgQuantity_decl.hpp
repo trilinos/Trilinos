@@ -46,14 +46,17 @@ class ScatterCellAvgQuantity
 {
   public:
 
+    /// \brief Construct from a ParameterList as documented in the class description.
     ScatterCellAvgQuantity(
       const Teuchos::ParameterList& p);
 
+    /// \brief Looks up the STK field pointers needed by evaluateFields(). Called once before the first evaluation.
     void
     postRegistrationSetup(
       typename Traits::SetupData d,
       PHX::FieldManager<Traits>& fm);
 
+    /// \brief Averages this workset's field values over each cell's integration points and writes the (optionally scaled) result to the STK mesh.
     void
     evaluateFields(
       typename Traits::EvalData d);

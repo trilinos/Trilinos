@@ -16,6 +16,13 @@
 
 namespace panzer {
 
+  /** \brief Exposes the size type used by a given multidimensional
+    * array type, so generic code can name it without depending
+    * directly on the array implementation.
+    *
+    * \tparam Scalar the array's scalar (element) type.
+    * \tparam Array the multidimensional array type to introspect.
+    */
   template<typename Scalar, typename Array> struct ArrayTraits
   {
     typedef typename Array::size_type size_type;

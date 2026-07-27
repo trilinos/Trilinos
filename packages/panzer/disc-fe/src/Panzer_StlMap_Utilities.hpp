@@ -17,6 +17,16 @@
 
 namespace panzer {
 
+  /** \brief Looks up a key in an STL-like associative container,
+    * throwing std::runtime_error if the key is not found (instead of
+    * the undefined behavior of operator[] on a const map, or the
+    * silent insertion of operator[] on a non-const map).
+    *
+    * \tparam MapT an STL-like associative container type (e.g. std::map).
+    * \param in_map the container to search.
+    * \param in_key the key to look up.
+    * \return the value associated with in_key.
+    */
   template<typename MapT>
   const typename MapT::mapped_type &
   getEntry(const MapT& in_map, const typename MapT::key_type& in_key) {

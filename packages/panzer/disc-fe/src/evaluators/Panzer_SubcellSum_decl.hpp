@@ -53,9 +53,11 @@ class SubcellSum
 {
   public:
 
+    /// \brief Construct from a ParameterList as documented in the class description.
     SubcellSum(
       const Teuchos::ParameterList& p);
 
+    /// \brief Computes the "Sum Name" field for this workset per the class description.
     void
     evaluateFields(
       typename Traits::EvalData d);
@@ -63,24 +65,26 @@ class SubcellSum
   private:
 
     using ScalarT = typename EvalT::ScalarT;
-  
+
   PHX::MDField<ScalarT,Cell> outField;  // result
-    
+
   PHX::MDField<const ScalarT,Cell,BASIS> inField; // function to be integrated
 
   double multiplier;
 
 public:
 
-  const PHX::FieldTag & getFieldTag() const 
+  /// \brief Returns the FieldTag of the summed output field.
+  const PHX::FieldTag & getFieldTag() const
   { return outField.fieldTag(); }
 
 private:
+  /// \brief Returns the ParameterList of valid parameters/defaults for this evaluator's constructor.
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
- 
+
   // This is used to lookup closure indices (local Ids that live on a subcell)
   Teuchos::RCP<const panzer::FieldPattern> fieldPattern_;
-  
+
   // evalaute on the "closure" of the indicated sub-cells
   bool evaluateOnClosure_;
 

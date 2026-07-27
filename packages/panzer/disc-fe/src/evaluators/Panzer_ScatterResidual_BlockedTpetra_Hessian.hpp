@@ -23,26 +23,41 @@ namespace panzer {
 // Hessian Specialization
 // **************************************************************
 
+/**
+ * \brief Hessian specialization of ScatterResidual_BlockedTpetra.
+ *
+ * Accumulates each cell's residual contributions, and their
+ * second-derivative (Hessian) information, into the global blocked
+ * Tpetra residual vector and Hessian-vector product, using the
+ * blocked DOF manager to map local (field, element, basis) triplets
+ * to global unknowns.
+ */
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 class ScatterResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Hessian, TRAITS>,
     public panzer::CloneableEvaluator {
-  
+
 public:
+  /// \brief Construct with a blocked DOF manager only; scattered field names must be set later (e.g. via clone()).
   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer)
      : globalIndexer_(indexer) {}
-  
+
+  /// \brief Construct from a blocked DOF manager and a ParameterList describing the fields to scatter.
   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                                 const Teuchos::ParameterList& p);
-  
+
+  /// \brief Looks up and caches the blocked Tpetra linear object container and field offsets needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
 
+  /// \brief Fetches the blocked Tpetra containers to scatter into for the upcoming fill.
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
+  /// \brief Accumulates this workset's scattered field values and their derivatives into the global residual/Hessian-vector-product.
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
+  /// \brief Creates a copy of this evaluator configured from a new ParameterList, sharing the same blocked DOF manager.
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 

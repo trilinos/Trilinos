@@ -19,7 +19,14 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
+/** This sets a flux field to a constant, per-dimension vector of values,
+  * the same for every cell and integration point in the workset.
+  * 
+  * NOTE: This implementation will not work with PHX_ENABLE_SHARED=1 as
+  *       the memory is potentially reused and overwritten by other 
+  *       evaluators.
+  */
 template<typename EvalT, typename Traits>
 class ConstantFlux
   :
@@ -28,14 +35,17 @@ class ConstantFlux
 {
   public:
 
+    /// \brief Construct from a ParameterList specifying the flux field name, data layout, and constant per-dimension flux values.
     ConstantFlux(
       const Teuchos::ParameterList& p);
 
+    /// \brief Sets the flux field to the constant values given at construction. Called once before the first evaluation.
     void
     postRegistrationSetup(
       typename Traits::SetupData d,
       PHX::FieldManager<Traits>& fm);
 
+    /// \brief No-op; the flux field is already set by postRegistrationSetup().
     void
     evaluateFields(
       typename Traits::EvalData d);

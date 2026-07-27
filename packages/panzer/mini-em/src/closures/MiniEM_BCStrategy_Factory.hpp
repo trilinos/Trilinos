@@ -27,8 +27,18 @@ namespace mini_em {
   PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(mini_em::BCStrategy_Dirichlet_AuxConstant,
 					     BCStrategy_Dirichlet_AuxConstant)
 
+  /** \brief mini-em's panzer::BCStrategyFactory, recognizing the
+    * "Constant" and "AuxConstant" boundary condition strategy
+    * identifiers (see mini_em::BCStrategy_Dirichlet_Constant and
+    * mini_em::BCStrategy_Dirichlet_AuxConstant).
+    */
   struct BCFactory : public panzer::BCStrategyFactory {
 
+    /** \brief Builds the named BC strategy ("Constant" or "AuxConstant"); throws std::logic_error for any other strategy identifier.
+      *
+      * \param[in] bc the boundary condition to build a strategy for; its strategy identifier ("Constant"/"AuxConstant") selects which is built.
+      * \param[in] global_data global data passed through to the built BC strategy.
+      */
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
     buildBCStrategy(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data) const
     {

@@ -25,25 +25,22 @@
 
 namespace panzer_stk {
 
-/** This class is a gather operation from the mesh. It
-  * takes a set of field names and basis objects and
-  * then reads them in from the mesh object.
-  *
-  * The constructor takes a STK_Interface RCP and parameter list
-  * that is required to contain the following two fields
-  * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>
-  * and "Basis" of type <code>Teuchos::RCP<panzer::Basis></code>.
+/** This gathers the physical (mesh) coordinates of a basis's nodes
+  * directly from the STK mesh, into a field with one entry per
+  * cell/node/spatial dimension.
   */
-template<typename EvalT, typename Traits> 
+template<typename EvalT, typename Traits>
 class GatherRefCoords
   : public panzer::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits> {
 
 public:
+  /// \brief Construct from the mesh, the basis whose node coordinates to gather, and the name to give the output field.
   GatherRefCoords(const Teuchos::RCP<const STK_Interface> & mesh,
                   const panzer::BasisIRLayout & basis,
                   const std::string & fieldName);
-  
+
+  /// \brief Gathers the node coordinate field for this workset per the class description.
   void evaluateFields(typename Traits::EvalData d);
 
 private:

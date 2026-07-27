@@ -16,6 +16,7 @@
 
 namespace panzer {
 
+  /// \brief Returns a human-readable string identifying the Panzer version being used.
   std::string version();
 
 }

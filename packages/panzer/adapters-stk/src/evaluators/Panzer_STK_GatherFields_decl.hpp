@@ -40,11 +40,14 @@ class GatherFields
     public PHX::EvaluatorDerived<EvalT, Traits> {
 
 public:
+  /// \brief Construct from the mesh and a ParameterList as documented in the class description.
   GatherFields(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,const Teuchos::ParameterList & p);
-  
+
+  /// \brief Looks up the STK field pointers needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
-  
+
+  /// \brief Gathers this workset's field values from the STK mesh per the class description.
   void evaluateFields(typename Traits::EvalData d);
 
 private:

@@ -21,24 +21,46 @@
 
 namespace mini_em {
 
+  /** \brief An auxiliary equation set (not part of the physical
+    * system being solved) that assembles the discrete weak gradient
+    * operator mapping the scalar (nodal) field to the vector field,
+    * and scatters it to the global evaluation data container under
+    * the key "AUX_<vector_name>_WeakGradient", for use by
+    * mini_em::OperatorRequestCallback and the augmentation-based
+    * Maxwell block preconditioner factory.
+    */
   template <typename EvalT>
   class AuxiliaryEquationSet_WeakGradient : public panzer::EquationSet_DefaultImpl<EvalT> {
 
-  public:    
+  public:
 
+    /// \brief Construct from the global evaluation data container to scatter the weak gradient operator into, and a ParameterList specifying the basis/integration order.
     AuxiliaryEquationSet_WeakGradient(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
 					  const Teuchos::RCP<Teuchos::ParameterList>& params,
 					  const int& default_integration_order,
 					  const panzer::CellData& cell_data,
 					  const Teuchos::RCP<panzer::GlobalData>& global_data,
 					  const bool build_transient_support);
-    
+
+    /** \brief Registers the evaluators that assemble the weak gradient operator per the class description.
+      *
+      * \param[in] fm the field manager to register evaluators with.
+      * \param[in] field_library field data layouts available for this physics block (unused).
+      * \param[in] user_data user-supplied parameters (unused).
+      */
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					       const panzer::FieldLibrary& /* field_library */, 
+					       const panzer::FieldLibrary& /* field_library */,
                                                const Teuchos::ParameterList& /* user_data */) const;
 
+    /** \brief Registers the evaluators that scatter the assembled operator into the global evaluation data container per the class description.
+      *
+      * \param[in] fm the field manager to register evaluators with.
+      * \param[in] field_library field data layouts available for this physics block.
+      * \param[in] lof linear object factory used to build the scatter evaluator.
+      * \param[in] user_data user-supplied parameters passed through to the scatter evaluator.
+      */
     void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					   const panzer::FieldLibrary& field_library, 
+					   const panzer::FieldLibrary& field_library,
                                            const panzer::LinearObjFactory<panzer::Traits> & lof,
                                            const Teuchos::ParameterList& user_data) const;
 
@@ -50,10 +72,11 @@ namespace mini_em {
     Teuchos::RCP<std::vector<std::string> > m_dof_names;
   };
 
+/// \brief Jacobian specialization: this is the only evaluation type for which the weak gradient operator is actually assembled and scattered.
 template < >
 void AuxiliaryEquationSet_WeakGradient<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				  const panzer::FieldLibrary& field_library, 
+				  const panzer::FieldLibrary& field_library,
                                   const panzer::LinearObjFactory<panzer::Traits> & lof,
                                   const Teuchos::ParameterList& user_data) const;
 
