@@ -26,6 +26,8 @@
 #include <qd/qd_real.h>
 #endif
 
+#include "Kokkos_Core.hpp"
+
 namespace Teuchos {
 
 /// \class UndefinedSerializationTraits
@@ -370,6 +372,11 @@ class SerializationTraits<Ordinal,long int>
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned long int>
   : public DirectSerializationTraits<Ordinal,long unsigned int>
+{};
+
+template<typename Ordinal>
+class SerializationTraits<Ordinal,Kokkos::Experimental::half_t>
+  : public DirectSerializationTraits<Ordinal,Kokkos::Experimental::half_t>
 {};
 
 template<typename Ordinal>

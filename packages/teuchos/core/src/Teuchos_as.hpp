@@ -52,6 +52,8 @@
 #include <qd/dd_real.h>
 #endif // HAVE_TEUCHOS_QD
 
+#include "Kokkos_Core.hpp"
+
 namespace Teuchos {
 
 
@@ -1641,6 +1643,276 @@ public:
     return static_cast<unsigned long long> (t);
   }
 };
+
+//! Convert from \c Kokkos::Experimental::half_t to \c short.
+template<>
+class ValueTypeConversionTraits<short, Kokkos::Experimental::half_t> {
+public:
+  /// \brief Convert the given \c Kokkos::Experimental::half_t to a \c short.
+  ///
+  /// \warning Single-precision Kokkos::Experimental::half_ting-point values may overflow
+  ///   <tt>short</tt>.  You should use safeConvert() if you aren't
+  ///   sure that the given value fits in an <tt>short</tt>.
+  static short convert (const Kokkos::Experimental::half_t t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<short> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to a \c short, checking for overflow first.
+  static short safeConvert (const Kokkos::Experimental::half_t t) {
+    const short minVal = std::numeric_limits<short>::min ();
+    const short maxVal = std::numeric_limits<short>::max ();
+
+    // Cases:
+    // 1. sizeof(short) < sizeof(Kokkos::Experimental::half_t) == 4
+    // 2. sizeof(short) == sizeof(Kokkos::Experimental::half_t) == 4
+    // 3. sizeof(short) > sizeof(Kokkos::Experimental::half_t) == 4
+    //
+    // Overflow when converting from Kokkos::Experimental::half_t to short is possible only
+    // for Case 1.  Loss of accuracy (rounding) is possible for Cases
+    // 2 and 3, but safeConvert() only cares about overflow, not
+    // rounding.  In Case 3, casting minVal or maxVal to Kokkos::Experimental::half_t in this
+    // case could result in overflow.  Thus, we only do the test for
+    // Case 1.
+    //
+    // All three cases are legal according to both C++03 and C99.  I
+    // (mfh 15 Nov 2012) think Case 1 is the most common, but Case 2
+    // is certainly reasonable.  (For example, some hardware prefers
+    // to work only with 32-bit words, so _every_ built-in type has
+    // size a multiple of 4 bytes.)
+    if constexpr (sizeof (short) < sizeof (Kokkos::Experimental::half_t)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < minVal || t > maxVal,
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<short, Kokkos::Experimental::half_t>::safeConvert: "
+        "Input Kokkos::Experimental::half_t t = " << t << " is out of the valid range [" << minVal
+        << ", " << maxVal << "] for conversion to short.");
+    }
+
+    return static_cast<short> (t);
+  }
+};
+
+
+//! Convert from \c Kokkos::Experimental::half_t to <tt>unsigned short</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned short, Kokkos::Experimental::half_t> {
+public:
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned short</tt>.
+  static unsigned short convert (const Kokkos::Experimental::half_t t) {
+    // Implicit conversion may cause compiler warnings, but
+    // static_cast does not.
+    return static_cast<unsigned short> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned short</tt>, checking for overflow first.
+  static unsigned short safeConvert (const Kokkos::Experimental::half_t t) {
+    const unsigned short minVal = 0;
+    const unsigned short maxVal = std::numeric_limits<unsigned short>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > maxVal,
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned short, Kokkos::Experimental::half_t>::safeConvert: "
+      "Input Kokkos::Experimental::half_t t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned short.");
+
+    return static_cast<unsigned short> (t);
+  }
+};
+
+
+//! Convert from \c Kokkos::Experimental::half_t to \c int.
+template<>
+class ValueTypeConversionTraits<int, Kokkos::Experimental::half_t> {
+public:
+  //! Convert the given \c Kokkos::Experimental::half_t to an \c int.
+  static int convert (const Kokkos::Experimental::half_t t) {
+    // Implicit conversion from Kokkos::Experimental::half_t to int may cause compiler
+    // warnings, but static_cast does not.  Overflow here would mean
+    // that sizeof(int) < sizeof(Kokkos::Experimental::half_t), which is legal, but unlikely
+    // on platforms of interest.
+    return static_cast<int> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to an \c int.
+  static int safeConvert (const Kokkos::Experimental::half_t t) {
+    const int minVal = std::numeric_limits<int>::min ();
+    const int maxVal = std::numeric_limits<int>::max ();
+
+    // Cases:
+    // 1. sizeof(int) < sizeof(Kokkos::Experimental::half_t) == 4
+    // 2. sizeof(int) == sizeof(Kokkos::Experimental::half_t) == 4
+    // 3. sizeof(int) > sizeof(Kokkos::Experimental::half_t) == 4
+    //
+    // Overflow when converting from Kokkos::Experimental::half_t to int is possible only for
+    // Case 1.  Loss of accuracy (rounding) is possible for Cases 2
+    // and 3, but safeConvert() only cares about overflow, not
+    // rounding.  Case 3 is rare, but casting minVal or maxVal to
+    // Kokkos::Experimental::half_t in this case could result in loss of accuracy
+    // (sizeof(int) == 8 or 16) or overflow (sizeof(int) > 16).  Thus,
+    // we only do the test for Case 1.
+    if constexpr (sizeof (int) < sizeof (Kokkos::Experimental::half_t)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < minVal || t > maxVal,
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<int, Kokkos::Experimental::half_t>::safeConvert: "
+        "Input Kokkos::Experimental::half_t t = " << t << " is out of the valid range ["
+        << minVal << ", " << maxVal << "] for conversion to int.");
+    }
+    return static_cast<int> (t);
+  }
+};
+
+
+//! Convert from \c Kokkos::Experimental::half_t to <tt>unsigned int</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned int, Kokkos::Experimental::half_t> {
+public:
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned int</tt>.
+  static unsigned int convert (const Kokkos::Experimental::half_t t) {
+    // Implicit conversion from Kokkos::Experimental::half_t to unsigned int may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<unsigned int> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned int</tt>, checking first or under- or overflow.
+  static unsigned int safeConvert (const Kokkos::Experimental::half_t t) {
+    const unsigned int minVal = 0; // Had better be, since it's unsigned.
+    const unsigned int maxVal = std::numeric_limits<unsigned int>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > static_cast<Kokkos::Experimental::half_t>(maxVal),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned int, Kokkos::Experimental::half_t>::safeConvert: "
+      "Input double t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned int.");
+
+    return static_cast<unsigned int> (t);
+  }
+};
+
+
+//! Convert from \c Kokkos::Experimental::half_t to \c long.
+template<>
+class ValueTypeConversionTraits<long, Kokkos::Experimental::half_t> {
+public:
+  //! Convert the given \c Kokkos::Experimental::half_t to an \c long.
+  static long convert (const Kokkos::Experimental::half_t t) {
+    // Implicit conversion from Kokkos::Experimental::half_t to long may cause compiler
+    // warnings, but static_cast does not.  Overflow here would mean
+    // that sizeof(long) < sizeof(Kokkos::Experimental::half_t), which is legal, but unlikely
+    // on platforms of longerest.
+    return static_cast<long> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to an \c long, checking first for overflow.
+  static long safeConvert (const Kokkos::Experimental::half_t t) {
+    const long minVal = std::numeric_limits<long>::min ();
+    const long maxVal = std::numeric_limits<long>::max ();
+
+    // Cases:
+    // 1. sizeof(long) < sizeof(Kokkos::Experimental::half_t) == 4
+    // 2. sizeof(long) == sizeof(Kokkos::Experimental::half_t) == 4
+    // 3. sizeof(long) > sizeof(Kokkos::Experimental::half_t) == 4
+    //
+    // Overflow when converting from Kokkos::Experimental::half_t to long is possible only
+    // for Case 1.  Loss of accuracy (rounding) is possible for Cases
+    // 2 and 3, but safeConvert() only cares about overflow, not
+    // rounding.  Casting minVal or maxVal to double in Case 3 could
+    // result in overflow.  Thus, we only do the cast for Case 1.
+    //
+    // I've never encountered a Case 1 platform (mfh 14 Nov 2012).
+    // C99 actually forbids it, though I don't think a valid C++
+    // compiler (for version C++03 of the language standard) needs to
+    // implement C99 (mfh 14 Nov 2012).  Case 2 occurs in Win64
+    // (64-bit Windows) and other implementations of (I32L32)LLP64.
+    // Case 3 is common (e.g., in the (I32)LP64 integer model of
+    // GNU/Linux and other operating systems).
+    if constexpr (sizeof (long) < sizeof (Kokkos::Experimental::half_t)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        t < minVal || t > static_cast<Kokkos::Experimental::half_t>(maxVal),
+        std::range_error,
+        "Teuchos::ValueTypeConversionTraits<long, Kokkos::Experimental::half_t>::safeConvert: "
+        "Input Kokkos::Experimental::half_t t = " << t << " is out of the valid range ["
+        << minVal << ", " << maxVal << "] for conversion to long.");
+    }
+    return static_cast<long> (t);
+  }
+};
+
+
+//! Convert from \c Kokkos::Experimental::half_t to <tt>unsigned long</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned long, Kokkos::Experimental::half_t> {
+public:
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned long</tt>.
+  static unsigned long convert (const Kokkos::Experimental::half_t t) {
+    // Implicit conversion from Kokkos::Experimental::half_t to unsigned long may cause
+    // compiler warnings, but static_cast does not.
+    return static_cast<unsigned long> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned long</tt>, checking first or under- or overflow.
+  static unsigned long safeConvert (const Kokkos::Experimental::half_t t) {
+    const unsigned long minVal = 0; // Had better be, since it's unsigned.
+    const unsigned long maxVal = std::numeric_limits<unsigned long>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > static_cast<Kokkos::Experimental::half_t>(maxVal),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned long, Kokkos::Experimental::half_t>::safeConvert: "
+      << "Input Kokkos::Experimental::half_t t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned long.");
+
+    return static_cast<unsigned long> (t);
+  }
+};
+
+//! Convert from \c Kokkos::Experimental::half_t to <tt>long long</tt>.
+template<>
+class ValueTypeConversionTraits<long long, Kokkos::Experimental::half_t> {
+public:
+  //! Convert the given \c Kokkos::Experimental::half_t to a <tt>long long</tt>.
+  static long long convert (const Kokkos::Experimental::half_t t) {
+    return static_cast<long long> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to a <tt>long long</tt>, checking first for overflow.
+  static long long safeConvert (const Kokkos::Experimental::half_t t) {
+    // The C99 standard (Section 5.2.4.2.1) actually requires
+    // sizeof(long long) >= 64, so overflow is impossible.
+    return static_cast<long long> (t);
+  }
+};
+
+
+//! Convert from \c Kokkos::Experimental::half_t to <tt>unsigned long long</tt>.
+template<>
+class ValueTypeConversionTraits<unsigned long long, Kokkos::Experimental::half_t> {
+public:
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned long long</tt>.
+  static unsigned long long convert (const Kokkos::Experimental::half_t t) {
+    return static_cast<unsigned long long> (t);
+  }
+
+  //! Convert the given \c Kokkos::Experimental::half_t to an <tt>unsigned long long</tt>, checking first for overflow.
+  static unsigned long long safeConvert (const Kokkos::Experimental::half_t t) {
+    const unsigned long long minVal = 0; // unsigned, so min value is 0.
+    const unsigned long long maxVal = std::numeric_limits<unsigned long long>::max ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      t < minVal || t > static_cast<Kokkos::Experimental::half_t>(maxVal),
+      std::range_error,
+      "Teuchos::ValueTypeConversionTraits<unsigned long long, Kokkos::Experimental::half_t>::safeConvert: "
+      "Input Kokkos::Experimental::half_t t = " << t << " is out of the valid range [" << minVal
+      << ", " << maxVal << "] for conversion to unsigned long long.");
+
+    return static_cast<unsigned long long> (t);
+  }
+};
+
 
 //
 // * Specializations for conversions between a unsigned built-in

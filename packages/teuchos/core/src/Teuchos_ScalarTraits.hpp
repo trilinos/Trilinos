@@ -25,6 +25,7 @@
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
 #include "Kokkos_Complex.hpp"
+#include "Kokkos_Core.hpp"
 #endif // HAVE_TEUCHOSCORE_KOKKOS
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -546,6 +547,99 @@ extern TEUCHOSCORE_LIB_DLL_EXPORT const float flt_nan;
 
 
 template<>
+struct ScalarTraits<Kokkos::Experimental::half_t>
+{
+  typedef Kokkos::Experimental::half_t magnitudeType;
+  typedef Kokkos::Experimental::half_t halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
+  typedef float doublePrecision;
+  typedef Kokkos::Experimental::half_t coordinateType;
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+  static inline Kokkos::Experimental::half_t eps()   {
+    return std::numeric_limits<Kokkos::Experimental::half_t>::epsilon();
+  }
+  static inline Kokkos::Experimental::half_t sfmin() {
+    return std::numeric_limits<Kokkos::Experimental::half_t>::min();
+  }
+  static inline Kokkos::Experimental::half_t base()  {
+    return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::radix);
+  }
+  static inline Kokkos::Experimental::half_t prec()  {
+    return eps()*base();
+  }
+  static inline Kokkos::Experimental::half_t t()     {
+    return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::digits);
+  }
+  static inline Kokkos::Experimental::half_t rnd()   {
+    return ( std::numeric_limits<Kokkos::Experimental::half_t>::round_style == std::round_to_nearest ? one() : zero() );
+  }
+  static inline Kokkos::Experimental::half_t emin()  {
+    return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::min_exponent);
+  }
+  static inline Kokkos::Experimental::half_t rmin()  {
+    return std::numeric_limits<Kokkos::Experimental::half_t>::min();
+  }
+  static inline Kokkos::Experimental::half_t emax()  {
+    return static_cast<Kokkos::Experimental::half_t>(std::numeric_limits<Kokkos::Experimental::half_t>::max_exponent);
+  }
+  static inline Kokkos::Experimental::half_t rmax()  {
+    return std::numeric_limits<Kokkos::Experimental::half_t>::max();
+  }
+  static inline magnitudeType magnitude(Kokkos::Experimental::half_t a)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif
+      return Kokkos::fabs(a);
+    }
+  static inline Kokkos::Experimental::half_t zero()  { return(0.0f); }
+  static inline Kokkos::Experimental::half_t one()   { return(1.0f); }
+  static inline Kokkos::Experimental::half_t conjugate(Kokkos::Experimental::half_t x)   { return(x); }
+  static inline Kokkos::Experimental::half_t real(Kokkos::Experimental::half_t x) { return x; }
+  static inline Kokkos::Experimental::half_t imag(Kokkos::Experimental::half_t) { return zero(); }
+  static inline Kokkos::Experimental::half_t nan() {
+#ifdef __sun
+    return 0.0f/std::sin(0.0f);
+#else
+    return std::numeric_limits<Kokkos::Experimental::half_t>::quiet_NaN();
+#endif
+  }
+  static inline bool isnaninf(Kokkos::Experimental::half_t x) {
+    return Kokkos::isnan(x) || Kokkos::isinf(x);
+  }
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  static inline Kokkos::Experimental::half_t random() { Kokkos::Experimental::half_t rnd = (Kokkos::Experimental::half_t) std::rand() / static_cast<Kokkos::Experimental::half_t>(RAND_MAX); return (-1.0f + 2.0f * rnd); }
+  static inline std::string name() { return "Kokkos::Experimental::half_t"; }
+  static inline Kokkos::Experimental::half_t squareroot(Kokkos::Experimental::half_t x)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif
+      errno = 0;
+      const Kokkos::Experimental::half_t rtn = Kokkos::sqrt(x);
+      if (errno)
+        return nan();
+      return rtn;
+    }
+  static inline Kokkos::Experimental::half_t pow(Kokkos::Experimental::half_t x, Kokkos::Experimental::half_t y) { return Kokkos::pow(x,y); }
+  static inline Kokkos::Experimental::half_t pi() { return 3.14159265358979323846f; }
+  static inline Kokkos::Experimental::half_t log(Kokkos::Experimental::half_t x) { return Kokkos::log(x); }
+  static inline Kokkos::Experimental::half_t log10(Kokkos::Experimental::half_t x) { return Kokkos::log10(x); }
+};
+
+
+template<>
 struct ScalarTraits<float>
 {
   typedef float magnitudeType;
@@ -757,7 +851,7 @@ struct ScalarTraits<long double>
 {
   typedef long double magnitudeType;
   typedef double halfPrecision;
-  typedef double doublePrecision;    
+  typedef double doublePrecision;
   typedef long double coordinateType;
   static const bool isComplex = false;
   static const bool isOrdinal = false;
