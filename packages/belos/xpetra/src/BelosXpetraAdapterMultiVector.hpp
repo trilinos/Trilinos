@@ -135,9 +135,10 @@ using Teuchos::rcp;
   Xpetra::MultiVector will be accepted by the Belos templated solvers.
 */
 template <class Scalar, class LO, class GO, class Node>
-class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, LO, GO, Node>, Teuchos::SerialDenseMatrix<int, Scalar>> {
+class MultiVecTraits<Scalar, Xpetra::MultiVector<Scalar, LO, GO, Node>, ::Belos::DefaultDenseMatrix<int, Scalar>> {
 private:
-  using DM = Teuchos::SerialDenseMatrix<int, Scalar>;
+  using DM = ::Belos::DefaultDenseMatrix<int, Scalar>;
+  using DMT =::Belos::DenseMatTraits<Scalar, DM>;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MV;
   using MVT = MultiVecTraits<Scalar, MV, DM>;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
@@ -462,17 +463,15 @@ public:
     if (auto A_bmv = asBlocked(A)) {
       auto B_bmv = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(
           Teuchos::rcpFromRef(B), true);
-      C.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      DM Ctmp(C.numRows(), C.numCols());
+      DMT::PutScalar(C, Teuchos::ScalarTraits<Scalar>::zero());
+      auto Ctmp = DMT::Create(DMT::GetNumRows(C), DMT::GetNumCols(C));
 
       for (size_t r = 0; r < getNumBlocks(*A_bmv); ++r) {
         RCP<MV> A_r = A_bmv->getMultiVector(r);
         RCP<MV> B_r = B_bmv->getMultiVector(r);
-        Ctmp.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-        MVT::MvTransMv(alpha, *A_r, *B_r, Ctmp);
-        for (int i = 0; i < C.numRows(); ++i)
-          for (int j = 0; j < C.numCols(); ++j)
-            C(i, j) += Ctmp(i, j);
+        DMT::PutScalar(*Ctmp, Teuchos::ScalarTraits<Scalar>::zero());
+        MVT::MvTransMv(alpha, *A_r, *B_r, *Ctmp);
+        DMT::Add(C, *Ctmp);
       }
       return;
     }

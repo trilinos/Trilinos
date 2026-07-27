@@ -11,6 +11,7 @@
 /// \brief Implement Injection and Inversion (DII) for Xpetra
 
 #include "BelosSolverFactory_Xpetra.hpp"
+#include "BelosTypes.hpp"
 
 #include "BelosBiCGStabSolMgr.hpp"
 #include "BelosBlockCGSolMgr.hpp"
@@ -43,10 +44,10 @@ void registerSolverFactory() {
   Impl::registerSolverSubclassForTypes<                                        \
       manager<SC, ::Xpetra::MultiVector<SC, LO, GO, NT>,                       \
               ::Belos::OperatorT<::Xpetra::MultiVector<SC, LO, GO, NT>>,       \
-              ::Teuchos::SerialDenseMatrix<int, SC>>,                          \
+              ::Belos::DefaultDenseMatrix<int, SC>>,                           \
       SC, ::Xpetra::MultiVector<SC, LO, GO, NT>,                               \
       ::Belos::OperatorT<::Xpetra::MultiVector<SC, LO, GO, NT>>,               \
-      ::Teuchos::SerialDenseMatrix<int, SC>>(name);
+      ::Belos::DefaultDenseMatrix<int, SC>>(name);
 
 #define LCL_CALL(SC, LO, GO, NT)                                               \
   BELOS_LCL_CALL_FOR_MANAGER(BiCGStabSolMgr, "BICGSTAB", SC, LO, GO, NT)
