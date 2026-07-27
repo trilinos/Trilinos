@@ -1,6 +1,8 @@
 import re
 import git
 import os
+from github import Github
+from github import Auth
 import logging
 logger = logging.getLogger(__name__)
 
@@ -197,4 +199,37 @@ def push(branch: str, repo_path: str, remote: str="origin", force: bool=False):
             git_repo.git.push(remote, '-f' ,branch)
     except Exception as e:
         raise RuntimeError(f"Failed to push: {e}") from e
+
+
+def create_pull_request(base: str, head: str, title: str, body: str) -> PullRequest:
+    """
+    Open a pull request from head branch to base branch in the origin upstream repository.
+
+    Args:
+        base: target branch to merge head branch into
+        head: source branch to merge into target branch. Use <fork:branch> form for branches from forks.
+        title: title of opened pull request
+        body: body text of opened pull request
+    """
+    token = os.getenv('GITHUB_TOKEN')
+    if not token:
+        raise RuntimeError(f"GITHUB_TOKEN environment variable not set.")
+
+    if not base or not head or not title:
+        raise ValueError("base, head, and title must be non-empty strings.")
+
+    gh = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']))
+
+    try:
+        org_repo = "trilinos-cicd2/Trilinos-test"
+        repo = gh.get_repo(org_repo)
+        pr = repo.create_pull(base=base, head=head, title=title, body=body)
+        print(f"Opened pull request at {pr.html_url}")
+
+        return pr
+    except GithubException as e:
+        raise RuntimeError(f"GitHub API error when creating PR") from e
+    finally:
+        gh.close()
+
 

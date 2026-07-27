@@ -55,7 +55,6 @@ def main():
     pre_checks(args)
     git_root = get_git_root(args.dir if args.dir else script_path)
 
-#    fetch_and_checkout_branch(base_branch, args.dir if args.dir else script_path)
 
     rel = parse_semver(args.rel_version)
     rel_branch= f"trilinos-release-{rel['major']}-{rel['minor']}-branch"
@@ -67,12 +66,11 @@ def main():
 
     # Fetch latest master and develop
 
-    fetch_branch(main_branch, git_root, merge=True)
     fetch_branch(dev_branch, git_root, merge=True)
+    fetch_branch(main_branch, git_root, merge=True)
 
     # Checkout new release branch
 
-    checkout_branch(main_branch, git_root)
     checkout_branch(rel_branch, git_root)
 
     # Push new release branch to origin
@@ -80,28 +78,33 @@ def main():
     push(rel_branch, git_root)
 
     # Update Version.cmake in release branch
-    # - checkout new branch from release branch that updates Version.cmake
     rel_update_branch = f"update-rel-version-{dev['major']}-{dev['minor']}"
     checkout_branch(rel_update_branch, git_root)
     dev_mode = False
     update_version_cmake(args.rel_version, rel_branch, dev_mode, git_root)
     commit_tracked(release_commit_msg, git_root)
-    push(rel_update_branch, git_root, remote="fork")
+    push(rel_update_branch, git_root)
+
+    # Create branch protection rules for pushed release branch
+
+    # TODO
 
     # Make PR from Version.cmake update branch to release branch
+    # Probably want to abstract this into another fucntion with templated title/body
+    create_pull_request(rel_branch, rel_update_branch, "Update release Version.cmake", "")
 
+   # Checkout remote "develop" and update
+    checkout_branch(dev_branch, git_root, remote=True)
 
+    # Checkout new branch for dev version update
+    checkout_branch(dev_update_branch, git_root)
+    dev_mode = True
+    update_version_cmake(args.dev_version, dev_update_branch, dev_mode, git_root)
+    commit_tracked(dev_commit_msg, git_root)
+    push(dev_update_branch, git_root)
 
-
-##    fetch_branch(dev_branch, git_root, merge=True)
-#   # Checkout remote "develop" and update
-#    fetch_branch(dev_branch, git_root)
-#    checkout_branch(dev_branch, git_root, remote=True)
-#    # Checkout new branch for dev version update
-#    checkout_branch(dev_update_branch, git_root)
-#    dev_mode = True
-#    update_version_cmake(args.dev_version, dev_update_branch, dev_mode, git_root)
-#    commit_tracked(dev_commit_msg, git_root)
+    # Create PR to update Version.cmake in develop branch
+    create_pull_request(dev_branch, dev_update_branch, "Update develop Version.cmake", "")
 
     return 0
 
