@@ -41,6 +41,9 @@ def pre_checks(args):
         exit(1)
 
 
+release_commit_msg = "Update release Version.cmake"
+dev_commit_msg = "Update dev Version.cmake"
+
 
 def main():
     args = parse_args()
@@ -57,13 +60,48 @@ def main():
     rel = parse_semver(args.rel_version)
     rel_branch= f"trilinos-release-{rel['major']}-{rel['minor']}-branch"
     dev = parse_semver(args.dev_version)
+    dev_update_branch= f"update-dev-version-{dev['major']}-{dev['minor']}"
 
-    base_branch = "master"
-    # fetch and pull master
-    fetch_branch(base_branch, git_root, merge=True)
-    # checkout new branch for release
+    main_branch = "master"
+    dev_branch = "develop"
+
+    # Fetch latest master and develop
+
+    fetch_branch(main_branch, git_root, merge=True)
+    fetch_branch(dev_branch, git_root, merge=True)
+
+    # Checkout new release branch
+
+    checkout_branch(main_branch, git_root)
     checkout_branch(rel_branch, git_root)
 
+    # Push new release branch to origin
+
+    push(rel_branch, git_root)
+
+    # Update Version.cmake in release branch
+    # - checkout new branch from release branch that updates Version.cmake
+    rel_update_branch = f"update-rel-version-{dev['major']}-{dev['minor']}"
+    checkout_branch(rel_update_branch, git_root)
+    dev_mode = False
+    update_version_cmake(args.rel_version, rel_branch, dev_mode, git_root)
+    commit_tracked(release_commit_msg, git_root)
+    push(rel_update_branch, git_root, remote="fork")
+
+    # Make PR from Version.cmake update branch to release branch
+
+
+
+
+##    fetch_branch(dev_branch, git_root, merge=True)
+#   # Checkout remote "develop" and update
+#    fetch_branch(dev_branch, git_root)
+#    checkout_branch(dev_branch, git_root, remote=True)
+#    # Checkout new branch for dev version update
+#    checkout_branch(dev_update_branch, git_root)
+#    dev_mode = True
+#    update_version_cmake(args.dev_version, dev_update_branch, dev_mode, git_root)
+#    commit_tracked(dev_commit_msg, git_root)
 
     return 0
 

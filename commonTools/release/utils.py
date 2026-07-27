@@ -12,14 +12,12 @@ def get_git_root(path: str) -> str:
     Returns:
         Absolute path to the git repository root
     """
-    logger.debug(f"Finding git root for {path}")
     if not os.path.exists(path):
         raise FileNotFoundError(f"Path does not exist: {path}")
 
     try:
         git_repo = git.Repo(path, search_parent_directories=True)
         git_root = git_repo.git.rev_parse("--show-toplevel")
-        logger.debug(f"git root = {git_root}")
         return git_root
     except git.InvalidGitRepositoryError as e:
         raise ValueError(f"Path is not within a git repository: {path}")
@@ -62,7 +60,6 @@ def fetch_branch(branch: str, repo_path: str, merge: bool=False) -> None:
         git_root = get_git_root(repo_path)
         git_repo = git.Repo(git_root)
 
-        logger.info(f"Fetching latest changes for repository at {git_root}")
         origin = git_repo.remotes.origin
         origin.fetch(branch)
         if merge:
@@ -70,20 +67,15 @@ def fetch_branch(branch: str, repo_path: str, merge: bool=False) -> None:
                 current_branch = git_repo.active_branch.name
 
                 if current_branch != branch:
-                    logger.info(f"Checking out branch {branch} before merging")
                     git_repo.git.checkout(branch)
 
-                logger.info(f"Merging fetched branch {branch} with local branch")
                 git_repo.git.merge(f"origin/{branch}")
             else:
-                logger.info(f"Branch {branch} doesn't exist locally, cannot merge")
+                git_repo.git.checkout("-b", branch, f"origin/{branch}")
     except git.InvalidGitRepositoryError as e:
         raise ValueError(f"Invalid git repository at {repo_path}: {e}") from e
     except Exception as e:
         raise RuntimeError(f"Failed to fetch branch {branch}: {e}") from e
-
-
-
 
 
 def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:
@@ -99,15 +91,14 @@ def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:
         git_repo = git.Repo(git_root)
 
         if branch in [b.name for b in git_repo.branches]:
-            logger.info(f"Branch {branch} exists locally, checking it out")
             git_repo.git.checkout(branch)
+            if remote:
+                git_repo.git.pull("origin", branch, "--rebase")
         else:
-            logger.info(f"Checking out new branch {branch}")
-            git_repo.git.checkout(b=branch)
-
-        if remote:
-            logger.info(f"Remote specified, pulling latest remote changes of {branch}")
-            git_repo.git.pull('origin', branch)
+            if remote:
+                git_repo.git.checkout('--track', f"origin/{branch}")
+            else:
+                git_repo.git.checkout(b=branch)
 
     except git.InvalidGitRepositoryError as e:
         raise ValueError(f"Invalid git repository at {repo_path}: {e}") from e
@@ -115,5 +106,95 @@ def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:
         raise RuntimeError(f"Failed to checkout branch {branch}: {e}") from e
 
 
+def update_version_cmake(version: str, rel_branch: str, dev_mode: bool, repo_path: str):
+    """
+    Update the Version.cmake file in root of the Trilinos repo.
 
+    Example Version.cmake in Trilinos:
+
+    ```
+    SET(Trilinos_VERSION 17.0.0)
+    SET(Trilinos_MAJOR_VERSION 17)
+    SET(Trilinos_MAJOR_MINOR_VERSION 170000)
+    SET(Trilinos_VERSION_STRING "17.0.0-dev")
+    SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT ON)
+    ```
+
+    when called to update for 17.1.1 in Release Mode,
+    Version.cmake gets updated to:
+
+    ```
+    SET(Trilinos_VERSION 17.1.1)
+    SET(Trilinos_MAJOR_VERSION 17)
+    SET(Trilinos_MAJOR_MINOR_VERSION 170101)
+    SET(Trilinos_VERSION_STRING "17.1.1")
+    SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT OFF)
+    ```
+    """
+    try:
+        file_path = f"{repo_path}/Version.cmake"
+        with open(file_path, 'r') as f:
+            content = f.read()
+    except Exception as e:
+        raise RuntimeError(f"Failed to read Version.cmake: {e}") from e
+
+    semver = parse_semver(version)
+    major = semver['major']
+    minor = semver['minor']
+    patch = semver['patch']
+    major_minor_patch = int(major) * 10000 + int(minor) * 100 + int(patch)
+    base_version = version.split("-")[0]
+
+    dev_mode_default = "ON" if dev_mode else "OFF"
+
+    new_content = content
+    new_content = re.sub(r'SET\(Trilinos_VERSION \d+\.\d+\.\d+\)', f'SET(Trilinos_VERSION {base_version})', new_content)
+    new_content = re.sub(r'SET\(Trilinos_MAJOR_VERSION \d+\)', f'SET(Trilinos_MAJOR_VERSION {major})', new_content)
+    new_content = re.sub(r'SET\(Trilinos_MAJOR_MINOR_VERSION \d+\)', f'SET(Trilinos_MAJOR_MINOR_VERSION {major_minor_patch})', new_content)
+    new_content = re.sub(r'SET\(Trilinos_VERSION_STRING "[^"]+"\)', f'SET(Trilinos_VERSION_STRING "{version}")', new_content)
+    new_content = re.sub(r'SET\(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT (?:ON|OFF)\)', f'SET(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT {dev_mode_default})', new_content)
+
+    if not dev_mode:
+        new_content = re.sub(r'SET\(Trilinos_REPOSITORY_BRANCH "[^"]+" CACHE INTERNAL ""\)', f'SET(Trilinos_REPOSITORY_BRANCH "{rel_branch}" CACHE INTERNAL "")', new_content)
+
+    try:
+        with open(file_path, 'w') as f:
+            f.write(new_content)
+    except Exception as e:
+        raise RuntimeError(f"Failed to update Version.cmake: {e}") from e
+
+
+def commit_tracked(msg: str, repo_path: str):
+    """
+    Commit all modified tracked files in the working tree with the given message.
+    """
+    try:
+        git_root = get_git_root(repo_path)
+        git_repo = git.Repo(git_root)
+
+        git_repo.git.add(update=True)
+
+        git_status = git_repo.git.status()
+        logger.debug(f"Git status after add:\n{git_status}")
+
+        git_repo.git.commit('-s', '-m', msg)
+
+        latest_log = git_repo.git.log('-1', '--pretty=fuller')
+        logger.debug(f"Last commit:\n{latest_log}")
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to commit: {e}") from e
+
+
+def push(branch: str, repo_path: str, remote: str="origin", force: bool=False):
+    try:
+        git_root = get_git_root(repo_path)
+        git_repo = git.Repo(git_root)
+
+        if force:
+            git_repo.git.push(origin, branch)
+        else:
+            git_repo.git.push(remote, '-f' ,branch)
+    except Exception as e:
+        raise RuntimeError(f"Failed to push: {e}") from e
 
