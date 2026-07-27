@@ -1,0 +1,258 @@
+/*! \page tempus_tutorial_transition_06_07 Transition from Example 6 to Example 7
+ *
+ *  \section tempus_tutorial_transition_06_07_goal Goal
+ *
+ *  The primary goal of \ref example-07 is to introduce the observer pattern
+ *  used by Tempus to provide application access during time integration.
+ *  The example preserves the same \ref Thyra::ModelEvaluator-based van der Pol
+ *  model, the same \ref Tempus::SolutionHistory, the same
+ *  \ref Tempus::StepperForwardEuler, the same \ref Tempus::TimeStepControl,
+ *  and the same application-managed time loop used in \ref example-06.
+ *
+ *  This example uses a tutorial-local `TutorialObserver` class.  Its method
+ *  names mirror the \ref Tempus::IntegratorObserver lifecycle, but its
+ *  arguments are adapted to the application-managed loop used in this
+ *  tutorial.  In \ref example-08, \ref Tempus::IntegratorBasic provides the
+ *  integrator context, and the production observer interface can be used
+ *  directly.
+ *
+ *  New concepts introduced are:
+ *
+ *  - `TutorialObserver`
+ *    - a tutorial-local observer used to demonstrate the observer pattern
+ *  - `observeStartIntegrator(...)`
+ *    - provides application access before the integration begins
+ *  - `observeStartTimeStep(...)`
+ *    - provides application access at the beginning of a time step
+ *  - `observeNextTimeStep(...)`
+ *    - provides application access after timestep metadata is selected
+ *  - `observeBeforeTakeStep(...)`
+ *    - provides application access before the stepper advances the solution
+ *  - `observeAfterTakeStep(...)`
+ *    - provides application access after the stepper advances the solution
+ *  - `observeAfterCheckTimeStep(...)`
+ *    - provides application access after the step status is checked
+ *  - `observeEndTimeStep(...)`
+ *    - provides application access at the end of a time step
+ *  - `observeEndIntegrator(...)`
+ *    - provides application access after the integration completes
+ *
+ *  This is the first step in separating application callbacks from the main
+ *  time integration logic.  Rather than embedding output and other application
+ *  actions directly in the loop body, the code now uses observer callbacks to
+ *  organize access to time-integration events.
+ *
+ *  \section tempus_tutorial_transition_06_07_same What stays the same
+ *
+ *  - The van der Pol model is still provided by a \ref Thyra::ModelEvaluator.
+ *  - The application still manages the overall time loop directly.
+ *  - The application still manages the \ref Tempus::SolutionHistory.
+ *  - The Forward Euler step is still performed by
+ *    \ref Tempus::StepperForwardEuler.
+ *  - Timestep-size control is still handled by \ref Tempus::TimeStepControl.
+ *  - The regression check follows the same pattern.
+ *
+ *  \section tempus_tutorial_transition_06_07_snippets Selected code excerpts
+ *
+ *  The code excerpts below highlight the main changes needed to introduce
+ *  observer-based application access.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_06_07_snippet1 Define the tutorial observer
+ *
+ *  <b>Introduce a tutorial-local observer.</b>  The `TutorialObserver` class,
+ *  defined in `TutorialObserver.hpp`, mirrors the callback structure of
+ *  \ref Tempus::IntegratorObserver, but it receives the objects needed by the
+ *  application-managed loop directly.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  // No observer class in Example 6.
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  // TutorialObserver.hpp
+ *  namespace Tempus_Tutorial {
+ *
+ *  template <class Scalar>
+ *  class TutorialObserver {
+ *   public:
+ *    void observeStartIntegrator(...);
+ *    void observeStartTimeStep(...);
+ *    void observeNextTimeStep(...);
+ *    void observeBeforeTakeStep(...);
+ *    void observeAfterTakeStep(...);
+ *    void observeAfterCheckTimeStep(...);
+ *    void observeEndTimeStep(...);
+ *    void observeEndIntegrator(...);
+ *  };
+ *
+ *  }  // namespace Tempus_Tutorial
+ *  @endcode
+ *
+ *  The callback names match the lifecycle used by the production
+ *  \ref Tempus::IntegratorObserver interface, but no
+ *  \ref Tempus::Integrator is required in this example.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_06_07_snippet2 Create the observer
+ *
+ *  <b>Create a TutorialObserver.</b>  The application constructs the observer
+ *  before entering the time integration loop.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  // Output
+    cout << std::fixed;
+    cout << std::setw(8)  << "index"
+         << std::setw(10) << "time"
+         << std::setw(12) << "x_0"
+         << std::setw(12) << "x_1" << endl;
+
+    auto currentState = solHistory->getCurrentState();
+    cout << std::setw(8)  << currentState->getIndex()
+         << std::setw(10) << std::setprecision(3) << currentState->getTime()
+         << std::setw(12) << std::setprecision(4) << Thyra::get_ele(*(currentState->getX()), 0)
+         << std::setw(12) << std::setprecision(4) << Thyra::get_ele(*(currentState->getX()), 1)
+         << endl;
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  Tempus_Tutorial::TutorialObserver<double> observer;
+ *
+ *  observer.observeStartIntegrator(
+ *    solHistory, stepper, timeStepControl, integratorStatus);
+ *  @endcode
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_06_07_snippet3 Add observer callbacks to the loop
+ *
+ *  <b>Observe key points in the time-step cycle.</b>  The main loop still
+ *  performs the same operations as before, but observer callbacks now mark
+ *  the important integration events.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  solHistory->initWorkingState();
+ *
+ *  timeStepControl->setNextTimeStep(solHistory, integratorStatus);
+ *
+ *  stepper->takeStep(solHistory);
+ *
+ *  solHistory->promoteWorkingState();
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  observer.observeStartTimeStep(
+ *    solHistory, stepper, timeStepControl, integratorStatus);
+ *
+ *  solHistory->initWorkingState();
+ *
+ *  timeStepControl->setNextTimeStep(solHistory, integratorStatus);
+ *
+ *  observer.observeNextTimeStep(
+ *    solHistory, stepper, timeStepControl, integratorStatus);
+ *
+ *  observer.observeBeforeTakeStep(
+ *    solHistory, stepper, timeStepControl, integratorStatus);
+ *
+ *  stepper->takeStep(solHistory);
+ *
+ *  observer.observeAfterTakeStep(
+ *    solHistory, stepper, timeStepControl, integratorStatus);
+ *
+ *  observer.observeAfterCheckTimeStep(
+ *    solHistory, stepper, timeStepControl, integratorStatus);
+ *
+ *  solHistory->promoteWorkingState();
+ *
+ *  observer.observeEndTimeStep(
+ *    solHistory, stepper, timeStepControl, integratorStatus);
+ *  @endcode
+ *
+ *  The time loop is still application-controlled, but application access is
+ *  now organized around observer callbacks.  Although there appears to be
+ *  back-to-back observer calls, in Tempus::IntegratorBasic there additional
+ *  calls that have not been introduced in this tutorial which separate these
+ *  observer call.
+ *
+ *  Note that these observer functions are no-ops in this tutorial,
+ *  but show where these function are called for developers usage.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \subsection tempus_tutorial_transition_06_07_snippet4 Move output into the observer
+ *
+ *  <b>Move application output into the observer.</b>  The step output that was
+ *  previously embedded directly in the time loop is now handled by
+ *  `observeEndTimeStep(...)`.
+ *
+ *  <b>Before</b>
+ *  @code
+ *  if (solHistory->getCurrentState()->getIndex() % 100 == 0) {
+ *    auto currentState = solHistory->getCurrentState();
+ *    cout << currentState->getIndex() << "  " << currentState->getTime()
+ *         << "  " << Thyra::get_ele(*(currentState->getX()), 0)
+ *         << "  " << Thyra::get_ele(*(currentState->getX()), 1) << endl;
+ *  }
+ *  @endcode
+ *
+ *  <b>After</b>
+ *  @code
+ *  void observeEndTimeStep(...)
+ *  {
+ *    auto currentState = solHistory->getCurrentState();
+ *
+ *    if (currentState->getIndex() % 100 == 0) {
+ *      cout << currentState->getIndex()
+ *           << "  " << currentState->getTime()
+ *           << "  " << Thyra::get_ele(*(currentState->getX()), 0)
+ *           << "  " << Thyra::get_ele(*(currentState->getX()), 1)
+ *           << endl;
+ *    }
+ *  }
+ *  @endcode
+ *
+ *  This illustrates how observers can separate application-specific actions
+ *  from the time-integration algorithm.
+ *
+ *  The observers here primarily access the solution state to print out
+ *  the index, time and solution.  However users can perform any other
+ *  tasks (e.g., perform auxiliary calculations, add additional constraints
+ *  for step failure) within observers via access to the solution
+ *  history, stepper, time step control, and integrator status).
+ *  A word of caution: although allowed, one should carefully consider
+ *  modifying the solution history, stepper or time step control,
+ *  as this could lead to inaccurate or even wrong solutions.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \section tempus_tutorial_transition_06_07_compare How to compare the examples
+ *
+ *  A more detailed comparison can be made by diffing:
+ *  - `examples/06_Intro_TimeStepControl/06_Intro_TimeStepControl.cpp`
+ *  - `examples/07_Intro_Observers/07_Intro_Observers.cpp`
+ *
+ *  From the `packages/tempus` directory, a focused comparison of the main
+ *  time-integration logic between these two examples can be generated locally
+ *  in `bash` or `zsh` with:
+ *
+ *  @code{.sh}
+ *  git diff --no-index \
+ *    <(sed -n '91,180p' examples/06_Intro_TimeStepControl/06_Intro_TimeStepControl.cpp) \
+ *    <(sed -n '88,180p' examples/07_Intro_Observers/07_Intro_Observers.cpp)
+ *  @endcode
+ *
+ *  This ignores leading header lines (e.g., `#include` statements and
+ *  Doxygen comments) and trailing regression-testing lines.
+ *
+ *  <hr style="border:0; border-top:5px solid #ccc;">
+ *  \htmlonly
+ *  <div style="text-align:center;">
+ *    <a href="example-06.html">← Previous Example</a> |
+ *    <a href="example-07.html">Current Example</a> |
+ *    <a href="example-08.html">Next Example →</a>
+ *  </div>
+ *  \endhtmlonly
+ */
