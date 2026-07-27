@@ -62,7 +62,7 @@ TRIBITS_ADD_EXECUTABLE(
   AsyncTransfer_UnitTests
   SOURCES AsyncTransfer_UnitTests.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
-  )
+)
 
 TRIBITS_ADD_TEST(
   AsyncTransfer_UnitTests
@@ -71,15 +71,15 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-if (TPL_ENABLE_MPI)
+IF(TPL_ENABLE_MPI)
   TRIBITS_ADD_TEST(
     AsyncTransfer_UnitTests
     NAME AsyncTransfer_UnitTests_Ialltofewv
     COMM mpi
     ARGS "--distributor-send-type=Ialltofewv --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
     STANDARD_PASS_OUTPUT
-    )
-endif()
+  )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport2_CrsSortingUtils
