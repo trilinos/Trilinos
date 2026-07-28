@@ -67,6 +67,7 @@
       </ParameterList>
 
       <ParameterList name="solver_params">
+        <Parameter name="small matrix threshold" type="int" value="0"/>
       </ParameterList>
   </ParameterList> <!-- end cuSOLVER -->
     <ParameterList name="all_solver_params">
@@ -154,6 +155,7 @@
       </ParameterList>
 
       <ParameterList name="solver_params">
+        <Parameter name="small matrix threshold" type="int" value="0"/>
       </ParameterList>
 
     </ParameterList>

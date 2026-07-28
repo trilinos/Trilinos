@@ -14,7 +14,7 @@ IF (${PACKAGE_NAME}_ENABLE_METIS)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestcuSolverFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    SOURCE_FILES cuSOLVER_test.xml
+    SOURCE_FILES cuSOLVER_test.xml cuSOLVER_sparse_test.xml
     EXEDEPS Solver_Test
     )
 
@@ -22,6 +22,15 @@ IF (${PACKAGE_NAME}_ENABLE_METIS)
     Solver_Test
     NAME cuSOLVER_Solver_Test
     ARGS "--xml-params=cuSOLVER_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME cuSOLVER_Sparse_Solver_Test
+    ARGS "--xml-params=cuSOLVER_sparse_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
     COMM serial mpi
