@@ -6,7 +6,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_ArithTraits.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -148,8 +148,9 @@ template <class execution_space, class RV, class XV, class YV,
 struct DotSpecialAccumulator {
   // Note: not doing the static_asserts to validate RV, XV, YV since those
   // errors would have already arisen when building the library.
-  using size_type  = typename YV::size_type;
-  using dot_type   = typename Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::dot_type;
+  using size_type = typename YV::size_type;
+  using dot_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::dot_type;
   using accum_type = typename DotAccumulatingScalar<dot_type>::type;
   // This is the same View type as RV, but using the special accumulator as the
   // value type
@@ -254,8 +255,9 @@ struct DotSpecialAccumulator<execution_space, RV, XV, YV, KOKKOSKERNELS_IMPL_COM
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
 
-  using size_type  = typename YV::size_type;
-  using dot_type   = typename Kokkos::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::dot_type;
+  using size_type = typename YV::size_type;
+  using dot_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XV::non_const_value_type>::dot_type;
   using accum_type = typename DotAccumulatingScalar<dot_type>::type;
   // This is the same View type as RV, but using the special accumulator as the
   // value type

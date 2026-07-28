@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // Only enable this test where KokkosLapack supports geqrf:
 // CUDA+CUSOLVER, HIP+ROCSOLVER and HOST+LAPACK
@@ -33,10 +20,14 @@
 namespace Test {
 
 template <class ViewTypeA, class ViewTypeTau>
-void getQR(int const m, int const n, typename ViewTypeA::host_mirror_type const& h_A,
-           typename ViewTypeTau::host_mirror_type const& h_tau, typename ViewTypeA::host_mirror_type& h_Q,
-           typename ViewTypeA::host_mirror_type& h_R, typename ViewTypeA::host_mirror_type& h_QR) {
+void getQR(int const m, int const n, ViewTypeA const& h_A, ViewTypeTau const& h_tau, ViewTypeA& h_Q, ViewTypeA& h_R,
+           ViewTypeA& h_QR) {
   using ScalarA = typename ViewTypeA::value_type;
+
+  using m_ViewTypeA   = Kokkos::View<typename ViewTypeA::non_const_value_type**, typename ViewTypeA::array_layout,
+                                   typename ViewTypeA::device_type>;
+  using m_ViewTypeTau = Kokkos::View<typename ViewTypeTau::non_const_value_type*, typename ViewTypeTau::array_layout,
+                                     typename ViewTypeTau::device_type>;
 
   // ********************************************************************
   // Populate h_R
@@ -54,8 +45,9 @@ void getQR(int const m, int const n, typename ViewTypeA::host_mirror_type const&
   // ********************************************************************
   // Instantiate the m x m identity matrix h_I
   // ********************************************************************
-  ViewTypeA I("I", m, m);
-  typename ViewTypeA::host_mirror_type h_I = Kokkos::create_mirror_view(I);
+  // ViewTypeA I("I", m, m);
+  // typename ViewTypeA::host_mirror_type h_I = Kokkos::create_mirror_view(I);
+  m_ViewTypeA h_I("host I", m, m);
   for (int i = 0; i < m; ++i) {
     h_I(i, i) = ScalarA(1.);
   }
@@ -64,14 +56,11 @@ void getQR(int const m, int const n, typename ViewTypeA::host_mirror_type const&
   // Compute h_Q
   // ********************************************************************
   int minMN(std::min(m, n));
-  ViewTypeTau v("v", m);
-  typename ViewTypeTau::host_mirror_type h_v = Kokkos::create_mirror_view(v);
+  m_ViewTypeTau h_v("host v", m);
 
-  ViewTypeA Qk("Qk", m, m);
-  typename ViewTypeA::host_mirror_type h_Qk = Kokkos::create_mirror_view(Qk);
+  m_ViewTypeA h_Qk("host Qk", m, m);
 
-  ViewTypeA auxM("auxM", m, m);
-  typename ViewTypeA::host_mirror_type h_auxM = Kokkos::create_mirror_view(auxM);
+  m_ViewTypeA h_auxM("host auxM", m, m);
 
   // Q = H(0) H(1) . . . H(min(M,N)-1), where for k=0,1,...,min(m,n)-1:
   //   H(k) = I - Tau(k) * v * v**H, and
@@ -302,7 +291,22 @@ void impl_test_geqrf(int m, int n) {
   typename ViewTypeA::host_mirror_type h_R  = Kokkos::create_mirror_view(R);
   typename ViewTypeA::host_mirror_type h_QR = Kokkos::create_mirror_view(QR);
 
-  getQR<ViewTypeA, ViewTypeTau>(m, n, h_A, h_tau, h_Q, h_R, h_QR);
+  using ViewTypeA_alias = Kokkos::View<typename ViewTypeA::non_const_value_type**, typename ViewTypeA::array_layout,
+                                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,
+                                       Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using ViewTypeTau_alias =
+      Kokkos::View<typename ViewTypeTau::non_const_value_type*, typename ViewTypeTau::array_layout,
+                   Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>,
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  ViewTypeA_alias ha_A(h_A.data(), h_A.extent(0), h_A.extent(1));
+  ViewTypeA_alias ha_Q(h_Q.data(), h_Q.extent(0), h_Q.extent(1));
+  ViewTypeA_alias ha_R(h_R.data(), h_R.extent(0), h_R.extent(1));
+  ViewTypeA_alias ha_QR(h_QR.data(), h_QR.extent(0), h_QR.extent(1));
+
+  ViewTypeTau_alias ha_tau(h_tau.data(), h_tau.extent(0));
+
+  getQR<ViewTypeA_alias, ViewTypeTau_alias>(m, n, ha_A, ha_tau, ha_Q, ha_R, ha_QR);
 
   // ********************************************************************
   // Check Q, R, and QR

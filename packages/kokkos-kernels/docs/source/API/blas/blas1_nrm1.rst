@@ -6,11 +6,11 @@ Defined in header: :code:`KokkosBlas1_nrm1.hpp`
 .. code:: c++
 
   template <class execution_space, class XVector>
-  typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+  typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
   nrm1(const execution_space& space, const XVector& x);
 
   template <class XVector>
-  typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+  typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
   nrm1(const XVector& x)
 
   template <class execution_space, class RV, class XMV>
@@ -54,7 +54,7 @@ Type Requirements
 
   - ``RV::rank == XMV::rank - 1``
   - ``std::is_same_v<typename RV::value_type, typename RV::non_const_value_type> == true``
-  - ``std::is_same_v<typename RV::value_type, typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type> == true``
+  - ``std::is_same_v<typename RV::value_type, typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type> == true``
 
 Example
 =======

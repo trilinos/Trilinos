@@ -162,9 +162,8 @@ template <class AMatrix, class XVector, class YVector>
 void spmv_sellmatrix_rocsparse(const Kokkos::HIP& exec, const char mode[], typename YVector::const_value_type& alpha,
                                const AMatrix& A, const XVector& x, typename YVector::const_value_type& beta,
                                const YVector& y) {
-  using offset_type = typename AMatrix::non_const_size_type;
-  using entry_type  = typename AMatrix::non_const_ordinal_type;
-  using value_type  = typename AMatrix::non_const_value_type;
+  using entry_type = typename AMatrix::non_const_ordinal_type;
+  using value_type = typename AMatrix::non_const_value_type;
 
   /* initialize rocsparse library */
   rocsparse_handle rocsparseHandle = KokkosKernels::Impl::RocsparseSingleton::singleton().rocsparseHandle;
@@ -175,8 +174,7 @@ void spmv_sellmatrix_rocsparse(const Kokkos::HIP& exec, const char mode[], typen
   rocsparse_operation myRocsparseOperation = mode_kk_to_rocsparse(mode);
 
   /* Set the index type */
-  rocsparse_indextype offset_index_type = rocsparse_index_type<offset_type>();
-  rocsparse_indextype entry_index_type  = rocsparse_index_type<entry_type>();
+  rocsparse_indextype entry_index_type = rocsparse_index_type<entry_type>();
 
   /* Set the scalar type */
   rocsparse_datatype compute_type = rocsparse_compute_type<value_type>();

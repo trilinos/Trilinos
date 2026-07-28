@@ -29,7 +29,7 @@ void print_options() {
   std::cerr << "\t[Optional] --n           :: number of columns of A" << std::endl;
 }  // print_options
 
-int parse_inputs(svd_parameters& params, int argc, char** argv) {
+int parse_inputs(int argc, char** argv, svd_parameters& params) {
   for (int i = 1; i < argc; ++i) {
     if (benchmark::check_arg_int(i, argc, argv, "--m", params.numRows)) {
       ++i;
@@ -80,8 +80,8 @@ int main(int argc, char** argv) {
 
   benchmark::CommonInputParams common_params;
   benchmark::parse_common_options(argc, argv, common_params);
-  svd_parameters svd_params(0, 0, false);
-  parse_inputs(svd_params, argc, argv);
+  svd_parameters svd_params(100, 100, false);
+  parse_inputs(argc, argv, svd_params);
 
   std::string bench_name = "KokkosLapack_SVD";
 

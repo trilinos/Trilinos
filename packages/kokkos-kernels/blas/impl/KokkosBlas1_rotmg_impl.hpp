@@ -14,8 +14,7 @@ namespace Impl {
 template <class DXView, class YView, class PView>
 KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2, DXView const& x1, YView const& y1,
                                        PView const& param) {
-  using Scalar = typename DXView::non_const_value_type;
-
+  using Scalar      = typename DXView::non_const_value_type;
   const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
   const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
 
@@ -27,7 +26,7 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2, DXVie
   Scalar h11 = zero, h12 = zero, h21 = zero, h22 = zero;
 
   // Quick exit if d1 negative
-  if (d1() < 0) {
+  if (d1() < zero) {
     flag = -one;
 
     d1() = zero;
@@ -141,22 +140,22 @@ KOKKOS_INLINE_FUNCTION void rotmg_impl(DXView const& d1, DXView const& d2, DXVie
         }
       }
     }
-
-    // Setup output parameters
-    if (flag < zero) {
-      param(1) = h11;
-      param(2) = h21;
-      param(3) = h12;
-      param(4) = h22;
-    } else if (flag == zero) {
-      param(2) = h21;
-      param(3) = h12;
-    } else {
-      param(1) = h11;
-      param(4) = h22;
-    }
-    param(0) = flag;
   }
+
+  // Setup output parameters
+  if (flag < zero) {
+    param(1) = h11;
+    param(2) = h21;
+    param(3) = h12;
+    param(4) = h22;
+  } else if (flag == zero) {
+    param(2) = h21;
+    param(3) = h12;
+  } else {
+    param(1) = h11;
+    param(4) = h22;
+  }
+  param(0) = flag;
 }
 
 template <class DXView, class YView, class PView>

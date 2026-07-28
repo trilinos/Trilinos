@@ -123,7 +123,7 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
       typename ValuesViewType::host_mirror_type, typename IntView::host_mirror_type,
       typename VectorViewType::host_mirror_type, typename VectorViewType::host_mirror_type, 1>(
       -1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_0_host);
+  KokkosBatched::SerialDot<Trans::ConjTranspose, 1>::invoke(R_host, R_host, sqr_norm_0_host);
   Functor_TestBatchedTeamVectorCG<DeviceType, ValuesViewType, IntView, VectorViewType, KrylovHandleType>(D, r, c, X, B,
                                                                                                          N_team)
       .run();
@@ -138,7 +138,7 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
       typename ValuesViewType::host_mirror_type, typename IntView::host_mirror_type,
       typename VectorViewType::host_mirror_type, typename VectorViewType::host_mirror_type, 1>(
       -1, D_host, r_host, c_host, X_host, 1, R_host);
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_j_host);
+  KokkosBatched::SerialDot<Trans::ConjTranspose, 1>::invoke(R_host, R_host, sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e3 * ats::epsilon();
 

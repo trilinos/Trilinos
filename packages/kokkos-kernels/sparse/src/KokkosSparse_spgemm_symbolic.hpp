@@ -148,9 +148,7 @@ void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_
 
   auto algo = spgemmHandle->get_algorithm_type();
 
-  if (algo == SPGEMM_DEBUG || algo == SPGEMM_SERIAL) {
-    // Never call a TPL if serial/debug is requested (this is needed for
-    // testing)
+  if (Impl::is_spgemm_algorithm_native(algo)) {
     KokkosSparse::Impl::SPGEMM_SYMBOLIC<const_handle_type,  // KernelHandle,
                                         Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_blno_row_view_t_,
                                         Internal_blno_nnz_view_t_, Internal_clno_row_view_t_,

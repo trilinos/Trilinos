@@ -22,17 +22,18 @@ namespace KokkosBlas {
 /// \return The nrm1 product result; a single value.
 template <class execution_space, class XVector,
           typename std::enable_if<Kokkos::is_execution_space<execution_space>::value, int>::type = 0>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm1(
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm1(
     const execution_space& space, const XVector& x) {
-  static_assert(Kokkos::is_execution_space<execution_space>::value,
+  static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::nrm1: execution_space must be a Kokkos::execution_space.");
-  static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::nrm1: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<XVector>, "KokkosBlas::nrm1: XVector must be a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
                 "KokkosBlas::nrm1: XVector must be accessible from execution_space");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm1: "
                 "Both Vector inputs must have rank 1.");
-  using mag_type = typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type;
+  using mag_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type;
 
   using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
                                         typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
@@ -58,7 +59,7 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
 ///
 /// \return The nrm1 product result; a single value.
 template <class XVector>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm1(
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm1(
     const XVector& x) {
   return nrm1(typename XVector::execution_space{}, x);
 }
@@ -70,8 +71,8 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
 /// This function is non-blocking and thread-safe
 ///
 /// \tparam execution_space a Kokkos execution space where the kernel will run.
-/// \tparam RMV 1-D or 2-D Kokkos::View specialization.
-/// \tparam XMV 1-D or 2-D Kokkos::View specialization.  It must have
+/// \tparam RMV rank-0 or rank-1 Kokkos::View specialization.
+/// \tparam XMV rank-1 or rank-2 Kokkos::View specialization.  It must have
 ///   the same rank as RMV, and its entries must be assignable to
 ///   those of RMV.
 ///
@@ -82,13 +83,13 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
 template <class execution_space, class RV, class XMV>
 void nrm1(const execution_space& space, const RV& R, const XMV& X,
           typename std::enable_if<Kokkos::is_view<RV>::value, int>::type = 0) {
-  static_assert(Kokkos::is_view<RV>::value,
+  static_assert(Kokkos::is_view_v<RV>,
                 "KokkosBlas::nrm1: "
                 "R is not a Kokkos::View.");
-  static_assert(Kokkos::is_view<XMV>::value,
+  static_assert(Kokkos::is_view_v<XMV>,
                 "KokkosBlas::nrm1: "
                 "X is not a Kokkos::View.");
-  static_assert(std::is_same<typename RV::value_type, typename RV::non_const_value_type>::value,
+  static_assert(std::is_same_v<typename RV::value_type, typename RV::non_const_value_type>,
                 "KokkosBlas::nrm1: R is const.  "
                 "It must be nonconst, because it is an output argument "
                 "(we have to be able to write to its entries).");
@@ -98,8 +99,9 @@ void nrm1(const execution_space& space, const RV& R, const XMV& X,
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::nrm1: execution_space cannot access data in XMV");
 
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
-  static_assert(std::is_same<typename RV::value_type, mag_type>::value,
+  typedef
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
+  static_assert(std::is_same_v<typename RV::value_type, mag_type>,
                 "KokkosBlas::nrm1: R must have the magnitude type of"
                 "the xvectors value_type it is an output argument "
                 "(we have to be able to write to its entries).");
@@ -153,7 +155,7 @@ void nrm1(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view<RV>
 
 /// \brief Return the nrm1 of the vector x via asum (the actual blas name).
 template <class XVector>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type asum(
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type asum(
     const XVector& x) {
   return nrm1(x);
 }

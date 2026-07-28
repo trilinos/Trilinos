@@ -56,6 +56,7 @@
 
 #include <Kokkos_NumericTraits.hpp>
 
+#include "KokkosKernels_Iota.hpp"
 #include "KokkosKernels_Predicates.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
 
@@ -78,7 +79,7 @@ template <typename ViewLike, typename Pred = LT<typename ViewLike::non_const_val
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_sequential_thread(
     const ViewLike &view, const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
   using size_type = typename ViewLike::size_type;
-  static_assert(1 == ViewLike::rank, "lower_bound_sequential_thread requires rank-1 views");
+  static_assert(1 == ViewLike::rank, "lower_bound_sequential_thread requires rank-1 view-like objects");
 
   size_type i = 0;
   while (i < view.size() && pred(view(i), value)) {
@@ -103,7 +104,7 @@ template <typename ViewLike, typename Pred = LT<typename ViewLike::non_const_val
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
     const ViewLike &view, const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
   using size_type = typename ViewLike::size_type;
-  static_assert(1 == ViewLike::rank, "lower_bound_binary_thread requires rank-1 views");
+  static_assert(1 == ViewLike::rank, "lower_bound_binary_thread requires rank-1 view-like objects");
 
   size_type lo = 0;
   size_type hi = view.size();
@@ -138,7 +139,7 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_binary_thread(
 template <typename ViewLike, typename Pred = LT<typename ViewLike::non_const_value_type>>
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_thread(
     const ViewLike &view, const typename ViewLike::non_const_value_type &value, Pred pred = Pred()) {
-  static_assert(1 == ViewLike::rank, "lower_bound_thread requires rank-1 views");
+  static_assert(1 == ViewLike::rank, "lower_bound_thread requires rank-1 view-like objects");
   /*
      sequential search makes on average 0.5 * view.size memory accesses
      binary search makes log2(view.size)+1 accesses
@@ -207,10 +208,7 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_sequential_team(
     const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
     typename ViewLike::size_type lo, typename ViewLike::size_type hi, Pred pred = Pred()) {
   using size_type = typename ViewLike::size_type;
-  static_assert(1 == ViewLike::rank, "lower_bound_sequential_team requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
-                "lower_bound_sequential_team requires a "
-                "KokkosKernels::Impl::Iota or a Kokkos::View");
+  static_assert(1 == ViewLike::rank, "lower_bound_sequential_team requires rank-1 view-like objects");
 
   if (lo == hi) {
     return hi;
@@ -327,10 +325,7 @@ template <typename TeamMember, typename ViewLike, typename Pred = LT<typename Vi
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_kary_team(
     const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
     Pred pred = Pred()) {
-  static_assert(1 == ViewLike::rank, "lower_bound_kary_team requires rank-1 views");
-  static_assert(is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
-                "lower_bound_kary_team requires a "
-                "KokkosKernels::Impl::Iota or a Kokkos::View");
+  static_assert(1 == ViewLike::rank, "lower_bound_kary_team requires rank-1 view-like objects");
 
   using size_type = typename ViewLike::size_type;
 
@@ -401,10 +396,7 @@ template <typename TeamMember, typename ViewLike, typename Pred = LT<typename Vi
 KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_team(
     const TeamMember &handle, const ViewLike &view, const typename ViewLike::non_const_value_type &value,
     Pred pred = Pred()) {
-  static_assert(1 == ViewLike::rank, "lower_bound_team requires rank-1 views");
-  static_assert(KokkosKernels::Impl::is_iota_v<ViewLike> || Kokkos::is_view<ViewLike>::value,
-                "lower_bound_team requires a "
-                "KokkosKernels::Impl::Iota or a Kokkos::View");
+  static_assert(1 == ViewLike::rank, "lower_bound_team requires rank-1 view-like objects");
 
   /* kary search is A = (k-1) * (logk(view.size()) + 1) accesses
 
