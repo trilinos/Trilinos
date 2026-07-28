@@ -13,6 +13,13 @@
 #include "Tpetra_Details_DefaultTypes.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 
+#if defined(__GNUC__) && !defined(__clang__) &&                      \
+    !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) && \
+    (__GNUC__ == 12)
+// GCC 12 can emit false-positive -Wnonnull diagnostics.
+#define TPETRA_IMPL_GCC_12_NONNULL_WORKAROUND
+#endif
+
 namespace Tpetra {
 // Used in all Tpetra code that explicitly must a type (like a loop index)
 // that is used with the Teuchos::Array[View,RCP] classes.
@@ -42,8 +49,8 @@ typedef Teuchos_Ordinal Array_size_type;
 
 #include <functional>
 
-//#ifndef __CUDACC__
-// mem management
+// #ifndef __CUDACC__
+//  mem management
 #include "Teuchos_Array.hpp"  // includes ArrayRCP
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Tuple.hpp"  // includes ArrayView
@@ -57,7 +64,7 @@ typedef Teuchos_Ordinal Array_size_type;
 #include "Teuchos_CommHelpers.hpp"
 // misc
 #include "Teuchos_ParameterList.hpp"
-//#endif
+// #endif
 
 namespace Tpetra {
 
