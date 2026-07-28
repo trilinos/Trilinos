@@ -181,14 +181,16 @@ solve_full_pivot(Tensor<T, N> const & A, RHS const & b)
 
     }
 
-    assert(pivot_row < dimension);
-    assert(pivot_col < dimension);
+    // The search finds no pivot if all remaining entries are zero or NaN
+    // (NaN compares false against the running maximum). Indexing with
+    // pivot_row == dimension would write out of bounds, so fail explicitly.
+    if (pivot_row >= dimension || pivot_col >= dimension) {
+      MT_ERROR_EXIT("Full-pivot solve failed: singular or non-finite matrix.");
+    }
 
     // Gauss-Jordan elimination
     T const
     t{S(pivot_row, pivot_col)};
-
-    assert(t != 0.0);
 
     for (Index j{0}; j < dimension; ++j) {
       S(pivot_row, j) /= t;
@@ -3398,8 +3400,14 @@ sqrt_dbp(Tensor<T, N> const & A, int& k)
       auto const d2 = std::sqrt(d);
       auto const d6 = cbrt(d2);
       auto const g  = 1.0 / d6;
-      X *= g;
-      M *= g * g;
+      // For ill-conditioned M the expanded determinant can cancel to zero
+      // (or overflow), which would make g non-finite and flood the iteration
+      // with Inf/NaN. The scaling only accelerates convergence, so it is
+      // safe to skip it in that case.
+      if (d > 0.0 && std::isfinite(g)) {
+        X *= g;
+        M *= g * g;
+      }
     }
     auto const Y = X;
     auto const L = inverse_full_pivot(M);

@@ -975,6 +975,38 @@ TEST(MiniTensor, ExpSym)
   ASSERT_LE(error_rt, 16 * machine_epsilon<Real>());
 }
 
+TEST(MiniTensor, LogIllConditioned)
+{
+  // SPD tensor with eigenvalues (1e6, 1, 1e-6) and unit determinant. The
+  // expanded 3x3 determinant of this tensor cancels catastrophically to
+  // exactly zero in double precision, which used to make the determinant
+  // scaling in sqrt_dbp non-finite and abort (or corrupt memory in release
+  // builds) inside log().
+  Tensor<Real>
+  A(3.05423526260858198e+04, 1.44662229379329743e+05, 9.31790062083673984e+04,
+    1.44662229379329743e+05, 6.85186842144699185e+05, 4.41337014755186858e+05,
+    9.31790062083673984e+04, 4.41337014755186858e+05, 2.84271805230215017e+05);
+
+  Tensor<Real> const
+  L = log(A);
+
+  for (Index i = 0; i < 3; ++i) {
+    for (Index j = 0; j < 3; ++j) {
+      ASSERT_TRUE(std::isfinite(L(i, j)));
+    }
+  }
+
+  // The eigendecomposition path is independent of the scaling-and-squaring
+  // path; at this conditioning both are accurate to ~1e-5 relative.
+  Tensor<Real> const
+  L_sym = log_sym(A);
+
+  Real const
+  error_log = norm(L - L_sym) / norm(L_sym);
+
+  ASSERT_LE(error_log, 1.0e-4);
+}
+
 TEST(MiniTensor, LogRotation)
 {
   // Identity rotation
