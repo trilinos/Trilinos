@@ -9,11 +9,7 @@
 #ifdef KOKKOS_ENABLE_CUDA
 
 #include <Kokkos_Macros.hpp>
-#ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
-import kokkos.core;
-#else
 #include <Kokkos_Core.hpp>
-#endif
 #include <Cuda/Kokkos_Cuda.hpp>
 #include <Cuda/Kokkos_CudaSpace.hpp>
 
@@ -73,12 +69,6 @@ void DeepCopyAsyncCuda(void *dst, const void *src, size_t n) {
 /*--------------------------------------------------------------------------*/
 
 namespace Kokkos {
-
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-bool CudaUVMSpace::available() { return true; }
-#endif
-
-/*--------------------------------------------------------------------------*/
 
 #ifdef KOKKOS_IMPL_DEBUG_CUDA_PIN_UVM_TO_HOST
 // The purpose of the following variable is to allow a state-based choice
