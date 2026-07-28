@@ -723,7 +723,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzSubdomainSolver, Scalar
     Teuchos::ParameterList params;
     params.set("inner preconditioner name", "RBILUK");
     params.set("schwarz: overlap level", overlapLevel);
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
     params.set("schwarz: use reordering", true);
 #else
     params.set("schwarz: use reordering", false);
@@ -833,12 +833,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzReordering, Scalar, Loc
 
       params.set("inner preconditioner parameters", innerParams);
     }
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
     params.set("schwarz: use reordering", true);
     out << "Using reordering" << std::endl;
 #else
     params.set("schwarz: use reordering", false);
-    out << "Not using reordering, XPETRA and/or ZOLTAN2 missing." << std::endl;
+    out << "Not using reordering, ZOLTAN2 missing." << std::endl;
 #endif
     {
       Teuchos::ParameterList zlist;

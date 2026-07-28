@@ -1,5 +1,5 @@
 SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra Kokkos KokkosKernels)
-SET(LIB_OPTIONAL_DEP_PACKAGES Xpetra Zoltan2Core ThyraTpetraAdapters Amesos2 ShyLU_NodeBasker ShyLU_NodeHTS ShyLU_NodeFastILU)
+SET(LIB_OPTIONAL_DEP_PACKAGES Zoltan2Core ThyraTpetraAdapters Amesos2 ShyLU_NodeBasker ShyLU_NodeHTS ShyLU_NodeFastILU)
 SET(TEST_REQUIRED_DEP_PACKAGES Belos Galeri)
 SET(TEST_OPTIONAL_DEP_PACKAGES Amesos2 ShyLU_NodeHTS Zoltan2Core)
 SET(LIB_REQUIRED_DEP_TPLS)

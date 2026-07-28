@@ -371,7 +371,7 @@ IF(Tpetra_INST_DOUBLE)
     STANDARD_PASS_OUTPUT
   )
 
-  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core AND ${PACKAGE_NAME}_ENABLE_Xpetra)
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
     TRIBITS_ADD_TEST(
       tif_belos
       NAME Schwarz_RILUK_hb_belos
