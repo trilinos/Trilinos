@@ -1,0 +1,292 @@
+// @HEADER
+// *****************************************************************************
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//
+// Copyright 2012 NTESS and the Zoltan2 contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+/*! \file Zoltan2_XpetraMultiVectorAdapter.hpp
+    \brief Defines the XpetraMultiVectorAdapter
+*/
+
+#ifndef ZOLTAN2_TPETRAMULTIVECTORADAPTER_HPP
+#define ZOLTAN2_TPETRAMULTIVECTORADAPTER_HPP
+
+#include <Zoltan2_XpetraTraits.hpp>
+#include <Zoltan2_VectorAdapter.hpp>
+#include <Zoltan2_StridedData.hpp>
+#include <Zoltan2_PartitioningHelpers.hpp>
+
+#include <Tpetra_MultiVector.hpp>
+
+namespace Zoltan2 {
+
+/*!  \brief An adapter for Tpetra::MultiVector.
+
+    The template parameter is the user's input object:
+    \li \c Tpetra::MultiVector
+
+    The \c scalar_t type, representing use data such as vector values, is
+    used by Zoltan2 for weights, coordinates, part sizes and
+    quality metrics.
+    Some User types (like Tpetra::CrsMatrix) have an inherent scalar type,
+    and some
+    (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
+    set by Zoltan2 to \c float.  If you wish to change it to double, set
+    the second template parameter to \c double.
+*/
+
+template <typename User>
+  class TpetraMultiVectorAdapter : public VectorAdapter<User> {
+public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  typedef typename InputTraits<User>::scalar_t scalar_t;
+  typedef typename InputTraits<User>::impl_scalar_t impl_scalar_t;
+  typedef typename InputTraits<User>::lno_t    lno_t;
+  typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::part_t   part_t;
+  typedef typename InputTraits<User>::node_t   node_t;
+  typedef User user_t;
+  typedef User userCoord_t;
+
+  typedef Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t> t_mvector_t;
+#endif
+
+  /*! \brief Constructor
+   *
+   *  \param invector  the user's Xpetra, Tpetra MultiVector object
+   *  \param weights  a list of pointers to arrays of weights.
+   *      The number of weights per multivector element is assumed to be
+   *      \c weights.size().
+   *  \param weightStrides  a list of strides for the \c weights.
+   *     The weight for weight index \c n for multivector element
+   *     \c k should be found at <tt>weights[n][weightStrides[n] * k]</tt>.
+   *     If \c weightStrides.size() is zero, it is assumed all strides are one.
+   *
+   *  The values pointed to the arguments must remain valid for the
+   *  lifetime of this Adapter.
+   */
+
+  TpetraMultiVectorAdapter(const RCP<const User> &invector,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+
+  /*! \brief Constructor for case when weights are not being used.
+   *
+   *  \param invector  the user's Xpetra, Tpetra MultiVector object
+   */
+
+  TpetraMultiVectorAdapter(const RCP<const User> &invector);
+
+
+  ////////////////////////////////////////////////////
+  // The Adapter interface.
+  ////////////////////////////////////////////////////
+
+  size_t getLocalNumIDs() const { return vector_->getLocalLength();}
+
+  void getIDsView(const gno_t *&ids) const
+  {
+    ids = map_->getLocalElementList().getRawPtr();
+  }
+
+  void getIDsKokkosView(
+    Kokkos::View<const gno_t *, typename node_t::device_type> &ids) const {
+    using device_type = typename node_t::device_type;
+    // MJ can be running Host, CudaSpace, or CudaUVMSpace while Map now
+    // internally never stores CudaUVMSpace so we may need a conversion.
+    // However Map stores both Host and CudaSpace so this could be improved
+    // if device_type was CudaSpace. Then we could add a new accessor to
+    // Map such as getMyGlobalIndicesDevice() which could be direct assigned
+    // here. Since Tpetra is still UVM dependent that is not going to happen
+    // yet so just leaving this as Host to device_type conversion for now.
+    ids = Kokkos::create_mirror_view_and_copy(device_type(),
+                                              vector_->getMap()->getMyGlobalIndices());
+  }
+
+  int getNumWeightsPerID() const { return numWeights_;}
+
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
+  {
+    if(idx<0 || idx >= numWeights_)
+    {
+        std::ostringstream emsg;
+        emsg << __FILE__ << ":" << __LINE__
+             << "  Invalid weight index " << idx << std::endl;
+        throw std::runtime_error(emsg.str());
+    }
+
+    size_t length;
+    weights_[idx].getStridedList(length, weights, stride);
+  }
+
+  void getWeightsKokkos2dView(Kokkos::View<scalar_t **,
+    typename node_t::device_type> &wgt) const {
+    typedef Kokkos::View<scalar_t**, typename node_t::device_type> view_t;
+    wgt = view_t("wgts", vector_->getLocalLength(), numWeights_);
+    typename view_t::host_mirror_type host_wgt = Kokkos::create_mirror_view(wgt);
+    for(int idx = 0; idx < numWeights_; ++idx) {
+      const scalar_t * weights;
+      size_t length;
+      int stride;
+      weights_[idx].getStridedList(length, weights, stride);
+      size_t fill_index = 0;
+      for(size_t n = 0; n < length; n += stride) {
+        host_wgt(fill_index++,idx) = weights[n];
+      }
+    }
+    Kokkos::deep_copy(wgt, host_wgt);
+  }
+
+  ////////////////////////////////////////////////////
+  // The VectorAdapter interface.
+  ////////////////////////////////////////////////////
+
+  int getNumEntriesPerID() const {return vector_->getNumVectors();}
+
+  void getEntriesView(const scalar_t *&elements, int &stride, int idx=0) const;
+
+  void getEntriesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<impl_scalar_t **, Kokkos::LayoutLeft,
+    typename node_t::device_type> & elements) const;
+
+  template <typename Adapter>
+    void applyPartitioningSolution(const User &in, User *&out,
+         const PartitioningSolution<Adapter> &solution) const;
+
+  template <typename Adapter>
+    void applyPartitioningSolution(const User &in, RCP<User> &out,
+         const PartitioningSolution<Adapter> &solution) const;
+
+private:
+
+  RCP<const User> invector_;
+  RCP<const t_mvector_t> vector_;
+  RCP<const Tpetra::Map<lno_t, gno_t, node_t> > map_;
+
+  int numWeights_;
+  ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
+};
+
+////////////////////////////////////////////////////////////////////////////
+// Definitions
+////////////////////////////////////////////////////////////////////////////
+
+template <typename User>
+  TpetraMultiVectorAdapter<User>::TpetraMultiVectorAdapter(
+    const RCP<const User> &invector,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
+      invector_(invector), vector_(), map_(),
+      numWeights_(weights.size()), weights_(weights.size())
+{
+  typedef StridedData<lno_t, scalar_t> input_t;
+
+  vector_ = invector;
+  map_ = vector_->getMap();
+
+  size_t length = vector_->getLocalLength();
+
+  if (length > 0 && numWeights_ > 0){
+    int stride = 1;
+    for (int w=0; w < numWeights_; w++){
+      if (weightStrides.size())
+        stride = weightStrides[w];
+      ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*length, false);
+      weights_[w] = input_t(wgtV, stride);
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+  TpetraMultiVectorAdapter<User>::TpetraMultiVectorAdapter(
+    const RCP<const User> &invector):
+      invector_(invector), vector_(), map_(),
+      numWeights_(0), weights_()
+{
+  vector_ = invector;
+  map_ = vector_->getMap();
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+  void TpetraMultiVectorAdapter<User>::getEntriesView(
+    const scalar_t *&elements, int &stride, int idx) const
+{
+  size_t vecsize;
+  stride = 1;
+  elements = NULL;
+  vecsize = vector_->getLocalLength();
+  if (vecsize > 0){
+    ArrayRCP<const scalar_t> data = vector_->getData(idx);
+    elements = data.get();
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+  void TpetraMultiVectorAdapter<User>::getEntriesKokkosView(
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    Kokkos::View<impl_scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const
+{
+  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+  auto view2d =
+    rcp_const_cast<t_mvector_t>(vector_)->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  elements = view2d;
+  // CMS/KDD: Look at this stuff right here.  Compare against a non-cuda build OR, look at core/driver/driverinputs/kuberry/kuberry.coords
+  // Ca try changing the kuberry.xml to use "input adapter" "BasicVector" rather than "XpetraMultiVector"
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+  template <typename Adapter>
+    void TpetraMultiVectorAdapter<User>::applyPartitioningSolution(
+      const User &in, User *&out,
+      const PartitioningSolution<Adapter> &solution) const
+{
+  // Get an import list (rows to be received)
+  size_t numNewRows;
+  ArrayRCP<gno_t> importList;
+  try{
+    numNewRows = Zoltan2::getImportList<Adapter,
+                                        TpetraMultiVectorAdapter<User> >
+                                       (solution, this, importList);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  // Move the rows, creating a new vector.
+  RCP<User> outPtr = XpetraTraits<User>::doMigration(in, numNewRows,
+                                                     importList.getRawPtr());
+  out = outPtr.get();
+  outPtr.release();
+}
+
+////////////////////////////////////////////////////////////////////////////
+template <typename User>
+  template <typename Adapter>
+    void TpetraMultiVectorAdapter<User>::applyPartitioningSolution(
+      const User &in, RCP<User> &out,
+      const PartitioningSolution<Adapter> &solution) const
+{
+  // Get an import list (rows to be received)
+  size_t numNewRows;
+  ArrayRCP<gno_t> importList;
+  try{
+    numNewRows = Zoltan2::getImportList<Adapter,
+                                        TpetraMultiVectorAdapter<User> >
+                                       (solution, this, importList);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  // Move the rows, creating a new vector.
+  out = XpetraTraits<User>::doMigration(in, numNewRows,
+                                        importList.getRawPtr());
+}
+
+}  //namespace Zoltan2
+
+#endif
