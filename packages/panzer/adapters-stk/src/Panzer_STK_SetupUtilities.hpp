@@ -79,6 +79,8 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const std::string & blockid_b,
                 const std::string & sideset);
 
+//  TODO: ROGER This looks to be a duplicate of the one above. CAn probably be removed!
+/// \copydoc panzer_stk::buildBCWorksets(const panzer_stk::STK_Interface&,const panzer::WorksetNeeds&,const std::string&,const panzer::WorksetNeeds&,const std::string&,const std::string&)
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk::STK_Interface & mesh,
                 const panzer::WorksetNeeds & needs_a,const std::string & eblock_a,

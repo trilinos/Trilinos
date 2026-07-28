@@ -31,22 +31,29 @@ namespace mini_em {
   using panzer::Point;
   using panzer::Dim;
 
-/** Darcy source with know analytic solution
+/** Computes the forcing term f consistent with the manufactured
+  * solution u(x,y[,z],t) = sin(pi*t)*sin(pi*x)*sin(pi*y)[*sin(pi*z)]
+  * (see mini_em::DarcyAnalyticSolution) for the Darcy equation
+  * du/dt - kappa*Laplacian(u) = f, i.e. f = (pi*cos(pi*t) +
+  * kappa*dim*pi^2*sin(pi*t)) * sin(pi*x)*sin(pi*y)[*sin(pi*z)].
   */
 template<typename EvalT, typename Traits>
 class DarcyAnalyticForcing : public panzer::EvaluatorWithBaseImpl<Traits>,
                       public PHX::EvaluatorDerived<EvalT, Traits>  {
 
 public:
+    /// \brief Construct from the output field name, integration rule, field layout library, diffusivity kappa, and the name of the DOF basis whose integration points to evaluate at.
     DarcyAnalyticForcing(const std::string & name,
                   const panzer::IntegrationRule & ir,
                   const panzer::FieldLayoutLibrary & fl,
                   const double kappa,
                   const std::string& basisName="u");
 
+    /// \brief Looks up the integration rule index needed by evaluateFields(). Called once before the first evaluation.
     void postRegistrationSetup(typename Traits::SetupData d,
                                PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the forcing field at this workset's integration points and time, per the class description.
     void evaluateFields(typename Traits::EvalData d);
 
 

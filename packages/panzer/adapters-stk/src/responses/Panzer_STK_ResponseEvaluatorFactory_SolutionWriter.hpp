@@ -35,6 +35,7 @@ template <typename EvalT>
 class ResponseEvaluatorFactory_SolutionWriter : public panzer::ResponseEvaluatorFactory<EvalT> {
 public:
 
+   /// \brief Construct with the mesh to write solutions to. Solution and coordinate fields are added by default.
    ResponseEvaluatorFactory_SolutionWriter(const Teuchos::RCP<STK_Interface> & mesh)
      : mesh_(mesh), addSolutionFields_(true), addCoordinateFields_(true) {}
 
@@ -51,8 +52,9 @@ public:
      */
    virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName) const;
 
+   /// \brief Equivalent to buildResponseObject(responseName); the workset descriptor list is not used.
    virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<panzer::WorksetDescriptor>& /* wkstDesc */) const 
+                                                          const std::vector<panzer::WorksetDescriptor>& /* wkstDesc */) const
    { return buildResponseObject(responseName); }
    
    /** Build and register evaluators for a response on a particular physics
@@ -119,6 +121,7 @@ public:
    { removedFields_.push_back(fieldName); }
 
   // should be private but needs a lambda
+   /// \brief Computes the reference-cell centroid coordinates for each of the given bases.
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > & bases,
                                  int baseDimension,
                                  Kokkos::DynRankView<double,PHX::Device> & centroid) const;
@@ -149,13 +152,17 @@ private:
   * and this will build the response factories for you. (Pass into ResponseLibrary::addResponse)
   */
 struct RespFactorySolnWriter_Builder {
+  /// \brief Construct with solution and coordinate fields enabled by default; set the public mesh member before calling build().
   RespFactorySolnWriter_Builder() : addSolutionFields_(true), addCoordinateFields_(true) {}
 
+  //! The mesh to write solutions to; must be set before build() is called.
   Teuchos::RCP<panzer_stk::STK_Interface> mesh;
 
+  /// \brief Scales the named field by fieldScalar in factories built by build().
   void scaleField(const std::string & fieldName,double fieldScalar)
   { fieldToScalar_[fieldName] = fieldScalar; }
 
+  /// \brief Adds an additional (solution) field to write out in factories built by build().
   void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<const panzer::PureBasis> & basis)
   { additionalFields_.push_back(std::make_pair(fieldName,basis)); }
 
@@ -166,9 +173,10 @@ struct RespFactorySolnWriter_Builder {
   void removeField(const std::string & fieldName)
   { removedFields_.push_back(fieldName); }
 
+  /// \brief Builds a ResponseEvaluatorFactory_SolutionWriter<T> configured with this builder's mesh and accumulated field settings.
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
-  { 
+  {
     Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref = 
         Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
  

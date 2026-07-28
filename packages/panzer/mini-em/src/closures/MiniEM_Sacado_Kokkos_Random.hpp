@@ -17,6 +17,12 @@
 
 namespace Kokkos {
 
+  /** \brief Specializes Kokkos::rand for panzer::Traits::FadType,
+    * drawing random values from the underlying base scalar's generator
+    * and wrapping them as (non-differentiated) Fad values. Needed so
+    * Kokkos random number generation can be used directly in AD
+    * (Jacobian/Tangent) evaluation types.
+    */
   template<class Generator>
   struct rand<Generator,panzer::Traits::FadType> {
     typedef panzer::Traits::FadType Scalar;

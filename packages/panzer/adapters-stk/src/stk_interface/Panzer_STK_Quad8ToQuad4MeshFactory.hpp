@@ -28,13 +28,26 @@ class STK_Interface;
 class Quad8ToQuad4MeshFactory : public STK_MeshFactory {
 public:
 
+  /** \brief Construct by reading the Quad8 mesh from the given Exodus file.
+    *
+    * \param[in] quad8MeshFileName Exodus file to read the Quad8 mesh from.
+    * \param[in] mpi_comm the MPI communicator to build the mesh on.
+    * \param[in] print_debug if true, prints debug diagnostics while converting the mesh.
+    */
   Quad8ToQuad4MeshFactory(const std::string& quad8MeshFileName,
                           stk::ParallelMachine mpi_comm = MPI_COMM_WORLD, // CHECK: ALLOW MPI_COMM_WORLD
                           const bool print_debug = false);
 
+  /** \brief Construct from an already-built Quad8 STK_Interface mesh.
+    *
+    * \param[in] quad8Mesh the already-built Quad8 mesh to convert.
+    * \param[in] print_debug if true, prints debug diagnostics while converting the mesh.
+    */
   Quad8ToQuad4MeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quad8Mesh,
                           const bool print_debug = false);
 
+  //! Build the mesh object
+  /// \param[in] parallelMach descriptor for the STK parallel machine to build this mesh on.
   Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;

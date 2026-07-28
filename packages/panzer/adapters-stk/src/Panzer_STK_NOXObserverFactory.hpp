@@ -25,12 +25,23 @@
 
 namespace panzer_stk {
 
+  /** \brief Abstract factory for building a NOX::Observer that has
+    * access to the STK mesh, DOF manager, and linear object factory,
+    * e.g. for writing solution snapshots to disk between nonlinear
+    * iterations.
+    */
   class NOXObserverFactory {
 
   public:
-    
+
     virtual ~NOXObserverFactory() {}
 
+    /** \brief Builds a NOX::Observer configured with the given mesh, DOF manager, and linear object factory.
+      *
+      * \param[in] mesh the STK mesh the observer may write solution data to.
+      * \param[in] dof_manager maps solution vector entries to mesh fields.
+      * \param[in] lof linear object factory used to interpret the solution vector passed to the observer.
+      */
     virtual Teuchos::RCP<NOX::Abstract::PrePostOperator>
     buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 		     const Teuchos::RCP<const panzer::GlobalIndexer>& dof_manager,

@@ -29,11 +29,19 @@ namespace mini_em {
   using panzer::Cell;
   using panzer::Point;
 
+  /** \brief Computes a constant, spatially-uniform magnetized
+    * (Hall-effect) conductivity tensor field, of the form
+    * sigma*(I + beta⊗beta - [beta]_x), where sigma is the scalar
+    * conductivity and beta=(betax,betay,betaz) is the (dimensionless)
+    * Hall parameter vector, with [beta]_x the cross-product matrix of
+    * beta.
+    */
   template<typename EvalT, typename Traits>
   class TensorConductivity : public panzer::EvaluatorWithBaseImpl<Traits>,
                        public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   public:
+    /// \brief Constructor.
     TensorConductivity(const std::string & name,
                  const panzer::IntegrationRule & ir,
                  const panzer::FieldLayoutLibrary & fl,
@@ -43,6 +51,7 @@ namespace mini_em {
                  const double & betaz_,
                  const std::string& DoF_);
 
+    /// \brief Computes the conductivity tensor field for this workset per the class description.
     void evaluateFields(typename Traits::EvalData d);
 
 

@@ -12,8 +12,12 @@
 #define PANZER_EVALUATION_TRAITS_HPP
 
 namespace panzer {
-  
+
+  /** \brief Traits class used by Sacado::ScalarParameterLibrary (see
+    * panzer::ParamLib) to map an evaluation type to its scalar type.
+    */
   struct EvaluationTraits {
+    /// \brief Maps evaluation type T to its scalar type, as T::ScalarT.
     template <class T> struct apply {
       typedef typename T::ScalarT type;
     };

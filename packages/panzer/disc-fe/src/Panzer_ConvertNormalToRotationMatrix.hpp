@@ -13,6 +13,20 @@
 
 namespace panzer {
 
+/** \brief Builds an orthonormal (transverse, binormal) pair completing a
+  * right-handed rotation matrix for the given unit normal.
+  *
+  * Given a surface normal, constructs a transverse vector orthogonal to
+  * it and a binormal vector such that (transverse, binormal, normal)
+  * form a right-handed orthonormal basis, i.e. binormal = normal x
+  * transverse. If the normal has zero length, transverse and binormal
+  * are both set to zero.
+  *
+  * \tparam Scalar the scalar type of the vector components.
+  * \param[in] normal the unit surface normal, as a 3-component array.
+  * \param[out] transverse the computed transverse vector, as a 3-component array.
+  * \param[out] binormal the computed binormal vector, as a 3-component array.
+  */
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION
 void

@@ -41,15 +41,18 @@ class GaussianPulse : public panzer::EvaluatorWithBaseImpl<Traits>,
                       public PHX::EvaluatorDerived<EvalT, Traits>  {
 
 public:
+    /// \brief Construct from the output field name, integration rule, field layout library, and the time step dt used to derive the pulse's time width beta=5*dt.
     GaussianPulse(const std::string & name,
                   const panzer::IntegrationRule & ir,
                   const panzer::FieldLayoutLibrary & fl,
                   const double & dt);
 
+    /// \brief Looks up the integration rule index needed by evaluateFields(). Called once before the first evaluation.
     void postRegistrationSetup(typename Traits::SetupData d,
                                PHX::FieldManager<Traits>& fm);
-                                                                        
-    void evaluateFields(typename Traits::EvalData d);               
+
+    /// \brief Computes the Gaussian pulse current field at this workset's integration points and time, per the class description.
+    void evaluateFields(typename Traits::EvalData d);
 
 
 private:

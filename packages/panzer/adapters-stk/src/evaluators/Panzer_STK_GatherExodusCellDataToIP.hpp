@@ -49,9 +49,11 @@ public:
                            const std::vector<std::string>& exodusNames,
                            const Teuchos::RCP<panzer::IntegrationRule>& integrationRule);
   
+  /// \brief Looks up the STK field pointers needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename Traits::SetupData d,
-			     PHX::FieldManager<Traits>& vm);
-  
+			                       PHX::FieldManager<Traits>& vm);
+
+  /// \brief Gathers this workset's field values from the STK mesh at the restart time index, per the class description.
   void evaluateFields(typename Traits::EvalData d);
 
 private:

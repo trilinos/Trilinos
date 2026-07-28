@@ -49,14 +49,18 @@ class CoordMatcher {
    }
 
 public:
-   /// index is the coordinate direction that will be compared to find matching nodes.
+   /// Constructor where the index is the coordinate axis that will be compared to find matching nodes.
    CoordMatcher(int index) : error_(1e-8),index_(index),relative_(false) { buildLabels(); }
+   /// \brief Construct with an explicit absolute tolerance.
    CoordMatcher(int index,double error) : error_(error),index_(index),relative_(false) { buildLabels(); }
+   /// \brief Construct with tolerance and "relative" option parsed from strings, as accepted by parseParams().
    CoordMatcher(int index,const std::vector<std::string> & params) : error_(1e-8),index_(index),relative_(false)
    { buildLabels(); parseParams(params); }
 
+   /// \brief Copy constructor.
    CoordMatcher(const CoordMatcher & cm) : error_(cm.error_),index_(cm.index_),relative_(cm.relative_) { buildLabels(); }
 
+   /// \brief Returns true if points a and b match, i.e. their coordinates in the compared direction are within tolerance.
    bool operator()(const Teuchos::Tuple<double,3> & a,
                    const Teuchos::Tuple<double,3> & b) const
    {
@@ -66,6 +70,7 @@ public:
      return std::fabs(a[index_]-b[index_])<error; /* I'm being lazy here! */
    }
 
+   /// \brief Returns a human-readable description of this matcher's compared coordinate and tolerance.
    std::string getString() const
    {
       std::stringstream ss;
@@ -73,8 +78,10 @@ public:
       return ss.str();
    }
 
+  /// \brief Returns the coordinate axis/direction being compared.
   int getIndex() const {return index_;}
 
+  /// \brief Returns the direction (0=x, 1=y) in which the boundary condition is periodic; the direction orthogonal to the compared coordinate. Asserts for a z-direction matcher (3D requires PlaneMatcher instead).
   int getPeriodicDirection() const
   {
     // This assumes a 2D x-y mesh even though the object supports the
@@ -85,8 +92,10 @@ public:
     return 0;
   }
 
+  /// \brief Returns the absolute matching tolerance.
   double getAbsoluteTolerance() const {return error_;}
 
+  /// \brief Shifts ptB's periodic-direction coordinate to match centroidA's, in place.
   void transform(double * ptB, const std::vector<double> & centroidA) const
   {
     // Instead of matching directly, shift pt B given the centroid
@@ -139,19 +148,24 @@ class PlaneMatcher {
    }
 
 public:
+   /// index0 and index1 are the two coordinate directions defining the plane compared to find matching nodes.
    PlaneMatcher(int index0,int index1) : error_(1e-8),index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); }
 
+   /// \brief Construct with an explicit absolute tolerance.
    PlaneMatcher(int index0,int index1,double error) : error_(error),index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); }
 
+   /// \brief Construct with tolerance and "relative" option parsed from strings, as accepted by parseParams().
    PlaneMatcher(int index0,int index1,const std::vector<std::string> & params)
       : error_(1e-8), index0_(index0), index1_(index1), relative_(false)
    { TEUCHOS_ASSERT(index0!=index1); buildLabels(); parseParams(params); }
 
+   /// \brief Copy constructor.
    PlaneMatcher(const PlaneMatcher & cm) : error_(cm.error_),index0_(cm.index0_), index1_(cm.index1_), relative_(cm.relative_)
    { buildLabels(); }
 
+   /// \brief Returns true if points a and b match, i.e. their coordinates in both compared directions are within tolerance.
    bool operator()(const Teuchos::Tuple<double,3> & a,
                    const Teuchos::Tuple<double,3> & b) const
    {
@@ -162,6 +176,7 @@ public:
          && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */
    }
 
+   /// \brief Returns a human-readable description of this matcher's compared coordinates and tolerance.
    std::string getString() const
    {
       std::stringstream ss;
@@ -169,8 +184,11 @@ public:
       return ss.str();
    }
 
+  /// \brief Returns the first coordinate direction being compared.
   int getIndex0() const {return index0_;}
+  /// \brief Returns the second coordinate direction being compared.
   int getIndex1() const {return index1_;}
+  /// \brief Returns the direction orthogonal to the compared plane, in which the boundary condition is periodic.
   int getPeriodicDirection() const
   {
     if (index0_ ==0) {
@@ -192,9 +210,11 @@ public:
         return 0; // match z,y=periodic in x
     }
   }
-  
+
+  /// \brief Returns the absolute matching tolerance.
   double getAbsoluteTolerance() const {return error_;}
 
+  /// \brief Shifts ptB's periodic-direction coordinate to match centroidA's, in place.
   void transform(double * ptB, const std::vector<double> & centroidA) const
   {
     // Instead of matching directly, shift pt B given the centroid
@@ -236,27 +256,33 @@ class QuarterPlaneMatcher {
    }
 
 public:
+   /// index0a/index0b are the coordinate directions compared across the two quarter-symmetry planes; index1 is the direction shared by both planes.
    QuarterPlaneMatcher(int index0a,int index0b,int index1)
       : error_(1e-8), index0a_(index0a), index0b_(index0b), index1_(index1)
    { TEUCHOS_ASSERT(index0a!=index1); TEUCHOS_ASSERT(index0b!=index1); buildLabels(); }
 
+   /// \brief Construct with an explicit absolute tolerance.
    QuarterPlaneMatcher(int index0a,int index0b,int index1,double error)
       : error_(error), index0a_(index0a), index0b_(index0b), index1_(index1)
    { TEUCHOS_ASSERT(index0a!=index1); TEUCHOS_ASSERT(index0b!=index1); buildLabels(); }
 
+   /// \brief Construct with tolerance parsed from strings, as accepted by parseParams().
    QuarterPlaneMatcher(int index0a,int index0b,int index1,const std::vector<std::string> & params)
       : error_(1e-8), index0a_(index0a), index0b_(index0b), index1_(index1)
    { TEUCHOS_ASSERT(index0a!=index1); TEUCHOS_ASSERT(index0b!=index1); buildLabels(); parseParams(params); }
 
+   /// \brief Copy constructor.
    QuarterPlaneMatcher(const QuarterPlaneMatcher & cm)
       : error_(cm.error_), index0a_(cm.index0a_), index0b_(cm.index0b_), index1_(cm.index1_)
    { buildLabels(); }
 
+   /// \brief Returns true if points a and b match across the quarter-symmetry planes, within tolerance.
    bool operator()(const Teuchos::Tuple<double,3> & a,
                    const Teuchos::Tuple<double,3> & b) const
    { return (std::fabs(a[index0a_]-b[index0b_])<error_)
          && (std::fabs(a[index1_]-b[index1_])<error_) ; /* I'm being lazy here! */ }
 
+   /// \brief Returns a human-readable description of this matcher's compared coordinates and tolerance.
    std::string getString() const
    {
       std::stringstream ss;
@@ -264,16 +290,18 @@ public:
       return ss.str();
    }
 
+  /// \brief Returns the absolute matching tolerance.
   double getAbsoluteTolerance() const {return error_;}
 
+  /// \brief Shifts ptB in place to reflect it into plane A's quarter-symmetry orientation, given plane A's centroid.
   void transform(double * ptB, const std::vector<double> & centroidA) const
   {
     // Instead of matching directly, shift pt B given the centroid
     // of side A
     // For now, we assume the planes are aligned with one of the
-    // coordinate axes 
+    // coordinate axes
     // We leave ptB[index1_] alone,
-    // put ptB[index0b_] in the index0a_ slot and replace it with 
+    // put ptB[index0b_] in the index0a_ slot and replace it with
     // centroidA[index0b_] which is the fixed value for plane B
 
     ptB[index0a_] = ptB[index0b_];
@@ -301,6 +329,12 @@ public:
      XZ_PLANE=0,
      YZ_PLANE=1
   };
+  /** \brief Construct for the given mirror plane, with tolerance and dimensionality ("2D"/"3D") options parsed from strings.
+   * 
+   *  \param mp The mirror plane, either XZ_PLANE or YZ_PLANE
+   *  \param params[0] the tolerance value as a string
+   *  \param params[1] The dimensionality, either "2D" or "3D"
+   */
   WedgeMatcher(MirrorPlane mp,const std::vector<std::string> & params )
     : error_(1e-8),index0_(0),is_three_d_(true)
   {
@@ -325,8 +359,10 @@ public:
       }
     }
   }
+  /// \brief Copy constructor.
   WedgeMatcher(const WedgeMatcher & cm) = default;
 
+  /// \brief Returns true if points a and b match across the mirror plane, within tolerance.
   bool operator()(const Teuchos::Tuple<double,3> & a,
                   const Teuchos::Tuple<double,3> & b) const
   {
@@ -341,6 +377,7 @@ public:
              (std::fabs(a[1-index0_]-b[1-index0_])<error_) );
   }
 
+  /// \brief Returns a human-readable description of this matcher's mirror plane and tolerance.
   std::string getString() const
    {
      std::stringstream ss;
@@ -351,8 +388,10 @@ public:
      return ss.str();
    }
 
+  /// \brief Returns the coordinate direction being compared.
   int getIndex() const {return index0_;}
 
+  /// \brief Returns which plane the wedge is mirrored over.
   WedgeMatcher::MirrorPlane getMirrorPlane() const
   {
     if (index0_ == 0)
@@ -360,10 +399,13 @@ public:
     return MirrorPlane::XZ_PLANE;
   }
 
+  /// \brief Returns true if this matcher was constructed for a 3D problem.
   bool isThreeD() const {return is_three_d_;}
-  
+
+  /// \brief Returns the absolute matching tolerance.
   double getAbsoluteTolerance() const {return error_;}
 
+  /// \brief Mirrors ptB's compared coordinate over the mirror plane, in place.
   void transform(double * ptB, const std::vector<double> & centroidA) const
   {
     // Instead of matching directly, shift pt B given the centroid

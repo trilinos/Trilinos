@@ -35,15 +35,26 @@ namespace panzer {
   template < typename Ch, class Tr = ::std::char_traits<Ch> >
   class basic_ios_all_saver;
 
+  /// \brief basic_ios_all_saver for narrow-character streams.
   typedef basic_ios_all_saver<char>            ios_all_saver;
+  /// \brief basic_ios_all_saver for wide-character streams.
   typedef basic_ios_all_saver<wchar_t>        wios_all_saver;
 
+  /** \brief RAII helper that saves a stream's formatting state on
+    * construction and restores it on destruction (or explicit restore()).
+    *
+    * Captures the flags, precision, width, error state, exception mask,
+    * tied stream, stream buffer, and fill character of the given
+    * std::basic_ios, and restores all of them when the saver is
+    * destroyed (or restore() is called explicitly).
+    */
   template < typename Ch, class Tr >
   class basic_ios_all_saver
   {
   public:
     typedef ::std::basic_ios<Ch, Tr>  state_type;
 
+    /// \brief Captures the current formatting state of the given stream.
     explicit  basic_ios_all_saver( state_type &s )
       : s_save_( s ), a1_save_( s.flags() ), a2_save_( s.precision() )
       , a3_save_( s.width() ), a4_save_( s.rdstate() )
@@ -51,9 +62,11 @@ namespace panzer {
       , a7_save_( s.rdbuf() ), a8_save_( s.fill() )
     {}
 
+    /// \brief Restores the stream's formatting state as captured at construction.
     ~basic_ios_all_saver()
     { this->restore(); }
 
+    /// \brief Restores the stream's formatting state as captured at construction.
     void  restore()
     {
       s_save_.fill( a8_save_ );
