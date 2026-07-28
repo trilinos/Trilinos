@@ -91,6 +91,32 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
 
   TRIBITS_ADD_TEST(
     Structured
+    NAME "StructuredRAPFactory_Constant_Laplace1D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace1D --nx=20 --mx=1 --op=setup --check-rap-against-symbolic"
+    COMM serial
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed:.*graph comparison = exact"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Laplace1D_XSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace1D --nx=20 --mx=2 --op=setup --check-rap-against-symbolic"
+    COMM mpi
+    NUM_MPI_PROCS 2
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed:.*graph comparison = exact"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Linear_Laplace2D_XYSplit_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_lin.xml --matrixType=Laplace2D --nx=10 --ny=10 --mx=2 --my=2 --op=setup --check-rap-against-symbolic --rap-graph-comparison=prebuilt-superset"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "RAP matrix comparison passed:.*graph comparison = prebuilt superset"
+  )
+
+  TRIBITS_ADD_TEST(
+    Structured
     NAME "StructuredRAPFactory_Constant_Laplace2D_Tpetra"
     ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace2D --nx=10 --ny=10 --mx=1 --my=1 --op=setup --check-rap-against-symbolic"
     COMM serial

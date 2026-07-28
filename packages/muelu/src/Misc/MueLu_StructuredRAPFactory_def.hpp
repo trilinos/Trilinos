@@ -16,10 +16,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
-#include <stdexcept>
 #include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_MatrixMatrix.hpp>
-#include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
@@ -27,7 +24,6 @@
 
 #include "MueLu_StructuredRAPFactory_decl.hpp"
 
-#include "MueLu_Utilities.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
@@ -111,880 +107,440 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInp
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructured1D(RCP<Matrix>& Ac, RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, LocalOrdinal dofsPerNode, const std::string& matrixType) const {
-  const GO localNx       = Teuchos::as<GO>(lCoarseNodesPerDim[0]);
-  const GO dofsPerNodeGO = Teuchos::as<GO>(dofsPerNode);
-  TEUCHOS_TEST_FOR_EXCEPTION(localNx <= 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                      << "): local coarse dimension must be positive.");
-  TEUCHOS_TEST_FOR_EXCEPTION(dofsPerNode <= 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                      << "): dofsPerNode must be positive.");
+typename StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::StructuredGraphSpec
+StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructuredGraphSpec(
+    const std::string& matrixType, const int interpolationOrder) const {
+  StructuredGraphSpec graphSpec;
+  graphSpec.description = matrixType;
+
+  bool useFullStencil = false;
+  if (matrixType == "Laplace1D" || matrixType == "Elasticity1D") {
+    graphSpec.numDimensions = 1;
+    graphSpec.dofsPerNode   = Teuchos::as<LO>(1);
+  } else if (matrixType == "Laplace2D") {
+    TEUCHOS_TEST_FOR_EXCEPTION(interpolationOrder < 0 || interpolationOrder > 1, Exceptions::RuntimeError,
+                               "StructuredRAPFactory::GetStructuredGraphSpec: interpolation order "
+                                   << interpolationOrder << " is not supported for " << matrixType << ".");
+    graphSpec.numDimensions = 2;
+    graphSpec.dofsPerNode   = Teuchos::as<LO>(1);
+    useFullStencil          = interpolationOrder == 1;
+  } else if (matrixType == "Elasticity2D") {
+    graphSpec.numDimensions = 2;
+    graphSpec.dofsPerNode   = Teuchos::as<LO>(2);
+    useFullStencil          = true;
+  } else if (matrixType == "Laplace3D") {
+    TEUCHOS_TEST_FOR_EXCEPTION(interpolationOrder < 0 || interpolationOrder > 1, Exceptions::RuntimeError,
+                               "StructuredRAPFactory::GetStructuredGraphSpec: interpolation order "
+                                   << interpolationOrder << " is not supported for " << matrixType << ".");
+    graphSpec.numDimensions = 3;
+    graphSpec.dofsPerNode   = Teuchos::as<LO>(1);
+    useFullStencil          = interpolationOrder == 1;
+  } else if (matrixType == "Elasticity3D") {
+    graphSpec.numDimensions = 3;
+    graphSpec.dofsPerNode   = Teuchos::as<LO>(3);
+    useFullStencil          = true;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                               "StructuredRAPFactory: matrixType \"" << matrixType
+                                                                       << "\" is not supported for prebuilt Ac graph.");
+  }
+
+  const int minY = graphSpec.numDimensions > 1 ? -1 : 0;
+  const int maxY = graphSpec.numDimensions > 1 ? 1 : 0;
+  const int minZ = graphSpec.numDimensions > 2 ? -1 : 0;
+  const int maxZ = graphSpec.numDimensions > 2 ? 1 : 0;
+  for (int dz = minZ; dz <= maxZ; ++dz) {
+    for (int dy = minY; dy <= maxY; ++dy) {
+      for (int dx = -1; dx <= 1; ++dx) {
+        const int numChangedDimensions = (dx != 0 ? 1 : 0) + (dy != 0 ? 1 : 0) + (dz != 0 ? 1 : 0);
+        if (useFullStencil || numChangedDimensions <= 1)
+          graphSpec.stencilOffsets.push_back(StencilOffset{dx, dy, dz});
+      }
+    }
+  }
+
+  return graphSpec;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructuredGraph(
+    RCP<Matrix>& Ac, RCP<Matrix> P,
+    const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
+    const Teuchos::Array<int>& processorGrid,
+    const StructuredGraphSpec& graphSpec) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(graphSpec.numDimensions < 1 || graphSpec.numDimensions > 3, Exceptions::RuntimeError,
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): number of dimensions must be between one and three.");
+  TEUCHOS_TEST_FOR_EXCEPTION(lCoarseNodesPerDim.size() < graphSpec.numDimensions, Exceptions::RuntimeError,
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): insufficient local coarse-grid dimensions.");
+  TEUCHOS_TEST_FOR_EXCEPTION(graphSpec.dofsPerNode <= 0, Exceptions::RuntimeError,
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): dofsPerNode must be positive.");
+  TEUCHOS_TEST_FOR_EXCEPTION(graphSpec.stencilOffsets.empty(), Exceptions::RuntimeError,
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): stencil must contain at least one offset.");
+
+  Teuchos::Array<GO> localNodes(3, Teuchos::as<GO>(1));
+  Teuchos::Array<int> procGrid(3, 1);
+  for (int dim = 0; dim < graphSpec.numDimensions; ++dim) {
+    localNodes[dim] = Teuchos::as<GO>(lCoarseNodesPerDim[dim]);
+    TEUCHOS_TEST_FOR_EXCEPTION(localNodes[dim] <= 0, Exceptions::RuntimeError,
+                               "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                           << "): local coarse dimensions must be positive.");
+    if (dim < processorGrid.size())
+      procGrid[dim] = processorGrid[dim];
+  }
+  for (typename std::vector<StencilOffset>::const_iterator offset = graphSpec.stencilOffsets.begin();
+       offset != graphSpec.stencilOffsets.end(); ++offset) {
+    TEUCHOS_TEST_FOR_EXCEPTION(offset->x < -1 || offset->x > 1 ||
+                                   offset->y < -1 || offset->y > 1 ||
+                                   offset->z < -1 || offset->z > 1,
+                               Exceptions::RuntimeError,
+                               "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                           << "): only radius-one stencil offsets are currently supported.");
+    TEUCHOS_TEST_FOR_EXCEPTION((graphSpec.numDimensions < 2 && offset->y != 0) ||
+                                   (graphSpec.numDimensions < 3 && offset->z != 0),
+                               Exceptions::RuntimeError,
+                               "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                           << "): stencil contains an offset in an inactive dimension.");
+  }
 
   RCP<ParameterList> paramList = rcp(new ParameterList);
   paramList->set("No Nonlocal Changes", true);
   paramList->set("Optimize Storage", true);
   paramList->set("compute global constants", true);
 
-  // P->getDomainMap() contains all properties of the coarse dofs owned by this MPI rank.
-  auto rowMap                = P->getDomainMap();
-  const size_t localNumRows  = rowMap->getLocalNumElements();
-  const GO expectedLocalRows = localNx * dofsPerNodeGO;
+  auto rowMap                                     = P->getDomainMap();
+  const size_t localNumRows                       = rowMap->getLocalNumElements();
+  const Teuchos::ArrayView<const GO> localRowGids = rowMap->getLocalElementList();
+  const GO dofsPerNodeGO                          = Teuchos::as<GO>(graphSpec.dofsPerNode);
+  const size_t rowsPerNode                        = Teuchos::as<size_t>(graphSpec.dofsPerNode);
+  const GO localNumNodes                          = localNodes[0] * localNodes[1] * localNodes[2];
+  const GO expectedLocalRows                      = localNumNodes * dofsPerNodeGO;
   TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<GO>(localNumRows) != expectedLocalRows, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                      << "): local coarse dimension " << localNx << " with " << dofsPerNode
-                                                                      << " dofs per node does not match local coarse row count " << localNumRows << ".");
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): local coarse dimensions with " << graphSpec.dofsPerNode
+                                                                         << " dofs per node do not match local coarse row count "
+                                                                         << localNumRows << ".");
 
   const GO numGlobalRows = Teuchos::as<GO>(rowMap->getGlobalNumElements());
   TEUCHOS_TEST_FOR_EXCEPTION(numGlobalRows % dofsPerNodeGO != 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                      << "): global coarse row count " << numGlobalRows
-                                                                      << " is not divisible by dofsPerNode " << dofsPerNode << ".");
-
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): global coarse row count is not divisible by dofsPerNode.");
   const GO numGlobalNodes = numGlobalRows / dofsPerNodeGO;
-  const GO lowerBound     = rowMap->getMinAllGlobalIndex();
-  const GO upperBound     = rowMap->getMaxAllGlobalIndex() + 1;
-  TEUCHOS_TEST_FOR_EXCEPTION(upperBound - lowerBound != numGlobalRows, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                      << "): coarse row map GIDs must form a contiguous range.");
-
-  const Teuchos::ArrayView<const GO> localRowGids = rowMap->getLocalElementList();
-  RCP<const Teuchos::Comm<int>> comm              = rowMap->getComm();
-  const int numRanks                              = comm->getSize();
-
-  Teuchos::Array<GO> localRankData(2);
-  localRankData[0] = localNx;
-  localRankData[1] = Teuchos::as<GO>(localNumRows);
-  Teuchos::Array<GO> rankData(2 * numRanks);
-  Teuchos::gatherAll(*comm, 2, localRankData.getRawPtr(), 2 * numRanks, rankData.getRawPtr());
-  GO globalRankBlockedNx   = 0;
-  GO globalRankBlockedRows = 0;
-  for (int rank = 0; rank < numRanks; ++rank) {
-    globalRankBlockedNx += rankData[2 * rank];
-    globalRankBlockedRows += rankData[2 * rank + 1];
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(globalRankBlockedNx != numGlobalNodes, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                      << "): rank-blocked coarse dimension " << globalRankBlockedNx
-                                                                      << " does not match coarse node count " << numGlobalNodes << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION(globalRankBlockedRows != numGlobalRows, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                      << "): rank-blocked coarse row count " << globalRankBlockedRows
-                                                                      << " does not match coarse row count " << numGlobalRows << ".");
-
-  const auto getNodeOrdinal = [&](const GO rowGid) -> GO {
-    const GO relativeGid = rowGid - lowerBound;
-    TEUCHOS_TEST_FOR_EXCEPTION(relativeGid < 0 || relativeGid >= numGlobalRows, Exceptions::RuntimeError,
-                               "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                        << "): row GID " << rowGid << " is outside the contiguous coarse row range.");
-    return relativeGid / dofsPerNodeGO;
-  };
-
-  const auto getDofGid = [&](const GO nodeOrdinal, const LO dof) -> GO {
-    return lowerBound + nodeOrdinal * dofsPerNodeGO + Teuchos::as<GO>(dof);
-  };
-
-  std::vector<GO> remoteColGids;
-  remoteColGids.reserve(Teuchos::as<size_t>(2 * dofsPerNode));
-  for (int rowLid = 0; rowLid < localRowGids.size(); ++rowLid) {
-    const GO rowNode = getNodeOrdinal(localRowGids[rowLid]);
-    for (GO colNode = rowNode - 1; colNode <= rowNode + 1; ++colNode) {
-      if (colNode < 0 || colNode >= numGlobalNodes)
-        continue;
-      for (LO colDof = 0; colDof < dofsPerNode; ++colDof) {
-        const GO colGid = getDofGid(colNode, colDof);
-        if (rowMap->getLocalElement(colGid) == Teuchos::OrdinalTraits<LO>::invalid())
-          remoteColGids.push_back(colGid);
-      }
-    }
-  }
-  std::sort(remoteColGids.begin(), remoteColGids.end());
-  remoteColGids.erase(std::unique(remoteColGids.begin(), remoteColGids.end()), remoteColGids.end());
-
-  Array<GO> colMapGids;
-  colMapGids.reserve(localRowGids.size() + Teuchos::as<int>(remoteColGids.size()));
-  for (int i = 0; i < localRowGids.size(); ++i)
-    colMapGids.push_back(localRowGids[i]);
-  for (typename std::vector<GO>::const_iterator it = remoteColGids.begin(); it != remoteColGids.end(); ++it)
-    colMapGids.push_back(*it);
-
-  RCP<const Map> colMap = MapFactory::Build(rowMap->lib(),
-                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                            colMapGids(),
-                                            rowMap->getIndexBase(),
-                                            comm);
-
-  ArrayRCP<size_t> rowptr(localNumRows + 1);
-  rowptr[0]       = 0;
-  size_t localNnz = 0;
-  for (int rowLid = 0; rowLid < localRowGids.size(); ++rowLid) {
-    const GO rowNode = getNodeOrdinal(localRowGids[rowLid]);
-    if (rowNode > 0)
-      localNnz += Teuchos::as<size_t>(dofsPerNode);
-    localNnz += Teuchos::as<size_t>(dofsPerNode);
-    if (rowNode + 1 < numGlobalNodes)
-      localNnz += Teuchos::as<size_t>(dofsPerNode);
-    rowptr[rowLid + 1] = localNnz;
-  }
-
-  ArrayRCP<LO> colind(localNnz);
-  const auto getColLid = [&](const GO colGid) -> LO {
-    const LO colLid = colMap->getLocalElement(colGid);
-    TEUCHOS_TEST_FOR_EXCEPTION(colLid == Teuchos::OrdinalTraits<LO>::invalid(), Exceptions::RuntimeError,
-                               "StructuredRAPFactory::GetStructured1D(" << matrixType
-                                                                        << "): column GID " << colGid
-                                                                        << " was not found in the prebuilt coarse column map.");
-    return colLid;
-  };
-
-  size_t k = 0;
-  for (int rowLid = 0; rowLid < localRowGids.size(); ++rowLid) {
-    const GO rowNode = getNodeOrdinal(localRowGids[rowLid]);
-    for (GO colNode = rowNode - 1; colNode <= rowNode + 1; ++colNode) {
-      if (colNode < 0 || colNode >= numGlobalNodes)
-        continue;
-      for (LO colDof = 0; colDof < dofsPerNode; ++colDof)
-        colind[k++] = getColLid(getDofGid(colNode, colDof));
-    }
-  }
-  TEUCHOS_ASSERT(k == localNnz);
-
-  RCP<CrsGraph> myGraph = CrsGraphFactory::Build(rowMap, colMap, rowptr, colind, paramList);
-  if (!myGraph->isFillComplete())
-    myGraph->fillComplete(rowMap, rowMap, paramList);
-  Ac = MatrixFactory::Build(myGraph, paramList);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLaplace1D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim) const {
-  GetStructured1D(Ac, P, lCoarseNodesPerDim, Teuchos::as<LO>(1), "Laplace1D");
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetElasticity1D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim) const {
-  // Galeri builds exactly the same scalar 1D operator for Laplace1D and Elasticity1D, so we can just call GetStructured1D with dofsPerNode=1
-  GetStructured1D(Ac, P, lCoarseNodesPerDim, Teuchos::as<LO>(1), "Elasticity1D");
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructured2D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, LocalOrdinal dofsPerNode, bool includeDiagonalNeighbors, int procX, int procY, const std::string& matrixType) const {
-  const GO localNx       = Teuchos::as<GO>(lCoarseNodesPerDim[0]);
-  const GO localNy       = Teuchos::as<GO>(lCoarseNodesPerDim[1]);
-  const GO dofsPerNodeGO = Teuchos::as<GO>(dofsPerNode);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(localNx <= 0 || localNy <= 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured2D(" << matrixType
-                                                                      << "): local coarse dimensions must be positive.");
-  TEUCHOS_TEST_FOR_EXCEPTION(dofsPerNode <= 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured2D(" << matrixType
-                                                                      << "): dofsPerNode must be positive.");
-
-  RCP<ParameterList> paramList = rcp(new ParameterList);
-  paramList->set("No Nonlocal Changes", true);
-  paramList->set("Optimize Storage", true);
-  paramList->set("compute global constants", true);
-
-  // P->getDomainMap() contains all properties of the coarse dofs owned by this MPI rank.
-  auto rowMap                                     = P->getDomainMap();
-  const size_t localNumRows                       = rowMap->getLocalNumElements();
-  const Teuchos::ArrayView<const GO> localRowGids = rowMap->getLocalElementList();
-  const GO numGlobalCoarseDofs                    = Teuchos::as<GO>(rowMap->getGlobalNumElements());
-  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalCoarseDofs % dofsPerNodeGO != 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured2D(" << matrixType
-                                                                      << "): coarse domain map size " << numGlobalCoarseDofs
-                                                                      << " is not divisible by dofsPerNode " << dofsPerNode << ".");
-  const GO numGlobalCoarseNodes = numGlobalCoarseDofs / dofsPerNodeGO;
-  const GO expectedLocalRows    = localNx * localNy * dofsPerNodeGO;
-  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<GO>(localNumRows) != expectedLocalRows, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured2D(" << matrixType
-                                                                      << "): local coarse dimensions " << localNx << "x" << localNy
-                                                                      << " with " << dofsPerNode << " dofs per node do not match local coarse row count "
-                                                                      << localNumRows << ".");
-
-  const GO localMinGid       = rowMap->getMinGlobalIndex();
-  const GO localMaxGid       = rowMap->getMaxGlobalIndex();
-  bool localRowMapContiguous = true;
-  for (int i = 0; i < localRowGids.size(); ++i) {
-    if (localRowGids[i] != localMinGid + Teuchos::as<GO>(i)) {
-      localRowMapContiguous = false;
-      break;
-    }
-  }
+  const GO globalMinGid   = rowMap->getMinAllGlobalIndex();
+  const GO globalMaxGid   = rowMap->getMaxAllGlobalIndex();
+  TEUCHOS_TEST_FOR_EXCEPTION(globalMaxGid - globalMinGid + 1 != numGlobalRows, Exceptions::RuntimeError,
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): coarse row-map GIDs must form a contiguous range.");
 
   RCP<const Teuchos::Comm<int>> comm = rowMap->getComm();
   const int myRank                   = comm->getRank();
   const int numRanks                 = comm->getSize();
-  if (procX <= 0) procX = 1;
-  if (procY <= 0) procY = numRanks / procX;
-  TEUCHOS_TEST_FOR_EXCEPTION(procX <= 0 || procY <= 0 || procX * procY != numRanks, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured2D(" << matrixType
-                                                                      << "): invalid processor grid " << procX << "x" << procY
-                                                                      << " for " << numRanks << " ranks.");
-
-  const int myProcX        = myRank % procX;
-  const int myProcY        = myRank / procX;
-  const size_t rowsPerNode = Teuchos::as<size_t>(dofsPerNode);
-  const GO localMinNodeGid = localMinGid / dofsPerNodeGO;
-  Teuchos::Array<GO> localRankData(4);
-  localRankData[0] = localMinNodeGid;
-  localRankData[1] = localNx;
-  localRankData[2] = localNy;
-  localRankData[3] = Teuchos::as<GO>(localNumRows / rowsPerNode);
-  Teuchos::Array<GO> rankData(4 * numRanks);
-  Teuchos::gatherAll(*comm, 4, localRankData.getRawPtr(), 4 * numRanks, rankData.getRawPtr());
-
-  GO globalRankBlockedNx = 0;
-  for (int px = 0; px < procX; ++px)
-    globalRankBlockedNx += rankData[4 * px + 1];
-  GO globalRankBlockedNy = 0;
-  for (int py = 0; py < procY; ++py)
-    globalRankBlockedNy += rankData[4 * (py * procX) + 2];
-  TEUCHOS_TEST_FOR_EXCEPTION(globalRankBlockedNx * globalRankBlockedNy != numGlobalCoarseNodes, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured2D(" << matrixType
-                                                                      << "): processor-grid coarse dimensions " << globalRankBlockedNx << "x" << globalRankBlockedNy
-                                                                      << " do not match coarse node count " << numGlobalCoarseNodes << ".");
-
-  const bool pairedContiguousRows =
-      localRowMapContiguous &&
-      (localMinGid % dofsPerNodeGO == 0 && localNumRows % rowsPerNode == 0);
-
-  const auto useStencilOffset = [&](const int dx, const int dy) -> bool {
-    return includeDiagonalNeighbors || dx == 0 || dy == 0;
-  };
-
-  const auto resolveNeighbor = [&](const GO x, const GO y, const int dx, const int dy,
-                                   int& neighborRank, GO& neighborX, GO& neighborY) -> bool {
-    int neighborProcX = myProcX;
-    int neighborProcY = myProcY;
-    neighborX         = x + Teuchos::as<GO>(dx);
-    neighborY         = y + Teuchos::as<GO>(dy);
-
-    if (neighborX < 0)
-      --neighborProcX;
-    else if (neighborX >= localNx)
-      ++neighborProcX;
-    if (neighborY < 0)
-      --neighborProcY;
-    else if (neighborY >= localNy)
-      ++neighborProcY;
-
-    if (neighborProcX < 0 || neighborProcX >= procX || neighborProcY < 0 || neighborProcY >= procY)
-      return false;
-
-    neighborRank             = neighborProcY * procX + neighborProcX;
-    const GO neighborLocalNx = rankData[4 * neighborRank + 1];
-    const GO neighborLocalNy = rankData[4 * neighborRank + 2];
-    if (neighborX < 0)
-      neighborX = neighborLocalNx - 1;
-    else if (neighborX >= localNx)
-      neighborX = 0;
-    if (neighborY < 0)
-      neighborY = neighborLocalNy - 1;
-    else if (neighborY >= localNy)
-      neighborY = 0;
-
-    return true;
-  };
-
-  const auto countStencilColumns = [&](const GO x, const GO y) -> size_t {
-    size_t nnz = 0;
-    for (int dy = -1; dy <= 1; ++dy) {
-      for (int dx = -1; dx <= 1; ++dx) {
-        if (!useStencilOffset(dx, dy))
-          continue;
-        int neighborRank = myRank;
-        GO neighborX     = x;
-        GO neighborY     = y;
-        if (resolveNeighbor(x, y, dx, dy, neighborRank, neighborX, neighborY))
-          nnz += rowsPerNode;
-      }
-    }
-    return nnz;
-  };
-
-  ArrayRCP<size_t> rowptr(localNumRows + 1);
-  rowptr[0] = 0;
-
-  size_t localNnz    = 0;
-  GO previousNodeGid = Teuchos::OrdinalTraits<GO>::invalid();
-  size_t previousNnz = 0;
-
-  for (size_t rowLid = 0; rowLid < localNumRows; rowLid += (pairedContiguousRows ? rowsPerNode : 1)) {
-    const GO rowGid  = localRowMapContiguous ? localMinGid + Teuchos::as<GO>(rowLid) : rowMap->getGlobalElement(Teuchos::as<LO>(rowLid));
-    const GO nodeGid = rowGid / dofsPerNodeGO;
-
-    if (!pairedContiguousRows && nodeGid == previousNodeGid) {
-      localNnz += previousNnz;
-      rowptr[rowLid + 1] = localNnz;
-      continue;
-    }
-
-    const GO localNodeLid = nodeGid - localMinNodeGid;
-    const GO x            = localNodeLid % localNx;
-    const GO y            = localNodeLid / localNx;
-    const size_t nnz      = countStencilColumns(x, y);
-
-    previousNodeGid = nodeGid;
-    previousNnz     = nnz;
-    if (pairedContiguousRows) {
-      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof) {
-        localNnz += nnz;
-        rowptr[rowLid + rowDof + 1] = localNnz;
-      }
-    } else {
-      localNnz += nnz;
-      rowptr[rowLid + 1] = localNnz;
-    }
+  if (graphSpec.numDimensions == 1) {
+    if (procGrid[0] <= 0) procGrid[0] = numRanks;
+  } else if (graphSpec.numDimensions == 2) {
+    if (procGrid[0] <= 0) procGrid[0] = 1;
+    if (procGrid[1] <= 0) procGrid[1] = numRanks / procGrid[0];
+  } else {
+    if (procGrid[0] <= 0) procGrid[0] = 1;
+    if (procGrid[1] <= 0) procGrid[1] = 1;
+    if (procGrid[2] <= 0) procGrid[2] = numRanks / (procGrid[0] * procGrid[1]);
   }
-
-  std::vector<GO> remoteColGids;
-  const size_t maxNodalNeighbors = includeDiagonalNeighbors ? 9 : 5;
-  remoteColGids.reserve(Teuchos::as<size_t>((2 * localNx + 2 * localNy) * dofsPerNodeGO * Teuchos::as<GO>(maxNodalNeighbors)));
-
-  const auto addRemoteColumnsForNode = [&](const GO x, const GO y) {
-    for (int dy = -1; dy <= 1; ++dy) {
-      for (int dx = -1; dx <= 1; ++dx) {
-        if (!useStencilOffset(dx, dy))
-          continue;
-
-        int neighborRank = myRank;
-        GO neighborX     = x;
-        GO neighborY     = y;
-        if (!resolveNeighbor(x, y, dx, dy, neighborRank, neighborX, neighborY))
-          continue;
-        if (neighborRank == myRank)
-          continue;
-
-        const GO neighborLocalNx = rankData[4 * neighborRank + 1];
-        const GO colNodeGid      = rankData[4 * neighborRank] + neighborY * neighborLocalNx + neighborX;
-        for (LO colDof = 0; colDof < dofsPerNode; ++colDof)
-          remoteColGids.push_back(dofsPerNodeGO * colNodeGid + Teuchos::as<GO>(colDof));
-      }
-    }
-  };
-
-  for (GO x = 0; x < localNx; ++x)
-    addRemoteColumnsForNode(x, 0);
-  if (localNy > 1)
-    for (GO x = 0; x < localNx; ++x)
-      addRemoteColumnsForNode(x, localNy - 1);
-  for (GO y = 1; y + 1 < localNy; ++y) {
-    addRemoteColumnsForNode(0, y);
-    if (localNx > 1)
-      addRemoteColumnsForNode(localNx - 1, y);
-  }
-
-  std::sort(remoteColGids.begin(), remoteColGids.end());
-  remoteColGids.erase(std::unique(remoteColGids.begin(), remoteColGids.end()), remoteColGids.end());
-
-  Array<GO> colMapGids;
-  colMapGids.reserve(localRowGids.size() + Teuchos::as<int>(remoteColGids.size()));
-  for (int i = 0; i < localRowGids.size(); ++i)
-    colMapGids.push_back(localRowGids[i]);
-  for (typename std::vector<GO>::const_iterator it = remoteColGids.begin(); it != remoteColGids.end(); ++it)
-    colMapGids.push_back(*it);
-
-  RCP<const Map> colMap = MapFactory::Build(rowMap->lib(),
-                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                            colMapGids(),
-                                            rowMap->getIndexBase(),
-                                            rowMap->getComm());
-
-  ArrayRCP<LO> colind(localNnz);
-  const size_t maxColumnsPerRow = rowsPerNode * maxNodalNeighbors;
-  Array<LO> colLids(Teuchos::as<int>(maxColumnsPerRow));
-  Array<LO> previousColLids(Teuchos::as<int>(maxColumnsPerRow));
-  size_t k        = 0;
-  previousNodeGid = Teuchos::OrdinalTraits<GO>::invalid();
-  previousNnz     = 0;
-
-  for (size_t rowLid = 0; rowLid < localNumRows; rowLid += (pairedContiguousRows ? rowsPerNode : 1)) {
-    const GO rowGid  = localRowMapContiguous ? localMinGid + Teuchos::as<GO>(rowLid) : rowMap->getGlobalElement(Teuchos::as<LO>(rowLid));
-    const GO nodeGid = rowGid / dofsPerNodeGO;
-
-    if (!pairedContiguousRows && nodeGid == previousNodeGid) {
-      for (size_t i = 0; i < previousNnz; ++i)
-        colind[k++] = previousColLids[i];
-      continue;
-    }
-
-    const GO localNodeLid = nodeGid - localMinNodeGid;
-    const GO x            = localNodeLid % localNx;
-    const GO y            = localNodeLid / localNx;
-
-    if (pairedContiguousRows && x > 0 && x + 1 < localNx && y > 0 && y + 1 < localNy) {
-      size_t nnz = 0;
-      for (int dy = -1; dy <= 1; ++dy) {
-        const GO yy = y + Teuchos::as<GO>(dy);
-        for (int dx = -1; dx <= 1; ++dx) {
-          if (!useStencilOffset(dx, dy))
-            continue;
-          const GO xx      = x + Teuchos::as<GO>(dx);
-          const LO colBase = Teuchos::as<LO>(dofsPerNodeGO * (yy * localNx + xx));
-          for (LO colDof = 0; colDof < dofsPerNode; ++colDof)
-            colLids[nnz++] = colBase + colDof;
-        }
-      }
-
-      previousNodeGid = nodeGid;
-      previousNnz     = nnz;
-      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof)
-        for (size_t i = 0; i < nnz; ++i)
-          colind[k++] = colLids[i];
-      continue;
-    }
-
-    size_t nnz = 0;
-    for (int dy = -1; dy <= 1; ++dy) {
-      for (int dx = -1; dx <= 1; ++dx) {
-        if (!useStencilOffset(dx, dy))
-          continue;
-
-        int neighborRank = myRank;
-        GO neighborX     = x;
-        GO neighborY     = y;
-        if (!resolveNeighbor(x, y, dx, dy, neighborRank, neighborX, neighborY))
-          continue;
-
-        const GO neighborLocalNx = rankData[4 * neighborRank + 1];
-        const GO colNodeGid      = rankData[4 * neighborRank] + neighborY * neighborLocalNx + neighborX;
-        for (LO colDof = 0; colDof < dofsPerNode; ++colDof) {
-          const GO colGid          = dofsPerNodeGO * colNodeGid + Teuchos::as<GO>(colDof);
-          const bool localFastPath = localRowMapContiguous && colGid >= localMinGid && colGid <= localMaxGid;
-          const LO colLid          = localFastPath ? Teuchos::as<LO>(colGid - localMinGid) : colMap->getLocalElement(colGid);
-          TEUCHOS_TEST_FOR_EXCEPTION(colLid == Teuchos::OrdinalTraits<LO>::invalid(), Exceptions::RuntimeError,
-                                     "StructuredRAPFactory::GetStructured2D(" << matrixType
-                                                                              << "): column GID " << colGid
-                                                                              << " was not found in the prebuilt coarse column map.");
-          colLids[nnz++] = colLid;
-        }
-      }
-    }
-
-    std::sort(colLids.getRawPtr(), colLids.getRawPtr() + nnz);
-
-    previousNodeGid = nodeGid;
-    previousNnz     = nnz;
-    if (pairedContiguousRows) {
-      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof)
-        for (size_t i = 0; i < nnz; ++i)
-          colind[k++] = colLids[i];
-    } else {
-      for (size_t i = 0; i < nnz; ++i) {
-        previousColLids[i] = colLids[i];
-        colind[k++]        = colLids[i];
-      }
-    }
-  }
-  TEUCHOS_ASSERT(k == localNnz);
-
-  RCP<CrsGraph> myGraph = CrsGraphFactory::Build(rowMap, colMap, rowptr, colind, paramList);
-  if (!myGraph->isFillComplete())
-    myGraph->fillComplete(rowMap, rowMap, paramList);
-  Ac = MatrixFactory::Build(myGraph, paramList);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLaplace2D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, int procX, int procY, int interpolationOrder) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(interpolationOrder < 0 || interpolationOrder > 1, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetLaplace2D: interpolation order "
-                                 << interpolationOrder << " is not supported.");
-  // Piecewise-linear interpolation can create diagonal coarse couplings for scalar Laplace2D
-  // So we set includeDiagonalNeighbors to true for interpolationOrder=1, and false for interpolationOrder=0
-  const bool includeDiagonalNeighbors = (interpolationOrder == 1);
-  GetStructured2D(Ac, P, lCoarseNodesPerDim, Teuchos::as<LO>(1), includeDiagonalNeighbors, procX, procY, "Laplace2D");
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetElasticity2D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, int procX, int procY) const {
-  // Call GetStructured2D with dofsPerNode=2 and includeDiagonalNeighbors=true for Elasticity2D (9 point stencil)
-  GetStructured2D(Ac, P, lCoarseNodesPerDim, Teuchos::as<LO>(2), true, procX, procY, "Elasticity2D");
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructured3D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, LocalOrdinal dofsPerNode, bool includeDiagonalNeighbors, int procX, int procY, int procZ, const std::string& matrixType) const {
-  const GO localNx       = Teuchos::as<GO>(lCoarseNodesPerDim[0]);
-  const GO localNy       = Teuchos::as<GO>(lCoarseNodesPerDim[1]);
-  const GO localNz       = Teuchos::as<GO>(lCoarseNodesPerDim[2]);
-  const GO dofsPerNodeGO = Teuchos::as<GO>(dofsPerNode);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(localNx <= 0 || localNy <= 0 || localNz <= 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured3D(" << matrixType
-                                                                      << "): local coarse dimensions must be positive.");
-  TEUCHOS_TEST_FOR_EXCEPTION(dofsPerNode <= 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured3D(" << matrixType
-                                                                      << "): dofsPerNode must be positive.");
-
-  RCP<ParameterList> paramList = rcp(new ParameterList);
-  paramList->set("No Nonlocal Changes", true);
-  paramList->set("Optimize Storage", true);
-  paramList->set("compute global constants", true);
-
-  // P->getDomainMap() contains all properties of the coarse dofs owned by this MPI rank.
-  auto rowMap                                     = P->getDomainMap();
-  const size_t localNumRows                       = rowMap->getLocalNumElements();
-  const Teuchos::ArrayView<const GO> localRowGids = rowMap->getLocalElementList();
-  const GO numGlobalCoarseDofs                    = Teuchos::as<GO>(rowMap->getGlobalNumElements());
-  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalCoarseDofs % dofsPerNodeGO != 0, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured3D(" << matrixType
-                                                                      << "): coarse domain map size " << numGlobalCoarseDofs
-                                                                      << " is not divisible by dofsPerNode " << dofsPerNode << ".");
-  const GO numGlobalCoarseNodes = numGlobalCoarseDofs / dofsPerNodeGO;
-  const GO expectedLocalRows    = localNx * localNy * localNz * dofsPerNodeGO;
-  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<GO>(localNumRows) != expectedLocalRows, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured3D(" << matrixType
-                                                                      << "): local coarse dimensions " << localNx << "x" << localNy << "x" << localNz
-                                                                      << " with " << dofsPerNode << " dofs per node do not match local coarse row count "
-                                                                      << localNumRows << ".");
-
-  const GO localMinGid       = rowMap->getMinGlobalIndex();
-  const GO localMaxGid       = rowMap->getMaxGlobalIndex();
-  bool localRowMapContiguous = true;
-  for (int i = 0; i < localRowGids.size(); ++i) {
-    if (localRowGids[i] != localMinGid + Teuchos::as<GO>(i)) {
-      localRowMapContiguous = false;
-      break;
-    }
-  }
-
-  RCP<const Teuchos::Comm<int>> comm = rowMap->getComm();
-  const int myRank                   = comm->getRank();
-  const int numRanks                 = comm->getSize();
-  if (procX <= 0) procX = 1;
-  if (procY <= 0) procY = 1;
-  if (procZ <= 0) procZ = numRanks / (procX * procY);
-  TEUCHOS_TEST_FOR_EXCEPTION(procX <= 0 || procY <= 0 || procZ <= 0 || procX * procY * procZ != numRanks,
+  const int procXY = procGrid[0] * procGrid[1];
+  TEUCHOS_TEST_FOR_EXCEPTION(procGrid[0] <= 0 || procGrid[1] <= 0 || procGrid[2] <= 0 ||
+                                 procXY * procGrid[2] != numRanks,
                              Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured3D(" << matrixType
-                                                                      << "): invalid processor grid " << procX << "x" << procY << "x" << procZ
-                                                                      << " for " << numRanks << " ranks.");
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): invalid processor grid "
+                                                                         << procGrid[0] << "x" << procGrid[1] << "x" << procGrid[2]
+                                                                         << " for " << numRanks << " ranks.");
 
-  const int procXY         = procX * procY;
-  const int myProcX        = myRank % procX;
-  const int myProcY        = (myRank % procXY) / procX;
-  const int myProcZ        = myRank / procXY;
-  const size_t rowsPerNode = Teuchos::as<size_t>(dofsPerNode);
-  const GO localMinNodeGid = localMinGid / dofsPerNodeGO;
+  const int myProcX = myRank % procGrid[0];
+  const int myProcY = (myRank % procXY) / procGrid[0];
+  const int myProcZ = myRank / procXY;
+  const GO localMinGid = rowMap->getMinGlobalIndex();
+  const GO localMaxGid = rowMap->getMaxGlobalIndex();
+  TEUCHOS_TEST_FOR_EXCEPTION((localMinGid - globalMinGid) % dofsPerNodeGO != 0, Exceptions::RuntimeError,
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): local row range does not begin at a nodal boundary.");
+  const GO firstLocalNode = (localMinGid - globalMinGid) / dofsPerNodeGO;
+
+  bool localRowMapContiguous = true;
+  for (int rowLid = 0; rowLid < localRowGids.size(); ++rowLid) {
+    if (localRowGids[rowLid] != localMinGid + Teuchos::as<GO>(rowLid)) {
+      localRowMapContiguous = false;
+      break;
+    }
+  }
+
   Teuchos::Array<GO> localRankData(5);
-  localRankData[0] = localMinNodeGid;
-  localRankData[1] = localNx;
-  localRankData[2] = localNy;
-  localRankData[3] = localNz;
-  localRankData[4] = Teuchos::as<GO>(localNumRows / rowsPerNode);
+  localRankData[0] = firstLocalNode;
+  localRankData[1] = localNodes[0];
+  localRankData[2] = localNodes[1];
+  localRankData[3] = localNodes[2];
+  localRankData[4] = localNumNodes;
   Teuchos::Array<GO> rankData(5 * numRanks);
   Teuchos::gatherAll(*comm, 5, localRankData.getRawPtr(), 5 * numRanks, rankData.getRawPtr());
 
-  GO globalRankBlockedNx = 0;
-  for (int px = 0; px < procX; ++px)
-    globalRankBlockedNx += rankData[5 * px + 1];
-  GO globalRankBlockedNy = 0;
-  for (int py = 0; py < procY; ++py)
-    globalRankBlockedNy += rankData[5 * (py * procX) + 2];
-  GO globalRankBlockedNz = 0;
-  for (int pz = 0; pz < procZ; ++pz)
-    globalRankBlockedNz += rankData[5 * (pz * procXY) + 3];
-  TEUCHOS_TEST_FOR_EXCEPTION(globalRankBlockedNx * globalRankBlockedNy * globalRankBlockedNz != numGlobalCoarseNodes,
+  Teuchos::Array<GO> globalNodes(3, Teuchos::as<GO>(0));
+  for (int px = 0; px < procGrid[0]; ++px)
+    globalNodes[0] += rankData[5 * px + 1];
+  for (int py = 0; py < procGrid[1]; ++py)
+    globalNodes[1] += rankData[5 * (py * procGrid[0]) + 2];
+  for (int pz = 0; pz < procGrid[2]; ++pz)
+    globalNodes[2] += rankData[5 * (pz * procXY) + 3];
+  TEUCHOS_TEST_FOR_EXCEPTION(globalNodes[0] * globalNodes[1] * globalNodes[2] != numGlobalNodes,
                              Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructured3D(" << matrixType
-                                                                      << "): processor-grid coarse dimensions " << globalRankBlockedNx << "x"
-                                                                      << globalRankBlockedNy << "x" << globalRankBlockedNz
-                                                                      << " do not match coarse node count " << numGlobalCoarseNodes << ".");
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): processor-grid coarse dimensions do not match coarse node count.");
 
-  const bool groupedContiguousRows =
-      localRowMapContiguous &&
-      (localMinGid % dofsPerNodeGO == 0 && localNumRows % rowsPerNode == 0);
-
-  const auto useStencilOffset = [&](const int dx, const int dy, const int dz) -> bool {
-    return includeDiagonalNeighbors ||
-           (dx == 0 && dy == 0) ||
-           (dx == 0 && dz == 0) ||
-           (dy == 0 && dz == 0);
+  const auto getDofGid = [&](const GO nodeOrdinal, const LO dof) -> GO {
+    return globalMinGid + nodeOrdinal * dofsPerNodeGO + Teuchos::as<GO>(dof);
   };
 
-  const auto resolveNeighbor = [&](const GO x, const GO y, const GO z,
-                                   const int dx, const int dy, const int dz,
-                                   int& neighborRank, GO& neighborX, GO& neighborY, GO& neighborZ) -> bool {
+  const auto getLocalNodeCoordinates = [&](const GO localNode, GO& x, GO& y, GO& z) {
+    x = localNode % localNodes[0];
+    y = (localNode / localNodes[0]) % localNodes[1];
+    z = localNode / (localNodes[0] * localNodes[1]);
+  };
+
+  const auto resolveNeighbor = [&](const GO x, const GO y, const GO z, const StencilOffset& offset,
+                                   int& neighborRank, GO& neighborNode) -> bool {
     int neighborProcX = myProcX;
     int neighborProcY = myProcY;
     int neighborProcZ = myProcZ;
-    neighborX         = x + Teuchos::as<GO>(dx);
-    neighborY         = y + Teuchos::as<GO>(dy);
-    neighborZ         = z + Teuchos::as<GO>(dz);
+    GO neighborX      = x + Teuchos::as<GO>(offset.x);
+    GO neighborY      = y + Teuchos::as<GO>(offset.y);
+    GO neighborZ      = z + Teuchos::as<GO>(offset.z);
 
     if (neighborX < 0)
       --neighborProcX;
-    else if (neighborX >= localNx)
+    else if (neighborX >= localNodes[0])
       ++neighborProcX;
     if (neighborY < 0)
       --neighborProcY;
-    else if (neighborY >= localNy)
+    else if (neighborY >= localNodes[1])
       ++neighborProcY;
     if (neighborZ < 0)
       --neighborProcZ;
-    else if (neighborZ >= localNz)
+    else if (neighborZ >= localNodes[2])
       ++neighborProcZ;
 
-    if (neighborProcX < 0 || neighborProcX >= procX ||
-        neighborProcY < 0 || neighborProcY >= procY ||
-        neighborProcZ < 0 || neighborProcZ >= procZ)
+    if (neighborProcX < 0 || neighborProcX >= procGrid[0] ||
+        neighborProcY < 0 || neighborProcY >= procGrid[1] ||
+        neighborProcZ < 0 || neighborProcZ >= procGrid[2])
       return false;
 
-    neighborRank             = neighborProcZ * procXY + neighborProcY * procX + neighborProcX;
+    neighborRank             = neighborProcZ * procXY + neighborProcY * procGrid[0] + neighborProcX;
     const GO neighborLocalNx = rankData[5 * neighborRank + 1];
     const GO neighborLocalNy = rankData[5 * neighborRank + 2];
     const GO neighborLocalNz = rankData[5 * neighborRank + 3];
     if (neighborX < 0)
       neighborX = neighborLocalNx - 1;
-    else if (neighborX >= localNx)
+    else if (neighborX >= localNodes[0])
       neighborX = 0;
     if (neighborY < 0)
       neighborY = neighborLocalNy - 1;
-    else if (neighborY >= localNy)
+    else if (neighborY >= localNodes[1])
       neighborY = 0;
     if (neighborZ < 0)
       neighborZ = neighborLocalNz - 1;
-    else if (neighborZ >= localNz)
+    else if (neighborZ >= localNodes[2])
       neighborZ = 0;
 
+    neighborNode = rankData[5 * neighborRank] +
+                   neighborZ * neighborLocalNx * neighborLocalNy +
+                   neighborY * neighborLocalNx + neighborX;
     return true;
   };
 
-  const auto countStencilColumns = [&](const GO x, const GO y, const GO z) -> size_t {
-    size_t nnz = 0;
-    for (int dz = -1; dz <= 1; ++dz) {
-      for (int dy = -1; dy <= 1; ++dy) {
-        for (int dx = -1; dx <= 1; ++dx) {
-          if (!useStencilOffset(dx, dy, dz))
-            continue;
-          int neighborRank = myRank;
-          GO neighborX     = x;
-          GO neighborY     = y;
-          GO neighborZ     = z;
-          if (resolveNeighbor(x, y, z, dx, dy, dz, neighborRank, neighborX, neighborY, neighborZ))
-            nnz += rowsPerNode;
-        }
+  const size_t maxStencilSize = graphSpec.stencilOffsets.size();
+  Teuchos::Array<int> neighborRanks(Teuchos::as<int>(maxStencilSize));
+  Teuchos::Array<GO> neighborNodes(Teuchos::as<int>(maxStencilSize));
+  const auto getNeighbors = [&](const GO x, const GO y, const GO z) -> size_t {
+    size_t numNeighbors = 0;
+    for (typename std::vector<StencilOffset>::const_iterator offset = graphSpec.stencilOffsets.begin();
+         offset != graphSpec.stencilOffsets.end(); ++offset) {
+      int neighborRank = myRank;
+      GO neighborNode  = 0;
+      if (resolveNeighbor(x, y, z, *offset, neighborRank, neighborNode)) {
+        neighborRanks[numNeighbors] = neighborRank;
+        neighborNodes[numNeighbors] = neighborNode;
+        ++numNeighbors;
       }
     }
-    return nnz;
+    return numNeighbors;
   };
+
+  const bool groupedContiguousRows =
+      localRowMapContiguous && localNumRows % rowsPerNode == 0;
+  const auto isInteriorNode = [&](const GO x, const GO y, const GO z) -> bool {
+    return x > 0 && x + 1 < localNodes[0] &&
+           (graphSpec.numDimensions < 2 || (y > 0 && y + 1 < localNodes[1])) &&
+           (graphSpec.numDimensions < 3 || (z > 0 && z + 1 < localNodes[2]));
+  };
+
+  Teuchos::Array<GO> interiorNodeOffsets(Teuchos::as<int>(maxStencilSize));
+  for (size_t stencil = 0; stencil < maxStencilSize; ++stencil) {
+    const StencilOffset& offset = graphSpec.stencilOffsets[stencil];
+    interiorNodeOffsets[stencil] =
+        Teuchos::as<GO>(offset.x) +
+        localNodes[0] * (Teuchos::as<GO>(offset.y) +
+                         localNodes[1] * Teuchos::as<GO>(offset.z));
+  }
 
   ArrayRCP<size_t> rowptr(localNumRows + 1);
-  rowptr[0] = 0;
-
-  size_t localNnz    = 0;
-  GO previousNodeGid = Teuchos::OrdinalTraits<GO>::invalid();
-  size_t previousNnz = 0;
-
-  for (size_t rowLid = 0; rowLid < localNumRows; rowLid += (groupedContiguousRows ? rowsPerNode : 1)) {
-    const GO rowGid  = localRowMapContiguous ? localMinGid + Teuchos::as<GO>(rowLid) : rowMap->getGlobalElement(Teuchos::as<LO>(rowLid));
-    const GO nodeGid = rowGid / dofsPerNodeGO;
-
-    if (!groupedContiguousRows && nodeGid == previousNodeGid) {
-      localNnz += previousNnz;
-      rowptr[rowLid + 1] = localNnz;
-      continue;
-    }
-
-    const GO localNodeLid = nodeGid - localMinNodeGid;
-    const GO x            = localNodeLid % localNx;
-    const GO y            = (localNodeLid / localNx) % localNy;
-    const GO z            = localNodeLid / (localNx * localNy);
-    const size_t nnz      = countStencilColumns(x, y, z);
-
-    previousNodeGid = nodeGid;
-    previousNnz     = nnz;
-    if (groupedContiguousRows) {
-      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof) {
-        localNnz += nnz;
-        rowptr[rowLid + rowDof + 1] = localNnz;
-      }
-    } else {
-      localNnz += nnz;
-      rowptr[rowLid + 1] = localNnz;
-    }
-  }
-
+  rowptr[0]       = 0;
+  size_t localNnz = 0;
   std::vector<GO> remoteColGids;
-  const auto addRemoteColumnsForNode = [&](const GO x, const GO y, const GO z) {
-    for (int dz = -1; dz <= 1; ++dz) {
-      for (int dy = -1; dy <= 1; ++dy) {
-        for (int dx = -1; dx <= 1; ++dx) {
-          if (!useStencilOffset(dx, dy, dz))
-            continue;
 
-          int neighborRank = myRank;
-          GO neighborX     = x;
-          GO neighborY     = y;
-          GO neighborZ     = z;
-          if (!resolveNeighbor(x, y, z, dx, dy, dz, neighborRank, neighborX, neighborY, neighborZ))
-            continue;
-          if (neighborRank == myRank)
-            continue;
+  if (groupedContiguousRows) {
+    // Every DOF row at a node has the same columns, so resolve the stencil once per node.
+    for (GO localNode = 0; localNode < localNumNodes; ++localNode) {
+      GO x = 0, y = 0, z = 0;
+      getLocalNodeCoordinates(localNode, x, y, z);
+      const bool interior       = isInteriorNode(x, y, z);
+      const size_t numNeighbors = interior ? maxStencilSize : getNeighbors(x, y, z);
+      const size_t rowNnz       = numNeighbors * rowsPerNode;
+      const size_t firstRow     = Teuchos::as<size_t>(localNode) * rowsPerNode;
+      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof) {
+        localNnz += rowNnz;
+        rowptr[firstRow + rowDof + 1] = localNnz;
+      }
 
-          const GO neighborLocalNx = rankData[5 * neighborRank + 1];
-          const GO neighborLocalNy = rankData[5 * neighborRank + 2];
-          const GO colNodeGid      = rankData[5 * neighborRank] +
-                                neighborZ * neighborLocalNx * neighborLocalNy +
-                                neighborY * neighborLocalNx + neighborX;
-          for (LO colDof = 0; colDof < dofsPerNode; ++colDof)
-            remoteColGids.push_back(dofsPerNodeGO * colNodeGid + Teuchos::as<GO>(colDof));
+      // Interior nodes cannot reference remote columns.
+      if (!interior) {
+        for (size_t neighbor = 0; neighbor < numNeighbors; ++neighbor) {
+          if (neighborRanks[neighbor] == myRank)
+            continue;
+          for (LO colDof = 0; colDof < graphSpec.dofsPerNode; ++colDof)
+            remoteColGids.push_back(getDofGid(neighborNodes[neighbor], colDof));
         }
       }
     }
-  };
+  } else {
+    // Preserve support for maps whose local rows are not grouped by node.
+    for (size_t rowLid = 0; rowLid < localNumRows; ++rowLid) {
+      const GO rowGid      = rowMap->getGlobalElement(Teuchos::as<LO>(rowLid));
+      const GO nodeOrdinal = (rowGid - globalMinGid) / dofsPerNodeGO;
+      const GO localNode   = nodeOrdinal - firstLocalNode;
+      TEUCHOS_TEST_FOR_EXCEPTION(localNode < 0 || localNode >= localNumNodes, Exceptions::RuntimeError,
+                                 "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                             << "): row GID does not belong to the rank-local structured block.");
+      GO x = 0, y = 0, z = 0;
+      getLocalNodeCoordinates(localNode, x, y, z);
+      const size_t numNeighbors = getNeighbors(x, y, z);
+      localNnz += numNeighbors * rowsPerNode;
+      rowptr[rowLid + 1] = localNnz;
+    }
 
-  for (GO z = 0; z < localNz; ++z) {
-    for (GO y = 0; y < localNy; ++y) {
-      for (GO x = 0; x < localNx; ++x) {
-        if (x == 0 || x + 1 == localNx ||
-            y == 0 || y + 1 == localNy ||
-            z == 0 || z + 1 == localNz)
-          addRemoteColumnsForNode(x, y, z);
+    for (GO localNode = 0; localNode < localNumNodes; ++localNode) {
+      GO x = 0, y = 0, z = 0;
+      getLocalNodeCoordinates(localNode, x, y, z);
+      const size_t numNeighbors = getNeighbors(x, y, z);
+      for (size_t neighbor = 0; neighbor < numNeighbors; ++neighbor) {
+        if (neighborRanks[neighbor] == myRank)
+          continue;
+        for (LO colDof = 0; colDof < graphSpec.dofsPerNode; ++colDof)
+          remoteColGids.push_back(getDofGid(neighborNodes[neighbor], colDof));
       }
     }
   }
-
   std::sort(remoteColGids.begin(), remoteColGids.end());
   remoteColGids.erase(std::unique(remoteColGids.begin(), remoteColGids.end()), remoteColGids.end());
 
   Array<GO> colMapGids;
   colMapGids.reserve(localRowGids.size() + Teuchos::as<int>(remoteColGids.size()));
-  for (int i = 0; i < localRowGids.size(); ++i)
-    colMapGids.push_back(localRowGids[i]);
-  for (typename std::vector<GO>::const_iterator it = remoteColGids.begin(); it != remoteColGids.end(); ++it)
-    colMapGids.push_back(*it);
+  for (int rowLid = 0; rowLid < localRowGids.size(); ++rowLid)
+    colMapGids.push_back(localRowGids[rowLid]);
+  for (typename std::vector<GO>::const_iterator gid = remoteColGids.begin(); gid != remoteColGids.end(); ++gid)
+    colMapGids.push_back(*gid);
 
   RCP<const Map> colMap = MapFactory::Build(rowMap->lib(),
                                             Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                            colMapGids(),
-                                            rowMap->getIndexBase(),
-                                            rowMap->getComm());
+                                            colMapGids(), rowMap->getIndexBase(), comm);
 
+  const size_t maxColumnsPerRow = maxStencilSize * rowsPerNode;
+  Array<LO> rowColLids(Teuchos::as<int>(maxColumnsPerRow));
   ArrayRCP<LO> colind(localNnz);
-  const size_t maxNodalNeighbors = includeDiagonalNeighbors ? 27 : 7;
-  const size_t maxColumnsPerRow  = rowsPerNode * maxNodalNeighbors;
-  Array<LO> colLids(Teuchos::as<int>(maxColumnsPerRow));
-  Array<LO> previousColLids(Teuchos::as<int>(maxColumnsPerRow));
-  size_t k        = 0;
-  previousNodeGid = Teuchos::OrdinalTraits<GO>::invalid();
-  previousNnz     = 0;
 
-  for (size_t rowLid = 0; rowLid < localNumRows; rowLid += (groupedContiguousRows ? rowsPerNode : 1)) {
-    const GO rowGid  = localRowMapContiguous ? localMinGid + Teuchos::as<GO>(rowLid) : rowMap->getGlobalElement(Teuchos::as<LO>(rowLid));
-    const GO nodeGid = rowGid / dofsPerNodeGO;
+  if (groupedContiguousRows) {
+    for (GO localNode = 0; localNode < localNumNodes; ++localNode) {
+      GO x = 0, y = 0, z = 0;
+      getLocalNodeCoordinates(localNode, x, y, z);
+      const bool interior = isInteriorNode(x, y, z);
+      size_t rowNnz       = 0;
 
-    if (!groupedContiguousRows && nodeGid == previousNodeGid) {
-      for (size_t i = 0; i < previousNnz; ++i)
-        colind[k++] = previousColLids[i];
-      continue;
-    }
-
-    const GO localNodeLid = nodeGid - localMinNodeGid;
-    const GO x            = localNodeLid % localNx;
-    const GO y            = (localNodeLid / localNx) % localNy;
-    const GO z            = localNodeLid / (localNx * localNy);
-
-    if (groupedContiguousRows &&
-        x > 0 && x + 1 < localNx &&
-        y > 0 && y + 1 < localNy &&
-        z > 0 && z + 1 < localNz) {
-      size_t nnz = 0;
-      for (int dz = -1; dz <= 1; ++dz) {
-        const GO zz = z + Teuchos::as<GO>(dz);
-        for (int dy = -1; dy <= 1; ++dy) {
-          const GO yy = y + Teuchos::as<GO>(dy);
-          for (int dx = -1; dx <= 1; ++dx) {
-            if (!useStencilOffset(dx, dy, dz))
-              continue;
-            const GO xx      = x + Teuchos::as<GO>(dx);
-            const LO colBase = Teuchos::as<LO>(dofsPerNodeGO *
-                                               (zz * localNx * localNy + yy * localNx + xx));
-            for (LO colDof = 0; colDof < dofsPerNode; ++colDof)
-              colLids[nnz++] = colBase + colDof;
-          }
+      if (interior) {
+        // Stencil offsets are in x-fastest order, so these local column LIDs are already sorted.
+        for (size_t stencil = 0; stencil < maxStencilSize; ++stencil) {
+          const GO colLocalNode = localNode + interiorNodeOffsets[stencil];
+          const LO colBase      = Teuchos::as<LO>(colLocalNode * dofsPerNodeGO);
+          for (LO colDof = 0; colDof < graphSpec.dofsPerNode; ++colDof)
+            rowColLids[rowNnz++] = colBase + colDof;
         }
-      }
-
-      previousNodeGid = nodeGid;
-      previousNnz     = nnz;
-      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof)
-        for (size_t i = 0; i < nnz; ++i)
-          colind[k++] = colLids[i];
-      continue;
-    }
-
-    size_t nnz = 0;
-    for (int dz = -1; dz <= 1; ++dz) {
-      for (int dy = -1; dy <= 1; ++dy) {
-        for (int dx = -1; dx <= 1; ++dx) {
-          if (!useStencilOffset(dx, dy, dz))
-            continue;
-
-          int neighborRank = myRank;
-          GO neighborX     = x;
-          GO neighborY     = y;
-          GO neighborZ     = z;
-          if (!resolveNeighbor(x, y, z, dx, dy, dz, neighborRank, neighborX, neighborY, neighborZ))
-            continue;
-
-          const GO neighborLocalNx = rankData[5 * neighborRank + 1];
-          const GO neighborLocalNy = rankData[5 * neighborRank + 2];
-          const GO colNodeGid      = rankData[5 * neighborRank] +
-                                neighborZ * neighborLocalNx * neighborLocalNy +
-                                neighborY * neighborLocalNx + neighborX;
-          for (LO colDof = 0; colDof < dofsPerNode; ++colDof) {
-            const GO colGid          = dofsPerNodeGO * colNodeGid + Teuchos::as<GO>(colDof);
-            const bool localFastPath = localRowMapContiguous && colGid >= localMinGid && colGid <= localMaxGid;
-            const LO colLid          = localFastPath ? Teuchos::as<LO>(colGid - localMinGid) : colMap->getLocalElement(colGid);
+      } else {
+        const size_t numNeighbors = getNeighbors(x, y, z);
+        for (size_t neighbor = 0; neighbor < numNeighbors; ++neighbor) {
+          for (LO colDof = 0; colDof < graphSpec.dofsPerNode; ++colDof) {
+            const GO colGid = getDofGid(neighborNodes[neighbor], colDof);
+            const bool localFastPath = colGid >= localMinGid && colGid <= localMaxGid;
+            const LO colLid = localFastPath
+                                  ? Teuchos::as<LO>(colGid - localMinGid)
+                                  : colMap->getLocalElement(colGid);
             TEUCHOS_TEST_FOR_EXCEPTION(colLid == Teuchos::OrdinalTraits<LO>::invalid(), Exceptions::RuntimeError,
-                                       "StructuredRAPFactory::GetStructured3D(" << matrixType
-                                                                                << "): column GID " << colGid
-                                                                                << " was not found in the prebuilt coarse column map.");
-            colLids[nnz++] = colLid;
+                                       "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                                   << "): column GID " << colGid
+                                                                                   << " was not found in the coarse column map.");
+            rowColLids[rowNnz++] = colLid;
           }
         }
+        std::sort(rowColLids.getRawPtr(), rowColLids.getRawPtr() + rowNnz);
+      }
+
+      const size_t firstRow = Teuchos::as<size_t>(localNode) * rowsPerNode;
+      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof) {
+        const size_t rowStart = rowptr[firstRow + rowDof];
+        TEUCHOS_ASSERT(rowptr[firstRow + rowDof + 1] - rowStart == rowNnz);
+        for (size_t column = 0; column < rowNnz; ++column)
+          colind[rowStart + column] = rowColLids[column];
       }
     }
+  } else {
+    size_t entry = 0;
+    for (size_t rowLid = 0; rowLid < localNumRows; ++rowLid) {
+      const GO rowGid      = rowMap->getGlobalElement(Teuchos::as<LO>(rowLid));
+      const GO nodeOrdinal = (rowGid - globalMinGid) / dofsPerNodeGO;
+      const GO localNode   = nodeOrdinal - firstLocalNode;
+      GO x = 0, y = 0, z = 0;
+      getLocalNodeCoordinates(localNode, x, y, z);
+      const size_t numNeighbors = getNeighbors(x, y, z);
 
-    std::sort(colLids.getRawPtr(), colLids.getRawPtr() + nnz);
-
-    previousNodeGid = nodeGid;
-    previousNnz     = nnz;
-    if (groupedContiguousRows) {
-      for (size_t rowDof = 0; rowDof < rowsPerNode; ++rowDof)
-        for (size_t i = 0; i < nnz; ++i)
-          colind[k++] = colLids[i];
-    } else {
-      for (size_t i = 0; i < nnz; ++i) {
-        previousColLids[i] = colLids[i];
-        colind[k++]        = colLids[i];
+      size_t rowNnz = 0;
+      for (size_t neighbor = 0; neighbor < numNeighbors; ++neighbor) {
+        for (LO colDof = 0; colDof < graphSpec.dofsPerNode; ++colDof) {
+          const GO colGid = getDofGid(neighborNodes[neighbor], colDof);
+          const LO colLid = colMap->getLocalElement(colGid);
+          TEUCHOS_TEST_FOR_EXCEPTION(colLid == Teuchos::OrdinalTraits<LO>::invalid(), Exceptions::RuntimeError,
+                                     "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                                 << "): column GID " << colGid
+                                                                                 << " was not found in the coarse column map.");
+          rowColLids[rowNnz++] = colLid;
+        }
       }
+      std::sort(rowColLids.getRawPtr(), rowColLids.getRawPtr() + rowNnz);
+      for (size_t column = 0; column < rowNnz; ++column)
+        colind[entry++] = rowColLids[column];
     }
+    TEUCHOS_ASSERT(entry == localNnz);
   }
-  TEUCHOS_ASSERT(k == localNnz);
 
-  RCP<CrsGraph> myGraph = CrsGraphFactory::Build(rowMap, colMap, rowptr, colind, paramList);
-  if (!myGraph->isFillComplete())
-    myGraph->fillComplete(rowMap, rowMap, paramList);
-  Ac = MatrixFactory::Build(myGraph, paramList);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLaplace3D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, int procX, int procY, int procZ, int interpolationOrder) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(interpolationOrder < 0 || interpolationOrder > 1, Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetLaplace3D: interpolation order "
-                                 << interpolationOrder << " is not supported.");
-  // Piecewise-linear interpolation can create edge and corner coarse couplings for scalar Laplace3D.
-  const bool includeDiagonalNeighbors = (interpolationOrder == 1);
-  GetStructured3D(Ac, P, lCoarseNodesPerDim, Teuchos::as<LO>(1), includeDiagonalNeighbors,
-                  procX, procY, procZ, "Laplace3D");
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetElasticity3D(RCP<Matrix>& Ac, RCP<Matrix> P, Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, int procX, int procY, int procZ) const {
-  // Elasticity3D has a full 27-point nodal stencil with three dofs per node.
-  GetStructured3D(Ac, P, lCoarseNodesPerDim, Teuchos::as<LO>(3), true,
-                  procX, procY, procZ, "Elasticity3D");
+  RCP<CrsGraph> graph = CrsGraphFactory::Build(rowMap, colMap, rowptr, colind, paramList);
+  if (!graph->isFillComplete())
+    graph->fillComplete(rowMap, rowMap, paramList);
+  Ac = MatrixFactory::Build(graph, paramList);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1045,8 +601,11 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
 
         RAPparams = coarseLevel.Get<RCP<ParameterList>>("RAP reuse data", this);
 
-        if (RAPparams->isParameter("graph"))
-          Ac = RAPparams->get<RCP<Matrix>>("graph");
+        TEUCHOS_TEST_FOR_EXCEPTION(!RAPparams->isParameter("graph"), Exceptions::RuntimeError,
+                                   "StructuredRAPFactory::Build(): \"RAP reuse data\" does not contain the expected graph.");
+        Ac = RAPparams->get<RCP<Matrix>>("graph");
+        TEUCHOS_TEST_FOR_EXCEPTION(Ac.is_null(), Exceptions::RuntimeError,
+                                   "StructuredRAPFactory::Build(): \"RAP reuse data\" graph is null.");
 
         // Some eigenvalue may have been cached with the matrix in the previous run.
         // As the matrix values will be updated, we need to reset the eigenvalue.
@@ -1066,30 +625,15 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
         const int procY              = pL.get<int>("rap: processor grid y");
         const int procZ              = pL.get<int>("rap: processor grid z");
 
-        if (matrixType == "Laplace1D") {
-          GetOStream(Statistics1) << "StructuredRAP: Using Laplace1D pattern determination routine." << std::endl;
-          GetLaplace1D(Ac, P, lCoarseNodesPerDim);
-        } else if (matrixType == "Elasticity1D") {
-          GetOStream(Statistics1) << "StructuredRAP: Using Elasticity1D pattern determination routine." << std::endl;
-          GetElasticity1D(Ac, P, lCoarseNodesPerDim);
-        } else if (matrixType == "Laplace2D") {
-          GetOStream(Statistics1) << "StructuredRAP: Using Laplace2D pattern determination routine.\n";
-          GetLaplace2D(Ac, P, lCoarseNodesPerDim, procX, procY, interpolationOrder);
-        } else if (matrixType == "Elasticity2D") {
-          GetOStream(Statistics1) << "StructuredRAP: Using Elasticity2D pattern determination routine.\n";
-          GetElasticity2D(Ac, P, lCoarseNodesPerDim, procX, procY);
-        } else if (matrixType == "Laplace3D") {
-          GetOStream(Statistics1) << "StructuredRAP: Using Laplace3D pattern determination routine.\n";
-          GetLaplace3D(Ac, P, lCoarseNodesPerDim, procX, procY, procZ, interpolationOrder);
-        } else if (matrixType == "Elasticity3D") {
-          GetOStream(Statistics1) << "StructuredRAP: Using Elasticity3D pattern determination routine.\n";
-          GetElasticity3D(Ac, P, lCoarseNodesPerDim, procX, procY, procZ);
-        } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true, Exceptions::RuntimeError,
-              "StructuredRAPFactory: matrixType \"" << matrixType
-                                                    << "\" is not supported for prebuilt Ac graph.");
-        }
+        const StructuredGraphSpec graphSpec = GetStructuredGraphSpec(matrixType, interpolationOrder);
+        Teuchos::Array<int> processorGrid(3);
+        processorGrid[0] = procX;
+        processorGrid[1] = procY;
+        processorGrid[2] = procZ;
+        GetOStream(Statistics1) << "StructuredRAP: Using " << graphSpec.description
+                                << " stencil with " << graphSpec.stencilOffsets.size()
+                                << " nodal entries." << std::endl;
+        GetStructuredGraph(Ac, P, lCoarseNodesPerDim, processorGrid, graphSpec);
       }
 
       // We *always* need global constants for the RAP, but not for the temps

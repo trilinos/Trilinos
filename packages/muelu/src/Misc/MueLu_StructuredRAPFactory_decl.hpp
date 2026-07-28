@@ -10,6 +10,7 @@
 #define MUELU_STRUCTUREDRAPFACTORY_DECL_HPP
 
 #include <string>
+#include <vector>
 
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_CrsMatrix_fwd.hpp>
@@ -96,23 +97,25 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
 
   //@{
 
-  void GetStructured1D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim,
-                       LocalOrdinal dofsPerNode, const std::string& matrixType) const;
-  void GetStructured2D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim,
-                       LocalOrdinal dofsPerNode, bool includeDiagonalNeighbors,
-                       int procX, int procY, const std::string& matrixType) const;
-  void GetStructured3D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim,
-                       LocalOrdinal dofsPerNode, bool includeDiagonalNeighbors,
-                       int procX, int procY, int procZ, const std::string& matrixType) const;
-  void GetLaplace1D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim) const;
-  void GetElasticity1D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim) const;
-  void GetLaplace2D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim,
-                    int procX, int procY, int interpolationOrder) const;
-  void GetElasticity2D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim, int procX, int procY) const;
-  void GetLaplace3D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim,
-                    int procX, int procY, int procZ, int interpolationOrder) const;
-  void GetElasticity3D(RCP<Matrix>& Ac, const RCP<Matrix> P, const Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim,
-                       int procX, int procY, int procZ) const;
+  struct StencilOffset {
+    int x;
+    int y;
+    int z;
+  };
+
+  struct StructuredGraphSpec {
+    int numDimensions;
+    LocalOrdinal dofsPerNode;
+    std::vector<StencilOffset> stencilOffsets;
+    std::string description;
+  };
+
+  StructuredGraphSpec GetStructuredGraphSpec(const std::string& matrixType, int interpolationOrder) const;
+
+  void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
+                          const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
+                          const Teuchos::Array<int>& processorGrid,
+                          const StructuredGraphSpec& graphSpec) const;
 
   //}
 
