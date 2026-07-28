@@ -4,6 +4,7 @@
 #define KOKKOSBATCHED_INNER_TRSM_DECL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+/// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 namespace KokkosBatched {
 
@@ -11,20 +12,20 @@ namespace KokkosBatched {
 // Solve L(m x m) X(m x n) = B(m x n)
 template <int bmn>
 struct InnerTrsmLeftLowerUnitDiag {
-  const int _as0, _as1, _bs0, _bs1;
+  const int m_as0, m_as1, m_bs0, m_bs1;
 
   KOKKOS_INLINE_FUNCTION
   InnerTrsmLeftLowerUnitDiag(const int as0, const int as1, const int bs0, const int bs1)
-      : _as0(as0), _as1(as1), _bs0(bs0), _bs1(bs1) {}
+      : m_as0(as0), m_as1(as1), m_bs0(bs0), m_bs1(bs1) {}
 
   // trisolve
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 };
 
@@ -32,20 +33,20 @@ struct InnerTrsmLeftLowerUnitDiag {
 // Solve L(m x m) X(m x n) = B(m x n)
 template <int bmn>
 struct InnerTrsmLeftLowerNonUnitDiag {
-  const int _as0, _as1, _bs0, _bs1;
+  const int m_as0, m_as1, m_bs0, m_bs1;
 
   KOKKOS_INLINE_FUNCTION
   InnerTrsmLeftLowerNonUnitDiag(const int as0, const int as1, const int bs0, const int bs1)
-      : _as0(as0), _as1(as1), _bs0(bs0), _bs1(bs1) {}
+      : m_as0(as0), m_as1(as1), m_bs0(bs0), m_bs1(bs1) {}
 
   // trisolve
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 };
 
@@ -53,20 +54,20 @@ struct InnerTrsmLeftLowerNonUnitDiag {
 // Solve U(m x m) X(m x n) = B(m x n)
 template <int bmn>
 struct InnerTrsmLeftUpperUnitDiag {
-  const int _as0, _as1, _bs0, _bs1;
+  const int m_as0, m_as1, m_bs0, m_bs1;
 
   KOKKOS_INLINE_FUNCTION
   InnerTrsmLeftUpperUnitDiag(const int as0, const int as1, const int bs0, const int bs1)
-      : _as0(as0), _as1(as1), _bs0(bs0), _bs1(bs1) {}
+      : m_as0(as0), m_as1(as1), m_bs0(bs0), m_bs1(bs1) {}
 
   // trisolve
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 };
 
@@ -74,20 +75,20 @@ struct InnerTrsmLeftUpperUnitDiag {
 // Solve U(m x m) X(m x n) = B(m x n)
 template <int bmn>
 struct InnerTrsmLeftUpperNonUnitDiag {
-  const int _as0, _as1, _bs0, _bs1;
+  const int m_as0, m_as1, m_bs0, m_bs1;
 
   KOKKOS_INLINE_FUNCTION
   InnerTrsmLeftUpperNonUnitDiag(const int as0, const int as1, const int bs0, const int bs1)
-      : _as0(as0), _as1(as1), _bs0(bs0), _bs1(bs1) {}
+      : m_as0(as0), m_as1(as1), m_bs0(bs0), m_bs1(bs1) {}
 
   // trisolve
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 
   // for remainder
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION int serial_invoke(const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION int serial_invoke(Op op, const ValueType *KOKKOS_RESTRICT A, const int m, const int n,
                                            /**/ ValueType *KOKKOS_RESTRICT B);
 };
 

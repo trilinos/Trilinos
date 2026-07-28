@@ -171,8 +171,8 @@ struct MKL_SpMV_Data : public TPL_SpMV_Data<ExecutionSpace> {
 #endif
 
 #if defined(KOKKOS_ENABLE_SYCL)
-struct OneMKL_SpMV_Data : public TPL_SpMV_Data<Kokkos::Experimental::SYCL> {
-  OneMKL_SpMV_Data(const Kokkos::Experimental::SYCL& exec_) : TPL_SpMV_Data(exec_) {}
+struct OneMKL_SpMV_Data : public TPL_SpMV_Data<Kokkos::SYCL> {
+  OneMKL_SpMV_Data(const Kokkos::SYCL& exec_) : TPL_SpMV_Data(exec_) {}
   ~OneMKL_SpMV_Data() {
     // Make sure no spmv is still running with this handle, if exec uses an
     // out-of-order queue (rare case)

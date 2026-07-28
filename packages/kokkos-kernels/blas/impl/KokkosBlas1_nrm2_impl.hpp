@@ -24,7 +24,7 @@ template <class RV, class XV, class SizeType = typename XV::size_type>
 struct V_Nrm2_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
@@ -72,7 +72,7 @@ template <class ExecSpace, class RV, class XV, class size_type>
 struct Nrm2_MV_Functor {
   typedef typename RV::non_const_value_type rvalue_type;
   typedef typename XV::non_const_value_type xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 

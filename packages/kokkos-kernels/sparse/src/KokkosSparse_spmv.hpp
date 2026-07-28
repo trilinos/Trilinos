@@ -113,20 +113,38 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
   }
 
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
-    if ((x.extent(1) != y.extent(1)) || (n != x.extent(0)) || (m != y.extent(0))) {
-      std::ostringstream os;
-      os << "KokkosSparse::spmv: Dimensions do not match: "
-         << ", A: " << m << " x " << n << ", x: " << x.extent(0) << " x " << x.extent(1) << ", y: " << y.extent(0)
-         << " x " << y.extent(1);
-      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    if constexpr (XVector::rank() == 1) {
+      if ((n != x.extent(0)) || (m != y.extent(0))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv: Dimensions do not match: "
+           << ", A: " << m << " x " << n << ", x: " << x.extent(0) << ", y: " << y.extent(0);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if constexpr (XVector::rank() == 2) {
+      if ((x.extent(1) != y.extent(1)) || (n != x.extent(0)) || (m != y.extent(0))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv: Dimensions do not match: "
+           << ", A: " << m << " x " << n << ", x: " << x.extent(0) << " x " << x.extent(1) << ", y: " << y.extent(0)
+           << " x " << y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
     }
   } else {
-    if ((x.extent(1) != y.extent(1)) || (m != x.extent(0)) || (n != y.extent(0))) {
-      std::ostringstream os;
-      os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
-         << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << " x " << x.extent(1)
-         << ", y: " << y.extent(0) << " x " << y.extent(1);
-      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    if constexpr (XVector::rank() == 1) {
+      if ((m != x.extent(0)) || (n != y.extent(0))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
+           << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << ", y: " << y.extent(0);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if constexpr (XVector::rank() == 2) {
+      if ((x.extent(1) != y.extent(1)) || (m != x.extent(0)) || (n != y.extent(0))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv: Dimensions do not match (transpose): "
+           << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << " x " << x.extent(1)
+           << ", y: " << y.extent(0) << " x " << y.extent(1);
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
     }
   }
 
@@ -240,7 +258,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
         useNative = useNative || (mode[0] == Conjugate[0]);
       }
 #ifdef KOKKOS_ENABLE_SYCL
-      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Experimental::SYCL>) {
+      if constexpr (std::is_same_v<ExecutionSpace, Kokkos::SYCL>) {
         useNative = useNative || (mode[0] != NoTranspose[0]);
       }
 #endif
@@ -560,24 +578,56 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
 
   // Check compatibility of dimensions at run time.
   if ((mode[0] == NoTranspose[0]) || (mode[0] == Conjugate[0])) {
-    if ((x.extent(1) != y.extent(1)) || (static_cast<size_t>(A.numCols()) > static_cast<size_t>(x.extent(0))) ||
-        (static_cast<size_t>(A.numRows()) > static_cast<size_t>(y.extent(0)))) {
-      std::ostringstream os;
-      os << "KokkosSparse::spmv_struct: Dimensions do not match: "
-         << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << " x " << x.extent(1)
-         << ", y: " << y.extent(0) << " x " << y.extent(1);
+    if constexpr (XVector::rank == 1) {
+      if ((static_cast<size_t>(A.numCols()) > static_cast<size_t>(x.extent(0))) ||
+          (static_cast<size_t>(A.numRows()) > static_cast<size_t>(y.extent(0)))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv_struct: Dimensions do not match: "
+           << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << ", y: " << y.extent(0);
 
-      KokkosKernels::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    }
+    if constexpr (XVector::rank == 1) {
+      if ((static_cast<size_t>(A.numCols()) > static_cast<size_t>(x.extent(0))) ||
+          (static_cast<size_t>(A.numRows()) > static_cast<size_t>(y.extent(0)))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv_struct: Dimensions do not match: "
+           << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << ", y: " << y.extent(0);
+
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if constexpr (XVector::rank == 2) {
+      if ((x.extent(1) != y.extent(1)) || (static_cast<size_t>(A.numCols()) > static_cast<size_t>(x.extent(0))) ||
+          (static_cast<size_t>(A.numRows()) > static_cast<size_t>(y.extent(0)))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv_struct: Dimensions do not match: "
+           << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << " x " << x.extent(1)
+           << ", y: " << y.extent(0) << " x " << y.extent(1);
+
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
     }
   } else {
-    if ((x.extent(1) != y.extent(1)) || (static_cast<size_t>(A.numCols()) > static_cast<size_t>(y.extent(0))) ||
-        (static_cast<size_t>(A.numRows()) > static_cast<size_t>(x.extent(0)))) {
-      std::ostringstream os;
-      os << "KokkosSparse::spmv_struct: Dimensions do not match (transpose): "
-         << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << " x " << x.extent(1)
-         << ", y: " << y.extent(0) << " x " << y.extent(1);
+    if constexpr (XVector::rank == 1) {
+      if ((static_cast<size_t>(A.numCols()) > static_cast<size_t>(y.extent(0))) ||
+          (static_cast<size_t>(A.numRows()) > static_cast<size_t>(x.extent(0)))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv_struct: Dimensions do not match (transpose): "
+           << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << ", y: " << y.extent(0);
 
-      KokkosKernels::Impl::throw_runtime_exception(os.str());
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
+    } else if constexpr (XVector::rank == 2) {
+      if ((x.extent(1) != y.extent(1)) || (static_cast<size_t>(A.numCols()) > static_cast<size_t>(y.extent(0))) ||
+          (static_cast<size_t>(A.numRows()) > static_cast<size_t>(x.extent(0)))) {
+        std::ostringstream os;
+        os << "KokkosSparse::spmv_struct: Dimensions do not match (transpose): "
+           << ", A: " << A.numRows() << " x " << A.numCols() << ", x: " << x.extent(0) << " x " << x.extent(1)
+           << ", y: " << y.extent(0) << " x " << y.extent(1);
+
+        KokkosKernels::Impl::throw_runtime_exception(os.str());
+      }
     }
   }
 

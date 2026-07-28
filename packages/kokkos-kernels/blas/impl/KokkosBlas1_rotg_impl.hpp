@@ -10,62 +10,87 @@
 namespace KokkosBlas {
 namespace Impl {
 
-template <class Scalar, class Magnitude,
-          typename std::enable_if<!KokkosKernels::ArithTraits<Scalar>::is_complex, bool>::type = true>
-KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c, Scalar* s) {
-  const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
-  const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
+/// \brief Compute Givens rotation coefficients for real scalars.
+/// \tparam Scalar The real scalar type for a and b
+/// \tparam Magnitude The real scalar type for c
+/// \param[in,out] a The first scalar, overwritten by the first rotation coefficient
+/// \param[in,out] b The second scalar, overwritten by the second rotation coefficient
+/// \param[out] c The cosine of the rotation
+/// \param[out] s The sine of the rotation
+template <class Scalar, class Magnitude>
+  requires(!KokkosKernels::ArithTraits<Scalar>::is_complex)
+KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* KOKKOS_RESTRICT a, Scalar* KOKKOS_RESTRICT b,
+                                      Magnitude* KOKKOS_RESTRICT c, Scalar* KOKKOS_RESTRICT s) {
+  const Scalar one   = KokkosKernels::ArithTraits<Scalar>::one();
+  const Scalar zero  = KokkosKernels::ArithTraits<Scalar>::zero();
+  const Scalar anorm = Kokkos::abs(*a);
+  const Scalar bnorm = Kokkos::abs(*b);
 
-  const Scalar numerical_scaling = Kokkos::abs(*a) + Kokkos::abs(*b);
-  if (numerical_scaling == zero) {
+  if (bnorm == zero) {
     *c = one;
     *s = zero;
-    *a = zero;
     *b = zero;
-  } else {
-    const Scalar scaled_a = *a / numerical_scaling;
-    const Scalar scaled_b = *b / numerical_scaling;
-    Scalar norm           = Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b) * numerical_scaling;
-    Scalar sign           = Kokkos::abs(*a) > Kokkos::abs(*b) ? *a : *b;
-    norm                  = Kokkos::copysign(norm, sign);
-    *c                    = *a / norm;
-    *s                    = *b / norm;
-
-    Scalar z = one;
-    if (Kokkos::abs(*a) > Kokkos::abs(*b)) {
-      z = *s;
-    }
-    if ((Kokkos::abs(*b) >= Kokkos::abs(*a)) && (*c != zero)) {
-      z = one / *c;
-    }
-    *a = norm;
-    *b = z;
+    return;
   }
+
+  if (anorm == zero) {
+    *c = zero;
+    *s = one;
+    *a = bnorm;
+    *b = one;
+    return;
+  }
+
+  const Scalar scale = anorm + bnorm;
+  const Scalar sign  = anorm > bnorm ? *a : *b;
+  Scalar norm        = scale * Kokkos::hypot(*a / scale, *b / scale);
+  norm               = Kokkos::copysign(norm, sign);
+
+  *c = *a / norm;
+  *s = *b / norm;
+  if (anorm > bnorm) {
+    *b = *s;
+  } else if (*c != zero) {
+    *b = one / *c;
+  } else {
+    *b = one;
+  }
+  *a = norm;
 }
 
-template <class Scalar, class Magnitude,
-          typename std::enable_if<KokkosKernels::ArithTraits<Scalar>::is_complex, bool>::type = true>
-KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* a, Scalar* b, Magnitude* c, Scalar* s) {
-  using mag_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
+/// \brief Compute Givens rotation coefficients for complex scalars.
+/// \tparam Scalar The complex scalar type for a and b
+/// \tparam Magnitude The real scalar type for c
+/// \param[in,out] a The first scalar, overwritten by the first rotation coefficient
+/// \param[in] b The second scalar
+/// \param[out] c The cosine of the rotation
+/// \param[out] s The sine of the rotation
+template <class Scalar, class Magnitude>
+  requires KokkosKernels::ArithTraits<Scalar>::is_complex
+KOKKOS_INLINE_FUNCTION void rotg_impl(Scalar* KOKKOS_RESTRICT a, const Scalar* KOKKOS_RESTRICT b,
+                                      Magnitude* KOKKOS_RESTRICT c, Scalar* KOKKOS_RESTRICT s) {
+  using mag_type    = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
+  const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
 
-  const Scalar one        = KokkosKernels::ArithTraits<Scalar>::one();
-  const Scalar zero       = KokkosKernels::ArithTraits<Scalar>::zero();
-  const mag_type mag_zero = KokkosKernels::ArithTraits<mag_type>::zero();
-
-  const mag_type numerical_scaling = Kokkos::abs(*a) + Kokkos::abs(*b);
-  if (Kokkos::abs(*a) == zero) {
-    *c = mag_zero;
-    *s = one;
-    *a = *b;
-  } else {
-    const Scalar scaled_a = Kokkos::abs(*a / numerical_scaling);
-    const Scalar scaled_b = Kokkos::abs(*b / numerical_scaling);
-    mag_type norm         = Kokkos::abs(Kokkos::sqrt(scaled_a * scaled_a + scaled_b * scaled_b)) * numerical_scaling;
-    Scalar unit_a         = *a / Kokkos::abs(*a);
-    *c                    = Kokkos::abs(*a) / norm;
-    *s                    = unit_a * Kokkos::conj(*b) / norm;
-    *a                    = unit_a * norm;
+  if (Kokkos::abs(*b) == zero) {
+    *c = KokkosKernels::ArithTraits<mag_type>::one();
+    *s = zero;
+    return;
   }
+
+  if (Kokkos::abs(*a) == zero) {
+    *c = KokkosKernels::ArithTraits<mag_type>::zero();
+    *s = Kokkos::conj(*b) / Kokkos::abs(*b);
+    *a = Scalar(Kokkos::abs(*b));
+    return;
+  }
+
+  const mag_type scale = Kokkos::abs(*a) + Kokkos::abs(*b);
+  const mag_type norm  = scale * Kokkos::hypot(Kokkos::abs(*a) / scale, Kokkos::abs(*b) / scale);
+  const Scalar unit_a  = *a / Kokkos::abs(*a);
+  *c                   = Kokkos::abs(*a) / norm;
+  *s                   = unit_a * Kokkos::conj(*b) / norm;
+  *a                   = unit_a * norm;
 }
 
 template <class SViewType, class MViewType>

@@ -100,7 +100,7 @@ void impl_test_batched_gesv(const int N, const int BlkSize) {
         -1, Kokkos::subview(A_host, l, Kokkos::ALL, Kokkos::ALL), Kokkos::subview(X_host, l, Kokkos::ALL), 1,
         Kokkos::subview(B_host, l, Kokkos::ALL));
 
-  KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(B_host, B_host, sqr_norm_j_host);
+  KokkosBatched::SerialDot<Trans::ConjTranspose, 1>::invoke(B_host, B_host, sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e3 * ats::epsilon();
 

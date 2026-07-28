@@ -5,7 +5,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosBlas1_axpby_impl.hpp>
@@ -214,21 +214,29 @@ struct Axpby<execution_space, AV, XMV, BV, YMV, 2, false, KOKKOSKERNELS_IMPL_COM
         scalar_y = 1;
       }
     }
-
-    if (numRows < static_cast<size_type>(INT_MAX) && numRows * numCols < static_cast<size_type>(INT_MAX)) {
-      using index_type = int;
-      using Axpby_MV_Invoke_Layout =
-          typename std::conditional<std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
-                                    Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
-                                    Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type> >::type;
-      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, scalar_x, scalar_y);
+    // Support rank-1, extent-1 coefficients even when numCols > 1. Use a single implementation for this to avoid
+    // excessive kernel instantiations. It specializes for MDRange layout but not special values (-1, 0, 1) of a,b.
+    int numCoeffsA = getNumCoefficients(av);
+    int numCoeffsB = getNumCoefficients(bv);
+    if (numCols > size_type(1) && (numCoeffsA == 1 || numCoeffsB == 1)) {
+      axpby_mv_simple(space, av, X, bv, Y);
     } else {
-      using index_type = typename XMV::size_type;
-      using Axpby_MV_Invoke_Layout =
-          typename std::conditional<std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
-                                    Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
-                                    Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type> >::type;
-      Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, scalar_x, scalar_y);
+      // In the optimized path, we know that if av/bv are rank-1 then they represent one coefficient per column.
+      if (numRows < static_cast<size_type>(INT_MAX) && numRows * numCols < static_cast<size_type>(INT_MAX)) {
+        using index_type = int;
+        using Axpby_MV_Invoke_Layout =
+            typename std::conditional<std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
+                                      Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
+                                      Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type> >::type;
+        Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, scalar_x, scalar_y);
+      } else {
+        using index_type = typename XMV::size_type;
+        using Axpby_MV_Invoke_Layout =
+            typename std::conditional<std::is_same<typename XMV::array_layout, Kokkos::LayoutLeft>::value,
+                                      Axpby_MV_Invoke_Left<execution_space, AV, XMV, BV, YMV, index_type>,
+                                      Axpby_MV_Invoke_Right<execution_space, AV, XMV, BV, YMV, index_type> >::type;
+        Axpby_MV_Invoke_Layout::run(space, av, X, bv, Y, scalar_x, scalar_y);
+      }
     }
     Kokkos::Profiling::popRegion();
   }

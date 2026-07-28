@@ -2,8 +2,6 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #pragma once
-// exclude from Cuda builds without lambdas enabled
-#if !defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 #include <list>
 #include <limits>
 #include <Kokkos_Core.hpp>
@@ -1712,5 +1710,3 @@ class coarse_builder {
 
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
-// exclude from Cuda builds without lambdas enabled
-#endif

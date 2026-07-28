@@ -1,0 +1,1535 @@
+#!/usr/bin/env python3
+
+"""
+Unit tests for generate_eti script. These tests are not run by
+CI and are only used manually.
+"""
+
+import unittest
+import sys
+from pathlib import Path
+
+# Import the module to test by reading and executing it
+script_dir = Path(__file__).parent.resolve()
+generate_eti_path = script_dir / "generate_eti"
+
+if not generate_eti_path.exists():
+    raise FileNotFoundError(f"Cannot find generate_eti at {generate_eti_path}")
+
+# Read the file and execute it in a namespace
+with open(generate_eti_path, 'r') as f:
+    code = f.read()
+
+# Create a module namespace
+import types
+gen = types.ModuleType('generate_eti')
+
+# Execute the code in that namespace
+exec(code, gen.__dict__)
+
+# Add to sys.modules
+sys.modules['generate_eti'] = gen
+
+###############################################################################
+class TestParseSignature(unittest.TestCase):
+###############################################################################
+    """Test parse_signature function."""
+
+    ###########################################################################
+    def check_param(self, param, dim, ptype, mutability, name, cpp_type,
+                    template_param, is_const, is_scalar, is_char):
+    ###########################################################################
+        """Helper to check all properties of a Param instance."""
+        self.assertEqual(param.dim, dim)
+        self.assertEqual(param.type, ptype)
+        self.assertEqual(param.mutability, mutability)
+        self.assertEqual(param.name, name)
+        self.assertEqual(param.cpp_type, cpp_type)
+        if template_param is None:
+            self.assertIsNone(param.template_param)
+        else:
+            self.assertEqual(param.template_param, template_param)
+        self.assertEqual(param.is_const, is_const)
+        self.assertEqual(param.is_scalar, is_scalar)
+        self.assertEqual(param.is_char, is_char)
+
+    ###########################################################################
+    def test_simple_vector_io(self):
+    ###########################################################################
+        """Test parsing simple input/output vectors."""
+        result = gen.parse_signature("1dsi_x,1dso_y")
+        self.assertEqual(len(result), 2)
+
+        # Check first param (input vector)
+        self.check_param(result[0], 1, 's', 'i', 'x', 'XViewType', 'XViewType', True, False, False)
+
+        # Check second param (output vector)
+        self.check_param(result[1], 1, 's', 'o', 'y', 'YViewType', 'YViewType', False, False, False)
+
+    ###########################################################################
+    def test_axpby_signature(self):
+    ###########################################################################
+        """Test parsing axpby signature."""
+        result = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        self.assertEqual(len(result), 4)
+
+        # Check scalar alpha
+        self.check_param(result[0], 0, 's', 'i', 'alpha', 'ScalarType', None, True, True, False)
+
+        # Check vector x
+        self.check_param(result[1], 1, 's', 'i', 'x', 'XViewType', 'XViewType', True, False, False)
+
+        # Check scalar beta
+        self.check_param(result[2], 0, 's', 'i', 'beta', 'ScalarType', None, True, True, False)
+
+        # Check vector y (input-output)
+        self.check_param(result[3], 1, 's', 'io', 'y', 'YViewType', 'YViewType', False, False, False)
+
+    ###########################################################################
+    def test_gemv_with_char(self):
+    ###########################################################################
+        """Test parsing gemv signature with char parameter."""
+        result = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        self.assertEqual(len(result), 6)
+
+        # Check char parameter
+        self.check_param(result[0], 0, 'c', 'i', 'trans', 'const char[]', None, True, False, True)
+
+        # Check alpha scalar
+        self.check_param(result[1], 0, 's', 'i', 'alpha', 'ScalarType', None, True, True, False)
+
+        # Check 2D matrix
+        self.check_param(result[2], 2, 's', 'i', 'A', 'AViewType', 'AViewType', True, False, False)
+
+        # Check x vector
+        self.check_param(result[3], 1, 's', 'i', 'x', 'XViewType', 'XViewType', True, False, False)
+
+        # Check beta scalar
+        self.check_param(result[4], 0, 's', 'i', 'beta', 'ScalarType', None, True, True, False)
+
+        # Check y vector (output)
+        self.check_param(result[5], 1, 's', 'io', 'y', 'YViewType', 'YViewType', False, False, False)
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test parsing parameter names with underscores."""
+        result = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        self.assertEqual(len(result), 2)
+
+        self.check_param(result[0], 1, 's', 'i', 'input_vec', 'InputVecViewType', 'InputVecViewType', True, False, False)
+        self.check_param(result[1], 1, 's', 'io', 'output_vec', 'OutputVecViewType', 'OutputVecViewType', False, False, False)
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test parsing 3D tensor."""
+        result = gen.parse_signature("3dsi_tensor")
+        self.assertEqual(len(result), 1)
+
+        self.check_param(result[0], 3, 's', 'i', 'tensor', 'TensorViewType', 'TensorViewType', True, False, False)
+
+    ###########################################################################
+    def test_integer_types(self):
+    ###########################################################################
+        """Test parsing integer types."""
+        result = gen.parse_signature("0dii_count,1dii_indices")
+        self.assertEqual(len(result), 2)
+
+        self.check_param(result[0], 0, 'i', 'i', 'count', 'int', None, True, True, False)
+        self.check_param(result[1], 1, 'i', 'i', 'indices', 'IndicesViewType', 'IndicesViewType', True, False, False)
+
+    ###########################################################################
+    def test_complex_types(self):
+    ###########################################################################
+        """Test parsing complex types."""
+        result = gen.parse_signature("0dsi_alpha,1dsi_x")
+        self.assertEqual(len(result), 2)
+
+        self.check_param(result[0], 0, 's', 'i', 'alpha', 'ScalarType', None, True, True, False)
+        self.check_param(result[1], 1, 's', 'i', 'x', 'XViewType', 'XViewType', True, False, False)
+
+    ###########################################################################
+    def test_c_format(self):
+    ###########################################################################
+        """Test parsing 'c' format for char."""
+        result = gen.parse_signature("c_uplo")
+        self.assertEqual(len(result), 1)
+
+        self.check_param(result[0], 0, 'c', 'i', 'uplo', 'const char[]', None, True, False, True)
+
+
+    ###########################################################################
+    def test_missing_name_error(self):
+    ###########################################################################
+        """Test that missing name raises error."""
+        with self.assertRaises(ValueError) as cm:
+            gen.parse_signature("1dri,1dro")
+        self.assertIn("name is REQUIRED", str(cm.exception))
+
+    ###########################################################################
+    def test_invalid_spec_error(self):
+    ###########################################################################
+        """Test that invalid spec raises error."""
+        with self.assertRaises(ValueError) as cm:
+            gen.parse_signature("invalid")
+        self.assertIn("Invalid signature spec", str(cm.exception))
+
+    ###########################################################################
+    def test_empty_spec(self):
+    ###########################################################################
+        """Test that empty specs are skipped."""
+        result = gen.parse_signature("1dsi_x,,1dso_y")
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0].name, 'x')
+        self.assertEqual(result[1].name, 'y')
+
+###############################################################################
+class TestBuildTemplateParamsList(unittest.TestCase):
+###############################################################################
+    """Test build_template_params_list function."""
+
+    ###########################################################################
+    def test_with_views(self):
+    ###########################################################################
+        """Test building template params with view parameters."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class XViewType, class YViewType")
+
+    ###########################################################################
+    def test_with_scalars_only(self):
+    ###########################################################################
+        """Test building template params with scalars only (no views)."""
+        params = gen.parse_signature("0dsi_alpha,0dsi_beta")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class ScalarType")
+
+    ###########################################################################
+    def test_mixed_params(self):
+    ###########################################################################
+        """Test building template params with mixed parameters."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class XViewType, class YViewType")
+
+    ###########################################################################
+    def test_with_char_params(self):
+    ###########################################################################
+        """Test that char parameters don't generate template params."""
+        params = gen.parse_signature("ci_trans,1dsi_x")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class XViewType")
+
+    ###########################################################################
+    def test_matrix_view(self):
+    ###########################################################################
+        """Test building template params with matrix view."""
+        params = gen.parse_signature("2dsi_A,1dsi_x")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class AViewType, class XViewType")
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test building template params with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class TensorViewType")
+
+    ###########################################################################
+    def test_integer_views(self):
+    ###########################################################################
+        """Test building template params with integer views."""
+        params = gen.parse_signature("0dii_count,1dii_indices")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class IndicesViewType")
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test building template params with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class InputVecViewType, class OutputVecViewType")
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test building template params with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class AViewType, class XViewType, class YViewType")
+
+    ###########################################################################
+    def test_int_scalars_only(self):
+    ###########################################################################
+        """Test building template params with only integer scalars."""
+        params = gen.parse_signature("0dii_n,0dii_m")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class ScalarType")
+
+    ###########################################################################
+    def test_char_only(self):
+    ###########################################################################
+        """Test building template params with only char parameter."""
+        params = gen.parse_signature("c_uplo")
+        result = gen.build_template_params_list(params)
+        self.assertEqual(result, "class ScalarType")
+
+###############################################################################
+class TestBuildFunctionParamsList(unittest.TestCase):
+###############################################################################
+    """Test build_function_params_list function."""
+
+    ###########################################################################
+    def test_simple_views(self):
+    ###########################################################################
+        """Test building function params with simple views."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "const XViewType& x, YViewType& y")
+
+    ###########################################################################
+    def test_with_scalars(self):
+    ###########################################################################
+        """Test building function params with scalars."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result,
+            "const typename XViewType::value_type& alpha, const XViewType& x, "
+            "const typename XViewType::value_type& beta, YViewType& y")
+
+    ###########################################################################
+    def test_with_char(self):
+    ###########################################################################
+        """Test building function params with char parameters."""
+        params = gen.parse_signature("ci_trans,1dsi_x")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "const char trans[], const XViewType& x")
+
+    ###########################################################################
+    def test_matrix_param(self):
+    ###########################################################################
+        """Test building function params with matrix."""
+        params = gen.parse_signature("2dsi_A,1dsi_x")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "const AViewType& A, const XViewType& x")
+
+    ###########################################################################
+    def test_input_output_view(self):
+    ###########################################################################
+        """Test io mutability produces non-const reference."""
+        params = gen.parse_signature("1dsio_data")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "DataViewType& data")
+
+    ###########################################################################
+    def test_integer_scalar(self):
+    ###########################################################################
+        """Test integer scalar generates const int& parameter."""
+        params = gen.parse_signature("0dii_count,1dsi_x")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "const int& count, const XViewType& x")
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test building function params with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "const TensorViewType& tensor")
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test building function params with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "const InputVecViewType& input_vec, OutputVecViewType& output_vec")
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test building function params with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result,
+            "const char trans[], const typename AViewType::value_type& alpha, "
+            "const AViewType& A, const XViewType& x, "
+            "const typename AViewType::value_type& beta, YViewType& y")
+
+    ###########################################################################
+    def test_multiple_output_views(self):
+    ###########################################################################
+        """Test building function params with multiple output views."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        result = gen.build_function_params_list(params)
+        self.assertEqual(result, "const XViewType& x, YViewType& y, ZViewType& z")
+
+    ###########################################################################
+    def test_scalars_only_no_views(self):
+    ###########################################################################
+        """Test building function params with only scalars (no views for value_type)."""
+        params = gen.parse_signature("0dsi_alpha,0dsi_beta")
+        result = gen.build_function_params_list(params)
+        # Fallback to double when no views available
+        self.assertEqual(result, "const ScalarType& alpha, const ScalarType& beta")
+
+###############################################################################
+class TestBuildFunctionCallParamsList(unittest.TestCase):
+###############################################################################
+    """Test build_function_call_params_list function."""
+
+    ###########################################################################
+    def test_simple_params(self):
+    ###########################################################################
+        """Test building function call params."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,1dso_y")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "alpha, x, y")
+
+    ###########################################################################
+    def test_with_char(self):
+    ###########################################################################
+        """Test building function call params with char."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "trans, alpha, A")
+
+    ###########################################################################
+    def test_single_view(self):
+    ###########################################################################
+        """Test building function call params with single view."""
+        params = gen.parse_signature("1dsi_x")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "x")
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test building function call params with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "trans, alpha, A, x, beta, y")
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test building function call params with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "input_vec, output_vec")
+
+    ###########################################################################
+    def test_integer_types(self):
+    ###########################################################################
+        """Test building function call params with integer types."""
+        params = gen.parse_signature("0dii_count,1dii_indices")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "count, indices")
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test building function call params with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor,1dsi_x")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "tensor, x")
+
+    ###########################################################################
+    def test_multiple_scalars(self):
+    ###########################################################################
+        """Test building function call params with multiple scalars."""
+        params = gen.parse_signature("0dsi_alpha,0dsi_beta,0dsi_gamma")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "alpha, beta, gamma")
+
+    ###########################################################################
+    def test_mixed_mutability(self):
+    ###########################################################################
+        """Test building function call params with mixed mutability."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dsio_z")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "x, y, z")
+
+    ###########################################################################
+    def test_axpby_signature(self):
+    ###########################################################################
+        """Test building function call params with axpby signature."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "alpha, x, beta, y")
+
+    ###########################################################################
+    def test_char_only(self):
+    ###########################################################################
+        """Test building function call params with only char parameter."""
+        params = gen.parse_signature("c_uplo")
+        result = gen.build_function_call_params_list(params)
+        self.assertEqual(result, "uplo")
+
+###############################################################################
+class TestBuildApiParamList(unittest.TestCase):
+###############################################################################
+    """Test build_api_param_list function."""
+
+    ###########################################################################
+    def test_with_exec_space(self):
+    ###########################################################################
+        """Test API params with execution space."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_api_param_list(params, include_exec_space=True)
+        self.assertIn("const execution_space& space", result)
+        self.assertIn("const XViewType& x", result)
+        self.assertIn("YViewType& y", result)
+
+    ###########################################################################
+    def test_without_exec_space(self):
+    ###########################################################################
+        """Test API params without execution space."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertNotIn("execution_space", result)
+        self.assertIn("const XViewType& x", result)
+
+    ###########################################################################
+    def test_with_scalars(self):
+    ###########################################################################
+        """Test API params with scalars reference view's value_type."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertIn("const typename XViewType::value_type& alpha", result)
+
+    ###########################################################################
+    def test_with_char(self):
+    ###########################################################################
+        """Test API params with char parameter."""
+        params = gen.parse_signature("ci_trans,1dsi_x")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertIn("const char trans[]", result)
+        self.assertIn("const XViewType& x", result)
+
+    ###########################################################################
+    def test_gemv_with_exec_space(self):
+    ###########################################################################
+        """Test API params with complex gemv signature and exec space."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_api_param_list(params, include_exec_space=True)
+        self.assertIn("const execution_space& space", result)
+        self.assertIn("const char trans[]", result)
+        self.assertIn("const AViewType& A", result)
+
+    ###########################################################################
+    def test_integer_scalar(self):
+    ###########################################################################
+        """Test API params with integer scalar."""
+        params = gen.parse_signature("0dii_count,1dsi_x")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertIn("const int& count", result)
+        self.assertIn("const XViewType& x", result)
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test API params with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertIn("const TensorViewType& tensor", result)
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test API params with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertIn("const InputVecViewType& input_vec", result)
+        self.assertIn("OutputVecViewType& output_vec", result)
+
+    ###########################################################################
+    def test_axpby_with_exec_space(self):
+    ###########################################################################
+        """Test API params with axpby signature and exec space."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_api_param_list(params, include_exec_space=True)
+        self.assertIn("const execution_space& space", result)
+        self.assertIn("const typename XViewType::value_type& alpha", result)
+        self.assertIn("const typename XViewType::value_type& beta", result)
+
+    ###########################################################################
+    def test_matrix_only(self):
+    ###########################################################################
+        """Test API params with only matrix parameter."""
+        params = gen.parse_signature("2dsi_A")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertIn("const AViewType& A", result)
+
+    ###########################################################################
+    def test_multiple_outputs(self):
+    ###########################################################################
+        """Test API params with multiple output parameters."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        result = gen.build_api_param_list(params, include_exec_space=False)
+        self.assertIn("const XViewType& x", result)
+        self.assertIn("YViewType& y", result)
+        self.assertIn("ZViewType& z", result)
+
+###############################################################################
+class TestBuildViewConversions(unittest.TestCase):
+###############################################################################
+    """Test build_view_conversions function."""
+
+    ###########################################################################
+    def test_simple_views(self):
+    ###########################################################################
+        """Test view conversion code generation."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_view_conversions(params)
+
+        self.assertIn("XViewInternalType", result)
+        self.assertIn("YViewInternalType", result)
+        self.assertIn("const_data_type", result)  # For input view
+        self.assertIn("uX(x)", result)
+        self.assertIn("uY(y)", result)
+
+    ###########################################################################
+    def test_no_views(self):
+    ###########################################################################
+        """Test with only scalars (no view conversions)."""
+        params = gen.parse_signature("0dsi_alpha,0dsi_beta")
+        result = gen.build_view_conversions(params)
+        self.assertEqual(result, "")
+
+    ###########################################################################
+    def test_output_view(self):
+    ###########################################################################
+        """Test output view uses data_type not const_data_type."""
+        params = gen.parse_signature("1dso_y")
+        result = gen.build_view_conversions(params)
+
+        self.assertIn("typename YViewType::data_type", result)
+        self.assertNotIn("const_data_type", result)
+
+    ###########################################################################
+    def test_matrix_view(self):
+    ###########################################################################
+        """Test view conversion with matrix parameter."""
+        params = gen.parse_signature("2dsi_A")
+        result = gen.build_view_conversions(params)
+        self.assertIn("AViewInternalType", result)
+        self.assertIn("uA(A)", result)
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test view conversion with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        result = gen.build_view_conversions(params)
+        self.assertIn("TensorViewInternalType", result)
+        self.assertIn("uTensor(tensor)", result)
+
+    ###########################################################################
+    def test_integer_view(self):
+    ###########################################################################
+        """Test view conversion with integer view."""
+        params = gen.parse_signature("1dii_indices")
+        result = gen.build_view_conversions(params)
+        self.assertIn("IndicesViewInternalType", result)
+        self.assertIn("uIndices(indices)", result)
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test view conversion with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec")
+        result = gen.build_view_conversions(params)
+        self.assertIn("Input_vecViewInternalType", result)
+        self.assertIn("uInput_vec(input_vec)", result)
+
+    ###########################################################################
+    def test_mixed_params(self):
+    ###########################################################################
+        """Test view conversion with mixed parameters (scalars and views)."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_view_conversions(params)
+        self.assertIn("XViewInternalType", result)
+        self.assertIn("YViewInternalType", result)
+        self.assertNotIn("alpha", result)  # Scalars not converted
+        self.assertNotIn("beta", result)
+
+    ###########################################################################
+    def test_char_parameter(self):
+    ###########################################################################
+        """Test view conversion with char parameter (no conversion needed)."""
+        params = gen.parse_signature("ci_trans,1dsi_x")
+        result = gen.build_view_conversions(params)
+        self.assertIn("XViewInternalType", result)
+        self.assertNotIn("trans", result)  # Char not converted
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test view conversion with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_view_conversions(params)
+        self.assertIn("AViewInternalType", result)
+        self.assertIn("XViewInternalType", result)
+        self.assertIn("YViewInternalType", result)
+        self.assertNotIn("trans", result)
+        self.assertNotIn("alpha", result)
+        self.assertNotIn("beta", result)
+
+    ###########################################################################
+    def test_multiple_output_views(self):
+    ###########################################################################
+        """Test view conversion with multiple output views."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        result = gen.build_view_conversions(params)
+        self.assertIn("XViewInternalType", result)
+        self.assertIn("YViewInternalType", result)
+        self.assertIn("ZViewInternalType", result)
+
+###############################################################################
+class TestBuildEtiMacroViewSpecs(unittest.TestCase):
+###############################################################################
+    """Test build_eti_macro_view_specs function."""
+
+    ###########################################################################
+    def test_1d_views(self):
+    ###########################################################################
+        """Test ETI macro specs for 1D views."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("const SCALAR*", result[0])
+        self.assertIn("SCALAR*", result[1])
+        self.assertNotIn("const SCALAR*", result[1])  # Output is not const
+
+    ###########################################################################
+    def test_2d_views(self):
+    ###########################################################################
+        """Test ETI macro specs for 2D views."""
+        params = gen.parse_signature("2dsi_A")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("const SCALAR**", result[0])
+
+    ###########################################################################
+    def test_3d_views(self):
+    ###########################################################################
+        """Test ETI macro specs for 3D views."""
+        params = gen.parse_signature("3dsi_T")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("const SCALAR***", result[0])
+
+    ###########################################################################
+    def test_io_view(self):
+    ###########################################################################
+        """Test ETI macro specs for input-output view."""
+        params = gen.parse_signature("1dsio_data")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("SCALAR*", result[0])
+        self.assertNotIn("const", result[0])
+
+    ###########################################################################
+    def test_integer_views(self):
+    ###########################################################################
+        """Test ETI macro specs for integer views."""
+        params = gen.parse_signature("1dii_indices")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("const int*", result[0])
+
+    ###########################################################################
+    def test_mixed_dimensions(self):
+    ###########################################################################
+        """Test ETI macro specs with mixed dimensions."""
+        params = gen.parse_signature("1dsi_x,2dsi_A,3dsi_T")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 3)
+        self.assertIn("const SCALAR*", result[0])
+        self.assertIn("const SCALAR**", result[1])
+        self.assertIn("const SCALAR***", result[2])
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test ETI macro specs with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dso_output_vec")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("const SCALAR*", result[0])
+        self.assertIn("SCALAR*", result[1])
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test ETI macro specs with gemv signature (excluding char and scalars)."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 3)
+        self.assertIn("const SCALAR**", result[0])  # Matrix A
+        self.assertIn("const SCALAR*", result[1])   # Vector x
+        self.assertIn("SCALAR*", result[2])         # Vector y (io)
+
+    ###########################################################################
+    def test_4d_view(self):
+    ###########################################################################
+        """Test ETI macro specs for 4D view."""
+        params = gen.parse_signature("4dsi_hyper")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 1)
+        self.assertIn("const SCALAR****", result[0])
+
+    ###########################################################################
+    def test_matrix_output(self):
+    ###########################################################################
+        """Test ETI macro specs for matrix output."""
+        params = gen.parse_signature("2dsi_A,2dso_B")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_eti_macro_view_specs(view_params)
+
+        self.assertEqual(len(result), 2)
+        self.assertIn("const SCALAR**", result[0])
+        self.assertIn("SCALAR**", result[1])
+        self.assertNotIn("const SCALAR**", result[1])  # Output B is not const
+
+###############################################################################
+class TestBuildTestSetupCode(unittest.TestCase):
+###############################################################################
+    """Test build_test_setup_code function."""
+
+    ###########################################################################
+    def test_with_views(self):
+    ###########################################################################
+        """Test test setup code with views."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn("using ScalarType", result)
+        self.assertIn("ArithTraits", result)
+        self.assertIn('view_stride_adapter<XViewType> x("X", N)', result)
+        self.assertIn('view_stride_adapter<YViewType> y("Y", N)', result)
+
+    ###########################################################################
+    def test_with_scalars(self):
+    ###########################################################################
+        """Test test setup code includes scalar initialization."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn("ScalarType alpha = AT::one()", result)
+
+    ###########################################################################
+    def test_with_char(self):
+    ###########################################################################
+        """Test test setup code includes char initialization."""
+        params = gen.parse_signature("ci_trans,1dsi_x")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn('const char trans[] = "N"', result)
+
+    ###########################################################################
+    def test_with_matrix(self):
+    ###########################################################################
+        """Test test setup code with 2D matrix."""
+        params = gen.parse_signature("2dsi_A")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn('view_stride_adapter<AViewType> A("A", N, N)', result)
+        self.assertIn("TODO: Adjust dimensions", result)
+
+    ###########################################################################
+    def test_integer_scalar(self):
+    ###########################################################################
+        """Test test setup code with integer scalar."""
+        params = gen.parse_signature("0dii_count,1dsi_x")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn("int count = 0;", result)
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test test setup code with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        result = gen.build_test_setup_code(params)
+
+        # Note: 3D+ tensors don't generate view_stride_adapter lines yet
+        # They just set up the ScalarType and ArithTraits
+        self.assertIn("using ScalarType", result)
+        self.assertIn("ArithTraits", result)
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test test setup code with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn('view_stride_adapter<InputVecViewType> input_vec("INPUT_VEC", N)', result)
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test test setup code with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn('const char trans[] = "N"', result)
+        self.assertIn("ScalarType alpha = AT::one()", result)
+        self.assertIn("ScalarType beta = AT::one()", result)
+        self.assertIn('view_stride_adapter<AViewType> A("A", N, N)', result)
+        self.assertIn('view_stride_adapter<XViewType> x("X", N)', result)
+        self.assertIn('view_stride_adapter<YViewType> y("Y", N)', result)
+
+    ###########################################################################
+    def test_multiple_outputs(self):
+    ###########################################################################
+        """Test test setup code with multiple output views."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn('view_stride_adapter<XViewType> x("X", N)', result)
+        self.assertIn('view_stride_adapter<YViewType> y("Y", N)', result)
+        self.assertIn('view_stride_adapter<ZViewType> z("Z", N)', result)
+
+    ###########################################################################
+    def test_multiple_chars(self):
+    ###########################################################################
+        """Test test setup code with multiple char parameters."""
+        params = gen.parse_signature("c_uplo,ci_trans,1dsi_x")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn('const char uplo[] = "N"', result)
+        self.assertIn('const char trans[] = "N"', result)
+
+    ###########################################################################
+    def test_axpby_signature(self):
+    ###########################################################################
+        """Test test setup code with axpby signature."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_test_setup_code(params)
+
+        self.assertIn("ScalarType alpha = AT::one()", result)
+        self.assertIn("ScalarType beta = AT::one()", result)
+        self.assertIn('view_stride_adapter<XViewType> x("X", N)', result)
+        self.assertIn('view_stride_adapter<YViewType> y("Y", N)', result)
+
+###############################################################################
+class TestBuildTestCall(unittest.TestCase):
+###############################################################################
+    """Test build_test_call function."""
+
+    ###########################################################################
+    def test_simple_call(self):
+    ###########################################################################
+        """Test building test function call."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_test_call("blas", "axpy", params)
+
+        self.assertEqual(result, "  KokkosBlas::axpy(x.d_view, y.d_view);")
+
+    ###########################################################################
+    def test_with_scalars(self):
+    ###########################################################################
+        """Test function call with scalars."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,1dsio_y")
+        result = gen.build_test_call("blas", "axpy", params)
+
+        self.assertEqual(result, "  KokkosBlas::axpy(alpha, x.d_view, y.d_view);")
+
+    ###########################################################################
+    def test_with_char(self):
+    ###########################################################################
+        """Test function call with char parameter."""
+        params = gen.parse_signature("ci_trans,1dsi_x")
+        result = gen.build_test_call("lapack", "func", params)
+
+        self.assertEqual(result, "  KokkosLapack::func(trans, x.d_view);")
+
+    ###########################################################################
+    def test_matrix_param(self):
+    ###########################################################################
+        """Test function call with matrix parameter."""
+        params = gen.parse_signature("2dsi_A,1dsi_x")
+        result = gen.build_test_call("blas", "gemv", params)
+
+        self.assertEqual(result, "  KokkosBlas::gemv(A.d_view, x.d_view);")
+
+    ###########################################################################
+    def test_integer_scalar(self):
+    ###########################################################################
+        """Test function call with integer scalar."""
+        params = gen.parse_signature("0dii_count,1dsi_x")
+        result = gen.build_test_call("blas", "func", params)
+
+        self.assertEqual(result, "  KokkosBlas::func(count, x.d_view);")
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test function call with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        result = gen.build_test_call("sparse", "func", params)
+
+        self.assertEqual(result, "  KokkosSparse::func(tensor.d_view);")
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test function call with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        result = gen.build_test_call("blas", "func", params)
+
+        self.assertEqual(result, "  KokkosBlas::func(input_vec.d_view, output_vec.d_view);")
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test function call with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_test_call("blas", "gemv", params)
+
+        self.assertEqual(result, "  KokkosBlas::gemv(trans, alpha, A.d_view, x.d_view, beta, y.d_view);")
+
+    ###########################################################################
+    def test_axpby_signature(self):
+    ###########################################################################
+        """Test function call with axpby signature."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_test_call("blas", "axpby", params)
+
+        self.assertEqual(result, "  KokkosBlas::axpby(alpha, x.d_view, beta, y.d_view);")
+
+    ###########################################################################
+    def test_multiple_outputs(self):
+    ###########################################################################
+        """Test function call with multiple output views."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        result = gen.build_test_call("blas", "func", params)
+
+        self.assertEqual(result, "  KokkosBlas::func(x.d_view, y.d_view, z.d_view);")
+
+    ###########################################################################
+    def test_sparse_package(self):
+    ###########################################################################
+        """Test function call with sparse package."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_test_call("sparse", "spmv", params)
+
+        self.assertEqual(result, "  KokkosSparse::spmv(x.d_view, y.d_view);")
+
+###############################################################################
+class TestBuildImplCallParams(unittest.TestCase):
+###############################################################################
+    """Test build_impl_call_params function."""
+
+    ###########################################################################
+    def test_simple_views(self):
+    ###########################################################################
+        """Test impl call params with views (uses unmanaged)."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "uX, uY")
+
+    ###########################################################################
+    def test_with_scalars(self):
+    ###########################################################################
+        """Test impl call params with scalars."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,1dsio_y")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "alpha, uX, uY")
+
+    ###########################################################################
+    def test_with_char(self):
+    ###########################################################################
+        """Test impl call params with char."""
+        params = gen.parse_signature("ci_trans,1dsi_x")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "trans, uX")
+
+    ###########################################################################
+    def test_matrix_param(self):
+    ###########################################################################
+        """Test impl call params with matrix parameter."""
+        params = gen.parse_signature("2dsi_A,1dsi_x")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "uA, uX")
+
+    ###########################################################################
+    def test_integer_scalar(self):
+    ###########################################################################
+        """Test impl call params with integer scalar."""
+        params = gen.parse_signature("0dii_count,1dsi_x")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "count, uX")
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test impl call params with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "uTensor")
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test impl call params with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "uInput_vec, uOutput_vec")
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test impl call params with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "trans, alpha, uA, uX, beta, uY")
+
+    ###########################################################################
+    def test_axpby_signature(self):
+    ###########################################################################
+        """Test impl call params with axpby signature."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "alpha, uX, beta, uY")
+
+    ###########################################################################
+    def test_multiple_outputs(self):
+    ###########################################################################
+        """Test impl call params with multiple output views."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "uX, uY, uZ")
+
+    ###########################################################################
+    def test_scalars_only(self):
+    ###########################################################################
+        """Test impl call params with only scalars."""
+        params = gen.parse_signature("0dsi_alpha,0dsi_beta")
+        result = gen.build_impl_call_params(params)
+
+        self.assertEqual(result, "alpha, beta")
+
+###############################################################################
+class TestBuildTestViewTypedefs(unittest.TestCase):
+###############################################################################
+    """Test build_test_view_typedefs function."""
+
+    ###########################################################################
+    def test_simple_1d_views(self):
+    ###########################################################################
+        """Test typedef generation for simple 1D views."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        self.assertIn("using XViewType = Kokkos::View<const Scalar*, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using YViewType = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;", result)
+        self.assertNotIn("const Scalar*", result.split('\n')[1])  # Second line (YViewType) should not have const
+
+    ###########################################################################
+    def test_2d_matrix(self):
+    ###########################################################################
+        """Test typedef generation for 2D matrix."""
+        params = gen.parse_signature("2dsi_A")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        self.assertIn("using AViewType = Kokkos::View<const Scalar**, Kokkos::LayoutLeft, Device>;", result)
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test typedef generation for 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutRight")
+
+        self.assertIn("using TensorViewType = Kokkos::View<const Scalar***, Kokkos::LayoutRight, Device>;", result)
+
+    ###########################################################################
+    def test_4d_view(self):
+    ###########################################################################
+        """Test typedef generation for 4D view."""
+        params = gen.parse_signature("4dsi_hyper")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        self.assertIn("using HyperViewType = Kokkos::View<const Scalar****, Kokkos::LayoutLeft, Device>;", result)
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test typedef generation for complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        self.assertIn("using AViewType = Kokkos::View<const Scalar**, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using XViewType = Kokkos::View<const Scalar*, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using YViewType = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;", result)
+        # Y should not have const (it's io)
+        lines = result.split('\n')
+        y_line = [l for l in lines if 'YViewType' in l][0]
+        self.assertNotIn("const Scalar*", y_line)
+
+    ###########################################################################
+    def test_io_view(self):
+    ###########################################################################
+        """Test typedef generation for input-output view."""
+        params = gen.parse_signature("1dsio_data")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        self.assertIn("using DataViewType = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;", result)
+        self.assertNotIn("const", result)
+
+    ###########################################################################
+    def test_output_only(self):
+    ###########################################################################
+        """Test typedef generation for output-only view."""
+        params = gen.parse_signature("1dso_result")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutRight")
+
+        self.assertIn("using ResultViewType = Kokkos::View<Scalar*, Kokkos::LayoutRight, Device>;", result)
+        self.assertNotIn("const", result)
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test typedef generation with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        self.assertIn("using InputVecViewType = Kokkos::View<const Scalar*, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using OutputVecViewType = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device>;", result)
+
+    ###########################################################################
+    def test_integer_views(self):
+    ###########################################################################
+        """Test typedef generation for integer views."""
+        params = gen.parse_signature("1dii_indices")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        # Integer views use 'int' not 'Scalar'
+        self.assertIn("using IndicesViewType = Kokkos::View<const int*, Kokkos::LayoutLeft, Device>;", result)
+
+    ###########################################################################
+    def test_mixed_dimensions(self):
+    ###########################################################################
+        """Test typedef generation with mixed dimensions."""
+        params = gen.parse_signature("1dsi_x,2dsi_A,3dsi_T")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        self.assertIn("using XViewType = Kokkos::View<const Scalar*, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using AViewType = Kokkos::View<const Scalar**, Kokkos::LayoutLeft, Device>;", result)
+        self.assertIn("using TViewType = Kokkos::View<const Scalar***, Kokkos::LayoutLeft, Device>;", result)
+
+    ###########################################################################
+    def test_multiple_outputs(self):
+    ###########################################################################
+        """Test typedef generation with multiple output views."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_view_typedefs(view_params, "LayoutLeft")
+
+        lines = result.split('\n')
+        self.assertEqual(len(lines), 3)
+        self.assertIn("const Scalar*", lines[0])  # x is input
+        self.assertNotIn("const Scalar*", lines[1])  # y is output
+        self.assertNotIn("const Scalar*", lines[2])  # z is output
+
+###############################################################################
+class TestBuildTestTemplateArgs(unittest.TestCase):
+###############################################################################
+    """Test build_test_template_args function."""
+
+    ###########################################################################
+    def test_simple_views(self):
+    ###########################################################################
+        """Test template args with simple views."""
+        params = gen.parse_signature("1dsi_x,1dso_y")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "XViewType, YViewType, Device")
+
+    ###########################################################################
+    def test_single_view(self):
+    ###########################################################################
+        """Test template args with single view."""
+        params = gen.parse_signature("1dsi_x")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "XViewType, Device")
+
+    ###########################################################################
+    def test_no_views(self):
+    ###########################################################################
+        """Test template args with no views (scalars only)."""
+        params = gen.parse_signature("0dsi_alpha,0dsi_beta")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "Device")
+
+    ###########################################################################
+    def test_gemv_signature(self):
+    ###########################################################################
+        """Test template args with complex gemv signature."""
+        params = gen.parse_signature("ci_trans,0dsi_alpha,2dsi_A,1dsi_x,0dsi_beta,1dsio_y")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "AViewType, XViewType, YViewType, Device")
+
+    ###########################################################################
+    def test_matrix_only(self):
+    ###########################################################################
+        """Test template args with only matrix."""
+        params = gen.parse_signature("2dsi_A")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "AViewType, Device")
+
+    ###########################################################################
+    def test_3d_tensor(self):
+    ###########################################################################
+        """Test template args with 3D tensor."""
+        params = gen.parse_signature("3dsi_tensor,1dsi_x")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "TensorViewType, XViewType, Device")
+
+    ###########################################################################
+    def test_underscored_names(self):
+    ###########################################################################
+        """Test template args with underscored names."""
+        params = gen.parse_signature("1dsi_input_vec,1dsio_output_vec")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "InputVecViewType, OutputVecViewType, Device")
+
+    ###########################################################################
+    def test_integer_views(self):
+    ###########################################################################
+        """Test template args with integer views."""
+        params = gen.parse_signature("0dii_count,1dii_indices,1dsi_values")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        # Integer scalar doesn't generate template param, but integer view does
+        self.assertEqual(result, "IndicesViewType, ValuesViewType, Device")
+
+    ###########################################################################
+    def test_axpby_signature(self):
+    ###########################################################################
+        """Test template args with axpby signature."""
+        params = gen.parse_signature("0dsi_alpha,1dsi_x,0dsi_beta,1dsio_y")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "XViewType, YViewType, Device")
+
+    ###########################################################################
+    def test_multiple_outputs(self):
+    ###########################################################################
+        """Test template args with multiple output views."""
+        params = gen.parse_signature("1dsi_x,1dso_y,1dso_z")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "XViewType, YViewType, ZViewType, Device")
+
+    ###########################################################################
+    def test_mixed_dimensions(self):
+    ###########################################################################
+        """Test template args with mixed dimensions."""
+        params = gen.parse_signature("1dsi_x,2dsi_A,3dsi_T")
+        view_params = [p for p in params if not p.is_scalar and not p.is_char]
+        result = gen.build_test_template_args(view_params)
+
+        self.assertEqual(result, "XViewType, AViewType, TViewType, Device")
+
+###############################################################################
+class TestGenerateEti(unittest.TestCase):
+###############################################################################
+    """Test generate_eti function (main generation logic)."""
+
+    ###########################################################################
+    def setUp(self):
+    ###########################################################################
+        """Set up test directory."""
+        import tempfile
+        import shutil
+        self.test_dir = Path(tempfile.mkdtemp())
+
+        # Create required directory structure
+        for subdir in ['src', 'impl', 'tpls',
+                      'eti/generated_specializations_hpp',
+                      'eti/generated_specializations_cpp',
+                      'unit_test']:
+            (self.test_dir / 'blas' / subdir).mkdir(parents=True, exist_ok=True)
+
+    ###########################################################################
+    def tearDown(self):
+    ###########################################################################
+        """Clean up test directory."""
+        import shutil
+        if self.test_dir.exists():
+            shutil.rmtree(self.test_dir)
+
+    ###########################################################################
+    def test_basic_generation(self):
+    ###########################################################################
+        """Test that generate_eti creates all expected files."""
+        result = gen.generate_eti(
+            package='blas',
+            function='test_func',
+            directory=self.test_dir,
+            overwrite=False,
+            signature='1dsi_x,1dso_y',
+            quiet=True
+        )
+
+        self.assertTrue(result)
+
+        # Check that files were created
+        expected_files = [
+            'blas/src/KokkosBlas1_test_func.hpp',
+            'blas/impl/KokkosBlas1_test_func_impl.hpp',
+            'blas/impl/KokkosBlas1_test_func_spec.hpp',
+            'blas/tpls/KokkosBlas1_test_func_tpl_spec_avail.hpp',
+            'blas/tpls/KokkosBlas1_test_func_tpl_spec_decl.hpp',
+            'blas/eti/generated_specializations_hpp/KokkosBlas1_test_func_eti_spec_avail.hpp.in',
+            'blas/eti/generated_specializations_hpp/KokkosBlas1_test_func_eti_spec_decl.hpp.in',
+            'blas/eti/generated_specializations_cpp/test_func/KokkosBlas1_test_func_eti_spec_inst.cpp.in',
+            'blas/unit_test/Test_Blas1_test_func.hpp'
+        ]
+
+        for file_path in expected_files:
+            full_path = self.test_dir / file_path
+            self.assertTrue(full_path.exists(), f"Expected file not created: {file_path}")
+
+    ###########################################################################
+    def test_file_content(self):
+    ###########################################################################
+        """Test that generated files contain expected content."""
+        gen.generate_eti(
+            package='blas',
+            function='axpy',
+            directory=self.test_dir,
+            overwrite=False,
+            signature='0dsi_alpha,1dsi_x,1dsio_y',
+            quiet=True
+        )
+
+        # Check impl header
+        impl_file = self.test_dir / 'blas/impl/KokkosBlas1_axpy_impl.hpp'
+        content = impl_file.read_text()
+
+        self.assertIn("KOKKOSBLAS1_AXPY_IMPL_HPP", content)
+        self.assertIn("struct AxpyImpl", content)
+        self.assertIn("void axpy", content)
+        self.assertIn("const typename XViewType::value_type& alpha", content)
+        self.assertIn("const XViewType& x", content)
+        self.assertIn("YViewType& y", content)
+
+    ###########################################################################
+    def test_overwrite_protection(self):
+    ###########################################################################
+        """Test that overwrite=False prevents overwriting existing files."""
+        # Generate once
+        gen.generate_eti(
+            package='blas',
+            function='test_func',
+            directory=self.test_dir,
+            overwrite=False,
+            signature='1dsi_x,1dso_y',
+            quiet=True
+        )
+
+        # Try to generate again without overwrite - should fail
+        result = gen.generate_eti(
+            package='blas',
+            function='test_func',
+            directory=self.test_dir,
+            overwrite=False,
+            signature='1dsi_x,1dso_y',
+            quiet=True
+        )
+
+        self.assertFalse(result)
+
+    ###########################################################################
+    def test_overwrite_allowed(self):
+    ###########################################################################
+        """Test that overwrite=True allows overwriting."""
+        # Generate once
+        gen.generate_eti(
+            package='blas',
+            function='test_func',
+            directory=self.test_dir,
+            overwrite=False,
+            signature='1dsi_x,1dso_y',
+            quiet=True
+        )
+
+        # Generate again with overwrite=True - should succeed
+        result = gen.generate_eti(
+            package='blas',
+            function='test_func',
+            directory=self.test_dir,
+            overwrite=True,
+            signature='1dsi_x,1dso_y',
+            quiet=True
+        )
+
+        self.assertTrue(result)
+
+###############################################################################
+
+if __name__ == '__main__':
+    unittest.main()

@@ -12,7 +12,7 @@ template <class Scalar, class ExecutionSpace>
 inline void rotg_print_specialization() {
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
   printf("KokkosBlas1::rotg<> TPL Blas specialization for < %s, %s >\n", typeid(Scalar).name(),
-         typeid(ExecutionSpace).name);
+         typeid(ExecutionSpace).name());
 #endif
 }
 }  // namespace

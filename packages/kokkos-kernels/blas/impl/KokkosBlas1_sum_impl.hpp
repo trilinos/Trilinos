@@ -5,7 +5,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 #include <KokkosBlas1_sum_spec.hpp>
 #include <KokkosBlas_util.hpp>
 
@@ -25,7 +25,7 @@ template <class RV, class XV, class SizeType = typename XV::size_type>
 struct V_Sum_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename RV::non_const_value_type value_type;
 
