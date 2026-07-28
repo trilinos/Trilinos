@@ -483,7 +483,7 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
   ///     The default is zero, meaning no overlap.
   ///   - "schwarz: use reordering" (\c bool): Whether to use Zoltan2
   ///     to do reordering.  If true, then Trilinos must have been
-  ///     built with Zoltan2 and Xpetra enabled.  Default is false.
+  ///     built with Zoltan2 enabled.  Default is false.
   ///   - "schwarz: subdomain id" (\c int): This option does not
   ///     currently work.
   ///   - "schwarz: filter singletons" (\c bool): If true, exclude

@@ -30,7 +30,7 @@
 #include "Ifpack2_Details_LinearSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
 #include "Zoltan2_TpetraRowGraphAdapter.hpp"
 #include "Zoltan2_OrderingProblem.hpp"
 #include "Zoltan2_OrderingSolution.hpp"
@@ -828,13 +828,13 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
   // "schwarz: reordering list" to give to Zoltan2.
   UseReordering_ = plist->get("schwarz: use reordering", UseReordering_);
 
-#if !defined(HAVE_IFPACK2_XPETRA) || !defined(HAVE_IFPACK2_ZOLTAN2)
+#if !defined(HAVE_IFPACK2_ZOLTAN2)
   TEUCHOS_TEST_FOR_EXCEPTION(
       UseReordering_, std::invalid_argument,
       "Ifpack2::AdditiveSchwarz::"
       "setParameters: You specified \"schwarz: use reordering\" = true.  "
-      "This is only valid when Trilinos was built with Ifpack2, Xpetra, and "
-      "Zoltan2 enabled.  Either Xpetra or Zoltan2 was not enabled in your build "
+      "This is only valid when Trilinos was built with Ifpack2, and "
+      "Zoltan2 enabled.  Zoltan2 was not enabled in your build "
       "of Trilinos.");
 #endif
 
@@ -1392,7 +1392,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::setup() {
     ArrayRCP<local_ordinal_type> revperm;
     if (UseReordering_) {
       Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Reordering"));
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
       // Unlike Ifpack, Zoltan2 does all the dirty work here.
       Teuchos::ParameterList zlist = List_.sublist("schwarz: reordering list");
       ReorderingAlgorithm_         = zlist.get<std::string>("order_method", "rcm");
@@ -1447,7 +1447,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::setup() {
       TEUCHOS_TEST_FOR_EXCEPTION(
           true, std::logic_error,
           "Ifpack2::AdditiveSchwarz::setup: "
-          "The Zoltan2 and Xpetra packages must be enabled in order "
+          "The Zoltan2 package must be enabled in order "
           "to support reordering.");
 #endif
     } else {
@@ -1516,7 +1516,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::setup() {
 
     // Do reordering
     if (UseReordering_) {
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
       // Unlike Ifpack, Zoltan2 does all the dirty work here.
       typedef ReorderFilter<row_matrix_type> reorder_filter_type;
       Teuchos::ParameterList zlist = List_.sublist("schwarz: reordering list");
@@ -1579,7 +1579,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::setup() {
       TEUCHOS_TEST_FOR_EXCEPTION(
           true, std::logic_error,
           "Ifpack2::AdditiveSchwarz::setup: "
-          "The Zoltan2 and Xpetra packages must be enabled in order "
+          "The Zoltan2 package must be enabled in order "
           "to support reordering.");
 #endif
     }
