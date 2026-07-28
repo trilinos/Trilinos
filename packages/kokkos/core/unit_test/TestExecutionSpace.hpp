@@ -44,27 +44,6 @@ TEST(TEST_CATEGORY, execution_space_moved_from) {
 }
 
 constexpr bool test_execspace_explicit_construction() {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-#ifdef KOKKOS_ENABLE_SERIAL
-  static_assert(std::is_convertible_v<Kokkos::NewInstance, Kokkos::Serial>);
-#endif
-#ifdef KOKKOS_ENABLE_OPENMP
-  static_assert(std::is_convertible_v<int, Kokkos::OpenMP>);
-#endif
-#ifdef KOKKOS_ENABLE_CUDA
-  static_assert(std::is_convertible_v<cudaStream_t, Kokkos::Cuda>);
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-  static_assert(std::is_convertible_v<hipStream_t, Kokkos::HIP>);
-#endif
-#ifdef KOKKOS_ENABLE_HPX
-  static_assert(std::is_convertible_v<Kokkos::Experimental::HPX::instance_mode,
-                                      Kokkos::Experimental::HPX>);
-  static_assert(
-      std::is_convertible_v<hpx::execution::experimental::unique_any_sender<>&&,
-                            Kokkos::Experimental::HPX>);
-#endif
-#else
 #ifdef KOKKOS_ENABLE_SERIAL
   static_assert(!std::is_convertible_v<Kokkos::NewInstance, Kokkos::Serial>);
 #endif
@@ -84,8 +63,6 @@ constexpr bool test_execspace_explicit_construction() {
                 hpx::execution::experimental::unique_any_sender<>&&,
                 Kokkos::Experimental::HPX>);
 #endif
-#endif
-
 #ifdef KOKKOS_ENABLE_OPENACC
   static_assert(!std::is_convertible_v<int, Kokkos::Experimental::OpenACC>);
 #endif
@@ -97,6 +74,16 @@ constexpr bool test_execspace_explicit_construction() {
 }
 
 static_assert(test_execspace_explicit_construction());
+
+consteval bool test_execspace_nothrow_copy_and_move() {
+  static_assert(std::is_nothrow_copy_constructible_v<TEST_EXECSPACE>);
+  static_assert(std::is_nothrow_copy_assignable_v<TEST_EXECSPACE>);
+  static_assert(std::is_nothrow_move_constructible_v<TEST_EXECSPACE>);
+  static_assert(std::is_nothrow_move_assignable_v<TEST_EXECSPACE>);
+  return true;
+}
+
+static_assert(test_execspace_nothrow_copy_and_move());
 
 // We don't actually promise a tool-observable event and acknowledge that some
 // backend mights not need a fence to ensure that all enqueued work has finished
