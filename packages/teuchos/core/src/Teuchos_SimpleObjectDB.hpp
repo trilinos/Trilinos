@@ -277,7 +277,11 @@ template <class T>
 RCP<T> SimpleObjectDB<T>::getNonconstObjRCP(const int index)
 {
   validateIndex(index);
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  return tableOfObjects_.at(index).getNonconstObj();
+#else
   return tableOfObjects_[index].getNonconstObj();
+#endif
 }
 
 
@@ -285,7 +289,11 @@ template <class T>
 RCP<const T> SimpleObjectDB<T>::getConstObjRCP(const int index) const
 {
   validateIndex(index);
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  return tableOfObjects_.at(index).getConstObj();
+#else
   return tableOfObjects_[index].getConstObj();
+#endif
 }
 
 
@@ -293,7 +301,11 @@ template <class T>
 Ptr<T> SimpleObjectDB<T>::getNonconstObjPtr(const int index)
 {
   validateIndex(index);
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  return tableOfObjects_.at(index).getNonconstObj().ptr();
+#else
   return tableOfObjects_[index].getNonconstObj().ptr();
+#endif
 }
 
 
@@ -301,7 +313,11 @@ template <class T>
 Ptr<const T> SimpleObjectDB<T>::getConstObjPtr(const int index) const
 {
   validateIndex(index);
+#ifdef TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+  return tableOfObjects_.at(index).getConstObj().ptr();
+#else
   return tableOfObjects_[index].getConstObj().ptr();
+#endif
 }
 
 
@@ -366,4 +382,3 @@ void SimpleObjectDB<T>::removeObjImpl(const int index)
 
 
 #endif // TEUCHOS_SIMPLE_OBJECT_DB_HPP
-

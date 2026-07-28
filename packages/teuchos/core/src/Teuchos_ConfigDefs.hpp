@@ -25,6 +25,13 @@
 
 #ifdef __cplusplus
 
+#if defined(__GNUC__) && !defined(__clang__) && \
+    !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) && \
+    (__GNUC__ == 12)
+// GCC 12 can emit false-positive -Wnonnull diagnostics.
+#  define TEUCHOS_IMPL_GCC_12_NONNULL_WORKAROUND
+#endif
+
 #if defined(_MSC_VER) || defined(__APPLE__)
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif
