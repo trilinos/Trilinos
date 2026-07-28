@@ -936,6 +936,45 @@ TEST(MiniTensor, Log)
   ASSERT_LE(error_F, 8 * machine_epsilon<Real>());
 }
 
+TEST(MiniTensor, ExpSym)
+{
+  Tensor<Real> const
+  O(3, Filler::ZEROS);
+
+  // exp of the zero tensor is the identity
+  Tensor<Real> const
+  I = exp_sym(O);
+
+  Real const
+  error_I = norm(I - identity<Real>(3));
+
+  ASSERT_LE(error_I, machine_epsilon<Real>());
+
+  // symmetric tensor with eigenvalues of both signs
+  Tensor<Real> const
+  A(0.7, -0.3,  0.2,
+   -0.3,  0.1, -0.5,
+    0.2, -0.5, -0.9);
+
+  // agree with the general scaling-and-squaring exponential
+  Tensor<Real> const
+  E = exp_sym(A);
+
+  Real const
+  error_exp = norm(E - exp(A)) / norm(E);
+
+  ASSERT_LE(error_exp, 16 * machine_epsilon<Real>());
+
+  // round trip through the symmetric logarithm recovers the argument
+  Tensor<Real> const
+  R = log_sym(E);
+
+  Real const
+  error_rt = norm(R - A) / norm(A);
+
+  ASSERT_LE(error_rt, 16 * machine_epsilon<Real>());
+}
+
 TEST(MiniTensor, LogRotation)
 {
   // Identity rotation
