@@ -29,6 +29,15 @@
 
 namespace {  // anonymous
 
+template <class T, int N>
+void assignTuple(Teuchos::Array<T>& destination, const Teuchos::Tuple<T, N>& source) {
+#ifdef TPETRA_IMPL_GCC_12_NONNULL_WORKAROUND
+  destination = Teuchos::Array<T>(source);
+#else
+  destination.assign(source.begin(), source.end());
+#endif
+}
+
 // Create a crs matrix with a Poisson-like structure and extra dense rows at its
 // end. Add column entries to each row so that the matrix remains symmetric.
 //
@@ -128,27 +137,27 @@ void generate_graphs(
       if (row == 0) {
         // [4, -1, 0, -1]
         auto my_cols = tuple(row, row + 1, row + 3);
-        columns.assign(my_cols.begin(), my_cols.end());
+        assignTuple(columns, my_cols);
       } else if (row == 1 || row == 2) {
         // 1: [-1, 4, -1, 0, -1]
         // 2: [0, -1, 4, -1, 0, -1]
         auto my_cols = tuple(row - 1, row, row + 1, row + 3);
-        columns.assign(my_cols.begin(), my_cols.end());
+        assignTuple(columns, my_cols);
       } else if (
           gsize_t(row) == global_rows - 3 - dense_rows ||
           gsize_t(row) == global_rows - 2 - dense_rows) {
         // -3: [-1, 0, -1, 4, -1, 0]
         // -2:    [-1, 0, -1, 4, -1]
         auto my_cols = tuple(row - 3, row - 1, row, row + 1);
-        columns.assign(my_cols.begin(), my_cols.end());
+        assignTuple(columns, my_cols);
       } else if (gsize_t(row) == global_rows - 1 - dense_rows) {
         // [-1, 0, -1, 4]
         auto my_cols = tuple(row - 3, row - 1, row);
-        columns.assign(my_cols.begin(), my_cols.end());
+        assignTuple(columns, my_cols);
       } else {
         // [-1, 0, -1, 4, -1, 0, -1]
         auto my_cols = tuple(row - 3, row - 1, row, row + 1, row + 3);
-        columns.assign(my_cols.begin(), my_cols.end());
+        assignTuple(columns, my_cols);
       }
 
       // Fill in columns at end of row associated with the extra dense rows to
@@ -276,15 +285,15 @@ generate_matrix(
         // [4, -1, 0, -1]
         auto my_cols = tuple(row, row + 1, row + 3);
         auto my_vals = tuple(four, mone, mone);
-        columns.assign(my_cols.begin(), my_cols.end());
-        values.assign(my_vals.begin(), my_vals.end());
+        assignTuple(columns, my_cols);
+        assignTuple(values, my_vals);
       } else if (row == 1 || row == 2) {
         // 1: [-1, 4, -1, 0, -1]
         // 2: [0, -1, 4, -1, 0, -1]
         auto my_cols = tuple(row - 1, row, row + 1, row + 3);
         auto my_vals = tuple(mone, four, mone, mone);
-        columns.assign(my_cols.begin(), my_cols.end());
-        values.assign(my_vals.begin(), my_vals.end());
+        assignTuple(columns, my_cols);
+        assignTuple(values, my_vals);
       } else if (
           gsize_t(row) == global_rows - 3 - dense_rows ||
           gsize_t(row) == global_rows - 2 - dense_rows) {
@@ -292,20 +301,20 @@ generate_matrix(
         // -2:    [-1, 0, -1, 4, -1]
         auto my_cols = tuple(row - 3, row - 1, row, row + 1);
         auto my_vals = tuple(mone, mone, four, mone);
-        columns.assign(my_cols.begin(), my_cols.end());
-        values.assign(my_vals.begin(), my_vals.end());
+        assignTuple(columns, my_cols);
+        assignTuple(values, my_vals);
       } else if (gsize_t(row) == global_rows - 1 - dense_rows) {
         // [-1, 0, -1, 4]
         auto my_cols = tuple(row - 3, row - 1, row);
         auto my_vals = tuple(mone, mone, four);
-        columns.assign(my_cols.begin(), my_cols.end());
-        values.assign(my_vals.begin(), my_vals.end());
+        assignTuple(columns, my_cols);
+        assignTuple(values, my_vals);
       } else {
         // [-1, 0, -1, 4, -1, 0, -1]
         auto my_cols = tuple(row - 3, row - 1, row, row + 1, row + 3);
         auto my_vals = tuple(mone, mone, four, mone, mone);
-        columns.assign(my_cols.begin(), my_cols.end());
-        values.assign(my_vals.begin(), my_vals.end());
+        assignTuple(columns, my_cols);
+        assignTuple(values, my_vals);
       }
 
       // Fill in columns at end of row associated with the extra dense rows to
