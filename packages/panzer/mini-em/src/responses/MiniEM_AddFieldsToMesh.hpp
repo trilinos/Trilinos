@@ -20,6 +20,12 @@ namespace Teuchos {
 
 namespace mini_em {
 
+  /** \brief Registers the cell/nodal fields requested by an output
+    * ParameterList with the mesh so they can be written to Exodus.
+    *
+    * \param[in,out] mesh the mesh to register fields with.
+    * \param[in] output_list a ParameterList with (a subset of) the sublists "Cell Average Quantities", "Cell Average Vectors", "Cell Quantities", "Nodal Quantities", and "Allocate Nodal Quantities", each mapping an element block ID to a comma-separated list of field names.
+    */
   void addFieldsToMesh(panzer_stk::STK_Interface & mesh,
                        const Teuchos::ParameterList & output_list);
 

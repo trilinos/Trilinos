@@ -81,7 +81,9 @@ namespace panzer_stk {
 
     /** @name Overridden from ParameterListAcceptor */
     //@{
+    /// \brief Sets and validates the top-level parameter list describing the physics, mesh, and solver setup.
     void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+    /// \brief Returns the valid parameters (with defaults) for the top-level parameter list.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     //@}
 
@@ -108,26 +110,33 @@ namespace panzer_stk {
                       const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                       bool meConstructionOn=true);
 
+    /// \brief Returns the physics model evaluator built by buildObjects().
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getPhysicsModelEvaluator();
 
     /** @name Methods for building the solver */
     //@{
 
+    /// \brief Sets the factory used to build a NOX observer for the solver built by buildResponseOnlyModelEvaluator().
     void setNOXObserverFactory(const Teuchos::RCP<const panzer_stk::NOXObserverFactory>& nox_observer_factory);
 
 #ifdef PANZER_HAVE_TEMPUS
+    /// \brief Sets the factory used to build a Tempus observer for the solver built by buildResponseOnlyModelEvaluator().
     void setTempusObserverFactory(const Teuchos::RCP<const panzer_stk::TempusObserverFactory>& tempus_observer_factory);
 #endif
 
+    /// \brief Registers a response to be built by buildResponses(), using the given response evaluator factory builder.
     template <typename BuilderT>
     int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
 
+    /// \brief Builds and registers the evaluators for all responses added via addResponse().
     void buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const bool write_graphviz_file=false,
                         const std::string& graphviz_file_prefix="");
 
+    /// \brief Returns the response-only model evaluator built by buildResponseOnlyModelEvaluator().
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > getResponseOnlyModelEvaluator();
 
+    /// \brief Wraps the given physics model evaluator with a solver (e.g. NOX/Tempus), exposing only the registered responses.
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> >
     buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                     const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -145,8 +154,10 @@ namespace panzer_stk {
     //! Set user defined workset factory
     void setUserWorksetFactory(Teuchos::RCP<panzer_stk::WorksetFactory>& user_wkst_factory);
 
+    /// \brief Returns the response library used to build and evaluate registered responses.
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > getResponseLibrary();
 
+    /// \brief Returns the physics blocks built by buildObjects().
     const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & getPhysicsBlocks() const;
 
     //! Get mesh object used to build model evaluator
@@ -161,7 +172,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::ConnManager> getConnManager() const
     { return m_conn_manager; }
 
-    //! Is blocked assembly?
+    //! Returns true if assembly is blocked
     bool isBlockedAssembly() const
     { return m_blockedAssembly; }
 
@@ -169,6 +180,7 @@ namespace panzer_stk {
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > getLinearObjFactory() const
     { return m_lin_obj_factory; }
 
+    //! Returns true if this a transient problem
     bool isTransient() const
     { return m_is_transient; }
 
@@ -226,6 +238,7 @@ namespace panzer_stk {
                         bool is_transient,double t_init) const;
 
 
+    //! Should coordinates be recomputed dynamically (e.g. for a moving mesh) rather than cached once?
     bool useDynamicCoordinates() const
     { return useDynamicCoordinates_; }
 
@@ -237,6 +250,7 @@ namespace panzer_stk {
     double getInitialTime(Teuchos::ParameterList& transient_ic_params,
                           const panzer_stk::STK_Interface& mesh) const;
 
+    /// \brief Builds a Thyra LOWS (linear-op-with-solve) factory from this object's Stratimikos parameter list, for the given global indexer, connection manager, and mesh.
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
     buildLOWSFactory(bool blockedAssembly,
                      const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer,
@@ -258,6 +272,7 @@ namespace panzer_stk {
     //! build STK mesh factory from a mesh parameter list
     Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
 
+    /// \brief Commits the mesh's meta data, builds its bulk data, and writes it out if requested, completing construction started by an STK_MeshFactory.
     void finalizeMeshConstruction(const STK_MeshFactory & mesh_factory,
                                   const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
                                   const Teuchos::MpiComm<int> mpi_comm,
@@ -265,6 +280,7 @@ namespace panzer_stk {
 
   protected:
 
+    /// \brief Builds the field manager builder used to register and evaluate the physics/BC/closure-model evaluators for buildObjects().
     Teuchos::RCP<panzer::FieldManagerBuilder>
     buildFieldManagerBuilder(const Teuchos::RCP<panzer::WorksetContainer> & wc,
                              const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
@@ -279,7 +295,7 @@ namespace panzer_stk {
                              bool writeGraph,const std::string & graphPrefix,
 			     bool write_field_managers,const std::string & field_manager_prefix) const;
 
-    /**
+    /** \brief Builds a response library configured to write the solution out to the STK mesh.
       */
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > initializeSolnWriterResponseLibrary(
                                                                 const Teuchos::RCP<panzer::WorksetContainer> & wc,
@@ -287,7 +303,7 @@ namespace panzer_stk {
                                                                 const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof,
                                                                 const Teuchos::RCP<panzer_stk::STK_Interface> & mesh) const;
 
-    /**
+    /** \brief Builds and registers the evaluators needed by a solution-writer response library built with initializeSolnWriterResponseLibrary().
       */
     void finalizeSolnWriterResponseLibrary(panzer::ResponseLibrary<panzer::Traits> & rl,
                                            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks,
@@ -295,6 +311,7 @@ namespace panzer_stk {
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
 
+    /// \brief Registers the given mesh with a closure model factory template manager, e.g. so its closure models can reference mesh-derived fields.
     void registerMeshWithClosureModelFactories(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
                                                panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory);
   private:

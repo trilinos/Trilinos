@@ -44,13 +44,31 @@ namespace mini_em {
 
   AUX_DECLARE_EQSET_TEMPLATE_BUILDER(AuxiliaryEquationSet_WeakGradient, AuxiliaryEquationSet_WeakGradient)
 
+  /** \brief mini-em's panzer::EquationSetFactory, recognizing the
+    * "Maxwell" and "Darcy" primary equation set identifiers (see
+    * mini_em::EquationSet_Maxwell, mini_em::EquationSet_Darcy) and the
+    * "Auxiliary Mass Matrix", "Auxiliary SchurComplement", "Auxiliary
+    * DarcySchurComplement", "Auxiliary ProjectedSchurComplement",
+    * "Auxiliary ProjectedDarcySchurComplement", and "Auxiliary Weak
+    * Gradient" auxiliary equation set identifiers used to build
+    * preconditioner operators.
+    */
   class EquationSetFactory : public panzer::EquationSetFactory {
 
   public:
 
+    /// \brief Construct with the global evaluation data container that auxiliary equation sets scatter their operators into (unused by the primary Maxwell/Darcy equation sets).
     EquationSetFactory(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc=Teuchos::null) :
        m_gedc(gedc) {}
 
+    /** \brief Builds the named equation set ("Maxwell", "Darcy", or one of the "Auxiliary ..." identifiers per the class description); throws std::logic_error for any other "Type".
+      *
+      * \param[in] params the equation set's ParameterList; its "Type" entry selects which equation set is built.
+      * \param[in] default_integration_order the integration order to use if params does not specify one.
+      * \param[in] cell_data the cell topology/dimension information for the physics block being built.
+      * \param[in] global_data global data passed through to the built equation set.
+      * \param[in] build_transient_support if true, the built equation set should also register time-derivative terms.
+      */
     Teuchos::RCP<panzer::EquationSet_TemplateManager<panzer::Traits> >
     buildEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
         const int& default_integration_order,

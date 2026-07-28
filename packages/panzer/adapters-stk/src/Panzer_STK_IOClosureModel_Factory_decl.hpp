@@ -26,19 +26,52 @@ namespace panzer {
 
 namespace panzer_stk {
 
+  /** \brief A panzer::ClosureModelFactory decorator that provides
+    * evaluators for writing fields to exodus files. Wraps a user
+    * closure model factory. buildClosureModels() delegates to the
+    * wrapped factory for every evaluation type; the
+    * panzer::Traits::Residual specialization additionally builds the
+    * scatter evaluators needed to write selected nodal/cell fields
+    * out to the STK mesh for visualization/output, since output only
+    * needs to happen once per workset regardless of evaluation type.
+    */
   template<typename EvalT>
   class IOClosureModelFactory : public panzer::ClosureModelFactory<EvalT> {
   public:
 
+    /** \brief Construct with the fields to write specified via an output ParameterList (parsed with parseOutputList()).
+      *
+      * \param[in] userCMF_ the wrapped closure model factory to delegate buildClosureModels() calls to.
+      * \param[in] mesh the STK mesh to write output fields to.
+      * \param[in] outputList ParameterList naming the fields to write out.
+      */
     IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF_,
                           const Teuchos::RCP<STK_Interface> & mesh,
                           const Teuchos::ParameterList & outputList);
 
+    /** \brief Construct with the fields to write specified explicitly, split into nodal and cell fields per element block.
+      *
+      * \param[in] userCMF_ the wrapped closure model factory to delegate buildClosureModels() calls to.
+      * \param[in] mesh the STK mesh to write output fields to.
+      * \param[in] nodalFields nodal field names to write out, keyed by element block ID.
+      * \param[in] cellFields cell (element-averaged) field names to write out, keyed by element block ID.
+      */
     IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF_,
                           const Teuchos::RCP<STK_Interface> & mesh,
                           const std::map<std::string,std::vector<std::string> > & nodalFields,
                           const std::map<std::string,std::vector<std::string> > & cellFields);
 
+    /** \brief Delegates to the wrapped factory's buildClosureModels() for the named model.
+      *
+      * \param[in] model_id the closure model ID to build; selects which sublist of models to use.
+      * \param[in] models ParameterList of named closure model sublists, keyed by model ID.
+      * \param[in] fl the field layouts available for the current physics block.
+      * \param[in] ir the integration rule the built evaluators should evaluate on.
+      * \param[in] default_params equation-set-level parameters used as defaults when building closures.
+      * \param[in] user_data user-supplied parameters passed through to closures that need additional application data.
+      * \param[in] global_data global data (parameter library, output stream) shared across the problem.
+      * \param[in] fm the field manager the built evaluators will be registered into.
+      */
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     buildClosureModels(const std::string& model_id,
 		       const Teuchos::ParameterList& models,
@@ -82,6 +115,17 @@ namespace panzer_stk {
     Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF_;
   };
 
+  /** \brief Delegates to the wrapped factory's buildClosureModels() for the named model, then adds the scatter-to-mesh evaluators needed for the fields requested at construction.
+    *
+    * \param[in] model_id the closure model ID to build; selects which sublist of models to use.
+    * \param[in] models ParameterList of named closure model sublists, keyed by model ID.
+    * \param[in] fl the field layouts available for the current physics block.
+    * \param[in] ir the integration rule the built evaluators should evaluate on.
+    * \param[in] default_params equation-set-level parameters used as defaults when building closures.
+    * \param[in] user_data user-supplied parameters passed through to closures that need additional application data.
+    * \param[in] global_data global data (parameter library, output stream) shared across the problem.
+    * \param[in] fm the field manager the built evaluators will be registered into.
+    */
   template < >
   Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
   panzer_stk::IOClosureModelFactory<panzer::Traits::Residual>::buildClosureModels(const std::string& model_id,

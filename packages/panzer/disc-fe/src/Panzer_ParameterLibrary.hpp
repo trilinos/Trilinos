@@ -17,8 +17,10 @@
 #include "Panzer_EvaluationTraits.hpp"
 
 namespace panzer {
-  
+
+  /// \brief Panzer's registry of named scalar parameters (see panzer::ScalarParameterEntry), keyed and evaluated using panzer::EvaluationTraits.
   typedef Sacado::ScalarParameterLibrary<panzer::EvaluationTraits> ParamLib;
+  /// \brief A vector of named scalar parameter entries drawn from a ParamLib, e.g. for use as LOCA continuation/bifurcation parameters.
   typedef Sacado::ScalarParameterVector<panzer::EvaluationTraits> ParamVec;
 
 }

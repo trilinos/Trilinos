@@ -39,14 +39,23 @@ class STKConnManager;
   */
 class ParameterListCallbackBlocked : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
 public:
+  /** \brief Construct from the connection manager and the (blocked) DOF manager(s) whose fields' coordinates may be requested; an auxiliary DOF manager is optional.
+    *
+    * \param[in] connManager connection manager used to look up mesh entity coordinates.
+    * \param[in] blkDofs the blocked DOF manager describing the primary problem's field layout.
+    * \param[in] auxBlkDofs the blocked DOF manager for an auxiliary problem, if any, whose fields' coordinates may also be requested.
+    */
   ParameterListCallbackBlocked(const Teuchos::RCP<const panzer_stk::STKConnManager> & connManager,
                                const Teuchos::RCP<const panzer::BlockedDOFManager> & blkDofs,
                                const Teuchos::RCP<const panzer::BlockedDOFManager> & auxBlkDofs=Teuchos::null);
 
+  /// \brief Returns a ParameterList populated with the requested field's coordinate data, building it on first request.
   Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
 
+  /// \brief Returns true if this callback can satisfy the given request.
   bool handlesRequest(const Teko::RequestMesg & rm);
 
+  /// \brief Notifies this callback that the given request will be made later, allowing it to prepare (e.g. build coordinates) in advance.
   void preRequest(const Teko::RequestMesg & rm);
 
 private:

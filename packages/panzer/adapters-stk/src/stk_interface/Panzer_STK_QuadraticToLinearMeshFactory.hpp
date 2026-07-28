@@ -27,13 +27,26 @@ class STK_Interface;
 class QuadraticToLinearMeshFactory : public STK_MeshFactory {
 public:
 
+  /** \brief Construct by reading the quadratic mesh from the given Exodus file.
+    *
+    * \param[in] quadMeshFileName Exodus file to read the quadratic mesh from.
+    * \param[in] mpi_comm the MPI communicator to build the mesh on.
+    * \param[in] print_debug if true, prints debug diagnostics while converting the mesh.
+    */
   QuadraticToLinearMeshFactory(const std::string& quadMeshFileName,
                           stk::ParallelMachine mpi_comm = MPI_COMM_WORLD, // CHECK: ALLOW MPI_COMM_WORLD
                           const bool print_debug = false);
 
+  /** \brief Construct from an already-built quadratic STK_Interface mesh.
+    *
+    * \param[in] quadMesh the already-built quadratic mesh to convert.
+    * \param[in] print_debug if true, prints debug diagnostics while converting the mesh.
+    */
   QuadraticToLinearMeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quadMesh,
                           const bool print_debug = false);
 
+  //! Build the mesh object
+  /// \param[in] parallelMach descriptor for the parallel machine to build this mesh on.
   Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;

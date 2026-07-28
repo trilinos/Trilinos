@@ -47,9 +47,11 @@ public:
   ProjectField(const std::string & inName, Teuchos::RCP<panzer::PureBasis> src,
                Teuchos::RCP<panzer::PureBasis> dst, std::string outname = "");
   
+  /// \brief Looks up the cell orientations needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& fm);
-  
+
+  /// \brief Computes the projected field for this workset per the class description.
   void evaluateFields(typename Traits::EvalData d);
 
 private:

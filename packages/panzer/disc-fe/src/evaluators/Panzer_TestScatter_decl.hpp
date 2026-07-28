@@ -18,6 +18,11 @@
 
 namespace panzer {
 
+/** A test-only evaluator that computes each cell's node average of an
+  * input field and scatters a scaled copy of that average back out to
+  * every node of an output field. Used for exercising the scatter
+  * machinery in unit tests, not for production physics.
+  */
 template<typename EvalT, typename Traits>
 class TestScatter
   :
@@ -26,14 +31,17 @@ class TestScatter
 {
   public:
 
+    /// \brief Construct from a ParameterList specifying the input/output field names and shared data layout.
     TestScatter(
       const Teuchos::ParameterList& p);
 
+    /// \brief Looks up the number of nodes per cell needed by evaluateFields(). Called once before the first evaluation.
     void
     postRegistrationSetup(
       typename Traits::SetupData d,
       PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the output field for this workset per the class description.
     void
     evaluateFields(
       typename Traits::EvalData d);

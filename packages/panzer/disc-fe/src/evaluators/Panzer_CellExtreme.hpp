@@ -21,15 +21,16 @@
 
 namespace panzer {
     
-/** This integrates a scalar quanity over each cell.
-  * It is useful for comptuing integral responses.
+/** This finds the maximum or minimum value of a scalar quantity, over
+  * the integration points of each cell.
+  * It is useful for computing extreme-value responses.
 
   \verbatim
     <ParameterList>
       <Parameter name="Extreme Name" type="string" value="<Name to give to the extreme field>"/>
       <Parameter name="Field Name" type="string" value="<Name of field to find extreme of>"/>
       <Parameter name="IR" type="RCP<IntegrationRule>" value="<user specified IntegrationRule>"/>
-      <Parameter name="Use Max" type="bool" value="<Compute maximum (true - default) or minimum (false)>"/>
+      <Parameter name="Use Max" type="bool" value="<Compute maximum (default = true) or minimum (false)>"/>
       <Parameter name="Multiplier" type="double" value="<Scaling factor, default=1>"/>
       <Parameter name="Field Multipliers" type="RCP<const vector<string> >" value="<Other scalar multiplier fields>"/>
     </ParameterList>
@@ -43,14 +44,17 @@ class CellExtreme
 {
   public:
 
+    /// \brief Construct from a ParameterList as documented in the class description.
     CellExtreme(
       const Teuchos::ParameterList& p);
 
+    /// \brief Looks up the quadrature index/order needed by evaluateFields(). Called once before the first evaluation.
     void
     postRegistrationSetup(
       typename Traits::SetupData d,
       PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the "Extreme Name" field for this workset per the class description.
     void
     evaluateFields(
       typename Traits::EvalData d);
@@ -74,10 +78,12 @@ class CellExtreme
 
 public:
   // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
+  /// \brief Returns the FieldTag of the extreme-value output field. Used only for unit testing.
+  const PHX::FieldTag & getFieldTag() const
   { return extreme.fieldTag(); }
 
 private:
+  /// \brief Returns the ParameterList of valid parameters/defaults for this evaluator's constructor.
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
 }; // end of class CellExtreme

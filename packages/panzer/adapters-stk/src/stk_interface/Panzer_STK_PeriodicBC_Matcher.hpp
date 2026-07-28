@@ -49,6 +49,7 @@ namespace periodic_helpers {
                      const STK_Interface & mesh,
                      const Matcher & matcher, const std::string type_ = "coord");
 
+   /// \copydoc panzer_stk::periodic_helpers::matchPeriodicSides(const std::string&,const std::string&,const STK_Interface&,const Matcher&,const std::string)
    template <typename Matcher>
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >
    matchPeriodicSides(const std::string & left,const std::string & right,
@@ -277,8 +278,10 @@ public:
 template <typename Matcher>
 class PeriodicBC_Matcher : public PeriodicBC_MatcherBase {
 public:
+   /// \brief Construct from the two sideset names to match and the matcher object defining how coordinates on them are paired.
    PeriodicBC_Matcher(const std::string & left, const std::string & right,const Matcher & matcher, const std::string type = "coord")
       : left_(left), right_(right), matcher_(matcher), type_(type) {}
+   /// \brief Copy constructor.
    PeriodicBC_Matcher(const PeriodicBC_Matcher & src)
       : left_(src.left_), right_(src.right_), matcher_(src.matcher_), type_(src.type_) {}
 
@@ -350,6 +353,7 @@ public:
    std::string getRightSidesetName() const
    {return right_;}
 
+   /// \brief Returns the underlying matcher object.
    const Matcher& getMatcher() const
    {return matcher_;}
 

@@ -18,9 +18,43 @@ namespace panzer {
 
 //**********************************************************************
 
+/**
+ * \brief Device functors that interpolate DOF coefficients to values at integration points.
+ *
+ * Each functor here performs one Kokkos-parallel evaluation of
+ * `dof_ip(cell,pt) = sum_bf dof_basis(cell,bf) * basis(cell,bf,pt)`,
+ * i.e. it computes the value (or vector/gradient components) of a
+ * field at every integration point of every cell in a workset, given
+ * per-basis-function DOF coefficients. They are used by evaluators
+ * such as panzer::DOF and panzer::DOFGradient.
+ *
+ * Two evaluation strategies are provided:
+ *  - `*WithSens`: propagates derivatives with respect to all local DOF
+ *    coefficients using whatever AD type `ScalarT` already carries.
+ *    Correct in general, but loops over every derivative component.
+ *  - `*FastSens`: exploits the fact that `dof_ip`'s derivative with
+ *    respect to a given cell-local DOF depends only on that DOF's
+ *    entry in `offsets`, so the functor sets exactly that one nonzero
+ *    derivative component via `fastAccessDx()` instead of iterating
+ *    over the whole FAD array. This is a significant performance
+ *    optimization for the Jacobian evaluation type, but assumes the
+ *    `basis` values themselves carry no derivative information (see
+ *    the per-functor note about coordinate sensitivities).
+ *
+ * `*_Vector` variants compute all `spaceDim` components of a
+ * vector-valued (or gradient) field; `*_Scalar` variants compute a
+ * single scalar field.
+ */
 // This hides the EvaluateDOF functors outside of this file
 namespace dof_functors {
 
+/**
+ * \brief Vector-valued DOF interpolation functor with full derivative propagation.
+ * \tparam ScalarT the field scalar type (may carry AD derivatives).
+ * \tparam Array the basis-value array type.
+ * \tparam spaceDim number of spatial dimensions (vector components) to compute.
+ * \sa dof_functors
+ */
 template <typename ScalarT,typename Array,int spaceDim>
 class EvaluateDOFWithSens_Vector {
   PHX::View<const ScalarT**> dof_basis; // <C,P>
@@ -34,6 +68,13 @@ class EvaluateDOFWithSens_Vector {
 public:
   using scratch_view = Kokkos::View<ScalarT* ,typename PHX::DevLayout<ScalarT>::type,typename PHX::exec_space::scratch_memory_space,Kokkos::MemoryUnmanaged>;
 
+  /**
+   * \brief Constructor.
+   * \param in_dof_basis input field of per-cell, per-basis-function DOF coefficients.
+   * \param in_dof_ip output field values at integration points.
+   * \param in_basis basis values at integration points.
+   * \param in_use_shared_memory if true, stage per-team data in Kokkos team scratch memory (see team_shmem_size()) to reduce redundant global-memory traffic across the contraction.
+   */
   EvaluateDOFWithSens_Vector(PHX::View<const ScalarT**> in_dof_basis,
                              PHX::View<ScalarT***> in_dof_ip,
                              Array in_basis,
@@ -45,6 +86,7 @@ public:
       use_shared_memory(in_use_shared_memory)
   {}
 
+  /// \brief Computes dof_ip for one cell (team.league_rank()), optionally staging through team scratch memory.
   KOKKOS_INLINE_FUNCTION
   void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
   {
@@ -105,6 +147,7 @@ public:
     } // if (use_shared_memory) {
   }
 
+  /// \brief Returns the team scratch memory size (in bytes) required by operator() when use_shared_memory is enabled; 0 otherwise.
   size_t team_shmem_size(int /* team_size */ ) const
   {
     if (not use_shared_memory)
@@ -120,6 +163,12 @@ public:
 
 };
 
+/**
+ * \brief Scalar-valued DOF interpolation functor with full derivative propagation.
+ * \tparam ScalarT the field scalar type (may carry AD derivatives).
+ * \tparam Array the basis-value array type.
+ * \sa dof_functors
+ */
 template <typename ScalarT, typename Array>
 class EvaluateDOFWithSens_Scalar {
   PHX::MDField<const ScalarT,Cell,Point> dof_basis;
@@ -132,6 +181,12 @@ class EvaluateDOFWithSens_Scalar {
 public:
   typedef typename PHX::Device execution_space;
 
+  /**
+   * \brief Constructor.
+   * \param in_dof_basis input field of per-cell, per-basis-function DOF coefficients.
+   * \param in_dof_ip output field values at integration points.
+   * \param in_basis basis values at integration points.
+   */
   EvaluateDOFWithSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_basis,
                              PHX::MDField<ScalarT,Cell,Point> in_dof_ip,
                              Array in_basis)
@@ -140,6 +195,7 @@ public:
     numFields = basis.extent(1);
     numPoints = basis.extent(2);
   }
+  /// \brief Computes dof_ip for all points of one cell.
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
@@ -154,6 +210,19 @@ public:
   }
 };
 
+/**
+ * \brief Vector-valued DOF interpolation functor using the fast-sensitivity optimization.
+ *
+ * Assumes each cell-local DOF's derivative contribution is confined to
+ * a single entry of \c offsets, so only that one derivative component
+ * is computed via \c fastAccessDx() rather than propagating a full AD
+ * derivative array. Not valid if \c basis itself carries derivatives
+ * (e.g. sensitivity to coordinates).
+ * \tparam ScalarT the field scalar type (AD type carrying derivatives).
+ * \tparam Array the basis-value array type.
+ * \tparam spaceDim number of spatial dimensions (vector components) to compute.
+ * \sa dof_functors
+ */
 template <typename ScalarT,typename Array,int spaceDim>
 class EvaluateDOFFastSens_Vector {
   PHX::MDField<const ScalarT,Cell,Point> dof_basis;
@@ -167,6 +236,13 @@ class EvaluateDOFFastSens_Vector {
 public:
   typedef typename PHX::Device execution_space;
 
+  /**
+   * \brief Constructor.
+   * \param in_dof_basis input field of per-cell, per-basis-function DOF coefficients.
+   * \param in_dof_ip output field values at integration points.
+   * \param in_offsets maps each basis function to the derivative array index holding its (only nonzero) sensitivity.
+   * \param in_basis basis values at integration points.
+   */
   EvaluateDOFFastSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_basis,
                              PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_ip,
                              PHX::View<const int*> in_offsets,
@@ -176,6 +252,7 @@ public:
       numPoints(in_basis.extent(2))
   {}
 
+  /// \brief Computes dof_ip (value and its one nonzero sensitivity) for all points/dimensions of one cell.
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
@@ -198,6 +275,18 @@ public:
   }
 };
 
+/**
+ * \brief Scalar-valued DOF interpolation functor using the fast-sensitivity optimization.
+ *
+ * Assumes each cell-local DOF's derivative contribution is confined to
+ * a single entry of \c offsets, so only that one derivative component
+ * is computed via \c fastAccessDx() rather than propagating a full AD
+ * derivative array. Not valid if \c basis itself carries derivatives
+ * (e.g. sensitivity to coordinates).
+ * \tparam ScalarT the field scalar type (AD type carrying derivatives).
+ * \tparam Array the basis-value array type.
+ * \sa dof_functors
+ */
 template <typename ScalarT, typename Array>
 class EvaluateDOFFastSens_Scalar {
   PHX::MDField<const ScalarT,Cell,Point> dof_basis;
@@ -211,6 +300,13 @@ class EvaluateDOFFastSens_Scalar {
 public:
   typedef typename PHX::Device execution_space;
 
+  /**
+   * \brief Constructor.
+   * \param in_dof_basis input field of per-cell, per-basis-function DOF coefficients.
+   * \param in_dof_ip output field values at integration points.
+   * \param in_offsets maps each basis function to the derivative array index holding its (only nonzero) sensitivity.
+   * \param in_basis basis values at integration points.
+   */
   EvaluateDOFFastSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_basis,
                              PHX::MDField<ScalarT,Cell,Point> in_dof_ip,
                              PHX::View<const int*> in_offsets,
@@ -220,6 +316,7 @@ public:
     numFields = basis.extent(1);
     numPoints = basis.extent(2);
   }
+  /// \brief Computes dof_ip (value and its one nonzero sensitivity) for all points of one cell.
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {

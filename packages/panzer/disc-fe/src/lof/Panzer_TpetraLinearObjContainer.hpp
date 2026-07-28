@@ -29,6 +29,20 @@
 
 namespace panzer {
 
+/**
+ * \brief Tpetra-backed implementation of LinearObjContainer.
+ *
+ * Holds the solution vector `x`, its time derivative `dxdt`, the
+ * residual vector `f`, and the Jacobian matrix `A` as Tpetra objects,
+ * and (via ThyraObjContainer) exposes Thyra-wrapped views of the same
+ * data so panzer's linear-algebra-agnostic code can operate on them
+ * without depending on Tpetra directly. Built and populated by a
+ * matching Tpetra linear object factory.
+ * \tparam ScalarT the field scalar type.
+ * \tparam LocalOrdinalT local ordinal type.
+ * \tparam GlobalOrdinalT global ordinal type.
+ * \tparam NodeT Kokkos node type; defaults to panzer::TpetraNodeType.
+ */
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT=panzer::TpetraNodeType>
 class TpetraLinearObjContainer : public LinearObjContainer
                                , public ThyraObjContainer<ScalarT> {
@@ -44,6 +58,11 @@ public:
    typedef Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> ImportType;
    typedef Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> ExportType;
 
+   /** \brief Construct from the domain (solution) and range (residual) Tpetra maps, building the corresponding Thyra vector spaces.
+     *
+     * \param[in] domain map for the solution/time-derivative vectors (x, dxdt) and the Jacobian's domain space.
+     * \param[in] range map for the residual vector (f) and the Jacobian's range space.
+     */
    TpetraLinearObjContainer(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > & domain,
                             const Teuchos::RCP<const Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > & range)
    {
@@ -51,13 +70,14 @@ public:
       rangeSpace = Thyra::createVectorSpace<ScalarT>(range);
    }
 
-   virtual void initialize() 
+   /// \brief Zeroes out whichever of x, dxdt, f, and A are currently set.
+   virtual void initialize()
    {
       if(get_x()!=Teuchos::null) get_x()->putScalar(0.0);
       if(get_dxdt()!=Teuchos::null) get_dxdt()->putScalar(0.0);
       if(get_f()!=Teuchos::null) get_f()->putScalar(0.0);
       if(get_A()!=Teuchos::null) {
-        Teuchos::RCP<CrsMatrixType> mat = get_A(); 
+        Teuchos::RCP<CrsMatrixType> mat = get_A();
         mat->setAllToScalar(0.0);
       }
    }
@@ -71,25 +91,31 @@ public:
       set_A(Teuchos::null);
    }
 
-   inline void set_x(const Teuchos::RCP<VectorType> & in) { x = in; } 
+   //! \name Direct Tpetra accessors for the solution, time derivative, residual, and Jacobian.
+   //@{
+   inline void set_x(const Teuchos::RCP<VectorType> & in) { x = in; }
    inline const Teuchos::RCP<VectorType> get_x() const { return x; }
 
-   inline void set_dxdt(const Teuchos::RCP<VectorType> & in) { dxdt = in; } 
+   inline void set_dxdt(const Teuchos::RCP<VectorType> & in) { dxdt = in; }
    inline const Teuchos::RCP<VectorType> get_dxdt() const { return dxdt; }
 
-   inline void set_f(const Teuchos::RCP<VectorType> & in) { f = in; } 
+   inline void set_f(const Teuchos::RCP<VectorType> & in) { f = in; }
    inline const Teuchos::RCP<VectorType> get_f() const { return f; }
 
-   inline void set_A(const Teuchos::RCP<CrsMatrixType> & in) { A = in; } 
+   inline void set_A(const Teuchos::RCP<CrsMatrixType> & in) { A = in; }
    inline const Teuchos::RCP<CrsMatrixType> get_A() const { return A; }
+   //@}
 
+   /// \brief Sets every entry of the Jacobian matrix A to \p value.
    void initializeMatrix(ScalarT value)
-   {  
-     A->setAllToScalar(value); 
+   {
+     A->setAllToScalar(value);
    }
 
-   virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in) 
-   { 
+   //! \name ThyraObjContainer overrides: Thyra-wrapped views of the same underlying Tpetra data.
+   //@{
+   virtual void set_x_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in)
+   {
      if(in==Teuchos::null) { x = Teuchos::null; return; }
 
      Teuchos::RCP<const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > x_const 
@@ -119,7 +145,8 @@ public:
    { A = (in==Teuchos::null) ? Teuchos::null : Teuchos::rcp_dynamic_cast<CrsMatrixType>(TOE::getTpetraOperator(in),true); }
    virtual Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > get_A_th() const
    { return (A==Teuchos::null) ? Teuchos::null : Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(A,rangeSpace,domainSpace); }
-    
+   //@}
+
 private:
    typedef Thyra::TpetraOperatorVectorExtraction<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> TOE;
 

@@ -31,22 +31,27 @@ namespace mini_em {
   using panzer::Point;
   using panzer::Dim;
 
-  /** Maxwell source with know analytic solution
+  /** Computes the manufactured analytic solution
+    * E(x,y[,z],t) = sin(timeScale*t) * grad[sin(pi*x)*sin(pi*y)[*sin(pi*z)]]
+    * used for verifying the mini-em Maxwell solver.
    */
   template<typename EvalT, typename Traits>
   class MaxwellAnalyticSolution : public panzer::EvaluatorWithBaseImpl<Traits>,
                                   public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   public:
+    /// \brief Construct from the output field name, integration rule, field layout library, time-oscillation scale, and the name of the DOF basis whose integration points to evaluate at.
     MaxwellAnalyticSolution(const std::string & name,
                             const panzer::IntegrationRule & ir,
                             const panzer::FieldLayoutLibrary & fl,
                             const double timeScale,
                             const std::string& basisName="E_edge");
 
+    /// \brief Looks up the integration rule index needed by evaluateFields(). Called once before the first evaluation.
     void postRegistrationSetup(typename Traits::SetupData d,
                                PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the analytic solution field at this workset's integration points and time, per the class description.
     void evaluateFields(typename Traits::EvalData d);
 
 

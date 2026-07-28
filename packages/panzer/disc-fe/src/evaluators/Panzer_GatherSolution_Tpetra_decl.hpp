@@ -54,6 +54,13 @@ class GatherSolution_Tpetra;
 // **************************************************************
 // Residual
 // **************************************************************
+
+/** \brief Residual specialization of GatherSolution_Tpetra.
+ *
+ * Reads cell-local values directly out of the Tpetra solution vector
+ * (no derivative information), using #globalIndexer_ to map each
+ * (field, element, basis) triplet to its global unknown.
+ */
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 class GatherSolution_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
@@ -63,23 +70,30 @@ class GatherSolution_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>
 
 public:
 
+  /// \brief Construct with a global indexer only; solution/parameter names must be set later (e.g. via clone()).
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer) :
      globalIndexer_(indexer) {}
 
+  /// \brief Construct from a global indexer and a ParameterList giving the DOF names to gather (see the class-level Panzer_GatherSolution_Input options).
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
                         const Teuchos::ParameterList& p);
 
+  /// \brief Looks up and caches the Tpetra linear object container and field offsets needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
 
+  /// \brief Fetches the Tpetra solution vector to gather from for the upcoming fill.
   void preEvaluate(typename TRAITS::PreEvalData d);
 
+  /// \brief Copies solution values for this workset from the Tpetra vector into #gatherFields_.
   void evaluateFields(typename TRAITS::EvalData d);
 
+  /// \brief Creates a copy of this evaluator configured from a new ParameterList, sharing the same global indexer.
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
   // for testing purposes
+  /// \brief Returns the FieldTag of the i-th gathered field. For testing purposes.
   const PHX::FieldTag & getFieldTag(int i) const
   { TEUCHOS_ASSERT(i < Teuchos::as<int>(gatherFields_.size())); return gatherFields_[i].fieldTag(); }
 
@@ -117,6 +131,14 @@ private:
 // **************************************************************
 // Tangent
 // **************************************************************
+
+/** \brief Tangent specialization of GatherSolution_Tpetra.
+ *
+ * Gathers solution values as in the Residual specialization, and
+ * additionally exposes the tangent fields dx/dp (derivatives of the
+ * solution with respect to parameters) so they can be carried through
+ * a forward sensitivity (tangent) evaluation.
+ */
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 class GatherSolution_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
@@ -126,19 +148,25 @@ class GatherSolution_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>
 
 public:
 
+  /// \brief Construct with a global indexer only; solution/parameter names must be set later (e.g. via clone()).
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer) :
      globalIndexer_(indexer) {}
 
+  /// \brief Construct from a global indexer and a ParameterList giving the DOF names to gather (see the class-level Panzer_GatherSolution_Input options).
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
                         const Teuchos::ParameterList& p);
 
+  /// \brief Looks up and caches the Tpetra linear object container and field offsets needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
 
+  /// \brief Fetches the Tpetra solution vector (and tangent vectors, if present) to gather from for the upcoming fill.
   void preEvaluate(typename TRAITS::PreEvalData d);
 
+  /// \brief Copies solution and tangent values for this workset from the Tpetra vector(s) into #gatherFields_ / #tangentFields_.
   void evaluateFields(typename TRAITS::EvalData d);
 
+  /// \brief Creates a copy of this evaluator configured from a new ParameterList, sharing the same global indexer.
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Tangent,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
@@ -174,6 +202,14 @@ private:
 // **************************************************************
 // Jacobian
 // **************************************************************
+
+/** \brief Jacobian specialization of GatherSolution_Tpetra.
+ *
+ * Gathers solution values from the Tpetra vector and seeds each one
+ * as an independent AD variable (Sacado FAD), so that derivatives
+ * with respect to the local solution unknowns propagate through the
+ * rest of the field evaluation DAG to produce the Jacobian.
+ */
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 class GatherSolution_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
@@ -181,28 +217,36 @@ class GatherSolution_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>
     public panzer::CloneableEvaluator  {
 
 public:
+  /// \brief Construct with a global indexer only; solution/parameter names must be set later (e.g. via clone()).
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer) :
      globalIndexer_(indexer) {}
 
+  /// \brief Construct from a global indexer and a ParameterList giving the DOF names to gather (see the class-level Panzer_GatherSolution_Input options).
   GatherSolution_Tpetra(const Teuchos::RCP<const panzer::GlobalIndexer> & indexer,
                         const Teuchos::ParameterList& p);
 
+  /// \brief Looks up and caches the Tpetra linear object container and field offsets needed by evaluateFields(). Called once before the first evaluation.
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
 
+  /// \brief Fetches the Tpetra solution vector to gather from and determines whether sensitivities should be seeded for the upcoming fill.
   void preEvaluate(typename TRAITS::PreEvalData d);
 
+  /// \brief Launches the device functor (operator()) over all cells in the workset to gather and, if enabled, seed solution values with derivatives.
   void evaluateFields(typename TRAITS::EvalData d);
 
+  /// \brief Creates a copy of this evaluator configured from a new ParameterList, sharing the same global indexer.
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Tpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>(globalIndexer_,pl)); }
 
+  /// \brief Device functor: gathers one cell's solution values into #functor_data.field, seeding derivative components per #functor_data.seed_value.
   KOKKOS_INLINE_FUNCTION
   void operator()(const int cell) const;
 
 
-  // No seeding of the AD fuctor
+  /// \brief Tag type selecting the operator() overload that gathers values without seeding any AD derivatives.
   struct NoSeed {};
+  /// \brief Device functor: gathers one cell's solution values into #functor_data.field with no derivative seeding. \sa NoSeed
   KOKKOS_INLINE_FUNCTION
   void operator()(const NoSeed,const int cell) const;
 

@@ -27,6 +27,10 @@
 
 namespace panzer_stk {
 
+/** \brief A panzer::ConnManager implementation backed by an STK mesh,
+  * mapping local element IDs to global mesh-entity (node/edge/face/cell)
+  * IDs according to a given field pattern.
+  */
 class STKConnManager : public panzer::ConnManager {
 public:
    typedef typename panzer::ConnManager::LocalOrdinal LocalOrdinal;
@@ -34,8 +38,10 @@ public:
    typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::host_mirror_type GlobalOrdinalView;
    typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::host_mirror_type LocalOrdinalView;
 
+   /// \brief Construct from the STK mesh to build connectivity from. buildConnectivity() must be called before connectivity queries are valid.
    STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB);
 
+   /// \brief Copy constructor.
    STKConnManager(const panzer_stk::STKConnManager & cm);
 
    virtual ~STKConnManager() {}
@@ -82,12 +88,15 @@ public:
    virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const
    { return connSize_[localElmtId]; }
 
+   /// \brief Returns a view of the flat connectivity array (all elements' global IDs, concatenated).
    const GlobalOrdinalView getConnectivityView()
    { return GlobalOrdinalView(connectivity_.data(), connectivity_.size()); }
 
+   /// \brief Returns a view of the per-element connectivity size array.
    const LocalOrdinalView getConnectivitySizeView()
    { return LocalOrdinalView(connSize_.data(), connSize_.size()); }
 
+   /// \brief Returns a view of the per-element offset into the flat connectivity array returned by getConnectivityView().
    const LocalOrdinalView getElementLidToConnView()
    { return LocalOrdinalView(elmtLidToConn_.data(), elmtLidToConn_.size()); }
 

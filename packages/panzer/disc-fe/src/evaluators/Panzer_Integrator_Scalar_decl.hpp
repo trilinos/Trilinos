@@ -42,14 +42,17 @@ class Integrator_Scalar
 {
   public:
 
+    /// \brief Construct from a ParameterList as documented in the class description.
     Integrator_Scalar(
       const Teuchos::ParameterList& p);
 
+    /// \brief Looks up the quadrature index/order and integration weights needed by evaluateFields(). Called once before the first evaluation.
     void
     postRegistrationSetup(
       typename Traits::SetupData d,
       PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the "Integral Name" field for this workset per the class description.
     void
     evaluateFields(
       typename Traits::EvalData d);
@@ -75,10 +78,12 @@ class Integrator_Scalar
 
 public:
   // for testing purposes
-  const PHX::FieldTag & getFieldTag() const 
+  /// \brief Returns the FieldTag of the integral output field. For testing purposes.
+  const PHX::FieldTag & getFieldTag() const
   { return integral.fieldTag(); }
 
 private:
+  /// \brief Returns the ParameterList of valid parameters/defaults for this evaluator's constructor.
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
 }; // end of class Integrator_Scalar
