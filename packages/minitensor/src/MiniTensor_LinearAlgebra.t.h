@@ -3536,6 +3536,46 @@ log_eig_sym(Tensor<T, N> const & A)
 }
 
 //
+// Exponential map for symmetric tensor.
+//
+template<typename T, Index N>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N>
+exp_sym(Tensor<T, N> const & A)
+{
+  return exp_eig_sym(A);
+}
+
+//
+// Exponential map for symmetric tensor using eigenvalue decomposition.
+//
+template<typename T, Index N>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N>
+exp_eig_sym(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Tensor<T, N>
+  V(dimension);
+
+  Tensor<T, N>
+  D(dimension);
+
+  std::tie(V, D) = eig_sym(A);
+
+  for (Index i = 0; i < dimension; ++i) {
+    D(i, i) = std::exp(D(i, i));
+  }
+
+  Tensor<T, N> const
+  B = dot_t(dot(V, D), V);
+
+  return B;
+}
+
+//
 // R^N logarithmic map of a rotation.
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$

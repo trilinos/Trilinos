@@ -170,6 +170,24 @@ exp_taylor(Tensor<T, N> const & A);
 template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A);
 
 ///
+/// Exponential map for symmetric tensor
+/// \return \f$ \exp A \f$
+///
+template<typename T, Index N>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N>
+exp_sym(Tensor<T, N> const & A);
+
+///
+/// Exponential map for symmetric tensor using eigenvalue decomposition
+/// \return \f$ \exp A \f$
+///
+template<typename T, Index N>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N>
+exp_eig_sym(Tensor<T, N> const & A);
+
+///
 /// Logarithmic map.
 /// \return \f$ \log A \f$
 ///
