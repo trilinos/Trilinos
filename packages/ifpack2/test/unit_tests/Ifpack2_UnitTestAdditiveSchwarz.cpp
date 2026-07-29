@@ -18,21 +18,14 @@
 #endif  // HAVE_IFPACK2_AMESOS2
 #include "Teuchos_UnitTestHarness.hpp"
 
-// Xpetra / Galeri
-#ifdef HAVE_IFPACK2_XPETRA
-#include "Xpetra_ConfigDefs.hpp"
-#include "Xpetra_DefaultPlatform.hpp"
-#include "Xpetra_Parameters.hpp"
-#include "Xpetra_MapFactory.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_TpetraCrsMatrix.hpp"
+// Galeri
+#ifdef HAVE_IFPACK2_GALERI
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
 #include "Galeri_XpetraParameters.hpp"
 #include "Galeri_XpetraUtils.hpp"
 #include "Galeri_XpetraMaps.hpp"
-#endif  // HAVE_IFPACK2_XPETRA
+#endif  // HAVE_IFPACK2_GALERI
 
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_UnitTestHelpers.hpp"
@@ -97,7 +90,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test0, Scalar, LocalOr
   params.set("schwarz: overlap level", static_cast<int>(0));
   params.set("schwarz: combine mode", "Zero");
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   std::cout << "Test0: Enabling reordering!\n";
   params.set("schwarz: use reordering", true);
   params.set("schwarz: reordering list", zlist);
@@ -184,7 +177,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, Test1, Scalar, LO, GO)
     innerParams.set("fact: drop tolerance", 0.0);
     params.set("inner preconditioner parameters", innerParams);
   }
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering", true);
   params.set("schwarz: reordering list", zlist);
 #else
@@ -326,7 +319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK, Scalar, LO, GO)
 
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering", true);
 #else
   params.set("schwarz: use reordering", false);
@@ -406,7 +399,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK_UserOrdering, Sc
 
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   size_t N = rowmap->getLocalNumElements();
   params.set("schwarz: use reordering", true);
 
@@ -504,10 +497,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, L
     else
       reorderSubdomains = true;
 
-#if !defined(HAVE_IFPACK2_XPETRA) || !defined(HAVE_IFPACK2_ZOLTAN2)
+#if !defined(HAVE_IFPACK2_ZOLTAN2)
     // mfh 19 Nov 2013: Reordering won't work (will throw an exception
     // in Ifpack2::AdditiveSchwarz) if Trilinos was not built with
-    // Xpetra and Zoltan2 enabled.  Don't even bother running the test
+    // Zoltan2 enabled.  Don't even bother running the test
     // in that case.
     if (reorderSubdomains) {
       continue;
@@ -554,7 +547,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, TestOverlap, Scalar, L
 }
 
 // ///////////////////////////////////////////////////////////////////// //
-#if defined(HAVE_IFPACK2_AMESOS2) && defined(HAVE_IFPACK2_XPETRA) && (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
+#if defined(HAVE_IFPACK2_AMESOS2) && (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 // Test sparse direct solver as subdomain solver for AdditiveSchwarz.
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC, LO, GO) {
   using Teuchos::ParameterList;
@@ -566,10 +559,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
   typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
   typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-
-  typedef Xpetra::TpetraCrsMatrix<SC, LO, GO, NT> XCrsType;
-  typedef Xpetra::Map<LO, GO, NT> XMapType;
-  typedef Xpetra::MultiVector<SC, LO, GO, NT> XMVectorType;
 
   using Teuchos::outArg;
   using Teuchos::REDUCE_MIN;
@@ -585,24 +574,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
 #endif
       << " as subdomain solver for AdditiveSchwarz" << endl;
 
-  // Generate the matrix using Galeri.  Galeri wraps it in an Xpetra
-  // matrix, so after it finishes, ask it for the Tpetra matrix.
+  // Generate the matrix using Galeri.
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   Teuchos::CommandLineProcessor clp;
   GO nx = 10, ny = 10, nz = 10;
   Galeri::Xpetra::Parameters<GO> GaleriParameters(clp, nx, ny, nz, "Laplace2D");
-  Xpetra::Parameters xpetraParameters(clp);
   ParameterList GaleriList = GaleriParameters.GetParameterList();
 
-  RCP<XMapType> xmap =
-      Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(),
-                                              "Cartesian2D", comm, GaleriList);
-  RCP<Galeri::Xpetra::Problem<XMapType, XCrsType, XMVectorType> > Pr =
-      Galeri::Xpetra::BuildProblem<SC, LO, GO, XMapType, XCrsType, XMVectorType>(std::string("Laplace2D"),
-                                                                                 xmap, GaleriList);
+  RCP<map_type> tmap =
+      Galeri::Xpetra::CreateMap<LO, GO, map_type>("Cartesian2D", comm, GaleriList);
+  RCP<Galeri::Xpetra::Problem<map_type, crs_matrix_type, MV> > Pr =
+      Galeri::Xpetra::BuildProblem<SC, LO, GO, map_type, crs_matrix_type, MV>(std::string("Laplace2D"),
+                                                                              tmap, GaleriList);
 
-  RCP<XCrsType> XA       = Pr->BuildMatrix();
-  RCP<crs_matrix_type> A = XA->getTpetra_CrsMatrixNonConst();
+  RCP<crs_matrix_type> A = Pr->BuildMatrix();
   TEST_INEQUALITY(A, Teuchos::null);
 
   RCP<const map_type> rowmap = A->getRowMap();
@@ -616,7 +601,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SparseDirectSolver, SC
 
   params.set("schwarz: overlap level", 2);
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering", true);
 #else
   params.set("schwarz: use reordering", false);
@@ -791,7 +776,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
   out << "Setting AdditiveSchwarz's parameters" << endl;
 
   // prec1 assumes initial guess is zero
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params1.set("schwarz: use reordering", true);
 #else
   params1.set("schwarz: use reordering", false);
@@ -801,7 +786,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
   TEST_NOTHROW(prec1.setParameters(params1));
 
   // prec2 assumes initial guess is nonzero
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params2.set("schwarz: use reordering", true);
 #else
   params2.set("schwarz: use reordering", false);
@@ -1228,7 +1213,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILU, Scalar, Local
   params.set("schwarz: overlap level", 0);
   params.set("schwarz: combine mode", "Zero");
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering", true);
   params.set("schwarz: reordering list", zlist);
 #else
@@ -1316,7 +1301,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastIC, Scalar, LocalO
   params.set("schwarz: overlap level", static_cast<int>(0));
   params.set("schwarz: combine mode", "Zero");
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering", true);
   params.set("schwarz: reordering list", zlist);
 #else
@@ -1404,7 +1389,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, Loca
   params.set("schwarz: overlap level", static_cast<int>(0));
   params.set("schwarz: combine mode", "Zero");
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   params.set("schwarz: use reordering", true);
   params.set("schwarz: reordering list", zlist);
 #else
@@ -1451,7 +1436,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, Loca
   TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4 * STS::eps());
 }
 
-#ifdef HAVE_IFPACK2_XPETRA
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOnNonsymScaledTriDiag, Scalar, LO, GO) {
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
   typedef Tpetra::Map<LO, GO, Node> map_type;
@@ -1554,7 +1538,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOn
       paramsBase.set("schwarz: zero starting solution", true);
       paramsBase.set("schwarz: subdomain 1-norm equilibration", false);
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
       if (useReordering) {
         ParameterList zlist;
         zlist.set("order_method", "rcm");
@@ -1613,11 +1597,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOn
 }
 #define IFPACK2_EQUILIBRATION_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, EquilImprovesParIlutOnNonsymScaledTriDiag, Scalar, LocalOrdinal, GlobalOrdinal)
-#else
-#define IFPACK2_EQUILIBRATION_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
-#endif  // HAVE_IFPACK2_XPETRA
 
-#if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
+#if defined(HAVE_IFPACK2_AMESOS2) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 
 #define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2AdditiveSchwarz, SparseDirectSolver, Scalar, LocalOrdinal, GlobalOrdinal)

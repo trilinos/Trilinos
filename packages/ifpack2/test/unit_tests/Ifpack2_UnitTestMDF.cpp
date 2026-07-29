@@ -154,7 +154,7 @@ void test_mdf_reference_problem(
     TEST_COMPARE_FLOATING_ARRAYS(yview, knownSln, test_mdf_reference_tol<Scalar>());
   }
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   // Now apply reordering with AdditiveSchwarz
   Ifpack2::AdditiveSchwarz<row_matrix_t> reorderedPrec(crsmatrix.getConst());
   {

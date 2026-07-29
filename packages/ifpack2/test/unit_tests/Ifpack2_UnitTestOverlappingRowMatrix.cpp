@@ -17,15 +17,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <iostream>
 
-// Xpetra / Galeri
-#ifdef HAVE_IFPACK2_XPETRA
-#include <Xpetra_ConfigDefs.hpp>
-#include <Xpetra_DefaultPlatform.hpp>
-#include <Xpetra_Parameters.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_TpetraMap.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_TpetraCrsMatrix.hpp>
+// Galeri
+#ifdef HAVE_IFPACK2_GALERI
 #include <Galeri_XpetraProblemFactory.hpp>
 #include <Galeri_XpetraMatrixTypes.hpp>
 #endif
@@ -216,14 +209,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   out << "Ifpack2::OverlappingRowMatrix unit test" << endl;
   Teuchos::OSTab tab0(out);
 
-#ifndef HAVE_IFPACK2_XPETRA
-  out << "This test requires building with Xpetra enabled." << endl;
+#ifndef HAVE_IFPACK2_GALERI
+  out << "This test requires building with Galeri enabled." << endl;
 #else
+  typedef Tpetra::Map<LO, GO, Node> MapType;
+  typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MVType;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> CrsType;
   typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
-  typedef Xpetra::TpetraCrsMatrix<Scalar, LO, GO, Node> XCrsType;
-  typedef Xpetra::Map<LO, GO, Node> XMapType;
-  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> XMVectorType;
   typedef Tpetra::Vector<Scalar, LO, GO, Node> VectorType;
 
   int lclSuccess = 1;
@@ -235,7 +227,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   const int numProcs                  = comm->getSize();
 
   Teuchos::CommandLineProcessor clp;
-  Xpetra::Parameters xpetraParameters(clp);
   Teuchos::ParameterList GaleriList;
   int nx                    = 447;  // ~200K unknowns per MPI rank
   size_t numElementsPerProc = nx * nx;
@@ -251,19 +242,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   }
 
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
-  RCP<XMapType> xmap;
-  RCP<Galeri::Xpetra::Problem<XMapType, XCrsType, XMVectorType> > Pr;
-  RCP<XCrsType> XA;
+  RCP<MapType> tmap;
+  RCP<Galeri::Xpetra::Problem<MapType, CrsType, MVType> > Pr;
   RCP<CrsType> A;
   try {
-    xmap = Xpetra::MapFactory<LO, GO>::Build(xpetraParameters.GetLib(), INVALID,
-                                             numElementsPerProc, 0, comm);
-    Pr   = Galeri::Xpetra::BuildProblem<Scalar, LO, GO, XMapType, XCrsType, XMVectorType>(std::string("Laplace2D"), xmap, GaleriList);
-    XA   = Pr->BuildMatrix();
-    A    = XA->getTpetra_CrsMatrixNonConst();
+    tmap = rcp(new MapType(INVALID, numElementsPerProc, 0, comm));
+    Pr   = Galeri::Xpetra::BuildProblem<Scalar, LO, GO, MapType, CrsType, MVType>(std::string("Laplace2D"), tmap, GaleriList);
+    A    = Pr->BuildMatrix();
   } catch (std::exception& e) {
     lclSuccess = 0;
-    errStrm << "Problem setup (Galeri or Xpetra) threw exception: " << e.what() << endl;
+    errStrm << "Problem setup (Galeri) threw exception: " << e.what() << endl;
   }
   IFPACK2OVERLAPPINGROWMATRIX_REPORT_GLOBAL_ERR("Problem setup");
 
@@ -365,7 +353,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   IFPACK2OVERLAPPINGROWMATRIX_REPORT_GLOBAL_ERR("Ifpack2::OverlappingRowMatrix::apply");
 
   TEST_COMPARE_FLOATING_ARRAYS(Y.get1dView(), Z.get1dView(), 1e4 * Teuchos::ScalarTraits<Scalar>::eps());
-#endif  // HAVE_IFPACK2_XPETRA
+#endif  // HAVE_IFPACK2_GALERI
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, getLocalDiag, Scalar, LO, GO) {
