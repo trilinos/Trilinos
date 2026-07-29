@@ -173,11 +173,10 @@ Teuchos::RCP<Teuchos::ParameterList> PLCallback::request(const Teko::RequestMesg
 
   Teuchos::RCP<Teuchos::ParameterList> outputPL = Teuchos::rcp(new Teuchos::ParameterList);
 
-  // build up new parameter list from message list
   Teuchos::ParameterList::ConstIterator itr;
   for (itr = inputPL->begin(); itr != inputPL->end(); ++itr) {
     if (itr->first == "cat")
-      outputPL->set<int>("cat", 7);
+      outputPL->set<int>("fact: level-of-fill", 7);
     else
       outputPL->setEntry(itr->first, itr->second);
   }
@@ -195,47 +194,42 @@ bool PLCallback::handlesRequest(const Teko::RequestMesg& rm) {
 }
 
 TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface) {
-#ifdef TEKO_HAVE_EPETRA
   using Teuchos::RCP;
   using Teuchos::rcp;
 
   Teuchos::ParameterList pl;
-  {  // ML-Test requires a handler
-    Teuchos::ParameterList& mlList = pl.sublist("ML-Test");
-    mlList.set<std::string>("Type", "ML");
-    mlList.sublist("ML Settings");
-    mlList.sublist("Required Parameters").set<std::string>("cat", "dog");
+  {  // Ifpack2-Test requires a handler
+    Teuchos::ParameterList& ifpack2List = pl.sublist("Ifpack2-Test");
+    ifpack2List.set<std::string>("Type", "Ifpack2");
+    ifpack2List.sublist("Ifpack2 Settings");
+    ifpack2List.sublist("Required Parameters").set<std::string>("cat", "dog");
   }
-  {  // ML-Test2 does not require a handler
-    Teuchos::ParameterList& mlList = pl.sublist("ML-Test2");
-    mlList.set<std::string>("Type", "ML");
-    mlList.sublist("ML Settings").set<std::string>("pet", "horse");
+  {  // Ifpack2-Test2 does not require a handler
+    Teuchos::ParameterList& ifpack2List = pl.sublist("Ifpack2-Test2");
+    ifpack2List.set<std::string>("Type", "Ifpack2");
+    ifpack2List.sublist("Ifpack2 Settings").set<int>("fact: level-of-fill", 3);
   }
 
-  // make sure it throws if uses haven't set things up correctly
   {
     RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
-    TEST_NOTHROW(invLib->getInverseFactory("ML-Test2"));  // this one doesn't require a handler
-    TEST_THROW(invLib->getInverseFactory("ML-Test"), std::runtime_error);  // this one does
+    TEST_NOTHROW(invLib->getInverseFactory("Ifpack2-Test2"));
+    TEST_THROW(invLib->getInverseFactory("Ifpack2-Test"), std::runtime_error);
   }
 
   {
     RCP<Teko::RequestHandler> reqHandler = rcp(new Teko::RequestHandler);
     reqHandler->addRequestCallback(rcp(new PLCallback));
 
-    // build inverse library and set request handler
     RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
     invLib->setRequestHandler(reqHandler);
 
-    RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("ML-Test");
+    RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("Ifpack2-Test");
 
-    // investigate the parameter list to see if it has bee correctly updated!
     RCP<Teko::PreconditionerInverseFactory> pInvFact =
-        Teuchos::rcp_dynamic_cast<Teko::PreconditionerInverseFactory>(invFact);
+        Teuchos::rcp_dynamic_cast<Teko::PreconditionerInverseFactory>(invFact, true);
     Teuchos::RCP<const Teuchos::ParameterList> pl2 = pInvFact->getPrecFactory()->getParameterList();
 
-    TEST_ASSERT(pl2->sublist("ML Settings").isParameter("cat"));
-    TEST_EQUALITY(pl2->sublist("ML Settings").get<int>("cat"), 7);
+    TEST_ASSERT(pl2->sublist("Ifpack2 Settings").isParameter("fact: level-of-fill"));
+    TEST_EQUALITY(pl2->sublist("Ifpack2 Settings").get<int>("fact: level-of-fill"), 7);
   }
-#endif
 }
