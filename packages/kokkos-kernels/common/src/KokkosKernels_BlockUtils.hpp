@@ -23,7 +23,7 @@ KOKKOS_INLINE_FUNCTION void kk_block_init(const size_type block_dim, value_type 
 // Initializes block: A = B
 template <typename size_type, typename value_type>
 KOKKOS_INLINE_FUNCTION void kk_block_set(const size_type block_dim, value_type *dst, const value_type *val) {
-  memcpy((void *)dst, val, block_dim * block_dim * sizeof(value_type));
+  memcpy((void *)dst, val, block_dim * static_cast<std::size_t>(block_dim) * sizeof(value_type));
 }
 
 // Performs A += B on blocks

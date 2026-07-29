@@ -78,8 +78,9 @@ struct TeamVectorSolveUTV_Internal {
       /// T is matrix_rank x matrix_rank
       /// V is matrix_rank x n
       /// W = U^T B
-      TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(member, matrix_rank, nrhs, m, one, U, us1, us0, B, bs0, bs1,
-                                                            zero, W, ws0, ws1);
+      Impl::TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(member, KokkosBlas::Impl::OpID(),
+                                                                  KokkosBlas::Impl::OpID(), matrix_rank, nrhs, m, one,
+                                                                  U, us1, us0, B, bs0, bs1, zero, W, ws0, ws1);
       member.team_barrier();
 
       /// W = T^{-1} W
@@ -88,13 +89,15 @@ struct TeamVectorSolveUTV_Internal {
       member.team_barrier();
 
       /// X = V^T W
-      TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(member, n, nrhs, matrix_rank, one, V, vs1, vs0, W, ws0, ws1,
-                                                            zero, X, xs0, xs1);
+      Impl::TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(member, KokkosBlas::Impl::OpID(),
+                                                                  KokkosBlas::Impl::OpID(), n, nrhs, matrix_rank, one,
+                                                                  V, vs1, vs0, W, ws0, ws1, zero, X, xs0, xs1);
       member.team_barrier();
     } else {
       /// W = U^T B
-      TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(member, matrix_rank, nrhs, m, one, U, us1, us0, B, bs0, bs1,
-                                                            zero, X, xs0, xs1);
+      Impl::TeamVectorGemmInternal<Algo::Gemm::Unblocked>::invoke(member, KokkosBlas::Impl::OpID(),
+                                                                  KokkosBlas::Impl::OpID(), matrix_rank, nrhs, m, one,
+                                                                  U, us1, us0, B, bs0, bs1, zero, X, xs0, xs1);
       member.team_barrier();
 
       /// X = T^{-1} X

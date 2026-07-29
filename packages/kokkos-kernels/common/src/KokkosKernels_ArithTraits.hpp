@@ -21,10 +21,14 @@
 /// \brief Declaration and definition of KokkosKernels::ArithTraits
 
 #include <KokkosKernels_config.h>
+
+#include <Kokkos_Macros.hpp>
+#if KOKKOS_VERSION_GREATER(5, 1, 1)
+#include <Kokkos_Half.hpp>
+#endif
 #include <Kokkos_NumericTraits.hpp>
 #include <Kokkos_MathematicalFunctions.hpp>
 #include <Kokkos_Complex.hpp>
-#include <Kokkos_Macros.hpp>
 
 #include <impl/Kokkos_QuadPrecisionMath.hpp>
 

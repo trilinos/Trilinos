@@ -112,30 +112,29 @@ void run(const blas3_gemm_params& params) {
 }
 
 int main(int argc, char** argv) {
-  const auto params     = blas3_gemm_params::get_params(argc, argv);
-  const int num_threads = params.use_openmp;
-
-  // the common parameter parser takes the requested device ID and
-  // adds 1 to it (e.g. --cuda 0 -> params.use_cuda = 1)
-  // this is presumably so that 0 can be a sentinel value,
-  // even though device ID 0 is valid
-  // here, we use CUDA, SYCL, or HIP, whichever is set first, to
-  // choose which device Kokkos should initialize on
-  // or -1, for no such selection
-  const int device_id = params.use_cuda
-                            ? params.use_cuda - 1
-                            : (params.use_sycl ? params.use_sycl - 1 : (params.use_hip ? params.use_hip - 1 : 0));
-
-  Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
+  // Ask Kokkos and benchmark to parse their command line arguments
+  Kokkos::initialize(argc, argv);
   benchmark::Initialize(&argc, argv);
   benchmark::SetDefaultTimeUnit(benchmark::kSecond);
   KokkosKernelsBenchmark::add_benchmark_context(true);
+
+  // Now look for command line arguments specific to this benchmark
+  const auto params = blas3_gemm_params::get_params(argc, argv);
+
+  if (params.use_serial) {
+#if defined(KOKKOS_ENABLE_SERIAL)
+    run<Kokkos::Serial>(params);
+#else
+    std::cout << "ERROR: Serial device requested, but not available.\n";
+    return 1;
+#endif
+  }
 
   if (params.use_threads) {
 #if defined(KOKKOS_ENABLE_THREADS)
     run<Kokkos::Threads>(params);
 #else
-    std::cout << "ERROR:  PThreads requested, but not available.\n";
+    std::cout << "ERROR:  Threads requested, but not available.\n";
     return 1;
 #endif
   }
@@ -169,21 +168,16 @@ int main(int argc, char** argv) {
 
   if (params.use_sycl) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    run<Kokkos::Experimental::SYCL>(params);
+    run<Kokkos::SYCL>(params);
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";
     return 1;
 #endif
   }
 
-  // use serial if no backend is specified
-  if (!params.use_cuda and !params.use_hip and !params.use_openmp and !params.use_sycl and !params.use_threads) {
-#if defined(KOKKOS_ENABLE_SERIAL)
-    run<Kokkos::Serial>(params);
-#else
-    std::cout << "ERROR: Serial device requested, but not available.\n";
-    return 1;
-#endif
+  if (!params.use_cuda && !params.use_hip && !params.use_sycl && !params.use_openmp && !params.use_threads &&
+      !params.use_serial) {
+    run<Kokkos::DefaultExecutionSpace>(params);
   }
 
   benchmark::RunSpecifiedBenchmarks();

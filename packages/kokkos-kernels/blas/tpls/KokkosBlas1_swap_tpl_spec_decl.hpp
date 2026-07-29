@@ -12,7 +12,7 @@ template <class ExecutionSpace, class XVector, class YVector>
 inline void swap_print_specialization() {
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
   printf("KokkosBlas::swap<> TPL Blas specialization for < %s, %s, %s >\n", typeid(XVector).name(),
-         typeid(YVector).name(), typeid(ExecutionSpace).name);
+         typeid(YVector).name(), typeid(ExecutionSpace).name());
 #endif
 }
 }  // namespace

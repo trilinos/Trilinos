@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
+
+
+#define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY true
+#include "KokkosKernels_config.h"
+#include "KokkosLapack_potrf_spec.hpp"
+
+namespace KokkosLapack {
+namespace Impl {
+@LAPACK_POTRF_ETI_INST_BLOCK@
+} // namespace Impl
+} // namespace KokkosLapack

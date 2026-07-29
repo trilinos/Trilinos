@@ -160,7 +160,7 @@ void test_spmv_sell_analytic() {
 }
 
 template <typename scalar_t, typename ordinal_t, typename size_type, typename Device>
-void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length, ordinal_t variance,
+void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length, const double variance,
                     ordinal_t bandwidth, scalar_t alpha, scalar_t beta) {
   using sellMat_t     = KokkosSparse::Experimental::SellMatrix<scalar_t, ordinal_t, Device, void, size_type>;
   using scalar_view_t = typename sellMat_t::values_type::non_const_type;
@@ -215,14 +215,15 @@ void test_spmv_sell(ordinal_t num_rows, ordinal_t num_cols, ordinal_t row_length
 
 }  // namespace Test
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                         \
-  TEST_F(TestCategory, sparse##_##spmv_sell##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
-    ::Test::test_spmv_sell_analytic<SCALAR, ORDINAL, OFFSET, DEVICE>();                     \
-    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5, 3, 0, 2, 2.0, 1.0);       \
-    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(20, 20, 5, 2, 2, 2.0, 1.0);     \
-    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(100, 100, 7, 3, 10, 2.0, 1.0);  \
-    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(100, 50, 7, 2, 3, 2.0, 1.0);    \
-    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(80, 100, 7, 2, 3, 2.0, 1.0);    \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                                  \
+  TEST_F(TestCategory, sparse##_##spmv_sell##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) {                          \
+    ::Test::test_spmv_sell_analytic<SCALAR, ORDINAL, OFFSET, DEVICE>();                                              \
+    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(5, 5, 3, std::numeric_limits<double>::epsilon(), 2, 2.0, \
+                                                            1.0);                                                    \
+    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(20, 20, 5, 2, 2, 2.0, 1.0);                              \
+    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(100, 100, 7, 3, 10, 2.0, 1.0);                           \
+    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(100, 50, 7, 2, 3, 2.0, 1.0);                             \
+    ::Test::test_spmv_sell<SCALAR, ORDINAL, OFFSET, DEVICE>(80, 100, 7, 2, 3, 2.0, 1.0);                             \
   }
 
 #include <Test_Common_Test_All_Type_Combos.hpp>

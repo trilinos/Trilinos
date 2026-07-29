@@ -80,7 +80,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
 
   P.template apply<Trans::NoTranspose, 1>(W, W);
 
-  SerialDot<Trans::NoTranspose>::invoke(W, W, tmp);
+  SerialDot<Trans::ConjTranspose, 1>::invoke(W, W, tmp);
 
   for (OrdinalType i = 0; i < numMatrices; ++i) {
     tmp(i) = ATM::sqrt(tmp(i));
@@ -130,7 +130,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
     if (handle.get_ortho_strategy() == 1) {
       for (size_t i = 0; i < j + 1; ++i) {
         auto V_i = Kokkos::subview(V_view, Kokkos::ALL, i, Kokkos::ALL);
-        SerialDot<Trans::NoTranspose>::invoke(W, V_i, tmp);
+        SerialDot<Trans::ConjTranspose, 1>::invoke(W, V_i, tmp);
         SerialCopy<Trans::NoTranspose>::invoke(tmp, Kokkos::subview(H_view, Kokkos::ALL, j, i));
         for (OrdinalType ii = 0; ii < numMatrices; ++ii) tmp(ii) = -tmp(ii);
 
@@ -138,7 +138,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
       }
     }
 
-    SerialDot<Trans::NoTranspose>::invoke(W, W, tmp);
+    SerialDot<Trans::ConjTranspose, 1>::invoke(W, W, tmp);
 
     for (OrdinalType i = 0; i < numMatrices; ++i) {
       H_view(i, j, j + 1) = ATM::sqrt(tmp(i));
@@ -235,7 +235,7 @@ KOKKOS_INLINE_FUNCTION int SerialGMRES::invoke(const OperatorType& A, const Vect
     SerialCopy<Trans::NoTranspose>::invoke(B, W);
     A.template apply<Trans::NoTranspose>(X, W, -1, 1);
     P.template apply<Trans::NoTranspose, 1>(W, W);
-    SerialDot<Trans::NoTranspose>::invoke(W, W, tmp);
+    SerialDot<Trans::ConjTranspose, 1>::invoke(W, W, tmp);
 
     for (OrdinalType i = 0; i < numMatrices; ++i) {
       tmp(i) = ATM::sqrt(tmp(i));

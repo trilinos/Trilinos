@@ -14,11 +14,12 @@
 namespace benchmark {
 
 struct CommonInputParams {
-  int use_cuda    = 0;
-  int use_hip     = 0;
-  int use_sycl    = 0;
-  int use_openmp  = 0;
-  int use_threads = 0;
+  bool use_cuda    = false;
+  bool use_hip     = false;
+  bool use_sycl    = false;
+  bool use_openmp  = false;
+  bool use_threads = false;
+  bool use_serial  = false;
 
   int repeat      = 0;
   bool print_help = false;
@@ -26,48 +27,50 @@ struct CommonInputParams {
 
 std::string list_common_options() {
   std::ostringstream common_options;
-  common_options << "\t[Required] Backend: the available backends are:\n"
+  common_options << "\t[Required]:\n"
+                 << "\t[Optional]:\n"
+                 << "\t The following backends are available because Kokkos was "
+                    "configured with them:\n"
 #ifdef KOKKOS_ENABLE_THREADS
-                 << "\t\t'--threads [numThreads]'\n"
+                 << "\t\t'--threads'\n"
 #endif
 #ifdef KOKKOS_ENABLE_OPENMP
-                 << "\t\t'--openmp [numThreads]'\n"
+                 << "\t\t'--openmp'\n"
 #endif
 #ifdef KOKKOS_ENABLE_CUDA
-                 << "\t\t'--cuda [deviceIndex]'\n"
+                 << "\t\t'--cuda'\n"
 #endif
 #ifdef KOKKOS_ENABLE_HIP
-                 << "\t\t'--hip [deviceIndex]'\n"
+                 << "\t\t'--hip'\n"
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
-                 << "\t\t'--sycl [deviceIndex]'\n"
+                 << "\t\t'--sycl'\n"
 #endif
 #ifdef KOKKOS_ENABLE_SERIAL
-                 << "\t\tIf no parallel backend is requested, Serial will be used.\n"
+                 << "\t\t'--serial'\n"
 #endif
                  << "\n"
                  << "\t The following backends are not available because Kokkos was not "
                     "configured with them:\n"
 #ifndef KOKKOS_ENABLE_THREADS
-                 << "\t\t'--threads [numThreads]'\n"
+                 << "\t\t'--threads'\n"
 #endif
 #ifndef KOKKOS_ENABLE_OPENMP
-                 << "\t\t'--openmp [numThreads]'\n"
+                 << "\t\t'--openmp'\n"
 #endif
 #ifndef KOKKOS_ENABLE_CUDA
-                 << "\t\t'--cuda [deviceIndex]'\n"
+                 << "\t\t'--cuda'\n"
 #endif
 #ifndef KOKKOS_ENABLE_HIP
-                 << "\t\t'--hip [deviceIndex]'\n"
+                 << "\t\t'--hip'\n"
 #endif
 #ifndef KOKKOS_ENABLE_SYCL
-                 << "\t\t'--sycl [deviceIndex]'\n"
+                 << "\t\t'--sycl'\n"
 #endif
 #ifndef KOKKOS_ENABLE_SERIAL
-                 << "\t\tSerial is not enabled so a parallel backend must be selected.\n"
+                 << "\t\t'--serial'\n"
 #endif
                  << "\n"
-                 << "\t[Optional]:\n"
                  << "\t\t'-h', '--help': show available options\n\n";
 
   return common_options.str();
@@ -165,28 +168,24 @@ bool check_arg_str(int const i, int const argc, char** argv, char const* name, s
 void parse_common_options(int& argc, char** argv, CommonInputParams& params) {
   // Skip the program name, start with argIdx=1
   int argIdx = 1;
-  // Note: after parsing a GPU device ID, always add 1 to it.
-  // If e.g. params.use_cuda is 0, that means CUDA will not be used at all.
-  // But if it's N, then it means run on CUDA device N-1.
   while (argIdx < argc) {
     // How many flags to delete from argc/argv
     // 0: not a common option, so leave it
-    // 1: a bool parameter like '-h'
-    // 2: a parameter followed by a value, like "--cuda 0"
+    // 1: a bool parameter like '-h or --cuda'
+    // 2: a parameter followed by a value, like "--repeat 3"
     int remove_flags = 0;
-    if (check_arg_int(argIdx, argc, argv, "--threads", params.use_threads)) {
-      remove_flags = 2;
-    } else if (check_arg_int(argIdx, argc, argv, "--openmp", params.use_openmp)) {
-      remove_flags = 2;
-    } else if (check_arg_int(argIdx, argc, argv, "--cuda", params.use_cuda)) {
-      params.use_cuda++;
-      remove_flags = 2;
-    } else if (check_arg_int(argIdx, argc, argv, "--hip", params.use_hip)) {
-      params.use_hip++;
-      remove_flags = 2;
-    } else if (check_arg_int(argIdx, argc, argv, "--sycl", params.use_sycl)) {
-      params.use_sycl++;
-      remove_flags = 2;
+    if (check_arg_bool(argIdx, argc, argv, "--threads", params.use_threads)) {
+      remove_flags = 1;
+    } else if (check_arg_bool(argIdx, argc, argv, "--openmp", params.use_openmp)) {
+      remove_flags = 1;
+    } else if (check_arg_bool(argIdx, argc, argv, "--cuda", params.use_cuda)) {
+      remove_flags = 1;
+    } else if (check_arg_bool(argIdx, argc, argv, "--hip", params.use_hip)) {
+      remove_flags = 1;
+    } else if (check_arg_bool(argIdx, argc, argv, "--sycl", params.use_sycl)) {
+      remove_flags = 1;
+    } else if (check_arg_bool(argIdx, argc, argv, "--serial", params.use_serial)) {
+      remove_flags = 1;
     } else if (check_arg_int(argIdx, argc, argv, "--repeat", params.repeat)) {
       remove_flags = 2;
     } else if (check_arg_bool(argIdx, argc, argv, "-h", params.print_help) ||

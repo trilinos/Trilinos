@@ -35,6 +35,7 @@ struct IlutWrap {
   using HandleDeviceEntriesType = typename IlutHandle::nnz_lno_view_t;
   using HandleDeviceRowMapType  = typename IlutHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename IlutHandle::nnz_value_view_t;
+  using HandleDeviceFloatType   = typename IlutHandle::nnz_float_view_t;
   using karith                  = typename KokkosKernels::ArithTraits<scalar_t>;
   using policy_type             = typename IlutHandle::TeamPolicy;
   using member_type             = typename policy_type::member_type;
@@ -462,42 +463,37 @@ struct IlutWrap {
     }
   }
 
-  struct AbsComparator {
-    KOKKOS_INLINE_FUNCTION
-    bool operator()(const scalar_t& a, const scalar_t& b) const { return karith::abs(a) < karith::abs(b); }
-  };
-
   /**
-   * Select threshold based on filter rank. Do all this on host
+   * Select threshold based on filter rank.
    */
-  template <class ValuesType, class ValuesCopyHostType, class ValuesCopyType>
+  template <class ValuesType, class ValuesFloatType>
   static float_t threshold_select(const ValuesType& values, const typename IlutHandle::nnz_lno_t rank,
-                                  ValuesCopyHostType& values_copy, ValuesCopyType& values_copy_d) {
+                                  ValuesFloatType& values_f) {
     const index_t size = values.extent(0);
 
-    // Legacy views do not support sort, so we have to do it on host
-#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-    if constexpr (true) {
-#else
-    if constexpr (std::is_same_v<Kokkos::HostSpace, typename ValuesType::memory_space>) {
-#endif
-      Kokkos::realloc(Kokkos::WithoutInitializing, values_copy, size);
-      Kokkos::deep_copy(values_copy, values);
+    // Fill values_f with abs values so that we don't need a custom
+    // comparator for Kokkos::sort (custom compares can cause thrust problems for
+    // large views).
+    Kokkos::realloc(Kokkos::WithoutInitializing, values_f, size);
+    Kokkos::parallel_for(
+        range_policy(0, size), KOKKOS_LAMBDA(const size_type i) { values_f(i) = karith::abs(values(i)); });
 
-      auto begin  = values_copy.data();
+    if constexpr (std::is_same_v<Kokkos::HostSpace, typename ValuesType::memory_space>) {
+      // On host, the nth_element approach performs much better than Kokkos::sort. At
+      // least, this was true before the recent refactor that eliminated the need for
+      // a custom comparator.
+      auto begin  = values_f.data();
       auto target = begin + rank;
       auto end    = begin + size;
-      std::nth_element(begin, target, end, [](scalar_t a, scalar_t b) { return karith::abs(a) < karith::abs(b); });
-      return karith::abs(values_copy(rank));
+      std::nth_element(begin, target, end);
+
+      return values_f(rank);
     } else {
-      Kokkos::realloc(Kokkos::WithoutInitializing, values_copy_d, size);
-      Kokkos::deep_copy(values_copy_d, values);
+      Kokkos::sort(values_f);
 
       float_t result;
-      Kokkos::sort(values_copy_d, AbsComparator{});
       Kokkos::parallel_reduce(
-          range_policy(0, 1), KOKKOS_LAMBDA(const int, float_t& lsum) { lsum = karith::abs(values_copy_d(rank)); },
-          result);
+          range_policy(0, 1), KOKKOS_LAMBDA(const size_type, float_t& lsum) { lsum = values_f(rank); }, result);
 
       return result;
     }
@@ -768,8 +764,8 @@ struct IlutWrap {
 
     HandleDeviceRowMapType R_row_map;
     HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries, R_entries;
-    HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy_d, R_values;
-    auto V_copy = Kokkos::create_mirror_view(V_copy_d);
+    HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, R_values;
+    HandleDeviceFloatType V_copy;
 
     size_type itr                  = 0;
     scalar_t curr_residual         = std::numeric_limits<scalar_t>::max();
@@ -817,8 +813,8 @@ struct IlutWrap {
         const auto l_filter_rank = std::max(static_cast<index_t>(0), l_nnz - l_nnz_limit - 1);
         const auto u_filter_rank = std::max(static_cast<index_t>(0), u_nnz - u_nnz_limit - 1);
 
-        const auto l_threshold = threshold_select(L_new_values, l_filter_rank, V_copy, V_copy_d);
-        const auto u_threshold = threshold_select(U_new_values, u_filter_rank, V_copy, V_copy_d);
+        const auto l_threshold = threshold_select(L_new_values, l_filter_rank, V_copy);
+        const auto u_threshold = threshold_select(U_new_values, u_filter_rank, V_copy);
 
         threshold_filter(thandle, l_threshold, L_new_row_map, L_new_entries, L_new_values, L_row_map, L_entries,
                          L_values);
@@ -863,6 +859,10 @@ struct IlutWrap {
           prev_residual = curr_residual;
         }
       } else {
+        if (verbose) {
+          std::cout << "Completed itr " << itr << ", residual is unknown." << std::endl;
+        }
+
         curr_residual = 0;
         prev_residual = 0;
       }

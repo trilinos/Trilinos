@@ -6,7 +6,7 @@
 
 #include <sstream>
 
-#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -659,16 +659,16 @@ static void spmv_struct_beta_no_transpose(
     numExteriorPts = 2;
     vector_length  = 1;
   } else if (structure.extent(0) == 2) {
-    numInteriorPts = (structure(1) - 2) * (structure(0) - 2);
-    numExteriorPts = 2 * (structure(1) + structure(0) - 2);
+    numInteriorPts = static_cast<int64_t>(structure(1) - 2) * (structure(0) - 2);
+    numExteriorPts = 2 * (static_cast<int64_t>(structure(1)) + structure(0) - 2);
     if (stencil_type == 1) {
       vector_length = 2;
     } else if (stencil_type == 2) {
       vector_length = 2;
     }
   } else if (structure.extent(0) == 3) {
-    numInteriorPts = (structure(2) - 2) * (structure(1) - 2) * (structure(0) - 2);
-    numExteriorPts = structure(2) * structure(1) * structure(0) - numInteriorPts;
+    numInteriorPts = static_cast<int64_t>(structure(2) - 2) * (structure(1) - 2) * (structure(0) - 2);
+    numExteriorPts = static_cast<int64_t>(structure(2)) * structure(1) * structure(0) - numInteriorPts;
     if (stencil_type == 1) {
       vector_length = 2;
     } else if (stencil_type == 2) {
