@@ -5,6 +5,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
 
@@ -113,15 +114,16 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
             // Made this non-const in order to WORKAROUND issue #349
             int j = jj * nb, qb = (j + nb) > jb ? np : nb;
             if (use_unit_diag)
-              trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+              trsm_u.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
             else
-              trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+              trsm_n.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
           });
           member.team_barrier();
 
           // gemm update
-          TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, ib - p - pb, jb, pb, minus_one, Ap + pb * as0, as0, as1,
-                                                        Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
+          Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+              member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), ib - p - pb, jb, pb, minus_one, Ap + pb * as0,
+              as0, as1, Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
         }
       };
       KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
@@ -233,15 +235,16 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, (jb / nb) + (np > 0)), [&](const int &jj) {
             const int j = jj * nb, qb = (j + nb) > jb ? np : nb;
             if (use_unit_diag)
-              trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+              trsm_u.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
             else
-              trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+              trsm_n.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Bp + j * bs1);
           });
           member.team_barrier();
 
           // gemm update
-          TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, p, jb, pb, minus_one, Ap - p * as0, as0, as1, Bp, bs0,
-                                                        bs1, one, BB, bs0, bs1);
+          Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, KokkosBlas::Impl::OpID(),
+                                                              KokkosBlas::Impl::OpID(), p, jb, pb, minus_one,
+                                                              Ap - p * as0, as0, as1, Bp, bs0, bs1, one, BB, bs0, bs1);
         }
       };
       KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))

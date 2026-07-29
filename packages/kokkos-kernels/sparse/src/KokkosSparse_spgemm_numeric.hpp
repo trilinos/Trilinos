@@ -175,18 +175,6 @@ void spgemm_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t
   Internal_clno_nnz_view_t_ nonconst_c_l(entriesC.data(), entriesC.extent(0));
   Internal_cscalar_nnz_view_t_ nonconst_c_s(valuesC.data(), valuesC.extent(0));
 
-  if (block_dim > 1) {
-    KokkosSparse::Impl::BSPGEMM_NUMERIC<
-        const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
-        Internal_blno_row_view_t_, Internal_blno_nnz_view_t_, Internal_bscalar_nnz_view_t_, Internal_clno_row_view_t_,
-        Internal_clno_nnz_view_t_, Internal_cscalar_nnz_view_t_>::bspgemm_numeric(&tmp_handle, m, n, k, block_dim,
-                                                                                  const_a_r, const_a_l, const_a_s,
-                                                                                  transposeA, const_b_r, const_b_l,
-                                                                                  const_b_s, transposeB, const_c_r,
-                                                                                  nonconst_c_l, nonconst_c_s);
-    return;
-  }
-
   auto spgemmHandle = tmp_handle.get_spgemm_handle();
 
   if (!spgemmHandle) {
@@ -205,7 +193,32 @@ void spgemm_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t
 
   auto algo = spgemmHandle->get_algorithm_type();
 
-  if (algo == SPGEMM_DEBUG || algo == SPGEMM_SERIAL) {
+  if (block_dim > 1) {
+    if (Impl::is_spgemm_algorithm_native(algo)) {
+      KokkosSparse::Impl::BSPGEMM_NUMERIC<
+          const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
+          Internal_blno_row_view_t_, Internal_blno_nnz_view_t_, Internal_bscalar_nnz_view_t_, Internal_clno_row_view_t_,
+          Internal_clno_nnz_view_t_, Internal_cscalar_nnz_view_t_, false>::bspgemm_numeric(&tmp_handle, m, n, k,
+                                                                                           block_dim, const_a_r,
+                                                                                           const_a_l, const_a_s,
+                                                                                           transposeA, const_b_r,
+                                                                                           const_b_l, const_b_s,
+                                                                                           transposeB, const_c_r,
+                                                                                           nonconst_c_l, nonconst_c_s);
+    } else {
+      KokkosSparse::Impl::BSPGEMM_NUMERIC<
+          const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_ascalar_nnz_view_t_,
+          Internal_blno_row_view_t_, Internal_blno_nnz_view_t_, Internal_bscalar_nnz_view_t_, Internal_clno_row_view_t_,
+          Internal_clno_nnz_view_t_, Internal_cscalar_nnz_view_t_>::bspgemm_numeric(&tmp_handle, m, n, k, block_dim,
+                                                                                    const_a_r, const_a_l, const_a_s,
+                                                                                    transposeA, const_b_r, const_b_l,
+                                                                                    const_b_s, transposeB, const_c_r,
+                                                                                    nonconst_c_l, nonconst_c_s);
+    }
+    return;
+  }
+
+  if (Impl::is_spgemm_algorithm_native(algo)) {
     // Never call a TPL if serial/debug is requested (this is needed for
     // testing)
     KokkosSparse::Impl::SPGEMM_NUMERIC<

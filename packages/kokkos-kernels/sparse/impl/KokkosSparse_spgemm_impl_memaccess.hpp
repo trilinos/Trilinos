@@ -235,8 +235,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   this->create_read_write_hg(overall_flops, c_flop_rowmap, c_comp_a_net_index, c_comp_b_net_index, c_comp_row_index,
                              c_comp_col_index);
 
-  int write_type                   = 0;  // 0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR 4-KKMULTICOLOR2
-  SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
+  int write_type = 0;  // 0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR 4-KKMULTICOLOR2
 
   if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR) {
     write_type = 2;

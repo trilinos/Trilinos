@@ -80,29 +80,29 @@ struct Trsv {
 #include "KokkosBatched_Trsv_Team_Impl.hpp"
 #include "KokkosBatched_Trsv_TeamVector_Impl.hpp"
 
-#define KOKKOSBATCHED_SERIAL_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS)  \
-  KokkosBatched::Impl::SerialTrsvInternalLower<ALGOTYPE>::invoke(DIAG::use_unit_diag, false, M, ALPHA, A, AS0, AS1, B, \
-                                                                 BS)
+#define KOKKOSBATCHED_SERIAL_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS) \
+  KokkosBatched::Impl::SerialTrsvInternalLower<ALGOTYPE>::invoke(DIAG::use_unit_diag, KokkosBlas::Impl::OpID(), M,    \
+                                                                 ALPHA, A, AS0, AS1, B, BS)
 
-#define KOKKOSBATCHED_SERIAL_TRSV_LOWER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS)     \
-  KokkosBatched::Impl::SerialTrsvInternalUpper<ALGOTYPE>::invoke(DIAG::use_unit_diag, false, N, ALPHA, A, AS1, AS0, B, \
-                                                                 BS)
+#define KOKKOSBATCHED_SERIAL_TRSV_LOWER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS) \
+  KokkosBatched::Impl::SerialTrsvInternalUpper<ALGOTYPE>::invoke(DIAG::use_unit_diag, KokkosBlas::Impl::OpID(), N, \
+                                                                 ALPHA, A, AS1, AS0, B, BS)
 
 #define KOKKOSBATCHED_SERIAL_TRSV_LOWER_CONJTRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS) \
-  KokkosBatched::Impl::SerialTrsvInternalUpper<ALGOTYPE>::invoke(DIAG::use_unit_diag, true, N, ALPHA, A, AS1, AS0, B,  \
-                                                                 BS)
+  KokkosBatched::Impl::SerialTrsvInternalUpper<ALGOTYPE>::invoke(DIAG::use_unit_diag, KokkosBlas::Impl::OpConj(), N,   \
+                                                                 ALPHA, A, AS1, AS0, B, BS)
 
-#define KOKKOSBATCHED_SERIAL_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS)  \
-  KokkosBatched::Impl::SerialTrsvInternalUpper<ALGOTYPE>::invoke(DIAG::use_unit_diag, false, M, ALPHA, A, AS0, AS1, B, \
-                                                                 BS)
+#define KOKKOSBATCHED_SERIAL_TRSV_UPPER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS) \
+  KokkosBatched::Impl::SerialTrsvInternalUpper<ALGOTYPE>::invoke(DIAG::use_unit_diag, KokkosBlas::Impl::OpID(), M,    \
+                                                                 ALPHA, A, AS0, AS1, B, BS)
 
-#define KOKKOSBATCHED_SERIAL_TRSV_UPPER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS)     \
-  KokkosBatched::Impl::SerialTrsvInternalLower<ALGOTYPE>::invoke(DIAG::use_unit_diag, false, N, ALPHA, A, AS1, AS0, B, \
-                                                                 BS)
+#define KOKKOSBATCHED_SERIAL_TRSV_UPPER_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS) \
+  KokkosBatched::Impl::SerialTrsvInternalLower<ALGOTYPE>::invoke(DIAG::use_unit_diag, KokkosBlas::Impl::OpID(), N, \
+                                                                 ALPHA, A, AS1, AS0, B, BS)
 
 #define KOKKOSBATCHED_SERIAL_TRSV_UPPER_CONJTRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, DIAG, M, N, ALPHA, A, AS0, AS1, B, BS) \
-  KokkosBatched::Impl::SerialTrsvInternalLower<ALGOTYPE>::invoke(DIAG::use_unit_diag, true, N, ALPHA, A, AS1, AS0, B,  \
-                                                                 BS)
+  KokkosBatched::Impl::SerialTrsvInternalLower<ALGOTYPE>::invoke(DIAG::use_unit_diag, KokkosBlas::Impl::OpConj(), N,   \
+                                                                 ALPHA, A, AS1, AS0, B, BS)
 
 #define KOKKOSBATCHED_TEAM_TRSV_LOWER_NO_TRANSPOSE_INTERNAL_INVOKE(ALGOTYPE, MEMBER, DIAG, M, N, ALPHA, A, AS0, AS1, \
                                                                    B, BS)                                            \

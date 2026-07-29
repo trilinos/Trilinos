@@ -3,7 +3,9 @@ kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 
+add_subdirectory(docs)
 #ADD_SUBDIRECTORY(graph)
+add_subdirectory(sparse)
 add_subdirectory(wiki)
 add_subdirectory(gmres)
 add_subdirectory(batched_solve)

@@ -7,7 +7,7 @@
 # Kokkos Kernels
 
 Kokkos C++ Performance Portability Programming EcoSystem: Math Kernels -
-Provides BLAS, Sparse BLAS and Graph Kernels 
+Provides BLAS, Sparse BLAS and Graph Kernels
 
 KokkosKernels implements local computational kernels for linear
 algebra and graph operations, using the Kokkos shared-memory parallel
@@ -78,7 +78,7 @@ KokkosKernels_ENABLE_OPTION
 with options capitalized at the end. Almost all Kokkos Kernels options determine
 whether ETI is used with a particular datatype, e.g.
 ````
--DKokkosKernels_INST_DOUBLE=On 
+-DKokkosKernels_INST_DOUBLE=On
 ````
 which does explicit instantation of all kernels for double type.
 Kokkos Kernels derives most of its CXXFLAGS, C++ standard, architecture flags,
@@ -157,21 +157,21 @@ CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON when building with CUDA and
 complex double enabled."
 
 
-## Using Kokkoskernels Test Drivers 
+## Using Kokkoskernels Test Drivers
 
 In `perf_test` there are test drivers.
 
-* `KokkosGraph_triangle.exe` : Triangle counting driver. 
-* `KokkosSparse_spgemm.exe` : Sparse Matrix Sparse Matrix Multiply: 
+* `KokkosGraph_triangle.exe` : Triangle counting driver.
+* `KokkosSparse_spgemm.exe` : Sparse Matrix Sparse Matrix Multiply:
 * *****NOTE: KKMEM is outdated. Use default algorithm: KKSPGEMM = KKDEFAULT = DEFAULT****
 * Or within the code:
 *     kh.create_spgemm_handle(KokkosSparse::SPGEMM_KK);
 * `KokkosSparse_spmv.exe` : Sparse matvec.
 * `KokkosSparse_pcg.exe`  : CG method with Gauss Seidel as preconditioner.
-* `KokkosGraph_color.exe` : Distance-1 Graph coloring 
+* `KokkosGraph_color.exe` : Distance-1 Graph coloring
 * `KokkosKernels_MatrixConverter.exe` : given a matrix market format, converts it ".bin"
    binary format for fast input output readings, which can be read by other test drivers.
-   
+
 Please report bugs or performance issues to: https://github.com/kokkos/kokkos-kernels/issues
 
 ##### [LICENSE](https://github.com/kokkos/kokkos-kernels/blob/devel/LICENSE)

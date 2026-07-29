@@ -123,7 +123,7 @@ void test_RK_count() {
   Test::RK_Count<RK>(TestDevice(), TestProblem::EnrightD4(), 1.e-5, 1.e-9, 932);
 #if defined(KOKKOS_ENABLE_SYCL)
   if constexpr ((RK != KokkosODE::Experimental::RK_type::RKF12) &&
-                !std::is_same_v<typename TestDevice::execution_space, Kokkos::Experimental::SYCL>) {
+                !std::is_same_v<typename TestDevice::execution_space, Kokkos::SYCL>) {
 #else
   if constexpr (RK != KokkosODE::Experimental::RK_type::RKF12) {
 #endif

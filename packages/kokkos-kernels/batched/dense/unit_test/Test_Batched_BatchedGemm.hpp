@@ -65,8 +65,9 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
     // Check for DblBuf runtime errors related to team_size
     try {
       fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
-      Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle, ScalarType, decltype(a_actual),
-                              decltype(b_actual), decltype(c_actual), BoundsCheck::Yes, AlphaTag::No, 65536, 1, 65536>(
+      KokkosBatched::Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle, ScalarType,
+                                             decltype(a_actual), decltype(b_actual), decltype(c_actual),
+                                             BoundsCheck::Yes, AlphaTag::No, 65536, 1, 65536>(
           batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual)
           .invoke();
       FAIL() << (fmsg + fmsg_rhs);
@@ -76,9 +77,10 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
     // Check for DblBuf runtime errors related to vector_len
     try {
       fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
-      Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle, ScalarType, decltype(a_actual),
-                              decltype(b_actual), decltype(c_actual), BoundsCheck::No, AlphaTag::No, 65536, 65536 * 2,
-                              65536>(batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual)
+      KokkosBatched::Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle, ScalarType,
+                                             decltype(a_actual), decltype(b_actual), decltype(c_actual),
+                                             BoundsCheck::No, AlphaTag::No, 65536, 65536 * 2, 65536>(
+          batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual)
           .invoke();
       FAIL() << (fmsg + fmsg_rhs);
     } catch (const std::runtime_error& error) {
@@ -275,9 +277,9 @@ void test_batched_gemm_with_layout(int N) {
 
   // Non-square cases
   for (int i = 1; i < 5; ++i) {
-    int dimM = 1 * i;
+    int dimM = 3 * i;
     int dimN = 2 * i;
-    int dimK = 3 * i;
+    int dimK = i;
     if ((std::is_same<typename ParamTagType::transA, KokkosBatched::Trans::NoTranspose>::value) &&
         (std::is_same<typename ParamTagType::transB, KokkosBatched::Trans::NoTranspose>::value)) {
       Test::impl_test_batched_gemm<DeviceType, ViewType, ScalarType, ParamTagType>(N, dimM, dimK, dimK, dimN, dimM,

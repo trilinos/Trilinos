@@ -45,26 +45,19 @@ endif()
 #Generate @X@ variables in the template X.hpp.in and X.cpp.in
 #files containing the list of all needed macros
 
-kokkoskernels_generate_eti(Lapack_gesv gesv
-  COMPONENTS  lapack
-  HEADER_LIST ETI_HEADERS
-  SOURCE_LIST SOURCES
-  TYPE_LISTS  FLOATS LAYOUTS DEVICES)
+macro(gen_lapack_eti FUNC_NAME SUBDIR)
+  kokkoskernels_generate_eti(${FUNC_NAME} ${SUBDIR}
+    COMPONENTS  lapack
+    HEADER_LIST ETI_HEADERS
+    SOURCE_LIST SOURCES
+    TYPE_LISTS  FLOATS LAYOUTS DEVICES)
+endmacro()
 
-kokkoskernels_generate_eti(Lapack_trtri trtri
-  COMPONENTS  lapack
-  HEADER_LIST ETI_HEADERS
-  SOURCE_LIST SOURCES
-  TYPE_LISTS  FLOATS LAYOUTS DEVICES)
-
-kokkoskernels_generate_eti(Lapack_svd svd
-  COMPONENTS  lapack
-  HEADER_LIST ETI_HEADERS
-  SOURCE_LIST SOURCES
-  TYPE_LISTS  FLOATS LAYOUTS DEVICES)
-
-KOKKOSKERNELS_GENERATE_ETI(Lapack_geqrf geqrf
-  COMPONENTS  lapack
-  HEADER_LIST ETI_HEADERS
-  SOURCE_LIST SOURCES
-  TYPE_LISTS  FLOATS LAYOUTS DEVICES)
+gen_lapack_eti(Lapack_gesv gesv)
+gen_lapack_eti(Lapack_trtri trtri)
+gen_lapack_eti(Lapack_svd svd)
+gen_lapack_eti(Lapack_geqrf geqrf)
+gen_lapack_eti(Lapack_gemqr gemqr)
+gen_lapack_eti(Lapack_gegqr gegqr)
+gen_lapack_eti(Lapack_potrf potrf)
+gen_lapack_eti(Lapack_potrs potrs)

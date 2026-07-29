@@ -234,13 +234,20 @@ int main(int argc, char** argv) {
 
   const auto params = blas2_ger_params::get_params(argc, argv);
 
-  // std::cout << "In main(): params.repeat = " << params.repeat << std::endl;
+  if (params.use_serial) {
+#if defined(KOKKOS_ENABLE_SERIAL)
+    run<Kokkos::Serial>(params);
+#else
+    std::cout << "ERROR: Serial requested, but not available.\n";
+    return 1;
+#endif
+  }
 
   if (params.use_threads) {
 #if defined(KOKKOS_ENABLE_THREADS)
     run<Kokkos::Threads>(params);
 #else
-    std::cout << "ERROR: PThreads requested, but not available.\n";
+    std::cout << "ERROR: Threads requested, but not available.\n";
     return 1;
 #endif
   }
@@ -274,21 +281,16 @@ int main(int argc, char** argv) {
 
   if (params.use_sycl) {
 #if defined(KOKKOS_ENABLE_SYCL)
-    run<Kokkos::Experimental::SYCL>(params);
+    run<Kokkos::SYCL>(params);
 #else
     std::cout << "ERROR: SYCL requested, but not available.\n";
     return 1;
 #endif
   }
 
-  // use serial if no backend is specified
-  if (!params.use_cuda && !params.use_hip && !params.use_openmp && !params.use_sycl && !params.use_threads) {
-#if defined(KOKKOS_ENABLE_SERIAL)
-    run<Kokkos::Serial>(params);
-#else
-    std::cout << "ERROR: Serial device requested, but not available.\n";
-    return 1;
-#endif
+  if (!params.use_cuda && !params.use_hip && !params.use_sycl && !params.use_openmp && !params.use_threads &&
+      !params.use_serial) {
+    run<Kokkos::DefaultExecutionSpace>(params);
   }
 
   benchmark::RunSpecifiedBenchmarks();

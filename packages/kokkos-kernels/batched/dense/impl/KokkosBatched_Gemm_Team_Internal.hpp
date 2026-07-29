@@ -4,6 +4,7 @@
 #define KOKKOSBATCHED_GEMM_TEAM_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+/// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
@@ -14,26 +15,28 @@
 #include "KokkosBatched_InnerGemmFixC_Serial_Impl.hpp"
 
 namespace KokkosBatched {
+namespace Impl {
 
 ///
 /// Team Internal Impl
 /// ====================
 template <typename ArgAlgo>
 struct TeamGemmInternal {
-  template <typename MemberType, typename ScalarType, typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n, const int k,
-                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
-                                           const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
-                                           const int bs1, const ScalarType beta,
+  template <typename MemberType, typename OpA, typename OpB, typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const OpA opA, const OpB opB, const int m,
+                                           const int n, const int k, const ScalarType alpha,
+                                           const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+                                           const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1,
+                                           const ScalarType beta,
                                            /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1);
 };
 
 template <>
-template <typename MemberType, typename ScalarType, typename ValueType>
+template <typename MemberType, typename OpA, typename OpB, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
-    const MemberType &member, const int m, const int n, const int k, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
-    const int bs1, const ScalarType beta,
+    const MemberType &member, const OpA opA, const OpB opB, const int m, const int n, const int k,
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1, const ScalarType beta,
     /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
@@ -56,7 +59,7 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
       const ValueType *KOKKOS_RESTRICT pA = A + i * as0, *KOKKOS_RESTRICT pB = B + j * bs1;
 
       ValueType c = ValueType(0);
-      for (int p = 0; p < k; ++p) c += pA[p * as1] * pB[p * bs0];
+      for (int p = 0; p < k; ++p) c += opA(pA[p * as1]) * opB(pB[p * bs0]);
       C[i * cs0 + j * cs1] += alpha * c;
     });
   }
@@ -64,11 +67,11 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Unblocked>::invoke(
 }
 
 template <>
-template <typename MemberType, typename ScalarType, typename ValueType>
+template <typename MemberType, typename OpA, typename OpB, typename ScalarType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
-    const MemberType &member, const int m, const int n, const int k, const ScalarType alpha,
-    const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
-    const int bs1, const ScalarType beta,
+    const MemberType &member, const OpA opA, const OpB opB, const int m, const int n, const int k,
+    const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
+    const ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1, const ScalarType beta,
     /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
@@ -105,8 +108,8 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
             i = ij / nq * mb;
             j = ij % nq * nb;
           }
-          inner.serial_invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), alpha, AA + i * as0, BB + j * bs1,
-                              (i + mb) > ib ? mp : mb, (j + nb) > jb ? np : nb, pb, CC + i * cs0 + j * cs1);
+          inner.serial_invoke(opA, opB, alpha, AA + i * as0, BB + j * bs1, (i + mb) > ib ? mp : mb,
+                              (j + nb) > jb ? np : nb, pb, CC + i * cs0 + j * cs1);
         });
       };
 
@@ -141,6 +144,20 @@ KOKKOS_INLINE_FUNCTION int TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
   }
   return 0;
 }
+}  // namespace Impl
+
+template <typename ArgAlgo>
+struct [[deprecated("Use KokkosBatched::TeamGemm instead")]] TeamGemmInternal {
+  template <typename MemberType, typename ScalarType, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int m, const int n, const int k,
+                                           const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0,
+                                           const int as1, const ValueType *KOKKOS_RESTRICT B, const int bs0,
+                                           const int bs1, const ScalarType beta,
+                                           /**/ ValueType *KOKKOS_RESTRICT C, const int cs0, const int cs1) {
+    return Impl::TeamGemmInternal<ArgAlgo>::invoke(member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m, n, k,
+                                                   alpha, A, as0, as1, B, bs0, bs1, beta, C, cs0, cs1);
+  }
+};
 
 }  // namespace KokkosBatched
 

@@ -12,7 +12,7 @@ template <class ExecutionSpace, class VectorView, class ScalarView>
 inline void rot_print_specialization() {
 #ifdef KOKKOSKERNELS_ENABLE_CHECK_SPECIALIZATION
   printf("KokkosBlas::rot<> TPL Blas specialization for < %s, %s, %s >\n", typeid(VectorView).name(),
-         typeid(ScalarView).name(), typeid(ExecutionSpace).name);
+         typeid(ScalarView).name(), typeid(ExecutionSpace).name());
 #endif
 }
 }  // namespace

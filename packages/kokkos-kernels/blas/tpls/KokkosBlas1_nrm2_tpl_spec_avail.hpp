@@ -19,15 +19,15 @@ namespace Impl {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 // double
-#define KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                                                 \
-  template <class ExecSpace>                                                                                           \
-  struct nrm2_tpl_spec_avail<ExecSpace,                                                                                \
-                             Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type, LAYOUT, \
-                                          Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                \
-                             Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                  \
-                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                   \
-                             1> {                                                                                      \
-    enum : bool { value = true };                                                                                      \
+#define KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                                                \
+  template <class ExecSpace>                                                                                          \
+  struct nrm2_tpl_spec_avail<ExecSpace,                                                                               \
+                             Kokkos::View<typename KokkosKernels::Details::InnerProductSpaceTraits<SCALAR>::mag_type, \
+                                          LAYOUT, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >,       \
+                             Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                 \
+                                          Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                  \
+                             1> {                                                                                     \
+    enum : bool { value = true };                                                                                     \
   };
 
 KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::HostSpace)
@@ -63,8 +63,7 @@ KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::HIP, Kokkos::HIPSpac
 #endif
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) && defined(KOKKOS_ENABLE_SYCL)
-KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::Experimental::SYCL,
-                                Kokkos::Experimental::SYCLDeviceUSMSpace)
+KOKKOSBLAS1_NRM2_TPL_SPEC_AVAIL(Kokkos::LayoutLeft, Kokkos::SYCL, Kokkos::SYCLDeviceUSMSpace)
 #endif
 
 }  // namespace Impl
