@@ -303,13 +303,6 @@ namespace Intrepid2 {
       if      (cellDim == 1) numEdges = 1;
       else if (cellDim == 2) numFaces = 1;
       
-      std::cout << "cellDim=" << cellDim
-                << " numEdges=" << numEdges
-                << " numFaces=" << numFaces
-                << " edgeOpExtent0=" << std::get<0>(op_tuple).extent(0)
-                << " faceOpExtent0=" << std::get<1>(op_tuple).extent(0)
-                << std::endl;
-      
       bool leftMultiply = true;
       
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
