@@ -119,6 +119,7 @@ void test_mdf_reference_problem(
     Teuchos::ParameterList params;
     params.set("fact: mdf level-of-fill", 0.0);
     params.set("Verbosity", 0);
+    params.set("trisolver: type", "Internal");
     TEST_NOTHROW(prec.setParameters(params));
   }
 
