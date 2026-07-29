@@ -18,15 +18,10 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Ifpack2_ConfigDefs.hpp>
 
-// Xpetra / Galeri
-#include "Xpetra_ConfigDefs.hpp"
-#include "Xpetra_DefaultPlatform.hpp"
-#include "Xpetra_Parameters.hpp"
-#include "Xpetra_MapFactory.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_TpetraCrsMatrix.hpp"
+// Galeri
+#include "Tpetra_MultiVector_fwd.hpp"
 #include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraCartesian.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
 #include "Galeri_XpetraParameters.hpp"
 #include "Galeri_XpetraUtils.hpp"
@@ -46,14 +41,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, ParILUT, Scalar, LocalOrdinal, Gl
   using Teuchos::RCP;
   typedef Node NT;
 
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, NT> map_type;
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, NT> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, NT> mv_type;
 
-  typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, NT> XCrsType;
-  typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, NT> XMapType;
-  typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, NT> XMVectorType;
-
-  // Generate the matrix using Galeri.  Galeri wraps it in an Xpetra
-  // matrix, so after it finishes, ask it for the Tpetra matrix.
+  // Generate the matrix using Galeri.
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   Teuchos::CommandLineProcessor clp;
 
@@ -96,17 +88,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, ParILUT, Scalar, LocalOrdinal, Gl
 #else
   GlobalOrdinal nx = 30, ny = 30, nz = 3;
   Galeri::Xpetra::Parameters<GlobalOrdinal> GaleriParameters(clp, nx, ny, nz, "Laplace2D");
-  Xpetra::Parameters xpetraParameters(clp);
   ParameterList GaleriList = GaleriParameters.GetParameterList();
-  RCP<XMapType> xmap =
-      Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(xpetraParameters.GetLib(),
-                                                                   "Cartesian2D", comm, GaleriList);
-  RCP<Galeri::Xpetra::Problem<XMapType, XCrsType, XMVectorType> > Pr =
-      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, XMapType, XCrsType, XMVectorType>(std::string("Laplace2D"),
-                                                                                                          xmap, GaleriList);
 
-  RCP<XCrsType> XA       = Pr->BuildMatrix();
-  RCP<crs_matrix_type> A = XA->getTpetra_CrsMatrixNonConst();
+  auto tmap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, map_type>("Cartesian2D", comm, GaleriList);
+  RCP<Galeri::Xpetra::Problem<map_type, crs_matrix_type, mv_type> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, map_type, crs_matrix_type, mv_type>(std::string("Laplace2D"),
+                                                                                                            tmap, GaleriList);
+
+  RCP<crs_matrix_type> A = Pr->BuildMatrix();
 #endif
   TEST_INEQUALITY(A, Teuchos::null);
 

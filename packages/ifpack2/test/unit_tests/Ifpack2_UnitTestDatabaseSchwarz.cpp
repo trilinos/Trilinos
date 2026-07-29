@@ -15,22 +15,6 @@
 #include "Ifpack2_config.h"
 #include "Teuchos_UnitTestHarness.hpp"
 
-// Xpetra / Galeri
-#ifdef HAVE_IFPACK2_XPETRA
-#include "Xpetra_ConfigDefs.hpp"
-#include "Xpetra_DefaultPlatform.hpp"
-#include "Xpetra_Parameters.hpp"
-#include "Xpetra_MapFactory.hpp"
-#include "Xpetra_TpetraMap.hpp"
-#include "Xpetra_CrsMatrix.hpp"
-#include "Xpetra_TpetraCrsMatrix.hpp"
-#include "Galeri_XpetraProblemFactory.hpp"
-#include "Galeri_XpetraMatrixTypes.hpp"
-#include "Galeri_XpetraParameters.hpp"
-#include "Galeri_XpetraUtils.hpp"
-#include "Galeri_XpetraMaps.hpp"
-#endif  // HAVE_IFPACK2_XPETRA
-
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_UnitTestHelpers.hpp"
 #include "Ifpack2_DatabaseSchwarz.hpp"

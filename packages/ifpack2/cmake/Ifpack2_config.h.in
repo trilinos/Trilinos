@@ -79,9 +79,6 @@
 /* Define if we have ThyraTpetraAdapters */
 #cmakedefine HAVE_IFPACK2_THYRATPETRAADAPTERS
 
-/* Define if we have Xpetra */
-#cmakedefine HAVE_IFPACK2_XPETRA
-
 /* Define if we have Zoltan2 */
 #cmakedefine HAVE_IFPACK2_ZOLTAN2CORE
 #ifdef HAVE_IFPACK2_ZOLTAN2CORE
