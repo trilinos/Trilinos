@@ -216,6 +216,16 @@ Tensor<T, N>
 log_gregory(Tensor<T, N> const & A);
 
 ///
+/// Logarithmic map by real Schur decomposition and inverse scaling and
+/// squaring on the quasi-triangular factor (Al-Mohy and Higham, 2012).
+/// Dimension 3 or less; used by log() for those dimensions.
+/// \return \f$ \log A \f$
+///
+template<typename T, Index N>
+Tensor<T, N>
+log_schur(Tensor<T, N> const & A);
+
+///
 /// Logarithmic map for symmetric tensor.
 /// \return \f$ \log A \f$
 ///

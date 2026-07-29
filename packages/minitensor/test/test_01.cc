@@ -1007,6 +1007,56 @@ TEST(MiniTensor, LogIllConditioned)
   ASSERT_LE(error_log, 1.0e-4);
 }
 
+TEST(MiniTensor, LogGeneralComplexPair)
+{
+  // Nonsymmetric logarithm with a complex-conjugate eigenvalue pair.
+  // The eigenvalue imaginary parts of L are bounded by its norm, which is
+  // well inside (-pi, pi), so log(exp(L)) must recover L exactly.
+  Tensor<Real> const
+  L(0.20, -1.10,  0.30,
+    1.10,  0.20, -0.40,
+    0.10,  0.25, -0.30);
+
+  Tensor<Real> const
+  A = exp(L);
+
+  // the general exponential must agree with the Taylor series
+  Real const
+  error_exp = norm(A - exp_taylor(L)) / norm(A);
+
+  ASSERT_LE(error_exp, 16 * machine_epsilon<Real>());
+
+  Tensor<Real> const
+  R = log(A);
+
+  Real const
+  error_rt = norm(R - L) / norm(L);
+
+  ASSERT_LE(error_rt, 256 * machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, LogScaledRotation2x2)
+{
+  // 2x2 scaled rotation: log(s R(t)) = [log s, -t; t, log s] for |t| < pi.
+  Real const s = 2.0;
+  Real const t = 2.5;
+
+  Tensor<Real> const
+  A(s * std::cos(t), -s * std::sin(t),
+    s * std::sin(t),  s * std::cos(t));
+
+  Tensor<Real> const
+  L = log(A);
+
+  Tensor<Real> const
+  L_exact(std::log(s), -t, t, std::log(s));
+
+  Real const
+  error = norm(L - L_exact) / norm(L_exact);
+
+  ASSERT_LE(error, 16 * machine_epsilon<Real>());
+}
+
 TEST(MiniTensor, LogRotation)
 {
   // Identity rotation
