@@ -326,7 +326,7 @@ scaling_squaring_theta(Index const order)
   {
       0.0e-0, 3.7e-8, 5.3e-4, 1.5e-2, 8.5e-2, 2.5e-1, 5.4e-1, 9.5e-1,
       1.5e-0, 2.1e-0, 2.8e-0, 3.6e-0, 4.5e-0, 5.4e-0, 6.3e-0, 7.3e-0,
-      8.4e-0, 9,4e-0, 1.1e+1, 1.2e+1, 1.3e+1, 1.4e+1
+      8.4e-0, 9.4e-0, 1.1e+1, 1.2e+1, 1.3e+1, 1.4e+1
   };
 
   return theta[order];
@@ -3150,54 +3150,202 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
+// Padé truncation-order thresholds of Al-Mohy and Higham, A New Scaling
+// and Squaring Algorithm for the Matrix Exponential, SIAM J. Matrix Anal.
+// Appl. 31(3), 2009, Table 3.1. The value for order 13 is their revised
+// choice that also accounts for rounding in the squaring phase.
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+T
+scaling_squaring_theta_ah09(Index const order)
+{
+  switch (order) {
+    default: MT_ERROR_EXIT("Unsupported Pade order for expm."); break;
+    case 3: return 1.495585217958292e-02;
+    case 5: return 2.539398330063230e-01;
+    case 7: return 9.504178996162932e-01;
+    case 9: return 2.097847961257068e+00;
+    case 13: return 4.25;
+  }
+  return 0.0;
+}
+
+// Rounding-error correction term of Al-Mohy and Higham (2009), Eq. (5.1):
+// number of extra squarings needed so that the truncation bound remains
+// valid when the Padé numerator is evaluated in floating point. Zero for
+// all but the most nonnormal arguments.
+template<Index N>
+Index
+expm_ell(Tensor<Real, N> const & A, Index const m)
+{
   Index const
   dimension = A.get_dimension();
+
+  Real const
+  norm_A = norm_1(A);
+
+  if (norm_A == 0.0) return 0;
+
+  // 1 / |c_{2m+1}| = binomial(2m, m) * (2m+1)!  (few-digit accuracy is
+  // all the base-2 logarithm below requires)
+  Real
+  factorial = 1.0;
+
+  for (Index i = 2; i <= 2 * m + 1; ++i) {
+    factorial *= static_cast<Real>(i);
+  }
+
+  Real
+  binomial = 1.0;
+
+  for (Index i = 1; i <= m; ++i) {
+    binomial = binomial * static_cast<Real>(m + i) / static_cast<Real>(i);
+  }
+
+  Real const
+  c_recip = binomial * factorial;
+
+  Real const
+  u_half = 0.5 * machine_epsilon<Real>();
+
+  // conservative bound alpha <= norm(A)^(2m) / c_recip: when it is
+  // already below the unit roundoff (in particular whenever norm(A) is
+  // within the 2005 norm-based threshold) no correction is needed and
+  // the matrix powers below are skipped
+  if (std::pow(norm_A, 2.0 * static_cast<Real>(m)) / c_recip <= u_half) {
+    return 0;
+  }
+
+  // norm of |A|^(2m+1), elementwise absolute value, by binary powering
+  Tensor<Real, N>
+  P(dimension);
+
+  for (Index i = 0; i < dimension; ++i) {
+    for (Index j = 0; j < dimension; ++j) {
+      P(i, j) = std::abs(A(i, j));
+    }
+  }
+
+  Tensor<Real, N> const
+  Q = binary_powering(P, 2 * m + 1);
+
+  Real const
+  alpha = norm_1(Q) / (norm_A * c_recip);
+
+  if (alpha == 0.0) return 0;
+
+  int const
+  extra = static_cast<int>(
+      std::ceil(std::log2(alpha / u_half) / (2.0 * static_cast<Real>(m))));
+
+  return extra > 0 ? static_cast<Index>(extra) : 0;
+}
+
+template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
+  // Scaling and squaring with diagonal Padé approximants and the
+  // parameter selection of Al-Mohy and Higham (2009). Their theta_m
+  // thresholds satisfy theta_m^(2m) / c_recip(m) <= u, so whenever
+  // norm(A) <= theta_m both the eta_m test (eta_m <= norm) and the
+  // vanishing of the expm_ell correction are guaranteed: for such
+  // arguments selecting the order directly from norm(A) is exact
+  // short-circuit evaluation of the full algorithm at a fraction of the
+  // cost. The norm(A^p)^(1/p) analysis, which prevents overscaling of
+  // nonnormal arguments, runs only when norm(A) > theta_13.
+  Index const
+  dimension = A.get_dimension();
+
+  Real const
+  norm = Sacado::ScalarValue<T>::eval(norm_1(A));
+
+  Index
+  order = 13;
 
   Index const
   orders[] = {3, 5, 7, 9, 13};
 
-  Index const
-  number_orders = 5;
+  for (Index i = 0; i < 5; ++i) {
+    if (norm <= scaling_squaring_theta_ah09<Real>(orders[i])) {
+      order = orders[i];
+      break;
+    }
+  }
 
-  Index const
-  highest_order = orders[number_orders - 1];
+  Real
+  eta_5 = 0.0;
+
+  bool const
+  scaling_needed = norm > scaling_squaring_theta_ah09<Real>(13);
+
+  bool
+  use_ell = false;
+
+  Tensor<Real, N>
+  Ar(dimension);
+
+  if (scaling_needed) {
+    // Double-precision value copy for parameter selection only; carries
+    // no derivative information.
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = 0; j < dimension; ++j) {
+        Ar(i, j) = Sacado::ScalarValue<T>::eval(A(i, j));
+      }
+    }
+    Tensor<Real, N> const A2r = Ar * Ar;
+    Tensor<Real, N> const A4r = A2r * A2r;
+    Tensor<Real, N> const A6r = A2r * A4r;
+    Tensor<Real, N> const A8r = A4r * A4r;
+    Real const d6 = std::pow(norm_1(A6r), 1.0 / 6.0);
+    Real const d8 = std::pow(norm_1(A8r), 1.0 / 8.0);
+    Real const d10 = std::pow(norm_1(A4r * A6r), 1.0 / 10.0);
+    Real const eta_3 = std::max(d6, d8);
+    Real const eta_4 = std::max(d8, d10);
+    eta_5 = std::min(eta_3, eta_4);
+    use_ell = true;
+  }
 
   Tensor<T, N>
   B;
 
-  Real const
-  norm = Sacado::ScalarValue<T>::eval((norm_1(A)));
+  if (order < 13) {
 
-  for (Index i = 0; i < number_orders; ++i) {
+    Tensor<T, N>
+    U;
 
-    Index const
-    order = orders[i];
+    Tensor<T, N>
+    V;
 
-    Real const
-    theta = scaling_squaring_theta<Real>(order);
+    std::tie(U, V) = pade_polynomial_terms(A, order);
 
-    if (order < highest_order && norm < theta) {
+    // The Pade denominator V - U = q_m(A) is diagonally dominant and
+    // well conditioned for norm(A) within the theta thresholds, so the
+    // inexpensive adjugate inverse is safe here.
+    B = inverse(V - U) * (U + V);
 
-      Tensor<T, N>
-      U;
-
-      Tensor<T, N>
-      V;
-
-      std::tie(U, V) = pade_polynomial_terms(A, order);
-
-      B = inverse(V - U) * (U + V);
-
-      break;
-
-    } else if (order == highest_order) {
+  } else {
 
       Real const
-      theta_highest = scaling_squaring_theta<Real>(order);
+      theta_highest = scaling_squaring_theta_ah09<Real>(13);
 
-      int const
-      signed_power = static_cast<int>(std::ceil(std::log2(norm / theta_highest)));
+      int
+      signed_power = 0;
+
+      if (eta_5 > 0.0) {
+        signed_power = static_cast<int>(
+            std::ceil(std::log2(eta_5 / theta_highest)));
+        if (signed_power < 0) signed_power = 0;
+      }
+
+      // rounding correction on the scaled argument (needed only when the
+      // alpha-based scaling was used; the norm-based bounds make it zero)
+      if (use_ell) {
+        Real
+        scale_r = 1.0;
+        for (int j = 0; j < signed_power; ++j) {
+          scale_r /= 2.0;
+        }
+        signed_power += static_cast<int>(expm_ell(scale_r * Ar, 13));
+      }
+
       Index const
       power_two = signed_power > 0 ? static_cast<Index>(signed_power) : 0;
 
@@ -3254,8 +3402,6 @@ template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
       exponent = (1U << power_two);
 
       B = binary_powering(R, exponent);
-
-    }
 
   }
 
@@ -3486,6 +3632,394 @@ log_iss(Tensor<T, N> const & A)
   return X;
 }
 
+namespace {
+
+// Givens pair (c, s) with G = [c, -s; s, c] such that G [a; b] = [r; 0].
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+std::pair<T, T>
+givens_zero(T const & a, T const & b)
+{
+  T const r = std::sqrt(a * a + b * b);
+  if (Sacado::ScalarValue<T>::eval(r) == 0.0) {
+    return std::make_pair(T(1.0), T(0.0));
+  }
+  return std::make_pair(a / r, -b / r);
+}
+
+// Standardize the 2x2 diagonal block of S at rows/columns (p, p+1) by an
+// orthogonal similarity applied to all of S and accumulated into Q:
+// afterwards the block is upper triangular (real eigenvalues, S(p+1,p)
+// set exactly to zero) or has equal diagonal entries and off-diagonal
+// entries of opposite sign (complex conjugate pair), as in LAPACK dlanv2.
+template<typename T, Index N>
+void
+schur_standardize_2x2(Tensor<T, N> & S, Tensor<T, N> & Q, Index const p)
+{
+  Index const q = p + 1;
+
+  T const a = S(p, p);
+  T const b = S(p, q);
+  T const c = S(q, p);
+  T const d = S(q, q);
+
+  if (Sacado::ScalarValue<T>::eval(std::abs(c)) == 0.0) {
+    S(q, p) = 0.0;
+    return;
+  }
+
+  T const half_diff = 0.5 * (a - d);
+  T const disc = half_diff * half_diff + b * c;
+
+  T cs, sn;
+
+  if (Sacado::ScalarValue<T>::eval(disc) >= 0.0) {
+    // Real eigenvalues: rotate the eigenvector of the larger-|z| root
+    // onto the first coordinate axis.
+    T const root = std::sqrt(disc);
+    T const z = Sacado::ScalarValue<T>::eval(half_diff) >= 0.0 ?
+        half_diff + root : half_diff - root;
+    std::tie(cs, sn) = givens_zero(z, c);
+    givens_left(cs, sn, p, q, S);
+    givens_right(cs, sn, p, q, S);
+    givens_right(cs, sn, p, q, Q);
+    S(q, p) = 0.0;
+  } else {
+    // Complex pair: rotate so the diagonal entries are equal.
+    T const theta = 0.5 * std::atan2(a - d, b + c);
+    cs = std::cos(theta);
+    sn = std::sin(theta);
+    givens_left(cs, sn, p, q, S);
+    givens_right(cs, sn, p, q, S);
+    givens_right(cs, sn, p, q, Q);
+    T const m = 0.5 * (S(p, p) + S(q, q));
+    S(p, p) = m;
+    S(q, q) = m;
+  }
+}
+
+// Real Schur decomposition A = Q S Q^T for dimension <= 3: S is upper
+// quasi-triangular with 1x1 blocks and standardized 2x2 blocks (complex
+// conjugate eigenvalue pairs), Q is orthogonal. Hessenberg reduction by a
+// Givens rotation followed by Francis double-shift QR iteration.
+template<typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>>
+schur_real_small(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Tensor<T, N>
+  S = A;
+
+  Tensor<T, N>
+  Q = identity<T, N>(dimension);
+
+  if (dimension == 1) {
+    return std::make_pair(Q, S);
+  }
+
+  if (dimension == 2) {
+    schur_standardize_2x2(S, Q, 0);
+    return std::make_pair(Q, S);
+  }
+
+  // dimension == 3
+
+  // Hessenberg: zero S(2,0) with a rotation in the (1,2) plane.
+  {
+    auto const cs_sn = givens_zero(S(1, 0), S(2, 0));
+    givens_left(cs_sn.first, cs_sn.second, 1, 2, S);
+    givens_right(cs_sn.first, cs_sn.second, 1, 2, S);
+    givens_right(cs_sn.first, cs_sn.second, 1, 2, Q);
+    S(2, 0) = 0.0;
+  }
+
+  Real const
+  eps = machine_epsilon<Real>();
+
+  Index const
+  max_iter = 64;
+
+  for (Index iter = 0; iter < max_iter; ++iter) {
+
+    Real const h00 = std::abs(Sacado::ScalarValue<T>::eval(S(0, 0)));
+    Real const h11 = std::abs(Sacado::ScalarValue<T>::eval(S(1, 1)));
+    Real const h22 = std::abs(Sacado::ScalarValue<T>::eval(S(2, 2)));
+    Real const h10 = std::abs(Sacado::ScalarValue<T>::eval(S(1, 0)));
+    Real const h21 = std::abs(Sacado::ScalarValue<T>::eval(S(2, 1)));
+
+    if (h10 <= eps * (h00 + h11)) {
+      // leading 1x1 deflated; standardize the trailing 2x2
+      S(1, 0) = 0.0;
+      schur_standardize_2x2(S, Q, 1);
+      return std::make_pair(Q, S);
+    }
+
+    if (h21 <= eps * (h11 + h22)) {
+      // trailing 1x1 deflated; standardize the leading 2x2
+      S(2, 1) = 0.0;
+      schur_standardize_2x2(S, Q, 0);
+      return std::make_pair(Q, S);
+    }
+
+    // Francis double-shift step: first column of (S - l1 I)(S - l2 I)
+    // with l1, l2 the eigenvalues of the trailing 2x2 block, written in
+    // the classical difference form so that clustered eigenvalues (for
+    // example A near the identity, where the column is O(eps^2) but the
+    // naive expansion sums O(1) terms) do not lose the shift direction to
+    // cancellation. Every 12th iteration perturb the shift to escape
+    // stagnation.
+    T x, y, z;
+
+    if (iter > 0 && iter % 12 == 0) {
+      T const shift = std::abs(S(2, 1)) + std::abs(S(1, 0));
+      T const tr = 2.0 * shift;
+      T const dt = shift * shift;
+      x = S(0, 0) * S(0, 0) + S(0, 1) * S(1, 0) - tr * S(0, 0) + dt;
+      y = S(1, 0) * (S(0, 0) + S(1, 1) - tr);
+      z = S(1, 0) * S(2, 1);
+    } else {
+      x = (S(0, 0) - S(1, 1)) * (S(0, 0) - S(2, 2)) -
+          S(1, 2) * S(2, 1) + S(0, 1) * S(1, 0);
+      y = S(1, 0) * (S(0, 0) - S(2, 2));
+      z = S(1, 0) * S(2, 1);
+    }
+
+    // Two rotations mapping (x, y, z) onto e1
+    auto const g1 = givens_zero(y, z);
+    T const y1 = g1.first * y - g1.second * z;
+    auto const g2 = givens_zero(x, y1);
+
+    givens_left(g1.first, g1.second, 1, 2, S);
+    givens_right(g1.first, g1.second, 1, 2, S);
+    givens_right(g1.first, g1.second, 1, 2, Q);
+
+    givens_left(g2.first, g2.second, 0, 1, S);
+    givens_right(g2.first, g2.second, 0, 1, S);
+    givens_right(g2.first, g2.second, 0, 1, Q);
+
+    // Restore Hessenberg form: zero the bulge S(2,0)
+    auto const g3 = givens_zero(S(1, 0), S(2, 0));
+    givens_left(g3.first, g3.second, 1, 2, S);
+    givens_right(g3.first, g3.second, 1, 2, S);
+    givens_right(g3.first, g3.second, 1, 2, Q);
+    S(2, 0) = 0.0;
+  }
+
+  MT_ERROR_EXIT("Schur QR iteration failed to converge.");
+  return std::make_pair(Q, S);
+}
+
+// Principal square root of an upper quasi-triangular S (dimension <= 3)
+// with standardized 2x2 blocks and spectrum off the closed negative real
+// axis. 1x1 blocks: scalar square root. 2x2 blocks [m, b; c, m], bc < 0:
+// closed form sqrt(B) = (B + delta I) / tau with delta = sqrt(det B) and
+// tau = sqrt(tr B + 2 delta). Off-diagonal blocks from the Sylvester
+// equations of U^2 = S.
+template<typename T, Index N>
+Tensor<T, N>
+sqrt_quasi_triu(Tensor<T, N> const & S)
+{
+  Index const
+  dimension = S.get_dimension();
+
+  Tensor<T, N>
+  U(dimension, Filler::ZEROS);
+
+  // block structure from exact subdiagonal zeros
+  Index
+  blocks[3];
+
+  Index
+  starts[3];
+
+  Index
+  num_blocks = 0;
+
+  for (Index i = 0; i < dimension;) {
+    bool const two = (i + 1 < dimension) &&
+        (Sacado::ScalarValue<T>::eval(S(i + 1, i)) != 0.0);
+    starts[num_blocks] = i;
+    blocks[num_blocks] = two ? 2 : 1;
+    ++num_blocks;
+    i += two ? 2 : 1;
+  }
+
+  // diagonal blocks
+  for (Index b = 0; b < num_blocks; ++b) {
+    Index const i = starts[b];
+    if (blocks[b] == 1) {
+      U(i, i) = std::sqrt(S(i, i));
+    } else {
+      T const m = S(i, i);
+      T const delta =
+          std::sqrt(m * m - S(i, i + 1) * S(i + 1, i));
+      T const tau = std::sqrt(m + m + delta + delta);
+      U(i, i) = (m + delta) / tau;
+      U(i + 1, i + 1) = U(i, i);
+      U(i, i + 1) = S(i, i + 1) / tau;
+      U(i + 1, i) = S(i + 1, i) / tau;
+    }
+  }
+
+  // off-diagonal blocks, nearest first
+  for (Index gap = 1; gap < num_blocks; ++gap) {
+    for (Index b = 0; b + gap < num_blocks; ++b) {
+      Index const bi = b;
+      Index const bj = b + gap;
+      Index const i = starts[bi];
+      Index const j = starts[bj];
+      // right-hand side: S_ij - sum_k U_ik U_kj over blocks strictly
+      // between bi and bj
+      T rhs[2][2] = {{T(0.0), T(0.0)}, {T(0.0), T(0.0)}};
+      for (Index r = 0; r < blocks[bi]; ++r) {
+        for (Index c = 0; c < blocks[bj]; ++c) {
+          rhs[r][c] = S(i + r, j + c);
+        }
+      }
+      for (Index bk = bi + 1; bk < bj; ++bk) {
+        Index const k = starts[bk];
+        for (Index r = 0; r < blocks[bi]; ++r) {
+          for (Index c = 0; c < blocks[bj]; ++c) {
+            for (Index kk = 0; kk < blocks[bk]; ++kk) {
+              rhs[r][c] -= U(i + r, k + kk) * U(k + kk, j + c);
+            }
+          }
+        }
+      }
+      // solve U_ii X + X U_jj = rhs
+      if (blocks[bi] == 1 && blocks[bj] == 1) {
+        U(i, j) = rhs[0][0] / (U(i, i) + U(j, j));
+      } else if (blocks[bi] == 2 && blocks[bj] == 1) {
+        // (U_ii + u_jj I) x = rhs (2x2 solve)
+        T const a00 = U(i, i) + U(j, j);
+        T const a01 = U(i, i + 1);
+        T const a10 = U(i + 1, i);
+        T const a11 = U(i + 1, i + 1) + U(j, j);
+        T const det = a00 * a11 - a01 * a10;
+        U(i, j) = (rhs[0][0] * a11 - a01 * rhs[1][0]) / det;
+        U(i + 1, j) = (a00 * rhs[1][0] - a10 * rhs[0][0]) / det;
+      } else {
+        // x (U_jj + u_ii I) = rhs (1x2 row solve)
+        T const a00 = U(j, j) + U(i, i);
+        T const a01 = U(j, j + 1);
+        T const a10 = U(j + 1, j);
+        T const a11 = U(j + 1, j + 1) + U(i, i);
+        T const det = a00 * a11 - a01 * a10;
+        U(i, j) = (rhs[0][0] * a11 - rhs[0][1] * a10) / det;
+        U(i, j + 1) = (rhs[0][1] * a00 - rhs[0][0] * a01) / det;
+      }
+    }
+  }
+
+  return U;
+}
+
+} // anonymous namespace
+
+//
+// Logarithmic map by real Schur decomposition and inverse scaling and
+// squaring on the quasi-triangular factor, in the spirit of Al-Mohy and
+// Higham, Improved Inverse Scaling and Squaring Algorithms for the
+// Matrix Logarithm, SIAM J. Sci. Comput. 34(4), 2012. Dimension <= 3.
+//
+template<typename T, Index N>
+Tensor<T, N>
+log_schur(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Tensor<T, N>
+  Q(dimension);
+
+  Tensor<T, N>
+  R(dimension);
+
+  std::tie(Q, R) = schur_real_small(A);
+
+  // The principal logarithm requires the spectrum off the closed
+  // negative real axis; real eigenvalues appear as 1x1 diagonal blocks.
+  for (Index i = 0; i < dimension; ++i) {
+    bool const in_block =
+        (i + 1 < dimension &&
+         Sacado::ScalarValue<T>::eval(R(i + 1, i)) != 0.0) ||
+        (i > 0 && Sacado::ScalarValue<T>::eval(R(i, i - 1)) != 0.0);
+    if (!in_block && Sacado::ScalarValue<T>::eval(R(i, i)) <= 0.0) {
+      MT_ERROR_EXIT("Non-positive real eigenvalue: principal log undefined.");
+    }
+  }
+
+  // Inverse scaling and squaring on R with exact quasi-triangular square
+  // roots; degree selection as in log_iss.
+  auto const
+  I = identity<T, N>(dimension);
+
+  auto const
+  c15 = pade_coefficients<Real>(15);
+
+  Tensor<T, N>
+  X = R;
+
+  auto j = 0;
+  auto k = 0;
+  auto m = 0;
+
+  while (true) {
+    Real const
+    diff = Sacado::ScalarValue<T>::eval(norm_1(X - I));
+    if (diff <= c15) {
+      auto p = 2;
+      while (pade_coefficients<Real>(p) <= diff && p < 16) {
+        ++p;
+      }
+      auto q = 2;
+      while (pade_coefficients<Real>(q) <= diff / 2.0 && q < 16) {
+        ++q;
+      }
+      // an exact triangular square root is cheap: take another one only
+      // if it reduces the Pade degree meaningfully
+      if (p - q < 3 || ++j == 2) {
+        m = p + 1;
+        break;
+      }
+    }
+    X = sqrt_quasi_triu(X);
+    ++k;
+  }
+
+  Tensor<T, N>
+  L = (1U << k) * log_pade_pf(X - I, m);
+
+  // Recompute the diagonal blocks of log R exactly from the eigenvalues
+  // (Al-Mohy-Higham refinement): 1x1 blocks are scalar logs; for a
+  // standardized 2x2 block [m, b; c, m] with eigenvalues m +/- i mu,
+  // mu = sqrt(-b c), the log is l I + (theta / mu) K with
+  // l = log(sqrt(m^2 + mu^2)), theta = atan2(mu, m), K = [0, b; c, 0].
+  for (Index i = 0; i < dimension;) {
+    bool const two = (i + 1 < dimension) &&
+        (Sacado::ScalarValue<T>::eval(R(i + 1, i)) != 0.0);
+    if (!two) {
+      L(i, i) = std::log(R(i, i));
+      i += 1;
+    } else {
+      T const mm = R(i, i);
+      T const mu = std::sqrt(-R(i, i + 1) * R(i + 1, i));
+      T const ell = 0.5 * std::log(mm * mm + mu * mu);
+      T const theta = std::atan2(mu, mm);
+      T const factor = theta / mu;
+      L(i, i) = ell;
+      L(i + 1, i + 1) = ell;
+      L(i, i + 1) = R(i, i + 1) * factor;
+      L(i + 1, i) = R(i + 1, i) * factor;
+      i += 2;
+    }
+  }
+
+  return dot(Q, dot_t(L, Q));
+}
+
 //
 // Logarithmic map by squaring and scaling and Padé approximants.
 // See algorithm 11.10 in Functions of Matrices, N.J. Higham, SIAM, 2008.
@@ -3497,6 +4031,34 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
 log_pade(Tensor<T, N> const & A)
 {
+  Index const
+  dimension = A.get_dimension();
+
+  if (dimension <= 3) {
+
+    // Near the identity no square roots are needed: evaluate the Padé
+    // approximant directly on A - I, which is computed exactly. This
+    // path preserves the relative accuracy of small logarithms, which
+    // any similarity-based method loses to the ~eps*norm(A) rounding of
+    // the transformation itself.
+    Tensor<T, N> const
+    W = A - identity<T, N>(dimension);
+
+    Real const
+    diff = Sacado::ScalarValue<T>::eval(norm_1(W));
+
+    if (diff <= pade_coefficients<Real>(15)) {
+      auto p = 2;
+      while (pade_coefficients<Real>(p) <= diff && p < 16) {
+        ++p;
+      }
+      return log_pade_pf(W, p + 1);
+    }
+
+    // Away from the identity: Schur-based inverse scaling and squaring.
+    return log_schur(A);
+  }
+
   return log_iss(A);
 }
 
