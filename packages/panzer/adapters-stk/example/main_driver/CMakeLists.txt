@@ -155,9 +155,20 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
       TRIBITS_ADD_EXECUTABLE(
         main_driver_opt
         SOURCES main_driver_opt.cpp ${main_driver_SOURCES} user_app_ROLTempusReducedObjective.hpp user_app_TransientObjective.hpp user_app_TransientObjective_impl.hpp user_app_TransientObjective.cpp user_app_Utilities.hpp user_app_Utilities.cpp
-        )
+      )
+      # Only run in opt builds. It is too slow for debug builds and we
+      # get random timeouts.  Also protect against case sensitivity in
+      # the build type.
+      option(PANZER_THIS_IS_AN_OPT_BUILD
+       "Enable the transient optimization tests (automatically disabled for Debug builds)."
+       TRUE)
+      string(TOUPPER "${CMAKE_BUILD_TYPE}" _panzer_build_type_upper_case)
+      IF (_panzer_build_type_upper_case STREQUAL "DEBUG")
+        set(PANZER_THIS_IS_AN_OPT_BUILD FALSE)
+      ENDIF()
       TRIBITS_ADD_ADVANCED_TEST(
         main_driver_energy-transient-tempus-opt-blocked
+        EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
         TEST_0 EXEC main_driver_opt
           PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
         )
