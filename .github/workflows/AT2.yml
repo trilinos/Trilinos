@@ -137,7 +137,7 @@ jobs:
       skip-create-packageenables: true
 
   ramses-openmp:
-    needs: [pre-checks, gcc12-openmpi4, openmp]
+    needs: pre-checks
     if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
