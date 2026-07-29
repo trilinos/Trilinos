@@ -3550,7 +3550,8 @@ sqrt_dbp(Tensor<T, N> const & A, int& k)
       // (or overflow), which would make g non-finite and flood the iteration
       // with Inf/NaN. The scaling only accelerates convergence, so it is
       // safe to skip it in that case.
-      if (d > 0.0 && std::isfinite(g)) {
+      if (Sacado::ScalarValue<T>::eval(d) > 0.0 &&
+          std::isfinite(Sacado::ScalarValue<T>::eval(g))) {
         X *= g;
         M *= g * g;
       }
@@ -3678,7 +3679,7 @@ schur_standardize_2x2(Tensor<T, N> & S, Tensor<T, N> & Q, Index const p)
     // onto the first coordinate axis.
     T const root = std::sqrt(disc);
     T const z = Sacado::ScalarValue<T>::eval(half_diff) >= 0.0 ?
-        half_diff + root : half_diff - root;
+        T(half_diff + root) : T(half_diff - root);
     std::tie(cs, sn) = givens_zero(z, c);
     givens_left(cs, sn, p, q, S);
     givens_right(cs, sn, p, q, S);
