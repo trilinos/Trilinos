@@ -7,9 +7,23 @@
 // *****************************************************************************
 // @HEADER
 
+#include <iostream>
+
 #include "gtest/gtest.h"
 #include "MiniTensor_FunctionSet.h"
-#include "Teuchos_oblackholestream.hpp"
+
+namespace {
+
+// Output stream that discards everything written to it.
+class NullStream : public std::ostream, private std::streambuf {
+public:
+  NullStream() : std::ostream(this) {}
+
+private:
+  int overflow(int c) override { return c; }
+};
+
+} // anonymous namespace
 
 int
 main(int ac, char * av[])
@@ -45,7 +59,7 @@ solveFNwithSTEP(STEP & step_method, FN & function, Vector<T, N> & x)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -290,7 +304,7 @@ TEST(MiniTensor, LinearSolver)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -337,7 +351,7 @@ TEST(MiniTensor, Preconditioners)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -422,7 +436,7 @@ TEST(MiniTensor, OptimizationMethods)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -481,7 +495,7 @@ TEST(MiniTensor, ValueGradientHessian)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -510,7 +524,7 @@ TEST(MiniTensor, MixedStorage)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -552,7 +566,7 @@ TEST(MiniTensor, FailedFlag)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -592,7 +606,7 @@ TEST(MiniTensor, Monotonicity)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -635,7 +649,7 @@ TEST(MiniTensor, Boundedness)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &
@@ -698,7 +712,7 @@ TEST(MiniTensor, ConstraintIdentity)
   print_output = ::testing::GTEST_FLAG(print_time);
 
   // outputs nothing
-  Teuchos::oblackholestream
+  NullStream
   bhs;
 
   std::ostream &

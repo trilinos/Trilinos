@@ -10,6 +10,7 @@
 #if !defined(MiniTensor_Solvers_h)
 #define MiniTensor_Solvers_h
 
+#include <iomanip>
 #include <memory>
 #include <utility>
 

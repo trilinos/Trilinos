@@ -10,6 +10,8 @@
 #if !defined(MiniTensor_Tensor3_h)
 #define MiniTensor_Tensor3_h
 
+#include <iomanip>
+
 #include "MiniTensor_Tensor.h"
 
 namespace minitensor {
