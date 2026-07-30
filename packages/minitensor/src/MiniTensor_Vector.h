@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 #include <Kokkos_Core.hpp>
