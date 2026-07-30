@@ -114,8 +114,7 @@ typename Sacado::ScalarType<T>::type
 tau();
 
 ///
-/// Random number generation. Uniform distribution U(-1,1)
-/// which is the Teuchos default (!).
+/// Random number generation. Uniform distribution U(-1,1).
 ///
 template <typename T> typename Sacado::ScalarType<T>::type random();
 
@@ -218,13 +217,8 @@ levi_civita(Index const i, Index const j, Index const k, Index const l);
 
 #include <cfloat>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
-#if KOKKOS_VERSION >= 40799
-#include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
-#include "Teuchos_ScalarTraits.hpp"
 
 namespace minitensor {
 
@@ -311,11 +305,7 @@ typename Sacado::ScalarType<T>::type
 not_a_number()
 {
   using S = typename Sacado::ScalarType<T>::type;
-#if KOKKOS_VERSION >= 40799
-  return KokkosKernels::ArithTraits<S>::nan();
-#else
-  return Kokkos::ArithTraits<S>::nan();
-#endif
+  return std::numeric_limits<S>::quiet_NaN();
 }
 
 //
@@ -330,11 +320,7 @@ typename Sacado::ScalarType<T>::type
 machine_epsilon()
 {
   using S = typename Sacado::ScalarType<T>::type;
-#if KOKKOS_VERSION >= 40799
-  return KokkosKernels::ArithTraits<S>::epsilon();
-#else
-  return Kokkos::ArithTraits<S>::epsilon();
-#endif
+  return std::numeric_limits<S>::epsilon();
 }
 
 //
@@ -379,11 +365,12 @@ tau()
 }
 
 //
-// Random number generation. Teuchos [-1,1]
+// Uniform random number generation on [-1,1].
 //
 template <typename T> typename Sacado::ScalarType<T>::type random() {
   using S = typename Sacado::ScalarType<T>::type;
-  return Teuchos::ScalarTraits<S>().random();
+  S const rnd = static_cast<S>(std::rand()) / static_cast<S>(RAND_MAX);
+  return S(-1.0) + S(2.0) * rnd;
 }
 
 //

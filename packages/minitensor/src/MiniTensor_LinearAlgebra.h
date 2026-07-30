@@ -999,11 +999,6 @@ std::pair<Vector<T, N>, Tensor<T, N>> sort_permutation(Vector<T, N> const &u) {
 }
 
 } // namespace minitensor
-#if KOKKOS_VERSION >= 40799
-#include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 
 namespace minitensor {
 
@@ -5850,11 +5845,8 @@ polar_rotation(Tensor<T, N> const & A)
   tol_scale = 0.01;
 
   T const tol_conv =
-#if KOKKOS_VERSION >= 40799
-      KokkosKernels::ArithTraits<Index>::sqrt(dimension) * machine_epsilon<T>();
-#else
-      Kokkos::ArithTraits<Index>::sqrt(dimension) * machine_epsilon<T>();
-#endif
+      static_cast<Index>(Kokkos::sqrt(static_cast<double>(dimension))) *
+      machine_epsilon<T>();
 
   Tensor<T, N>
   X = A;
