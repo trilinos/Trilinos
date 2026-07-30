@@ -382,6 +382,10 @@ private:
 
 } // namespace minitensor
 
-#include "MiniTensor_Storage.i.h"
+namespace minitensor {
+
+// Place holder for now.
+
+} // namespace minitensor
 
 #endif // MiniTensor_Storage_h
