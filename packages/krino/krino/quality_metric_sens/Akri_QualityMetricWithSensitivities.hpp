@@ -33,7 +33,12 @@ public:
   virtual ~MeanRatioQualityMetricWithSensitivities() {}
 
   static std::tuple<double, std::array<double,3>> tet_quality_and_sensitivity_to_nth_vertex(const std::array<stk::math::Vector3d, 4> & verts, const int n);
-  static std::tuple<double, std::array<double,3*4>> tet_quality_and_sensitivities(const std::array<stk::math::Vector3d, 4> & verts);
+
+  static std::tuple<double, std::array<stk::math::Vector3d, 4>> tet_quality_and_sensitivities_using_FAD(const std::array<stk::math::Vector3d, 4> & verts);
+  static std::tuple<double, std::array<stk::math::Vector3d, 4>> tet_quality_and_sensitivities(const std::array<stk::math::Vector3d, 4> & verts);
+
+  static std::tuple<double, std::array<double, 6>> tri2d_quality_and_sensitivities_using_FAD(const double * v0, const double * v1, const double * v2);
+  static std::tuple<double, std::array<double, 6>> tri2d_quality_and_sensitivities(const double * v0, const double * v1, const double * v2);
 };
 
 }

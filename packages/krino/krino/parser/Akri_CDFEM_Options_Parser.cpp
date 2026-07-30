@@ -11,11 +11,82 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_Parser.hpp>
+#include <Akri_Phase_Support.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
 #include <Akri_RefinementSupport.hpp>
 
 namespace krino {
+
+static void append_parsed_phase_cluster_conversions(const Parser::Node & clusterSeq, const unsigned numClusterElems, std::vector<std::tuple<std::string,std::string,unsigned>> & smallClusterFromPhaseToPhaseClusterSize)
+{
+  for (auto && clusterNode : clusterSeq)
+  {
+    const std::vector<std::string> clusterPhaseFromTo = clusterNode.as<std::vector<std::string>>();
+    if (clusterPhaseFromTo.size() == 2)
+      smallClusterFromPhaseToPhaseClusterSize.emplace_back(clusterPhaseFromTo[0], clusterPhaseFromTo[1], numClusterElems);
+    else
+      stk::RuntimeDoomedAdHoc() << "Expecting 2 string values for cluster phases [from_phase, to_phase].\n";
+  }
+}
+
+std::vector<std::tuple<std::string,std::string,unsigned>>
+parse_small_cluster_cleanup(const Parser::Node & cdfemNode)
+{
+  std::vector<std::tuple<std::string,std::string,unsigned>> smallClusterFromPhaseToPhaseClusterSize;
+  const Parser::Node cleanupNode = cdfemNode.get_if_present("small_cluster_cleanup");
+
+  if (cleanupNode)
+  {
+    if (cleanupNode.is_map())
+    {
+      const Parser::Node allButLargestClusterSeq = cleanupNode.get_sequence_if_present("convert_all_but_the_largest_cluster_of_phase_from_to");
+      if (allButLargestClusterSeq)
+      {
+        const unsigned clusterSizeIndicatingAllButLargest = 0;
+        append_parsed_phase_cluster_conversions(allButLargestClusterSeq, clusterSizeIndicatingAllButLargest, smallClusterFromPhaseToPhaseClusterSize);
+      }
+
+      unsigned globalNumClusterElems = 0;
+      cleanupNode.get_if_present("element_count_for_small_clusters", globalNumClusterElems);
+
+      const Parser::Node clusterSeq = cleanupNode.get_sequence_if_present("convert_small_clusters_of_phase_from_to");
+      if (clusterSeq)
+      {
+        append_parsed_phase_cluster_conversions(clusterSeq, globalNumClusterElems, smallClusterFromPhaseToPhaseClusterSize);
+      }
+    }
+    else if (cleanupNode.is_sequence())
+    {
+      for (auto && clusterNode : cleanupNode)
+      {
+
+        std::string fromPhase;
+        if (!clusterNode.get_if_present("find_small_clusters_in_phase", fromPhase))
+        {
+          stk::RuntimeDoomedAdHoc() << "Blank or missing from phase name (find_small_clusters_in_phase).\n";
+        }
+        std::string toPhase;
+        if (!clusterNode.get_if_present("convert_small_clusters_to_phase", toPhase))
+        {
+          stk::RuntimeDoomedAdHoc() << "Blank or missing to phase name (convert_small_clusters_to_phase).\n";
+        }
+        unsigned smallClusterSize;
+        if (!clusterNode.get_if_present("element_count_for_small_clusters", smallClusterSize))
+        {
+          stk::RuntimeDoomedAdHoc() << "Blank or missing cluster size (element_count_for_small_clusters).\n";
+        }
+        smallClusterFromPhaseToPhaseClusterSize.emplace_back(fromPhase, toPhase, smallClusterSize);
+      }
+    }
+    else
+    {
+      stk::RuntimeDoomedAdHoc() << "Expecting small_cluster_cleanup to be specified as either map or sequence.\n";
+    }
+  }
+
+  return smallClusterFromPhaseToPhaseClusterSize;
+}
 
 void
 CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & meta)
@@ -158,6 +229,13 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
         post_cdfem_refinement_blocks.push_back(post_cdfem_refinement_block);
       }
       cdfem_support.set_post_cdfem_refinement_blocks( post_cdfem_refinement_blocks );
+    }
+
+    const std::vector<std::tuple<std::string,std::string,unsigned>> smallClusterCleanup = parse_small_cluster_cleanup(cdfem_node);
+    if (!smallClusterCleanup.empty())
+    {
+      Phase_Support & phaseSupport = Phase_Support::get(meta);
+      phaseSupport.set_small_cluster_cleanup(smallClusterCleanup);
     }
 
     bool myFlagDoNearbyRefinementBeforeInterfaceRefinement = false;

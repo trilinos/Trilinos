@@ -17,7 +17,7 @@
 #include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Phase_Support.hpp>
-#include <Akri_Quality.hpp>
+#include <Akri_MeshQuality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_SharpFeature.hpp>
 #include <Akri_SnapIndependentSetFinder.hpp>

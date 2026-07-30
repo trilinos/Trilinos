@@ -250,6 +250,16 @@ void Faceted_Surface<FACET>::prepare_to_compute(const double /*time*/, const Bou
 {
   build_local_facets(point_bbox);
 
+  const stk::ParallelMachine comm = stk::EnvData::parallel_comm();
+  if (stk::is_true_on_all_procs(comm, myLocalFacets.empty()))
+  {
+    my_bounding_box.clear();
+    myNonLocalFacets.clear();
+    myAllFacetPtrs.clear();
+    my_facet_tree = std::make_unique<SearchTree<const FACET*>>( myAllFacetPtrs, FACET::get_centroid, FACET::insert_into_bounding_box );
+    return;
+  }
+
   if (my_transformation != nullptr)
   {
     for ( auto&& facet : myLocalFacets )

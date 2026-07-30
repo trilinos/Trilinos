@@ -950,10 +950,17 @@ void LevelSet::extend_interface_velocity_using_closest_point_projection(const st
   BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh, nodeSelector, coordsField);
   interfaceFacets->prepare_to_compute(nodeBBox, 0.);
 
-  if (3 == nDim)
-    extend_velocity_to_selected_nodes(mesh, nodeSelector, coordsField, extendedVelocity, interfaceFacets->as_derived_type<FacetWithVelocity3d>());
+  if (interfaceFacets->empty())
+  {
+    stk::mesh::field_fill(0., extendedVelocity, nodeSelector);
+  }
   else
-    extend_velocity_to_selected_nodes(mesh, nodeSelector, coordsField, extendedVelocity, interfaceFacets->as_derived_type<FacetWithVelocity2d>());
+  {
+    if (3 == nDim)
+      extend_velocity_to_selected_nodes(mesh, nodeSelector, coordsField, extendedVelocity, interfaceFacets->as_derived_type<FacetWithVelocity3d>());
+    else
+      extend_velocity_to_selected_nodes(mesh, nodeSelector, coordsField, extendedVelocity, interfaceFacets->as_derived_type<FacetWithVelocity2d>());
+  }
 }
 
 void LevelSet::advance_semilagrangian_using_interface_velocity(const FieldRef interfaceCoordsField, const FieldRef evaluationCoordsField, const double timeN, const double timeNp1, const FieldRef interfaceVelocity)

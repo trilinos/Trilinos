@@ -21,6 +21,8 @@ protected:
     static constexpr unsigned NUM_DIM = TopologyData<TOPO>::spatial_dimension();
     static constexpr unsigned NPE = TopologyData<TOPO>::num_nodes();
     static constexpr unsigned theBlockId = 1;
+
+    static stk::topology element_topology() { return TOPO; }
 public:
     stk::mesh::BulkData & get_mesh() { return mMesh; }
     const stk::mesh::BulkData & get_mesh() const { return mMesh; }
@@ -31,6 +33,7 @@ public:
     const AuxMetaData & get_aux_meta() const { return mBuilder.get_aux_meta(); }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mBuilder.get_assigned_node_global_ids(); }
     stk::mesh::Entity get_assigned_node_for_index(const size_t nodeIndex) const { return mBuilder.get_assigned_node_for_index(nodeIndex); }
+    stk::mesh::Entity get_assigned_element_for_index(const size_t elemIndex) const { return mBuilder.get_assigned_element_for_index(elemIndex); }
     const std::vector<stk::mesh::EntityId> & get_assigned_element_global_ids() const { return mBuilder.get_assigned_element_global_ids(); }
     std::vector<stk::mesh::EntityId> get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const { return mBuilder.get_ids_of_elements_with_given_indices(elemIndices); }
     std::vector<stk::mesh::EntityId> get_ids_of_nodes_with_given_indices(const std::vector<unsigned> & nodeIndices) const { return mBuilder.get_ids_of_nodes_with_given_indices(nodeIndices); }

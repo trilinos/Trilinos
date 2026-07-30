@@ -49,17 +49,27 @@ void StkMeshBuilder<TOPO>::declare_coordinates()
   stk::io::set_field_role(coordsField, Ioss::Field::MESH);
 }
 
+static std::string block_name_for_id(const unsigned blockId)
+{
+  return std::string("block_")+std::to_string(blockId);
+}
+
 template<stk::topology::topology_t TOPO>
 void StkMeshBuilder<TOPO>::create_block_parts(const std::vector<unsigned> &elementBlockIDs)
 {
-  STK_ThrowRequireMsg(mBlockParts.empty(), "create_block_parts should only be called once.");
-  for (unsigned blockId : elementBlockIDs)
+  if (mBlockParts.empty())
   {
-    const std::string blockName = "block_"+std::to_string(blockId);
-    stk::mesh::Part &part = mMesh.mesh_meta_data().declare_part_with_topology(blockName, TOPO);
-    mBlockParts.push_back(&part);
-    mMesh.mesh_meta_data().set_part_id(part, blockId);
-    stk::io::put_io_part_attribute(part);
+    for (unsigned blockId : elementBlockIDs)
+      mBlockParts.push_back(&mMesh.mesh_meta_data().declare_part_with_topology(block_name_for_id(blockId), TOPO));
+  }
+
+  STK_ThrowRequireMsg(mBlockParts.size() == elementBlockIDs.size(), "Mismatched num blocks " << mBlockParts.size() << " != " << elementBlockIDs.size());
+  for (unsigned i=0; i<mBlockParts.size(); ++i)
+  {
+    stk::mesh::Part * part = mMesh.mesh_meta_data().get_part(block_name_for_id(elementBlockIDs[i]));
+    STK_ThrowRequireMsg(part == mBlockParts[i], "Mismatched part " << part->name() << " != " << block_name_for_id(elementBlockIDs[i]));
+    mMesh.mesh_meta_data().set_part_id(*part, elementBlockIDs[i]);
+    stk::io::put_io_part_attribute(*part);
   }
 }
 
@@ -386,7 +396,7 @@ void StkMeshBuilder<TOPO>::build_mesh(const std::vector<stk::math::Vec<double,DI
       }
     }
 
-    build_mesh_with_all_needed_block_ids(nodeLocs, elementConn, elementBlockIDs, {blockId}, elementProcOwners);
+    build_mesh_with_all_needed_block_ids(nodeLocs, elementConn, elementBlockIDs, elementProcOwners);
 }
 
 template<stk::topology::topology_t TOPO>
@@ -395,10 +405,7 @@ void StkMeshBuilder<TOPO>::build_mesh(const std::vector<stk::math::Vec<double,DI
     const std::vector<unsigned> &elementBlockIDs,
     const std::vector<int> &specifiedElementProcOwners)
 {
-    std::vector<unsigned> allBlockIDs = elementBlockIDs;
-    stk::util::sort_and_unique(allBlockIDs);
-
-    build_mesh_with_all_needed_block_ids(nodeLocs, elementConn, elementBlockIDs, allBlockIDs, specifiedElementProcOwners);
+    build_mesh_with_all_needed_block_ids(nodeLocs, elementConn, elementBlockIDs, specifiedElementProcOwners);
 }
 
 template<stk::topology::topology_t TOPO>
@@ -409,7 +416,10 @@ void StkMeshBuilder<TOPO>::build_mesh_nodes_and_elements(
     const std::vector<int> &specifiedElementProcOwners
 )
 {
-    create_block_parts(elementBlockIDs);
+    std::vector<unsigned> allBlockIDs = elementBlockIDs;
+    stk::util::sort_and_unique(allBlockIDs);
+
+    create_block_parts(allBlockIDs);
 
     const size_t numGlobalElems = elementConn.size();
     std::vector<int> elementProcOwners = specifiedElementProcOwners;
@@ -451,7 +461,6 @@ void StkMeshBuilder<TOPO>::build_mesh_with_all_needed_block_ids
     const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
     const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<unsigned> &elementBlockIDs,
-    const std::vector<unsigned> &/*allBlocksIncludingThoseThatDontHaveElements*/,
     const std::vector<int> &specifiedElementProcOwners
 )
 {
