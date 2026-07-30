@@ -24,6 +24,7 @@ jobs:
     permissions:
       issues: write  # for actions/stale to close stale issues
       pull-requests: write  # for actions/stale to close stale PRs
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/stale@1e223db275d687790206a7acac4d1a11bd6fe629 # v10.4.0

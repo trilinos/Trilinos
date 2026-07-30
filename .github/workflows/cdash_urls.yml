@@ -29,7 +29,7 @@ jobs:
 
               CI builds can be reproduced locally in a container.
 
-              Requirements: Python 3.9+, [Podman](https://podman.io/docs/installation), CMake
+              Requirements: Python 3.9+, [Podman](https://podman.io/docs/installation)
 
               Steps:
               - Check out the branch of the PR locally.

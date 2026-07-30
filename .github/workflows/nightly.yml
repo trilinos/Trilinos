@@ -19,6 +19,7 @@ permissions:
 
 jobs:
   cuda-kokkos-bounds-check:
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507', 'gpu:A100']"
@@ -32,6 +33,7 @@ jobs:
       slots-per-gpu: 8
 
   address-sanitizer:
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
@@ -44,6 +46,7 @@ jobs:
       num-concurrent-tests: 16
 
   coverage-check:
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6']"
