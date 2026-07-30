@@ -1,10 +1,17 @@
 import re
 import git
 import os
-from github import Github
-from github import Auth
+from github import (Github,
+                    Auth,
+                    PullRequest,
+                    BranchProtection,
+                    GithubException)
 import logging
 logger = logging.getLogger(__name__)
+
+
+ORG_REPO = "trilinos-cicd2/Trilinos-test"
+
 
 def get_git_root(path: str) -> str:
     """Get the root directory of a git repository.
@@ -215,21 +222,75 @@ def create_pull_request(base: str, head: str, title: str, body: str) -> PullRequ
     if not token:
         raise RuntimeError(f"GITHUB_TOKEN environment variable not set.")
 
+    gh = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']))
+
     if not base or not head or not title:
         raise ValueError("base, head, and title must be non-empty strings.")
 
-    gh = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']))
-
     try:
-        org_repo = "trilinos-cicd2/Trilinos-test"
-        repo = gh.get_repo(org_repo)
+        repo = gh.get_repo(ORG_REPO)
         pr = repo.create_pull(base=base, head=head, title=title, body=body)
-        print(f"Opened pull request at {pr.html_url}")
 
         return pr
     except GithubException as e:
         raise RuntimeError(f"GitHub API error when creating PR") from e
     finally:
         gh.close()
+
+
+def set_release_branch_protection(rel_branch: str):
+    """
+    Set the GitHub branch protection rules for a release branch.
+
+    This branch's required status checks are copied from the "develop" branch. All other branch protection rules are hard-coded to the ususual release branch rules.
+    """
+    token = os.getenv('GITHUB_TOKEN')
+    if not token:
+        raise RuntimeError(f"GITHUB_TOKEN environment variable not set.")
+
+    try:
+        gh = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']))
+        repo = gh.get_repo(ORG_REPO)
+
+        # Get develop branch protection rules to extract current required status checks
+        source_branch = "develop"
+        source_branch_prots = repo.get_branch(source_branch).get_protection()
+
+        required_status_checks = source_branch_prots.required_status_checks
+        strict = required_status_checks.strict
+        contexts = required_status_checks.contexts
+        checks = [(c.context, c.app_id) for c in required_status_checks.checks]
+
+        kwargs = {}
+
+        kwargs["strict"] = strict
+        kwargs["contexts"] = list(contexts)
+        kwargs["checks"] = list(checks)
+        kwargs["dismiss_stale_reviews"] = True
+        kwargs["required_approving_review_count"] = 1
+        kwargs["enforce_admins"] = True
+
+        kwargs["team_push_restrictions"] = []
+        kwargs["block_creations"] = True
+
+        # Create branch protection rule for the release branch
+        rel_branch_info = repo.get_branch(rel_branch)
+        rel_branch_info.edit_protection(**kwargs)
+
+    except GithubException as e:
+        raise RuntimeError(f"GitHub API error when creating release branch protection rules.") from e
+    finally:
+        gh.close()
+
+
+
+
+
+
+
+
+
+
+
 
 
