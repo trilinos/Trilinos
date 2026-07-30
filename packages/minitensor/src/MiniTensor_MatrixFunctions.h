@@ -17,6 +17,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_matrix_functions
+/// @{
+
 ///
 /// Exponential map.
 /// \return \f$ \exp A \f$
@@ -3017,6 +3020,9 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
 // and Squaring Algorithm for the Matrix Exponential, SIAM J. Matrix Anal.
 // Appl. 31(3), 2009, Table 3.1. The value for order 13 is their revised
 // choice that also accounts for rounding in the squaring phase.
+///
+/// Pade truncation-order thresholds of Al-Mohy and Higham (2009).
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
@@ -3037,6 +3043,9 @@ scaling_squaring_theta_ah09(Index const order)
 // number of extra squarings needed so that the truncation bound remains
 // valid when the Padé numerator is evaluated in floating point. Zero for
 // all but the most nonnormal arguments.
+///
+/// Rounding-error correction term of Al-Mohy and Higham (2009), Eq. (5.1).
+///
 template<Index N>
 Index
 expm_ell(Tensor<Real, N> const & A, Index const m)
@@ -3389,6 +3398,12 @@ log_gregory(Tensor<T, N> const & A)
 }
 
 // Matrix square root by product form of Denman-Beavers iteration.
+///
+/// Matrix square root by the product form of the Denman-Beavers
+/// iteration.
+/// \param A tensor
+/// \param k on return, the number of iterations performed
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
@@ -3432,6 +3447,9 @@ sqrt_dbp(Tensor<T, N> const & A, int& k)
 }
 
 // Tensor square root
+///
+/// Matrix square root.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
@@ -3442,6 +3460,9 @@ sqrt(Tensor<T, N> const & A)
 }
 
 // Logarithmic map by Padé approximant and partial fractions
+///
+/// Matrix logarithm via partial-fraction Pade approximant of order n.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
@@ -3460,6 +3481,9 @@ log_pade_pf(Tensor<T, N> const & A, Index const n)
 }
 
 // Logarithmic map by inverse scaling and squaring and Padé approximants
+///
+/// Matrix logarithm by inverse scaling and squaring.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
@@ -3890,6 +3914,10 @@ log_schur(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ \log A \f$
 //
+///
+/// Matrix logarithm by inverse scaling and squaring with Pade
+/// approximants.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
@@ -4036,6 +4064,7 @@ bch(Tensor<T, N> const & x, Tensor<T, N> const & y)
       (x*x*y*y - 2.0*x*y*x*y + 2.0*y*x*y*x - y*y*x*x);
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_MatrixFunctions_h

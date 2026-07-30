@@ -20,6 +20,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_containers
+/// @{
+
 ///
 /// Type for setting components all at once
 ///
@@ -78,6 +81,7 @@ public:
   ///
   /// Constructor that initializes to NaNs
   /// \param dimension the space dimension
+  /// \param order the tensor order
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
@@ -86,6 +90,7 @@ public:
   ///
   /// Create with specified value
   /// \param dimension the space dimension
+  /// \param order the tensor order
   /// \param value all components are set equal to this
   ///
   KOKKOS_INLINE_FUNCTION
@@ -94,6 +99,7 @@ public:
   ///
   /// Create from a scalar
   /// \param dimension the space dimension
+  /// \param order the tensor order
   /// \param s all components are set equal to this value
   ///
   KOKKOS_INLINE_FUNCTION
@@ -102,7 +108,9 @@ public:
   ///
   /// Create from array
   /// \param dimension the space dimension
-  /// \param data_ptr pointer into the array
+  /// \param order the tensor order
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
   ///
   // TensorBase for Kokkos Data Types (we can 't use pointers with Kokkos::View)
   template<class ArrayT>
@@ -113,6 +121,14 @@ public:
       ArrayT & data,
       Index index1);
 
+  ///
+  /// Create from array
+  /// \param dimension the space dimension
+  /// \param order the tensor order
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
@@ -122,6 +138,15 @@ public:
       Index index1,
       Index index2);
 
+  ///
+  /// Create from array
+  /// \param dimension the space dimension
+  /// \param order the tensor order
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
@@ -132,6 +157,16 @@ public:
       Index index2,
       Index index3);
 
+  ///
+  /// Create from array
+  /// \param dimension the space dimension
+  /// \param order the tensor order
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
@@ -143,6 +178,17 @@ public:
       Index index3,
       Index index4);
 
+  ///
+  /// Create from array
+  /// \param dimension the space dimension
+  /// \param order the tensor order
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
@@ -155,6 +201,18 @@ public:
       Index index4,
       Index index5);
 
+  ///
+  /// Create from array
+  /// \param dimension the space dimension
+  /// \param order the tensor order
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  /// \param index6 sixth fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   TensorBase(
@@ -169,6 +227,12 @@ public:
       Index index6);
 
   //TensorBase for Shards and other data Types
+  ///
+  /// Create from array defined by pointer.
+  /// \param dimension the space dimension
+  /// \param order the tensor order
+  /// \param data_ptr pointer into the array
+  ///
   KOKKOS_INLINE_FUNCTION
   TensorBase(Index const dimension, Index const order, T const * data_ptr);
   ///
@@ -219,7 +283,7 @@ public:
 
   ///
   /// Fill components with value
-  /// \param value all components are set equal to this parameter
+  /// \param s all components are set equal to this value
   ///
   KOKKOS_INLINE_FUNCTION
   void
@@ -227,7 +291,8 @@ public:
 
   ///
   /// Fill components from array defined by pointer.
-  /// \param data_ptr pointer into array for filling components
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
   ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
@@ -236,6 +301,12 @@ public:
       ArrayT & data,
       Index index1);
 
+  ///
+  /// Fill components from array.
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
@@ -244,6 +315,13 @@ public:
       Index index1,
       Index index2);
 
+  ///
+  /// Fill components from array.
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
@@ -253,6 +331,14 @@ public:
       Index index2,
       Index index3);
 
+  ///
+  /// Fill components from array.
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
@@ -263,6 +349,15 @@ public:
       Index index3,
       Index index4);
 
+  ///
+  /// Fill components from array.
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
@@ -274,6 +369,16 @@ public:
       Index index4,
       Index index5);
 
+  ///
+  /// Fill components from array.
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  /// \param index6 sixth fixed index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   void
@@ -286,6 +391,10 @@ public:
       Index index5,
       Index index6);
 
+  ///
+  /// Fill components from array defined by pointer.
+  /// \param data_ptr pointer into array for filling components
+  ///
   KOKKOS_INLINE_FUNCTION
   void fill(T const * data_ptr);
 
@@ -1738,6 +1847,7 @@ namespace minitensor {
 
 // Placeholder for now.
 
+/// @}
 } // namespace minitensor
 
 #endif //MiniTensor_TensorBase_h
