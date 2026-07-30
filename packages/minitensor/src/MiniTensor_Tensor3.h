@@ -16,6 +16,12 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_containers
+/// @{
+
+///
+/// Storage type alias for Tensor3.
+///
 template<typename T, Index N>
 using tensor3_store = Storage<T, dimension_power<N, 3>::value>;
 
@@ -59,15 +65,26 @@ public:
 
   ///
   /// 3rd-order tensor constructor with NaNs
-  /// \param dimension the space dimension
   ///
   KOKKOS_INLINE_FUNCTION
   explicit
   Tensor3();
 
+  ///
+  /// 3rd-order tensor constructor with NaNs
+  /// \param dimension the space dimension
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor3(Index const dimension);
+
+  ///
+  /// Create 3rd-order tensor from a specified value
+  /// \param value all components are set equal to this
+  ///
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor3(Filler const value);
 
   ///
   /// Create 3rd-order tensor from a specified value
@@ -76,21 +93,21 @@ public:
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
-  Tensor3(Filler const value);
-
-  explicit
-  KOKKOS_INLINE_FUNCTION
   Tensor3(Index const dimension, Filler const value);
 
   ///
   /// Create 3rd-order tensor from array
-  /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor3(T const * data_ptr);
 
+  ///
+  /// Create 3rd-order tensor from array
+  /// \param dimension the space dimension
+  /// \param data_ptr pointer into the array
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor3(Index const dimension, T const * data_ptr);
@@ -755,6 +772,9 @@ levi_civita_3()
   return A;
 }
 
+///
+/// Levi-Civita symbol as a 3rd-order tensor.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor3<T, DYNAMIC> const
@@ -768,6 +788,9 @@ levi_civita_3(Index const dimension)
   return A;
 }
 
+///
+/// Levi-Civita symbol as a 3rd-order tensor.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor3<T, N> const
@@ -792,6 +815,9 @@ permutation_3()
   return levi_civita_3<T, N>();
 }
 
+///
+/// Permutation symbol as a 3rd-order tensor; alias of levi_civita_3.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor3<T, DYNAMIC> const
@@ -800,6 +826,9 @@ permutation_3(Index const dimension)
   return levi_civita_3<T>(dimension);
 }
 
+///
+/// Permutation symbol as a 3rd-order tensor; alias of levi_civita_3.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor3<T, N> const
@@ -819,6 +848,9 @@ alternator_3()
   return levi_civita_3<T, N>();
 }
 
+///
+/// Alternator as a 3rd-order tensor; alias of levi_civita_3.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor3<T, DYNAMIC> const
@@ -827,6 +859,9 @@ alternator_3(Index const dimension)
   return levi_civita_3<T>(dimension);
 }
 
+///
+/// Alternator as a 3rd-order tensor; alias of levi_civita_3.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor3<T, N> const
@@ -938,6 +973,10 @@ dot(Vector<S, N> const & u, Tensor3<T, N> const & A)
 //
 // \return \f$ B = A \cdot u := B_{ij} = A_{ipj} u_p \f$
 //
+///
+/// Contraction of a vector with the middle index of a 3rd-order tensor.
+/// \return \f$ B_{ij} = A_{ipj} u_p \f$
+///
 template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<typename Promote<S, T>::type, N>
@@ -1181,6 +1220,7 @@ operator<<(std::ostream & os, Tensor3<T, N> const & A)
   return os;
 }
 
+/// @}
 } // namespace minitensor
 
 #endif //MiniTensor_Tensor3_h

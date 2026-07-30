@@ -16,10 +16,15 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_factorizations
+/// @{
+
 ///
 /// Apply Givens-Jacobi rotation on the left in place.
-/// \param c and s for a rotation G in form [c, s; -s, c]
-/// \param i and k indices for rows and columns where rotation is applied.
+/// \param c cosine defining the rotation G in form [c, s; -s, c]
+/// \param s sine defining the rotation G in form [c, s; -s, c]
+/// \param i row index where the rotation is applied
+/// \param k column index where the rotation is applied
 /// \param A tensor to rotate
 ///
 template<typename T, Index N>
@@ -29,8 +34,10 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A);
 
 ///
 /// Apply Givens-Jacobi rotation on the right in place.
-/// \param c and s for a rotation G in form [c, s; -s, c]
-/// \param i and k indices for rows and columns where rotation is applied.
+/// \param c cosine defining the rotation G in form [c, s; -s, c]
+/// \param s sine defining the rotation G in form [c, s; -s, c]
+/// \param i row index where the rotation is applied
+/// \param k column index where the rotation is applied
 /// \param A tensor to rotate
 ///
 template<typename T, Index N>
@@ -125,8 +132,10 @@ polar_left_logV_lame(Tensor<T, N> const &F);
 
 ///
 /// Symmetric Schur algorithm for R^2.
-/// \param \f$ A = [f, g; g, h] \in S(2) \f$
-/// \return \f$ c, s \rightarrow [c, -s; s, c]\f$ diagonalizes A$
+/// \param f component of \f$ A = [f, g; g, h] \in S(2) \f$
+/// \param g component of \f$ A = [f, g; g, h] \in S(2) \f$
+/// \param h component of \f$ A = [f, g; g, h] \in S(2) \f$
+/// \return \f$ c, s \f$ such that \f$ [c, -s; s, c] \f$ diagonalizes A
 ///
 template <typename T>
 std::pair<T, T> schur_sym(const T f, const T g, const T h);
@@ -861,6 +870,10 @@ polar_left_logV(Tensor<T, N> const &F) {
   return std::make_tuple(V, R, v);
 }
 
+///
+/// R^N left polar decomposition with eigenvalue decomposition,
+/// returning also \f$ \log V \f$.
+///
 template <typename T, Index N>
 std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 polar_left_logV_eig(Tensor<T, N> const &F) {
@@ -1527,6 +1540,7 @@ std::pair<Tensor<T, N>, bool> cholesky(Tensor<T, N> const &A) {
   return std::make_pair(G, true);
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Factorizations_h

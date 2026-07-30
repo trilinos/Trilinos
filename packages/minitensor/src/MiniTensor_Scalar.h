@@ -18,6 +18,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_traits
+/// @{
+
 //
 // abs function
 //
@@ -96,11 +99,17 @@ KOKKOS_INLINE_FUNCTION
 Index
 num_digits();
 
+///
+/// Number of binary digits in Index.
+///
 template<>
 KOKKOS_INLINE_FUNCTION
 Index
 num_digits<Index>();
 
+///
+/// Number of binary digits in LongIndex.
+///
 template<>
 KOKKOS_INLINE_FUNCTION
 Index
@@ -226,6 +235,9 @@ namespace minitensor {
 //
 //
 //
+///
+/// Absolute value, usable on host and device.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
@@ -237,6 +249,9 @@ abs(T const & a)
 //
 //
 //
+///
+/// Swap two values, usable on host and device.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 void
@@ -253,6 +268,9 @@ swap(T & a, T & b)
 //
 //
 //
+///
+/// Maximum of two values, usable on host and device.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
@@ -264,6 +282,9 @@ max(T const & a, T const & b)
 //
 //
 //
+///
+/// Minimum of two values, usable on host and device.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
@@ -399,6 +420,9 @@ template <typename T> typename Sacado::ScalarType<T>::type random_normal() {
 //
 // Fill in all levels of AD with specified constant.
 //
+///
+/// Fill a non-AD scalar with a constant.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 void
@@ -410,6 +434,9 @@ fill_AD(
   return;
 }
 
+///
+/// Fill an AD scalar with a constant, handling its derivative components.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 void
@@ -662,6 +689,7 @@ levi_civita(Index const i, Index const j, Index const k, Index const l)
   return T(0);
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Scalar_h

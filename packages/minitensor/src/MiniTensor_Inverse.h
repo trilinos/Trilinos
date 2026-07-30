@@ -15,6 +15,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_inverse
+/// @{
+
 ///
 /// 2nd-order tensor inverse
 /// \param A nonsingular tensor
@@ -47,6 +50,7 @@ inverse_full_pivot(Tensor<T, N> const & A);
 
 ///
 /// Swap row. Echange rows i and j in place
+/// \param A tensor
 /// \param i index
 /// \param j index
 ///
@@ -57,6 +61,7 @@ swap_row(Tensor<T, N> & A, Index const i, Index const j);
 
 ///
 /// Swap column. Echange columns i and j in place
+/// \param A tensor
 /// \param i index
 /// \param j index
 ///
@@ -111,6 +116,7 @@ std::pair<Tensor<T, N>, RHS> precon(PreconditionerType const pt,
 /// conjunction with Kokkos to take advantage of thread parallelism.
 /// \param A assumed non-singular tensor
 /// \param b rhs of the system Ax=b
+/// \param pt preconditioner type
 /// \return x solution(s) to the system Ax=b
 ///
 template <typename T, Index N, typename RHS>
@@ -252,6 +258,10 @@ inverse_fast23(Tensor<T, N> const & A)
 //
 //
 //
+///
+/// Solve linear system A x = b via Gauss-Jordan elimination with full
+/// pivoting.
+///
 template<typename T, Index N, typename RHS>
 KOKKOS_INLINE_FUNCTION
 RHS
@@ -493,6 +503,7 @@ RHS solve(Tensor<T, N> const &A, RHS const &b, PreconditionerType const pt) {
   return solve_full_pivot(PA, Pb);
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Inverse_h
