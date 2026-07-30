@@ -41,10 +41,6 @@ def pre_checks(args):
         exit(1)
 
 
-release_commit_msg = "Update release Version.cmake"
-dev_commit_msg = "Update dev Version.cmake"
-
-
 def main():
     args = parse_args()
     if args.debug:
@@ -85,12 +81,15 @@ def main():
     checkout_branch(rel_update_branch, git_root)
     dev_mode = False
     update_version_cmake(args.rel_version, rel_branch, dev_mode, git_root)
+    release_commit_msg = "Update release Version.cmake"
     commit_tracked(release_commit_msg, git_root)
     push(rel_update_branch, git_root)
 
     #####################################
     # Create Pull Request for release branch version update
-    pr = create_pull_request(rel_branch, rel_update_branch, "Update release Version.cmake", "")
+    title = "Framework: Update {arg.rel_version} release Version.cmake"
+    body = "@trilinos/framework"
+    pr = create_pull_request(rel_branch, rel_update_branch, title, body)
     print(f"Created release branch update PR: {pr.html_url}")
 
     #####################################
@@ -101,12 +100,14 @@ def main():
     checkout_branch(dev_update_branch, git_root)
     dev_mode = True
     update_version_cmake(args.dev_version, dev_update_branch, dev_mode, git_root)
+    dev_commit_msg = "Update develop Version.cmake"
     commit_tracked(dev_commit_msg, git_root)
     push(dev_update_branch, git_root)
 
     #####################################
     # Create PR to update Version.cmake in develop branch
-    pr = create_pull_request(dev_branch, dev_update_branch, "Update develop Version.cmake", "")
+    title = "Framework: Update develop release Version.cmake"
+    pr = create_pull_request(dev_branch, dev_update_branch, title, body)
     print(f"Created dev branch update PR: {pr.html_url}")
 
     return 0

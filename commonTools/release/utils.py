@@ -230,7 +230,7 @@ def create_pull_request(base: str, head: str, title: str, body: str) -> PullRequ
     try:
         repo = gh.get_repo(ORG_REPO)
         pr = repo.create_pull(base=base, head=head, title=title, body=body)
-
+	logger.debug(f"Open pull request at {pr.html_url}")
         return pr
     except GithubException as e:
         raise RuntimeError(f"GitHub API error when creating PR") from e
