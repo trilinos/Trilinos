@@ -11,7 +11,7 @@
 #if !defined(MiniTensor_Storage_h)
 #define MiniTensor_Storage_h
 
-#include "MiniTensor_Definitions.h"
+#include "MiniTensor_Traits.h"
 
 namespace minitensor {
 
