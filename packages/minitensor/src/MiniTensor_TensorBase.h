@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "MiniTensor_Storage.h"
-#include "MiniTensor_Utilities.h"
+#include "MiniTensor_Scalar.h"
 
 namespace minitensor {
 

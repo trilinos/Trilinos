@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "gtest/gtest.h"
-#include "MiniTensor_FunctionSet.h"
+#include "MiniTensor_TestFunctions.h"
 
 namespace {
 
