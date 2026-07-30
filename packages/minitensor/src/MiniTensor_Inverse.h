@@ -399,7 +399,7 @@ rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
 }
 
 // Auxiliary functions for precondioners.
-namespace {
+namespace impl {
 
 //
 //
@@ -446,7 +446,7 @@ std::pair<Tensor<T, N>, RHS> maxabsrow_precon(Tensor<T, N> const &A, RHS &B) {
   return std::make_pair(P * A, P * B);
 }
 
-} // anonymous namespace
+} // namespace impl
 
 //
 //
@@ -463,10 +463,10 @@ std::pair<Tensor<T, N>, RHS> precon(PreconditionerType const pt,
     break;
 
   case PreconditionerType::DIAGONAL:
-    return diagonal_precon(A, B);
+    return impl::diagonal_precon(A, B);
 
   case PreconditionerType::MAX_ABS_ROW:
-    return maxabsrow_precon(A, B);
+    return impl::maxabsrow_precon(A, B);
   }
 
   return std::make_pair(A, B);
