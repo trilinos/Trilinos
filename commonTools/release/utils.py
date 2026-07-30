@@ -230,7 +230,7 @@ def create_pull_request(base: str, head: str, title: str, body: str) -> PullRequ
     try:
         repo = gh.get_repo(ORG_REPO)
         pr = repo.create_pull(base=base, head=head, title=title, body=body)
-	logger.debug(f"Open pull request at {pr.html_url}")
+        logger.debug(f"Open pull request at {pr.html_url}")
         return pr
     except GithubException as e:
         raise RuntimeError(f"GitHub API error when creating PR") from e
@@ -251,6 +251,10 @@ def set_release_branch_protection(rel_branch: str):
     try:
         gh = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']))
         repo = gh.get_repo(ORG_REPO)
+
+        rel_branch_info = repo.get_branch(rel_branch)
+        if rel_branch_info.protected:
+            raise RuntimeError(f"Branch protection rules already exist for branch {rel_branch}.")
 
         # Get develop branch protection rules to extract current required status checks
         source_branch = "develop"
@@ -274,7 +278,6 @@ def set_release_branch_protection(rel_branch: str):
         kwargs["block_creations"] = True
 
         # Create branch protection rule for the release branch
-        rel_branch_info = repo.get_branch(rel_branch)
         rel_branch_info.edit_protection(**kwargs)
 
     except GithubException as e:
