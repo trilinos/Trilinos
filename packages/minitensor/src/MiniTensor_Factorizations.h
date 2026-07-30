@@ -283,7 +283,7 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
   return;
 }
 
-namespace {
+namespace impl {
 
 //
 // Singular value decomposition (SVD) for 2x2
@@ -525,7 +525,7 @@ svd_NxN(Tensor<T, N> const &A) {
   return std::make_tuple(U, diag(diag(S)), transpose(V));
 }
 
-} // anonymous namespace
+} // namespace impl
 
 //
 // R^N singular value decomposition (SVD)
@@ -544,11 +544,11 @@ svd(Tensor<T, N> const &A) {
   switch (dimension) {
 
     default:
-      std::tie(U, S, V) = svd_NxN(A);
+      std::tie(U, S, V) = impl::svd_NxN(A);
       break;
 
     case 2:
-      std::tie(U, S, V) = svd_2x2(A);
+      std::tie(U, S, V) = impl::svd_2x2(A);
       // svd_2x2 doubles as a building block inside svd_NxN's Jacobi sweep, so
       // it returns the raw 2x2 factorization without the sign/order
       // canonicalization that svd_NxN applies to its own result. Apply that
@@ -997,7 +997,7 @@ template <typename T> std::pair<T, T> givens(T const &a, T const &b) {
   return std::make_pair(c, s);
 }
 
-namespace {
+namespace impl {
 
 //
 // R^N eigenvalue decomposition for symmetric 2nd-order tensor
@@ -1187,7 +1187,7 @@ std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym_2x2(Tensor<T, N> const &A) {
   return std::make_pair(V, D);
 }
 
-} // anonymous namespace
+} // namespace impl
 
 //
 // R^N eigenvalue decomposition for symmetric 2nd-order tensor
@@ -1205,11 +1205,11 @@ std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym(Tensor<T, N> const &A) {
   switch (dimension) {
 
     default:
-      std::tie(V, D) = eig_sym_NxN(A);
+      std::tie(V, D) = impl::eig_sym_NxN(A);
       break;
 
     case 2:
-      std::tie(V, D) = eig_sym_2x2(A);
+      std::tie(V, D) = impl::eig_sym_2x2(A);
       break;
 
   }

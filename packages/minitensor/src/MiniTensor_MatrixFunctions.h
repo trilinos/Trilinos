@@ -173,7 +173,7 @@ exp_taylor(Tensor<T, N> const & A)
   return B;
 }
 
-namespace {
+namespace impl {
 
 //
 // Scaling parameter theta for scaling and squaring exponential.
@@ -3005,7 +3005,7 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
   return X;
 }
 
-} // anonymous namespace
+} // namespace impl
 
 //
 // Exponential map by squaring and scaling and Padé approximants.
@@ -3090,7 +3090,7 @@ expm_ell(Tensor<Real, N> const & A, Index const m)
   }
 
   Tensor<Real, N> const
-  Q = binary_powering(P, 2 * m + 1);
+  Q = impl::binary_powering(P, 2 * m + 1);
 
   Real const
   alpha = norm_1(Q) / (norm_A * c_recip);
@@ -3177,7 +3177,7 @@ template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
     Tensor<T, N>
     V;
 
-    std::tie(U, V) = pade_polynomial_terms(A, order);
+    std::tie(U, V) = impl::pade_polynomial_terms(A, order);
 
     // The Pade denominator V - U = q_m(A) is diagonally dominant and
     // well conditioned for norm(A) within the theta thresholds, so the
@@ -3234,20 +3234,20 @@ template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
       Tensor<T, N> const
       A6 = A2 * A4;
 
-      Real const b0  = polynomial_coefficient<Real>(order, 0);
-      Real const b1  = polynomial_coefficient<Real>(order, 1);
-      Real const b2  = polynomial_coefficient<Real>(order, 2);
-      Real const b3  = polynomial_coefficient<Real>(order, 3);
-      Real const b4  = polynomial_coefficient<Real>(order, 4);
-      Real const b5  = polynomial_coefficient<Real>(order, 5);
-      Real const b6  = polynomial_coefficient<Real>(order, 6);
-      Real const b7  = polynomial_coefficient<Real>(order, 7);
-      Real const b8  = polynomial_coefficient<Real>(order, 8);
-      Real const b9  = polynomial_coefficient<Real>(order, 9);
-      Real const b10 = polynomial_coefficient<Real>(order, 10);
-      Real const b11 = polynomial_coefficient<Real>(order, 11);
-      Real const b12 = polynomial_coefficient<Real>(order, 12);
-      Real const b13 = polynomial_coefficient<Real>(order, 13);
+      Real const b0  = impl::polynomial_coefficient<Real>(order, 0);
+      Real const b1  = impl::polynomial_coefficient<Real>(order, 1);
+      Real const b2  = impl::polynomial_coefficient<Real>(order, 2);
+      Real const b3  = impl::polynomial_coefficient<Real>(order, 3);
+      Real const b4  = impl::polynomial_coefficient<Real>(order, 4);
+      Real const b5  = impl::polynomial_coefficient<Real>(order, 5);
+      Real const b6  = impl::polynomial_coefficient<Real>(order, 6);
+      Real const b7  = impl::polynomial_coefficient<Real>(order, 7);
+      Real const b8  = impl::polynomial_coefficient<Real>(order, 8);
+      Real const b9  = impl::polynomial_coefficient<Real>(order, 9);
+      Real const b10 = impl::polynomial_coefficient<Real>(order, 10);
+      Real const b11 = impl::polynomial_coefficient<Real>(order, 11);
+      Real const b12 = impl::polynomial_coefficient<Real>(order, 12);
+      Real const b13 = impl::polynomial_coefficient<Real>(order, 13);
 
       Tensor<T, N> const
       U = A1 * (
@@ -3264,7 +3264,7 @@ template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
       Index const
       exponent = (1U << power_two);
 
-      B = binary_powering(R, exponent);
+      B = impl::binary_powering(R, exponent);
 
   }
 
@@ -3451,8 +3451,8 @@ log_pade_pf(Tensor<T, N> const & A, Index const n)
   auto const I = identity<T, N>(dimension);
   auto       X = 0.0 * A;
   for (Index i = 0; i < n; ++i) {
-    auto const x = 0.5 * (1.0 + gauss_legendre_abscissae<T>(n, i));
-    auto const w = 0.5 * gauss_legendre_weights<T>(n, i);
+    auto const x = 0.5 * (1.0 + impl::gauss_legendre_abscissae<T>(n, i));
+    auto const w = 0.5 * impl::gauss_legendre_weights<T>(n, i);
     auto const B = I + x * A;
     X += w * A * inverse_full_pivot(B);
   }
@@ -3467,7 +3467,7 @@ log_iss(Tensor<T, N> const & A)
 {
   auto const dimension = A.get_dimension();
   auto const I   = identity<T, N>(dimension);
-  auto const c15 = pade_coefficients<T>(15);
+  auto const c15 = impl::pade_coefficients<T>(15);
   auto       X   = A;
   auto       i   = 5;
   auto       j   = 0;
@@ -3477,11 +3477,11 @@ log_iss(Tensor<T, N> const & A)
     auto const diff = norm_1(X - I);
     if (diff <= c15) {
       auto p = 2;
-      while (pade_coefficients<T>(p) <= diff && p < 16) {
+      while (impl::pade_coefficients<T>(p) <= diff && p < 16) {
         ++p;
       }
       auto q = 2;
-      while (pade_coefficients<T>(q) <= diff / 2.0 && q < 16) {
+      while (impl::pade_coefficients<T>(q) <= diff / 2.0 && q < 16) {
         ++q;
       }
       if ((2 * (p - q) / 3) < i || ++j == 2) {
@@ -3496,7 +3496,7 @@ log_iss(Tensor<T, N> const & A)
   return X;
 }
 
-namespace {
+namespace impl {
 
 // Givens pair (c, s) with G = [c, -s; s, c] such that G [a; b] = [r; 0].
 template<typename T>
@@ -3780,7 +3780,7 @@ sqrt_quasi_triu(Tensor<T, N> const & S)
   return U;
 }
 
-} // anonymous namespace
+} // namespace impl
 
 //
 // Logarithmic map by real Schur decomposition and inverse scaling and
@@ -3801,7 +3801,7 @@ log_schur(Tensor<T, N> const & A)
   Tensor<T, N>
   R(dimension);
 
-  std::tie(Q, R) = schur_real_small(A);
+  std::tie(Q, R) = impl::schur_real_small(A);
 
   // The principal logarithm requires the spectrum off the closed
   // negative real axis; real eigenvalues appear as 1x1 diagonal blocks.
@@ -3821,7 +3821,7 @@ log_schur(Tensor<T, N> const & A)
   I = identity<T, N>(dimension);
 
   auto const
-  c15 = pade_coefficients<Real>(15);
+  c15 = impl::pade_coefficients<Real>(15);
 
   Tensor<T, N>
   X = R;
@@ -3835,11 +3835,11 @@ log_schur(Tensor<T, N> const & A)
     diff = Sacado::ScalarValue<T>::eval(norm_1(X - I));
     if (diff <= c15) {
       auto p = 2;
-      while (pade_coefficients<Real>(p) <= diff && p < 16) {
+      while (impl::pade_coefficients<Real>(p) <= diff && p < 16) {
         ++p;
       }
       auto q = 2;
-      while (pade_coefficients<Real>(q) <= diff / 2.0 && q < 16) {
+      while (impl::pade_coefficients<Real>(q) <= diff / 2.0 && q < 16) {
         ++q;
       }
       // an exact triangular square root is cheap: take another one only
@@ -3849,7 +3849,7 @@ log_schur(Tensor<T, N> const & A)
         break;
       }
     }
-    X = sqrt_quasi_triu(X);
+    X = impl::sqrt_quasi_triu(X);
     ++k;
   }
 
@@ -3911,9 +3911,9 @@ log_pade(Tensor<T, N> const & A)
     Real const
     diff = Sacado::ScalarValue<T>::eval(norm_1(W));
 
-    if (diff <= pade_coefficients<Real>(15)) {
+    if (diff <= impl::pade_coefficients<Real>(15)) {
       auto p = 2;
-      while (pade_coefficients<Real>(p) <= diff && p < 16) {
+      while (impl::pade_coefficients<Real>(p) <= diff && p < 16) {
         ++p;
       }
       return log_pade_pf(W, p + 1);
