@@ -20,6 +20,7 @@ permissions:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
     runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6]
 
     permissions:
