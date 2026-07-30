@@ -31,13 +31,22 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
   using value_type      = typename ZViewType::value_type ;
   using execution_space = typename ZViewType::device_type::execution_space ;
   using memory_space    = typename ZViewType::device_type::memory_space ;
-  using ViewMatrixType  =  Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
-#ifdef ADELUS_HOST_PINNED_MEM_MPI
-  #if defined(KOKKOS_ENABLE_CUDA)
-    using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
-  #elif defined(KOKKOS_ENABLE_HIP)
-    using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
-  #endif
+  using ViewMatrixType  = Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
+#if defined(KOKKOS_ENABLE_CUDA)
+  using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
+#elif defined(KOKKOS_ENABLE_HIP)
+  using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+#else
+  using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft>;//fallback placeholder
+#endif
+
+  constexpr bool isOnDeviceSpace =
+#if defined( KOKKOS_ENABLE_CUDA )
+    std::is_same_v<memory_space, Kokkos::CudaSpace>;
+#elif defined( KOKKOS_ENABLE_HIP )
+    std::is_same_v<memory_space, Kokkos::HIPSpace>;
+#else
+    false;
 #endif
 
   MPI_Comm row_comm = ahandle.get_row_comm();
@@ -57,10 +66,11 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 
   ViewMatrixType piv_col( "piv_col", my_rows, 1 ); // portion of pivot column I am sending
   ViewMatrixType ck( "ck", 1, RHS.extent(1) ); // rhs corresponding to current column of the backsubstitution
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    ViewMatrixHostPinnType h_piv_col( "h_piv_col", my_rows, 1 );
-    ViewMatrixHostPinnType h_ck( "h_ck", 1, RHS.extent(1) );
-#endif
+  ViewMatrixHostPinnType h_piv_col, h_ck;
+  if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
+    h_piv_col = ViewMatrixHostPinnType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "h_piv_col"), my_rows, 1 );
+    h_ck      = ViewMatrixHostPinnType( Kokkos::view_alloc(Kokkos::WithoutInitializing, "h_ck"), 1, RHS.extent(1) );
+  }
 
 #ifdef PRINT_STATUS
   printf("Rank %i -- forward() Begin forward solve with myrow %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), myrow, nprocs_row, nprocs_col, nrows_matrix, ahandle.get_ncols_matrix(), my_rows, ahandle.get_my_cols(), ahandle.get_my_rhs(), ahandle.get_nrhs(), typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
@@ -87,13 +97,14 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
     //Note: replace MPI_Send/MPI_Irecv with MPI_Bcast
     //      Rank k_col broadcasts the pivot_col to all
     //      other ranks in the row_comm
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    Kokkos::deep_copy(h_piv_col,piv_col);
-    MPI_Bcast(reinterpret_cast<char *>(h_piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
-    Kokkos::deep_copy(piv_col,h_piv_col);
-#else //GPU-aware MPI
-    MPI_Bcast(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
-#endif
+    if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
+      Kokkos::deep_copy(h_piv_col,piv_col);
+      MPI_Bcast(reinterpret_cast<char *>(h_piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
+      Kokkos::deep_copy(piv_col,h_piv_col);
+    }
+    else { //GPU-aware MPI
+      MPI_Bcast(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
+    }
 
     if (ahandle.get_my_rhs() > 0) {
       //ck = RHS(k/nprocs_col,0);
@@ -111,14 +122,15 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
         });
       }
 
-#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-      Kokkos::deep_copy(h_ck,ck);
-      MPI_Bcast(reinterpret_cast<char *>(h_ck.data()), RHS.extent(1)*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
-      Kokkos::deep_copy(ck,h_ck);
-#else //GPU-aware MPI
-      Kokkos::fence();
-      MPI_Bcast(reinterpret_cast<char *>(ck.data()), RHS.extent(1)*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
-#endif
+      if (!(ahandle.get_gpuawarempi_behavior()) && isOnDeviceSpace) {
+        Kokkos::deep_copy(h_ck,ck);
+        MPI_Bcast(reinterpret_cast<char *>(h_ck.data()), RHS.extent(1)*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
+        Kokkos::deep_copy(ck,h_ck);
+      }
+      else { //GPU-aware MPI
+        Kokkos::fence();
+        MPI_Bcast(reinterpret_cast<char *>(ck.data()), RHS.extent(1)*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
+      }
 
       auto sub_pivot_col = subview(piv_col, Kokkos::make_pair(0, my_rows - istart), Kokkos::ALL());
       auto sub_rhs       = subview(RHS, Kokkos::make_pair(istart, my_rows), Kokkos::ALL());
