@@ -59,7 +59,6 @@ int main(int argc, char *argv[]) {
     list.sublist("General").set("Output Level", 3);
     list.sublist("Status Test").set("Iteration Limit", 20);
     list.sublist("Status Test").set("Constraint Tolerance", 1.e-4);
-    list.sublist("Status Test").set("Step Tolerance", -1.);
     list.sublist("Step").set("Type", "Augmented Lagrangian 2");
     list.sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Iteration Limit", 100);
     list.sublist("Step").sublist("Augmented Lagrangian").set("Use Default Initial Penalty Parameter", false);

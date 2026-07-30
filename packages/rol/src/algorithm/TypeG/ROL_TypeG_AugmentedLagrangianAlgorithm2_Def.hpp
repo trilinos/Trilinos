@@ -30,7 +30,8 @@ inline Ptr<TypeG::Algorithm<Real>> AlgorithmFactory(
 
 template<typename Real>
 AugmentedLagrangianAlgorithm2<Real>::AugmentedLagrangianAlgorithm2( ParameterList &list, const Ptr<Secant<Real>> &secant )
-  : TypeG::Algorithm<Real>::Algorithm(), secant_(secant), list_(list), subproblemIter_(0) {
+  : TypeG::Algorithm<Real>::Algorithm(), secant_(secant), list_(list),
+    subproblemIter_(0), isUpdated_(false) {
   // Set status test
   status_->reset();
   status_->add(makePtr<ConstraintStatusTest<Real>>(list));
@@ -52,12 +53,13 @@ AugmentedLagrangianAlgorithm2<Real>::AugmentedLagrangianAlgorithm2( ParameterLis
   tau0_   = sublist.get("Initial Dual Feasibility Tolerance",       one);
 
   // Subproblem information
-  useDefaultInitTol_  = sublist.get("Use Default Initial Subproblem Tolerances", false);
-  epsilon_            = sublist.get("Initial Optimality Tolerance",              1e-4);
-  delta_              = sublist.get("Initial Feasibility Tolerance",             1e-4);
-  maxit_              = sublist.get("Subproblem Iteration Limit",                1000);
-  bool print          = sublist.get("Print Intermediate Optimization History",   false);
-  subStep_            = sublist.get("Subproblem Step Type",             "Trust Region");
+  useDefaultInitTol_   = sublist.get("Use Default Initial Subproblem Tolerances", false);
+  epsilon_             = sublist.get("Initial Optimality Tolerance",              1e-4);
+  delta_               = sublist.get("Initial Feasibility Tolerance",             1e-4);
+  subproblemTolFactor_ = sublist.get("Subproblem Tolerance Lower Bound Factor",   1e-2);
+  maxit_               = sublist.get("Subproblem Iteration Limit",                1000);
+  bool print           = sublist.get("Print Intermediate Optimization History",   false);
+  subStep_             = sublist.get("Subproblem Step Type",             "Trust Region");
   list_.sublist("Step").set("Type",subStep_);
   list_.sublist("Status Test").set("Iteration Limit", maxit_);
   list_.sublist("Status Test").set("Use Relative Tolerances",false);
@@ -73,10 +75,11 @@ AugmentedLagrangianAlgorithm2<Real>::AugmentedLagrangianAlgorithm2( ParameterLis
   list_.sublist("General").set("Output Level",(print ? verbosity_ - 2 : 0));
 
   // Outer iteration tolerances
-  outerFeasTolerance_ = list.sublist("Status Test").get("Constraint Tolerance",    oem8);
-  outerOptTolerance_  = list.sublist("Status Test").get("Gradient Tolerance",      oem8);
-  outerStepTolerance_ = list.sublist("Status Test").get("Step Tolerance",          oem8);
-  useRelTol_          = list.sublist("Status Test").get("Use Relative Tolerances", false);
+  outerFeasTolerance_  = list.sublist("Status Test").get("Constraint Tolerance",    oem8);
+  outerOptTolerance_   = list.sublist("Status Test").get("Gradient Tolerance",      oem8);
+  outerStepTolerance_  = list.sublist("Status Test").get("Step Tolerance",          oem8);
+  outerIterationLimit_ = list.sublist("Status Test").get("Iteration Limit",          100);
+  useRelTol_           = list.sublist("Status Test").get("Use Relative Tolerances", false);
 
   // Augmented Lagrangian parameters
   useDefaultScaling_  = sublist.get("Use Default Problem Scaling",     true);
@@ -99,8 +102,13 @@ void AugmentedLagrangianAlgorithm2<Real>::initialize( Vector<Real>              
     outStream << "Warning: \"Use Relative Tolerances\" parameter is unsupported!" << std::endl;
     useRelTol_ = false;
   }
+  if (subproblemTolFactor_ >= Real(1)) {
+    outStream << "Warning: \"Subproblem Tolerance Lower Bound Factor\" is greater than or equal to 1! "
+              << "The lower bounds will not be tighter than the corresponding outer tolerances."
+              << std::endl;
+  }
 
-  const Real one(1), TOL(1.e-2);
+  const Real one(1);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   // > TypeG::Algorithm<Real>::initialize(x,g,l,c);
   if (state_->iterateVec == nullPtr) {
@@ -246,8 +254,8 @@ void AugmentedLagrangianAlgorithm2<Real>::initialize( Vector<Real>              
     for (unsigned i = 0; i < numberPenalties; ++i) 
       temp += alobj.getPenaltyParameter(i);
     temp = std::min(minPenaltyReciprocal_,1./temp);
-    epsilon_ = std::max(TOL*outerOptTolerance_, epsilon_*std::pow(temp,optDecreaseExponent_));
-    delta_   = std::max(TOL*outerFeasTolerance_,delta_  *std::pow(temp,optDecreaseExponent_));
+    epsilon_ = std::max(subproblemTolFactor_*outerOptTolerance_, epsilon_*std::pow(temp,optDecreaseExponent_));
+    delta_   = std::max(subproblemTolFactor_*outerFeasTolerance_,  delta_*std::pow(temp,optDecreaseExponent_));
   }
   
   alobj.reset();
@@ -370,16 +378,32 @@ void AugmentedLagrangianAlgorithm2<Real>::run( Problem<Real> &problem,
 
   EExitStatus statusFlag;
   bool isSubproblemConverged = false;
-  Real penaltyParameter;
   bool isForcedUpdate = false;
-
-  Real theta;
+  bool tolerancesUpdated = false;
+  Real penaltyParameter, reduction, theta, oldEpsilon, oldDelta;
 
   // ========================================================================
   // STEP 3: Run algorithm
   // ========================================================================
 
-  while (status_->check(*state_)) {
+  while (true) {
+    bool continueAlgorithm = status_->check(*state_);
+
+    // A zero primal-dual step does not indicate stagnation when the preceding
+    // iteration updated the penalty model.  Solve the new subproblem before
+    // applying the step-tolerance stopping criterion.
+    if (!continueAlgorithm
+        && state_->statusFlag == EXITSTATUS_STEPTOL
+        && (isUpdated_ || tolerancesUpdated)
+        && state_->iter < outerIterationLimit_) {
+      continueAlgorithm = true;
+      state_->statusFlag = EXITSTATUS_LAST;
+    }
+
+    if (!continueAlgorithm) {
+      break;
+    }
+
     // Solve augmented Lagrangian subproblem
     list_.sublist("Status Test").set("Gradient Tolerance",epsilon_);
     list_.sublist("Status Test").set("Constraint Tolerance",delta_);
@@ -446,35 +470,30 @@ void AugmentedLagrangianAlgorithm2<Real>::run( Problem<Real> &problem,
     isUpdated_ = false;
     for (unsigned i = 0; i < numberPenalties; ++i) {
       penaltyParameter = alobj->getPenaltyParameter(i);
-      // std::cout << "Dual Residuals " << i << ": " << dualResiduals[i] << " Scaling: " << alobj->getScaling(i) << " Tolerance: " << dualTolerances[i] << std::endl;
       if (isForcedUpdate || alobj->getScaling(i)*dualResiduals[i] > penaltyParameter*dualTolerances[i]) {
         penaltyParameter  *= penalty_growthf_[i];
         penaltyParameter   = std::min(penaltyParameter,maxPenaltyParam_);
         state_->searchSize = std::max(state_->searchSize,penaltyParameter);
         theta              = std::min(one/penaltyParameter,theta_);
         dualTolerances[i]  = tau0_*std::pow(theta,alphat_);
-        // dualTolerances[i]  = std::max(dualTolerances[i],oem2*outerFeasTolerance_);   // ROL convention
         alobj->setPenaltyParameter(penaltyParameter,i);
         isUpdated_ = true;
       }
       else {
         theta              = std::min(one/penaltyParameter,theta_);
         dualTolerances[i] *= std::pow(theta,betat_);
-        // dualTolerances[i]  = std::max(dualTolerances[i],oem2*outerFeasTolerance_); // ROL convention
       }
       if (alobj->getScaling(i)*dualResiduals[i] <= nu*std::pow(penaltyParameter,gamma)) {
-        alobj->updateMultiplier(x,tol,i);
-        // outStream << "multiplier update" << std::endl;
+        state_->snorm += alobj->updateMultiplier(x,tol,i);
       }
     }
-    if (isUpdated_) {
-      epsilon_ = 0.9*epsilon_;
-      delta_   = 0.9*delta_;
-    }
-    else {
-      epsilon_ = 0.25*epsilon_;
-      delta_   = 0.25*delta_;
-    }
+
+    reduction = isUpdated_ ? Real(0.9) : Real(0.25);
+    oldEpsilon = epsilon_;
+    oldDelta   = delta_;
+    epsilon_   = std::max(subproblemTolFactor_*outerOptTolerance_, reduction*epsilon_);
+    delta_     = std::max(subproblemTolFactor_*outerFeasTolerance_,reduction*delta_);
+    tolerancesUpdated = epsilon_ < oldEpsilon || delta_ < oldDelta;
 
     alobj->reset();
 
