@@ -32,3 +32,16 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES perf_test_01.cc
   COMM serial mpi
   )
+
+# Each tu/tu_*.cc includes exactly one public header and nothing else,
+# so building this executable proves every public header is
+# self-contained (independently includable).
+FILE(GLOB SELF_CONTAINED_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tu/*.cc)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Self_Contained
+  SOURCES ${SELF_CONTAINED_SOURCES}
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
