@@ -282,9 +282,6 @@ using EntityIdProcMap = std::map<EntityId, int>;
 
 using EntityKeyProc    = std::pair<EntityKey, int>;
 using EntityKeyProcVec = std::vector<EntityKeyProc>;
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Aug 2025
-using EntityKeyProcMap STK_DEPRECATED = std::map<EntityKey, int>;
-#endif
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *

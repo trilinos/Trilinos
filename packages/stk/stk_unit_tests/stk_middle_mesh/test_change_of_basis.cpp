@@ -44,46 +44,40 @@ void test_parallel(const utils::Point& pt1, const utils::Point& pt2)
 TEST(ChangeOfBasis, singleAxis)
 {
   // test cases where the normal vector is along one of the coordinate axes
-  utils::Point norm, p0;
+  utils::Point norm;
   std::array<utils::Point, 3> basis;
 
   norm  = utils::Point(1, 0, 0) * 2;
-  p0    = utils::Point(1, 1, 1);
   basis = compute_basis(norm);
   expect_float_eq(basis[0], utils::Point(0, 1, 0));
   expect_float_eq(basis[1], utils::Point(0, 0, 1));
   expect_float_eq(basis[2], utils::Point(1, 0, 0));
 
   norm  = utils::Point(-1, 0, 0) * 2;
-  p0    = utils::Point(1, 1, 1);
   basis = compute_basis(norm);
   expect_float_eq(basis[0], utils::Point(0, 0, 1));
   expect_float_eq(basis[1], utils::Point(0, 1, 0));
   expect_float_eq(basis[2], utils::Point(-1, 0, 0));
 
   norm  = utils::Point(0, 1, 0) * 2;
-  p0    = utils::Point(1, 1, 1);
   basis = compute_basis(norm);
   expect_float_eq(basis[0], utils::Point(0, 0, 1));
   expect_float_eq(basis[1], utils::Point(1, 0, 0));
   expect_float_eq(basis[2], utils::Point(0, 1, 0));
 
   norm  = utils::Point(0, -1, 0) * 2;
-  p0    = utils::Point(1, 1, 1);
   basis = compute_basis(norm);
   expect_float_eq(basis[0], utils::Point(1, 0, 0));
   expect_float_eq(basis[1], utils::Point(0, 0, 1));
   expect_float_eq(basis[2], utils::Point(0, -1, 0));
 
   norm  = utils::Point(0, 0, 1) * 2;
-  p0    = utils::Point(1, 1, 1);
   basis = compute_basis(norm);
   expect_float_eq(basis[0], utils::Point(1, 0, 0));
   expect_float_eq(basis[1], utils::Point(0, 1, 0));
   expect_float_eq(basis[2], utils::Point(0, 0, 1));
 
   norm  = utils::Point(0, 0, -1) * 2;
-  p0    = utils::Point(1, 1, 1);
   basis = compute_basis(norm);
   expect_float_eq(basis[0], utils::Point(0, 1, 0));
   expect_float_eq(basis[1], utils::Point(1, 0, 0));

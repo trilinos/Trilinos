@@ -186,7 +186,7 @@ concept is_ngp_space = requires
 template <typename T>
 concept is_host_exec_space = requires
 {
-  requires std::is_same_v<T, HostExecSpace>;
+  requires std::is_same_v<T, HostExecSpace> || std::is_same_v<T, Kokkos::Serial>;
 };
 
 template <typename T>

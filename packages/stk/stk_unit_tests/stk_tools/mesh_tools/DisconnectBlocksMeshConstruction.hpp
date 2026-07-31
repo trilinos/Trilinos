@@ -167,6 +167,14 @@ stk::mesh::PartVector setup_mesh_4block_4quad_bowtie_1hinge(stk::mesh::BulkData&
 
 stk::mesh::PartVector setup_mesh_3block_3quad_1hinge(stk::mesh::BulkData& bulk);
 
+stk::mesh::PartVector setup_mesh_two_tet10_hinge_at_vertex_and_edge_mid_node(stk::mesh::BulkData& bulk);
+
+stk::mesh::PartVector setup_mesh_two_tet10_hinge_at_edge(stk::mesh::BulkData& bulk);
+
+stk::mesh::PartVector setup_mesh_two_tet10_hinge_at_edge_mid_nodes(stk::mesh::BulkData& bulk);
+
+stk::mesh::PartVector setup_mesh_tet10_use_case(stk::mesh::BulkData& bulk);
+
 void print_hinge_info(const stk::mesh::BulkData& bulk,
                       const stk::tools::HingeNodeVector& hingeNodes,
                       const stk::tools::HingeEdgeVector& hingeEdges);

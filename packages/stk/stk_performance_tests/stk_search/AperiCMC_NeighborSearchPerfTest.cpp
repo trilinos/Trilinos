@@ -16,7 +16,7 @@
 #include <stk_mesh/base/NgpField.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
-#include <stk_mesh/base/NgpFieldBLAS.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_search/BoxIdent.hpp>
 #include <stk_search/CoarseSearch.hpp>

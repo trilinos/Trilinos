@@ -63,7 +63,8 @@ void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNod
 
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes)
 {
-  hingeNodes = impl::get_hinge_nodes(bulk, blocksToDetect);
+  EdgeMidNodeDetector midNodeDetector(bulk);
+  impl::fill_mesh_hinges(midNodeDetector, blocksToDetect, hingeNodes);
 }
 
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges, bool onlyIfConnectedToSolidElements)
@@ -74,13 +75,8 @@ void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNod
 
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges, bool onlyIfConnectedToSolidElements)
 {
-  hingeNodes = impl::get_hinge_nodes(bulk, blocksToDetect, onlyIfConnectedToSolidElements);
-
-  if(hingeNodes.size() != 0) {
-    hingeEdges = impl::get_hinge_edges(bulk, hingeNodes);
-  }
-
-  impl::prune_hinge_nodes(bulk, hingeNodes, hingeEdges);
+  EdgeMidNodeDetector midNodeDetector(bulk);
+  impl::fill_mesh_hinges(midNodeDetector, blocksToDetect, hingeNodes, hingeEdges, onlyIfConnectedToSolidElements);
 }
 
 }} // namespace stk::tools

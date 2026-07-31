@@ -215,11 +215,12 @@ double_double_int_type()
   return s_mpi_double_double_int;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2026
 namespace {
 
 extern "C" {
   void
-  mpi_double_complex_sum(
+  mpi_double_std_complex_sum(
     void *		invec,
     void *		inoutvec,
     int *		len,
@@ -236,7 +237,7 @@ extern "C" {
 } // namespace <unnamed>
 
 
-MPI_Op
+STK_DEPRECATED MPI_Op
 double_complex_sum_op()
 {
   static MPI_Op s_mpi_double_complex_sum;
@@ -245,10 +246,11 @@ double_complex_sum_op()
   if (!initialized) {
     initialized = true;
 
-    MPI_Op_create(mpi_double_complex_sum, true, &s_mpi_double_complex_sum);
+    MPI_Op_create(mpi_double_std_complex_sum, true, &s_mpi_double_complex_sum);
   }
   return s_mpi_double_complex_sum;
 }
+#endif
 
 namespace {
 

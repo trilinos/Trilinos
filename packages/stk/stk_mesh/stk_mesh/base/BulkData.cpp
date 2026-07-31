@@ -5658,7 +5658,7 @@ EntityRank BulkData::get_entity_rank_count() const
   return mesh_meta_data().entity_rank_count();
 }
 
-void BulkData::confirm_host_mesh_is_synchronized_from_device(const char * fileName, int lineNumber) const
+void BulkData::confirm_host_mesh_is_synchronized_from_device([[maybe_unused]] const char * fileName, [[maybe_unused]] int lineNumber) const
 {
 #ifdef STK_USE_DEVICE_MESH
   STK_ThrowRequireMsg((not get_ngp_mesh()) || (not get_ngp_mesh()->needs_update_bulk_data()),

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+5.31.3    (STK_VERSION 5310300)
+  stk_util: Deprecate 'double_complex_sum_op()' in MPI.hpp and rename
+            internal supporting function in MPI.cc (to avoid duplicate
+            symbol error with empire/xyce linking).
+  cmake:    Allow Intrepid2 to be an optional dependency of stk_search_util
+            (Fixes an issue where stk_search_util failed to compile if
+             Intrepid2 was not enabled.)
+
 5.31.2    (STK_VERSION 5310200)
   stk_mesh:     improve behavior of for_each_entity_run when OpenMP is enabled
   stk_transfer: enable transfers between 2D and 3D mesh, as well as 

@@ -47,49 +47,6 @@
 
 namespace stk {
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Aug 2025
-/** Given the send sizes determine the receive sizes and also
- * set output vectors of send-procs and recv-procs.
- * Send and receive size arrays are dimensioned to
- * the size of the parallel machine. (i.e., the number
- * of MPI processor ranks.)
- * Output vectors for send-procs and recv-procs will have
- * length num-send-procs and num-recv-procs respectively.
- */
-STK_DEPRECATED
-void comm_recv_procs_and_msg_sizes(ParallelMachine comm,
-                     const unsigned * const send_size,
-                     unsigned * const recv_size,
-                     std::vector<int>& output_send_procs,
-                     std::vector<int>& output_recv_procs);
-
-STK_DEPRECATED
-void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
-                                   const std::vector<CommBuffer>& send_bufs ,
-                                         std::vector<CommBuffer>& recv_bufs,
-                                   std::vector<int>& send_procs,
-                                   std::vector<int>& recv_procs);
-
-/** Given send sizes (of length number-of-MPI-processor-ranks) and
- * send-procs and recv-procs (of length number-of-procs-to-send/recv-with),
- * set recv sizes (recv_size array has length number-of-MPI-processor-ranks).
- */
-
-STK_DEPRECATED
-void comm_recv_msg_sizes(ParallelMachine comm ,
-                     const unsigned * const send_size ,
-                     const std::vector<int>& send_procs,
-                     const std::vector<int>& recv_procs,
-                     unsigned * const recv_size);
-
-STK_DEPRECATED
-void comm_recv_msg_sizes(ParallelMachine comm ,
-                     const std::vector<int>& send_procs,
-                     const std::vector<int>& recv_procs,
-                     const std::vector<CommBuffer>& send_bufs,
-                     std::vector<CommBuffer>& recv_bufs);
-#endif // STK_HIDE_DEPRECATED_CODE
-
 class CommSparse {
 public:
 
