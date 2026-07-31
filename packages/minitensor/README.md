@@ -31,8 +31,9 @@ on its own:
 | `MiniTensor_Inverse.h` | Inversion, rank-one updates, preconditioners, linear solves |
 | `MiniTensor_Factorizations.h` | Givens, Cholesky, eigen, SVD, polar, condition numbers |
 | `MiniTensor_MatrixFunctions.h` | `exp`, `log`, `sqrt` families and BCH |
-| `MiniTensor_Rotations.h` | SO(N) logarithmic and exponential maps |
+| `MiniTensor_Rotations.h` | SO(N) logarithmic and exponential maps, axial vector |
 | `MiniTensor_LinearAlgebra.h` | Umbrella over the five linear-algebra modules |
+| `MiniTensor_Quaternion.h` | Quaternions and rotation-representation conversions |
 | `MiniTensor_Geometry.h` | Element lengths, areas, volumes, centroids |
 | `MiniTensor_Mechanics.h` | Continuum-mechanics operations |
 | `MiniTensor_Solvers.h` | Nonlinear solvers and optimization (opt-in) |

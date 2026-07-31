@@ -52,6 +52,7 @@ mechanics; each module header can also be included on its own.
 | MiniTensor_MatrixFunctions.h | \ref minitensor_matrix_functions |
 | MiniTensor_Rotations.h | \ref minitensor_rotations |
 | MiniTensor_LinearAlgebra.h | Umbrella over the five linear-algebra modules above |
+| MiniTensor_Quaternion.h | Quaternions and rotation-representation conversions: \ref minitensor_rotations |
 | MiniTensor_Geometry.h | \ref minitensor_geometry |
 | MiniTensor_Mechanics.h | \ref minitensor_mechanics |
 | MiniTensor_Solvers.h, MiniTensor_TestFunctions.h | \ref minitensor_solvers |
@@ -134,7 +135,9 @@ Baker-Campbell-Hausdorff series.
 
 /*!
 \defgroup minitensor_rotations Rotations
-\brief Logarithmic and exponential maps on SO(N).
+\brief Logarithmic and exponential maps on SO(N), quaternions, and
+conversions among rotation representations: rotation matrix, unit
+quaternion and principal rotation vector.
 */
 
 /*!
