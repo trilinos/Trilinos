@@ -15,6 +15,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_norms
+/// @{
+
 ///
 /// Tensor Frobenius norm
 /// \return \f$ \sqrt{A:A} \f$
@@ -44,6 +47,7 @@ norm_infinity(Tensor<T, N> const & A);
 
 ///
 /// Subtensor
+/// \param A tensor
 /// \param i index
 /// \param j index
 /// \return Subtensor with i-row and j-col deleted.
@@ -620,6 +624,7 @@ std::pair<Index, Index> arg_max_off_diagonal(Tensor<T, N> const &A) {
   return std::make_pair(p,q);
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Norms_h
