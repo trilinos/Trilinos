@@ -49,6 +49,17 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
 exp_skew_symmetric(Tensor<T, N> const & r);
 
+///
+/// Axial vector of a skew-symmetric tensor, the inverse of
+/// skew(Vector). Defined for 3D only.
+/// \param W skew-symmetric tensor \f$ W \in so(3) \f$
+/// \return \f$ w \f$ such that \f$ W u = w \times u \f$ for all \f$ u \f$
+///
+template<typename T, Index N>
+KOKKOS_INLINE_FUNCTION
+Vector<T, N>
+vee(Tensor<T, N> const & W);
+
 //
 // R^N logarithmic map of a rotation.
 // \param R with \f$ R \in SO(N) \f$
@@ -270,6 +281,40 @@ exp_skew_symmetric(Tensor<T, N> const & r)
  }
 
   return R;
+}
+
+//
+// R^N axial vector of a skew-symmetric tensor, undefined for N != 3.
+//
+template<typename T, Index N>
+KOKKOS_INLINE_FUNCTION
+Vector<T, N>
+vee(Tensor<T, N> const & W)
+{
+  // Check whether skew-symmetry holds
+  assert(norm(sym(W)) < std::max(1.0e-12 * norm(W), 1.0e-12));
+
+  Index const
+  dimension = W.get_dimension();
+
+  Vector<T, N>
+  w(dimension);
+
+  switch (dimension) {
+
+  case 3:
+    w(0) = W(2, 1);
+    w(1) = W(0, 2);
+    w(2) = W(1, 0);
+    break;
+
+  default:
+    MT_ERROR_EXIT("Axial vector from tensor defined for 3D only");
+    break;
+
+  }
+
+  return w;
 }
 
 /// @}
