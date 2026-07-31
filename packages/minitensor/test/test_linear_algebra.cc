@@ -7,23 +7,10 @@
 // *****************************************************************************
 // @HEADER
 
-//
-// Property-based (randomized) tests for the matrix decompositions in
-// MiniTensor_LinearAlgebra. Rather than checking a single hand-picked input,
-// each test exercises many random tensors across dimensions 2, 3 and 4 and
-// verifies the defining algebraic invariants of the decomposition
-// (reconstruction, orthonormality, symmetry, positivity, ordering).
-//
-// These invariants are what a decomposition is *for*; a single example only
-// catches a bug if it happens to land in the broken case. The 2x2 symmetric
-// eigendecomposition bug (Trilinos issue #15389), for instance, slipped past
-// the existing single-example test because that example used equal diagonals,
-// the one case that reconstructed correctly. A randomized reconstruction check
-// would have caught it on the first off-diagonal sample.
-//
-// The RNG is seeded with a fixed value in each test, so failures are
-// reproducible and order-independent.
-//
+// Tests for the linear-algebra modules (Norms, Inverse,
+// Factorizations): invariants, inversion, eigendecompositions, SVD,
+// polar decompositions and Cholesky, including the property-based
+// (randomized) decomposition tests.
 
 #include <random>
 
@@ -39,7 +26,8 @@ main(int ac, char* av[])
 
   ::testing::InitGoogleTest(&ac, av);
 
-  auto const retval = RUN_ALL_TESTS();
+  auto const
+  retval = RUN_ALL_TESTS();
 
   Kokkos::finalize();
 
@@ -152,10 +140,353 @@ is_descending(Tensor<Real> const & D)
 
 }  // anonymous namespace
 
-//
-// Symmetric eigendecomposition: A = V D V^T, V orthonormal, D diagonal and
-// sorted in descending order.
-//
+TEST(MiniTensor, TensorManipulation)
+{
+  Tensor<Real> A = eye<Real>(3);
+  Tensor<Real> B(3);
+  Tensor<Real> C(3);
+  Vector<Real> u(3);
+
+  A = 2.0 * A;
+  A(1, 0) = A(0, 1) = 1.0;
+  A(2, 1) = A(1, 2) = 1.0;
+
+  B = inverse(A);
+
+  C = A * B;
+
+  ASSERT_LE(norm(C - eye<Real>(3)), machine_epsilon<Real>());
+
+  Real I1_A = I1(A);
+  Real I2_A = I2(A);
+  Real I3_A = I3(A);
+
+  u(0) = I1_A - 6;
+  u(1) = I2_A - 10;
+  u(2) = I3_A - 4;
+
+  Real const error = norm(u);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, Inverse2x2)
+{
+  Index const
+  N = 2;
+
+  Tensor<Real, N> const
+  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(Filler::RANDOM_UNIFORM);
+
+  Tensor<Real, N> const
+  B = inverse(A);
+
+  Tensor<Real, N> const
+  C = A * B;
+
+  Real const
+  error = norm(C - eye<Real, N>()) / norm(A);
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (N - 1) * machine_epsilon<Real>();
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(MiniTensor, Inverse3x3)
+{
+  Index const
+  N = 3;
+
+  Tensor<Real, N> const
+  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(Filler::RANDOM_UNIFORM);
+
+  Tensor<Real, N> const
+  B = inverse(A);
+
+  Tensor<Real, N> const
+  C = A * B;
+
+  Real const
+  error = norm(C - eye<Real, N>()) / norm(A);
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (N - 1) * machine_epsilon<Real>();
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(MiniTensor, InverseNxN)
+{
+  Index const
+  N = 11;
+
+  Tensor<Real, N> const
+  A = 2.0 * eye<Real, N>() + Tensor<Real, N>(Filler::RANDOM_UNIFORM);
+
+  Tensor<Real, N> const
+  B = inverse(A);
+
+  Tensor<Real, N> const
+  C = A * B;
+
+  Real const
+  error = norm(C - eye<Real, N>()) / norm(A);
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (N - 1) * machine_epsilon<Real>();
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(MiniTensor, Inverse_4th_NxN)
+{
+  Index const
+  N = 4;
+
+  Tensor4<Real, N> const
+  A = 2.0 * identity_1<Real, N>() + Tensor4<Real, N>(Filler::RANDOM_UNIFORM);
+
+  Tensor4<Real, N> const
+  B = inverse(A);
+
+  Tensor4<Real, N> const
+  C = dotdot(A, B);
+
+  Real const
+  error = norm_f(C - identity_1<Real, N>()) / norm_f(A);
+
+  // See Golub & Van Loan, Matrix Computations 4th Ed., pp 122-123
+  Real const
+  tolerance = 2 * (2 * N - 1) * machine_epsilon<Real>();
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(MiniTensor, SymmetricEigen)
+{
+  Tensor<Real> A = eye<Real>(3);
+  A(0, 1) = 0.1;
+  A(1, 0) = 0.1;
+
+  Tensor<Real> V(3);
+  Tensor<Real> D(3);
+
+  std::tie(V, D) = eig_sym(A);
+
+  ASSERT_LE(std::abs(D(0, 0) - 1.1), machine_epsilon<Real>());
+  ASSERT_LE(std::abs(D(1, 1) - 1.0), machine_epsilon<Real>());
+  ASSERT_LE(std::abs(D(2, 2) - 0.9), machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, LeftPolarDecomposition)
+{
+  Tensor<Real> const X(1.1, 0.2, 0.0, 0.2, 1.0, 0.0, 0.0, 0.0, 1.2);
+
+  Real const
+  c = std::sqrt(2.0) / 2.0;
+
+  Tensor<Real> const Y(c, -c, 0.0, c, c, 0.0, 0.0, 0.0, 1.0);
+
+  Tensor<Real> const F = X * Y;
+  Tensor<Real> V(3);
+  Tensor<Real> R(3);
+
+  std::tie(V, R) = polar_left(F);
+
+  Real const
+  error_x = norm(V - X) / norm(X);
+
+  Real const
+  error_y = norm(R - Y) / norm(Y);
+
+  ASSERT_LE(error_x, machine_epsilon<Real>());
+  ASSERT_LE(error_y, machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, PolarLeftLog)
+{
+  Real const
+  gamma = 0.1;
+
+  Tensor<Real> const x(0, gamma, 0, gamma, 0, 0, 0, 0, 0);
+
+  Tensor<Real> const X = exp(x);
+
+  Real const
+  c = std::sqrt(2.0) / 2.0;
+
+  Tensor<Real> const Y(c, -c, 0.0, c, c, 0.0, 0.0, 0.0, 1.0);
+
+  Tensor<Real> const F = X * Y;
+
+  Tensor<Real> V(3), R(3), v(3);
+
+  std::tie(V, R, v) = polar_left_logV(F);
+
+  Real const error = norm(v - x) / norm(x);
+
+  Real const
+  tolerance = 16.0 * machine_epsilon<Real>();
+
+  ASSERT_LE(error, tolerance);
+}
+
+TEST(MiniTensor, SVD2x2)
+{
+  Real const phi = 1.0;
+
+  Real const psi = 2.0;
+
+  Real const s0 = std::sqrt(3.0);
+
+  Real const s1 = std::sqrt(2.0);
+
+  Real const cl = cos(phi);
+
+  Real const sl = sin(phi);
+
+  Real const cr = cos(psi);
+
+  Real const sr = sin(psi);
+
+  Tensor<Real> const X(cl, -sl, sl, cl);
+
+  Tensor<Real> const Y(cr, -sr, sr, cr);
+
+  Tensor<Real> const D(s0, 0.0, 0.0, s1);
+
+  Tensor<Real> const A = X * D * transpose(Y);
+
+  Tensor<Real> U(2), S(2), V(2);
+
+  std::tie(U, S, V) = svd(A);
+
+  Tensor<Real> B = U * S * transpose(V);
+
+  Real const error = norm(A - B) / norm(A);
+
+  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, SVD3x3)
+{
+  Tensor<Real> const A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+
+  Tensor<Real> U(3), S(3), V(3);
+
+  std::tie(U, S, V) = svd(A);
+
+  Tensor<Real> const B = U * S * transpose(V);
+
+  Real const error = norm(A - B) / norm(A);
+
+  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, SVD3x3Fad)
+{
+  Tensor<Sacado::Fad::DFad<Real>> const
+  A(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+
+  Tensor<Sacado::Fad::DFad<Real>> U(3), S(3), V(3);
+
+  std::tie(U, S, V) = svd(A);
+
+  Tensor<Sacado::Fad::DFad<Real>> const
+  B = U * S * transpose(V);
+
+  Sacado::Fad::DFad<Real> const
+  error = norm(B - A) / norm(A);
+
+  ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, SymmetricEigen2x2)
+{
+  // Reconstruction A = V * D * transpose(V) must hold for general symmetric
+  // 2x2 tensors, including unequal diagonals with shear. The unequal-diagonal
+  // cases below regress Trilinos issue #15389, where the 2x2 path returned an
+  // inconsistent (V, D) that flipped the off-diagonal sign on reconstruction.
+  std::vector<Tensor<Real>> const tensors = {
+      Tensor<Real>(2.0, 1.0, 1.0, 2.0),        // equal diagonals
+      Tensor<Real>(1.0025, 0.1, 0.1, 1.0025),  // equal diagonals, shear
+      Tensor<Real>(1.168, 0.06, 0.06, 0.922),  // f > h, shear
+      Tensor<Real>(0.922, 0.06, 0.06, 1.168),  // f < h, shear
+      Tensor<Real>(2.0, 0.0, 0.0, 3.0),        // diagonal (g == 0)
+      Tensor<Real>(-1.0, 0.5, 0.5, -2.0)       // negative eigenvalues
+  };
+
+  for (Tensor<Real> const & A : tensors) {
+    Tensor<Real> V(2), D(2);
+
+    std::tie(V, D) = eig_sym(A);
+
+    Tensor<Real> const B = V * D * transpose(V);
+
+    Real const error = norm(A - B) / norm(A);
+
+    ASSERT_LE(error, 2.0 * machine_epsilon<Real>());
+
+    // Eigenvalues are returned in descending order (matches eig_sym_NxN).
+    ASSERT_GE(D(0, 0), D(1, 1));
+  }
+}
+
+TEST(MiniTensor, SymmetricEigen3x3)
+{
+  Tensor<Real> const A(2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0, 1.0, 2.0);
+
+  Tensor<Real> V(3), D(3);
+
+  std::tie(V, D) = eig_sym(A);
+
+  Tensor<Real> const B = V * D * transpose(V);
+
+  Real const error = norm(A - B) / norm(A);
+
+  ASSERT_LE(error, 4.0 * machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, Polar3x3)
+{
+  Tensor<Real> const A(2.0, 1.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 2.0);
+
+  Tensor<Real> R(3), U(3);
+
+  std::tie(R, U) = polar_right(A);
+
+  Tensor<Real> X(3), D(3), Y(3);
+
+  std::tie(X, D, Y) = svd(A);
+
+  Tensor<Real> const B = R - X * transpose(Y) + U - Y * D * transpose(Y);
+
+  Real const error = norm(B) / norm(A);
+
+  ASSERT_LE(error, 8.0 * machine_epsilon<Real>());
+}
+
+TEST(MiniTensor, Cholesky)
+{
+  Tensor<Real> const A(1.0, 1.0, 1.0, 1.0, 5.0, 3.0, 1.0, 3.0, 3.0);
+
+  Tensor<Real> G(3);
+
+  bool is_spd;
+
+  std::tie(G, is_spd) = cholesky(A);
+
+  Tensor<Real> const B(1.0, 0.0, 0.0, 1.0, 2.0, 0.0, 1.0, 1.0, 1.0);
+
+  Real const error = norm(G - B) / norm(A);
+
+  ASSERT_LE(error, machine_epsilon<Real>());
+}
+
 TEST(MiniTensor, EigSymProperties)
 {
   for (Index const dimension : {2, 3, 4}) {
@@ -180,10 +511,6 @@ TEST(MiniTensor, EigSymProperties)
   }
 }
 
-//
-// Symmetric positive-definite eigendecomposition: A = V D V^T with strictly
-// positive eigenvalues.
-//
 TEST(MiniTensor, EigSpdProperties)
 {
   for (Index const dimension : {2, 3, 4}) {
@@ -208,10 +535,6 @@ TEST(MiniTensor, EigSpdProperties)
   }
 }
 
-//
-// Singular value decomposition: A = U S V^T, U and V orthonormal, S diagonal
-// with nonnegative singular values sorted in descending order.
-//
 TEST(MiniTensor, SvdProperties)
 {
   for (Index const dimension : {2, 3, 4}) {
@@ -242,9 +565,6 @@ TEST(MiniTensor, SvdProperties)
   }
 }
 
-//
-// Left polar decomposition: A = V R, R a rotation (proper orthogonal), V SPD.
-//
 TEST(MiniTensor, PolarLeftProperties)
 {
   for (Index const dimension : {2, 3}) {
@@ -269,9 +589,6 @@ TEST(MiniTensor, PolarLeftProperties)
   }
 }
 
-//
-// Right polar decomposition: A = R U, R a rotation (proper orthogonal), U SPD.
-//
 TEST(MiniTensor, PolarRightProperties)
 {
   for (Index const dimension : {2, 3}) {
@@ -296,11 +613,6 @@ TEST(MiniTensor, PolarRightProperties)
   }
 }
 
-//
-// Matrix exponential / logarithm are inverse maps: exp(log(A)) = A for SPD A,
-// and log(exp(A)) = A for symmetric A of moderate norm (so the principal
-// logarithm recovers it).
-//
 TEST(MiniTensor, ExpLogInverseProperties)
 {
   for (Index const dimension : {2, 3}) {
@@ -321,9 +633,6 @@ TEST(MiniTensor, ExpLogInverseProperties)
   }
 }
 
-//
-// Inverse: A A^{-1} = A^{-1} A = I.
-//
 TEST(MiniTensor, InverseProperties)
 {
   for (Index const dimension : {2, 3, 4}) {
@@ -341,4 +650,4 @@ TEST(MiniTensor, InverseProperties)
   }
 }
 
-}  // namespace minitensor
+} // namespace minitensor
