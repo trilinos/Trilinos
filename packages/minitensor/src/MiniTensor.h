@@ -19,5 +19,6 @@
 #include "MiniTensor_Geometry.h"
 #include "MiniTensor_LinearAlgebra.h"
 #include "MiniTensor_Mechanics.h"
+#include "MiniTensor_Quaternion.h"
 
 #endif //MiniTensor_h
