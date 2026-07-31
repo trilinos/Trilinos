@@ -16,6 +16,12 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_containers
+/// @{
+
+///
+/// Storage type alias for Tensor4.
+///
 template<typename T, Index N>
 using tensor4_store = Storage<T, dimension_power<N, 4>::value>;
 
@@ -59,15 +65,26 @@ public:
 
   ///
   /// 4th-order tensor constructor with NaNs
-  /// \param dimension the space dimension
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor4();
 
+  ///
+  /// 4th-order tensor constructor with NaNs
+  /// \param dimension the space dimension
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor4(Index const dimension);
+
+  ///
+  /// Create 4th-order tensor from a specified value
+  /// \param value all components are set equal to this
+  ///
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor4(Filler const value);
 
   ///
   /// Create 4th-order tensor from a specified value
@@ -76,21 +93,21 @@ public:
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
-  Tensor4(Filler const value);
-
-  explicit
-  KOKKOS_INLINE_FUNCTION
   Tensor4(Index const dimension, Filler const value);
 
   ///
   /// Create 4th-order tensor from array
-  /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor4(T const * data_ptr);
 
+  ///
+  /// Create 4th-order tensor from array
+  /// \param dimension the space dimension
+  /// \param data_ptr pointer into the array
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor4(Index const dimension, T const * data_ptr);
@@ -271,6 +288,9 @@ KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
 identity_1();
 
+///
+/// 4th-order identity I1: \f$ \delta_{ik} \delta_{jl} \f$ such that \f$ A = I_1 A \f$.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC> const
@@ -290,6 +310,9 @@ KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
 identity_2();
 
+///
+/// 4th-order identity I2: \f$ \delta_{il} \delta_{jk} \f$ such that \f$ A^T = I_2 A \f$.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC> const
@@ -309,6 +332,9 @@ KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
 identity_3();
 
+///
+/// 4th-order identity I3: \f$ \delta_{ij} \delta_{kl} \f$ such that \f$ I_A I = I_3 A \f$.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC> const
@@ -1106,6 +1132,9 @@ identity_1(Index const dimension)
   return I;
 }
 
+///
+/// 4th-order identity I1: \f$ \delta_{ik} \delta_{jl} \f$ such that \f$ A = I_1 A \f$.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
@@ -1142,6 +1171,9 @@ identity_2(Index const dimension)
   return I;
 }
 
+///
+/// 4th-order identity I2: \f$ \delta_{il} \delta_{jk} \f$ such that \f$ A^T = I_2 A \f$.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
@@ -1178,6 +1210,9 @@ identity_3(Index const dimension)
   return I;
 }
 
+///
+/// 4th-order identity I3: \f$ \delta_{ij} \delta_{kl} \f$ such that \f$ I_A I = I_3 A \f$.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
@@ -1204,6 +1239,9 @@ levi_civita_4()
   return A;
 }
 
+///
+/// Levi-Civita symbol as a 4th-order tensor.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC> const
@@ -1217,6 +1255,9 @@ levi_civita_4(Index const dimension)
   return A;
 }
 
+///
+/// Levi-Civita symbol as a 4th-order tensor.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
@@ -1243,6 +1284,9 @@ permutation_4()
   return levi_civita_4<T, N>();
 }
 
+///
+/// Permutation symbol as a 4th-order tensor; alias of levi_civita_4.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC> const
@@ -1251,6 +1295,9 @@ permutation_4(Index const dimension)
   return levi_civita_4<T>(dimension);
 }
 
+///
+/// Permutation symbol as a 4th-order tensor; alias of levi_civita_4.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
@@ -1270,6 +1317,9 @@ alternator_4()
   return levi_civita_4<T, N>();
 }
 
+///
+/// Alternator as a 4th-order tensor; alias of levi_civita_4.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, DYNAMIC> const
@@ -1279,6 +1329,9 @@ alternator_4(Index const dimension)
 }
 
 
+///
+/// Alternator as a 4th-order tensor; alias of levi_civita_4.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor4<T, N> const
@@ -1731,6 +1784,10 @@ dot_t(Tensor4<T, N> const & A, Tensor<S, N> const & B)
 //
 // \return \f$ C = A \cdot B := C_{ijkl} = A_{ip} B_{pjkl} \f$
 //
+///
+/// 2nd-order by 4th-order dot product.
+/// \return \f$ C_{ijkl} = A_{ip} B_{pjkl} \f$
+///
 template<typename S, typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor4<typename Promote<S, T>::type, N>
@@ -2097,6 +2154,7 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
   return os;
 }
 
+/// @}
 } // namespace minitensor
 
 #endif //MiniTensor_Tensor4_h

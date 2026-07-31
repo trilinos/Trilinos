@@ -20,6 +20,12 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_containers
+/// @{
+
+///
+/// Storage type alias for Vector.
+///
 template<typename T, Index N>
 using vector_store = Storage<T, dimension_power<N, 1>::value>;
 
@@ -63,33 +69,41 @@ public:
 
   ///
   /// Construction that initializes to NaNs
-  /// \param dimension the space dimension
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Vector();
 
+  ///
+  /// Construction that initializes to NaNs.
+  /// \param dimension the space dimension
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Vector(Index const dimension);
 
   ///
   /// Create vector from a specified value
-  /// \param dimension the space dimension
   /// \param value all components are set equal to this
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Vector(Filler const value);
 
+  ///
+  /// Create vector from a specified value.
+  /// \param dimension the space dimension
+  /// \param value all components are set equal to this
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Vector(Index const dimension, Filler const value);
 
   ///
   /// Create vector from array.
-  /// \param dimension the space dimension
-  /// \param data_ptr pointer into the array
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
   ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
@@ -98,6 +112,13 @@ public:
       ArrayT & data,
       Index index1);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -106,6 +127,14 @@ public:
       Index index1,
       Index index2);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -115,6 +144,15 @@ public:
       Index index2,
       Index index3);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -125,6 +163,16 @@ public:
       Index index3,
       Index index4);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -136,6 +184,17 @@ public:
       Index index4,
       Index index5);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  /// \param index6 sixth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -148,6 +207,13 @@ public:
       Index index5,
       Index index6);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -156,6 +222,14 @@ public:
       ArrayT & data,
       Index index1);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -165,6 +239,15 @@ public:
       Index index1,
       Index index2);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -175,6 +258,16 @@ public:
       Index index2,
       Index index3);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -186,6 +279,17 @@ public:
       Index index3,
       Index index4);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION
   Vector(
@@ -198,6 +302,18 @@ public:
       Index index4,
       Index index5);
 
+  ///
+  /// Create vector from array.
+  /// \param source kind of data source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array with source components
+  /// \param index1 first index into the array
+  /// \param index2 second index into the array
+  /// \param index3 third index into the array
+  /// \param index4 fourth index into the array
+  /// \param index5 fifth index into the array
+  /// \param index6 sixth index into the array
+  ///
   template<class ArrayT>
   KOKKOS_INLINE_FUNCTION  
   Vector(
@@ -211,9 +327,18 @@ public:
       Index index5,
       Index index6);
 
+  ///
+  /// Create vector from array defined by pointer.
+  /// \param data_ptr pointer into the array
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector(T const * data_ptr);
 
+  ///
+  /// Create vector from array defined by pointer.
+  /// \param dimension the space dimension
+  /// \param data_ptr pointer into the array
+  ///
   KOKKOS_INLINE_FUNCTION
   Vector(Index const dimension, T const * data_ptr);
 
@@ -226,6 +351,7 @@ public:
   ///
   /// Create vector specifying components
   /// \param s0 s1 are the vector components in the R^2 canonical basis
+  /// \param s1 second vector component in the R^2 canonical basis
   ///
   KOKKOS_INLINE_FUNCTION
   Vector(T const & s0, T const & s1);
@@ -234,6 +360,8 @@ public:
   /// Create vector specifying components
   /// the vector components in the R^3 canonical basis
   /// \param s0 s1 s2 are the vector components in the R^3 canonical basis
+  /// \param s1 second vector component in the R^3 canonical basis
+  /// \param s2 third vector component in the R^3 canonical basis
   ///
   KOKKOS_INLINE_FUNCTION
   Vector(T const & s0, T const & s1, T const & s2);
@@ -1383,6 +1511,7 @@ operator<<(std::ostream & os, Vector<T, N> const & u)
   return os;
 }
 
+/// @}
 } // namespace minitensor
 
 #endif //MiniTensor_Vector_h

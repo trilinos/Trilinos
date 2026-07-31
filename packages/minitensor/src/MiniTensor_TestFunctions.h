@@ -14,6 +14,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_solvers
+/// @{
+
 //
 // Define some nonlinear systems (NLS) to test nonlinear solution methods.
 //
@@ -21,22 +24,40 @@ namespace minitensor {
 //
 //
 //
+///
+/// Square root NLS: the residual is \f$ r(x) = x^2 - c \f$,
+/// whose root is \f$ x = \sqrt{c} \f$. One-dimensional test
+/// for nonlinear system solvers.
+///
 template<typename S, Index M = 1>
 class SquareRoot : public Function_Base<SquareRoot<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  /// \param c Value whose square root is sought.
+  ///
   SquareRoot(S const c) : c_(c)
   {
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Square Root"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<SquareRoot<S, M>, S, M>;
 
   // Default value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -45,6 +66,9 @@ public:
   }
 
   // Explicit gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x) const
@@ -63,6 +87,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -71,6 +98,9 @@ public:
   }
 
 private:
+  ///
+  /// Value whose square root is sought.
+  ///
   S const
   c_{0.0};
 };
@@ -78,21 +108,41 @@ private:
 //
 //
 //
+///
+/// Quadratic NLS: the residual is the gradient of
+/// \f$ c((x_1-a)^2 + (x_2-b)^2) \f$. Two-dimensional, convex,
+/// single minimum at \f$ (a, b) \f$.
+///
 template<typename S, Index M = 2>
 class Quadratic : public Function_Base<Quadratic<S, M>, S, M>
 {
 public:
+  ///
+  /// Constructor.
+  /// \param a First coordinate of the minimizer.
+  /// \param b Second coordinate of the minimizer.
+  /// \param c Curvature scale factor.
+  ///
   Quadratic(S const a, S const b, S const c) :  a_(a), b_(b), c_(c)
   {
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Quadratic"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Quadratic<S, M>, S, M>;
 
   // Default value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -101,6 +151,9 @@ public:
   }
 
   // Explicit gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x) const
@@ -120,6 +173,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -128,12 +184,21 @@ public:
   }
 
 private:
+  ///
+  /// First coordinate of the minimizer.
+  ///
   S const
   a_{0.0};
 
+  ///
+  /// Second coordinate of the minimizer.
+  ///
   S const
   b_{0.0};
 
+  ///
+  /// Curvature scale factor.
+  ///
   S const
   c_{0.0};
 };
@@ -141,21 +206,42 @@ private:
 //
 //
 //
+///
+/// Inverted Gaussian NLS: the residual is the gradient of
+/// \f$ -e^{-c^2((x_1-a)^2+(x_2-b)^2)} \f$ scaled by
+/// \f$ c \f$. Two-dimensional; minimum at \f$ (a, b) \f$,
+/// nearly flat away from it, stressing globalization.
+///
 template<typename S, Index M = 2>
 class Gaussian : public Function_Base<Gaussian<S, M>, S, M>
 {
 public:
+  ///
+  /// Constructor.
+  /// \param a First coordinate of the center (minimizer).
+  /// \param b Second coordinate of the center (minimizer).
+  /// \param c Inverse width of the Gaussian.
+  ///
   Gaussian(S const a, S const b, S const c) : a_(a), b_(b), c_(c)
   {
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Inverted Gaussian"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Gaussian<S, M>, S, M>;
 
   // Default value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -164,6 +250,9 @@ public:
   }
 
   // Explicit gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x) const
@@ -192,6 +281,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -200,12 +292,21 @@ public:
   }
 
 private:
+  ///
+  /// First coordinate of the center.
+  ///
   S const
   a_{0.0};
 
+  ///
+  /// Second coordinate of the center.
+  ///
   S const
   b_{0.0};
 
+  ///
+  /// Inverse width of the Gaussian.
+  ///
   S const
   c_{0.0};
 };
@@ -213,22 +314,40 @@ private:
 //
 //
 //
+///
+/// Rosenbrock's banana function as an NLS: the residual is
+/// the gradient of \f$ (1-x_1)^2 + 100(x_2-x_1^2)^2 \f$.
+/// Two-dimensional; its curved, flat-bottomed valley stresses
+/// step control. Minimum at \f$ (1, 1) \f$.
+///
 template<typename S, Index M = 2>
 class Banana : public Function_Base<Banana<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Banana()
   {
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Rosenbrock's Banana"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Banana<S, M>, S, M>;
 
   // Default value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -237,6 +356,9 @@ public:
   }
 
   // Explicit gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x) const
@@ -256,6 +378,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -268,20 +393,38 @@ public:
 //
 //
 //
+///
+/// Matyas function NLS: the residual is the gradient of
+/// \f$ 0.26(x_1^2+x_2^2) - 0.48 x_1 x_2 \f$.
+/// Two-dimensional, convex but ill-conditioned; minimum at
+/// the origin.
+///
 template<typename S, Index M = 2>
 class Matyas : public Function_Base<Matyas<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Matyas() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Matyas"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Matyas<S, M>, S, M>;
 
   // Default value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -290,6 +433,9 @@ public:
   }
 
   // Explicit gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x) const
@@ -309,6 +455,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -321,20 +470,38 @@ public:
 //
 //
 //
+///
+/// McCormick function NLS: the residual is the gradient of
+/// \f$ \sin(x_1+x_2) + (x_1-x_2)^2 - 1.5 x_1
+/// + 2.5 x_2 + 1 \f$. Two-dimensional with multiple minima;
+/// global minimum near \f$ (-0.547, -1.547) \f$.
+///
 template<typename S, Index M = 2>
 class McCormick : public Function_Base<McCormick<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   McCormick() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"McCormick"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<McCormick<S, M>, S, M>;
 
   // Default value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -343,6 +510,9 @@ public:
   }
 
   // Explicit gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x) const
@@ -362,6 +532,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -374,20 +547,40 @@ public:
 //
 //
 //
+///
+/// Styblinski-Tang function NLS: the residual is the
+/// gradient of
+/// \f$ \frac{1}{2}\sum_{i=1}^{2}
+/// (x_i^4 - 16 x_i^2 + 5 x_i) \f$.
+/// Two-dimensional with multiple local minima; global
+/// minimum at \f$ x_i \approx -2.9035 \f$.
+///
 template<typename S, Index M = 2>
 class StyblinskiTang : public Function_Base<StyblinskiTang<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   StyblinskiTang() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Styblinski-Tang"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<StyblinskiTang<S, M>, S, M>;
 
   // Default value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -396,6 +589,9 @@ public:
   }
 
   // Explicit gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x) const
@@ -415,6 +611,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -431,22 +630,41 @@ public:
 //
 // Paraboloid of revolution
 //
+///
+/// Paraboloid of revolution
+/// \f$ (x_1-x_c)^2 + (x_2-y_c)^2 \f$. Two-dimensional,
+/// convex, single minimum at \f$ (x_c, y_c) \f$.
+///
 template<typename S, Index M = 2>
 class Paraboloid : public Function_Base<Paraboloid<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  /// \param xc First coordinate of the minimizer.
+  /// \param yc Second coordinate of the minimizer.
+  ///
   Paraboloid(S xc = 0.0, S yc = 0.0) : xc_(xc), yc_(yc)
   {
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Paraboloid"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Paraboloid<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -466,6 +684,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -474,6 +695,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -482,9 +706,15 @@ public:
   }
 
 private:
+  ///
+  /// First coordinate of the minimizer.
+  ///
   S
   xc_{0.0};
 
+  ///
+  /// Second coordinate of the minimizer.
+  ///
   S
   yc_{0.0};
 };
@@ -492,22 +722,43 @@ private:
 //
 //
 //
+///
+/// Rosenbrock's function \f$ (a-x_1)^2 + b(x_2-x_1^2)^2 \f$
+/// with defaults \f$ a=1, b=100 \f$. Two-dimensional; its
+/// curved banana valley stresses line search and step
+/// control. Minimum at \f$ (a, a^2) \f$.
+///
 template<typename S, Index M = 2>
 class Rosenbrock : public Function_Base<Rosenbrock<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  /// \param a Location parameter; the minimizer is
+  /// \f$ (a, a^2) \f$.
+  /// \param b Weight of the valley (coupling) term.
+  ///
   Rosenbrock(S a = 1.0, S b = 100.0) : a_(a), b_(b)
   {
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Rosenbrock's Function 2D"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Rosenbrock<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & x)
@@ -522,6 +773,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -530,6 +784,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -538,9 +795,15 @@ public:
   }
 
 private:
+  ///
+  /// Location parameter.
+  ///
   S
   a_{1.0};
 
+  ///
+  /// Weight of the valley (coupling) term.
+  ///
   S
   b_{100.0};
 };
@@ -548,20 +811,37 @@ private:
 //
 // Beale's function
 //
+///
+/// Beale's function \f$ (1.5-x+xy)^2 + (2.25-x+xy^2)^2
+/// + (2.625-x+xy^3)^2 \f$. Two-dimensional with sharp
+/// curved valleys; minimum at \f$ (3, 0.5) \f$.
+///
 template<typename S, Index M = 2>
 class Beale : public Function_Base<Beale<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Beale() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Beale"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Beale<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & X)
@@ -590,6 +870,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -598,6 +881,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -610,20 +896,37 @@ public:
 //
 // Booth's function
 //
+///
+/// Booth's function \f$ (x+2y-7)^2 + (2x+y-5)^2 \f$.
+/// Two-dimensional, convex quadratic; minimum at
+/// \f$ (1, 3) \f$.
+///
 template<typename S, Index M = 2>
 class Booth : public Function_Base<Booth<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Booth() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Booth"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Booth<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & X)
@@ -649,6 +952,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -657,6 +963,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -669,20 +978,39 @@ public:
 //
 // Goldstein-Price function
 //
+///
+/// Goldstein-Price function
+/// \f$ [1+(x+y+1)^2(19-14x+3x^2-14y+6xy+3y^2)] \f$
+/// \f$ [30+(2x-3y)^2(18-32x+12x^2+48y-36xy+27y^2)] \f$.
+/// Two-dimensional with several local minima; global
+/// minimum of 3 at \f$ (0, -1) \f$.
+///
 template<typename S, Index M = 2>
 class GoldsteinPrice : public Function_Base<GoldsteinPrice<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   GoldsteinPrice() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Goldstein-Price"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<GoldsteinPrice<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & X)
@@ -720,6 +1048,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -728,6 +1059,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -740,20 +1074,38 @@ public:
 //
 // Failure function to test failed mechanism
 //
+///
+/// Function that always reports failure: value() sets the
+/// failed flag and returns zero. One-dimensional; exercises
+/// the solvers' failure detection mechanism.
+///
 template<typename S, Index M = 1>
 class Failure : public Function_Base<Failure<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Failure() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Failure"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Failure<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value; flags an unrecoverable failure and
+  /// returns zero.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & X)
@@ -768,6 +1120,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -776,6 +1131,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -788,20 +1146,38 @@ public:
 //
 // Non-monotonic function to test monotonicity enforcement.
 //
+///
+/// Mesa function: \f$ x^2 \f$ plus a plateau of height 100
+/// on \f$ [-1, 1] \f$. One-dimensional, discontinuous and
+/// non-monotonic near the origin; tests monotonicity
+/// enforcement.
+///
 template<typename S, Index M = 1>
 class Mesa : public Function_Base<Mesa<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Mesa() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Mesa"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Mesa<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & X)
@@ -820,6 +1196,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -828,6 +1207,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -840,20 +1222,38 @@ public:
 //
 // Function to test boundedness or residual enforcement.
 //
+///
+/// Steep sigmoid-like monomial \f$ x^{33} \f$.
+/// One-dimensional, extremely flat near the origin and steep
+/// beyond \f$ |x| = 1 \f$; tests boundedness and residual
+/// enforcement.
+///
 template<typename S, Index M = 1>
 class Sigmoid : public Function_Base<Sigmoid<S, M>, S, M>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Sigmoid() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Sigmoid"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Function_Base<Sigmoid<S, M>, S, M>;
 
   // Explicit value.
+  ///
+  /// Objective value.
+  ///
   template<typename T, Index N>
   T
   value(Vector<T, N> const & X)
@@ -883,6 +1283,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient of the objective.
+  ///
   template<typename T, Index N>
   Vector<T, N>
   gradient(Vector<T, N> const & x)
@@ -891,6 +1294,9 @@ public:
   }
 
   // Default AD hessian.
+  ///
+  /// Hessian of the objective.
+  ///
   template<typename T, Index N>
   Tensor<T, N>
   hessian(Vector<T, N> const & x)
@@ -907,20 +1313,36 @@ public:
 //
 // Identity
 //
+///
+/// Identity map equality constraint \f$ c(x) = x \f$ with
+/// NC constraints in NV variables.
+///
 template<typename S, Index NC, Index NV>
 class Identity : public Equality_Constraint<Identity<S, NC, NV>, S, NC, NV>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Identity() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Identity Map"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Equality_Constraint<Identity<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
+  ///
+  /// Constraint value.
+  ///
   template<typename T, Index N>
   Vector<T, NC>
   value(Vector<T, N> const & x)
@@ -930,6 +1352,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient (Jacobian) of the constraint.
+  ///
   template<typename T, Index N>
   Matrix<T, NC, NV>
   gradient(Vector<T, N> const & x)
@@ -941,20 +1366,38 @@ public:
 //
 // A nonlinear function
 //
+///
+/// Nonlinear equality constraints, 3 equations in 5
+/// variables: \f$ x \cdot x - 10 \f$,
+/// \f$ x_2 x_3 - 5 x_4 x_5 \f$,
+/// \f$ x_1^3 + x_2^3 + 1 \f$.
+///
 template<typename S, Index NC = 3, Index NV = 5>
 class Nonlinear01 : public Equality_Constraint<Nonlinear01<S, NC, NV>, S, NC, NV>
 {
 public:
 
+  ///
+  /// Constructor.
+  ///
   Nonlinear01() {}
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Nonlinear 01"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Equality_Constraint<Nonlinear01<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
+  ///
+  /// Constraint value.
+  ///
   template<typename T, Index N = 5>
   Vector<T, NC>
   value(Vector<T, N> const & x)
@@ -974,6 +1417,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient (Jacobian) of the constraint.
+  ///
   template<typename T, Index N = 5>
   Matrix<T, NC, NV>
   gradient(Vector<T, N> const & x)
@@ -985,24 +1431,45 @@ public:
 //
 // Circumference feasible region
 //
+///
+/// Circumference equality constraint
+/// \f$ r^2 - \|x - c\|^2 = 0 \f$: the feasible set is
+/// the circle of radius \f$ r \f$ centered at
+/// \f$ c = (x_c, y_c) \f$.
+///
 template<typename S, Index NC = 1, Index NV = 2>
 class Circumference : public Equality_Constraint<Circumference<S, NC, NV>, S, NC, NV>
 {
 public:
 
+  ///
+  /// Constructor.
+  /// \param r Radius of the circumference.
+  /// \param xc First coordinate of the center.
+  /// \param yc Second coordinate of the center.
+  ///
   Circumference(S const r, S const xc = S(0.0), S const yc = S(0.0)) : r_(r)
   {
     c_(0) = xc;
     c_(1) = yc;
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Circumference"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Equality_Constraint<Circumference<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
+  ///
+  /// Constraint value.
+  ///
   template<typename T, Index N = 2>
   Vector<T, NC>
   value(Vector<T, N> const & x)
@@ -1018,6 +1485,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient (Jacobian) of the constraint.
+  ///
   template<typename T, Index N = 2>
   Matrix<T, NC, NV>
   gradient(Vector<T, N> const & x)
@@ -1026,9 +1496,15 @@ public:
   }
 
 private:
+  ///
+  /// Radius of the circumference.
+  ///
   S
   r_{0.0};
 
+  ///
+  /// Center of the circumference.
+  ///
   Vector<S, NV>
   c_;
 };
@@ -1036,24 +1512,45 @@ private:
 //
 // Circle feasible region
 //
+///
+/// Circle (disk) inequality constraint
+/// \f$ r^2 - \|x - c\|^2 \geq 0 \f$: the feasible set
+/// is the closed disk of radius \f$ r \f$ centered at
+/// \f$ c = (x_c, y_c) \f$.
+///
 template<typename S, Index NC = 1, Index NV = 2>
 class Circle : public Inequality_Constraint<Circle<S, NC, NV>, S, NC, NV>
 {
 public:
 
+  ///
+  /// Constructor.
+  /// \param r Radius of the disk.
+  /// \param xc First coordinate of the center.
+  /// \param yc Second coordinate of the center.
+  ///
   Circle(S const r, S const xc = S(0.0), S const yc = S(0.0)) : r_(r)
   {
     c_(0) = xc;
     c_(1) = yc;
   }
 
+  ///
+  /// Function name.
+  ///
   static constexpr
   char const * const
   NAME{"Circle constraint"};
 
+  ///
+  /// Base class type.
+  ///
   using Base = Inequality_Constraint<Circle<S, NC, NV>, S, NC, NV>;
 
   // Explicit value.
+  ///
+  /// Constraint value.
+  ///
   template<typename T, Index N = 2>
   Vector<T, NC>
   value(Vector<T, N> const & x)
@@ -1069,6 +1566,9 @@ public:
   }
 
   // Default AD gradient.
+  ///
+  /// Gradient (Jacobian) of the constraint.
+  ///
   template<typename T, Index N = 2>
   Matrix<T, NC, NV>
   gradient(Vector<T, N> const & x)
@@ -1077,13 +1577,20 @@ public:
   }
 
 private:
+  ///
+  /// Radius of the disk.
+  ///
   S
   r_{0.0};
 
+  ///
+  /// Center of the disk.
+  ///
   Vector<S, NV>
   c_;
 };
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_TestFunctions_h

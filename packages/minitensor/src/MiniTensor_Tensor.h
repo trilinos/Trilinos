@@ -21,6 +21,12 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_containers
+/// @{
+
+///
+/// Storage type alias for Tensor.
+///
 template<typename T, Index N>
 using tensor_store = Storage<T, dimension_power<N, 2>::value>;
 
@@ -64,15 +70,26 @@ public:
 
   ///
   /// Constructor that initializes to NaNs
-  /// \param dimension the space dimension
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor();
 
+  ///
+  /// Constructor that initializes to NaNs
+  /// \param dimension the space dimension
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(Index const dimension);
+
+  ///
+  /// Create tensor from a specified value
+  /// \param value all components are set equal to this
+  ///
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(Filler const value);
 
   ///
   /// Create tensor from a specified value
@@ -81,153 +98,261 @@ public:
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
-  Tensor(Filler const value);
+  Tensor(Index const dimension, Filler const value);
 
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  ///
+  template<class ArrayT>
   explicit
   KOKKOS_INLINE_FUNCTION
-  Tensor(Index const dimension, Filler const value);
+  Tensor(
+      Source const source,
+      ArrayT & data,
+      Index index1);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      ArrayT & data,
+      Index index1,
+      Index index2);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  /// \param index6 sixth fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      Index const dimension,
+      ArrayT & data,
+      Index index1);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      Index const dimension,
+      ArrayT & data,
+      Index index1,
+      Index index2);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      Index const dimension,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      Index const dimension,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      Index const dimension,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5);
+
+  ///
+  /// Create tensor from array
+  /// \param source the array source (Source::ARRAY)
+  /// \param dimension the space dimension
+  /// \param data array to copy components from
+  /// \param index1 first fixed index into the array
+  /// \param index2 second fixed index into the array
+  /// \param index3 third fixed index into the array
+  /// \param index4 fourth fixed index into the array
+  /// \param index5 fifth fixed index into the array
+  /// \param index6 sixth fixed index into the array
+  ///
+  template<class ArrayT>
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(
+      Source const source,
+      Index const dimension,
+      ArrayT & data,
+      Index index1,
+      Index index2,
+      Index index3,
+      Index index4,
+      Index index5,
+      Index index6);
+
+  ///
+  /// Create tensor from array
+  /// \param data_ptr pointer into the array
+  ///
+  explicit
+  KOKKOS_INLINE_FUNCTION
+  Tensor(T const * data_ptr);
 
   ///
   /// Create tensor from array
   /// \param dimension the space dimension
   /// \param data_ptr pointer into the array
   ///
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      ArrayT & data,
-      Index index1);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      ArrayT & data,
-      Index index1,
-      Index index2);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5,
-      Index index6);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      Index const dimension,
-      ArrayT & data,
-      Index index1);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      Index const dimension,
-      ArrayT & data,
-      Index index1,
-      Index index2);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      Index const dimension,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      Index const dimension,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      Index const dimension,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5);
-
-  template<class ArrayT>
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(
-      Source const source,
-      Index const dimension,
-      ArrayT & data,
-      Index index1,
-      Index index2,
-      Index index3,
-      Index index4,
-      Index index5,
-      Index index6);
-
-  explicit
-  KOKKOS_INLINE_FUNCTION
-  Tensor(T const * data_ptr);
-
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(Index const dimension, T const * data_ptr);
@@ -247,6 +372,9 @@ public:
   ///
   /// Create tensor specifying components
   /// \param  s00 s01 ... components in the R^2 canonical basis
+  /// \param s01 component in the R^2 canonical basis
+  /// \param s10 component in the R^2 canonical basis
+  /// \param s11 component in the R^2 canonical basis
   ///
   //
   explicit
@@ -256,6 +384,14 @@ public:
   ///
   /// Create tensor specifying components
   /// \param  s00 s01 ... components in the R^3 canonical basis
+  /// \param s01 component in the R^3 canonical basis
+  /// \param s02 component in the R^3 canonical basis
+  /// \param s10 component in the R^3 canonical basis
+  /// \param s11 component in the R^3 canonical basis
+  /// \param s12 component in the R^3 canonical basis
+  /// \param s20 component in the R^3 canonical basis
+  /// \param s21 component in the R^3 canonical basis
+  /// \param s22 component in the R^3 canonical basis
   ///
   explicit
   KOKKOS_INLINE_FUNCTION
@@ -273,6 +409,12 @@ public:
   KOKKOS_INLINE_FUNCTION
   Tensor(T const * data_ptr, ComponentOrder const component_order);
 
+  ///
+  /// Create tensor from array
+  /// \param dimension the space dimension
+  /// \param data_ptr pointer into the array
+  /// \param component_order component convention (3D only)
+  ///
   explicit
   KOKKOS_INLINE_FUNCTION
   Tensor(
@@ -2160,6 +2302,9 @@ zero()
   return Tensor<T, N>(N, Filler::ZEROS);
 }
 
+///
+/// Zero 2nd-order tensor.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC> const
@@ -2168,6 +2313,9 @@ zero(Index const dimension)
   return Tensor<T, DYNAMIC>(dimension, Filler::ZEROS);
 }
 
+///
+/// Zero 2nd-order tensor.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N> const
@@ -2244,6 +2392,9 @@ identity()
   return A;
 }
 
+///
+/// Identity 2nd-order tensor.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC> const
@@ -2257,6 +2408,9 @@ identity(Index const dimension)
   return A;
 }
 
+///
+/// Identity 2nd-order tensor.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N> const
@@ -2282,6 +2436,9 @@ eye()
   return identity<T, N>();
 }
 
+///
+/// Identity 2nd-order tensor; alias of identity.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC> const
@@ -2290,6 +2447,9 @@ eye(Index const dimension)
   return identity<T, DYNAMIC>(dimension);
 }
 
+///
+/// Identity 2nd-order tensor; alias of identity.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N> const
@@ -2314,6 +2474,9 @@ levi_civita_2()
   return A;
 }
 
+///
+/// Levi-Civita symbol as a 2nd-order tensor.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC> const
@@ -2327,6 +2490,9 @@ levi_civita_2(Index const dimension)
   return A;
 }
 
+///
+/// Levi-Civita symbol as a 2nd-order tensor.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N> const
@@ -2352,6 +2518,9 @@ permutation_2()
   return levi_civita_2<T, N>();
 }
 
+///
+/// Permutation symbol as a 2nd-order tensor; alias of levi_civita_2.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC> const
@@ -2361,6 +2530,9 @@ permutation_2(Index const dimension)
 }
 
 
+///
+/// Permutation symbol as a 2nd-order tensor; alias of levi_civita_2.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N> const
@@ -2380,6 +2552,9 @@ alternator_2()
   return levi_civita_2<T, N>();
 }
 
+///
+/// Alternator as a 2nd-order tensor; alias of levi_civita_2.
+///
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, DYNAMIC> const
@@ -2388,6 +2563,9 @@ alternator_2(Index const dimension)
   return levi_civita_2<T, DYNAMIC>(dimension);
 }
 
+///
+/// Alternator as a 2nd-order tensor; alias of levi_civita_2.
+///
 template<typename T, Index N>
 KOKKOS_INLINE_FUNCTION
 Tensor<T, N> const
@@ -2649,6 +2827,7 @@ operator<<(std::ostream & os, Tensor<T, N> const & A)
   return os;
 }
 
+/// @}
 } // namespace minitensor
 
 #endif //MiniTensor_Tensor_h

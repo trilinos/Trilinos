@@ -16,6 +16,9 @@
 
 namespace minitensor {
 
+/// \addtogroup minitensor_rotations
+/// @{
+
 ///
 /// Logarithmic map of a rotation
 /// \param R with \f$ R \in SO(3) \f$
@@ -269,6 +272,7 @@ exp_skew_symmetric(Tensor<T, N> const & r)
   return R;
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Rotations_h

@@ -18,6 +18,10 @@
 
 namespace minitensor
 {
+
+/// \addtogroup minitensor_solvers
+/// @{
+
 /// The Fad type to use.
 template<typename T, int N>
 using FAD = Sacado::Fad::SLFad<T, N>;
@@ -32,6 +36,9 @@ template<typename FunctionDerived, typename S, Index M>
 struct Function_Base
 {
 public:
+  ///
+  /// Maximum dimension of the argument vectors.
+  ///
   static constexpr
   Index
   DIMENSION{M};
@@ -69,18 +76,34 @@ public:
   Tensor<T, N>
   hessian(FunctionDerived & f, Vector<T, N> const & x);
 
+  ///
+  /// Mark the function as failed and optionally set a failure
+  /// message.
+  ///
   void
   set_failed(char const * const msg = nullptr);
 
+  ///
+  /// Return whether the function has failed.
+  ///
   bool
   get_failed();
 
+  ///
+  /// Clear the failure flag.
+  ///
   void
   clear_failed();
 
+  ///
+  /// Set the failure message.
+  ///
   void
   set_failure_message(char const * const msg = nullptr);
 
+  ///
+  /// Return the failure message.
+  ///
   char const *
   get_failure_message();
 
@@ -109,6 +132,7 @@ public:
   }
 
   ///
+  /// Return the value of the constraints at point x.
   ///
   template<typename T, Index N>
   Vector<T, NC>
@@ -121,6 +145,9 @@ public:
   Matrix<T, NC, NV>
   gradient(ConstraintDerived & c, Vector<T, N> const & x);
 
+  ///
+  /// This is an equality constraint.
+  ///
   static constexpr
   bool
   IS_EQUALITY{true};
@@ -131,10 +158,16 @@ public:
   bool
   failed{false};
 
+  ///
+  /// Number of constraints.
+  ///
   static constexpr
   Index
   NUM_CONSTR{NC};
 
+  ///
+  /// Number of variables.
+  ///
   static constexpr
   Index
   NUM_VAR{NV};
@@ -147,6 +180,9 @@ template<typename ConstraintDerived, typename S, Index NC, Index NV>
 struct Inequality_Constraint :
     public Equality_Constraint<ConstraintDerived, S, NC, NV>
 {
+  ///
+  /// This is not an equality constraint.
+  ///
   static constexpr
   bool
   IS_EQUALITY{false};
@@ -158,11 +194,20 @@ struct Inequality_Constraint :
 template<typename T, Index N>
 struct Bounds
 {
+  ///
+  /// Construct bounds from lower bound l and upper bound u.
+  ///
   Bounds(Vector<T, N> const & l, Vector<T, N> const & u);
 
+  ///
+  /// Lower bound.
+  ///
   Vector<T, N>
   lower;
 
+  ///
+  /// Upper bound.
+  ///
   Vector<T, N>
   upper;
 };
@@ -176,124 +221,253 @@ struct Minimizer
 public:
   Minimizer();
 
+  ///
+  /// Minimize the function fn starting from x using the given
+  /// step method. On return x contains the solution found.
+  ///
   template<typename STEP, typename FN>
   void
   solve(STEP & step_method, FN & fn, Vector<T, N> & x);
 
+  ///
+  /// Print a summary report of the minimization to the stream
+  /// os.
+  ///
   void
   printReport(std::ostream & os);
 
 private:
+  ///
+  /// Update the absolute and relative errors and the
+  /// convergence status.
+  ///
   void
   updateConvergenceCriterion(T const abs_error);
 
+  ///
+  /// Update the monotonicity, stagnation and boundedness
+  /// status with the latest function value.
+  ///
   void
   updateDivergenceCriterion(T const fn_value);
 
+  ///
+  /// Return whether the iteration loop should continue.
+  ///
   bool
   continueSolve() const;
 
+  ///
+  /// Record the final solution, function value, gradient and
+  /// Hessian.
+  ///
   template<typename FN>
   void
   recordFinals(FN & fn, Vector<T, N> const & x);
 
 public:
+  ///
+  /// Maximum number of iterations allowed.
+  ///
   Index
   max_num_iter{256};
 
+  ///
+  /// Minimum number of iterations to perform.
+  ///
   Index
   min_num_iter{0};
 
+  ///
+  /// Number of iterations taken.
+  ///
   Index
   num_iter{0};
 
+  ///
+  /// Number of consecutive stagnant iterations so far.
+  ///
   Index
   num_stagnation_iter{0};
 
+  ///
+  /// Maximum number of consecutive stagnant iterations
+  /// allowed.
+  ///
   Index
   max_stagnation_iter{0};
 
+  ///
+  /// Norm of the initial residual, \f$ \|R_0\| \f$.
+  ///
   T
   initial_norm{1.0};
 
+  ///
+  /// Relative error tolerance.
+  ///
   T
   rel_tol{1.0e-12};
 
+  ///
+  /// Current relative error, \f$ \|R\| / \|R_0\| \f$.
+  ///
   T
   rel_error{1.0};
 
+  ///
+  /// Absolute error tolerance.
+  ///
   T
   abs_tol{1.0e-12};
 
+  ///
+  /// Acceptable absolute tolerance applied at the last
+  /// iteration.
+  ///
   T
   acc_tol{1.0e-12};  
 
+  ///
+  /// Reduction ratio above which an iteration is considered
+  /// stagnant.
+  ///
   T
   stagnation_tol{1.0};
 
+  ///
+  /// Current absolute error, \f$ \|R\| \f$.
+  ///
   T
   abs_error{1.0};
 
+  ///
+  /// Growth factor over the initial value beyond which the
+  /// objective function is considered unbounded.
+  ///
   T
   growth_limit{1.0};
 
+  ///
+  /// Initial value of the objective function.
+  ///
   T
   initial_value{0.0};
 
+  ///
+  /// Value of the objective function at the previous
+  /// iteration.
+  ///
   T
   previous_value{0.0};
 
+  ///
+  /// Final value of the objective function.
+  ///
   T
   final_value{0.0};
 
+  ///
+  /// Whether the minimization failed.
+  ///
   bool
   failed{false};
 
+  ///
+  /// Whether a warning was issued.
+  ///
   bool
   warning{false};
   
+  ///
+  /// Whether the minimization converged.
+  ///
   bool
   converged{false};
 
+  ///
+  /// Whether the objective function decreased monotonically.
+  ///
   bool
   monotonic{true};
 
+  ///
+  /// Whether the objective function remained bounded.
+  ///
   bool
   bounded{true};
 
+  ///
+  /// Whether the iteration remained non-stagnant.
+  ///
   bool
   non_stagnant{true};
 
+  ///
+  /// If true, fail when the objective function is
+  /// non-monotonic.
+  ///
   bool
   enforce_monotonicity{false};
 
+  ///
+  /// If true, fail when the objective function grows
+  /// unbounded.
+  ///
   bool
   enforce_boundedness{false};
 
+  ///
+  /// If true, warn when the residual stagnates.
+  ///
   bool
   enforce_non_stagnation{false};
 
+  ///
+  /// Initial guess.
+  ///
   Vector<T, N>
   initial_guess;
 
+  ///
+  /// Final solution.
+  ///
   Vector<T, N>
   final_soln;
 
+  ///
+  /// Gradient at the final solution.
+  ///
   Vector<T, N>
   final_gradient;
 
+  ///
+  /// Hessian at the final solution.
+  ///
   Tensor<T, N>
   final_hessian;
 
+  ///
+  /// Name of the step method used.
+  ///
   char const *
   step_method_name{nullptr};
 
+  ///
+  /// Name of the function being minimized.
+  ///
   char const *
   function_name{nullptr};
 
+  ///
+  /// Message describing a failure, if any.
+  ///
   char const *
   failure_message{"No failure detected"};
 
+  ///
+  /// Message describing a warning, if any.
+  ///
   char const *
   warning_message{"No warning detected"};  
 };
@@ -304,13 +478,23 @@ public:
 template<typename T, Index N>
 struct NewtonLineSearch
 {
+  ///
+  /// Perform a Newton line search from soln along direction
+  /// and return the resulting step.
+  ///
   template<typename FN>
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln);
 
+  ///
+  /// Maximum number of line search iterations.
+  ///
   Index
   max_num_iter{16};
 
+  ///
+  /// Convergence tolerance on the step length.
+  ///
   T
   tolerance{1.0e-6};
 };
@@ -321,25 +505,49 @@ struct NewtonLineSearch
 template<typename T, Index N>
 struct BacktrackingLineSearch
 {
+  ///
+  /// Perform a back-tracking line search from soln along
+  /// direction and return the resulting step.
+  ///
   template<typename FN>
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln);
 
+  ///
+  /// Maximum number of iterations.
+  ///
   Index
   max_num_iter{100};
 
+  ///
+  /// Maximum number of line iterations before increasing the
+  /// search parameter.
+  ///
   Index
   max_line_iter{10};
 
+  ///
+  /// Sufficient-decrease parameter for the residual norm.
+  ///
   T
   search_parameter{0.5};
 
+  ///
+  /// Increment applied to the search parameter when the line
+  /// iterations are exhausted.
+  ///
   T
   search_increment{0.1};
 
+  ///
+  /// Line search step length multiplier.
+  ///
   T
   alpha{1.0};
 
+  ///
+  /// Convergence tolerance.
+  ///
   T
   tolerance{1.0e-6};
 };
@@ -350,9 +558,16 @@ struct BacktrackingLineSearch
 template<typename T, Index N>
 struct TrustRegionSubproblemBase
 {
+  ///
+  /// Preconditioner used by the linear solver.
+  ///
   PreconditionerType
   preconditioner_type{PreconditionerType::IDENTITY};
 
+  ///
+  /// Solve the linear system \f$ A x = b \f$ with
+  /// preconditioning.
+  ///
   Vector<T, N>
   lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b);
 };
@@ -364,12 +579,22 @@ struct TrustRegionSubproblemBase
 template<typename T, Index N>
 struct TrustRegionExactValue : public TrustRegionSubproblemBase<T, N>
 {
+  ///
+  /// Compute the trust-region step for the given Hessian and
+  /// gradient.
+  ///
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
 
+  ///
+  /// Maximum number of iterations for the subproblem.
+  ///
   Index
   max_num_iter{4};
 
+  ///
+  /// Trust-region radius \f$ \Delta \f$.
+  ///
   T
   region_size{1.0};
 };
@@ -381,12 +606,22 @@ struct TrustRegionExactValue : public TrustRegionSubproblemBase<T, N>
 template<typename T, Index N>
 struct TrustRegionExactGradient : public TrustRegionSubproblemBase<T, N>
 {
+  ///
+  /// Compute the trust-region step for the given Hessian and
+  /// gradient.
+  ///
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
 
+  ///
+  /// Maximum number of iterations for the subproblem.
+  ///
   Index
   max_num_iter{4};
 
+  ///
+  /// Trust-region radius \f$ \Delta \f$.
+  ///
   T
   region_size{1.0};
 }; 
@@ -398,9 +633,16 @@ struct TrustRegionExactGradient : public TrustRegionSubproblemBase<T, N>
 template<typename T, Index N>
 struct TrustRegionDogLegValue : public TrustRegionSubproblemBase<T, N>
 {
+  ///
+  /// Compute the dog-leg step for the given Hessian and
+  /// gradient.
+  ///
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
 
+  ///
+  /// Trust-region radius \f$ \Delta \f$.
+  ///
   T
   region_size{1.0};
 };
@@ -412,9 +654,16 @@ struct TrustRegionDogLegValue : public TrustRegionSubproblemBase<T, N>
 template<typename T, Index N>
 struct TrustRegionDogLegGradient : public TrustRegionSubproblemBase<T, N>
 {
+  ///
+  /// Compute the dog-leg step for the given Hessian and
+  /// gradient.
+  ///
   Vector<T, N>
   step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient);
 
+  ///
+  /// Trust-region radius \f$ \Delta \f$.
+  ///
   T
   region_size{1.0};
 }; 
@@ -433,14 +682,25 @@ struct StepBase
     static_assert(is_fad == false, "AD types not allowed for type T");
   }
 
+  ///
+  /// Return the name of the step method.
+  ///
   virtual
   char const *
   name() = 0;
 
+  ///
+  /// Initialize the step method with function fn, initial
+  /// guess x and residual r.
+  ///
   virtual
   void
   initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r) = 0;
 
+  ///
+  /// Compute a step for function fn at point x with residual
+  /// r.
+  ///
   virtual
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r) = 0;
@@ -448,9 +708,16 @@ struct StepBase
   virtual
   ~StepBase() {}
 
+  ///
+  /// Preconditioner used by the linear solver.
+  ///
   PreconditionerType
   preconditioner_type{PreconditionerType::IDENTITY};
 
+  ///
+  /// Solve the linear system \f$ A x = b \f$ with
+  /// preconditioning.
+  ///
   Vector<T, N>
   lin_solve(Tensor<T, N> const & A, Vector<T, N> const & b);
 };
@@ -481,10 +748,16 @@ stepFactory(StepType step_type);
 template<typename FN, typename T, Index N>
 struct NewtonStep : public StepBase<FN, T, N>
 {
+  ///
+  /// Name of the step method.
+  ///
   static constexpr
   char const * const
   NAME{"Newton"};
 
+  ///
+  /// Return the name of the step method.
+  ///
   virtual
   char const *
   name()
@@ -492,10 +765,16 @@ struct NewtonStep : public StepBase<FN, T, N>
     return NAME;
   }
 
+  ///
+  /// Initialize the step method.
+  ///
   virtual
   void
   initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
 
+  ///
+  /// Compute a full Newton step.
+  ///
   virtual
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
@@ -511,10 +790,16 @@ struct NewtonStep : public StepBase<FN, T, N>
 template<typename FN, typename T, Index N>
 struct NewtonWithLineSearchStep : public StepBase<FN, T, N>
 {
+  ///
+  /// Name of the step method.
+  ///
   static constexpr
   char const * const
   NAME{"Newton with Line Search"};
 
+  ///
+  /// Return the name of the step method.
+  ///
   virtual
   char const *
   name()
@@ -522,10 +807,17 @@ struct NewtonWithLineSearchStep : public StepBase<FN, T, N>
     return NAME;
   }
 
+  ///
+  /// Initialize the step method.
+  ///
   virtual
   void
   initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
 
+  ///
+  /// Compute a Newton step followed by a back-tracking line
+  /// search.
+  ///
   virtual
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
@@ -540,10 +832,16 @@ struct NewtonWithLineSearchStep : public StepBase<FN, T, N>
 template<typename FN, typename T, Index N>
 struct TrustRegionStep : public StepBase<FN, T, N>
 {
+  ///
+  /// Name of the step method.
+  ///
   static constexpr
   char const * const
   NAME{"Trust Region"};
 
+  ///
+  /// Return the name of the step method.
+  ///
   virtual
   char const *
   name()
@@ -551,10 +849,17 @@ struct TrustRegionStep : public StepBase<FN, T, N>
     return NAME;
   }
 
+  ///
+  /// Initialize the trust-region radius.
+  ///
   virtual
   void
   initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
 
+  ///
+  /// Compute a trust-region step. See Nocedal 2nd Ed,
+  /// algorithm 11.5.
+  ///
   virtual
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
@@ -562,16 +867,28 @@ struct TrustRegionStep : public StepBase<FN, T, N>
   virtual
   ~TrustRegionStep() {}
 
+  ///
+  /// Maximum trust-region radius.
+  ///
   T
   max_region_size{10.0};
 
+  ///
+  /// Initial trust-region radius.
+  ///
   T
   initial_region_size{10.0};
 
+  ///
+  /// Minimum reduction ratio to accept a step.
+  ///
   T
   min_reduction{0.0};
 
 private:
+  ///
+  /// Current trust-region radius \f$ \Delta \f$.
+  ///
   T
   region_size{0.0};
 };
@@ -582,10 +899,16 @@ private:
 template<typename FN, typename T, Index N>
 struct ConjugateGradientStep : public StepBase<FN, T, N>
 {
+  ///
+  /// Name of the step method.
+  ///
   static constexpr
   char const * const
   NAME{"Preconditioned Conjugate Gradient"};
 
+  ///
+  /// Return the name of the step method.
+  ///
   virtual
   char const *
   name()
@@ -593,10 +916,18 @@ struct ConjugateGradientStep : public StepBase<FN, T, N>
     return NAME;
   }
 
+  ///
+  /// Initialize the search direction and preconditioned
+  /// residual.
+  ///
   virtual
   void
   initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
 
+  ///
+  /// Compute a preconditioned conjugate gradient step
+  /// (Polak-Ribiere).
+  ///
   virtual
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
@@ -604,19 +935,36 @@ struct ConjugateGradientStep : public StepBase<FN, T, N>
   virtual
   ~ConjugateGradientStep() {}
 
+  ///
+  /// Number of iterations between restarts of the search
+  /// directions.
+  ///
   Index
   restart_directions_interval{32};
 
 private:
+  ///
+  /// Current search direction.
+  ///
   Vector<T, N>
   search_direction;
 
+  ///
+  /// Preconditioned residual.
+  ///
   Vector<T, N>
   precon_resi;
 
+  ///
+  /// Latest projection used by the Polak-Ribiere formula.
+  ///
   T
   projection_new{0.0};
 
+  ///
+  /// Iterations since the last restart of the search
+  /// directions.
+  ///
   Index
   restart_directions_counter{0};
 };
@@ -627,10 +975,16 @@ private:
 template<typename FN, typename T, Index N>
 struct LineSearchRegularizedStep : public StepBase<FN, T, N>
 {
+  ///
+  /// Name of the step method.
+  ///
   static constexpr
   char const * const
   NAME{"Line Search Regularized"};
 
+  ///
+  /// Return the name of the step method.
+  ///
   virtual
   char const *
   name()
@@ -638,10 +992,17 @@ struct LineSearchRegularizedStep : public StepBase<FN, T, N>
     return NAME;
   }
 
+  ///
+  /// Initialize the step method.
+  ///
   virtual
   void
   initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
 
+  ///
+  /// Compute a regularized Newton step followed by a Newton
+  /// line search. See Nocedal 2nd Ed, algorithm 11.4.
+  ///
   virtual
   Vector<T, N>
   step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
@@ -649,9 +1010,16 @@ struct LineSearchRegularizedStep : public StepBase<FN, T, N>
   virtual
   ~LineSearchRegularizedStep() {}
 
+  ///
+  /// Trust-region size used to regularize a bad Hessian.
+  ///
   T
   step_length{1.0};
 
+  ///
+  /// Hessian condition number above which regularization is
+  /// applied.
+  ///
   T
   hessian_cond_tol{1.0e+08};
 };
@@ -1818,6 +2186,9 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
 //
 //
 //
+///
+/// Construct the step object for the given step type.
+///
 template<typename FN, typename T, Index N>
 std::unique_ptr<StepBase<FN, T, N>>
 stepFactory(StepType step_type)
@@ -1854,6 +2225,7 @@ stepFactory(StepType step_type)
   return STUP(nullptr);
 }
 
+/// @}
 } // namespace minitensor
 
 #endif // MiniTensor_Solvers_h
