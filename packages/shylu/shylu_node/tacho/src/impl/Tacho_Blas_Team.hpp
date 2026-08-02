@@ -217,25 +217,40 @@ template <typename T> struct BlasTeam {
 
       const bool use_unit_diag = diag == 'U' || diag == 'u';
       T *KOKKOS_RESTRICT b0 = b;
-      for (int p = (m - 1); p >= 0; --p) {
-        const int iend = p;
+      if (use_unit_diag) {
+        for (int p = (m - 1); p >= 0; --p) {
+          const int iend = p;
 
-        const T *KOKKOS_RESTRICT a01 = A + p * as1;
-        /**/ T *KOKKOS_RESTRICT beta1 = b + p * bs0;
+          const T *KOKKOS_RESTRICT a01 = A + p * as1;
+          /**/  T *KOKKOS_RESTRICT beta1 = b + p * bs0;
 
-        /// make sure the previous iteration update is done
-        member.team_barrier();
-        T local_beta1 = *beta1;
-        if (!use_unit_diag) {
+          /// make sure the previous iteration update is done
+          member.team_barrier();
+          T local_beta1 = *beta1;
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend),
+                               [&](const int &i) { b0[i * bs0] -= cjA(a01[i * as0]) * local_beta1; });
+        }
+      } else {
+        for (int p = (m - 1); p >= 0; --p) {
+          const int iend = p;
+
+          const T *KOKKOS_RESTRICT a01 = A + p * as1;
+          /**/  T *KOKKOS_RESTRICT beta1 = b + p * bs0;
+
+          /// make sure the previous iteration update is done
+          member.team_barrier();
+          T local_beta1 = *beta1;
           const T alpha11 = cjA(A[p * as0 + p * as1]);
           local_beta1 /= alpha11;
           /// before modifying beta1 we need make sure
           /// that every local_beta1 has the previous beta1 value
           member.team_barrier();
           Kokkos::single(Kokkos::PerTeam(member), [&]() { *beta1 = local_beta1; });
+
+          // update remaining vector entries
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend),
+                               [&](const int &i) { b0[i * bs0] -= cjA(a01[i * as0]) * local_beta1; });
         }
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend),
-                             [&](const int &i) { b0[i * bs0] -= cjA(a01[i * as0]) * local_beta1; });
       }
     }
 
@@ -247,27 +262,37 @@ template <typename T> struct BlasTeam {
         return;
 
       const bool use_unit_diag = diag == 'U' || diag == 'u';
-      // T *KOKKOS_RESTRICT b0 = b;
-      for (int p = 0; p < m; ++p) {
-        const int iend = m - p - 1;
+      if (use_unit_diag) {
+        for (int p = 0; p < m; ++p) {
+          const int iend = m - p - 1;
+          const T *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
+          /**/  T *KOKKOS_RESTRICT beta1 = b + p * bs0, *KOKKOS_RESTRICT b2 = iend ? beta1 + bs0 : NULL;
 
-        const T *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
+          /// make sure that the previous iteration update is done
+          member.team_barrier();
+          T local_beta1 = *beta1;
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend),
+                               [&](const int &i) { b2[i * bs0] -= cjA(a21[i * as0]) * local_beta1; });
+        }
+      } else {
+        for (int p = 0; p < m; ++p) {
+          const int iend = m - p - 1;
+          const T *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
+          /**/  T *KOKKOS_RESTRICT beta1 = b + p * bs0, *KOKKOS_RESTRICT b2 = iend ? beta1 + bs0 : NULL;
 
-        T *KOKKOS_RESTRICT beta1 = b + p * bs0, *KOKKOS_RESTRICT b2 = iend ? beta1 + bs0 : NULL;
-
-        /// make sure that the previous iteration update is done
-        member.team_barrier();
-        T local_beta1 = *beta1;
-        if (!use_unit_diag) {
+          /// make sure that the previous iteration update is done
+          member.team_barrier();
+          T local_beta1 = *beta1;
           const T alpha11 = A[p * as0 + p * as1];
           local_beta1 /= alpha11;
           /// before modifying beta1 we need make sure
           /// that every local_beta1 has the previous beta1 value
           member.team_barrier();
           Kokkos::single(Kokkos::PerTeam(member), [&]() { *beta1 = local_beta1; });
+
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend),
+                               [&](const int &i) { b2[i * bs0] -= cjA(a21[i * as0]) * local_beta1; });
         }
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend),
-                             [&](const int &i) { b2[i * bs0] -= cjA(a21[i * as0]) * local_beta1; });
       }
     }
 
@@ -461,7 +486,7 @@ template <typename T> struct BlasTeam {
           const int iend = p, jend = n;
 
           const T *KOKKOS_RESTRICT a01 = A + p * as1;
-          /**/ T *KOKKOS_RESTRICT b1t = B + p * bs0;
+          /**/  T *KOKKOS_RESTRICT b1t = B + p * bs0;
 
           member.team_barrier();
           if (!use_unit_diag) {
@@ -499,75 +524,27 @@ template <typename T> struct BlasTeam {
           const int iend = m - p - 1, jend = n;
 
           const T *KOKKOS_RESTRICT a21 = iend ? A + (p + 1) * as0 + p * as1 : NULL;
-
-          T *KOKKOS_RESTRICT b1t = B + p * bs0, *KOKKOS_RESTRICT B2 = iend ? B + (p + 1) * bs0 : NULL;
+          /**/  T *KOKKOS_RESTRICT b1t = B + p * bs0, *KOKKOS_RESTRICT B2 = iend ? B + (p + 1) * bs0 : NULL;
 
           member.team_barrier();
           const T alpha11 = cjA(A[p * as0 + p * as1]);
-          if (!use_unit_diag) {
-            if (alpha11 == zero) {
-              // zeroing out off-diagonals
-              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] = zero; });
-            } else {
+          if (alpha11 == zero) { // either for unit or non-unit diag
+            // zeroing out off-diagonals
+            Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] = zero; });
+            member.team_barrier();
+          } else {
+            if (!use_unit_diag) {
               // scaling with diagonals
               Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] /= alpha11; });
+              member.team_barrier();
             }
-            member.team_barrier();
           }
 
-          if (use_unit_diag || alpha11 != zero) {
+          if (alpha11 != zero) {
             // skip updating with zero-diagonals (because all off-diagonals were zeroed out)
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
                                    [&](const int &i) { B2[i * bs0 + j * bs1] -= cjA(a21[i * as0]) * b1t[j * bs1]; });
-            });
-          }
-        }
-      }
-    }
-
-    template <typename ConjType, typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void trsm_defs_left_upper(MemberType &member, const ConjType &cjA, const char diag,
-                                                            const int m, const int n, const T alpha, const T *KOKKOS_RESTRICT A,
-                                                            const int as0, const int as1,
-                                                            /* */ T *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-      const T one(1.0), zero(0.0);
-
-      // note that parallel range is different ( m*n vs m-1*n);
-      if (alpha == zero)
-        set(member, m, n, zero, B, bs0, bs1);
-      else {
-        if (alpha != one)
-          scale(member, m, n, alpha, B, bs0, bs1);
-        if (m <= 0 || n <= 0)
-          return;
-
-        const bool use_unit_diag = diag == 'U' || diag == 'u';
-        T *KOKKOS_RESTRICT B0 = B;
-        for (int p = (m - 1); p >= 0; --p) {
-          const int iend = p, jend = n;
-
-          const T *KOKKOS_RESTRICT a01 = A + p * as1;
-          /* */ T *KOKKOS_RESTRICT b1t = B + p * bs0;
-
-          member.team_barrier();
-          const T alpha11 = cjA(A[p * as0 + p * as1]);
-          if (!use_unit_diag) {
-            if (alpha11 == zero) {
-              // zeroing out off-diagonals
-              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] = zero; });
-            } else {
-              // scaling with diagonals
-              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { b1t[j * bs1] /= alpha11; });
-            }
-            member.team_barrier();
-          }
-
-          if (use_unit_diag || alpha11 != zero) {
-            // skip updating with zero-diagonals (because all off-diagonals were zeroed out)
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, iend),
-                                   [&](const int &i) { B0[i * bs0 + j * bs1] -= cjA(a01[i * as0]) * b1t[j * bs1]; });
             });
           }
         }
@@ -1041,6 +1018,7 @@ template <typename T> struct BlasTeam {
           // calling left "LOWER" trsm with incA=lda and lda=1
           NoConjugate cjA;
           Impl::trsm_defs_left_lower(member, cjA, diag, m, n, alpha, a, lda, 1, b, 1, ldb);
+          break;
         }
         case 'C':
         case 'c': {

@@ -943,6 +943,7 @@ public:
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
             int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
 
             if (n_m > 0) {
@@ -1021,6 +1022,7 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
             int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
 
             // Apply TRSM to off-diagonal blocks
@@ -1124,6 +1126,7 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
             int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -2232,7 +2235,7 @@ public:
               checkDeviceBlasStatus("gemv");
             }
 
-            // Apply D^{-1} on off-diagonal
+            // Apply D^{-1} on off-diagonal (note: this checks for zero-diag, and skip if zero)
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, tT);
             checkDeviceBlasStatus("scale");
 
@@ -2299,7 +2302,7 @@ public:
               checkDeviceBlasStatus("gemv");
             }
 
-            // Apply D^{-1} on off-diagonal
+            // Apply D^{-1} on off-diagonal (note: this checks for zero-diag, and skip if zero)
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, bT);
             checkDeviceBlasStatus("scale");
 
@@ -2357,6 +2360,7 @@ public:
             checkDeviceBlasStatus("trmv");
 
             // Apply D^{-1} on diagonal (already updated using this block, also n >= m so diagonal block is stored first in aptr)
+            // (note: this checks for zero-diag, and skip if zero)
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, dx);
             checkDeviceBlasStatus("scale");
@@ -3779,11 +3783,12 @@ public:
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
       const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
       // returned value from team Chol
-      rval_view d_rval("rval",1);
-      auto h_rval = Kokkos::create_mirror_view(host_memory_space(), d_rval);
+      rval_view t_rval("t_rval",1); // rval from team call
+      rval_view d_rval("d_rval",1); // rval from device call
+      auto h_rval = Kokkos::create_mirror_view(host_memory_space(), t_rval);
       {
         typedef TeamFunctor_FactorizeChol<supernode_info_type> functor_type;
-        functor_type functor(_info, _factorize_mode, _level_sids, _buf, d_rval.data());
+        functor_type functor(_info, _factorize_mode, _level_sids, _buf, t_rval.data());
         if (pivot_tol > 0.0) {
           functor.setDiagPertubationTol(pivot_tol);
         }
@@ -3828,8 +3833,8 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());;
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());;
 
               // create policies
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
@@ -3862,7 +3867,7 @@ public:
               Kokkos::fence(); time_device += tick.seconds();
               tick.reset();
             }
-            Kokkos::deep_copy(h_rval, d_rval);
+            Kokkos::deep_copy(h_rval, t_rval);
             int rval = h_rval(0);
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
@@ -4213,8 +4218,8 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());
 
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
@@ -4587,8 +4592,8 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());
 
               // create policies
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);

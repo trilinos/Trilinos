@@ -130,6 +130,7 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> {
 };
 
 // diagonal scaling
+// from left
 template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
   template <typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(const ViewTypeD &D, const ViewTypeA &A) {
@@ -174,6 +175,7 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
  }
 };
 
+// from right
 template <> struct Scale_BlockInverseDiagonals<Side::Right, Algo::Internal> {
   template <typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(const ViewTypeD &D, const ViewTypeA &A) {

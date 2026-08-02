@@ -115,16 +115,16 @@ struct Trsm_defs<ArgSide, ArgUplo, ArgTransA, Algo::OnDevice> {
     const auto policy_scale = policy_type(exec_instance, 0, n);
     for (ordinal_type i = 0; i < m; i++) {
       Kokkos::parallel_for(policy_scale, KOKKOS_LAMBDA(const ordinal_type &j) {
-        if (A(i, i) == zero ) {
+        if (A(i, i) == zero ) { // either for unit or non-unit diag
           // if tiny pivot, zero out off-diagonal
           B(i, j) = zero;
-        } else {
+        } else if (B(i, j) != zero) {
           if (diagA.param != 'U') {
             // scale
             B(i, j) /= A(i, i);
           }
-          // update
-          for (ordinal_type k=j+1; k<m; k++) B(k, j) -= A(k, i) * B(i, j);
+          // update (transpose)
+          for (ordinal_type k=i+1; k<m; k++) B(k, j) -= A(i,k) * B(i, j);
         }
       });
     }

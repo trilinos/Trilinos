@@ -100,6 +100,7 @@ public:
           Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                                      ATR);
           // reset zero-diagonal to one
+          member.team_barrier();
           Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::reset_zero_diags(member, ATL);
         } else {
           Trsm<Side::Left, Uplo::Upper, Trans::Transpose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,

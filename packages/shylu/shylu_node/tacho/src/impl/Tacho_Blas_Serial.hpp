@@ -481,7 +481,7 @@ template <typename T> struct BlasSerial {
                                                             /* */ T *B, int ldb) {
     typedef ArithTraits<T> arith_traits;
     const T one(1.0), zero(0.0);
-    
+
     if (alpha == zero) {
       for (int j = 0; j < n; j++) {
         for (int i = 0; i < m; i++) {
@@ -505,20 +505,22 @@ template <typename T> struct BlasSerial {
         if (transa == 'T' || transa == 't') {
           // Transpose-solve with Upper-triangular matrix from Left, U^{-T} * B
           for (int i = 0; i < m; i++) {
-            if (A[i + i*lda] == zero) {
+            if (A[i + i*lda] == zero) { // for either unit or non-unit diag
               // zero-out off-diagonal
               for (int j = 0; j < n; j++) {
                 B[i + j*ldb] = zero;
               }
             } else {
               for (int j = 0; j < n; j++) {
-                // scale
-                if (diag != 'U' && diag != 'u') {
-                  B[i + j*ldb] /= A[i + i*lda];
-                }
-                // update
-                for (int l = i+1; l < m; l++) {
-                  B[l + j*ldb] -= A[i + l*lda] * B[i + j*ldb];
+                if (B[i + j*ldb] != zero) {
+                  // scale
+                  if (diag != 'U' && diag != 'u') {
+                    B[i + j*ldb] /= A[i + i*lda];
+                  }
+                  // update
+                  for (int l = i+1; l < m; l++) {
+                    B[l + j*ldb] -= A[i + l*lda] * B[i + j*ldb];
+                  }
                 }
               }
             }
@@ -526,7 +528,7 @@ template <typename T> struct BlasSerial {
         } else if (transa == 'C' || transa == 'c') {
           // Conjugate-solve with Upper-triangular matrix from Left, U^{-T} * B
           for (int i = 0; i < m; i++) {
-            if (A[i + i*lda] == zero) {
+            if (A[i + i*lda] == zero) { //// for either unit or non-unit diag
               // zero-out off-diagonal
               for (int j = 0; j < n; j++) {
                 B[i + j*ldb] = zero;

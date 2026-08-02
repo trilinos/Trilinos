@@ -199,47 +199,6 @@ template <typename T> struct LapackTeam {
         member.team_barrier();
       }
     }
-
-    template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void sytrf_lower_nopiv(const MemberType &member, const double tol,
-                                                         const int m, T *KOKKOS_RESTRICT A,
-                                                         const int as0, const int as1, int *info) {
-      *info = 0;
-      if (m <= 0)
-        return;
-
-      int r_val = 0;
-      typedef ArithTraits<T> arith_traits;
-      const T zero (0.0);
-      for (int p = 0; p < m; ++p) {
-        const int iend = m - p - 1;
-
-        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1, *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)*as1,
-                        *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
-
-        if (arith_traits::abs(*alpha11) < tol) {
-          *alpha11 = zero; // mark it with zero
-          // zero out off-diagonal (assuming we hit null-space)
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend), [&](const int &i) { a21[i * as0] = zero; });
-          r_val ++;
-        } else {
-          const auto alpha = *alpha11; // arith_traits::real(*alpha11);
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend), [&](const int &i) { a21[i * as0] /= alpha; });
-          member.team_barrier();
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, iend), [&](const int &i) {
-            const T aa = a21[i * as0];
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, i + 1), [&](const int &j) {
-              const T bb = a21[j * as0];
-              A22[i * as0 + j * as1] -= alpha * aa * bb;
-            });
-          });
-        }
-        member.team_barrier();
-        if (r_val > 0) {
-          // TODO: atomic-add to info
-        }
-      }
-    }
   };
 
   template <typename MemberType>
@@ -432,46 +391,46 @@ template <typename T> struct LapackTeam {
     }
   }
 
-    template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void sytrf_nopiv(const MemberType &member, const char uplo, const bool conjugate,
-                                                   const double tol, const int m,
-                                                   T *KOKKOS_RESTRICT A, const int lda, int *info) {
-      (*info) = 0;
-      if (m <= 0)
-        return;
+  template <typename MemberType>
+  static KOKKOS_INLINE_FUNCTION void sytrf_nopiv(const MemberType &member, const char uplo, const bool conjugate,
+                                                 const double tol, const int m,
+                                                 T *KOKKOS_RESTRICT A, const int lda, int *info) {
+    (*info) = 0;
+    if (m <= 0)
+      return;
 
-      typedef ArithTraits<T> arith_traits;
+    typedef ArithTraits<T> arith_traits;
 
-      // upper
-      const T zero (0);
-      for (int p = 0; p < m; ++p) {
-        const int jend = m - p - 1;
+    // upper
+    const T zero (0);
+    for (int p = 0; p < m; ++p) {
+      const int jend = m - p - 1;
 
-        T *KOKKOS_RESTRICT alpha11 = A + (p)     + (p)*lda,
-          *KOKKOS_RESTRICT a12t    = A + (p)     + (p + 1) * lda,
-          *KOKKOS_RESTRICT A22     = A + (p + 1) + (p + 1) * lda;
+      T *KOKKOS_RESTRICT alpha11 = A + (p)     + (p)*lda,
+        *KOKKOS_RESTRICT a12t    = A + (p)     + (p + 1) * lda,
+        *KOKKOS_RESTRICT A22     = A + (p + 1) + (p + 1) * lda;
 
-        if (arith_traits::abs(*alpha11) < tol) {
-          // mark tiny diagonal with zero
-          *alpha11 = zero;
-          // zero out off-diagonal
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * lda] = zero; });
-          (*info) ++;
-        } else {
-          const auto alpha = *alpha11;
-          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * lda] /= alpha; });
-          member.team_barrier();
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
-            const T aa = alpha * a12t[j * lda];
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int &i) {
-              const T bb = (conjugate ? arith_traits::conj(a12t[i * lda]) : a12t[i * lda]);
-              A22[i + j * lda] -= aa * bb;
-            });
-          });
-        }
+      if (arith_traits::abs(*alpha11) < tol) {
+        // mark tiny diagonal with zero
+        *alpha11 = zero;
+        // zero out off-diagonal
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * lda] = zero; });
+        (*info) ++;
+      } else {
+        const auto alpha = *alpha11;
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * lda] /= alpha; });
         member.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
+          const T aa = alpha * a12t[j * lda];
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int &i) {
+            const T bb = (conjugate ? arith_traits::conj(a12t[i * lda]) : a12t[i * lda]);
+            A22[i + j * lda] -= aa * bb;
+          });
+        });
       }
+      member.team_barrier();
     }
+  }
 };
 
 } // namespace Tacho
