@@ -129,8 +129,8 @@ polar decompositions and condition numbers.
 
 /*!
 \defgroup minitensor_matrix_functions Matrix Functions
-\brief Tensor exponential, logarithm and square root families, and the
-Baker-Campbell-Hausdorff series.
+\brief Tensor exponential, logarithm and square root families, integer
+powers, and the Baker-Campbell-Hausdorff series.
 */
 
 /*!
