@@ -73,7 +73,7 @@ void scale_to_unit_bbox(stk::mesh::BulkData& mesh)
   const unsigned spatialDim = mesh.mesh_meta_data().spatial_dimension();
   stk::mesh::field_data_execute<double,stk::mesh::ReadOnly>(*coordField,
   [&](auto& coordData) {
-    stk::mesh::for_each_entity_run(mesh, stk::topology::NODE_RANK, mesh.mesh_meta_data().universal_part(),
+    stk::mesh::for_each_entity_run_no_threads(mesh, stk::topology::NODE_RANK, mesh.mesh_meta_data().universal_part(),
       [&](const stk::mesh::BulkData&, stk::mesh::Entity node) {
         auto coord = coordData.entity_values(node);
         const bool nonNegative = coord(0_comp) >= 0.0 && coord(1_comp) >= 0.0 &&

@@ -44,7 +44,6 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/HostMesh.hpp>
-#include <stk_mesh/base/NgpFieldParallel.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
 #include <stk_mesh/base/Selector.hpp>

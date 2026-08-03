@@ -82,7 +82,7 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
     keep_coincident_elements_together(stkMeshBulkData, changeList);
   }
 
-  if (balanceSettings.shouldFixSpiders()) {
+  if (balanceSettings.shouldFixSpiders() && not balanceSettings.shouldGroupSpiderLegs()) {
     internal::logMessage(stkMeshBulkData.parallel(), "Fixing spider elements");
     stk::balance::internal::fix_spider_elements(balanceSettings, stkMeshBulkData, changeList);
   }

@@ -99,6 +99,7 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_contact_search(settings);
   set_contact_search_tolerance(settings);
   set_fix_spiders(settings);
+  set_group_spider_legs(settings);
   set_fix_mechanisms(settings);
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
@@ -170,8 +171,12 @@ void Parser::add_options_to_parser()
   stk::CommandLineOption contactSearch{m_optionNames.contactSearch, "",
                            "Use proximity search for contact [on|off]"};
   stk::CommandLineOption fixSpiders{m_optionNames.fixSpiders, "",
-                           "Correct the decomp to group spider legs (large collection of beam "
-                           "elements connected to a single node) onto fewer processors [on|off]"};
+                           "Correct the decomp to place spider legs (large collection of beam "
+                           "elements connected to a single node) on the same processor as the "
+                           "volume elements at the end of each leg [on|off]"};
+  stk::CommandLineOption groupSpiderLegs{m_optionNames.groupSpiderLegs, "",
+                           "If fixing spider elements, group all legs and the volume elements at the "
+                           "ends of the legs onto a single processor for each spider [on|off]"};
   stk::CommandLineOption fixMechanisms{m_optionNames.fixMechanisms, "",
                            "Remove mechanisms (partition components connected by a hinge) in "
                            "the decomp by reassigning element ownership [on|off]"};
@@ -224,6 +229,7 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_optional_implicit(faceSearchRelTol, DefaultSettings::faceSearchRelTol);
   m_commandLineParser.add_optional(contactSearch, (DefaultSettings::useContactSearch) ? "on" : "off");
   m_commandLineParser.add_optional(fixSpiders, (DefaultSettings::fixSpiders) ? "on" : "off");
+  m_commandLineParser.add_optional(groupSpiderLegs, (DefaultSettings::groupSpiderLegs) ? "on" : "off");
   m_commandLineParser.add_optional(fixMechanisms, (DefaultSettings::fixMechanisms) ? "on" : "off");
   m_commandLineParser.add_optional(decompMethod, DefaultSettings::decompMethod);
   m_commandLineParser.add_optional(vertexWeightBlockMultiplier, DefaultSettings::vertexWeightBlockMultiplier);
@@ -338,6 +344,19 @@ void Parser::set_fix_spiders(BalanceSettings& settings) const
         "Invalid spider fixing argument (" + fixSpiders + ").  Must be one of: [on|off]");
 
     settings.setShouldFixSpiders(fixSpiders == "on");
+  }
+}
+
+void Parser::set_group_spider_legs(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.groupSpiderLegs)) {
+    std::string groupSpiderLegs = m_commandLineParser.get_option_value<std::string>(m_optionNames.groupSpiderLegs);
+    std::transform(groupSpiderLegs.begin(), groupSpiderLegs.end(), groupSpiderLegs.begin(), ::tolower);
+
+    STK_ThrowRequireMsg(groupSpiderLegs == "on" || groupSpiderLegs == "off",
+        "Invalid spider leg grouping argument (" + groupSpiderLegs + ").  Must be one of: [on|off]");
+
+    settings.setShouldGroupSpiderLegs(groupSpiderLegs == "on");
   }
 }
 
