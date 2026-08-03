@@ -11,8 +11,7 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 # CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS exports via .def, but consumers still need
 # __declspec(dllimport) for DATA (e.g. wdvTrackingEnabled) or LNK2019 results.
 SET(CURRENT_PACKAGE TPETRA)
-CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in" ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
 #
 # B) Define the header and source files (and directories)
@@ -689,8 +688,7 @@ ENDIF()
 TRIBITS_ADD_LIBRARY(
   tpetra
   HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEFINES -DTPETRA_LIB_EXPORTS_MODE
+  SOURCES ${SOURCES} DEFINES -DTPETRA_LIB_EXPORTS_MODE
   ADDED_LIB_TARGET_NAME_OUT TPETRA_LIBNAME
 )
 
