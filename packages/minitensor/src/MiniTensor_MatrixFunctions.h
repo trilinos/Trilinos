@@ -127,6 +127,18 @@ KOKKOS_INLINE_FUNCTION
 Tensor<T, N>
 bch(Tensor<T, N> const & v, Tensor<T, N> const & r);
 
+///
+/// Non-negative integer power of a tensor by binary manipulation of the
+/// exponent, so that the number of multiplications is logarithmic in it.
+/// \param A tensor
+/// \param exponent non-negative integer exponent
+/// \return \f$ A^{\text{exponent}} \f$, the identity if the exponent is zero
+///
+template<typename T, Index N>
+KOKKOS_INLINE_FUNCTION
+Tensor<T, N>
+binary_powering(Tensor<T, N> const & A, Index const exponent);
+
 //
 // Exponential map
 //
@@ -2946,6 +2958,8 @@ gauss_legendre_weights(Index const m, Index const n)
   return x;
 }
 
+} // namespace impl
+
 //
 // Compute a non-negative integer power of a tensor by binary manipulation.
 //
@@ -3007,8 +3021,6 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
 
   return X;
 }
-
-} // namespace impl
 
 //
 // Exponential map by squaring and scaling and Padé approximants.
@@ -3099,7 +3111,7 @@ expm_ell(Tensor<Real, N> const & A, Index const m)
   }
 
   Tensor<Real, N> const
-  Q = impl::binary_powering(P, 2 * m + 1);
+  Q = binary_powering(P, 2 * m + 1);
 
   Real const
   alpha = norm_1(Q) / (norm_A * c_recip);
@@ -3273,7 +3285,7 @@ template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
       Index const
       exponent = (1U << power_two);
 
-      B = impl::binary_powering(R, exponent);
+      B = binary_powering(R, exponent);
 
   }
 

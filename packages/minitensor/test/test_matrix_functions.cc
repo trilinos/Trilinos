@@ -237,4 +237,27 @@ TEST(MiniTensor, BakerCampbellHausdorff)
   ASSERT_LE(error, tolerance);
 }
 
+TEST(MiniTensor, BinaryPowering)
+{
+  Tensor<Real> const A(1.1, 0.2, 0.3, 0.4, 1.2, 0.5, 0.6, 0.7, 1.3);
+
+  // Qualified on purpose: binary_powering is part of the public
+  // interface and external packages call it as minitensor::binary_powering.
+  ASSERT_LE(norm(minitensor::binary_powering(A, 0) - eye<Real>(3)),
+      machine_epsilon<Real>());
+
+  Tensor<Real> B = eye<Real>(3);
+
+  for (Index exponent = 1; exponent <= 9; ++exponent) {
+
+    B = B * A;
+
+    Real const
+    error = norm(minitensor::binary_powering(A, exponent) - B) / norm(B);
+
+    ASSERT_LE(error, 128.0 * machine_epsilon<Real>());
+
+  }
+}
+
 } // namespace minitensor
