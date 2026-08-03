@@ -396,11 +396,14 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           int *iwork   = reinterpret_cast <int*> (&(WORK(0)));
           num_match = trilinos_btf_maxtrans ((int)A.nrow, (int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
         } else {
-          long int *col_ptr = reinterpret_cast <long int*> (&(A.col_ptr(0)));
-          long int *row_idx = reinterpret_cast <long int*> (&(A.row_idx(0)));
-          long int *order   = reinterpret_cast <long int*> (&(order_match_array(0)));
-          long int *iwork   = reinterpret_cast <long int*> (&(WORK(0)));
-          num_match = trilinos_btf_l_maxtrans ((long int)A.nrow, (long int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
+          // NOTE: must be UF_long (not plain `long int`); on Win64 (LLP64) UF_long
+          // is __int64 (64-bit) while `long` is only 32-bit, and trilinos_btf_l_maxtrans
+          // always takes UF_long* (see trilinos_UFconfig.h).
+          UF_long *col_ptr = reinterpret_cast <UF_long*> (&(A.col_ptr(0)));
+          UF_long *row_idx = reinterpret_cast <UF_long*> (&(A.row_idx(0)));
+          UF_long *order   = reinterpret_cast <UF_long*> (&(order_match_array(0)));
+          UF_long *iwork   = reinterpret_cast <UF_long*> (&(WORK(0)));
+          num_match = trilinos_btf_l_maxtrans ((UF_long)A.nrow, (UF_long)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
         }
         #if 0
         printf( " >> debug: set order_match to identity <<\n" );
