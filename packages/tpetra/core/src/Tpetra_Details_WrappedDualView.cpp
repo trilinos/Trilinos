@@ -12,7 +12,7 @@
 namespace Tpetra {
 namespace Details {
 
-bool wdvTrackingEnabled = true;
+TPETRA_LIB_DLL_EXPORT bool wdvTrackingEnabled = true;
 
 void enableWDVTracking() {
   if (wdvTrackingEnabled)
