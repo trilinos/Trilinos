@@ -94,7 +94,8 @@ void snip_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& preservedHingeNodes
 {
   stk::mesh::EntityVector affectedNodes = get_affected_nodes(bulk, blocksToDisconnect);
 
-  snip_all_hinges_for_input_nodes(bulk, affectedNodes, preservedHingeNodes);
+  stk::tools::EdgeMidNodeDetector midNodeDetector(bulk);
+  snip_all_hinges_for_input_nodes(midNodeDetector, affectedNodes, preservedHingeNodes);
 
   info.snipTime = stk::wall_time();
 }

@@ -182,6 +182,7 @@ public:
 
   virtual bool shouldFixMechanisms() const;
   virtual bool shouldFixSpiders() const;
+  virtual bool shouldGroupSpiderLegs() const;
   virtual std::string getSpiderPartName() const;
   virtual std::string getSpiderVolumeConnectivityCountFieldName() const;
   virtual std::string getOutputSubdomainFieldName() const;
@@ -209,6 +210,7 @@ public:
 
   virtual void setShouldFixMechanisms(bool /*fixMechanisms*/) { }
   virtual void setShouldFixSpiders(bool /*fixSpiders*/) { }
+  virtual void setShouldGroupSpiderLegs(bool /*groupSpiderLegs*/) { }
   virtual void setEdgeWeightForSearch(double /*w*/) { }
   virtual void setVertexWeightMultiplierForVertexInSearch(double /*w*/) { }
   virtual void setToleranceForFaceSearch(double /*tol*/) { }
@@ -285,10 +287,12 @@ public:
   virtual void setEdgeWeightForSearch(double w) override;
   virtual void setVertexWeightMultiplierForVertexInSearch(double w) override;
   virtual void setShouldFixSpiders(bool fixSpiders) override;
+  virtual void setShouldGroupSpiderLegs(bool groupSpiderLegs) override;
   virtual void setShouldFixMechanisms(bool fixMechanisms) override;
 
   virtual bool shouldFixMechanisms() const override;
   virtual bool shouldFixSpiders() const override;
+  virtual bool shouldGroupSpiderLegs() const override;
   virtual stk::mesh::Part * getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const override;
   virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
   virtual const stk::mesh::Field<int> * getOutputSubdomainField(const stk::mesh::BulkData & stkMeshBulkData) const override;
@@ -312,6 +316,7 @@ protected:
   double m_edgeWeightForSearch;
   bool m_UseConstantToleranceForFaceSearch;
   bool m_shouldFixSpiders;
+  bool m_shouldGroupSpiderLegs;
   bool m_shouldFixMechanisms;
   mutable stk::mesh::Part * m_spiderPart;
   mutable const stk::mesh::Field<int> * m_spiderVolumeConnectivityCountField;

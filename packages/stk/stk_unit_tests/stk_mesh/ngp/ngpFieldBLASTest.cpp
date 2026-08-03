@@ -51,7 +51,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
-#include <stk_mesh/base/NgpFieldBLAS.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include "NgpFieldTestUtils.hpp"
 #include <string>

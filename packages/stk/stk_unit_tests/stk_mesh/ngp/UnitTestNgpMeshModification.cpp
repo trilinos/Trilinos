@@ -4153,7 +4153,7 @@ TEST_F(NgpMeshMod, PartCorrectnessAfterDeviceMeshUpdate)
   build_empty_mesh(1, 1);
 
   stk::mesh::Part& part1 = m_meta->declare_part_with_topology("part1", stk::topology::NODE);
-  const stk::mesh::Entity entity1 = create_node(*m_bulk, 1, {&part1});
+  create_node(*m_bulk, 1, {&part1});
 
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
@@ -4161,7 +4161,7 @@ TEST_F(NgpMeshMod, PartCorrectnessAfterDeviceMeshUpdate)
   }
 
   stk::mesh::Part& part2 = m_meta->declare_part_with_topology("part2", stk::topology::HEX_8);
-  const stk::mesh::Entity entity2 = create_element(*m_bulk, 2, {&part2});
+  create_element(*m_bulk, 2, {&part2});
 
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
@@ -4186,7 +4186,7 @@ TEST_F(NgpMeshMod, PartCorrectnessAfterDeviceMeshUpdate_NoEntitiesAdded)
   build_empty_mesh(1, 1);
 
   stk::mesh::Part& part1 = m_meta->declare_part_with_topology("part1", stk::topology::NODE);
-  const stk::mesh::Entity entity1 = create_node(*m_bulk, 1, {&part1});
+  create_node(*m_bulk, 1, {&part1});
 
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);

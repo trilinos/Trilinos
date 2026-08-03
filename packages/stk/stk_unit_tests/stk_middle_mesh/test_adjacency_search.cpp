@@ -464,9 +464,8 @@ TEST(AdjacencySearch, UnreachableCutCorner)
                                
   mesh::impl::AdjacencySearch search(mesh1, mesh2);
 
-  mesh::MeshEntityPtr el1;
   std::vector<mesh::MeshEntityPtr> entities;
-  while ((el1 = search.get_next(entities)))
+  while (search.get_next(entities))
   {
     EXPECT_EQ(entities.size(), 7u);
 

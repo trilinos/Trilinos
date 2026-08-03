@@ -58,7 +58,7 @@ public:
 
   stk::mesh::Entity get_element1() const { return elem1; }
   stk::mesh::Entity get_element2() const { return elem2; }
-  const stk::mesh::EntityVector& get_common_nodes() { return commonNodes; }
+  const stk::mesh::EntityVector& get_common_nodes() const { return commonNodes; }
   bool is_adjacent() const { return hasAdjacentFace; }
   void set_adjacency(bool adjacent) { hasAdjacentFace = adjacent; }
 
@@ -68,14 +68,26 @@ public:
   }
 
 private:
-  const stk::mesh::BulkData* bulk = nullptr;
+  const stk::mesh::BulkData* bulk{nullptr};
   stk::mesh::Entity elem1;
   stk::mesh::Entity elem2;
   stk::mesh::EntityVector commonNodes;
-  bool hasAdjacentFace = false;
+  bool hasAdjacentFace{false};
 };
 
 typedef std::vector<PairwiseSideInfo> PairwiseSideInfoVector;
+
+struct PairwiseNodeElementRelation
+{
+  PairwiseNodeElementRelation(stk::mesh::Entity node_,
+                              stk::mesh::Entity elem1_,
+                              stk::mesh::Entity elem2_)
+  : node(node_), elem1(elem1_), elem2(elem2_) {}
+
+  stk::mesh::Entity node;
+  stk::mesh::Entity elem1;
+  stk::mesh::Entity elem2;
+};
 
 } // namespace impl
 

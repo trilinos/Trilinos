@@ -110,13 +110,15 @@ MPI_Datatype float_int64_type();
 MPI_Datatype double_int64_type();
 MPI_Datatype double_int32_type();
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2026
 /**
  * @brief Function <code>double_complex_sum_op</code> returns a sum operation for the C++
  * complex MPI data type.
  *
  * @return a <code>MPI_Op</code> ...
  */
-MPI_Op double_complex_sum_op();
+STK_DEPRECATED_MSG("Prefer real_std_complex_sum_op or real_kokkos_complex_sum_op") MPI_Op double_complex_sum_op();
+#endif
 
 /**
  * @brief Function <code>real_complex_sum_op</code> returns a sum operation for the C++

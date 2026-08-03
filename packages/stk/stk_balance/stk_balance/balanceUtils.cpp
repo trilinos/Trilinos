@@ -299,6 +299,11 @@ bool BalanceSettings::shouldFixSpiders() const
   return false;
 }
 
+bool BalanceSettings::shouldGroupSpiderLegs() const
+{
+  return false;
+}
+
 std::string BalanceSettings::getSpiderPartName() const
 {
   return "stk_balance_spider_elements";
@@ -429,6 +434,7 @@ GraphCreationSettings::GraphCreationSettings()
     m_edgeWeightForSearch(DefaultSettings::faceSearchEdgeWeight),
     m_UseConstantToleranceForFaceSearch(false),
     m_shouldFixSpiders(DefaultSettings::fixSpiders),
+    m_shouldGroupSpiderLegs(DefaultSettings::groupSpiderLegs),
     m_shouldFixMechanisms(DefaultSettings::fixMechanisms),
     m_spiderPart(nullptr),
     m_spiderVolumeConnectivityCountField(nullptr),
@@ -838,6 +844,11 @@ void GraphCreationSettings::setShouldFixSpiders(bool fixSpiders)
   m_shouldFixSpiders = fixSpiders;
 }
 
+void GraphCreationSettings::setShouldGroupSpiderLegs(bool groupSpiderLegs)
+{
+  m_shouldGroupSpiderLegs = groupSpiderLegs;
+}
+
 void GraphCreationSettings::setShouldFixMechanisms(bool fixMechanisms)
 {
   m_shouldFixMechanisms = fixMechanisms;
@@ -851,6 +862,11 @@ bool GraphCreationSettings::shouldFixMechanisms() const
 bool GraphCreationSettings::shouldFixSpiders() const
 {
   return m_shouldFixSpiders;
+}
+
+bool GraphCreationSettings::shouldGroupSpiderLegs() const
+{
+  return m_shouldGroupSpiderLegs;
 }
 
 stk::mesh::Part * GraphCreationSettings::getSpiderPart(const stk::mesh::BulkData & stkMeshBulkData) const
