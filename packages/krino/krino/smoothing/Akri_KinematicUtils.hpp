@@ -48,11 +48,11 @@ minitensor::Tensor<double, 2> compute_deformation_gradient_tri3_2d(
     const std::array<stk::math::Vector2d, 3> & ref,
     const std::array<stk::math::Vector2d, 3> & cur);
 
-std::array<stk::math::Vector3d, 4>
+std::array<double, 12>
 tet4_forces_from_stress(const double refSize,
     const minitensor::Tensor<double, 3> & P);
 
-std::array<stk::math::Vector3d, 4>
+std::array<double, 12>
 tet4_forces_from_stress(const std::array<stk::math::Vector3d, 4> & ref,
     const minitensor::Tensor<double, 3> & P);
 
@@ -86,6 +86,13 @@ std::pair<bool, minitensor::Tensor<double, N>> safe_inverse(const minitensor::Te
   if (is_invertible(A))
     return std::make_pair(true, minitensor::inverse(A));
   return std::make_pair(false, A);
+}
+
+template<size_t NDOF>
+void fill_element_sensitivity(const std::array<double, NDOF> & sens,
+    std::vector<double> & elemGradContrib)
+{
+  elemGradContrib.assign(sens.begin(), sens.end());
 }
 
 }

@@ -226,7 +226,7 @@ Tensor2d seth_hill_stress_2d(const Tensor2d & F, const double J, const SethHillP
 }
 
 template<typename ELEMCOORDS>
-std::array<stk::math::Vector3d, 4>
+std::array<double, 12>
 SethHillSmoothingObjective::compute_tet4_element_forces(
     const double refSize,
     const ELEMCOORDS & current_coords,
@@ -239,12 +239,10 @@ SethHillSmoothingObjective::compute_tet4_element_forces(
     return {};
 
   const Tensor P = seth_hill_stress(F, J, params);
-  const std::array<stk::math::Vector3d, 4> forces = kinematicUtils::tet4_forces_from_stress(refSize, P);
-
-  return forces;
+  return kinematicUtils::tet4_forces_from_stress(refSize, P);
 }
 
-std::array<stk::math::Vector3d, 4>
+std::array<double, 12>
 SethHillSmoothingObjective::compute_tet4_element_forces(
     const std::array<stk::math::Vector3d, 4> & ref,
     const std::array<stk::math::Vector3d, 4> & current_coords,
@@ -257,9 +255,7 @@ SethHillSmoothingObjective::compute_tet4_element_forces(
     return {};
 
   const Tensor P = seth_hill_stress(F, J, params);
-  const std::array<stk::math::Vector3d, 4> forces = kinematicUtils::tet4_forces_from_stress(ref, P);
-
-  return forces;
+  return kinematicUtils::tet4_forces_from_stress(ref, P);
 }
 
 template<typename ELEMCOORDS>
@@ -368,28 +364,17 @@ void SethHillSmoothingObjective::fill_element_sensitivity(
 {
   STK_ThrowAssert((spatialDim == 2 && (npe == 3 || npe == 6)) || (spatialDim == 3 && (npe == 4 || npe == 10)));
   if (spatialDim == 2)
-  {
-    const auto forces = compute_tri3_2d_element_forces(refSize, elemNodeCoords, mySethHillParams);
-    elemGradContrib.resize(npe*spatialDim);
-    for (unsigned i = 0; i < npe*spatialDim; ++i)
-      elemGradContrib[i] = forces[i];
-  }
+    kinematicUtils::fill_element_sensitivity(compute_tri3_2d_element_forces(refSize, elemNodeCoords, mySethHillParams), elemGradContrib);
   else
-  {
-    const auto forces = compute_tet4_element_forces(refSize, elemNodeCoords, mySethHillParams);
-    elemGradContrib.resize(npe*spatialDim);
-    for (unsigned i = 0; i < 4; ++i)
-      for (unsigned j = 0; j < spatialDim; ++j)
-        elemGradContrib[spatialDim*i + j] = forces[i][j];
-  }
+    kinematicUtils::fill_element_sensitivity(compute_tet4_element_forces(refSize, elemNodeCoords, mySethHillParams), elemGradContrib);
 }
 
 // explicit template instantiation
 using CONSTPTRCONSTPTR = double const * const *;
 template double SethHillSmoothingObjective::compute_tet4_element_energy(const double refSize, const std::array<stk::math::Vector3d, 4> & current_coords, const SethHillParams & params);
 template double SethHillSmoothingObjective::compute_tet4_element_energy(const double refSize, const CONSTPTRCONSTPTR & current_coords, const SethHillParams & params);
-template std::array<stk::math::Vector3d, 4> SethHillSmoothingObjective::compute_tet4_element_forces(const double refSize, const std::array<stk::math::Vector3d, 4> & current_coords, const SethHillParams & params);
-template std::array<stk::math::Vector3d, 4> SethHillSmoothingObjective::compute_tet4_element_forces(const double refSize, const CONSTPTRCONSTPTR & current_coords, const SethHillParams & params);
+template std::array<double, 12> SethHillSmoothingObjective::compute_tet4_element_forces(const double refSize, const std::array<stk::math::Vector3d, 4> & current_coords, const SethHillParams & params);
+template std::array<double, 12> SethHillSmoothingObjective::compute_tet4_element_forces(const double refSize, const CONSTPTRCONSTPTR & current_coords, const SethHillParams & params);
 template double SethHillSmoothingObjective::compute_tri3_2d_element_energy(const double refSize, const std::array<stk::math::Vector2d, 3> & current_coords, const SethHillParams & params);
 template double SethHillSmoothingObjective::compute_tri3_2d_element_energy(const double refSize, const std::array<stk::math::Vector3d, 3> & current_coords, const SethHillParams & params);
 template double SethHillSmoothingObjective::compute_tri3_2d_element_energy(const double refSize, const CONSTPTRCONSTPTR & current_coords, const SethHillParams & params);

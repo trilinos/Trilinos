@@ -215,7 +215,7 @@ double tet4_volume(const std::array<stk::math::Vector3d, 4> & ref)
   return Vref;
 }
 
-std::array<stk::math::Vector3d, 4>
+std::array<double, 12>
 tet4_forces_from_stress(const std::array<stk::math::Vector3d, 4> & ref,
     const Tensor & P)
 {
@@ -242,20 +242,20 @@ tet4_forces_from_stress(const std::array<stk::math::Vector3d, 4> & ref,
   }
 
   // Weak form: f_a[j] = sum_k P(j, k) * dNdX[a][k] * Vref
-  std::array<stk::math::Vector3d, 4> forces;
+  std::array<double, 12> forces;
   for (int a = 0; a < 4; ++a)
     for (int j = 0; j < 3; ++j)
     {
       double val = 0.0;
       for (int k = 0; k < 3; ++k)
         val += P(j, k) * dNdX[a][k];
-      forces[a][j] = val * Vref;
+      forces[a*3+j] = val * Vref;
     }
 
   return forces;
 }
 
-std::array<stk::math::Vector3d, 4>
+std::array<double, 12>
 tet4_forces_from_stress(const double refSize, const Tensor & P)
 {
   const double c = 0.5 *std::sqrt(2.0) / refSize;
@@ -263,13 +263,13 @@ tet4_forces_from_stress(const double refSize, const Tensor & P)
 
   // dN_a/dX_k  (a = node index, k = reference spatial direction)
   // Weak form: f_a[j] = sum_k P(j, k) * dNdX[a][k] * Vref
-  std::array<stk::math::Vector3d, 4> forces;
+  std::array<double, 12> forces;
   for (int j = 0; j < 3; ++j)
   {
-    forces[0][j] = cVref*( P(j,0)+P(j,1)+P(j,2));
-    forces[1][j] = cVref*(-P(j,0)-P(j,1)+P(j,2));
-    forces[2][j] = cVref*(-P(j,0)+P(j,1)-P(j,2));
-    forces[3][j] = cVref*( P(j,0)-P(j,1)-P(j,2));
+    forces[0*3+j] = cVref*( P(j,0)+P(j,1)+P(j,2));
+    forces[1*3+j] = cVref*(-P(j,0)-P(j,1)+P(j,2));
+    forces[2*3+j] = cVref*(-P(j,0)+P(j,1)-P(j,2));
+    forces[3*3+j] = cVref*( P(j,0)-P(j,1)-P(j,2));
   }
 
   return forces;

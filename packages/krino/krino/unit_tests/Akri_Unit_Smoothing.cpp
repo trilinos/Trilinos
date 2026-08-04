@@ -14,6 +14,7 @@
 #include <Akri_SmoothNode.hpp>
 #include <Akri_LogRedirecter.hpp>
 #include <Akri_Objective_KinematicMesh.hpp>
+#include <Akri_Objective_ModifiedNeoHookean.hpp>
 #include <Akri_Objective_SethHill.hpp>
 #include <Akri_Objective_SizeShape.hpp>
 #include <Akri_UnitTestUtils.hpp>
@@ -102,6 +103,7 @@ protected:
   MESHSPEC meshSpec;
   MeanRatioNormObjective meanRatioObj;
   SizeShapeObjective sizeShapeObj;
+  ModifiedNeoHookeanObjective modNeoHookean;
   SethHillParams sethHillParams{1.0, 1.0, 2, 2};
   SethHillSmoothingObjective sethHillObj{sethHillParams};
 };
@@ -975,6 +977,9 @@ TEST_F(SquareOf8TrisSmoothing, nonUniformIsotropicSize_regressionTestForCenterNo
   const stk::math::Vector3d goldRegressionSizeShapeLocAlongxy(-0.08700252, -0.08700252, 0); // right direction, but very small magnitude. is it right?
   reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(sizeShapeObj, elemSizesGrowingAlongxy, goldRegressionSizeShapeLocAlongxy);
 
+  const stk::math::Vector3d goldRegressionModNeoHookeanLocAlongxy(-0.7755784, -0.7755784, 0.); // seems reasonable
+  reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(modNeoHookean, elemSizesGrowingAlongxy, goldRegressionModNeoHookeanLocAlongxy);
+
   const std::vector<double> elemSizesGrowingAlongy{ 0.1, 0.1, 0.1, 1.0, 1.0, 1.0, 1.0, 0.1 };
 
   const stk::math::Vector3d goldRegressionSethHillLocAlongy(0,-0.89069324,0); // seems reasonable
@@ -982,6 +987,9 @@ TEST_F(SquareOf8TrisSmoothing, nonUniformIsotropicSize_regressionTestForCenterNo
 
   const stk::math::Vector3d goldRegressionSizeShapeLocAlongy(0,-0.1522262544,0); // right direction, but very small magnitude. is it right?
   reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(sizeShapeObj, elemSizesGrowingAlongy, goldRegressionSizeShapeLocAlongy);
+
+  const stk::math::Vector3d goldRegressionModNeoHookeanLocAlongy(0,-0.92212396,0); // seems reasonable
+  reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(modNeoHookean, elemSizesGrowingAlongy, goldRegressionModNeoHookeanLocAlongy);
 }
 
 TEST_F(CubeOf24TetsSmoothing, nonUniformIsotropicSize_regressionTestForCenterNodeLocation)
@@ -994,6 +1002,9 @@ TEST_F(CubeOf24TetsSmoothing, nonUniformIsotropicSize_regressionTestForCenterNod
   const stk::math::Vector3d goldRegressionSizeShapeLocAlongxyz(0.192329888, 0.192329888, 0.192329888); // seems totally wrong! moved in the opposite direction
   reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(sizeShapeObj, elemSizesGrowingAlongxyz, goldRegressionSizeShapeLocAlongxyz);
 
+  const stk::math::Vector3d goldRegressionModNeoHookeanLocAlongxyz(-0.9546447, -0.9546447, -0.9546447); // seems reasonable
+  reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(modNeoHookean, elemSizesGrowingAlongxyz, goldRegressionModNeoHookeanLocAlongxyz);
+
   const std::vector<double> elemSizesGrowingAlongz{ 0.5, 0.1, 0.5, 1.0, 0.5, 0.1, 0.5, 1.0, 0.5, 0.1, 0.5, 1.0, 0.5, 0.1, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 0.1, 0.1, 0.1, 0.1};
 
   const stk::math::Vector3d goldRegressionSethHillLocAlongz(0,0,-0.953956); // seems reasonable
@@ -1001,6 +1012,9 @@ TEST_F(CubeOf24TetsSmoothing, nonUniformIsotropicSize_regressionTestForCenterNod
 
   const stk::math::Vector3d goldRegressionSizeShapeLocAlongz(0,0,0.2679499); // seems totally wrong! moved in the opposite direction
   reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(sizeShapeObj, elemSizesGrowingAlongz, goldRegressionSizeShapeLocAlongz);
+
+  const stk::math::Vector3d goldRegressionModNeoHookeanLocAlongz(0,0,-0.9949982); // seems reasonable
+  reset_coords_and_test_nonuniform_isotropic_smoothing_with_kinematic_objective(modNeoHookean, elemSizesGrowingAlongz, goldRegressionModNeoHookeanLocAlongz);
 }
 
 }

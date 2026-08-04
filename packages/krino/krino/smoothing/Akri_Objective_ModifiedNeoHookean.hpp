@@ -6,25 +6,21 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#ifndef KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_SETHHILL_HPP_
-#define KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_SETHHILL_HPP_
+#ifndef KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_MODIFIEDNEOHOOKEAN_HPP_
+#define KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_MODIFIEDNEOHOOKEAN_HPP_
 #include <vector>
 
 #include <stk_math/StkVector.hpp>
 #include <Akri_DistributedVector.hpp>
-#include <Akri_SethHillConfig.hpp>
 #include <Akri_ObjectiveInterface.hpp>
 #include <Akri_Smoothing_Utils.hpp>
 #include <Akri_Objective_KinematicMesh.hpp>
 
 namespace krino {
 
-class SethHillSmoothingObjective : public KinematicElementObjective
+class ModifiedNeoHookeanObjective : public KinematicElementObjective
 {
 public:
-  SethHillSmoothingObjective(const SethHillParams & params)
-  : mySethHillParams(params) {}
-
   virtual double compute_element_objective(
       const unsigned spatialDim,
       const unsigned npe,
@@ -41,41 +37,31 @@ public:
   template<typename ELEMCOORDS>
   static double compute_tet4_element_energy(
       const double refSize,
-      const ELEMCOORDS & current_coords,
-      const SethHillParams & params);
+      const ELEMCOORDS & current_coords);
   static double compute_tet4_element_energy(
       const std::array<stk::math::Vector3d, 4> & ref,
-      const std::array<stk::math::Vector3d, 4> & current_coords,
-      const SethHillParams & params);
+      const std::array<stk::math::Vector3d, 4> & current_coords);
   static std::array<double, 12> compute_tet4_element_forces(
       const std::array<stk::math::Vector3d, 4> & ref,
-      const std::array<stk::math::Vector3d, 4> & current_coords,
-      const SethHillParams & params);
+      const std::array<stk::math::Vector3d, 4> & current_coords);
   template<typename ELEMCOORDS>
   static std::array<double, 12> compute_tet4_element_forces(
       const double refSize,
-      const ELEMCOORDS & current_coords,
-      const SethHillParams & params);
+      const ELEMCOORDS & current_coords);
 
   template<typename ELEMCOORDS>
   static double compute_tri3_2d_element_energy(
       const double refSize,
-      const ELEMCOORDS & current_coords,
-      const SethHillParams & params);
+      const ELEMCOORDS & current_coords);
 
   template<typename ELEMCOORDS>
   static std::array<double, 6> compute_tri3_2d_element_forces(const double refSize,
-      const ELEMCOORDS & current_coords,
-      const SethHillParams & params);
+      const ELEMCOORDS & current_coords);
 
   static std::array<double, 6> compute_tri3_2d_element_forces(const std::array<stk::math::Vector2d, 3> & ref,
-      const std::array<stk::math::Vector2d, 3> & current_coords,
-      const SethHillParams & params);
-
-private:
-  SethHillParams mySethHillParams;
+      const std::array<stk::math::Vector2d, 3> & current_coords);
 };
 
 }
 
-#endif /* KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_SETHHILL_HPP_ */
+#endif /* KRINO_KRINO_SMOOTHING_AKRI_OBJECTIVE_MODIFIEDNEOHOOKEAN_HPP_ */

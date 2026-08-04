@@ -12,6 +12,7 @@
 #include <MiniTensor_Tensor.h>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_KinematicUtils.hpp>
+#include <Akri_Objective_ModifiedNeoHookean.hpp>
 #include <Akri_Objective_SizeShape.hpp>
 #include <Akri_SethHillConfig.hpp>
 #include <Akri_Smoothing_Utils.hpp>
@@ -120,14 +121,12 @@ static void expect_deformation_gradient(const std::array<double, 4> & gold, cons
     }
   }
 }
-static void expect_sensitivities(const std::array<double, 12> & gold, const std::array<stk::math::Vector3d, 4> & sens)
+template <size_t NDOF>
+static void expect_sensitivities(const std::array<double, NDOF> & gold, const std::array<double, NDOF> & sens)
 {
-  for (unsigned i=0; i<4; ++i)
+  for (unsigned i=0; i<NDOF; ++i)
   {
-    for (unsigned j=0; j<3; ++j)
-    {
-      EXPECT_NEAR(gold[i*3+j], sens[i][j], tol);
-    }
+    EXPECT_NEAR(gold[i], sens[i], tol);
   }
 }
 template <unsigned DIM>
@@ -201,16 +200,112 @@ TEST(KinematicObjective, testEnergyAndSensitivitiesFor2DConstantH)
 
   const auto sizeShapePseudoForcesFromSize = SizeShapeObjective::compute_tri3_2d_element_pseudo_forces(refSize, currentCoords);
   const auto sizeShapePseudoForcesFromRefCoords = SizeShapeObjective::compute_tri3_2d_element_pseudo_forces(refCoords, currentCoords);
-
-  for (int i=0; i<6; ++i)
-    EXPECT_NEAR(sizeShapePseudoForcesFromSize[i], sizeShapePseudoForcesFromRefCoords[i], tol);
+  expect_sensitivities(sizeShapePseudoForcesFromSize, sizeShapePseudoForcesFromRefCoords);
 
   const SethHillParams params{1.0, 10.0, 3, 3};
   const auto sethHillForcesFromSize = SethHillSmoothingObjective::compute_tri3_2d_element_forces(refSize, currentCoords, params);
   const auto sethHillForcesFromRefCoords = SethHillSmoothingObjective::compute_tri3_2d_element_forces(refCoords, currentCoords, params);
+  expect_sensitivities(sethHillForcesFromSize, sethHillForcesFromRefCoords);
+}
 
-  for (int i=0; i<6; ++i)
-    EXPECT_NEAR(sethHillForcesFromSize[i], sethHillForcesFromRefCoords[i], tol);
+template <unsigned DIM, size_t NPE, class ObjFn, class SensFn>
+static void test_sensitivity_matches_finite_difference(const std::array<stk::math::Vec<double,DIM>,NPE> & coords,
+    const ObjFn & objFn,
+    const SensFn & sensFn)
+{
+  const double obj = objFn(coords);
+  const auto sens = sensFn(coords);
+
+  const double delta = 1.e-4;
+  for (unsigned n=0; n<NPE; ++n)
+  {
+    for (unsigned i=0; i<DIM; ++i)
+    {
+      auto perturbCoords = coords;
+      perturbCoords[n][i] += delta;
+      const double perturbObj = objFn(perturbCoords);
+      const auto perturbSens = sensFn(perturbCoords);
+      const double fdSens = (perturbObj-obj)/delta;
+      const double deltaFDAnalytic = fdSens-sens[n*DIM+i];
+      const double deltaAnalytic = perturbSens[n*DIM+i]-sens[n*DIM+i];
+      const bool isInRange = (deltaFDAnalytic > 0 && deltaAnalytic > deltaFDAnalytic) || (deltaFDAnalytic < 0 && deltaAnalytic < deltaFDAnalytic);
+      EXPECT_TRUE(isInRange);
+    }
+  }
+}
+
+TEST(KinematicObjective, FiniteDifferenceCheck_SethHill3D)
+{
+  const double refSize = 1.;
+  const SethHillParams params{1.0, 10.0, 3, 3};
+  const auto objFn = [&](const std::array<stk::math::Vector3d,4> & coords)
+      { return SethHillSmoothingObjective::compute_tet4_element_energy(refSize, coords, params); };
+  const auto sensFn = [&](const std::array<stk::math::Vector3d,4> & coords)
+      { return SethHillSmoothingObjective::compute_tet4_element_forces(refSize, coords, params); };
+
+  const auto & currentCoords = tet_node_coords(KinematicObjectiveGoldData::current_coords);
+  test_sensitivity_matches_finite_difference(currentCoords, objFn, sensFn);
+}
+
+TEST(KinematicObjective, FiniteDifferenceCheck_SethHill2D)
+{
+  const double refSize = 1.;
+  const SethHillParams params{1.0, 10.0, 3, 3};
+  const auto objFn = [&](const std::array<stk::math::Vector2d,3> & coords)
+      { return SethHillSmoothingObjective::compute_tri3_2d_element_energy(refSize, coords, params); };
+  const auto sensFn = [&](const std::array<stk::math::Vector2d,3> & coords)
+      { return SethHillSmoothingObjective::compute_tri3_2d_element_forces(refSize, coords, params); };
+
+  const auto & currentCoords = tri_node_coords(KinematicObjectiveGoldData2d::current_coords);
+  test_sensitivity_matches_finite_difference(currentCoords, objFn, sensFn);
+}
+
+TEST(KinematicObjective, FiniteDifferenceCheck_SizeShape3D)
+{
+  const double refSize = 1.;
+  const auto objFn = [&](const std::array<stk::math::Vector3d,4> & coords)
+      { return SizeShapeObjective::compute_tet4_element_pseudo_energy(refSize, coords); };
+  const auto sensFn = [&](const std::array<stk::math::Vector3d,4> & coords)
+      { return SizeShapeObjective::compute_tet4_element_pseudo_forces(refSize, coords); };
+
+  const auto & currentCoords = tet_node_coords(KinematicObjectiveGoldData::current_coords);
+  test_sensitivity_matches_finite_difference(currentCoords, objFn, sensFn);
+}
+
+TEST(KinematicObjective, FiniteDifferenceCheck_SizeShape2D)
+{
+  const double refSize = 1.;
+  const auto objFn = [&](const std::array<stk::math::Vector2d,3> & coords)
+      { return SizeShapeObjective::compute_tri3_2d_element_pseudo_energy(refSize, coords); };
+  const auto sensFn = [&](const std::array<stk::math::Vector2d,3> & coords)
+      { return SizeShapeObjective::compute_tri3_2d_element_pseudo_forces(refSize, coords); };
+
+  const auto & currentCoords = tri_node_coords(KinematicObjectiveGoldData2d::current_coords);
+  test_sensitivity_matches_finite_difference(currentCoords, objFn, sensFn);
+}
+
+TEST(KinematicObjective, FiniteDifferenceCheck_ModifiedNeoHookean3D)
+{
+  const double refSize = 1.;
+  const auto objFn = [&](const std::array<stk::math::Vector3d,4> & coords)
+      { return ModifiedNeoHookeanObjective::compute_tet4_element_energy(refSize, coords); };
+  const auto sensFn = [&](const std::array<stk::math::Vector3d,4> & coords)
+      { return ModifiedNeoHookeanObjective::compute_tet4_element_forces(refSize, coords); };
+
+  const auto & currentCoords = tet_node_coords(KinematicObjectiveGoldData::current_coords);
+  test_sensitivity_matches_finite_difference(currentCoords, objFn, sensFn);
+}
+
+TEST(KinematicObjective, FiniteDifferenceCheck_ModifiedNeoHookean2D)
+{
+  const double refSize = 1.;
+  const auto objFn = [&](const std::array<stk::math::Vector2d,3> & coords)
+      { return ModifiedNeoHookeanObjective::compute_tri3_2d_element_energy(refSize, coords); };
+  const auto sensFn = [&](const std::array<stk::math::Vector2d,3> & coords)
+      { return ModifiedNeoHookeanObjective::compute_tri3_2d_element_forces(refSize, coords); };
+
+  const auto & currentCoords = tri_node_coords(KinematicObjectiveGoldData2d::current_coords);
+  test_sensitivity_matches_finite_difference(currentCoords, objFn, sensFn);
 }
 
 }

@@ -44,11 +44,11 @@ public:
       const std::array<stk::math::Vector3d, 4> & current_coords);
 
   template<typename ELEMCOORDS>
-  static std::array<stk::math::Vector3d, 4> compute_tet4_element_pseudo_forces(
+  static std::array<double, 12> compute_tet4_element_pseudo_forces(
         const double refSize,
         const ELEMCOORDS & current_coords);
 
-  static std::array<stk::math::Vector3d, 4> compute_tet4_element_pseudo_forces(
+  static std::array<double, 12> compute_tet4_element_pseudo_forces(
       const std::array<stk::math::Vector3d, 4> & ref,
       const std::array<stk::math::Vector3d, 4> & current_coords);
 
