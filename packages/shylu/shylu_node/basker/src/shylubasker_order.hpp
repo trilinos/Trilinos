@@ -389,13 +389,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " ++ calling TRILINOS_BTF_MAXTRANS (" << A.nrow << " x " << A.ncol << ") ++ " << std::endl;
         }
-        if constexpr (std::is_same<Int, int>::value) {
+        if constexpr (std::is_same_v<Int, int>) {
           int *col_ptr = &(A.col_ptr(0));
           int *row_idx = &(A.row_idx(0));
           int *order   = &(order_match_array(0));
           int *iwork   = &(WORK(0));
           num_match = trilinos_btf_maxtrans ((int)A.nrow, (int)A.ncol, col_ptr, row_idx, maxwork, &work, order, iwork);
-        } else if constexpr (std::is_same<Int, UF_long>::value) {
+        } else if constexpr (std::is_same_v<Int, UF_long>) {
           // Int is exactly UF_long here (e.g. long long == __int64 on Win64), so no
           // cast is needed: the pointers already have the right type. A reinterpret_cast
           // to bridge a different Int (e.g. 32-bit `long` on LLP64) would be UB even
