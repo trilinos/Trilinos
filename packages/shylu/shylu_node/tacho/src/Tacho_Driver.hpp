@@ -54,6 +54,7 @@ public:
 
   using size_type_array = Kokkos::View<size_type *, device_type>;
   using ordinal_type_array = Kokkos::View<ordinal_type *, device_type>;
+  using mag_type_array = Kokkos::View<mag_type *, device_type>;
   using value_type_array = Kokkos::View<value_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
 
@@ -172,7 +173,7 @@ private:
 
   int _shift_diag;                   // shift diagonal with small perturbation
   mag_type _shift;
-  value_type_array _dv;
+  mag_type_array _dv;
 
   int _replace_tiny_pivot;           // replace tiny pivot
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation

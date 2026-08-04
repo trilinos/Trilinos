@@ -118,6 +118,12 @@ void Driver<VT, DT>::setSolutionMethod(const int method) { // 0 - LDL nopivot, 1
   }
   _method_setup = method;
   _method = method;
+  if (method == 0) {
+    // Currently, non-pivot LDL is a special implementation in Tacho,
+    //  and uses a special scheme to replace tiny pivots (with tol = eps)
+    // NOTE: it is reset to default every time setSolutionMethod is called
+    useDefaultPivotTolerance(2);
+  }
 }
 
 template <typename VT, typename DT>
@@ -219,11 +225,17 @@ template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance(const int option) {
+  using arith_traits = ArithTraits<value_type>;
   _replace_tiny_pivot = option;
   if (option == 1) {
-    using arith_traits = ArithTraits<value_type>;
+    // tol = sqrt(eps)
     _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
+  } else if (option == 2) {
+    // tol = eps
+    _pivot_tol = arith_traits::epsilon();
   } else {
+    // if option == 0, then tol = 0.0
+    // if option >  2, then tol = sqrt(tol)||A||
     _pivot_tol = 0.0;
   }
 }
@@ -448,8 +460,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
   }
 
   const mag_type zero(0);
+  mag_type alpha(zero); // ||A||
   mag_type shift(0.0);
-  if (_shift_diag != 0 || _replace_tiny_pivot > 1) {
+  if (_shift_diag != 0 || _replace_tiny_pivot > 2) {
     const ordinal_type m = _m;
     Kokkos::RangePolicy<exec_space> range_policy(0, m);
 
@@ -457,7 +470,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     Kokkos::resize(_dv, _m);
 
     // Compute alpha = ||A||_2
-    value_type alpha(zero);
     //for (size_t i=0; i<ax.extent(0); i++) alpha += arith_traits::conj(ax(i)) * ax(i);
     const auto ap = _ap;
     const auto aj = _aj;
@@ -467,16 +479,17 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
       range_policy, KOKKOS_LAMBDA(const ordinal_type &i) {
         dv(i) = zero;
         for (size_type k=ap(i); k<ap(i+1); k++) {
-          dv(i) += arith_traits::conj(ax(k)) * ax(k);
+          // conj(ax(k)) * ax(k) should be always magnitude type, but take abs for compiler
+          dv(i) += arith_traits::abs(arith_traits::conj(ax(k)) * ax(k));
         }
       });
     // * atomic_sum row-sums
     Kokkos::parallel_reduce(
-      range_policy, KOKKOS_LAMBDA (int i, value_type &tmp) {
+      range_policy, KOKKOS_LAMBDA (int i, mag_type &tmp) {
         tmp += dv(i);
       }, alpha);
     // Compute shift = sqrt(eps) * ||A||_2
-    shift = Kokkos::sqrt(arith_traits::abs(alpha * arith_traits::epsilon()));
+    shift = Kokkos::sqrt(alpha * arith_traits::epsilon());
   }
   // internally keep track of the current shift
   if (_shift_diag != 0) {
@@ -485,9 +498,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     _shift = zero;
   }
   // internally save the pivot tol
-  if (_replace_tiny_pivot > 1) {
+  if (_replace_tiny_pivot > 2) {
     _pivot_tol = shift;
-  } else if (_replace_tiny_pivot != 1) {
+  } else if (_replace_tiny_pivot == 0) {
     _pivot_tol = zero;
   }
 
@@ -496,32 +509,26 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     case LDL_nopiv: {
       printf("TachoSolver: Factorize LDL (no pivot)\n");
       printf("=====================================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case Cholesky: {
       printf("TachoSolver: Factorize Cholesky\n");
       printf("===============================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case LDL: {
       printf("TachoSolver: Factorize LDL\n");
       printf("==========================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case SymLU: {
       printf("TachoSolver: Factorize SymLU\n");
       printf("============================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     }
+    if (_shift_diag != 0) printf(" > shifting diagonal by %.2e (||A|| = %.2e)\n",_shift,alpha);
+    if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e (%d, alpha=%.2e)\n",_pivot_tol,_replace_tiny_pivot,alpha);
     if (_m <= _small_problem_thres) {
       printf( " Small matrix\n" );
     }
@@ -832,7 +839,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
     _A = value_type_matrix_host();
     _D = value_type_matrix_host();
     _P = ordinal_type_array_host();
-    _dv = value_type_array();
+    _dv = mag_type_array();
 
     _verbose = 0;
     _small_problem_thres = 1024;

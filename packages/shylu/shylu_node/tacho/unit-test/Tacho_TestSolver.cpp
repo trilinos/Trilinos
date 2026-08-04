@@ -199,7 +199,13 @@ int driver(const std::string file, const std::string rhs, const std::string meth
         } else {
           /// > test "replace tiny pivot" code path
           solver.shiftDiagonal(0);
-          solver.useDefaultPivotTolerance(1);
+          if (method == 0) {
+            // with tol = eps
+            solver.useDefaultPivotTolerance(2);
+          } else {
+            // with tol = sqrt(eps)||A||
+            solver.useDefaultPivotTolerance(3);
+          }
         }
         /// do numerical factorization
         if (single_solve) {
