@@ -88,9 +88,9 @@ template <typename T> struct LapackTeam {
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * as1] /= alpha; });
         member.team_barrier();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
-          const T aa = arith_traits::conj(a12t[j * as1]);
+          const T aa = a12t[j * as1];
           Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int &i) {
-            const T bb = a12t[i * as1];
+            const T bb = arith_traits::conj(a12t[i * as1]);
             A22[i * as0 + j * as1] -= aa * bb;
           });
         });
@@ -336,7 +336,6 @@ template <typename T> struct LapackTeam {
     using arith_traits = ArithTraits<T>;
     using mag_type = typename arith_traits::mag_type;
     const mag_type zero(0);
-    //const mag_type tol = sqrt(arith_traits::epsilon());
     const int as0 = 1;
     for (int p = 0; p < m; ++p) {
       const int iend = m - p - 1, jend = n - p - 1;
