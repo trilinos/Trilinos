@@ -118,12 +118,6 @@ void Driver<VT, DT>::setSolutionMethod(const int method) { // 0 - LDL nopivot, 1
   }
   _method_setup = method;
   _method = method;
-  if (method == 0) {
-    // Currently, non-pivot LDL is a special implementation in Tacho,
-    //  and uses a special scheme to replace tiny pivots (with tol = eps)
-    // NOTE: it is reset to default every time setSolutionMethod is called
-    useDefaultPivotTolerance(2);
-  }
 }
 
 template <typename VT, typename DT>

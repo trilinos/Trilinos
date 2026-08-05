@@ -214,18 +214,19 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.setVerbose(verbose);
     solver.setSolutionMethod(method);
     solver.setLevelSetOptionAlgorithmVariant(variant);
-    if (shiftDiag) {
-      if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;
-      solver.shiftDiagonal();
-    }
-    if (perturb != 0) {
-      if (verbose) std::cout << " > perturb tiny pivots (" << perturb << ")" << std::endl;
-      solver.useDefaultPivotTolerance(perturb);
-    } else {
-      solver.useDefaultPivotTolerance(0);
-    }
-
     if (!default_setup) {
+      // tiny pivot options
+      if (perturb != 0) {
+        if (verbose) std::cout << " > perturb tiny pivots (" << perturb << ")" << std::endl;
+        solver.useDefaultPivotTolerance(perturb);
+      } else {
+        solver.useDefaultPivotTolerance(0);
+      }
+      if (shiftDiag) {
+        if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;
+        solver.shiftDiagonal();
+      }
+
       /// graph options
       if (order_connected_graph_separately) {
         solver.setOrderConnectedGraphSeparately();
