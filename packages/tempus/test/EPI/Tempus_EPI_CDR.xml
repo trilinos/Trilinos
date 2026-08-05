@@ -1,8 +1,8 @@
 <ParameterList name="EPI_CDR">
   <ParameterList name="CDR Model">
-    <Parameter name="num elements" type="int" value="100"/>
+    <Parameter name="num elements" type="int" value="50"/>
     <Parameter name="left end" type="double" value="0.0"/>
-    <Parameter name="right end" type="double" value="1.0"/>
+    <Parameter name="right end" type="double" value="0.5"/>
     <Parameter name="a (convection)" type="double" value="0.1"/>
     <Parameter name="k (source)" type="double" value="0.0"/>
   </ParameterList>

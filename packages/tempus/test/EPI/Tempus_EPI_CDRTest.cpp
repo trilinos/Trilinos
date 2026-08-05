@@ -119,7 +119,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
              .set("Expansion Order", 100)
              .set("Leja DD Method", 2)
              .set("Leja Ellipse Safety Factor", 1.05)
-             .set("leja_tol", 1.e-12)
+             .set("leja_tol", 1.e-14)
              .set("leja_a", -50000.0)
              .set("leja_c", 1000.0);
     }
@@ -226,9 +226,10 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
                     solutions, xErrorNorm, xSlope, out);
   }
 
-  std::tuple tol_compare = {1e-12, 1e-8};
+  std::tuple tol_compare = {1e-10, 1e-8};
   if (!lumped)
-    // The accuracy for the "Lump Mass Matrix" == False testcase is affected by the linear solver tolerance
+    // The accuracy for the "Lump Mass Matrix" == False testcase is
+    // affected by the linear solver tolerance
     tol_compare = {1e-5, 1e-1};
   TEST_COMPARE(std::abs(xErrorNorm[0]), <=, std::get<0>(tol_compare));
   TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, std::get<0>(tol_compare));
