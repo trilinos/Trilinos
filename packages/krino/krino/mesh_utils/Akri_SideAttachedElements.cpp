@@ -240,6 +240,7 @@ void make_local_to_global_group_id_mapping_parallel_consistent(const stk::mesh::
     const std::vector<size_t> & localElementGroupIds,
     std::map<size_t,size_t> & localToGlobalGroupIds)
 {
+  STK_ThrowRequire(mesh.is_automatic_aura_on());
   bool didSomethingChange = true;
   while(didSomethingChange)
   {
@@ -263,12 +264,18 @@ std::map<size_t,size_t> generate_parallel_consistent_local_to_global_group_id_ma
   return localToGlobalGroupIds;
 }
 
-static std::map<size_t,size_t> get_local_group_ids_sizes(const std::vector<size_t> & elementGroupIds)
+static std::map<size_t,size_t> get_local_group_ids_sizes(const stk::mesh::BulkData &mesh, const std::vector<size_t> & elementGroupIds)
 {
   std::map<size_t,size_t> localGroupIdSizes;
-  for (auto elementGroupId : elementGroupIds)
-    if (elementGroupId != 0)
-      ++(localGroupIdSizes[elementGroupId]);
+  for (size_t i=0; i<elementGroupIds.size(); ++i)
+  {
+    if (elementGroupIds[i] != 0)
+    {
+      const stk::mesh::Entity elem(i);
+      if (mesh.bucket(elem).owned())
+        ++(localGroupIdSizes[elementGroupIds[i]]);
+    }
+  }
   return localGroupIdSizes;
 }
 
@@ -293,12 +300,18 @@ static void parallel_sum_group_id_sizes(std::map<size_t,size_t> & groupIdSizes, 
     groupIdSizes[globalGroupSizes[i]] += globalGroupSizes[i+1];
 }
 
+static std::map<size_t,size_t> get_global_group_ids_sizes(const stk::mesh::BulkData & mesh, const std::vector<size_t> & elementGroupIds)
+{
+  std::map<size_t,size_t> groupIdSizes = get_local_group_ids_sizes(mesh, elementGroupIds);
+  parallel_sum_group_id_sizes(groupIdSizes, mesh.parallel());
+  return groupIdSizes;
+}
+
 static size_t find_id_of_largest_group(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & /*ownedSelectedElements*/,
     const std::vector<size_t> & elementGroupIds)
 {
-  std::map<size_t,size_t> groupIdSizes = get_local_group_ids_sizes(elementGroupIds);
-  parallel_sum_group_id_sizes(groupIdSizes, mesh.parallel());
+  std::map<size_t,size_t> groupIdSizes = get_global_group_ids_sizes(mesh, elementGroupIds);
   const auto iter = std::max_element(groupIdSizes.begin(), groupIdSizes.end(), [](const std::pair<size_t, size_t>& a, const std::pair<size_t, size_t>& b){ return a.second < b.second; });
   STK_ThrowRequire(iter != groupIdSizes.end());
   return iter->first;
@@ -314,18 +327,23 @@ void make_group_ids_parallel_consistent(const stk::mesh::BulkData & mesh,
       elementGroupId = localToGlobalGroupIds.at(elementGroupId);
 }
 
-static std::vector<size_t> determine_element_group_ids(const stk::mesh::BulkData & mesh,
+static std::vector<size_t> determine_element_group_ids(stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & elementSelector,
     const std::vector<stk::mesh::Entity> & ownedSelectedElements)
 {
+  const bool isAuraOn = mesh.is_automatic_aura_on();
+  if (!isAuraOn) mesh.set_automatic_aura_option(stk::mesh::BulkData::AUTO_AURA, true);
+
   const size_t initialValue = 0;
   std::vector<size_t> elementGroupIds = create_vector_indexable_by_entity_offset(mesh, stk::topology::ELEMENT_RANK, initialValue);
   assign_local_group_id_for_each_element(mesh, elementSelector, ownedSelectedElements, elementGroupIds);
   make_group_ids_parallel_consistent(mesh, ownedSelectedElements, elementGroupIds);
+
+  if(!isAuraOn) mesh.set_automatic_aura_option(stk::mesh::BulkData::NO_AUTO_AURA, true);
   return elementGroupIds;
 }
 
-std::vector<stk::mesh::Entity> find_owned_elements_that_are_not_in_the_largest_group_of_selected_side_attached_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+std::vector<stk::mesh::Entity> find_owned_elements_that_are_not_in_the_largest_group_of_selected_side_attached_elements(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
 {
   std::vector<stk::mesh::Entity> ownedSelectedElements;
   stk::mesh::get_selected_entities( elementSelector & mesh.mesh_meta_data().locally_owned_part(), mesh.buckets( stk::topology::ELEMENT_RANK ), ownedSelectedElements, false );
@@ -334,6 +352,43 @@ std::vector<stk::mesh::Entity> find_owned_elements_that_are_not_in_the_largest_g
 
   const size_t groupIdOfLargestGroup = find_id_of_largest_group(mesh, ownedSelectedElements, elementGroupIds);
   return get_elements_not_in_given_group(mesh, ownedSelectedElements, groupIdOfLargestGroup, elementGroupIds);
+}
+
+std::vector<size_t> get_sorted_ids_of_groups_with_global_size_less_than_size(const stk::mesh::BulkData & mesh, const std::vector<size_t> elementGroupIds, const size_t smallGroupSize)
+{
+  std::vector<size_t> smallGroups;
+  const std::map<size_t,size_t> groupIdSizes = get_global_group_ids_sizes(mesh, elementGroupIds);
+  for (auto & entry : groupIdSizes)
+    if (entry.second < smallGroupSize)
+      smallGroups.push_back(entry.first);
+  return smallGroups;
+}
+
+static std::vector<stk::mesh::Entity> gather_elements_in_sorted_groups(const std::vector<stk::mesh::Entity> & ownedSelectedElements,
+    const std::vector<size_t> & elementGroupIds,
+    const std::vector<size_t> & sortedGroups)
+{
+  std::vector<stk::mesh::Entity> elemsInGroups;
+  if (!sortedGroups.empty())
+  {
+    for ( auto elem : ownedSelectedElements )
+    {
+      const auto elemOffset = elem.local_offset();
+      if(std::binary_search(sortedGroups.begin(), sortedGroups.end(), elementGroupIds[elemOffset]))
+        elemsInGroups.push_back(elem);
+    }
+  }
+  return elemsInGroups;
+}
+
+std::vector<stk::mesh::Entity> find_selected_owned_elements_that_are_in_a_side_attached_group_smaller_than_size(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector, const size_t smallGroupSize)
+{
+  std::vector<stk::mesh::Entity> ownedSelectedElements;
+  stk::mesh::get_selected_entities( elementSelector & mesh.mesh_meta_data().locally_owned_part(), mesh.buckets( stk::topology::ELEMENT_RANK ), ownedSelectedElements, false );
+
+  const std::vector<size_t> elementGroupIds = determine_element_group_ids(mesh, elementSelector, ownedSelectedElements);
+  const std::vector<size_t> sortedSmallGroups = get_sorted_ids_of_groups_with_global_size_less_than_size(mesh, elementGroupIds, smallGroupSize);
+  return gather_elements_in_sorted_groups(ownedSelectedElements, elementGroupIds, sortedSmallGroups);
 }
 
 }

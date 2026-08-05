@@ -18,6 +18,8 @@ public:
     static constexpr unsigned NPE = TopologyData<TOPO>::num_nodes();
     static constexpr unsigned NPS = NPE-1;
 
+    static stk::topology element_topology() { return TOPO; }
+
     typedef std::pair<unsigned, std::vector<std::array<unsigned,NPS>>> SideIdAndNodeOfSides;
 
     StkMeshBuilder(stk::mesh::BulkData & mesh, const stk::ParallelMachine comm);
@@ -34,7 +36,6 @@ public:
     void build_mesh_with_all_needed_block_ids(const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
         const std::vector<std::array<unsigned, NPE>> &elementConn,
         const std::vector<unsigned> &elementBlockIDs,
-        const std::vector<unsigned> &allBlocksIncludingThoseThatDontHaveElements,
         const std::vector<int> &specifiedElementProcOwners);
 
     void build_mesh_nodes_and_elements(
@@ -46,6 +47,7 @@ public:
     std::vector<int> get_processor_distribution_for_num_elements(const unsigned numElements) const;
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mOwnedElems; }
     stk::mesh::Entity get_assigned_node_for_index(const size_t nodeIndex) const { return mMesh.get_entity(stk::topology::NODE_RANK, mAssignedGlobalNodeIdsforAllNodes[nodeIndex]); }
+    stk::mesh::Entity get_assigned_element_for_index(const size_t elemIndex) const { return mMesh.get_entity(stk::topology::ELEMENT_RANK, mAssignedGlobalElementIdsforAllElements[elemIndex]); }
     const std::vector<stk::mesh::EntityId> & get_assigned_node_global_ids() const { return mAssignedGlobalNodeIdsforAllNodes; }
     const std::vector<stk::mesh::EntityId> & get_assigned_element_global_ids() const { return mAssignedGlobalElementIdsforAllElements; }
     std::vector<stk::mesh::EntityId> get_ids_of_elements_with_given_indices(const std::vector<unsigned> & elemIndices) const;

@@ -124,6 +124,11 @@ public:
   const Block_Surface_Connectivity & get_input_block_surface_connectivity() const {return my_input_block_surface_connectivity;}
   void build_decomposed_block_surface_connectivity();
 
+  unsigned get_converted_conforming_part_ordinal(const unsigned partOrd, const PhaseTag & toPhase) const;
+  int get_converted_interface_part_ordinal(const unsigned convertedTouchingPartOrd, const unsigned convertedOppositePartOrd, const int valueToIndicateRemoval) const;
+  std::map<int,int> build_phase_conversion_map(const PhaseTag & fromPhase, const PhaseTag & toPhase) const;
+  stk::mesh::Selector get_selector_of_blocks_with_phase(const PhaseTag & phase) const;
+
   bool is_nonconformal(const stk::mesh::Part & io_part) const;
   bool is_conformal(const stk::mesh::Part & io_part) const;
   bool is_interface(const stk::mesh::Part & io_part) const;
@@ -163,6 +168,10 @@ public:
   static PartSet get_blocks_and_touching_surfaces(const stk::mesh::MetaData & mesh_meta, const stk::mesh::PartVector& input_blocks, const Block_Surface_Connectivity & input_block_surface_info);
 
   static std::vector<unsigned> get_indices_of_phases_that_depend_on_surface(const bool oneLSPerPhase, const PhaseVec & meshPhases, const Surface_Identifier & surfaceID);
+
+  const NamedPhase & get_phase_with_name(const std::string & phaseName) const;
+  void set_small_cluster_cleanup(const std::vector<std::tuple<std::string,std::string,unsigned>> & smallClusterCleanup);
+  const auto & get_small_cluster_cleanup() const { return mySmallClusterCleanup; }
 
 private:
   Phase_Support();
@@ -218,6 +227,7 @@ private:
 
   stk::mesh::Selector all_decomposed_blocks_selector;
   PhasePartInfo myPhasePartInfo;
+  std::vector<std::tuple<NamedPhase,NamedPhase,unsigned>> mySmallClusterCleanup;
 };
 
 class CDFEM_Inequality_Spec {

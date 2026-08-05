@@ -40,12 +40,16 @@ public:
 
     double get_element_quality_metric([[maybe_unused]] const unsigned dim, const std::vector<stk::math::Vector3d> &nodeLocations) const override
     {
-      STK_ThrowAssert(dim == 3);
-      return tet_mean_ratio(nodeLocations);
+      return (dim == 2) ?
+          tri2d_mean_ratio(nodeLocations) :
+          tet_mean_ratio(nodeLocations);
     }
 
-    static double tet_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations);
-    static double tet_mean_ratio(const std::array<stk::math::Vector3d,4> &nodeLocations);
+    template<typename ELEMCOORDS>
+    static double tet_mean_ratio(const ELEMCOORDS &nodeLocations);
+
+    template<typename ELEMCOORDS>
+    static double tri2d_mean_ratio(const ELEMCOORDS &nodeLocations);
 
     virtual double get_acceptable_value_for_metric() const override { return 0.2; }
 };
