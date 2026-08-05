@@ -776,13 +776,15 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
     }
     Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels numeric int");
 
-    // even though there is no TPL for this, we have to use the same handle that was used in the symbolic phase,
-    // so need to have a special int-typed call for this as well.
-    KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
-                                              Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
-                                              Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
-                                              int_row_mapC, entriesC, valuesC,
-                                              jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    if (c_nnz_size) {
+      // even though there is no TPL for this, we have to use the same handle that was used in the symbolic phase,
+      // so need to have a special int-typed call for this as well.
+      KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                                                Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
+                                                Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
+                                                int_row_mapC, entriesC, valuesC,
+                                                jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    }
     // transfer the integer rowptrs back to the correct rowptr type
     Kokkos::parallel_for(
         int_row_mapC.size(), KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
@@ -807,11 +809,13 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
     }
 
     Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels numeric non-int");
-    KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
-                                              Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
-                                              Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false,
-                                              row_mapC, entriesC, valuesC,
-                                              jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    if (c_nnz_size) {
+      KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                                                Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
+                                                Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false,
+                                                row_mapC, entriesC, valuesC,
+                                                jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    }
     kh.destroy_spgemm_handle();
   }
 

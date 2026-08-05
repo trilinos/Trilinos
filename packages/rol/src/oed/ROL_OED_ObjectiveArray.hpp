@@ -101,7 +101,7 @@ public:
 
   unsigned numObjectives() const { return nfact_; }
 
-  const Ptr<Vector<Real>> buildDesignVector() const {
+  Ptr<Vector<Real>> buildDesignVector() const {
     return makePtr<ProbabilityVector<Real>>(
            makePtr<std::vector<Real>>(sampler_->numMySamples(),0),
            sampler_->getBatchManager());

@@ -120,10 +120,63 @@ namespace Belos {
   ///
   /// \note This enum is part of the public interface of all Belos
   ///   solvers.
-  enum ReturnType {
-    Converged,  /*!< Convergence was reached for all linear systems. */
-    Unconverged /*!< Convergence was not reached for some or all linear systems. */
+  enum ReturnType : int {
+    Converged = 0,   /*!< Convergence was reached for all linear systems. */
+    Unconverged = 1, /*!< Convergence was not reached for some or all linear systems: this return code exists for compatibility with older versions of Belos */
+    MaxItersReached = 2,        /*!< Convergence was not reached because the maximum number of iterations was reached. */
+    MaxRestartsReached = 3,     /*!< Convergence was not reached because the maximum number of restarts was reached. */ // GMRES
+    OrthonormFailure= 4,        /*!< Convergence was not reached because the orthonormalization failed. */ // BlockCG
+    NaNDetected = 5,            /*!< Convergence was not reached because a NaN was detected. */
+    BreakdownDetected = 6,      /*!< Convergence was not reached because a breakdown was detected. */ // BlockCG
+    LossOfAccuracyDetected = 7, /*!< Convergence was not reached because loss of accuracty was detected. */ // GMRES
+    NonspecificException = 8,   /*!< Convergence was not reached because it caught a nonspecific exception. */
+    InconsistentState = 9,      /*!< Convergence was not reached because it detected an inconsistency (and threw an exception) */
+    Undetermined = 10           /*!< Convergence was not reached, but without setting the cause (upon entrance, solve() always initializes cause to 'Undetermined'). */
   };
+
+  inline constexpr bool compare(int lhs_int, int rhs_int) {
+    if (lhs_int == 1) {
+      return (rhs_int >= 1);
+    }
+    else if (rhs_int == 1) {
+      return (lhs_int >= 1);
+    }
+    else {
+      return (lhs_int == rhs_int);
+    }
+  }
+
+  constexpr bool operator==(ReturnType lhs, ReturnType rhs) {
+    int lhs_int = static_cast<int>(lhs);
+    int rhs_int = static_cast<int>(rhs);
+    return compare(lhs_int, rhs_int);
+  }
+
+  constexpr bool operator==(ReturnType lhs, int rhs_int) {
+    int lhs_int = static_cast<int>(lhs);
+    return compare(lhs_int, rhs_int);
+  }
+
+  constexpr bool operator==(int lhs_int, ReturnType rhs) {
+    int rhs_int = static_cast<int>(rhs);
+    return compare(lhs_int, rhs_int);
+  }
+
+  constexpr bool operator!=(ReturnType lhs, ReturnType rhs) {
+    int lhs_int = static_cast<int>(lhs);
+    int rhs_int = static_cast<int>(rhs);
+    return !compare(lhs_int, rhs_int);
+  }
+
+  constexpr bool operator!=(ReturnType lhs, int rhs_int) {
+    int lhs_int = static_cast<int>(lhs);
+    return !compare(lhs_int, rhs_int);
+  }
+
+  constexpr bool operator!=(int lhs_int, ReturnType rhs) {
+    int rhs_int = static_cast<int>(rhs);
+    return !compare(lhs_int, rhs_int);
+  }
 
   //! Convert the given \c ReturnType enum value to its corresponding string.
   std::string

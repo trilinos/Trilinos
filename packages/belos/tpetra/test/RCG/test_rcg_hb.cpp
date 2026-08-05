@@ -183,7 +183,10 @@ int main(int argc, char *argv[]) {
 
   if (proc_verbose) { std::cout << "Solve took " << numIters1 << " iterations." << std::endl; }
 
-  if ( ret!=Belos::Converged || badRes ) {
+  if ( ret==Belos::Converged && !badRes ) {
+    // Ok
+  }
+  else {
     if (proc_verbose) {
       std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }

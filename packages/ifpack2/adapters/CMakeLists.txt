@@ -22,14 +22,23 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 # B) Define the targets for package's library(s)
 #
 
-IF(NOT "${SOURCES}" STREQUAL "")
+IF(NOT
+   "${SOURCES}"
+   STREQUAL
+   ""
+)
   TRIBITS_ADD_LIBRARY(
     ifpack2-adapters
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     DEPLIBS ifpack2
   )
-ENDIF(NOT "${SOURCES}" STREQUAL "")
+ENDIF(
+  NOT
+  "${SOURCES}"
+  STREQUAL
+  ""
+)
 
 # If you add any .cpp files to this directory or its subdirectories
 # that you want to add to the library, be sure to make a trivial

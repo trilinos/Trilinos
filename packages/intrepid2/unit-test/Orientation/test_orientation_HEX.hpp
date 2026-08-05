@@ -946,7 +946,7 @@ int OrientationHex(const bool verbose) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                   *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
-                  *outStream << " Fist tag: " << basis.getDofTag(k)[0] << " " << basis.getDofTag(k)[1]<< " " <<  basis.getDofTag(k)[2] << " Second tag: " <<
+                  *outStream << " First tag: " << basis.getDofTag(k)[0] << " " << basis.getDofTag(k)[1]<< " " <<  basis.getDofTag(k)[2] << " Second tag: " <<
                       basis.getDofTag(i)[0] << " " << basis.getDofTag(i)[1]<< " " <<  basis.getDofTag(i)[2] <<")\n";
                 }
                 if ( k!=j && std::abs( dofValue ) > tol ) {

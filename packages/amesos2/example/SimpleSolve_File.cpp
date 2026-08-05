@@ -257,10 +257,11 @@ int main(int argc, char *argv[]) {
   if (xml_filename != "") {
     Teuchos::ParameterList test_params = Teuchos::ParameterXMLFileReader(xml_filename).getParameters();
     Teuchos::ParameterList& amesos2_params = test_params.sublist("Amesos2");
-    if (Amesos2::tolower (solvername) == "shylubasker") {
+    if (Amesos2::tolower (solvername) == "shylubasker" ||
+        Amesos2::tolower (solvername) == "pardisomkl") {
       // Partial factorization (only for ShyLU-Basker)
-      Teuchos::ParameterList& shylubasker_params = amesos2_params.sublist("ShyLUBasker");
-      partial_facto = (shylubasker_params.isParameter("PartialFacto") ? shylubasker_params.get<int>("PartialFacto") : 0);
+      Teuchos::ParameterList& solver_params = amesos2_params.sublist(solvername);
+      partial_facto = (solver_params.isParameter("PartialFacto") ? solver_params.get<int>("PartialFacto") : 0);
       if (partial_facto != 0 && myRank == 0) {
         RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::SerialComm<int>());
         const LO indexBase = 0;
@@ -275,12 +276,12 @@ int main(int argc, char *argv[]) {
           SchurPart->putScalar(0); // no schur
         }
         SchurPart_type schurPart = SchurPart->getData(0);
-        shylubasker_params.set("SchurPart", schurPart.getRawPtr());
+        solver_params.set("SchurPart", schurPart.getRawPtr());
 
         // storage for output schur comp
         for (int i=0; i<nrows; i++) if (schurPart[i] == 1) n2 ++;
         schurOut.resize(n2*n2);
-        shylubasker_params.set("SchurOut", schurOut.getRawPtr());
+        solver_params.set("SchurOut", schurOut.getRawPtr());
       }
     }
     *fos << amesos2_params.currentParametersString() << std::endl;

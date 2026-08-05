@@ -237,7 +237,7 @@ namespace Amesos2{
       using output_scalar_type = typename KV::non_const_value_type;
 
       // call appropriate apply based on if the input and output scalar types are the same or different
-      bool bAssigned =  std::conditional_t<std::is_same_v<input_scalar_type, output_scalar_type>,
+      bool bAssigned = std::conditional_t<std::is_same_v<input_scalar_type, output_scalar_type>,
                same_type_get_view<MV, KV>,
                diff_type_get_view<MV, KV>>::apply (bInitialize, mv, kokkos_vals, ldx, distribution_map, distribution);
       return bAssigned;

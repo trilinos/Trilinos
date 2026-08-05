@@ -165,6 +165,7 @@ public:
        "a nonnull argument before calling this method.");
 
     lastSolverOutput_ = solver_->solve (*X, *B);
+
     return lastSolverOutput_.converged ? Belos::Converged : Belos::Unconverged;
   }
 

@@ -216,7 +216,7 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
     //After solving the system w/ LAPACK, Phi contains A^T
     
     // transpose B and clean up numerical noise (for permutation matrices)
-    const double eps = tolerance();
+    const double eps = std::sqrt(tolerance()); // NVR: loosened this to allow better noise-cleaning for high-order polynomials
     for (ordinal_type i=0;i<ndofSubcell;++i) {
       auto intmatii = std::round(OrtMat(i,i));
       OrtMat(i,i) = (std::abs(OrtMat(i,i) - intmatii) < eps) ? intmatii : OrtMat(i,i);

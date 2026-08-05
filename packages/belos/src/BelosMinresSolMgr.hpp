@@ -644,6 +644,8 @@ namespace Belos {
     using Teuchos::rcp_const_cast;
     using std::endl;
 
+    ReturnType retType = Undetermined;
+
     if (! parametersSet_) {
       setParameters (params_);
     }
@@ -717,12 +719,14 @@ namespace Belos {
           }
           // Now check for max # of iterations
           else if (maxIterTest_->getStatus() == Passed) {
+            retType = MaxItersReached;
             dbg << "---- Did not converge after " << maxIterTest_->getNumIters()
                 << " iterations" << endl;
             // This right-hand side didn't converge!
             notConverged.push_back (currentRHS);
             break;
           } else {
+            retType = InconsistentState;
             // If we get here, we returned from iterate(), but none of
             // our status tests Passed.  Something is wrong, and it is
             // probably our fault.
@@ -734,14 +738,16 @@ namespace Belos {
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          retType = NaNDetected;
           achievedTol_ = MST::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
           printer_->stream(Warnings) << "Belos::MinresSolMgr::solve(): Warning! NaN has been detected!" 
                                      << std::endl;
-          return Unconverged; 
+          return retType; 
         }
         catch (const std::exception &e) {
+          retType = NonspecificException;
           printer_->stream (Errors)
             << "Error! Caught std::exception in MinresIter::iterate() at "
             << "iteration " << minres_iter->getNumIters() << endl
@@ -803,7 +809,7 @@ namespace Belos {
     }
 
     if (notConverged.size() > 0) {
-      return Unconverged;
+      return retType;
     } else {
       return Converged;
     }

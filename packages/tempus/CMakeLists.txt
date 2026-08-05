@@ -11,18 +11,6 @@ TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 
-COMBINED_OPTION( TEMPUS_ENABLE_EPETRA_STACK
-  DEP_OPTIONS_NAMES Tempus_ENABLE_Epetra
-                    Tempus_ENABLE_ThyraEpetraAdapters
-                    Tempus_ENABLE_Belos
-                    Tempus_ENABLE_Stratimikos
-                    Stratimikos_ENABLE_Belos
-  DOCSTR "Enables support for Epetra."
-    " Defaults to ON if the Epetra, Stratimikos, and Belos are all enabled,"
-    " otherwise defaults to OFF."
-  )
-MESSAGE(STATUS "Tempus: Epetra Stack: ${TEMPUS_ENABLE_EPETRA_STACK}")
-
 COMBINED_OPTION( TEMPUS_ENABLE_TPETRA_STACK
   DEP_OPTIONS_NAMES Tempus_ENABLE_Tpetra
                     Tempus_ENABLE_ThyraTpetraAdapters

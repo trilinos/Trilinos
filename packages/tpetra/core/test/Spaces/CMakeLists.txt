@@ -1,17 +1,14 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Spaces
-  SOURCES
-    Spaces.cpp
+  SOURCES Spaces.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
 
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SpaceUser
-  SOURCES
-    SpaceUser.cpp
+  SOURCES SpaceUser.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

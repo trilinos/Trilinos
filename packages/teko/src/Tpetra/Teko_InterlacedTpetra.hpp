@@ -141,7 +141,7 @@ void associateSubVectors(
     const std::vector<std::pair<int, Teuchos::RCP<Tpetra::Map<LO, GO, NT> > > >& subMaps,
     std::vector<Teuchos::RCP<const Tpetra::MultiVector<ST, LO, GO, NT> > >& subVectors);
 
-// build a single subblock Epetra_CrsMatrix
+// build a single subblock Tpetra::CrsMatrix
 Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     int i, int j, const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
     const std::vector<std::pair<int, Teuchos::RCP<Tpetra::Map<LO, GO, NT> > > >& subMaps);
