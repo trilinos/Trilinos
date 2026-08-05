@@ -286,6 +286,71 @@ def set_release_branch_protection(rel_branch: str):
         gh.close()
 
 
+def create_tag(tag_name: str, tag_message: str, branch: str, repo_path: str):
+    """
+    Create an annotated git tag on the specified branch.
+
+    Args:
+        tag_name: Name of the tag to create
+        tag_message: Message for the annotated tag
+        branch: Branch to tag
+        repo_path: Path to the git repository
+    """
+    try:
+        git_root = get_git_root(repo_path)
+        git_repo = git.Repo(git_root)
+
+        git_repo.git.checkout(branch)
+
+        git_repo.git.tag('-a', tag_name, '-m', tag_message)
+        logger.debug(f"Created tag {tag_name} on branch {branch}")
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to create tag {tag_name}: {e}") from e
+
+
+def push_tag(tag_name: str, repo_path: str, remote: str="origin"):
+    """Push a git tag to remote repository."""
+    try:
+        git_root = get_git_root(repo_path)
+        git_repo = git.Repo(git_root)
+
+        git_repo.git.push(remote, tag_name)
+        logger.debug(f"Pushed tag {tag_name} to {remote}")
+    except Exception as e:
+        raise RuntimeError(f"Failed to push tag {tag_name}: {e}") from e
+
+
+def create_release_label(label_name: str, color: str="658045"):
+    """
+    Create a GitHub issue label in the origin upstream repository.
+
+    Used to track issues and PRs destined for a given release's release notes.
+    If a label with the same name already exists, this is a no-op.
+
+    Args:
+        label_name: Name of the label (e.g. "17-1 release note")
+        color: 6-character hex color code (without leading '#')
+    """
+    token = os.getenv('GITHUB_TOKEN')
+    if not token:
+        raise RuntimeError(f"GITHUB_TOKEN environment variable not set.")
+
+    try:
+        gh = Github(auth=Auth.Token(os.environ['GITHUB_TOKEN']))
+        repo = gh.get_repo(ORG_REPO)
+
+        if label_name in [l.name for l in repo.get_labels()]:
+            logger.debug(f"Label '{label_name}' already exists; skipping creation.")
+            return
+
+        label = repo.create_label(name=label_name, color=color)
+        logger.debug(f"Created label '{label.name}'")
+
+    except GithubException as e:
+        raise RuntimeError(f"GitHub API error when creating label '{label_name}'.") from e
+    finally:
+        gh.close()
 
 
 

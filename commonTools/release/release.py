@@ -110,8 +110,24 @@ def main():
     pr = create_pull_request(dev_branch, dev_update_branch, title, body)
     print(f"Created dev branch update PR: {pr.html_url}")
 
-    return 0
 
+    #####################################
+    # Create tags for the release branch and push tag to GitHub
+
+    tag_name = f"trilinos-release-{rel['major']}-{rel['minor']}-{rel['patch']}"
+    tag_message = f"Trilinos release {args.rel_version}"
+    create_tag(tag_name, tag_message, rel_branch, git_root)
+    push_tag(tag_name, git_root)
+    print(f"Created and pushed tag: {tag_name}")
+
+    #####################################
+    # Create a GitHub issue label for the next set of release notes
+
+    label_name = f"{dev['major']}.{dev['minor']} release note"
+    create_release_label(label_name)
+    print(f"Created GitHub label: {label_name}")
+
+    return 0
 if __name__ == "__main__":
     sys.exit(main())
 
