@@ -87,7 +87,7 @@ def main():
 
     #####################################
     # Create Pull Request for release branch version update
-    title = "Framework: Update {arg.rel_version} release Version.cmake"
+    title = "Framework: Update {args.rel_version} release Version.cmake"
     body = "@trilinos/framework"
     pr = create_pull_request(rel_branch, rel_update_branch, title, body)
     print(f"Created release branch update PR: {pr.html_url}")
