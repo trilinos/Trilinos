@@ -6,6 +6,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_ContourTet.hpp>
+#include <Akri_ContourTri.hpp>
 #include <Akri_ContourUtils.hpp>
 #include <Akri_SubElement.hpp>
 #include <Akri_SubElementNodeAncestry.hpp>
@@ -1428,7 +1430,7 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
   NodeVec lnodes = my_nodes;
   lnodes.resize(6,(SubElementNode *)NULL);
 
-  const std::array<unsigned,6> & permute = ContourTri::get_permuted_node_ordinals(caseId);
+  const std::array<unsigned,6> & permute = ContourTri::get_permuted_tri6_node_ordinals(caseId);
   const int permutedCaseId = ContourTri::get_permuted_case_id(caseId);
 
   const unsigned i0 = permute[0];
@@ -1852,7 +1854,7 @@ SubElement_Tet_4::fix_hanging_children(CDMesh & mesh, const InterfaceID & interf
     const int permutation = edge_case_permutations[edge_case_id];
     STK_ThrowRequire(permutation >= 0);
 
-    const std::array<unsigned, 10> & permutedNodeOrdinals = ContourTet::get_permuted_node_ordinals_for_permutation(permutation);
+    const std::array<unsigned, 10> & permutedNodeOrdinals = ContourTet::get_permuted_tet10_node_ordinals_for_permutation(permutation);
     const unsigned i0 = permutedNodeOrdinals[0];
     const unsigned i1 = permutedNodeOrdinals[1];
     const unsigned i2 = permutedNodeOrdinals[2];
@@ -2065,7 +2067,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
   lnodes.resize(10,(SubElementNode *)NULL);
 
   const int permutedCaseId = ContourTet::get_permuted_case_id(caseId);
-  const std::array<unsigned,10> & permutedNodeOrdinals = ContourTet::get_permuted_node_ordinals(caseId);
+  const std::array<unsigned,10> & permutedNodeOrdinals = ContourTet::get_permuted_tet10_node_ordinals(caseId);
 
   const unsigned i0 = permutedNodeOrdinals[0];
   const unsigned i1 = permutedNodeOrdinals[1];

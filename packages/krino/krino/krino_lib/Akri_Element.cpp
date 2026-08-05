@@ -664,15 +664,19 @@ Mesh_Element::triangulate(const CDMesh & mesh, const InterfaceGeometry & interfa
   const bool inDecomposedBlock = decomposedBlocksSelector(mesh.stk_bulk().bucket(entity()));
   if (inDecomposedBlock)
   {
-    create_cutter(mesh, interfaceGeometry);
-
-    if (!myCuttingInterfaces.empty())
-      my_have_interface = true;
-
     if (my_phase.empty())
+    {
+      create_cutter(mesh, interfaceGeometry);
+
+      if (!myCuttingInterfaces.empty())
+        my_have_interface = true;
+
       my_phase = interfaceGeometry.get_starting_phase(myCutter.get());
+    }
     else
+    {
       my_have_interface = false; // uncut element with phase already set
+    }
   }
 
   if (!have_subelements() && (have_interface() || have_refined_edges()))

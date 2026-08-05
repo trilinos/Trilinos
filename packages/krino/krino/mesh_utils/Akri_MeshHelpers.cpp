@@ -29,6 +29,18 @@
 
 namespace krino{
 
+void connect_all_surfaces_to_all_blocks(stk::mesh::MetaData & meta)
+{
+  std::vector<const stk::mesh::Part*> blocks;
+  for (auto && volumePart : meta.get_mesh_parts())
+    if (volumePart->primary_entity_rank() == stk::topology::ELEMENT_RANK)
+      blocks.push_back(volumePart);
+
+  for (auto && surfacePart : meta.get_mesh_parts())
+    if (surfacePart->primary_entity_rank() == meta.side_rank())
+      meta.set_surface_to_block_mapping(surfacePart, blocks);
+}
+
 void populate_stk_local_ids(stk::mesh::BulkData & mesh)
 {
   stk::mesh::Selector selector = mesh.mesh_meta_data().universal_part();
@@ -50,6 +62,7 @@ void populate_stk_local_ids(stk::mesh::BulkData & mesh)
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds)
 {
   parentNodeIds.clear();
+  parentNodeIds.reserve(parentNodes.size());
   for (auto parent : parentNodes)
     parentNodeIds.push_back(mesh.identifier(parent));
 }
@@ -120,19 +133,19 @@ void fill_selected_edge_elements(const stk::mesh::BulkData & mesh, const stk::me
   edgeElements.resize(numSelected);
 }
 
-std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh,
+void fill_selected_side_attached_elements(const stk::mesh::BulkData &mesh,
   const stk::mesh::Selector & elementSelector,
-  const stk::mesh::Entity elem)
+  const stk::mesh::Entity elem,
+  std::vector<stk::mesh::Entity> & sideNbrs)
 {
-  std::vector<stk::mesh::Entity> nbrs;
-
+  sideNbrs.clear();
   std::vector<stk::mesh::Entity> elemNbrs;
   std::vector<stk::mesh::Entity> elemSideNodes;
 
   const stk::mesh::Entity* elemNodes = mesh.begin_nodes(elem);
   const stk::topology elemTopology = mesh.bucket(elem).topology();
   const unsigned numSides = elemTopology.num_sides();
-  nbrs.reserve(numSides);
+  sideNbrs.reserve(numSides);
   for (unsigned iside=0; iside<numSides; ++iside)
   {
     fill_side_nodes(mesh, elemTopology, elemNodes, iside, elemSideNodes);
@@ -140,9 +153,17 @@ std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::me
     stk::mesh::get_entities_through_relations(mesh, elemSideNodes, stk::topology::ELEMENT_RANK, elemNbrs);
     for (auto nbr : elemNbrs)
       if (nbr != elem && elementSelector(mesh.bucket(nbr)))
-        nbrs.push_back(nbr);
+        sideNbrs.push_back(nbr);
   }
-  return nbrs;
+}
+
+std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh,
+  const stk::mesh::Selector & elementSelector,
+  const stk::mesh::Entity elem)
+{
+  std::vector<stk::mesh::Entity> sideNbrs;
+  fill_selected_side_attached_elements(mesh, elementSelector, elem, sideNbrs);
+  return sideNbrs;
 }
 
 double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity)
@@ -1824,20 +1845,26 @@ void delete_faces_and_edges_without_entity_rank_parts(stk::mesh::BulkData & mesh
 
 //--------------------------------------------------------------------------------
 
-double compute_child_position(const unsigned dim, const double * childCoords, const double * parentCoords0, const double * parentCoords1)
+unsigned get_edge_longest_dimension(const unsigned dim, const double * edgeCoord0, const double * edgeCoord1)
 {
   unsigned bestDim = 0;
-  double bestExtent = parentCoords1[0] - parentCoords0[0];
+  double bestExtent = std::abs(edgeCoord1[0]-edgeCoord0[0]);
   for (unsigned d=1; d<dim; ++d)
   {
-    const double extent = parentCoords1[d] - parentCoords0[d];
-    if (std::abs(extent) > std::abs(bestExtent))
+    const double extent = std::abs(edgeCoord1[d]-edgeCoord0[d]);
+    if (extent > bestExtent)
     {
       bestDim = d;
       bestExtent = extent;
     }
   }
-  return (childCoords[bestDim] - parentCoords0[bestDim])/bestExtent;
+  return bestDim;
+}
+
+double compute_child_position(const unsigned dim, const double * childCoords, const double * parentCoords0, const double * parentCoords1)
+{
+  const unsigned bestDim = get_edge_longest_dimension(dim, parentCoords0, parentCoords1);
+  return (childCoords[bestDim] - parentCoords0[bestDim])/(parentCoords1[bestDim] - parentCoords0[bestDim]);
 }
 
 double compute_child_position(const unsigned dim, const stk::math::Vector3d & childCoords, const stk::math::Vector3d & parentCoords0, const stk::math::Vector3d & parentCoords1)
@@ -2602,6 +2629,13 @@ void pack_for_owning_procs(const stk::mesh::BulkData & mesh,
   });
 }
 
+size_t get_index_of_entity_in_sorted(const stk::mesh::BulkData& mesh, const std::vector<stk::mesh::Entity> & sortedEntities, const stk::mesh::Entity entity)
+{
+  const auto iter = std::lower_bound(sortedEntities.begin(), sortedEntities.end(), entity, stk::mesh::EntityLess(mesh));
+  STK_ThrowAssert(iter != sortedEntities.end() && *iter == entity);
+  return std::distance(sortedEntities.begin(), iter);
+};
+
 static std::vector<int> unpack_procs_that_have_selected_elements_for_nodes(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & sortedNodes,
     stk::CommSparse &commSparse)
@@ -3189,14 +3223,20 @@ static void fill_part_changes_to_convert_entity(const stk::mesh::BulkData & mesh
 {
   addParts.clear();
   removeParts.clear();
+  const stk::mesh::EntityRank entityRank = mesh.bucket(entity).entity_rank();
   for (auto * part : mesh.bucket(entity).supersets())
   {
-    const auto iter = partOrdinalMapping.find(part->mesh_meta_data_ordinal());
-    if (iter != partOrdinalMapping.end())
+    if (part->primary_entity_rank() == entityRank)
     {
-      removeParts.push_back(part);
-      if (iter->second >= 0) // Negative part ordinal used to indicate invalid mapping
-        addParts.push_back(&mesh.mesh_meta_data().get_part(iter->second));
+      const auto iter = partOrdinalMapping.find(part->mesh_meta_data_ordinal());
+      if (iter != partOrdinalMapping.end())
+      {
+        removeParts.push_back(part);
+        if (iter->second >= 0) // Negative part ordinal used to indicate invalid mapping
+        {
+          addParts.push_back(&mesh.mesh_meta_data().get_part(iter->second));
+        }
+      }
     }
   }
 }
@@ -3216,26 +3256,45 @@ static void append_part_changes_to_convert_entity(const stk::mesh::BulkData & me
   removeParts.push_back(entityRemoveParts);
 }
 
-static void append_part_changes_to_convert_element_and_sides(const stk::mesh::BulkData & mesh,
-    const std::map<int,int> & partOrdinalMapping,
-    const stk::mesh::Entity elem,
-    std::vector<stk::mesh::Entity> & entitiesToChange,
-    std::vector<stk::mesh::PartVector> & addParts,
-    std::vector<stk::mesh::PartVector> & removeParts)
+static std::vector<stk::mesh::Entity> get_owned_sides_of_elements(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Entity> & elements)
 {
   const stk::mesh::EntityRank sideRank = mesh.mesh_meta_data().side_rank();
-  append_part_changes_to_convert_entity(mesh, partOrdinalMapping, elem, entitiesToChange, addParts, removeParts);
-  for (auto side : StkMeshEntities{mesh.begin(elem, sideRank), mesh.end(elem, sideRank)})
-    append_part_changes_to_convert_entity(mesh, partOrdinalMapping, side, entitiesToChange, addParts, removeParts);
+  std::vector<stk::mesh::Entity> ownedElementSides;
+  std::vector<stk::mesh::Entity> unownedElementSides;
+  for (auto elem : elements)
+  {
+    for (auto side : StkMeshEntities{mesh.begin(elem, sideRank), mesh.end(elem, sideRank)})
+    {
+      if (mesh.bucket(side).owned())
+        ownedElementSides.push_back(side);
+      else
+        unownedElementSides.push_back(side);
+    }
+  }
+
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_for_owning_procs(mesh, unownedElementSides, commSparse);
+  const std::vector<stk::mesh::Entity> ownedSidesFromUnownedElements = unpack_entities_from_other_procs(mesh, commSparse);
+  ownedElementSides.insert(ownedElementSides.end(), ownedSidesFromUnownedElements.begin(), ownedSidesFromUnownedElements.end());
+  stk::util::sort_and_unique(ownedElementSides, stk::mesh::EntityLess(mesh));
+
+  return ownedElementSides;
 }
 
 void batch_convert_elements_and_their_sides(stk::mesh::BulkData & mesh, const std::map<int,int> & partOrdinalMapping, const std::vector<stk::mesh::Entity> & elements)
 {
+  const std::vector<stk::mesh::Entity> ownedSidesToConvert = get_owned_sides_of_elements(mesh, elements);
+
   std::vector<stk::mesh::Entity> entitiesToChange;
   std::vector<stk::mesh::PartVector> addParts;
   std::vector<stk::mesh::PartVector> removeParts;
+
   for (auto elem : elements)
-    append_part_changes_to_convert_element_and_sides(mesh, partOrdinalMapping, elem, entitiesToChange, addParts, removeParts);
+    append_part_changes_to_convert_entity(mesh, partOrdinalMapping, elem, entitiesToChange, addParts, removeParts);
+
+  for (auto side : ownedSidesToConvert)
+    append_part_changes_to_convert_entity(mesh, partOrdinalMapping, side, entitiesToChange, addParts, removeParts);
 
   mesh.batch_change_entity_parts(entitiesToChange, addParts, removeParts);
 }

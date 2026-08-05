@@ -107,17 +107,10 @@ void perform_multilevel_adaptivity(RefinementManager & refinement,
 
     if (rebalanceInterval > 0 && num_refinements%rebalanceInterval == 0)
     {
-      refinement.do_rebalance();
+      const bool didRebal = refinement.do_rebalance();
+      if (didRebal)
+        parallel_sync_all_fields(mesh);
     }
-  }
-
-  if (refinement.require_post_refinement_fixups())
-  {
-    // This probably should not be needed.
-    CDMesh::fixup_adapted_element_parts(mesh);
-
-    // This probably should not be needed.
-    attach_sides_to_elements(mesh);
   }
 }
 }
