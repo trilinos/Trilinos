@@ -221,16 +221,19 @@ namespace BaskerNS
     inline
     int strong_component 
     (   
-     long           &n,
-     long           *col_ptr,
-     long          *row_idx,
-     long           &nblks,
-     long           *perm,
-     long           *perm_in,
-     long          *CC
+     UF_long           &n,
+     UF_long           *col_ptr,
+     UF_long           *row_idx,
+     UF_long           &nblks,
+     UF_long           *perm,
+     UF_long           *perm_in,
+     long              *CC
     )
     {
-      typedef long  l_Int;
+      // NOTE: must be UF_long (not plain `long`), since on Win64 (LLP64) UF_long
+      // is __int64 (64-bit) while `long` is only 32-bit; the SuiteSparse "_l"
+      // routines below always take UF_long* (see trilinos_UFconfig.h).
+      typedef UF_long  l_Int;
       
       //l_Int p[n]; //output row_per
       l_Int *p = new l_Int[n];
@@ -291,18 +294,18 @@ namespace BaskerNS
     inline
     int amd_order
     (
-     long n, 
-     long *col_ptr,
-     long *row_idx,
-     long *p,
+     UF_long n,
+     UF_long *col_ptr,
+     UF_long *row_idx,
+     UF_long *p,
      bool verbose
     )
     {
       double Info[TRILINOS_AMD_INFO];
-      for(long i = 0; i < TRILINOS_AMD_INFO; ++i)
+      for(UF_long i = 0; i < TRILINOS_AMD_INFO; ++i)
       {Info[i] = 0;}
 
-      long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
+      UF_long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
 
       if (verbose) {
         if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
@@ -320,20 +323,20 @@ namespace BaskerNS
     inline
     int amd_order
     (
-     long n, 
-     long *col_ptr,
-     long *row_idx,
-     long *p,
+     UF_long n,
+     UF_long *col_ptr,
+     UF_long *row_idx,
+     UF_long *p,
      double &l_nnz,
      double &lu_work,
      bool verbose
     )
     {
       double Info[TRILINOS_AMD_INFO];
-      for(long i = 0; i < TRILINOS_AMD_INFO; ++i)
+      for(UF_long i = 0; i < TRILINOS_AMD_INFO; ++i)
       {Info[i] = 0;}
 
-      long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
+      UF_long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
 
       if (verbose) {
         if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
