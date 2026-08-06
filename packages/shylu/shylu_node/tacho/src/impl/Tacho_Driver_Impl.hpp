@@ -222,11 +222,11 @@ template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotToleranc
   using arith_traits = ArithTraits<value_type>;
   _replace_tiny_pivot = option;
   if (option == 1) {
-    // tol = sqrt(eps)
-    _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
-  } else if (option == 2) {
     // tol = eps
     _pivot_tol = arith_traits::epsilon();
+  } else if (option == 2) {
+    // tol = sqrt(eps)
+    _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
   } else {
     // if option == 0, then tol = 0.0
     // if option >  2, then tol = sqrt(tol)||A||
@@ -521,8 +521,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
       break;
     }
     }
+    alpha = Kokkos::sqrt(alpha);
     if (_shift_diag != 0) printf(" > shifting diagonal by %.2e (||A|| = %.2e)\n",_shift,alpha);
-    if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e (%d, alpha=%.2e)\n",_pivot_tol,_replace_tiny_pivot,alpha);
+    if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e (%d, ||A|| = %.2e)\n",_pivot_tol,_replace_tiny_pivot,alpha);
     if (_m <= _small_problem_thres) {
       printf( " Small matrix\n" );
     }

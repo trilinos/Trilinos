@@ -201,7 +201,7 @@ int driver(const std::string file, const std::string rhs, const std::string meth
           solver.shiftDiagonal(0);
           if (method == 0) {
             // with tol = eps
-            solver.useDefaultPivotTolerance(2);
+            solver.useDefaultPivotTolerance(1);
           } else {
             // with tol = sqrt(eps)||A||
             solver.useDefaultPivotTolerance(3);
