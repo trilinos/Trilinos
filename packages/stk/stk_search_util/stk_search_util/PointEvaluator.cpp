@@ -102,11 +102,23 @@ void MasterElementGaussPointEvaluator::coordinates(const spmd::EntityKeyPair& k,
   m_masterElemProvider->evaluate_field(meTopo, m_paramCoordVector, nDim, m_elementCoords, coords);
 }
 
-CentroidEvaluator::CentroidEvaluator(stk::mesh::BulkData& /*bulk*/, const stk::mesh::FieldBase* coords)
-  : m_coords(coords)
+void MasterElementGaussPointEvaluator::acquire_field_data()
 {
-  STK_ThrowRequireMsg(m_coords->entity_rank() == stk::topology::NODE_RANK ||
-                      m_coords->entity_rank() == stk::topology::ELEM_RANK,
+  m_coords.acquire_field_data();
+  m_masterElemProvider->acquire_field_data();
+}
+
+void MasterElementGaussPointEvaluator::release_field_data()
+{
+  m_coords.release_field_data();
+  m_masterElemProvider->release_field_data();
+}
+
+CentroidEvaluator::CentroidEvaluator(stk::mesh::BulkData& /*bulk*/, const stk::mesh::FieldBase* coords)
+  : m_coordinateField(coords)
+{
+  STK_ThrowRequireMsg(m_coordinateField->entity_rank() == stk::topology::NODE_RANK ||
+                      m_coordinateField->entity_rank() == stk::topology::ELEM_RANK,
                       "Centroid evaluator coordinate field must be either NODE_RANK or ELEM_RANK");
 }
 
@@ -118,21 +130,36 @@ size_t CentroidEvaluator::num_points(const spmd::EntityKeyPair& /*k*/, const stk
 void CentroidEvaluator::coordinates(const spmd::EntityKeyPair& k, size_t /*pointIndex*/, std::vector<double>& coords)
 {
   stk::mesh::Entity elem = k;
-  const unsigned nDim = m_coords->mesh_meta_data().spatial_dimension();
+  const unsigned nDim = m_coordinateField->mesh_meta_data().spatial_dimension();
 
-  if(m_coords->entity_rank() == stk::topology::NODE_RANK) {
-    stk::search::determine_centroid(nDim, elem, *m_coords, coords);
+  if(m_coordinateField->entity_rank() == stk::topology::NODE_RANK) {
+    stk::search::determine_centroid(nDim, elem, m_cachedCoordinateFieldData, coords);
   }
-  else if(m_coords->entity_rank() == stk::topology::ELEM_RANK) {
-    const double* coor = static_cast<double*>(stk::mesh::field_data(*m_coords, elem));
-    coords.assign(coor, coor+nDim);
+  else if(m_coordinateField->entity_rank() == stk::topology::ELEM_RANK) {
+    CachedEntityFieldData data;
+    m_cachedCoordinateFieldData->populate_entity_data(elem, data);
+
+    coords.clear();
+    for(unsigned j = 0; j < nDim; ++j) {
+      coords.push_back(data.constPointer[j * data.componentStride]);
+    }
   }
 }
 
-NodeEvaluator::NodeEvaluator(stk::mesh::BulkData& /*bulk*/, const stk::mesh::FieldBase* coords)
-  : m_coords(coords)
+void CentroidEvaluator::acquire_field_data()
 {
-  STK_ThrowRequireMsg(m_coords->entity_rank() == stk::topology::NODE_RANK,
+  fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+}
+
+void CentroidEvaluator::release_field_data()
+{
+  clear_cached_field_data(m_cachedCoordinateFieldData);
+}
+
+NodeEvaluator::NodeEvaluator(stk::mesh::BulkData& /*bulk*/, const stk::mesh::FieldBase* coords)
+  : m_coordinateField(coords)
+{
+  STK_ThrowRequireMsg(m_coordinateField->entity_rank() == stk::topology::NODE_RANK,
                       "Centroid evaluator coordinate field must be NODE_RANK");
 }
 
@@ -144,10 +171,25 @@ size_t NodeEvaluator::num_points(const spmd::EntityKeyPair& /*k*/, const stk::to
 void NodeEvaluator::coordinates(const spmd::EntityKeyPair& k, size_t /*pointIndex*/, std::vector<double>& coords)
 {
   stk::mesh::Entity node = k;
-  const unsigned nDim = m_coords->mesh_meta_data().spatial_dimension();
+  const unsigned nDim = m_coordinateField->mesh_meta_data().spatial_dimension();
 
-  const double* coor = static_cast<double*>(stk::mesh::field_data(*m_coords, node));
-  coords.assign(coor, coor+nDim);
+  CachedEntityFieldData data;
+  m_cachedCoordinateFieldData->populate_entity_data(node, data);
+
+  coords.clear();
+  for(unsigned j = 0; j < nDim; ++j) {
+    coords.push_back(data.constPointer[j * data.componentStride]);
+  }
+}
+
+void NodeEvaluator::acquire_field_data()
+{
+  fill_cached_const_field_data(m_coordinateField, m_cachedCoordinateFieldData);
+}
+
+void NodeEvaluator::release_field_data()
+{
+  clear_cached_field_data(m_cachedCoordinateFieldData);
 }
 
 } // namespace search

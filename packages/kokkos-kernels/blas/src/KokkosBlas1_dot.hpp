@@ -25,7 +25,7 @@ namespace KokkosBlas {
 /// \return The dot product result; a single value.
 template <class execution_space, class XVector, class YVector,
           typename std::enable_if<Kokkos::is_execution_space_v<execution_space>, int>::type = 0>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot(
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot(
     const execution_space& space, const XVector& x, const YVector& y) {
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::dot: execution_space must be a valid Kokkos "
@@ -57,7 +57,8 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
                                         typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
                                         typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  using dot_type = typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
+  using dot_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type;
   // result_type is usually just dot_type, except:
   //  if dot_type is float, result_type is double
   //  if dot_type is complex<float>, result_type is complex<double>
@@ -86,13 +87,13 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
     // mfh 22 Jan 2020: We need the line below because
     // Kokkos::complex<T> lacks a constructor that takes a
     // Kokkos::complex<U> with U != T.
-    return Kokkos::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
+    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
   } else {
     dot_type result{};
     RVector_Internal R = RVector_Internal(&result);
     Impl::Dot<execution_space, RVector_Internal, XVector_Internal, YVector_Internal>::dot(space, R, X, Y);
     space.fence();
-    return Kokkos::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
+    return KokkosKernels::Details::CastPossiblyComplex<dot_type, result_type>::cast(result);
   }
 }
 
@@ -109,7 +110,7 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
 ///
 /// \return The dot product result; a single value.
 template <class XVector, class YVector>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot(
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type dot(
     const XVector& x, const YVector& y) {
   return dot(typename XVector::execution_space{}, x, y);
 }

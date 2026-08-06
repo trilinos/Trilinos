@@ -46,6 +46,14 @@ class ScatterFields : public panzer::EvaluatorWithBaseImpl<TraitsT>,
 
   bool cellFields_;
 
+  /** \brief Shared setup logic for both constructors: sets up dependent fields and per-field scaling.
+    *
+    * \param[in] scatterName name to give this evaluator.
+    * \param[in] mesh the STK mesh to write field values to.
+    * \param[in] basis the basis whose node values are gathered from the fields and written to the mesh.
+    * \param[in] names names of the fields to scatter.
+    * \param[in] scaling per-field scale factor applied before writing; must be the same length as names.
+    */
   void initialize(const std::string & scatterName,
                   const Teuchos::RCP<STK_Interface> mesh,
                   const Teuchos::RCP<const panzer::PureBasis> & basis,
@@ -53,21 +61,38 @@ class ScatterFields : public panzer::EvaluatorWithBaseImpl<TraitsT>,
                   const std::vector<double> & scaling);
 
 public:
-  
+
+  /** \brief Construct from the mesh, basis, field names to scatter, and a per-field scaling factor (must be the same length as names).
+    *
+    * \param[in] scatterName name to give this evaluator.
+    * \param[in] mesh the STK mesh to write field values to.
+    * \param[in] basis the basis whose node values are gathered from the fields and written to the mesh.
+    * \param[in] names names of the fields to scatter.
+    */
   ScatterFields(const std::string & scatterName,
                 const Teuchos::RCP<STK_Interface> mesh,
                 const Teuchos::RCP<const panzer::PureBasis> & basis,
                 const std::vector<std::string> & names);
 
+  /** \brief Construct from the mesh, basis, field names to scatter, and a per-field scaling factor (must be the same length as names).
+    *
+    * \param[in] scatterName name to give this evaluator.
+    * \param[in] mesh the STK mesh to write field values to.
+    * \param[in] basis the basis whose node values are gathered from the fields and written to the mesh.
+    * \param[in] names names of the fields to scatter.
+    * \param[in] scaling per-field scale factor applied before writing; must be the same length as names.
+    */
   ScatterFields(const std::string & scatterName,
                 const Teuchos::RCP<STK_Interface> mesh,
                 const Teuchos::RCP<const panzer::PureBasis> & basis,
                 const std::vector<std::string> & names,
                 const std::vector<double> & scaling);
 
-  void postRegistrationSetup(typename TraitsT::SetupData d, 
+  /// \brief Looks up the STK field pointers needed by evaluateFields(). Called once before the first evaluation.
+  void postRegistrationSetup(typename TraitsT::SetupData d,
                              PHX::FieldManager<TraitsT>& fm);
 
+  /// \brief Writes this workset's (scaled) field values to the STK mesh per the class description.
   void evaluateFields(typename TraitsT::EvalData d);
 }; 
 

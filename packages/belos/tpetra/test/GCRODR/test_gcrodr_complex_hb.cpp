@@ -92,7 +92,7 @@ int run(int argc, char *argv[])
   // Create initial vectors
   RCP<MV> B, X;
   X = rcp( new MV(map,numrhs) );
-  MVT::MvRandom( *X );
+  MVT::MvInit( *X, one );
   B = rcp( new MV(map,numrhs) );
   OPT::Apply( *A, *X, *B );
   MVT::MvInit( *X, 0.0 );

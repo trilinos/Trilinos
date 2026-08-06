@@ -1364,9 +1364,11 @@ void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
   if (balanceSettings.shouldFixSpiders()) {
     internal::fill_spider_connectivity_count_fields_and_parts(stkMeshBulkData, balanceSettings);
 
-    const stk::mesh::Part & spiderPart = *balanceSettings.getSpiderPart(stkMeshBulkData);
-    for (stk::mesh::Selector & selector : balanceSelectors) {
-      selector = selector & !spiderPart;
+    if (not balanceSettings.shouldGroupSpiderLegs()) {
+      const stk::mesh::Part & spiderPart = *balanceSettings.getSpiderPart(stkMeshBulkData);
+      for (stk::mesh::Selector & selector : balanceSelectors) {
+        selector = selector & !spiderPart;
+      }
     }
   }
 

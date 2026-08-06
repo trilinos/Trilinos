@@ -173,7 +173,5 @@ private:
 } // namespace unit_test_util
 } // namespace stk
 
-
-
-
 #endif /* STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_CONSTRUCTEDMESH_HPP_ */
+

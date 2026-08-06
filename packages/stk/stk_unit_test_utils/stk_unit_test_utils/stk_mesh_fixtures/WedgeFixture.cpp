@@ -196,6 +196,7 @@ void WedgeFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
 
     stk::mesh::EntityIdVector elem_nodes(8);
     stk::mesh::EntityIdVector wedge_nodes(6);
+    stk::mesh::EntityVector nodeVec(6);
 
     for (size_t hex_id : hex_range_on_this_processor) {
       size_t ix = 0, iy = 0, iz = 0;
@@ -219,30 +220,44 @@ void WedgeFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
          wedge_nodes[5] = elem_nodes[wedge_vert[wed][5]];
 
          EntityId wedge_id = 2*hex_id + wed + elem_id_start;
-         stk::mesh::declare_element( m_bulk_data, m_elem_parts, wedge_id, wedge_nodes);
+         Entity elem = stk::mesh::declare_element( m_bulk_data, m_elem_parts, wedge_id, wedge_nodes);
+         nodeVec.clear();
+         auto elemNodes = m_bulk_data.get_connected_entities(elem, stk::topology::NODE_RANK);
+         for(stk::mesh::Entity node : elemNodes) {
+           nodeVec.push_back(node);//put in vector so memory doesn't move during change-parts
+         }
 
-         for (size_t i = 0; i<6; ++i) {
-           stk::mesh::Entity const node = m_bulk_data.get_entity( stk::topology::NODE_RANK , wedge_nodes[i] );
+         for(stk::mesh::Entity node : nodeVec) {
            m_bulk_data.change_entity_parts(node, m_node_parts);
 
            STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
                               "This process should know about the nodes that make up its element");
 
-           DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, wedge_nodes[i], node);
-
-           // Compute and assign coordinates to the node
-           size_t nx = 0, ny = 0, nz = 0;
-           node_x_y_z(wedge_nodes[i], nx, ny, nz);
-
-           auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
-           std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
-
-           coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
-
-           for (stk::mesh::ComponentIdx d : data.components()) {
-             data(d) = data_array[d];
-           }
+           stk::mesh::EntityId nodeId = m_bulk_data.identifier(node);
+           DoAddNodeSharings(m_bulk_data, m_nodes_to_procs, nodeId, node);
          }
+       }
+     }
+
+     stk::mesh::EntityVector nodes;
+     stk::mesh::Selector nodeSelector = stk::mesh::selectIntersection(m_elem_parts);
+     stk::mesh::get_entities(m_bulk_data, stk::topology::NODE_RANK, nodeSelector, nodes);
+
+     auto data = m_coord_field->data<stk::mesh::ReadWrite>();
+
+     for(stk::mesh::Entity node : nodes) {
+       stk::mesh::EntityId nodeId = m_bulk_data.identifier(node);
+       // Compute and assign coordinates to the node
+       size_t nx = 0, ny = 0, nz = 0;
+       node_x_y_z(nodeId, nx, ny, nz);
+
+       std::array<double, 3> data_array{0,0,0};
+
+       auto nodeData = data.entity_values(node);
+       coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
+
+       for (stk::mesh::ComponentIdx d : nodeData.components()) {
+         nodeData(d) = data_array[d];
       }
     }
   }

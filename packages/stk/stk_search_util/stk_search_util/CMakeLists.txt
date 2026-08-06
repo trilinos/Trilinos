@@ -43,14 +43,26 @@ FILE(GLOB SOURCES_SPMD CONFIGURE_DEPENDS spmd/*.cpp)
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
+if(NOT Trilinos_ENABLE_Intrepid2)
+  LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/Intrepid2BasisFactory.hpp")
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/MasterElementProviderIntrepid2.hpp")
+
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Intrepid2BasisFactory.cpp")
+  LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/MasterElementProviderIntrepid2.cpp")
+endif()
+
   TRIBITS_ADD_LIBRARY(stk_search_util
     NOINSTALLHEADERS ${HEADERS} ${HEADERS_SPMD}
     SOURCES ${SOURCES} ${SOURCES_SPMD}
   )
 else()
+
   add_library(stk_search_util ${SOURCES} ${SOURCES_SPMD})
+  find_package(Intrepid2 REQUIRED)
+  target_link_libraries(stk_search_util PUBLIC Intrepid2::all_libs)
   target_link_libraries(stk_search_util PUBLIC stk_search)
   target_link_libraries(stk_search_util PUBLIC stk_mesh_base)
+  target_link_libraries(stk_search_util PUBLIC stk_expreval)
 
   target_include_directories(stk_search_util PUBLIC
     $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_search_util>

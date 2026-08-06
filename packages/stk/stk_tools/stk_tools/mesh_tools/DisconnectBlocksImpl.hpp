@@ -156,7 +156,7 @@ struct InternalFaceInfo
   stk::mesh::Entity elemInSecondBlock;
   stk::mesh::ConnectivityOrdinal faceOrdinalInSecondBlock;
   stk::mesh::Entity internalFace;
-  std::pair<bool, bool> isInBlockPairSideset;
+  std::pair<bool, bool> isDefinedRelativeToBlockPair;
   std::map<std::pair<stk::mesh::Entity,stk::mesh::ConnectivityOrdinal>, stk::mesh::Entity> nodeMap;
 
   InternalFaceInfo(const BlockPair& blockPair_,
@@ -165,14 +165,14 @@ struct InternalFaceInfo
                    const stk::mesh::Entity elemInSecondBlock_,
                    const stk::mesh::ConnectivityOrdinal faceOrdinalInSecondBlock_,
                    const stk::mesh::Entity internalFace_,
-                   const std::pair<bool, bool>& isInBlockPairSideset_)
+                   const std::pair<bool, bool>& isDefinedRelativeToBlockPair_)
   : blockPair(blockPair_)
   , elemInFirstBlock(elemInFirstBlock_)
   , faceOrdinalInFirstBlock(faceOrdinalInFirstBlock_)
   , elemInSecondBlock(elemInSecondBlock_)
   , faceOrdinalInSecondBlock(faceOrdinalInSecondBlock_)
   , internalFace(internalFace_)
-  , isInBlockPairSideset(isInBlockPairSideset_) {}
+  , isDefinedRelativeToBlockPair(isDefinedRelativeToBlockPair_) {}
 
   InternalFaceInfo(const InternalFaceInfo&) = default;
 
@@ -196,7 +196,7 @@ struct InternalFaceInfo
     elemInSecondBlock = info.elemInSecondBlock;
     faceOrdinalInSecondBlock = info.faceOrdinalInSecondBlock;
     internalFace = info.internalFace;
-    isInBlockPairSideset = info.isInBlockPairSideset;
+    isDefinedRelativeToBlockPair = info.isDefinedRelativeToBlockPair;
   };
 
   bool operator==(const InternalFaceInfo &rhs) const

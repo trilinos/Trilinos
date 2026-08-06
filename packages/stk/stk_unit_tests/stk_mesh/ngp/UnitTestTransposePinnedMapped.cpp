@@ -200,7 +200,9 @@ TEST_F(TestTranspose, transpose_from)
   const unsigned numBuckets = 3;
   setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData.data(),
+                                                                   numScalarsPerEntity,
+                                                                   deviceFieldMetaData.extent(0),
                                                                    stk::mesh::Layout::Right);
   check_device_field_data_values(numBuckets);
 }
@@ -212,7 +214,9 @@ TEST_F(TestTranspose, transpose_modified_buckets)
   const unsigned numBuckets = 4;
   setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_modified_buckets_to_device<double>(execSpace, deviceFieldMetaData, 0,
+  stk::mesh::impl::transpose_modified_buckets_to_device<double>(execSpace, deviceFieldMetaData.data(),
+                                                                numScalarsPerEntity,
+                                                                deviceFieldMetaData.extent(0), 0,
                                                                 deviceBucketsMarkedModified,
                                                                 stk::mesh::Layout::Right);
   check_device_field_data_values(numBuckets);
@@ -225,9 +229,13 @@ TEST_F(TestTranspose, transpose_to)
   const unsigned numBuckets = 5;
   setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData.data(),
+                                                                   numScalarsPerEntity,
+                                                                   deviceFieldMetaData.extent(0),
                                                                    stk::mesh::Layout::Right);
-  stk::mesh::impl::transpose_to_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+  stk::mesh::impl::transpose_to_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData.data(),
+                                                                 numScalarsPerEntity,
+                                                                 deviceFieldMetaData.extent(0),
                                                                  stk::mesh::Layout::Right);
   check_host_field_data_values(numBuckets);
 }

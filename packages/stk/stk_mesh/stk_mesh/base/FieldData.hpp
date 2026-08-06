@@ -56,10 +56,10 @@ public:
   static constexpr Layout layout = DataLayout;
 
   KOKKOS_FUNCTION FieldData();
-  FieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes);
+  FieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, FieldDataCopyTracking* copyTracking);
   KOKKOS_FUNCTION virtual ~FieldData() override {}
 
-  FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
+  FieldData(const FieldData& fieldData, FieldAccessTag accessTag, const char* file, int line);
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData(FieldData&&) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(const FieldData&) = default;
@@ -98,10 +98,10 @@ public:
   static constexpr Layout layout = Layout::Right;
 
   FieldData();
-  FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName, const DataTraits& dataTraits);
+  FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const DataTraits& dataTraits);
   KOKKOS_FUNCTION virtual ~FieldData() override {}
 
-  FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
+  FieldData(const FieldData& fieldData, FieldAccessTag accessTag, const char* file, int line);
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData(FieldData&&) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(const FieldData&) = default;
@@ -146,10 +146,10 @@ public:
   static constexpr Layout layout = Layout::Left;
 
   FieldData();
-  FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName, const DataTraits& dataTraits);
+  FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const DataTraits& dataTraits);
   KOKKOS_FUNCTION virtual ~FieldData() override {}
 
-  FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
+  FieldData(const FieldData& fieldData, FieldAccessTag accessTag, const char* file, int line);
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData(FieldData&&) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(const FieldData&) = default;
@@ -194,7 +194,8 @@ public:
   static constexpr Layout layout = Layout::Auto;
 
   FieldData();
-  FieldData(const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag);
+  FieldData(const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag,
+            const char* file, int line);
   KOKKOS_FUNCTION virtual ~FieldData() override {}
 
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
@@ -241,16 +242,18 @@ FieldData<T, Space, DataLayout>::FieldData()
 
 //------------------------------------------------------------------------------
 template <typename T, typename Space, Layout DataLayout>
-FieldData<T, Space, DataLayout>::FieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes)
-  : ConstFieldData<T, Space, DataLayout>(hostFieldBytes)
+FieldData<T, Space, DataLayout>::FieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes,
+                                           FieldDataCopyTracking* copyTracking)
+  : ConstFieldData<T, Space, DataLayout>(hostFieldBytes, copyTracking)
 {
   static_assert(DataLayout == Layout::Left, "Only Layout::Left is supported for device data");
 }
 
 //------------------------------------------------------------------------------
 template <typename T, typename Space, Layout DataLayout>
-FieldData<T, Space, DataLayout>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
-  : ConstFieldData<T, Space, DataLayout>(fieldData, accessTag)
+FieldData<T, Space, DataLayout>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag,
+                                           const char* file, int line)
+  : ConstFieldData<T, Space, DataLayout>(fieldData, accessTag, file, line)
 {}
 
 //------------------------------------------------------------------------------
@@ -327,15 +330,15 @@ FieldData<T, stk::ngp::HostSpace, Layout::Right>::FieldData()
 //------------------------------------------------------------------------------
 template <typename T>
 FieldData<T, stk::ngp::HostSpace, Layout::Right>::FieldData(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                            const std::string& fieldName,
                                                             const DataTraits& dataTraits)
-  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>(entityRank, fieldOrdinal, fieldName, dataTraits)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>(entityRank, fieldOrdinal, dataTraits)
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostSpace, Layout::Right>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
-  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>(fieldData, accessTag)
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag,
+                                                            const char* file, int line)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>(fieldData, accessTag, file, line)
 {}
 
 //------------------------------------------------------------------------------
@@ -344,9 +347,9 @@ inline EntityValues<T, stk::ngp::HostSpace, Layout::Right>
 FieldData<T, stk::ngp::HostSpace, Layout::Right>::entity_values(Entity entity,
                                                                 const char* file, int line) const
 {
-  const MeshIndex& mi = this->mesh().mesh_index(entity);
-
   this->check_updated_field(file, line);
+
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
   this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
@@ -444,15 +447,15 @@ FieldData<T, stk::ngp::HostSpace, Layout::Left>::FieldData()
 //------------------------------------------------------------------------------
 template <typename T>
 FieldData<T, stk::ngp::HostSpace, Layout::Left>::FieldData(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                           const std::string& fieldName,
                                                            const DataTraits& dataTraits)
-  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>(entityRank, fieldOrdinal, fieldName, dataTraits)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>(entityRank, fieldOrdinal, dataTraits)
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostSpace, Layout::Left>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
-  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>(fieldData, accessTag)
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag,
+                                                           const char* file, int line)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>(fieldData, accessTag, file, line)
 {}
 
 //------------------------------------------------------------------------------
@@ -461,9 +464,9 @@ inline EntityValues<T, stk::ngp::HostSpace, Layout::Left>
 FieldData<T, stk::ngp::HostSpace, Layout::Left>::entity_values(Entity entity,
                                                                const char* file, int line) const
 {
-  const MeshIndex& mi = this->mesh().mesh_index(entity);
-
   this->check_updated_field(file, line);
+
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
   this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
@@ -565,9 +568,9 @@ FieldData<T, stk::ngp::HostSpace, Layout::Auto>::FieldData()
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostSpace, Layout::Auto>::FieldData(
-    const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag)
-  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>(hostFieldBytes, accessTag)
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::FieldData(const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes,
+                                                           FieldAccessTag accessTag, const char* file, int line)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>(hostFieldBytes, accessTag, file, line)
 {}
 
 //------------------------------------------------------------------------------
@@ -576,9 +579,9 @@ inline EntityValues<T, stk::ngp::HostSpace, Layout::Auto>
 FieldData<T, stk::ngp::HostSpace, Layout::Auto>::entity_values(Entity entity,
                                                                const char* file, int line) const
 {
-  const MeshIndex& mi = this->mesh().mesh_index(entity);
-
   this->check_updated_field(file, line);
+
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
   this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];

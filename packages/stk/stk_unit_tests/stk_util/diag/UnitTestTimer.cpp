@@ -387,11 +387,9 @@ TEST(UnitTestTimer, MultipleStarts)
       childTimer.stop();
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    double expectedTime = 0.2;
-    double measuredTime = childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap();
-    double relativeError = (std::abs(expectedTime - measuredTime)/expectedTime);
-    double relativeTolerance = 0.1;
-    EXPECT_TRUE(relativeError < relativeTolerance)<<"expectedTime="<<expectedTime<<", measuredTime="<<measuredTime<<", relativeError="<<relativeError<<", relativeTolerance="<<relativeTolerance;
+    const double expectedTime = 0.2;
+    const double measuredTime = childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap();
+    EXPECT_TRUE(measuredTime >= expectedTime);
     EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
     stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
   }

@@ -6,7 +6,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_ArithTraits.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY

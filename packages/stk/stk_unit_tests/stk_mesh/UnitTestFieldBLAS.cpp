@@ -229,8 +229,8 @@ void checkScalarFields(BLASFixtureScalar<T, Layout1, Layout2, Layout3>& fixture,
 }
 
 template <typename T, stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3>
-void checkScalarFields(BLASFixtureScalar<std::complex<T>, Layout1, Layout2, Layout3>& fixture,
-                       std::complex<T> val1, std::complex<T> val2, std::complex<T> val3,
+void checkScalarFields(BLASFixtureScalar<Kokkos::complex<T>, Layout1, Layout2, Layout3>& fixture,
+                       Kokkos::complex<T> val1, Kokkos::complex<T> val2, Kokkos::complex<T> val3,
                        stk::mesh::Selector selector, double tol=1.0e-5)
 {
   const stk::mesh::BucketVector& buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(), selector);
@@ -242,9 +242,9 @@ void checkScalarFields(BLASFixtureScalar<std::complex<T>, Layout1, Layout2, Layo
     auto field2Values = field2Data.bucket_values(*bucket);
     auto field3Values = field3Data.bucket_values(*bucket);
     for (stk::mesh::EntityIdx entity : bucket->entities()) {
-      EXPECT_LT(std::abs(field1Values(entity) - val1), tol);
-      EXPECT_LT(std::abs(field2Values(entity) - val2), tol);
-      EXPECT_LT(std::abs(field3Values(entity) - val3), tol);
+      EXPECT_LT(Kokkos::abs(field1Values(entity) - val1), tol);
+      EXPECT_LT(Kokkos::abs(field2Values(entity) - val2), tol);
+      EXPECT_LT(Kokkos::abs(field3Values(entity) - val3), tol);
     }
   }
 }
@@ -412,8 +412,8 @@ void checkVectorField(const stk::mesh::Field<T, Layout>& field, const std::array
 }
 
 template <typename T, stk::mesh::Layout Layout>
-void checkVectorField(const stk::mesh::Field<std::complex<T>, Layout>& field,
-                      const std::array<std::complex<T>, 3>& expectedValue,
+void checkVectorField(const stk::mesh::Field<Kokkos::complex<T>, Layout>& field,
+                      const std::array<Kokkos::complex<T>, 3>& expectedValue,
                       const double tol=1.5e-3)
 {
   const stk::mesh::BucketVector& buckets = field.get_mesh().get_buckets(field.entity_rank(),
@@ -424,7 +424,7 @@ void checkVectorField(const stk::mesh::Field<std::complex<T>, Layout>& field,
     auto fieldValues = fieldData.bucket_values(*bucket);
     for (stk::mesh::EntityIdx entity : bucket->entities()) {
       for (stk::mesh::ComponentIdx component : fieldValues.components()) {
-        EXPECT_LT(std::abs(fieldValues(entity, component) - expectedValue[component]), tol);
+        EXPECT_LT(Kokkos::abs(fieldValues(entity, component) - expectedValue[component]), tol);
       }
     }
   }
@@ -470,9 +470,9 @@ TEST(FieldBLAS, scalar_float_axpy)
 
 TEST(FieldBLAS, scalar_complex_axpy)
 {
-  const std::complex<double> alpha    = std::complex<double>(-3.11, 2.00);
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> alpha    = Kokkos::complex<double>(-3.11, 2.00);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_axpy<LayoutRight, LayoutRight>(alpha, initial1, initial2);
   test_axpy<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
@@ -549,12 +549,12 @@ TEST(FieldBLAS, scalar_float_selector_axpy)
 
 TEST(FieldBLAS, scalar_complex_selector_axpy)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
-  const std::complex<double> alpha_1   = std::complex<double>(7.11, -42.1);
-  const std::complex<double> alpha_2   = std::complex<double>(4.05, 7.22);
-  const std::complex<double> alpha_all = std::complex<double>(-2.04, 3.14);
+  const Kokkos::complex<double> alpha_1   = Kokkos::complex<double>(7.11, -42.1);
+  const Kokkos::complex<double> alpha_2   = Kokkos::complex<double>(4.05, 7.22);
+  const Kokkos::complex<double> alpha_all = Kokkos::complex<double>(-2.04, 3.14);
 
   test_axpy_selector<LayoutRight, LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
   test_axpy_selector<LayoutRight, LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
@@ -620,13 +620,13 @@ TEST(FieldBLAS, vector_float_axpy)
 
 TEST(FieldBLAS, vector_complex_axpy)
 {
-  const std::complex<double> alpha(4.11, -32.1);
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  const Kokkos::complex<double> alpha(4.11, -32.1);
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_axpy<LayoutRight, LayoutRight>(alpha, init1, init2);
   test_axpy<LayoutRight, LayoutLeft >(alpha, init1, init2);
@@ -701,10 +701,10 @@ TEST(FieldBLAS, scalar_float_axpby)
 
 TEST(FieldBLAS, scalar_complex_axpby)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
-  const std::complex<double> alpha    = std::complex<double>(-3.11, 2.00);
-  const std::complex<double> beta     = std::complex<double>(1.0, 0.5);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> alpha    = Kokkos::complex<double>(-3.11, 2.00);
+  const Kokkos::complex<double> beta     = Kokkos::complex<double>(1.0, 0.5);
 
   test_axpby<LayoutRight, LayoutRight>(alpha, initial1, beta, initial2);
   test_axpby<LayoutRight, LayoutLeft >(alpha, initial1, beta, initial2);
@@ -785,14 +785,14 @@ TEST(FieldBLAS, vector_float_axpby)
 
 TEST(FieldBLAS, vector_complex_axpby)
 {
-  const std::complex<double> alpha(4.11, -32.1);
-  const std::complex<double> beta(1.1, 1.2);
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  const Kokkos::complex<double> alpha(4.11, -32.1);
+  const Kokkos::complex<double> beta(1.1, 1.2);
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_axpby<LayoutRight, LayoutRight>(alpha, init1, beta, init2);
   test_axpby<LayoutRight, LayoutLeft >(alpha, init1, beta, init2);
@@ -862,9 +862,9 @@ TEST(FieldBLAS, scalar_float_product)
 
 TEST(FieldBLAS, scalar_complex_product)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
-  const std::complex<double> initial3 = std::complex<double>(1.28, 3.11);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> initial3 = Kokkos::complex<double>(1.28, 3.11);
 
   test_product<LayoutRight, LayoutRight, LayoutRight>(initial1, initial2, initial3);
   test_product<LayoutRight, LayoutRight, LayoutLeft >(initial1, initial2, initial3);
@@ -945,8 +945,8 @@ TEST(FieldBLAS, scalar_float_selector_product)
 
 TEST(FieldBLAS, scalar_complex_selector_product)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
   test_product_selector<LayoutRight, LayoutRight>(initial1, initial2);
   test_product_selector<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -1019,15 +1019,15 @@ TEST(FieldBLAS, vector_float_product)
 
 TEST(FieldBLAS, vector_complex_product)
 {
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
-  std::array<std::complex<double>, 3> init3 {std::complex<double>(0.24, -1.22),
-                                             std::complex<double>(-7.11, 42.1),
-                                             std::complex<double>(3.21, 7.11)};
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
+  std::array<Kokkos::complex<double>, 3> init3 {Kokkos::complex<double>(0.24, -1.22),
+                                                Kokkos::complex<double>(-7.11, 42.1),
+                                                Kokkos::complex<double>(3.21, 7.11)};
 
   test_product<LayoutRight, LayoutRight, LayoutRight>(init1, init2, init3);
   test_product<LayoutRight, LayoutRight, LayoutLeft >(init1, init2, init3);
@@ -1111,8 +1111,8 @@ TEST(FieldBLAS, scalar_float_copy)
 
 TEST(FieldBLAS, scalar_complex_copy)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_copy<LayoutRight, LayoutRight>(initial1, initial2);
   test_copy<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -1171,8 +1171,8 @@ TEST(FieldBLAS, scalar_float_selector_copy)
 
 TEST(FieldBLAS, scalar_complex_selector_copy)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
   test_copy_selector<LayoutRight, LayoutRight>(initial1, initial2);
   test_copy_selector<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -1239,12 +1239,12 @@ TEST(FieldBLAS, vector_float_copy)
 
 TEST(FieldBLAS, vector_complex_copy)
 {
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_copy<LayoutRight, LayoutRight>(init1, init2);
   test_copy<LayoutRight, LayoutLeft >(init1, init2);
@@ -1271,11 +1271,11 @@ void test_dot(T init1, T init2, double tol = 1.0e-3)
   BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
   T field_result = stk::mesh::field_dot(*fixture.field1, *fixture.field2);
-  EXPECT_LT(std::abs(field_result - init1 * init2 * T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(field_result - init1 * init2 * T(fixture.numEntitiesGlobal)), tol);
 
   T fieldBase_result;
   stk::mesh::field_dot(fieldBase_result, *fixture.fieldBase1, *fixture.fieldBase2);
-  EXPECT_LT(std::abs(fieldBase_result - init1 * init2 * T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldBase_result - init1 * init2 * T(fixture.numEntitiesGlobal)), tol);
 }
 
 TEST(FieldBLAS, scalar_double_dot)
@@ -1302,8 +1302,8 @@ TEST(FieldBLAS, scalar_float_dot)
 
 TEST(FieldBLAS, scalar_complex_dot)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_dot<LayoutRight, LayoutRight>(initial1, initial2);
   test_dot<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -1329,16 +1329,16 @@ void test_dot_selector(T init1, T init2, double tol = 1.0e-3)
   BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
   T resultA = stk::mesh::field_dot(*fixture.field1, *fixture.field2, stk::mesh::Selector(*fixture.pPartA));
-  EXPECT_LT(std::abs(init1 * init2 *T(fixture.numPartAEntitiesGlobal) - resultA), tol);
+  EXPECT_LT(Kokkos::abs(init1 * init2 *T(fixture.numPartAEntitiesGlobal) - resultA), tol);
 
   T resultB {};
   stk::mesh::field_dot(resultB, *fixture.fieldBase2, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartB));
-  EXPECT_LT(std::abs(init1 * init2 * T(fixture.numPartBEntitiesGlobal) - resultB), tol);
+  EXPECT_LT(Kokkos::abs(init1 * init2 * T(fixture.numPartBEntitiesGlobal) - resultB), tol);
 
   T resultABc = stk::mesh::field_dot(*fixture.field1, *fixture.field2,
                                      stk::mesh::Selector(*fixture.pPartA).complement() &
                                      stk::mesh::Selector(*fixture.pPartB).complement());
-  EXPECT_LT(std::abs(init1 * init2 * T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
+  EXPECT_LT(Kokkos::abs(init1 * init2 * T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
                                        fixture.numPartBEntitiesGlobal) - resultABc), tol);
 }
 
@@ -1366,8 +1366,8 @@ TEST(FieldBLAS, scalar_float_selector_dot)
 
 TEST(FieldBLAS, scalar_complex_selector_dot)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
   test_dot_selector<LayoutRight, LayoutRight>(initial1, initial2);
   test_dot_selector<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -1398,7 +1398,7 @@ void test_dot(const std::array<T, 3>& init1, const std::array<T, 3>& init2, doub
     const T result = stk::mesh::field_dot(*fixture.field1, *fixture.field2);
     const T expectedResult = (init1[0] * init2[0] + init1[1] * init2[1] + init1[2] * init2[2]) *
                              T(fixture.numEntitiesGlobal);
-    EXPECT_LT(std::abs(result - expectedResult), tol);
+    EXPECT_LT(Kokkos::abs(result - expectedResult), tol);
   }
   {
     BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
@@ -1409,7 +1409,7 @@ void test_dot(const std::array<T, 3>& init1, const std::array<T, 3>& init2, doub
     stk::mesh::field_dot(result, *fixture.fieldBase1, *fixture.fieldBase2);
     const T expectedResult = (init1[0] * init2[0] + init1[1] * init2[1] + init1[2] * init2[2]) *
                              T(fixture.numEntitiesGlobal);
-    EXPECT_LT(std::abs(result - expectedResult), tol);
+    EXPECT_LT(Kokkos::abs(result - expectedResult), tol);
   }
 }
 
@@ -1437,12 +1437,12 @@ TEST(FieldBLAS, vector_float_dot)
 
 TEST(FieldBLAS, vector_complex_dot)
 {
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_dot<LayoutRight, LayoutRight>(init1, init2);
   test_dot<LayoutRight, LayoutLeft >(init1, init2);
@@ -1469,16 +1469,16 @@ void test_nrm2(T init1, T init2, double tol = 1.0e-3)
   BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
   T fieldResult1 = stk::mesh::field_nrm2(*fixture.field1);
-  EXPECT_LT(std::abs(fieldResult1 - T(sqrt(std::abs(init1)*std::abs(init1)*double(fixture.numEntitiesGlobal)))), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult1 - T(sqrt(Kokkos::abs(init1)*Kokkos::abs(init1)*double(fixture.numEntitiesGlobal)))), tol);
   T fieldResult2 = stk::mesh::field_nrm2(*fixture.field2);
-  EXPECT_LT(std::abs(fieldResult2 - T(sqrt(std::abs(init2)*std::abs(init2)*double(fixture.numEntitiesGlobal)))), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult2 - T(sqrt(Kokkos::abs(init2)*Kokkos::abs(init2)*double(fixture.numEntitiesGlobal)))), tol);
 
   T fieldBaseResult1;
   stk::mesh::field_nrm2(fieldBaseResult1, *fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBaseResult1 - T(sqrt(std::abs(init1)*std::abs(init1)*double(fixture.numEntitiesGlobal)))), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult1 - T(sqrt(Kokkos::abs(init1)*Kokkos::abs(init1)*double(fixture.numEntitiesGlobal)))), tol);
   T fieldBaseResult2;
   stk::mesh::field_nrm2(fieldBaseResult2, *fixture.fieldBase2);
-  EXPECT_LT(std::abs(fieldBaseResult2 - T(sqrt(std::abs(init2)*std::abs(init2)*double(fixture.numEntitiesGlobal)))), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult2 - T(sqrt(Kokkos::abs(init2)*Kokkos::abs(init2)*double(fixture.numEntitiesGlobal)))), tol);
 }
 
 TEST(FieldBLAS, scalar_double_nrm2)
@@ -1505,8 +1505,8 @@ TEST(FieldBLAS, scalar_float_nrm2)
 
 TEST(FieldBLAS, scalar_complex_nrm2)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_nrm2<LayoutRight, LayoutRight>(initial1, initial2);
   test_nrm2<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -1531,16 +1531,16 @@ void test_nrm2_selector(T init1, T init2, double tol = 1.0e-1)
   BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
   T resultA = stk::mesh::field_nrm2(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
-  EXPECT_LT(std::abs(T(std::abs(init1)*sqrt(T(fixture.numPartAEntitiesGlobal))) - resultA), tol);
+  EXPECT_LT(Kokkos::abs(T(Kokkos::abs(init1)*sqrt(T(fixture.numPartAEntitiesGlobal))) - resultA), tol);
 
   T resultB;
   stk::mesh::field_nrm2(resultB, *fixture.fieldBase2, stk::mesh::Selector(*fixture.pPartB));
-  EXPECT_LT(std::abs(T(std::abs(init2)*sqrt(T(fixture.numPartBEntitiesGlobal))) - resultB), tol);
+  EXPECT_LT(Kokkos::abs(T(Kokkos::abs(init2)*sqrt(T(fixture.numPartBEntitiesGlobal))) - resultB), tol);
 
   T resultABc = stk::mesh::field_nrm2(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
                                       stk::mesh::Selector(*fixture.pPartB).complement());
-  EXPECT_LT(std::abs(T(std::abs(init1)*sqrt(T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
-                                              fixture.numPartBEntitiesGlobal))) - resultABc), tol);
+  EXPECT_LT(Kokkos::abs(T(Kokkos::abs(init1)*sqrt(T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
+                                                    fixture.numPartBEntitiesGlobal))) - resultABc), tol);
 }
 
 TEST(FieldBLAS, scalar_double_selector_nrm2)
@@ -1567,8 +1567,8 @@ TEST(FieldBLAS, scalar_float_selector_nrm2)
 
 TEST(FieldBLAS, scalar_complex_selector_nrm2)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
   test_nrm2_selector<LayoutRight, LayoutRight>(initial1, initial2);
   test_nrm2_selector<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -1597,17 +1597,17 @@ void test_nrm2(const std::array<T, 3>& init1, const std::array<T, 3>& init2, dou
 
   {
     const T result = stk::mesh::field_nrm2(*fixture.field1);
-    const T expectedResult = std::sqrt((std::pow(std::abs(init1[0]), 2) + std::pow(std::abs(init1[1]), 2) +
-                                        std::pow(std::abs(init1[2]), 2)) * T(fixture.numEntitiesGlobal));
-    EXPECT_LT(std::abs(result - expectedResult), tol);
+    const T expectedResult = Kokkos::sqrt((Kokkos::pow(Kokkos::abs(init1[0]), 2) + Kokkos::pow(Kokkos::abs(init1[1]), 2) +
+                                           Kokkos::pow(Kokkos::abs(init1[2]), 2)) * T(fixture.numEntitiesGlobal));
+    EXPECT_LT(Kokkos::abs(result - expectedResult), tol);
   }
 
   {
     T result {};
     stk::mesh::field_nrm2(result, *fixture.fieldBase2);
-    const T expectedResult = std::sqrt((std::pow(std::abs(init2[0]), 2) + std::pow(std::abs(init2[1]), 2) +
-                                        std::pow(std::abs(init2[2]), 2)) * T(fixture.numEntitiesGlobal));
-    EXPECT_LT(std::abs(result - expectedResult), tol);
+    const T expectedResult = Kokkos::sqrt((Kokkos::pow(Kokkos::abs(init2[0]), 2) + Kokkos::pow(Kokkos::abs(init2[1]), 2) +
+                                           Kokkos::pow(Kokkos::abs(init2[2]), 2)) * T(fixture.numEntitiesGlobal));
+    EXPECT_LT(Kokkos::abs(result - expectedResult), tol);
   }
 }
 
@@ -1635,12 +1635,12 @@ TEST(FieldBLAS, vector_float_nrm2)
 
 TEST(FieldBLAS, vector_complex_nrm2)
 {
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_nrm2<LayoutRight, LayoutRight>(init1, init2);
   test_nrm2<LayoutRight, LayoutLeft >(init1, init2);
@@ -1695,8 +1695,8 @@ TEST(FieldBLAS, scalar_float_scale)
 
 TEST(FieldBLAS, scalar_complex_scale)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial1 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> alpha = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_scale<LayoutRight, LayoutRight>(alpha, initial1);
   test_scale<LayoutRight, LayoutLeft >(alpha, initial1);
@@ -1766,9 +1766,9 @@ TEST(FieldBLAS, scalar_float_selector_scale)
 
 TEST(FieldBLAS, scalar_complex_selector_scale)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
-  const std::complex<double> alpha = -4.2;
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> alpha = -4.2;
 
   test_scale_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
   test_scale_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
@@ -1829,13 +1829,13 @@ TEST(FieldBLAS, vector_float_scale)
 
 TEST(FieldBLAS, vector_complex_scale)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11, -32.1);
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  const Kokkos::complex<double> alpha = Kokkos::complex<double>(4.11, -32.1);
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_scale<LayoutRight, LayoutRight>(alpha, init1, init2);
   test_scale<LayoutRight, LayoutLeft >(alpha, init1, init2);
@@ -1891,8 +1891,8 @@ TEST(FieldBLAS, scalar_float_fill)
 
 TEST(FieldBLAS, scalar_complex_fill)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial1 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> alpha = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_fill<LayoutRight, LayoutRight>(alpha, initial1);
   test_fill<LayoutRight, LayoutLeft >(alpha, initial1);
@@ -1945,8 +1945,8 @@ TEST(FieldBLAS, scalar_float_many_fill)
 
 TEST(FieldBLAS, scalar_complex_many_fill)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial1 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> alpha = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_fill_many<LayoutRight, LayoutRight>(alpha, initial1);
   test_fill_many<LayoutRight, LayoutLeft >(alpha, initial1);
@@ -2023,9 +2023,9 @@ TEST(FieldBLAS, scalar_float_selector_fill)
 
 TEST(FieldBLAS, scalar_complex_selector_fill)
 {
-  const std::complex<double> alpha = -4.2;
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> alpha = -4.2;
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
   test_fill_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
   test_fill_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
@@ -2084,13 +2084,13 @@ TEST(FieldBLAS, vector_float_fill)
 
 TEST(FieldBLAS, vector_complex_fill)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11, -32.1);
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  const Kokkos::complex<double> alpha = Kokkos::complex<double>(4.11, -32.1);
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_fill<LayoutRight, LayoutRight>(alpha, init1, init2);
   test_fill<LayoutRight, LayoutLeft >(alpha, init1, init2);
@@ -2148,15 +2148,15 @@ TEST(FieldBLAS, vector_float_fill_component)
 
 TEST(FieldBLAS, vector_complex_fill_component)
 {
-  std::array<std::complex<double>, 3> alpha {std::complex<double>(4.11, -3.1),
-                                             std::complex<double>(2.17, -0.25),
-                                             std::complex<double>(7.14, -38.1)};
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.13),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.24),
-                                             std::complex<double>(11.27, 4.21)};
+  std::array<Kokkos::complex<double>, 3> alpha {Kokkos::complex<double>(4.11, -3.1),
+                                                Kokkos::complex<double>(2.17, -0.25),
+                                                Kokkos::complex<double>(7.14, -38.1)};
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.13),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.24),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_fill_component<LayoutRight, LayoutRight>(alpha, init1, init2);
   test_fill_component<LayoutRight, LayoutLeft >(alpha, init1, init2);
@@ -2211,8 +2211,8 @@ TEST(FieldBLAS, scalar_float_swap)
 
 TEST(FieldBLAS, scalar_complex_swap)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_swap<LayoutRight, LayoutRight>(initial1, initial2);
   test_swap<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -2287,8 +2287,8 @@ TEST(FieldBLAS, swap_selector_float)
 
 TEST(FieldBLAS, swap_selector_complex)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
   test_swap_selector<LayoutRight, LayoutRight>(initial1, initial2);
   test_swap_selector<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -2342,12 +2342,12 @@ TEST(FieldBLAS, vector_float_swap)
 
 TEST(FieldBLAS, vector_complex_swap)
 {
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_swap<LayoutRight, LayoutRight>(init1, init2);
   test_swap<LayoutRight, LayoutLeft >(init1, init2);
@@ -2374,16 +2374,16 @@ void test_asum(T init1, T init2, double tol = 1.0e-3)
   BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
   T fieldResult1 = stk::mesh::field_asum(*fixture.field1);
-  EXPECT_LT(std::abs(fieldResult1 - std::abs(init1) * T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult1 - Kokkos::abs(init1) * T(fixture.numEntitiesGlobal)), tol);
   T fieldResult2 = stk::mesh::field_asum(*fixture.field2);
-  EXPECT_LT(std::abs(fieldResult2 - std::abs(init2) * T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult2 - Kokkos::abs(init2) * T(fixture.numEntitiesGlobal)), tol);
 
   T fieldBaseResult1;
   stk::mesh::field_asum(fieldBaseResult1, *fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBaseResult1 - std::abs(init1) * T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult1 - Kokkos::abs(init1) * T(fixture.numEntitiesGlobal)), tol);
   T fieldBaseResult2;
   stk::mesh::field_asum(fieldBaseResult2, *fixture.fieldBase2);
-  EXPECT_LT(std::abs(fieldBaseResult2 - std::abs(init2) * T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult2 - Kokkos::abs(init2) * T(fixture.numEntitiesGlobal)), tol);
 }
 
 TEST(FieldBLAS, scalar_double_asum)
@@ -2410,8 +2410,8 @@ TEST(FieldBLAS, scalar_float_asum)
 
 TEST(FieldBLAS, scalar_complex_asum)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.11, -7.63);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-7.21, -1.23);
 
   test_asum<LayoutRight, LayoutRight>(initial1, initial2);
   test_asum<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -2437,16 +2437,16 @@ void test_asum_selector(T init1, T init2, double tol = 1.0e-3)
   BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
   T resultA = stk::mesh::field_asum(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
-  EXPECT_LT(std::abs(std::abs(init1) * T(fixture.numPartAEntitiesGlobal) - resultA), tol);
+  EXPECT_LT(Kokkos::abs(Kokkos::abs(init1) * T(fixture.numPartAEntitiesGlobal) - resultA), tol);
 
   T resultB;
   stk::mesh::field_asum(resultB, *fixture.fieldBase2, stk::mesh::Selector(*fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(init2) * T(fixture.numPartBEntitiesGlobal) - resultB), tol);
+  EXPECT_LT(Kokkos::abs(Kokkos::abs(init2) * T(fixture.numPartBEntitiesGlobal) - resultB), tol);
 
   T resultABc=stk::mesh::field_asum(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
                                     stk::mesh::Selector(*fixture.pPartB).complement());
-  EXPECT_LT(std::abs(std::abs(init1) * T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
-                                         fixture.numPartBEntitiesGlobal) - resultABc), tol);
+  EXPECT_LT(Kokkos::abs(Kokkos::abs(init1) * T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
+                                               fixture.numPartBEntitiesGlobal) - resultABc), tol);
 }
 
 TEST(FieldBLAS, scalar_double_selector_asum)
@@ -2473,8 +2473,8 @@ TEST(FieldBLAS, scalar_float_selector_asum)
 
 TEST(FieldBLAS, scalar_complex_selector_asum)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+  const Kokkos::complex<double> initial1 = Kokkos::complex<double>(4.27, 2.1);
+  const Kokkos::complex<double> initial2 = Kokkos::complex<double>(-3.73, 1.04);
 
   test_asum_selector<LayoutRight, LayoutRight>(initial1, initial2);
   test_asum_selector<LayoutRight, LayoutLeft >(initial1, initial2);
@@ -2504,10 +2504,10 @@ void test_asum(const std::array<T, 3>& init1, const std::array<T, 3>& init2, dou
   T result2 {};
   stk::mesh::field_asum(result2, *fixture.fieldBase2);
 
-  EXPECT_LT(std::abs(result1 - (std::abs(init1[0]) + std::abs(init1[1]) + std::abs(init1[2])) *
-                     T(fixture.numEntitiesGlobal)), tol);
-  EXPECT_LT(std::abs(result2 - (std::abs(init2[0]) + std::abs(init2[1]) + std::abs(init2[2])) *
-                     T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(result1 - (Kokkos::abs(init1[0]) + Kokkos::abs(init1[1]) + Kokkos::abs(init1[2])) *
+                        T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(Kokkos::abs(result2 - (Kokkos::abs(init2[0]) + Kokkos::abs(init2[1]) + Kokkos::abs(init2[2])) *
+                        T(fixture.numEntitiesGlobal)), tol);
 }
 
 TEST(FieldBLAS, vector_double_asum)
@@ -2534,12 +2534,12 @@ TEST(FieldBLAS, vector_float_asum)
 
 TEST(FieldBLAS, vector_complex_asum)
 {
-  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
-                                             std::complex<double>(1.23, -0.1),
-                                             std::complex<double>(-2.13, 4.11)};
-  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
-                                             std::complex<double>(4.17, -0.2),
-                                             std::complex<double>(11.27, 4.21)};
+  std::array<Kokkos::complex<double>, 3> init1 {Kokkos::complex<double>(4.21, 0.24),
+                                                Kokkos::complex<double>(1.23, -0.1),
+                                                Kokkos::complex<double>(-2.13, 4.11)};
+  std::array<Kokkos::complex<double>, 3> init2 {Kokkos::complex<double>(1.32, 23.1),
+                                                Kokkos::complex<double>(4.17, -0.2),
+                                                Kokkos::complex<double>(11.27, 4.21)};
 
   test_asum<LayoutRight, LayoutRight>(init1, init2);
   test_asum<LayoutRight, LayoutLeft >(init1, init2);
@@ -2578,14 +2578,14 @@ void test_amax(T lowVal, T highVal, const double tol = 1.0e-3)
   auto fieldValues = fieldData.bucket_values(b);
 
   stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
-  fieldValues(targetEntity) = highVal*std::abs(lowVal/highVal) + T(highVal - highVal*std::abs(lowVal/highVal))*mpiFrac;
+  fieldValues(targetEntity) = highVal*Kokkos::abs(lowVal/highVal) + T(highVal - highVal*Kokkos::abs(lowVal/highVal))*mpiFrac;
 
   T fieldResult = stk::mesh::field_amax(*fixture.field1);
-  EXPECT_LT(std::abs(fieldResult - std::abs(highVal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult - Kokkos::abs(highVal)), tol);
 
   T fieldBaseResult {};
   stk::mesh::field_amax(fieldBaseResult, *fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBaseResult - std::abs(highVal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult - Kokkos::abs(highVal)), tol);
 }
 
 TEST(FieldBLAS, scalar_double_amax)
@@ -2608,8 +2608,8 @@ TEST(FieldBLAS, scalar_float_amax)
 
 TEST(FieldBLAS, scalar_complex_amax)
 {
-  const std::complex<double> lowVal  = std::complex<double>(-1.11, -2.63);
-  const std::complex<double> highVal = std::complex<double>(-100.21, -250.23);
+  const Kokkos::complex<double> lowVal  = Kokkos::complex<double>(-1.11, -2.63);
+  const Kokkos::complex<double> highVal = Kokkos::complex<double>(-100.21, -250.23);
 
   test_amax<LayoutRight>(lowVal, highVal);
   test_amax<LayoutLeft >(lowVal, highVal);
@@ -2643,14 +2643,14 @@ void test_amax_empty_selector(T lowVal, T highVal, const double tol = 1.0e-12)
   auto fieldValues = fieldData.bucket_values(b);
 
   stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
-  fieldValues(targetEntity) = highVal*std::abs(lowVal/highVal) + T(highVal - highVal*std::abs(lowVal/highVal))*mpiFrac;
+  fieldValues(targetEntity) = highVal*Kokkos::abs(lowVal/highVal) + T(highVal - highVal*Kokkos::abs(lowVal/highVal))*mpiFrac;
 
   T fieldResult = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector());
-  EXPECT_LT(std::abs(fieldResult - T{}), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult - T{}), tol);
 
   T fieldBaseResult {};
   stk::mesh::field_amax(fieldBaseResult, *fixture.fieldBase1, stk::mesh::Selector());
-  EXPECT_LT(std::abs(fieldBaseResult - T{}), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult - T{}), tol);
 }
 
 TEST(FieldBLAS, scalar_double_amax_empty_selector)
@@ -2684,10 +2684,10 @@ void test_amax_field_not_on_part(T lowVal, T highVal, const double tol = 1.0e-12
   auto fieldValues = fieldData.bucket_values(b);
 
   stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
-  fieldValues(targetEntity) = highVal*std::abs(lowVal/highVal) + T(highVal - highVal*std::abs(lowVal/highVal))*mpiFrac;
+  fieldValues(targetEntity) = highVal*Kokkos::abs(lowVal/highVal) + T(highVal - highVal*Kokkos::abs(lowVal/highVal))*mpiFrac;
 
   T fieldResult = stk::mesh::field_amax(partialField, meta.universal_part());
-  EXPECT_LT(std::abs(fieldResult - std::abs(highVal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult - Kokkos::abs(highVal)), tol);
 }
 
 TEST(FieldBLAS, scalar_double_amax_field_not_on_part)
@@ -2718,26 +2718,26 @@ void test_amax_selector(T lowVal, T highValA, T highValAB, T highValABc, const d
     auto fieldValuesA = fieldDataA.bucket_values(bA);
 
     stk::mesh::EntityIdx targetEntityA(fieldValuesA.num_entities()/3);
-    fieldValuesA(targetEntityA) = highValA*std::abs(lowVal/highValA) +
-                                  T(highValA - highValA*std::abs(lowVal/highValA))*mpiFrac;
+    fieldValuesA(targetEntityA) = highValA*Kokkos::abs(lowVal/highValA) +
+                                  T(highValA - highValA*Kokkos::abs(lowVal/highValA))*mpiFrac;
 
     T result;
     stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
-    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValA) - result), tol);
 
     result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(lowVal) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowVal) - result), tol);
 
     stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
                           stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValA) - result), tol);
 
     result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
                                    stk::mesh::Selector(*fixture.pPartB).complement());
-    EXPECT_LT(std::abs(std::abs(lowVal) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowVal) - result), tol);
 
     stk::mesh::field_amax(result, *fixture.fieldBase1);
-    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValA) - result), tol);
   }
   {
     const stk::mesh::BucketVector bucketsB = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
@@ -2749,23 +2749,23 @@ void test_amax_selector(T lowVal, T highValA, T highValAB, T highValABc, const d
     auto fieldValuesB = fieldDataB.bucket_values(bB);
 
     stk::mesh::EntityIdx targetEntityB(fieldValuesB.num_entities()/3);
-    fieldValuesB(targetEntityB) = highValAB*std::abs(lowVal/highValAB) +
-                                  T(highValAB - highValAB*std::abs(lowVal/highValAB))*mpiFrac;
+    fieldValuesB(targetEntityB) = highValAB*Kokkos::abs(lowVal/highValAB) +
+                                  T(highValAB - highValAB*Kokkos::abs(lowVal/highValAB))*mpiFrac;
 
     T result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
-    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValA) - result), tol);
 
     stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValAB) - result), tol);
 
     result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA) |
                                    stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValAB) - result), tol);
 
     stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA).complement() &
                           stk::mesh::Selector(*fixture.pPartB).complement());
-    EXPECT_LT(std::abs(std::abs(lowVal) - result), tol);
-    EXPECT_LT(std::abs(std::abs(highValAB) - stk::mesh::field_amax(*fixture.field1)), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowVal) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValAB) - stk::mesh::field_amax(*fixture.field1)), tol);
   }
   {
     const stk::mesh::BucketVector bucketsABc = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
@@ -2778,26 +2778,26 @@ void test_amax_selector(T lowVal, T highValA, T highValAB, T highValABc, const d
     auto fieldValuesABc = fieldDataABc.bucket_values(bABc);
 
     stk::mesh::EntityIdx targetEntityABc(fieldValuesABc.num_entities()/3);
-    fieldValuesABc(targetEntityABc) = highValABc*std::abs(lowVal/highValABc) +
-                                      T(highValABc - highValABc*std::abs(lowVal/highValABc))*mpiFrac;
+    fieldValuesABc(targetEntityABc) = highValABc*Kokkos::abs(lowVal/highValABc) +
+                                      T(highValABc - highValABc*Kokkos::abs(lowVal/highValABc))*mpiFrac;
 
     T result;
     stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
-    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValA) - result), tol);
 
     result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValAB) - result), tol);
 
     stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
                           stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValAB) - result), tol);
 
     result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
                                    stk::mesh::Selector(*fixture.pPartB).complement());
-    EXPECT_LT(std::abs(std::abs(highValABc) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValABc) - result), tol);
 
     stk::mesh::field_amax(result, *fixture.fieldBase1);
-    EXPECT_LT(std::abs(std::abs(highValABc) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highValABc) - result), tol);
   }
 }
 
@@ -2825,10 +2825,10 @@ TEST(FieldBLAS, scalar_float_selector_amax)
 
 TEST(FieldBLAS, scalar_complex_selector_amax)
 {
-  const std::complex<double> lowVal     = std::complex<double>(0.51, 0.32);
-  const std::complex<double> highValA   = std::complex<double>(-3.73, 4.04);
-  const std::complex<double> highValAB  = std::complex<double>(4.95, -5.12);
-  const std::complex<double> highValABc = std::complex<double>(-6.03, 6.11);
+  const Kokkos::complex<double> lowVal     = Kokkos::complex<double>(0.51, 0.32);
+  const Kokkos::complex<double> highValA   = Kokkos::complex<double>(-3.73, 4.04);
+  const Kokkos::complex<double> highValAB  = Kokkos::complex<double>(4.95, -5.12);
+  const Kokkos::complex<double> highValABc = Kokkos::complex<double>(-6.03, 6.11);
 
   test_amax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
   test_amax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
@@ -2865,18 +2865,18 @@ void test_amax(const std::array<T, 3>& lowVal, const std::array<T, 3>& highVal, 
 
   stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
   for (stk::mesh::ScalarIdx scalar : fieldValues.scalars()) {
-    fieldValues(targetEntity, scalar) = highVal[scalar]*std::abs(lowVal[scalar]/highVal[scalar]) +
-        T(highVal[scalar] - highVal[scalar]*std::abs(lowVal[scalar]/highVal[scalar]))*mpiFrac;
+    fieldValues(targetEntity, scalar) = highVal[scalar]*Kokkos::abs(lowVal[scalar]/highVal[scalar]) +
+        T(highVal[scalar] - highVal[scalar]*Kokkos::abs(lowVal[scalar]/highVal[scalar]))*mpiFrac;
   }
 
-  T maxHighVal = std::max({std::abs(highVal[0]), std::abs(highVal[1]), std::abs(highVal[2])});
+  T maxHighVal = std::max({Kokkos::abs(highVal[0]), Kokkos::abs(highVal[1]), Kokkos::abs(highVal[2])});
 
   T fieldResult = stk::mesh::field_amax(*fixture.field1);
-  EXPECT_LT(std::abs(fieldResult - maxHighVal), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult - maxHighVal), tol);
 
   T fieldBaseResult {};
   stk::mesh::field_amax(fieldBaseResult, *fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBaseResult - maxHighVal), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult - maxHighVal), tol);
 }
 
 TEST(FieldBLAS, vector_double_amax)
@@ -2899,12 +2899,12 @@ TEST(FieldBLAS, vector_float_amax)
 
 TEST(FieldBLAS, vector_complex_amax)
 {
-  std::array<std::complex<double>, 3> lowVal  = {std::complex<double>(-1.11, -2.63),
-                                                 std::complex<double>(-2.22, -1.65),
-                                                 std::complex<double>(-1.58, -1.27)};
-  std::array<std::complex<double>, 3> highVal = {std::complex<double>(-100.21, -250.23),
-                                                 std::complex<double>(-110.54, -260.28),
-                                                 std::complex<double>(-150.61, -331.87)};
+  std::array<Kokkos::complex<double>, 3> lowVal  = {Kokkos::complex<double>(-1.11, -2.63),
+                                                    Kokkos::complex<double>(-2.22, -1.65),
+                                                    Kokkos::complex<double>(-1.58, -1.27)};
+  std::array<Kokkos::complex<double>, 3> highVal = {Kokkos::complex<double>(-100.21, -250.23),
+                                                    Kokkos::complex<double>(-110.54, -260.28),
+                                                    Kokkos::complex<double>(-150.61, -331.87)};
 
   test_amax<LayoutRight>(lowVal, highVal);
   test_amax<LayoutLeft >(lowVal, highVal);
@@ -2937,14 +2937,14 @@ void test_amin(T lowVal, T highVal, const double tol = 1.0e-3)
   auto fieldValues = fieldData.bucket_values(b);
 
   stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
-  fieldValues(targetEntityIdx) = lowVal*std::abs(highVal/lowVal) + T(lowVal - lowVal*std::abs(highVal/lowVal))*mpiFrac;
+  fieldValues(targetEntityIdx) = lowVal*Kokkos::abs(highVal/lowVal) + T(lowVal - lowVal*Kokkos::abs(highVal/lowVal))*mpiFrac;
 
   T fieldResult = stk::mesh::field_amin(*fixture.field1);
-  EXPECT_LT(std::abs(fieldResult - std::abs(lowVal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult - Kokkos::abs(lowVal)), tol);
 
   T fieldBaseResult {};
   stk::mesh::field_amin(fieldBaseResult, *fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBaseResult - std::abs(lowVal)), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult - Kokkos::abs(lowVal)), tol);
 }
 
 TEST(FieldBLAS, scalar_double_amin)
@@ -2967,8 +2967,8 @@ TEST(FieldBLAS, scalar_float_amin)
 
 TEST(FieldBLAS, scalar_complex_amin)
 {
-  const std::complex<double> lowVal  = std::complex<double>(-1.11, -2.63);
-  const std::complex<double> highVal = std::complex<double>(-100.21, -250.23);
+  const Kokkos::complex<double> lowVal  = Kokkos::complex<double>(-1.11, -2.63);
+  const Kokkos::complex<double> highVal = Kokkos::complex<double>(-100.21, -250.23);
 
   test_amin<LayoutRight>(lowVal, highVal);
   test_amin<LayoutLeft >(lowVal, highVal);
@@ -3000,14 +3000,14 @@ void test_amin_empty_selector(T lowVal, T highVal, const double tol = 1.0e-12)
   auto fieldValues = fieldData.bucket_values(b);
 
   stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
-  fieldValues(targetEntityIdx) = lowVal*std::abs(highVal/lowVal) + T(lowVal - lowVal*std::abs(highVal/lowVal))*mpiFrac;
+  fieldValues(targetEntityIdx) = lowVal*Kokkos::abs(highVal/lowVal) + T(lowVal - lowVal*Kokkos::abs(highVal/lowVal))*mpiFrac;
 
   T fieldResult = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector());
-  EXPECT_LT(std::abs(fieldResult - std::numeric_limits<T>::max()), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult - std::numeric_limits<T>::max()), tol);
 
   T fieldBaseResult {};
   stk::mesh::field_amin(fieldBaseResult, *fixture.fieldBase1, stk::mesh::Selector());
-  EXPECT_LT(std::abs(fieldBaseResult - std::numeric_limits<T>::max()), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult - std::numeric_limits<T>::max()), tol);
 }
 
 TEST(FieldBLAS, scalar_double_amin_empty_selector)
@@ -3039,26 +3039,26 @@ void test_amin_selector(T highVal, T lowValA, T lowValAB, T lowValABc, const dou
     auto fieldValuesA = fieldDataA.bucket_values(bA);
 
     stk::mesh::EntityIdx targetEntityA(fieldValuesA.num_entities()/3);
-    fieldValuesA(targetEntityA) = lowValA*std::abs(highVal/lowValA) +
-                                  T(lowValA - lowValA*std::abs(highVal/lowValA))*mpiFrac;
+    fieldValuesA(targetEntityA) = lowValA*Kokkos::abs(highVal/lowValA) +
+                                  T(lowValA - lowValA*Kokkos::abs(highVal/lowValA))*mpiFrac;
 
     T result;
     stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
-    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValA) - result), tol);
 
     result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(highVal) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highVal) - result), tol);
 
     stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
                           stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValA) - result), tol);
 
     result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
                                    stk::mesh::Selector(*fixture.pPartB).complement());
-    EXPECT_LT(std::abs(std::abs(highVal) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highVal) - result), tol);
 
     stk::mesh::field_amin(result, *fixture.fieldBase1);
-    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValA) - result), tol);
   }
   {
     const stk::mesh::BucketVector bucketsB = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
@@ -3070,23 +3070,23 @@ void test_amin_selector(T highVal, T lowValA, T lowValAB, T lowValABc, const dou
     auto fieldValuesB = fieldDataB.bucket_values(bB);
 
     stk::mesh::EntityIdx targetEntityB(fieldValuesB.num_entities()/3);
-    fieldValuesB(targetEntityB) = lowValAB*std::abs(highVal/lowValAB) +
-                                  T(lowValAB - lowValAB*std::abs(highVal/lowValAB))*mpiFrac;
+    fieldValuesB(targetEntityB) = lowValAB*Kokkos::abs(highVal/lowValAB) +
+                                  T(lowValAB - lowValAB*Kokkos::abs(highVal/lowValAB))*mpiFrac;
 
     T result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
-    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValA) - result), tol);
 
     stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValAB) - result), tol);
 
     result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA) |
                                    stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValAB) - result), tol);
 
     stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA).complement() &
                           stk::mesh::Selector(*fixture.pPartB).complement());
-    EXPECT_LT(std::abs(std::abs(highVal) - result), tol);
-    EXPECT_LT(std::abs(std::abs(lowValAB) - stk::mesh::field_amin(*fixture.field1)), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(highVal) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValAB) - stk::mesh::field_amin(*fixture.field1)), tol);
   }
   {
     const stk::mesh::BucketVector bucketsABc = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
@@ -3099,26 +3099,26 @@ void test_amin_selector(T highVal, T lowValA, T lowValAB, T lowValABc, const dou
     auto fieldValuesABc = fieldDataABc.bucket_values(bABc);
 
     stk::mesh::EntityIdx targetEntityABc(fieldValuesABc.num_entities()/3);
-    fieldValuesABc(targetEntityABc) = lowValABc*std::abs(highVal/lowValABc) +
-                                      T(lowValABc - lowValABc*std::abs(highVal/lowValABc))*mpiFrac;
+    fieldValuesABc(targetEntityABc) = lowValABc*Kokkos::abs(highVal/lowValABc) +
+                                      T(lowValABc - lowValABc*Kokkos::abs(highVal/lowValABc))*mpiFrac;
 
     T result;
     stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
-    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValA) - result), tol);
 
     result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValAB) - result), tol);
 
     stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
                           stk::mesh::Selector(*fixture.pPartB));
-    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValAB) - result), tol);
 
     result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
                                    stk::mesh::Selector(*fixture.pPartB).complement());
-    EXPECT_LT(std::abs(std::abs(lowValABc) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValABc) - result), tol);
 
     stk::mesh::field_amin(result, *fixture.fieldBase1);
-    EXPECT_LT(std::abs(std::abs(lowValABc) - result), tol);
+    EXPECT_LT(Kokkos::abs(Kokkos::abs(lowValABc) - result), tol);
   }
 }
 
@@ -3146,10 +3146,10 @@ TEST(FieldBLAS, scalar_float_selector_amin)
 
 TEST(FieldBLAS, scalar_complex_selector_amin)
 {
-  const std::complex<double> highVal   = std::complex<double>(7.51, -8.32);
-  const std::complex<double> lowValA   = std::complex<double>(-6.73, 6.04);
-  const std::complex<double> lowValAB  = std::complex<double>(4.95, -5.12);
-  const std::complex<double> lowValABc = std::complex<double>(-4.03, 4.11);
+  const Kokkos::complex<double> highVal   = Kokkos::complex<double>(7.51, -8.32);
+  const Kokkos::complex<double> lowValA   = Kokkos::complex<double>(-6.73, 6.04);
+  const Kokkos::complex<double> lowValAB  = Kokkos::complex<double>(4.95, -5.12);
+  const Kokkos::complex<double> lowValABc = Kokkos::complex<double>(-4.03, 4.11);
 
   test_amin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
   test_amin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
@@ -3186,18 +3186,18 @@ void test_amin(const std::array<T, 3>& lowVal, const std::array<T, 3>& highVal, 
 
   stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
   for (stk::mesh::ScalarIdx scalar : fieldValues.scalars()) {
-    fieldValues(targetEntity, scalar) = lowVal[scalar]*std::abs(highVal[scalar]/lowVal[scalar]) +
-        T(lowVal[scalar] - lowVal[scalar]*std::abs(highVal[scalar]/lowVal[scalar]))*mpiFrac;
+    fieldValues(targetEntity, scalar) = lowVal[scalar]*Kokkos::abs(highVal[scalar]/lowVal[scalar]) +
+        T(lowVal[scalar] - lowVal[scalar]*Kokkos::abs(highVal[scalar]/lowVal[scalar]))*mpiFrac;
   }
 
-  T minLowVal = std::min({std::abs(lowVal[0]), std::abs(lowVal[1]), std::abs(lowVal[2])});
+  T minLowVal = std::min({Kokkos::abs(lowVal[0]), Kokkos::abs(lowVal[1]), Kokkos::abs(lowVal[2])});
 
   T fieldResult = stk::mesh::field_amin(*fixture.field1);
-  EXPECT_LT(std::abs(fieldResult - minLowVal), tol);
+  EXPECT_LT(Kokkos::abs(fieldResult - minLowVal), tol);
 
   T fieldBaseResult {};
   stk::mesh::field_amin(fieldBaseResult, *fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBaseResult - minLowVal), tol);
+  EXPECT_LT(Kokkos::abs(fieldBaseResult - minLowVal), tol);
 }
 
 TEST(FieldBLAS, vector_double_amin)
@@ -3220,12 +3220,12 @@ TEST(FieldBLAS, vector_float_amin)
 
 TEST(FieldBLAS, vector_complex_amin)
 {
-  std::array<std::complex<double>, 3> lowVal  = {std::complex<double>(-1.11, -2.63),
-                                                 std::complex<double>(-2.22, -1.65),
-                                                 std::complex<double>(-1.58, -1.27)};
-  std::array<std::complex<double>, 3> highVal = {std::complex<double>(-100.21, -250.23),
-                                                 std::complex<double>(-110.54, -260.28),
-                                                 std::complex<double>(-150.61, -331.87)};
+  std::array<Kokkos::complex<double>, 3> lowVal  = {Kokkos::complex<double>(-1.11, -2.63),
+                                                    Kokkos::complex<double>(-2.22, -1.65),
+                                                    Kokkos::complex<double>(-1.58, -1.27)};
+  std::array<Kokkos::complex<double>, 3> highVal = {Kokkos::complex<double>(-100.21, -250.23),
+                                                    Kokkos::complex<double>(-110.54, -260.28),
+                                                    Kokkos::complex<double>(-150.61, -331.87)};
 
   test_amin<LayoutRight>(lowVal, highVal);
   test_amin<LayoutLeft >(lowVal, highVal);

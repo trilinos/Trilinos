@@ -401,6 +401,14 @@ class ILUT : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_
   Teuchos::RCP<const row_matrix_type> A_;
   //! "Local filter" version of A_.
   Teuchos::RCP<const row_matrix_type> A_local_;
+  //! Persistent CRS representation of A_local_ used by the par_ilut path.
+  //!
+  //! If A_local_ is already a Tpetra::CrsMatrix, then A_local_crs_ aliases it.
+  //! Otherwise, initialize() constructs a persistent mutable CRS copy in
+  //! A_local_crs_nc_ and A_local_crs_ aliases that copy.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
+  //! Mutable cached CRS representation used when A_local_ is not already a CrsMatrix.
+  Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
   lno_row_view_t A_local_rowmap_;
   lno_nonzero_view_t A_local_entries_;
   scalar_nonzero_view_t A_local_values_;

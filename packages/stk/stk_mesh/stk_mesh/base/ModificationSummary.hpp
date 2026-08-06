@@ -53,13 +53,15 @@ public:
 
     ~EmptyModificationSummary(){}
 
-    // void track_create_ghosting();
     void track_induced_parts(stk::mesh::Entity, stk::mesh::Entity, const stk::mesh::OrdinalVector&, const stk::mesh::OrdinalVector&)
     {
-
     }
 
     void track_change_ghosting(const stk::mesh::Ghosting &, const std::vector<stk::mesh::EntityProc> &, const std::vector<stk::mesh::Entity> &)
+    {
+    }
+
+    void track_change_ghosting(const stk::mesh::Ghosting &, const std::vector<stk::mesh::EntityProc> &, const std::vector<stk::mesh::EntityProc> &)
     {
     }
 
@@ -124,6 +126,10 @@ public:
 
     }
 
+    void track_comm_list_remove(stk::mesh::EntityKey)
+    {
+    }
+
     void track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity, int, int)
     {
 
@@ -141,6 +147,10 @@ public:
     void set_proc_id(int)
     {
     }
+
+    void set_sync_count(int)
+    {
+    }
 };
 
 class ModificationSummary
@@ -154,6 +164,7 @@ public:
     void track_induced_parts(stk::mesh::Entity entity, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& add_parts, const stk::mesh::OrdinalVector& emptyParts);
 
     void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::Entity> & remove_receive );
+    void track_change_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send , const std::vector<stk::mesh::EntityProc> & remove_receive );
 
     void track_add_to_ghosting(const stk::mesh::Ghosting & ghosts, const std::vector<stk::mesh::EntityProc> & add_send );
 
@@ -183,6 +194,8 @@ public:
 
     void track_comm_map_clear(stk::mesh::EntityKey key);
 
+    void track_comm_list_remove(stk::mesh::EntityKey key);
+
     void track_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int old_owner, int new_owner);
 
     void track_change_owner_in_comm_data(stk::mesh::EntityKey key, int old_owner, int new_owner);
@@ -190,6 +203,8 @@ public:
     void write_summary(int mod_cycle_count, bool sortByEntity = false);
 
     void set_proc_id(int proc_id) { m_procId = proc_id; }
+
+    void set_sync_count(int syncCount);
 
 private:
 
@@ -210,6 +225,7 @@ private:
     stk::mesh::BulkData &m_bulkData;
     std::vector<std::pair<stk::mesh::EntityKey, std::string> > m_stringTracker;
     int m_lastModCycle;
+    int m_setModCycleCounter;
     int m_modCounter;
     int m_modificationSummaryNumber;
     int m_procId = -1;

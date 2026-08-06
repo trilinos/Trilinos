@@ -5,7 +5,6 @@
 
 /// \file KokkosBlas3_gemm.hpp
 
-#include <KokkosKernels_Macros.hpp>
 #include <KokkosBlas3_gemm_spec.hpp>
 #include <KokkosBlas2_gemv.hpp>
 #include <KokkosBlas1_scal.hpp>
@@ -142,7 +141,7 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
 
   // Simply scale C if A matrix is degenerated
   if (A.extent(1) == 0) {
-    scal(C, beta, C);
+    scal(space, C, beta, C);
     return;
   }
 

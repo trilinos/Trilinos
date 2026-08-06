@@ -5,6 +5,7 @@
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+#include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosBatched_InnerLU_Serial_Impl.hpp"
@@ -115,17 +116,18 @@ KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, mq_abr + nq_abr), [&](const int &ij) {
           if (ij < nq_abr) {
             const int j = (ij)*nb, qb = (j + nb) > n_abr ? np_abr : nb;
-            trsm_llu.serial_invoke(Ap, pb, qb, Ap + (j + mb) * as1);
+            trsm_llu.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Ap + (j + mb) * as1);
           } else {
             const int i = (ij - nq_abr) * nb, qb = (i + nb) > m_abr ? mp_abr : nb;
-            trsm_run.serial_invoke(Ap, pb, qb, Ap + (i + mb) * as0);
+            trsm_run.serial_invoke(KokkosBlas::Impl::OpID(), Ap, pb, qb, Ap + (i + mb) * as0);
           }
         });
         member.team_barrier();
 
         // gemm update
-        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
-                                                      Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+        Impl::TeamGemmInternal<Algo::Gemm::Blocked>::invoke(
+            member, KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0,
+            as1, Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
       }
     };
     KOKKOS_IF_ON_HOST((host_or_device(Algo::LU::Blocked::Impl::Host{});))

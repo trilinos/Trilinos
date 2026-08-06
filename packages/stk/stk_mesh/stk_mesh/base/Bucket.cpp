@@ -49,7 +49,6 @@
 namespace stk { namespace mesh { namespace impl { template <EntityRank TargetRank, stk::mesh::ConnectivityType> class BucketConnectivity; } } }
 
 
-
 //----------------------------------------------------------------------
 namespace stk {
 namespace mesh {

@@ -51,6 +51,7 @@
 #define STK_16BIT_CONNECTIVITY_ORDINAL
 #define STK_HAVE_STKNGP_TEST
 #define STK_HAS_SEACAS_IOSS
+#define STK_HAS_SEACAS_IOSS_ZOLTAN
 #define STK_HAS_SEACAS_EXODUS
 #define STK_HAS_SEACAS_NEMESIS
 #define STK_HAVE_FP_EXCEPT
@@ -96,7 +97,9 @@
 #endif
 
 #ifndef NDEBUG
-#define STK_FIELD_BOUNDS_CHECK
+  #ifndef STK_FIELD_BOUNDS_CHECK
+    #define STK_FIELD_BOUNDS_CHECK
+  #endif
 #endif
 
 //----------------------------------------------------------------------

@@ -56,20 +56,27 @@ namespace sierra {
 namespace MPI {
 
 template<class T>
+inline void
+mpi_real_std_complex_sum(void* invec, void* inoutvec, int* len, MPI_Datatype*)
+{
+  std::complex<T> *complex_in = static_cast<std::complex<T> *>(invec);
+  std::complex<T> *complex_inout = static_cast<std::complex<T> *>(inoutvec);
+
+  for (int i = 0; i < *len; ++i)
+    complex_inout[i] += complex_in[i];
+}
+
+template<class T>
 inline
 void
-  mpi_real_complex_sum(
-    void *		invec,
-    void *		inoutvec,
-    int *		len,
-    MPI_Datatype *	)
-  {
-    std::complex<T> *complex_in = static_cast<std::complex<T> *>(invec);
-    std::complex<T> *complex_inout = static_cast<std::complex<T> *>(inoutvec);
+mpi_real_kokkos_complex_sum(void* invec, void* inoutvec, int* len, MPI_Datatype*)
+{
+  Kokkos::complex<T> *complex_in = static_cast<Kokkos::complex<T> *>(invec);
+  Kokkos::complex<T> *complex_inout = static_cast<Kokkos::complex<T> *>(inoutvec);
 
-    for (int i = 0; i < *len; ++i)
-      complex_inout[i] += complex_in[i];
-  }
+  for (int i = 0; i < *len; ++i)
+    complex_inout[i] += complex_in[i];
+}
 
 ///
 /// @addtogroup MPIDetail
@@ -103,13 +110,15 @@ MPI_Datatype float_int64_type();
 MPI_Datatype double_int64_type();
 MPI_Datatype double_int32_type();
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2026
 /**
  * @brief Function <code>double_complex_sum_op</code> returns a sum operation for the C++
  * complex MPI data type.
  *
  * @return a <code>MPI_Op</code> ...
  */
-MPI_Op double_complex_sum_op();
+STK_DEPRECATED_MSG("Prefer real_std_complex_sum_op or real_kokkos_complex_sum_op") MPI_Op double_complex_sum_op();
+#endif
 
 /**
  * @brief Function <code>real_complex_sum_op</code> returns a sum operation for the C++
@@ -119,7 +128,7 @@ MPI_Op double_complex_sum_op();
  */
 template<class T>
 inline
-MPI_Op real_complex_sum_op()
+MPI_Op real_std_complex_sum_op()
 {
   static MPI_Op s_mpi_real_complex_sum;
   static bool initialized = false;
@@ -127,7 +136,22 @@ MPI_Op real_complex_sum_op()
   if (!initialized) {
     initialized = true;
 
-    MPI_Op_create(mpi_real_complex_sum<T>, true, &s_mpi_real_complex_sum);
+    MPI_Op_create(mpi_real_std_complex_sum<T>, true, &s_mpi_real_complex_sum);
+  }
+  return s_mpi_real_complex_sum;
+}
+
+template<class T>
+inline
+MPI_Op real_kokkos_complex_sum_op()
+{
+  static MPI_Op s_mpi_real_complex_sum;
+  static bool initialized = false;
+
+  if (!initialized) {
+    initialized = true;
+
+    MPI_Op_create(mpi_real_kokkos_complex_sum<T>, true, &s_mpi_real_complex_sum);
   }
   return s_mpi_real_complex_sum;
 }
@@ -379,7 +403,7 @@ struct Datatype<long double>
 };
 
 template <>
-struct Datatype<std::complex<float> >
+struct Datatype<std::complex<float>>
 {
   static MPI_Datatype type() {
     return float_complex_type();
@@ -387,7 +411,23 @@ struct Datatype<std::complex<float> >
 };
 
 template <>
-struct Datatype<std::complex<double> >
+struct Datatype<std::complex<double>>
+{
+  static MPI_Datatype type() {
+    return double_complex_type();
+  }
+};
+
+template <>
+struct Datatype<Kokkos::complex<float>>
+{
+  static MPI_Datatype type() {
+    return float_complex_type();
+  }
+};
+
+template <>
+struct Datatype<Kokkos::complex<double>>
 {
   static MPI_Datatype type() {
     return double_complex_type();

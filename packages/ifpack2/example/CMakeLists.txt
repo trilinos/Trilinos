@@ -22,9 +22,9 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Xpetra ${PACKAGE_NAME}_ENABLE_Galeri)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
 
-IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
+IF(${PACKAGE_NAME}_ENABLE_Galeri)
   # Correctness test with maximum block size (32)
   # Use a small grid so that GPU memory requirement isn't too large
   # Block TriDi
@@ -65,7 +65,7 @@ IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
   )
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Xpetra AND ${PACKAGE_NAME}_ENABLE_Galeri)
+IF(${PACKAGE_NAME}_ENABLE_Galeri)
 
   SET(blockSize 11)
   SET(nx 256)

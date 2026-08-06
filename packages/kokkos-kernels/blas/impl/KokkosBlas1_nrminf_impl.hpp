@@ -24,7 +24,7 @@ struct V_NrmInf_Functor {
   typedef typename XV::execution_space execution_space;
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
+  typedef KokkosKernels::Details::InnerProductSpaceTraits<xvalue_type> IPT;
   typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 

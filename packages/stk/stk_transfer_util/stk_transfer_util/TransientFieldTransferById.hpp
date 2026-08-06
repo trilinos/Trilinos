@@ -38,8 +38,9 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyById.hpp"
-#include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
+#include "stk_transfer_util/TransferCopyByIdStkMeshAdapter.hpp"
 #include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
 
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -53,6 +54,8 @@ namespace transfer_utils {
 class RepeatedTransferCopyByIdStkMeshAdapter : public stk::transfer::TransferCopyByIdStkMeshAdapter
 {
 public:
+  using BaseClass = stk::transfer::TransferCopyByIdStkMeshAdapter;
+
   RepeatedTransferCopyByIdStkMeshAdapter(stk::mesh::BulkData & mesh,
                                          const EntityVector & entities,
                                          const FieldVector & fields)
@@ -76,6 +79,8 @@ public:
 
   virtual void begin_transfer() const override
   {
+    BaseClass::begin_transfer();
+
     if (!m_areValuesCached) {
       for (auto & fieldValues : m_cachedFieldValues) {
         fieldValues.clear();
@@ -90,6 +95,7 @@ public:
 
   virtual void end_transfer() const override
   {
+    BaseClass::end_transfer();
     m_areValuesCached = true;
   }
 
@@ -99,9 +105,7 @@ public:
       return m_cachedFieldValues[field_index][m_cachedFieldValueIndex[field_index]++];
     }
     else {
-      const mesh::Entity entity = m_mesh.get_entity(key);
-      stk::mesh::FieldBase* field = m_transfer_fields[field_index];
-      void* fieldData = stk::mesh::field_data(*field, entity);
+      void* fieldData = const_cast<void *>(BaseClass::field_data(key, field_index));
       m_cachedFieldValues[field_index].push_back(fieldData);
       return fieldData;
     }
@@ -142,6 +146,7 @@ private:
   mutable std::vector<unsigned> m_cachedFieldValueIndex;
   mutable std::vector<std::vector<unsigned short>> m_cachedFieldValueSizes;
   mutable std::vector<unsigned> m_cachedFieldValueSizeIndex;
+  mutable std::vector<int> m_cachedFieldComponentStride;
 };
 
 class TransientTransferByIdForRank

@@ -90,8 +90,8 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
     stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
 
     // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
-    // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
-    // Element 2 is ghosted onto Proc 1, and Element 0 is ghosted onto Proc 0
+    // Elements 2 and 3 are aura-ghosted because of shared nodes 9, 10, 11, 12
+    // Element 2 is ghosted onto Proc 1, and Element 3 is ghosted onto Proc 0
 
     std::string exodusFileName = getOption("-i", "generated:1x1x4");
     populateBulkDataWithFile(exodusFileName, communicator, stkMeshBulkData);
@@ -124,9 +124,11 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
 
     create_edges(stkMeshBulkData, edgeIds, nodeIdsForEdge, elementRelations, edgeEntities, edge_part);
 
+    stkMeshBulkData.modification_end();
+
     std::vector<size_t> globalCounts;
     stk::mesh::comm_mesh_counts(stkMeshBulkData, globalCounts);
-    size_t numEdgesTotal = 2;
+    size_t numEdgesTotal = 1;
     EXPECT_EQ(numEdgesTotal, globalCounts[stk::topology::EDGE_RANK]);
 
     checkThatMeshIsParallelConsistent(stkMeshBulkData);
@@ -141,7 +143,7 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
 
       //============== Funky! Edge is marked as created, not modified. So resolved ownership of "modified" doesn't mess with created.
 
-      EXPECT_EQ(myProcId, stkMeshBulkData.parallel_owner_rank(shared_new[i]));
+      EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i]));
       EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(shared_new[i]));
     }
 
@@ -151,29 +153,29 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
     EXPECT_TRUE(stkMeshBulkData.bucket(node).member(edge_part));
     for (size_t i=0;i<edgeEntities.size();i++)
     {
-      EXPECT_FALSE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
+      EXPECT_TRUE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
     }
 
     stkMeshBulkData.my_resolve_ownership_of_modified_entities(shared_new);
 
     for (size_t i=0;i<edgeEntities.size();i++)
     {
-      EXPECT_FALSE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
+      EXPECT_TRUE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
 
-      EXPECT_EQ(myProcId, stkMeshBulkData.parallel_owner_rank(shared_new[i])) <<
-                                                                                 "Proc " << stkMeshBulkData.parallel_rank() << " failed.";
+      EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i])) << "Proc " << stkMeshBulkData.parallel_rank() << " failed.";
 
-      EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).shared());
-      EXPECT_TRUE(stkMeshBulkData.bucket(shared_new[i]).owned());
+      EXPECT_TRUE(stkMeshBulkData.bucket(shared_new[i]).shared());
+      if (myProcId == 0) {
+        EXPECT_TRUE(stkMeshBulkData.bucket(shared_new[i]).owned());
+      }
+      else {
+        EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).owned());
+      }
       EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).member(stkMeshBulkData.ghosting_part(stkMeshBulkData.aura_ghosting())));
 
-      EXPECT_FALSE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
+      EXPECT_TRUE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
     }
     EXPECT_TRUE(stkMeshBulkData.bucket(node).member(edge_part));
-
-    //============== Hopefully this works!
-
-    stkMeshBulkData.my_move_entities_to_proper_part_ownership( shared_new );
 
     for (size_t i=0;i<edgeEntities.size();i++)
     {
@@ -189,8 +191,6 @@ TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
       EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).member(stkMeshBulkData.ghosting_part(stkMeshBulkData.aura_ghosting())));
       EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i])) ;
     }
-
-    stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
 
     for (size_t i=0;i<edgeEntities.size();i++)
     {

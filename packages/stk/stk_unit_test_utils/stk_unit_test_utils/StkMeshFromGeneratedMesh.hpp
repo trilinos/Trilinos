@@ -3,7 +3,6 @@
 
 #include "mpi.h"
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>

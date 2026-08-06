@@ -75,7 +75,7 @@ cmake \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA_UVM:BOOL=OFF \
--DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON \
+-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=${cuda_on_or_off} \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTrilinos_ENABLE_Fortran:BOOL=ON \
 -DCMAKE_CXX_STANDARD:STRING=20 \

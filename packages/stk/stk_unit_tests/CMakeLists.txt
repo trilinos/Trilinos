@@ -1,5 +1,7 @@
 STK_SUBPACKAGE(Unit_tests)
 
+message("STKUnit_tests")
+
 STK_ADD_TEST_DIRECTORIES(stk_util)
 
 if(${PROJECT_NAME}_ENABLE_STKEmend AND STK_HAS_MPI)

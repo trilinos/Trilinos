@@ -664,7 +664,22 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
       }
     }
 
-    auto output_file = std::shared_ptr<impl::OutputFile>(new impl::OutputFile(out_filename, 
+    int maxNameLength = 0;
+    const bool maxNameLenAlreadySet = properties.exists("MAXIMUM_NAME_LENGTH");
+    if (maxNameLenAlreadySet) {
+      maxNameLength = properties.get("MAXIMUM_NAME_LENGTH").get_int();
+    } else {
+      const int minNameLength = 32;
+      Ioss::DatabaseIO* inputDBIO = (get_input_ioss_region() != nullptr) ? get_input_database(m_activeMeshIndex) : nullptr;
+      int inputMaxNameLength = inputDBIO ? inputDBIO->maximum_symbol_length() : 0;
+      maxNameLength = std::max(minNameLength, inputMaxNameLength);
+      if (m_metaData != nullptr) {
+        maxNameLength = std::max(maxNameLength, get_max_name_length(*m_metaData));
+      }
+    }
+    properties.add(Ioss::Property("MAXIMUM_NAME_LENGTH", maxNameLength));
+
+    auto output_file = std::shared_ptr<impl::OutputFile>(new impl::OutputFile(out_filename,
                                                          m_communicator, db_type,
                                                          properties, input_region, type, openFileImmediately));
 
@@ -979,7 +994,7 @@ void StkMeshIoBroker::add_input_field(size_t mesh_index, const stk::io::MeshFiel
     m_inputFiles[mesh_index]->add_input_field(mesh_field);
 }
 
-void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
+void StkMeshIoBroker::validate_output_file_index([[maybe_unused]] size_t output_file_index) const
 {
     STK_ThrowErrorMsgIf(!is_index_valid(m_outputFiles, output_file_index),
                     "StkMeshIoBroker::validate_output_file_index: invalid output file index of "
@@ -989,7 +1004,7 @@ void StkMeshIoBroker::validate_output_file_index(size_t output_file_index) const
                      "StkMeshIoBroker::validate_output_file_index: There is no Output mesh region associated with this output file index: " << output_file_index << ".");
 }
 
-void StkMeshIoBroker::validate_heartbeat_file_index(size_t heartbeat_file_index) const
+void StkMeshIoBroker::validate_heartbeat_file_index([[maybe_unused]] size_t heartbeat_file_index) const
 {
     STK_ThrowErrorMsgIf(!is_index_valid(m_heartbeat, heartbeat_file_index),
                     "StkMeshIoBroker::validate_heartbeat_file_index: invalid heartbeat file index of "
@@ -999,11 +1014,21 @@ void StkMeshIoBroker::validate_heartbeat_file_index(size_t heartbeat_file_index)
                      "StkMeshIoBroker::validate_heartbeat_file_index: There is no heartbeat mesh region associated with this heartbeat file index: " << heartbeat_file_index << ".");
 }
 
-void StkMeshIoBroker::validate_input_file_index(size_t input_file_index) const
+void StkMeshIoBroker::validate_input_file_index([[maybe_unused]] size_t input_file_index) const
 {
     STK_ThrowErrorMsgIf(!is_index_valid(m_inputFiles, input_file_index),
                     "StkMeshIoBroker::validate_input_file_index: invalid input file index of "
                     << input_file_index << ".");
+}
+
+void StkMeshIoBroker::stk_mesh_resolve_node_sharing()
+{
+  bulk_data().resolve_node_sharing();
+}
+
+void StkMeshIoBroker::stk_mesh_modification_end_after_node_sharing_resolution()
+{
+  bulk_data().modification_end_after_node_sharing_resolution();
 }
 
 void StkMeshIoBroker::add_field(size_t output_file_index, stk::mesh::FieldBase &field)

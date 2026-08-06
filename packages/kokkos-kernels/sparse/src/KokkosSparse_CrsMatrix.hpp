@@ -18,20 +18,19 @@
 #include "KokkosSparse_findRelOffset.hpp"
 #include "KokkosSparse_StaticCrsGraph.hpp"
 #include "KokkosKernels_default_types.hpp"
-#include "KokkosKernels_Macros.hpp"
 
 namespace KokkosSparse {
 //! String that tells sparse kernels to use the transpose of the matrix.
-static char KOKKOSKERNELS_UNUSED_ATTRIBUTE Transpose[] = "T";
+[[maybe_unused]] static char Transpose[] = "T";
 /// \brief String that tells sparse kernels to use the conjugate (NOT
 ///   transpose) of the matrix.
-static char KOKKOSKERNELS_UNUSED_ATTRIBUTE Conjugate[] = "C";
+[[maybe_unused]] static char Conjugate[] = "C";
 /// \brief String that tells sparse kernels to use the conjugate
 ///   transpose of the matrix.
-static char KOKKOSKERNELS_UNUSED_ATTRIBUTE ConjugateTranspose[] = "H";
+[[maybe_unused]] static char ConjugateTranspose[] = "H";
 /// \brief String that tells sparse kernels not to use the transpose
 ///   or conjugate of the matrix.
-static char KOKKOSKERNELS_UNUSED_ATTRIBUTE NoTranspose[] = "N";
+[[maybe_unused]] static char NoTranspose[] = "N";
 
 template <class DeviceType>
 inline int RowsPerThread(const int NNZPerRow) {

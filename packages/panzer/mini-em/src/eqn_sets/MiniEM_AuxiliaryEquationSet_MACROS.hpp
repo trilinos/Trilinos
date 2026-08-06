@@ -41,6 +41,20 @@ Matt Bettencourt, mbetten@sandia.gov
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_EquationSet_TemplateManager.hpp"
 
+/** \file
+  * Macros for declaring and instantiating panzer::EquationSetFactory
+  * "TemplateBuilder" functors for mini-em's auxiliary equation sets
+  * (see mini_em::EquationSetFactory), analogous to Panzer's own
+  * PANZER_DECLARE_EQSET_TEMPLATE_BUILDER/PANZER_BUILD_EQSET_OBJECTS
+  * but threading an additional panzer::GlobalEvaluationDataContainer
+  * through the builder, since auxiliary equation sets need it to
+  * scatter their assembled operators.
+  *
+  * AUX_DECLARE_EQSET_TEMPLATE_BUILDER and AUX_BUILD_EQSET_OBJECTS are
+  * the macros used by mini_em::EquationSetFactory.
+  */
+
+/// \brief Declares a `<fType>_TemplateBuilder` functor that constructs one `fClass<EvalT>` auxiliary equation set per evaluation type, threading a panzer::GlobalEvaluationDataContainer through the constructor.
 #undef AUX_DECLARE_EQSET_TEMPLATE_BUILDER
 #define AUX_DECLARE_EQSET_TEMPLATE_BUILDER(fClass, fType)                                   \
                                                                                             \
@@ -80,6 +94,7 @@ Matt Bettencourt, mbetten@sandia.gov
   };
 
 
+/// \brief If params's "Type" equals key, builds the `fType` auxiliary equation set (via its `_TemplateBuilder`, declared by AUX_DECLARE_EQSET_TEMPLATE_BUILDER) into eq_set and sets found=true. Intended to be chained, one invocation per recognized key, inside panzer::EquationSetFactory::buildEquationSet().
 #undef AUX_BUILD_EQSET_OBJECTS
 #define AUX_BUILD_EQSET_OBJECTS(key, fType)                                    \
   if (params->get<std::string>("Type") == key)                                 \
@@ -89,92 +104,5 @@ Matt Bettencourt, mbetten@sandia.gov
     eq_set->buildObjects(builder);                                             \
     found = true;                                                              \
   }
-
-#undef DREKAR_DECLARE_EQSET_TEMPLATE_BUILDER_GENERAL
-#define DREKAR_DECLARE_EQSET_TEMPLATE_BUILDER_GENERAL(fClass, fType)	         \
-  									                                                           \
-  struct fType ## _TemplateBuilder {					                                 \
-    const Teuchos::RCP<Teuchos::ParameterList> m_params;                       \
-    const int                                  m_default_integration_order;    \
-    const panzer::CellData&                    m_cell_data;                    \
-    const Teuchos::RCP<panzer::GlobalData>     m_global_data;                  \
-    const bool                                 m_build_transient_support;      \
-    const bool                                 m_do_semi_implicit;             \
-    const std::string                          m_semi_implicit_predictor_name; \
-    const bool                                 m_do_lagging;                   \
-    const std::string                          m_lagging_name;	               \
-    const bool                                 m_do_high_order;                \
-    fType ## _TemplateBuilder(                                                 \
-      const Teuchos::RCP<Teuchos::ParameterList>& params,                      \
-      const int default_integration_order,                                     \
-      const panzer::CellData& cd,                                              \
-      const Teuchos::RCP<panzer::GlobalData>& global_data,                     \
-      const bool build_transient_support,                                      \
-      const bool do_semi_implicit,                                             \
-      const std::string semi_implicit_predictor_name,                          \
-      const bool do_lagging,                                                   \
-      const std::string lagging_name,                                          \
-      const bool do_high_order)                                                \
-      :                                                                        \
-      m_params(params),                                                        \
-      m_default_integration_order(default_integration_order),                  \
-      m_cell_data(cd),                                                         \
-      m_global_data(global_data),                                              \
-      m_build_transient_support(build_transient_support),                      \
-      m_do_semi_implicit(do_semi_implicit),                                    \
-      m_semi_implicit_predictor_name(semi_implicit_predictor_name),            \
-      m_do_lagging(do_lagging),                                                \
-      m_lagging_name(lagging_name),                                            \
-      m_do_high_order(do_high_order)                                           \
-    {                                                                          \
-    }                                                                          \
-                                                                               \
-    template<typename EvalT>                                                   \
-    Teuchos::RCP<panzer::EquationSetBase> build() const                        \
-    {           	                                                             \
-      using Teuchos::RCP;                                                      \
-      using Teuchos::rcp;                                                      \
-      using Teuchos::rcp_dynamic_cast;                                         \
-      RCP<fClass<EvalT> > ptr = rcp(new fClass<EvalT>(m_params,                \
-        m_default_integration_order, m_cell_data, m_global_data,               \
-        m_build_transient_support));                                           \
-      Teuchos::RCP<drekar::MixIn_SemiImplicitSupport<EvalT> > semiImplicit =   \
-        rcp_dynamic_cast<drekar::MixIn_SemiImplicitSupport<EvalT> >(ptr);      \
-      if (semiImplicit != Teuchos::null)                                       \
-        semiImplicit->setDoSemiImplicit(m_do_semi_implicit,                    \
-          m_semi_implicit_predictor_name);                                     \
-      Teuchos::RCP<drekar::MixIn_LaggingSupport<EvalT> > lagging =             \
-        rcp_dynamic_cast<drekar::MixIn_LaggingSupport<EvalT> >(ptr);           \
-      if (lagging != Teuchos::null)                                            \
-        lagging->setDoLagging(m_do_lagging, m_lagging_name);                   \
-      if (m_do_high_order)                                                     \
-      {                                                                        \
-        Teuchos::RCP<drekar::MixIn_HighOrderSupport<EvalT> > highOrder =       \
-          rcp_dynamic_cast<drekar::MixIn_HighOrderSupport<EvalT> >(ptr);       \
-        if (highOrder != Teuchos::null)                                        \
-          highOrder->setDoHighOrder(m_do_high_order);                          \
-        else                                                                   \
-          std::cout << "Warning: High Order enabled, "                         \
-                    << "Equation set \"EvalT\" does not support it!";          \
-      }                                                                        \
-      ptr->initialize(m_params, m_default_integration_order, m_cell_data,      \
-        m_global_data, m_build_transient_support);                             \
-      return ptr;                                                              \
-    }									                                                         \
-    									                                                         \
-  };
-
-#undef DREKAR_BUILD_EQSET_OBJECTS_GENERAL
-#define DREKAR_BUILD_EQSET_OBJECTS_GENERAL(key, fType)                       \
-  if (params->get<std::string>("Type") == key)                               \
-  {                                                                          \
-      fType ## _TemplateBuilder builder(params, default_integration_order,   \
-        cell_data, global_data, build_transient_support, m_do_semi_implicit, \
-        m_semi_implicit_predictor_name, m_do_lagging, m_lagging_name,        \
-        m_do_high_order);                                                    \
-      eq_set->buildObjects(builder);				                                 \
-      found = true;                                                          \
-  }
-
 
 #endif

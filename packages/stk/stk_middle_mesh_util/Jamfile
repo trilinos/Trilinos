@@ -44,8 +44,6 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_middle_mesh_util-root-inc)
-    <define>STK_BUILT_FOR_SIERRA
-    <define>STK_BUILT_WITH_BJAM
   : usage-requirements
     <include>$(stk_middle_mesh_util-root-inc)
   : build-dir $(stk_middle_mesh_util-builddir)
@@ -163,5 +161,6 @@ exe stk_middle_mesh_util_utest
     stk_middle_mesh_util
     /sierra/stk_middle_mesh//stk_middle_mesh
     /sierra/stk_unit_test_utils//stk_mesh_fixtures
-  : <tag>@sierra-exec-tag
+  : <define>STK_BUILT_FOR_SIERRA
+    <tag>@sierra-exec-tag
   ;

@@ -52,6 +52,30 @@ namespace {
 class FieldDataBucketAccess : public FieldDataAccessFixture {};
 
 //==============================================================================
+template <typename FieldDataType>
+void test_host_scalar_default_construction(const stk::mesh::BulkData& bulk, const FieldDataType& fieldData)
+{
+  const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
+  std::vector<stk::mesh::BucketValues<int, stk::ngp::HostSpace>> valuesCache(buckets.size());
+
+  {
+    for (stk::mesh::Bucket* bucket : buckets) {
+      valuesCache[bucket->bucket_id()] = fieldData.bucket_values(*bucket);
+
+      int value = 0;
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        valuesCache[bucket->bucket_id()](entityIdx) = ++value*10;
+      }
+
+      value = 0;
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        EXPECT_EQ(valuesCache[bucket->bucket_id()](entityIdx), ++value*10);
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 template <typename FieldDataType, typename ConstFieldDataType>
 void test_host_scalar(const stk::mesh::BulkData& bulk,
                       const FieldDataType& fieldData, const ConstFieldDataType& constFieldData)
@@ -95,6 +119,18 @@ void test_host_scalar(const stk::mesh::BulkData& bulk,
       }
     }
   }
+}
+
+//------------------------------------------------------------------------------
+TEST_F(FieldDataBucketAccess, host_scalar_default_construction)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_mesh_with_scalar_field();
+
+  const stk::mesh::Field<int>& field = *m_field;
+
+  test_host_scalar_default_construction(get_bulk(),
+                                        field.data<stk::mesh::ReadWrite>());
 }
 
 //------------------------------------------------------------------------------
@@ -1618,6 +1654,47 @@ TEST_F(FieldDataBucketAccess, host_multiScalar_pointer_layoutRight)
 
 
 //==============================================================================
+template <typename FieldType, typename FieldDataType>
+void test_device_scalar_default_construction(const stk::mesh::BulkData& bulk, FieldType& field,
+                                             const FieldDataType& fieldData)
+{
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK, field);
+  unsigned numBuckets = bucketIds.size();
+  using TeamHandleType = typename stk::ngp::TeamPolicy<stk::ngp::ExecSpace>::member_type;
+
+  Kokkos::View<stk::mesh::BucketValues<int, stk::ngp::DeviceSpace>*> valuesCache("valuesCache", numBuckets);
+
+  Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
+    KOKKOS_LAMBDA(const TeamHandleType& team) {
+      const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
+      valuesCache(bucketId) = fieldData.bucket_values(bucketId);
+      stk::mesh::EntityIdx numEntities = valuesCache(bucketId).num_entities();
+
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numEntities),
+        [&](stk::mesh::EntityIdx entity) {
+          valuesCache(bucketId)(entity) = bucketId*10 + entity();
+        }
+      );
+    }
+  );
+
+  Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
+    KOKKOS_LAMBDA(const TeamHandleType& team) {
+      const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
+      const stk::mesh::EntityIdx numEntities = valuesCache(bucketId).num_entities();
+
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numEntities),
+        [&](stk::mesh::EntityIdx entity) {
+          NGP_EXPECT_EQ(valuesCache(bucketId)(entity), bucketId*10 + entity());
+        }
+      );
+    }
+  );
+}
+
+//------------------------------------------------------------------------------
 template <typename FieldType, typename FieldDataType, typename ConstFieldDataType>
 void test_device_scalar(const stk::mesh::BulkData& bulk, FieldType& field,
                         const FieldDataType& fieldData, const ConstFieldDataType& constFieldData)
@@ -1655,6 +1732,18 @@ void test_device_scalar(const stk::mesh::BulkData& bulk, FieldType& field,
       );
     }
   );
+}
+
+//------------------------------------------------------------------------------
+NGP_TEST_F(FieldDataBucketAccess, device_scalar_default_construction)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  build_mesh_with_scalar_field();
+
+  const stk::mesh::Field<int>& field = *m_field;
+
+  test_device_scalar_default_construction(get_bulk(), field,
+                                          field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------

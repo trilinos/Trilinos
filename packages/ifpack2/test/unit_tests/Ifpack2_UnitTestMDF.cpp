@@ -51,6 +51,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test0, Scalar, LocalOrdinal, Globa
   Teuchos::ParameterList params;
   params.set("fact: mdf level-of-fill", 0.0);
   params.set("Verbosity", 0);
+  params.set("trisolver: type", "Internal");
   TEST_NOTHROW(prec.setParameters(params));
 
   prec.initialize();
@@ -118,6 +119,7 @@ void test_mdf_reference_problem(
     Teuchos::ParameterList params;
     params.set("fact: mdf level-of-fill", 0.0);
     params.set("Verbosity", 0);
+    params.set("trisolver: type", "Internal");
     TEST_NOTHROW(prec.setParameters(params));
   }
 
@@ -153,7 +155,7 @@ void test_mdf_reference_problem(
     TEST_COMPARE_FLOATING_ARRAYS(yview, knownSln, test_mdf_reference_tol<Scalar>());
   }
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
   // Now apply reordering with AdditiveSchwarz
   Ifpack2::AdditiveSchwarz<row_matrix_t> reorderedPrec(crsmatrix.getConst());
   {

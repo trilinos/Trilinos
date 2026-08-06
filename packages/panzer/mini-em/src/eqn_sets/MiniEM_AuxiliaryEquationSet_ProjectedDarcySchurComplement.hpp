@@ -21,11 +21,22 @@
 
 namespace mini_em {
 
+  /** \brief An auxiliary equation set (not part of the physical
+    * system being solved) that assembles a curl-projected approximate
+    * Schur complement operator for the Darcy sigma (flux) block
+    * (using curl-basis integrators, rather than directly in the flux
+    * basis space like mini_em::AuxiliaryEquationSet_DarcySchurComplement)
+    * and scatters it to the global evaluation data container under
+    * the key "AUX_<dof_name>_ProjectedDarcySchurComplement", for use
+    * by mini_em::OperatorRequestCallback and the Darcy block
+    * preconditioner factory.
+    */
   template <typename EvalT>
   class AuxiliaryEquationSet_ProjectedDarcySchurComplement : public panzer::EquationSet_DefaultImpl<EvalT> {
 
   public:
 
+    /// \brief Construct from the global evaluation data container to scatter the projected Schur complement operator into, and a ParameterList specifying the basis/integration order and inverse diffusivity closure model name.
     AuxiliaryEquationSet_ProjectedDarcySchurComplement(const Teuchos::RCP<panzer::GlobalEvaluationDataContainer> & gedc,
                              const Teuchos::RCP<Teuchos::ParameterList>& params,
 			     const int& default_integration_order,
@@ -33,10 +44,23 @@ namespace mini_em {
 		             const Teuchos::RCP<panzer::GlobalData>& global_data,
 		             const bool build_transient_support);
 
+    /** \brief Registers the evaluators that assemble the projected approximate Schur complement operator per the class description.
+      *
+      * \param[in] fm the field manager to register evaluators with.
+      * \param[in] field_library field data layouts available for this physics block (unused).
+      * \param[in] user_data user-supplied parameters (unused).
+      */
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					       const panzer::FieldLibrary& /* field_library */,
                                                const Teuchos::ParameterList& /* user_data */) const;
 
+    /** \brief Registers the evaluators that scatter the assembled operator into the global evaluation data container per the class description.
+      *
+      * \param[in] fm the field manager to register evaluators with.
+      * \param[in] field_library field data layouts available for this physics block.
+      * \param[in] lof linear object factory used to build the scatter evaluator.
+      * \param[in] user_data user-supplied parameters passed through to the scatter evaluator.
+      */
     void buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					   const panzer::FieldLibrary& field_library,
                                            const panzer::LinearObjFactory<panzer::Traits> & lof,
@@ -49,6 +73,7 @@ namespace mini_em {
     std::string inverseDiffusivity_;
   };
 
+/// \brief Jacobian specialization: this is the only evaluation type for which the projected Schur complement operator is actually assembled and scattered.
 template < >
 void AuxiliaryEquationSet_ProjectedDarcySchurComplement<panzer::Traits::Jacobian>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,

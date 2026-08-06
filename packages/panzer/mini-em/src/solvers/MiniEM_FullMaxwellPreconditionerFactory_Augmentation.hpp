@@ -19,15 +19,26 @@
 
 namespace mini_em {
 
+/** \brief A Teko block preconditioner factory for the full (E,B)
+  * Maxwell system, using the augmentation approach: an auxiliary
+  * augmented (elliptic-like) operator built from the discrete
+  * gradient is used to precondition the otherwise near-singular
+  * curl-curl block.
+  */
 class FullMaxwellPreconditionerFactory_Augmentation : public Teko::BlockPreconditionerFactory {
 public:
 
    FullMaxwellPreconditionerFactory_Augmentation() {}
    virtual ~FullMaxwellPreconditionerFactory_Augmentation() {}
 
+   /** \brief Builds the block preconditioner operator for the given blocked Maxwell system, per the class description.
+     *
+     * \param[in] blo the blocked (E,B) system operator to precondition.
+     * \param[in,out] state Teko's preconditioner state, used to cache sub-block operators/inverses across applications.
+     */
    Teko::LinearOp buildPreconditionerOperator(Teko::BlockedLinearOp & blo, Teko::BlockPreconditionerState & state) const;
 
-   //! Initialize from a parameter list
+   //! Initialize the sub-solver inverse factories and options from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 
 private:

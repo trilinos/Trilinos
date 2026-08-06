@@ -94,7 +94,7 @@ public:
   KOKKOS_INLINE_FUNCTION value_type* data() { return m_value; }
 
 private:
-  value_type m_value[Dim];
+  value_type m_value[Dim] = {0};
 };
 
 template <class T>

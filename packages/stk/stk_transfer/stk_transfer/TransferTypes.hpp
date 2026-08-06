@@ -55,21 +55,50 @@ inline double default_transform(double value) { return value; }
 using FieldTransform = double (*)(double);
 
 struct InterpolationData {
-  unsigned nFields;
-  std::vector<double*> fieldPtr;
-  std::vector<int> fieldSize;
+  unsigned capacity{0};
+  unsigned nFields{0};
+
+  std::vector<double*>  fieldPtr;
+  std::vector<int>      fieldSize;
+  std::vector<int>      fieldComponents;
+  std::vector<int>      fieldComponentStride;
+  std::vector<int>      fieldCopies;
+  std::vector<int>      fieldCopyStride;
   std::vector<unsigned> fieldKey;
   std::vector<unsigned> fieldDataIndex;
   bool debug{false};
 
+  InterpolationData() = default;
+
   InterpolationData(unsigned maxSize)
-    : nFields(0)
+    : capacity(maxSize)
+    , nFields(0)
     , fieldPtr(maxSize)
     , fieldSize(maxSize)
+    , fieldComponents(maxSize)
+    , fieldComponentStride(maxSize)
+    , fieldCopies(maxSize)
+    , fieldCopyStride(maxSize)
     , fieldKey(maxSize)
     , fieldDataIndex(maxSize)
     , debug(false)
   {
+  }
+
+  void resize(unsigned newSize)
+  {
+    if(capacity < newSize) {
+      fieldPtr.resize(newSize, nullptr);
+      fieldSize.resize(newSize, 0);
+      fieldComponents.resize(newSize, 0);
+      fieldComponentStride.resize(newSize, 0);
+      fieldCopies.resize(newSize, 0);
+      fieldCopyStride.resize(newSize, 0);
+      fieldKey.resize(newSize, 0);
+      fieldDataIndex.resize(newSize, 0);
+    }
+
+    capacity = std::max(capacity, newSize);
   }
 };
 

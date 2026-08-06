@@ -44,8 +44,6 @@ project votd
   : requirements
     $(sierra-warnings)
     <include>$(stk_search_util-root-inc)
-    <define>STK_BUILT_FOR_SIERRA
-    <define>STK_BUILT_WITH_BJAM
   : usage-requirements
     <include>$(stk_search_util-root-inc)
   : build-dir $(stk_search_util-builddir)
@@ -141,6 +139,7 @@ lib stk_search_util_base
         [ glob $(stk_search_util-root)/stk_search_util/*.cpp ]
         [ glob $(stk_search_util-root)/stk_search_util/spmd/*.cpp ]
     ]
+    /sierra/stk_expreval//stk_expreval
     /sierra/stk_search//stk_search
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_diag

@@ -23,28 +23,36 @@ using namespace KokkosBatched;
 
 namespace Test {
 
+template <int extent_id, typename VectorViewType>
+inline int get_extent(const VectorViewType& v) {
+  if constexpr (extent_id < VectorViewType::rank) {
+    return v.extent(extent_id);
+  } else
+    return 1;
+}
+
 template <typename VectorViewType>
 void impl_init_vector_view(const VectorViewType& a) {
   int cnt = 0;
-  for (int i0 = 0, i0end = a.extent(0); i0 < i0end; ++i0)
-    for (int i1 = 0, i1end = a.extent(1); i1 < i1end; ++i1)
-      for (int i2 = 0, i2end = a.extent(2); i2 < i2end; ++i2)
-        for (int i3 = 0, i3end = a.extent(3); i3 < i3end; ++i3)
-          for (int i4 = 0, i4end = a.extent(4); i4 < i4end; ++i4)
-            for (int i5 = 0, i5end = a.extent(5); i5 < i5end; ++i5)
-              for (int i6 = 0, i6end = a.extent(6); i6 < i6end; ++i6)
-                for (int i7 = 0, i7end = a.extent(7); i7 < i7end; ++i7)
+  for (int i0 = 0, i0end = get_extent<0>(a); i0 < i0end; ++i0)
+    for (int i1 = 0, i1end = get_extent<1>(a); i1 < i1end; ++i1)
+      for (int i2 = 0, i2end = get_extent<2>(a); i2 < i2end; ++i2)
+        for (int i3 = 0, i3end = get_extent<3>(a); i3 < i3end; ++i3)
+          for (int i4 = 0, i4end = get_extent<4>(a); i4 < i4end; ++i4)
+            for (int i5 = 0, i5end = get_extent<5>(a); i5 < i5end; ++i5)
+              for (int i6 = 0, i6end = get_extent<6>(a); i6 < i6end; ++i6)
+                for (int i7 = 0, i7end = get_extent<7>(a); i7 < i7end; ++i7)
                   a.access(i0, i1, i2, i3, i4, i5, i6, i7) = cnt++;
 }
-#define TEST_LOOP                                                     \
-  for (int i0 = 0, i0end = b.extent(0); i0 < i0end; ++i0)             \
-    for (int i1 = 0, i1end = b.extent(1); i1 < i1end; ++i1)           \
-      for (int i2 = 0, i2end = b.extent(2); i2 < i2end; ++i2)         \
-        for (int i3 = 0, i3end = b.extent(3); i3 < i3end; ++i3)       \
-          for (int i4 = 0, i4end = b.extent(4); i4 < i4end; ++i4)     \
-            for (int i5 = 0, i5end = b.extent(5); i5 < i5end; ++i5)   \
-              for (int i6 = 0, i6end = b.extent(6); i6 < i6end; ++i6) \
-                for (int i7 = 0, i7end = b.extent(7); i7 < i7end; ++i7)
+#define TEST_LOOP                                                          \
+  for (int i0 = 0, i0end = get_extent<0>(b); i0 < i0end; ++i0)             \
+    for (int i1 = 0, i1end = get_extent<1>(b); i1 < i1end; ++i1)           \
+      for (int i2 = 0, i2end = get_extent<2>(b); i2 < i2end; ++i2)         \
+        for (int i3 = 0, i3end = get_extent<3>(b); i3 < i3end; ++i3)       \
+          for (int i4 = 0, i4end = get_extent<4>(b); i4 < i4end; ++i4)     \
+            for (int i5 = 0, i5end = get_extent<5>(b); i5 < i5end; ++i5)   \
+              for (int i6 = 0, i6end = get_extent<6>(b); i6 < i6end; ++i6) \
+                for (int i7 = 0, i7end = get_extent<7>(b); i7 < i7end; ++i7)
 
 template <typename VectorViewType>
 void impl_verify_vector_view(const VectorViewType& a, const SimdViewAccess<VectorViewType, PackDim<0> >& b) {

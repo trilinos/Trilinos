@@ -50,10 +50,13 @@ class PeriodicBC_MatcherBase;
   */
 class ElementDescriptor {
 public:
+   /// \brief Construct from the element's global ID and the global IDs of its nodes.
    ElementDescriptor(stk::mesh::EntityId gid,const std::vector<stk::mesh::EntityId> & nodes);
    virtual ~ElementDescriptor();
 
+   /// \brief Returns the element's global ID.
    stk::mesh::EntityId getGID() const { return gid_; }
+   /// \brief Returns the global IDs of the element's nodes.
    const std::vector<stk::mesh::EntityId> & getNodes() const { return nodes_; }
 protected:
    stk::mesh::EntityId gid_;
@@ -87,12 +90,14 @@ public:
    struct FaceBlockException : public std::logic_error
    { FaceBlockException(const std::string & what) : std::logic_error(what) {} };
 
+   /// \brief Construct with no spatial dimension set. addElementBlock() and initialize() must be used to set it up before use.
    STK_Interface();
 
    /** Default constructor
      */
    STK_Interface(unsigned dim);
 
+   /// \brief Construct from an already-built STK meta data object.
    STK_Interface(Teuchos::RCP<stk::mesh::MetaData> metaData);
 
    // functions called before initialize
@@ -214,10 +219,13 @@ public:
      */
    void addNode(stk::mesh::EntityId gid, const std::vector<double> & coord);
 
+   /// \brief Adds an element (described by its global ID and node IDs) into the given element block part.
    void addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::mesh::Part * block);
 
+   /// \brief Builds edge entities for the mesh from its existing elements.
    void addEdges();
 
+   /// \brief Builds face entities for the mesh from its existing elements.
    void addFaces();
 
    /** Adds an entity to a specified side set.
@@ -255,6 +263,7 @@ public:
    const VectorFieldType & getEdgesField() const
    { return *edgesField_; }
 
+   /** Return the faces field */
    const VectorFieldType & getFacesField() const
    { return *facesField_; }
 
@@ -267,6 +276,10 @@ public:
    const double * getNodeCoordinates(stk::mesh::Entity node) const;
 
    /** Get subcell global IDs
+     *
+     * \param[in] entityRank rank of the subcells to look up (e.g. node, edge, face).
+     * \param[in] elementId global ID of the element whose subcells to look up.
+     * \param[out] subcellIds populated with the global IDs of the element's subcells of the given rank.
      */
    void getSubcellIndices(unsigned entityRank,stk::mesh::EntityId elementId,
                           std::vector<stk::mesh::EntityId> & subcellIds) const;
@@ -469,6 +482,24 @@ public:
                   const bool append_after_restart_time = false,
                   const double restart_time = 0.0);
 
+    /**
+   *  \brief Set up an output Exodus file for writing results.
+   *
+   *  Create an output mesh associated with the given `filename` and add the
+   *  fields to it.
+   *
+   *  \note No writing is actually done at this stage.  That happens with a
+   *        call to `writeToExodus(double timestep)`.
+   *
+   *  \param[in] filename The name of the output Exodus file.
+   *  \param[in] ioss_properties A vector of ioss properties to set on the STK mesh ioss reader/writer.
+   *  \param[in] append If set to true, the output will be appended to the output Exodus file. If set to false, output file will be overwritten. Default is false.
+   *  \param[in] append_after_restart_time If set to true, instead of appending to the end of the Exodus file, this option will append new writes after a specified time and overwrite subsequent time steps that were in the file. Allows users to restart anywhere in the exodus file and write consistently. If set to false, the next write will append to the end of the file. Default is false.
+   *  \param[in] restart_time If append_after_restart_time is true, this is the time value to append after. Otherwise this value is ignored.
+   *
+   *  \throws `std::logic_error` If the `STK_Interface` does not yet have a MPI
+   *                             communicator.
+   */
   void
   setupExodusFile(const std::string& filename,
                   const std::vector<Ioss::Property>& ioss_properties,
@@ -594,7 +625,9 @@ public:
    //! get the comm associated with this mesh
    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
+   //! Returns the underlying STK bulk data object.
    Teuchos::RCP<stk::mesh::BulkData> getBulkData() const { return bulkData_; }
+   //! Returns the underlying STK meta data object.
    Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
 
 #ifdef PANZER_HAVE_PERCEPT
@@ -603,8 +636,10 @@ public:
   { TEUCHOS_ASSERT(Teuchos::nonnull(refinedMesh_)); return refinedMesh_; }
 #endif
 
+   //! Returns true if the mesh can be written out to Exodus (i.e. is IOSS/output set up)?
    bool isWritable() const;
 
+   //! Returns true if the bulk data manager is currently in modification mode (i.e. between beginModification() and endModification())
    bool isModifiable() const
    {  if(bulkData_==Teuchos::null) return false;
       return bulkData_->in_modifiable_state(); }
@@ -725,12 +760,21 @@ public:
    //! get a list of node ids for nodes connected to an element
    void getNodeIdsForElement(stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds) const;
 
-   /** Get set of element sharing a single node and its local node id.
+   /** Get set of owned elements sharing a single node and its local node id.
+     *
+     * \param[in] node the node to find owned elements sharing.
+     * \param[out] elements populated with the owned elements that share the node.
+     * \param[out] relIds populated with the node's local (relation) ID within each corresponding element in elements.
      */
    void getOwnedElementsSharingNode(stk::mesh::Entity node,std::vector<stk::mesh::Entity> & elements,
                                     std::vector<int> & relIds) const;
 
-   /** Get set of element sharing a single node and its local node id.
+   /** Get set of owned elements sharing a single node and its local node id.
+     *
+     * \param[in] nodeId global ID of the node to find owned elements sharing.
+     * \param[out] elements populated with the owned elements that share the node.
+     * \param[out] relIds populated with the node's local (relation) ID within each corresponding element in elements.
+     * \param[in] matchType entity rank to match on (e.g. node, edge, face) when locating shared relations.
      */
    void getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements,
                                     std::vector<int> & relIds, unsigned int matchType) const;
@@ -854,9 +898,10 @@ public:
    stk::mesh::Field<double> * getFaceField(const std::string & fieldName,
                                            const std::string & blockId) const;
 
+   //! Get the field holding each entity's owning processor rank.
    ProcIdFieldType * getProcessorIdField() { return processorIdField_; }
 
-   //! Has <code>initialize</code> been called on this mesh object?
+   //! Returns true if <code>initialize</code> been called on this mesh object
    bool isInitialized() const { return initialized_; }
 
    /** Get Vector of element entities ordered by their LID, returns an RCP so that
@@ -1156,10 +1201,15 @@ public:
    // const stk::mesh::FEMInterface & getFEMInterface() const
    // { return *femPtr_; }
 
+   //! Get the STK entity rank corresponding to elements.
    stk::mesh::EntityRank getElementRank() const { return stk::topology::ELEMENT_RANK; }
+   //! Get the STK entity rank corresponding to sides (dimension one lower than element rank).
    stk::mesh::EntityRank getSideRank() const { return metaData_->side_rank(); }
+   //! Get the STK entity rank corresponding to faces.
    stk::mesh::EntityRank getFaceRank() const { return stk::topology::FACE_RANK; }
+   //! Get the STK entity rank corresponding to edges.
    stk::mesh::EntityRank getEdgeRank() const { return stk::topology::EDGE_RANK; }
+   //! Get the STK entity rank corresponding to nodes.
    stk::mesh::EntityRank getNodeRank() const { return stk::topology::NODE_RANK; }
 
    /** Build fields and parts from the meta data
@@ -1301,6 +1351,7 @@ public:
    template <typename ArrayT>
    void getElementVertices_FromField(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const;
 
+   /// \copydoc panzer_stk::STK_Interface::getElementVertices_FromField, but the vertex array will not be resized.
    template <typename ArrayT>
    void getElementVertices_FromFieldNoResize(const std::vector<stk::mesh::Entity> & elements,
                                              const std::string & eBlock, ArrayT & vertices) const;
@@ -1317,6 +1368,7 @@ public:
    template <typename ArrayT>
    void getElementVertices_FromCoords(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
+   /// \copydoc panzer_stk::STK_Interface::getElementVertices_FromCoords, but the vertex array will not be resized.
    template <typename ArrayT>
    void getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
@@ -1335,6 +1387,7 @@ public:
    template <typename ArrayT>
    void getElementNodes_FromField(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & nodes) const;
 
+   /// \copydoc panzer_stk::STK_Interface::getElementNodes_FromField, but the node array will not be resized.
    template <typename ArrayT>
    void getElementNodes_FromFieldNoResize(const std::vector<stk::mesh::Entity> & elements,
                                              const std::string & eBlock, ArrayT & nodes) const;
@@ -1351,6 +1404,7 @@ public:
    template <typename ArrayT>
    void getElementNodes_FromCoords(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const;
 
+   /// \copydoc panzer_stk::STK_Interface::getElementNodes_FromCoords, but the node array will not be resized.
    template <typename ArrayT>
    void getElementNodes_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & nodes) const;
 
@@ -1381,6 +1435,9 @@ protected:
 
    /** Initialize STK fields using a map (allocate space for storage and writing)
      * to a specific entity rank.
+     *
+     * \param[in] nameToField fields to initialize, keyed by (field name, element block ID).
+     * \param[in] setupIO if true, also registers the fields for Exodus output.
      */
    void initializeFieldsInSTK(const std::map<std::pair<std::string,std::string>,SolutionFieldType*> & nameToField,
                               bool setupIO);
@@ -1398,8 +1455,12 @@ protected:
      */
    void applyElementLoadBalanceWeights();
 
-   /** Determine if a particular field in an element block is a displacement field. Return
-     * the displacement field name in the requested argument if so.
+   /** Determine if a particular field in an element block is a displacement (mesh coordinate)
+     * field. If so, returns which spatial axis it displaces in the requested argument.
+     *
+     * \param[in] eBlock element block to check.
+     * \param[in] fieldName name of the field to check.
+     * \param[out] axis if the field is a displacement field, set to its spatial axis index (0=x, 1=y, 2=z); otherwise unspecified.
      */
    bool isMeshCoordField(const std::string & eBlock,const std::string & fieldName,int & axis) const;
 

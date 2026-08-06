@@ -5,7 +5,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosBlas1_update_impl.hpp>
@@ -230,7 +230,6 @@ struct Update<execution_space, XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_
 #endif
 
     const size_type numRows = X.extent(0);
-    const size_type numCols = X.extent(1);
     int a = 2, b = 2, c = 2;
 
     if (alpha == ATA::zero()) {
@@ -249,7 +248,7 @@ struct Update<execution_space, XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_
       c = 2;
     }
 
-    if (numRows < static_cast<size_type>(INT_MAX) && numRows * numCols < static_cast<size_type>(INT_MAX)) {
+    if (numRows < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
       V_Update_Generic<execution_space, XV, YV, ZV, index_type>(space, alpha, X, beta, Y, gamma, Z, a, b, c);
     } else {

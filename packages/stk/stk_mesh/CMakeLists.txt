@@ -34,6 +34,8 @@
 
 STK_SUBPACKAGE(Mesh)
 
+message("STKMesh")
+
 ADD_SUBDIRECTORY(stk_mesh)
 
 STK_SUBPACKAGE_POSTPROCESS()

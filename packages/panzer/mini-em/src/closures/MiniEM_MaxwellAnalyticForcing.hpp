@@ -31,13 +31,19 @@ namespace mini_em {
   using panzer::Point;
   using panzer::Dim;
 
-  /** Maxwell source with know analytic solution
+  /** Computes the current source J = -epsilon*dE/dt consistent with
+    * the manufactured analytic solution
+    * E(x,y[,z],t) = sin(timeScale*t) * grad[sin(pi*x)*sin(pi*y)[*sin(pi*z)]]
+    * (see mini_em::MaxwellAnalyticSolution), for the Maxwell equation
+    * epsilon*dE/dt = curl(B)/mu - J (assuming zero conductivity, since
+    * E is curl-free so B and curl(B) remain zero).
    */
   template<typename EvalT, typename Traits>
   class MaxwellAnalyticForcing : public panzer::EvaluatorWithBaseImpl<Traits>,
                                  public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   public:
+    /// \brief Construct from the output field name, integration rule, field layout library, permittivity epsilon, time-oscillation scale, and the name of the DOF basis whose integration points to evaluate at.
     MaxwellAnalyticForcing(const std::string & name,
                            const panzer::IntegrationRule & ir,
                            const panzer::FieldLayoutLibrary & fl,
@@ -45,9 +51,11 @@ namespace mini_em {
                            const double timeScale,
                            const std::string& basisName="E_edge");
 
+    /// \brief Looks up the integration rule index needed by evaluateFields(). Called once before the first evaluation.
     void postRegistrationSetup(typename Traits::SetupData d,
                                PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the forcing (current source) field at this workset's integration points and time, per the class description.
     void evaluateFields(typename Traits::EvalData d);
 
 

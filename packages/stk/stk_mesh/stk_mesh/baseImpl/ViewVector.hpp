@@ -37,6 +37,7 @@
 #define STK_MESH_VIEWVECTOR_HPP
 
 #include "stk_util/ngp/NgpSpaces.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include "Kokkos_Core.hpp"
 #include <string>
 #include <utility>
@@ -51,17 +52,19 @@ public:
   using index_type = SizeT;
   using mem_space = MemSpace;
   using buffer_type = Kokkos::View<T*, MemSpace>;
+  using unmanaged_buffer_type = Kokkos::View<T*, MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using size_view_type = Kokkos::View<SizeT, stk::ngp::HostPinnedSpace>;
   static constexpr SizeT growth_scale = 2;
 
-  KOKKOS_INLINE_FUNCTION ViewVector();
   explicit ViewVector(const std::string& name);
   explicit ViewVector(const std::string& name, SizeT size);
   KOKKOS_INLINE_FUNCTION ~ViewVector();
 
+  KOKKOS_DEFAULTED_FUNCTION ViewVector() = default;
   KOKKOS_DEFAULTED_FUNCTION ViewVector(const ViewVector& other) = default;
   KOKKOS_DEFAULTED_FUNCTION ViewVector(ViewVector&& other) = default;
   KOKKOS_DEFAULTED_FUNCTION ViewVector& operator=(const ViewVector& rhs) = default;
-  KOKKOS_INLINE_FUNCTION ViewVector& operator=(ViewVector&& rhs);
+  KOKKOS_DEFAULTED_FUNCTION ViewVector& operator=(ViewVector&& rhs) = default;
 
   KOKKOS_INLINE_FUNCTION SizeT size() const;
   KOKKOS_INLINE_FUNCTION SizeT capacity() const;
@@ -85,12 +88,13 @@ public:
   void emplace_back(Args&&... args);
 
   KOKKOS_INLINE_FUNCTION auto& get_view() const;
+  KOKKOS_INLINE_FUNCTION bool is_allocated() const;
 
 private:
   void change_capacity(SizeT newCapacity);
 
   buffer_type m_buffer;
-  SizeT m_size;
+  size_view_type m_size;
 };
 
 //------------------------------------------------------------------------------
@@ -111,6 +115,23 @@ void construct_entries(const BufferType& buffer,
 
 //------------------------------------------------------------------------------
 template <typename BufferType>
+requires stk::ngp::is_host_exec_space<typename BufferType::memory_space::execution_space>
+void destroy_entries(const BufferType& buffer,
+                     typename BufferType::index_type beginIdx, typename BufferType::index_type endIdx)
+{
+  using T = typename BufferType::element_type;
+  using SizeT = typename BufferType::index_type;
+  using ExecSpace = typename BufferType::memory_space::execution_space;
+
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(beginIdx, endIdx),
+    [&](const SizeT i) {
+      (&buffer[i])->~T();
+    }
+  );
+}
+
+template <typename BufferType>
+requires stk::ngp::is_device_exec_space<typename BufferType::memory_space::execution_space>
 void destroy_entries(const BufferType& buffer,
                      typename BufferType::index_type beginIdx, typename BufferType::index_type endIdx)
 {
@@ -150,26 +171,20 @@ bool is_last_reference(const BufferType& buffer)
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, typename SizeT>
-KOKKOS_INLINE_FUNCTION
-ViewVector<T, MemSpace, SizeT>::ViewVector()
-  : m_buffer(),
-    m_size(0)
-{}
-
-//------------------------------------------------------------------------------
-template <typename T, typename MemSpace, typename SizeT>
 ViewVector<T, MemSpace, SizeT>::ViewVector(const std::string& name)
   : m_buffer(Kokkos::view_alloc(name, Kokkos::WithoutInitializing), 0),
-    m_size(0)
-{}
+    m_size(name + " size")
+{
+}
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, typename SizeT>
 ViewVector<T, MemSpace, SizeT>::ViewVector(const std::string& name, SizeT size)
   : m_buffer(Kokkos::view_alloc(name, Kokkos::WithoutInitializing), size),
-    m_size(size)
+    m_size(name + " size")
 {
-  construct_entries(m_buffer, 0, m_size);
+  construct_entries(m_buffer, 0, size);
+  m_size() = size;
   Kokkos::fence();
 }
 
@@ -178,8 +193,9 @@ template <typename T, typename MemSpace, typename SizeT>
 KOKKOS_INLINE_FUNCTION ViewVector<T, MemSpace, SizeT>::~ViewVector()
 {
   KOKKOS_IF_ON_HOST(
-    if (is_last_reference(m_buffer)) {
-       destroy_entries(m_buffer, 0, m_size);
+    bool viewIsTracked = const_cast<Kokkos::Impl::SharedAllocationTracker&>(m_buffer.impl_track()).tracking_enabled();
+    if (viewIsTracked && is_last_reference(m_buffer)) {
+       destroy_entries(m_buffer, 0, size());
        Kokkos::fence();
     }
   )
@@ -188,23 +204,12 @@ KOKKOS_INLINE_FUNCTION ViewVector<T, MemSpace, SizeT>::~ViewVector()
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, typename SizeT>
 KOKKOS_INLINE_FUNCTION
-ViewVector<T, MemSpace, SizeT>& ViewVector<T, MemSpace, SizeT>::operator=(ViewVector&& rhs)
-{
-  if (this != &rhs) {
-    m_buffer = std::move(rhs.m_buffer);
-    m_size = rhs.m_size;
-    rhs.m_size = 0;
-  }
-
-  return *this;
-}
-
-//------------------------------------------------------------------------------
-template <typename T, typename MemSpace, typename SizeT>
-KOKKOS_INLINE_FUNCTION
 SizeT ViewVector<T, MemSpace, SizeT>::size() const
 {
-  return m_size;
+  if (!m_size.is_allocated()) {
+    return 0;
+  }
+  return m_size();
 }
 
 //------------------------------------------------------------------------------
@@ -220,7 +225,7 @@ template <typename T, typename MemSpace, typename SizeT>
 KOKKOS_INLINE_FUNCTION
 bool ViewVector<T, MemSpace, SizeT>::empty() const
 {
-  return m_size == 0u;
+  return size() == 0u;
 }
 
 //------------------------------------------------------------------------------
@@ -263,15 +268,18 @@ void ViewVector<T, MemSpace, SizeT>::resize(SizeT newSize)
     change_capacity(newSize);
   }
 
-  if (newSize > m_size) {
-    construct_entries(m_buffer, m_size, newSize);
+  if (newSize > size()) {
+    construct_entries(m_buffer, size(), newSize);
   }
-  else if (newSize < m_size) {
-    destroy_entries(m_buffer, newSize, m_size);
+  else if (newSize < size()) {
+    destroy_entries(m_buffer, newSize, size());
   }
   Kokkos::fence();
 
-  m_size = newSize;
+  if (!m_size.is_allocated()) {
+    m_size = size_view_type("size");
+  }
+  m_size() = newSize;
 }
 
 //------------------------------------------------------------------------------
@@ -287,15 +295,18 @@ void ViewVector<T, MemSpace, SizeT>::resize_scale(SizeT newSize)
     change_capacity(newCapacity);
   }
 
-  if (newSize > m_size) {
-    construct_entries(m_buffer, m_size, newSize);
+  if (newSize > size()) {
+    construct_entries(m_buffer, size(), newSize);
   }
-  else if (newSize < m_size) {
-    destroy_entries(m_buffer, newSize, m_size);
+  else if (newSize < size()) {
+    destroy_entries(m_buffer, newSize, size());
   }
   Kokkos::fence();
 
-  m_size = newSize;
+  if (!m_size.is_allocated()) {
+    m_size = size_view_type("size");
+  }
+  m_size() = newSize;
 }
 
 //------------------------------------------------------------------------------
@@ -317,36 +328,44 @@ void ViewVector<T, MemSpace, SizeT>::swap(ViewVector& other)
 template <typename T, typename MemSpace, typename SizeT>
 void ViewVector<T, MemSpace, SizeT>::push_back(const T& value)
 {
+  static_assert(Kokkos::SpaceAccessibility<ngp::HostExecSpace, MemSpace>::accessible);
   KOKKOS_IF_ON_DEVICE((
     Kokkos::abort("Cannot call ViewVector::push_back() on device because it may need to allocate memory.");
   ))
 
   const SizeT oldCapacity = capacity();
-  if (m_size == oldCapacity) {
+  if (size() == oldCapacity) {
     SizeT newCapacity = std::max<SizeT>(oldCapacity*growth_scale, 1u);
     change_capacity(newCapacity);
   }
 
-  new (&m_buffer[m_size]) T(value);
-  ++m_size;
+  new (&m_buffer[size()]) T(value);
+  if (!m_size.is_allocated()) {
+    m_size = size_view_type("size");
+  }
+  ++m_size();
 }
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, typename SizeT>
 void ViewVector<T, MemSpace, SizeT>::push_back(T&& value)
 {
+  static_assert(Kokkos::SpaceAccessibility<ngp::HostExecSpace, MemSpace>::accessible);
   KOKKOS_IF_ON_DEVICE((
     Kokkos::abort("Cannot call ViewVector::push_back() on device because it may need to allocate memory.");
   ))
 
   const SizeT oldCapacity = capacity();
-  if (m_size == oldCapacity) {
+  if (size() == oldCapacity) {
     SizeT newCapacity = std::max<SizeT>(oldCapacity*growth_scale, 1u);
     change_capacity(newCapacity);
   }
 
-  new (&m_buffer[m_size]) T(std::move(value));
-  ++m_size;
+  new (&m_buffer[size()]) T(std::move(value));
+  if (!m_size.is_allocated()) {
+    m_size = size_view_type("size");
+  }
+  ++m_size();
 }
 
 //------------------------------------------------------------------------------
@@ -354,18 +373,22 @@ template <typename T, typename MemSpace, typename SizeT>
 template <typename... Args>
 void ViewVector<T, MemSpace, SizeT>::emplace_back(Args&&... args)
 {
+  static_assert(Kokkos::SpaceAccessibility<ngp::HostExecSpace, MemSpace>::accessible);
   KOKKOS_IF_ON_DEVICE((
     Kokkos::abort("Cannot call ViewVector::emplace_back() on device because it may need to allocate memory.");
   ))
 
   const SizeT oldCapacity = capacity();
-  if (m_size == oldCapacity) {
+  if (size() == oldCapacity) {
     SizeT newCapacity = std::max<SizeT>(oldCapacity*growth_scale, 1u);
     change_capacity(newCapacity);
   }
 
-  new (&m_buffer[m_size]) T(std::forward<Args>(args)...);
-  ++m_size;
+  new (&m_buffer[size()]) T(std::forward<Args>(args)...);
+  if (!m_size.is_allocated()) {
+    m_size = size_view_type("size");
+  }
+  ++m_size();
 }
 
 //------------------------------------------------------------------------------
@@ -378,19 +401,40 @@ auto& ViewVector<T, MemSpace, SizeT>::get_view() const
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, typename SizeT>
+KOKKOS_INLINE_FUNCTION
+bool ViewVector<T, MemSpace, SizeT>::is_allocated() const
+{
+  return m_buffer.is_allocated() && m_size.is_allocated();
+}
+
+//------------------------------------------------------------------------------
+template <typename T, typename MemSpace, typename SizeT>
 void ViewVector<T, MemSpace, SizeT>::change_capacity(SizeT newCapacity)
 {
   if (newCapacity == capacity()) return;
+  STK_ThrowRequireMsg(m_buffer.use_count() <= 1, "When resizing a ViewVector with multiple copies, the capcity must be large enough to include the new size.  Make sure to preallocate a large enough buffer using `.reserve()` function before making any copies.");
 
   buffer_type newBuffer(Kokkos::view_alloc(m_buffer.label(), Kokkos::WithoutInitializing), newCapacity);
 
-  const SizeT numToMove = std::min(m_size, newCapacity);
+  const SizeT numToMove = std::min(size(), newCapacity);
   move_entries(m_buffer, newBuffer, 0, numToMove);
-  destroy_entries(m_buffer, 0, m_size);
+  destroy_entries(m_buffer, 0, size());
   Kokkos::fence();
 
-  m_size = numToMove;
+  if (!m_size.is_allocated()) {
+    m_size = size_view_type("size");
+  }
+  m_size() = numToMove;
   m_buffer = newBuffer;
+}
+
+template <typename T, typename DestMemSpace, typename SrcMemSpace, typename DestSizeT, typename SrcSizeT>
+void deep_copy(ViewVector<T, DestMemSpace, DestSizeT>& destView, ViewVector<T, SrcMemSpace, SrcSizeT>& srcView)
+{
+  destView.resize(srcView.size());
+  auto destViewSize = typename ViewVector<T, DestMemSpace, DestSizeT>::unmanaged_buffer_type(destView.data(), destView.size());
+  auto srcViewSize = typename ViewVector<T, SrcMemSpace, SrcSizeT>::unmanaged_buffer_type(srcView.data(), srcView.size());
+  Kokkos::deep_copy(destViewSize, srcViewSize);
 }
 
 //------------------------------------------------------------------------------

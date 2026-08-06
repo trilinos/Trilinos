@@ -73,7 +73,11 @@ MeshFromFile::MeshFromFile(const MPI_Comm& c)
 void
 MeshFromFile::fill_from_serial(const std::string& fileName)
 {
+#ifdef STK_HAS_SEACAS_IOSS_ZOLTAN
   broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+#else
+  broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "LINEAR"));
+#endif
   stk::io::fill_mesh_preexisting(broker, fileName, *bulk);
   m_empty = false;
 }
@@ -277,12 +281,17 @@ void generated_mesh_with_transient_data_to_file_in_serial(const std::string &mes
 
 void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh::BulkData &mesh, const std::string &decompositionMethod)
 {
-    stk::io::StkMeshIoBroker broker;
-    broker.set_bulk_data(mesh);
-    broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", decompositionMethod));
-    broker.add_mesh_database(fileName, stk::io::READ_MESH);
-    broker.create_input_mesh();
-    broker.populate_bulk_data();
+  std::string validDecompMethod = decompositionMethod;
+#ifndef STK_HAS_SEACAS_IOSS_ZOLTAN
+  std::cerr << "Warning, SEACASIoss not built with Zoltan support, using LINEAR decomp method" << std::endl;
+  validDecompMethod = "LINEAR";
+#endif
+  stk::io::StkMeshIoBroker broker;
+  broker.set_bulk_data(mesh);
+  broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", validDecompMethod));
+  broker.add_mesh_database(fileName, stk::io::READ_MESH);
+  broker.create_input_mesh();
+  broker.populate_bulk_data();
 }
 
 void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field,

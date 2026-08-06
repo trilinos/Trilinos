@@ -39,6 +39,7 @@ class STK_Interface;
  */
   int getMeshDimension(const std::string & meshStr,stk::ParallelMachine parallelMach, const std::string & typeStr = "Exodus");
 
+  /// \brief Maps a mesh file type string (e.g. "Exodus", "Pamgen") to the corresponding IOSS database type string.
   std::string fileTypeToIOSSType(const std::string & fileType);
 
 /** Concrete mesh factory instantiation. This reads
@@ -54,6 +55,7 @@ class STK_Interface;
 class STK_ExodusReaderFactory : public STK_MeshFactory {
 public:
 
+   /// \brief Construct with no file name set; setParameterList() must be called before this factory can build a mesh.
    STK_ExodusReaderFactory();
 
 

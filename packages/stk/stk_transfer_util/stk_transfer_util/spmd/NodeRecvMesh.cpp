@@ -63,7 +63,8 @@ NodeRecvMesh::NodeRecvMesh(stk::mesh::BulkData* recvBulk,
                            const std::vector<stk::transfer::FieldSpec>& fieldSpecs,
                            const stk::mesh::PartVector& recvParts,
                            const stk::ParallelMachine recvComm,
-                           double parametricTolerance, double geometricTolerance)
+                           double parametricTolerance, double geometricTolerance,
+                           std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(recvBulk)
   , m_meta(recvBulk != nullptr ? &recvBulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -75,7 +76,7 @@ NodeRecvMesh::NodeRecvMesh(stk::mesh::BulkData* recvBulk,
   , m_parametricTolerance(parametricTolerance)
   , m_searchTolerance(geometricTolerance)
   , m_searchMesh(m_bulk, m_coordinateField, m_meshParts, m_activeSelector,
-                 m_comm, m_parametricTolerance, m_searchTolerance)
+                 m_comm, m_parametricTolerance, m_searchTolerance, coordTransform)
 {
   initialize();
 }
@@ -86,7 +87,8 @@ NodeRecvMesh::NodeRecvMesh(stk::mesh::BulkData* recvBulk,
                            const stk::mesh::PartVector& recvParts,
                            const stk::mesh::Selector& activeSelector,
                            const stk::ParallelMachine recvComm,
-                           double parametricTolerance, double geometricTolerance)
+                           double parametricTolerance, double geometricTolerance,
+                           std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(recvBulk)
   , m_meta(recvBulk != nullptr ? &recvBulk->mesh_meta_data() : nullptr)
   , m_coordinateField(coordinateField)
@@ -98,7 +100,7 @@ NodeRecvMesh::NodeRecvMesh(stk::mesh::BulkData* recvBulk,
   , m_parametricTolerance(parametricTolerance)
   , m_searchTolerance(geometricTolerance)
   , m_searchMesh(m_bulk, m_coordinateField, m_meshParts, m_activeSelector,
-                 m_comm, m_parametricTolerance, m_searchTolerance)
+                 m_comm, m_parametricTolerance, m_searchTolerance, coordTransform)
 {
   initialize();
 }
@@ -147,18 +149,21 @@ void NodeRecvMesh::initialize(stk::mesh::BulkData* recvBulk)
 unsigned NodeRecvMesh::spatial_dimension() const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_meta->spatial_dimension();
 }
 
 void NodeRecvMesh::bounding_boxes(std::vector<BoundingBox>& v_box) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.bounding_boxes(v_box);
 }
 
 void NodeRecvMesh::coordinates(const EntityKey& k, std::vector<double>& coords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.coordinates(k, coords);
 }
 
@@ -171,12 +176,14 @@ stk::mesh::EntityId NodeRecvMesh::id(const EntityKey& k) const
 double NodeRecvMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_from_nearest_node(k, toCoords);
 }
 
 void NodeRecvMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.centroid(k, centroid);
 }
 
@@ -187,51 +194,62 @@ void NodeRecvMesh::fill_entity_keys(const stk::mesh::EntityKeyVector& rangeEntit
   m_searchMesh.fill_entity_keys(rangeEntities, elementEntityKeys);
 }
 
-double* NodeRecvMesh::value(const EntityKey& k, const unsigned i) const
-{
-  STK_ThrowAssert(m_isInitialized);
-
-  const stk::mesh::FieldBase* field = m_fieldVec[i].field;
-
-  field->sync_to_host();
-  field->modify_on_host();
-
-  double* data = static_cast<double *>(stk::mesh::field_data(*field, k));
-  return data;
-}
-
-unsigned NodeRecvMesh::value_size(const EntityKey& k, const unsigned i) const
-{
-  STK_ThrowAssert(m_isInitialized);
-
-  return stk::mesh::field_scalars_per_entity(*m_fieldVec[i].field, k);
-}
-
-unsigned NodeRecvMesh::num_values(const EntityKey& /*e*/) const { return m_fieldVec.size(); }
-
-unsigned NodeRecvMesh::max_num_values() const { return m_fieldVec.size(); }
-
-unsigned NodeRecvMesh::value_key(const EntityKey& /*k*/, const unsigned i) const
-{
-  return i;
-}
-
 void NodeRecvMesh::update_values()
 {
   STK_ThrowAssert(m_isInitialized);
-
-  for(auto field : m_fieldVec) {
-    field.field->sync_to_host();
-    field.field->modify_on_host();
-  }
 
   std::vector<const stk::mesh::FieldBase*> fields = stk::transfer::extract_field_pointers(m_fieldVec);
   stk::mesh::communicate_field_data(*m_bulk, fields);
 }
 
-unsigned NodeRecvMesh::get_index(const unsigned i) const
+void NodeRecvMesh::acquire_field_data()
 {
-  return m_fieldVec[i].index;
+  STK_ThrowAssert(m_isInitialized);
+
+  m_searchMesh.acquire_field_data();
+
+  fill_cached_field_data(m_fieldVec, m_cachedFieldData);
+
+  m_hasAcquiredFieldData = true;
+}
+
+void NodeRecvMesh::release_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_searchMesh.release_field_data();
+
+  clear_cached_field_data(m_cachedFieldData);
+
+  m_hasAcquiredFieldData = false;
+}
+
+void NodeRecvMesh::populate_interpolation_data(const EntityKey& k, InterpolationData& data) const
+{
+  STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
+
+  data.resize(m_fieldVec.size());
+
+  data.nFields = m_fieldVec.size();
+
+  stk::mesh::Entity node = k;
+  stk::search::CachedEntityFieldData entityData;
+
+  for(const auto& fieldEntry : m_cachedFieldData) {
+    const unsigned fieldIndex = fieldEntry->m_fieldIndex;
+
+    fieldEntry->populate_entity_data(node, entityData);
+
+    data.fieldPtr[fieldIndex]             = entityData.pointer;
+    data.fieldSize[fieldIndex]            = entityData.numComponents;
+    data.fieldComponents[fieldIndex]      = entityData.numComponents;
+    data.fieldComponentStride[fieldIndex] = entityData.componentStride;
+    data.fieldCopies[fieldIndex]          = entityData.numCopies;
+    data.fieldCopyStride[fieldIndex]      = entityData.copyStride;
+    data.fieldKey[fieldIndex]             = fieldIndex;
+    data.fieldDataIndex[fieldIndex]       = m_fieldVec[fieldIndex].index;
+  }
 }
 
 } // namespace spmd

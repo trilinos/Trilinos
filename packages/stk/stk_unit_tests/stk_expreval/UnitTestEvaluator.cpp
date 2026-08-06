@@ -489,6 +489,7 @@ TEST(UnitTestEvaluator, getDependentVariables_noAssign)
   stk::expreval::Eval eval("x");
   eval.parse();
   EXPECT_EQ(eval.get_dependent_variable_names().size(), 0u);
+  EXPECT_FALSE(eval.is_dependent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_constant)
@@ -497,7 +498,7 @@ TEST(UnitTestEvaluator, getDependentVariables_constant)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_oneDependent)
@@ -506,7 +507,8 @@ TEST(UnitTestEvaluator, getDependentVariables_oneDependent)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
+  EXPECT_FALSE(eval.is_dependent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_constantAssign)
@@ -515,8 +517,8 @@ TEST(UnitTestEvaluator, getDependentVariables_constantAssign)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
-  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
+  EXPECT_TRUE(eval.is_dependent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_twoIdenticalVariables)
@@ -525,8 +527,9 @@ TEST(UnitTestEvaluator, getDependentVariables_twoIdenticalVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
-  EXPECT_TRUE(has_variable(variableNames, "z"));
+  EXPECT_TRUE(eval.is_dependent_variable("z"));
+  EXPECT_TRUE(eval.is_dependent_variable("x"));
+  EXPECT_FALSE(eval.is_dependent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getDependentVariables_twoVariables)
@@ -535,8 +538,10 @@ TEST(UnitTestEvaluator, getDependentVariables_twoVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_dependent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "y"));
-  EXPECT_TRUE(has_variable(variableNames, "w"));
+  EXPECT_TRUE(eval.is_dependent_variable("y"));
+  EXPECT_TRUE(eval.is_dependent_variable("w"));
+  EXPECT_FALSE(eval.is_dependent_variable("z"));
+  EXPECT_FALSE(eval.is_dependent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_noVariables)
@@ -552,7 +557,7 @@ TEST(UnitTestEvaluator, getIndependentVariables_noAssign)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(eval.is_independent_variable("x"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_constant)
@@ -568,7 +573,8 @@ TEST(UnitTestEvaluator, getIndependentVariables_oneDependent)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_FALSE(eval.is_independent_variable("x"));
+  EXPECT_TRUE(eval.is_independent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_constantAssign)
@@ -576,6 +582,8 @@ TEST(UnitTestEvaluator, getIndependentVariables_constantAssign)
   stk::expreval::Eval eval("x = 2; y = x");
   eval.parse();
   EXPECT_EQ(eval.get_independent_variable_names().size(), 0u);
+  EXPECT_FALSE(eval.is_independent_variable("x"));
+  EXPECT_FALSE(eval.is_independent_variable("y"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_twoIdenticalVariables)
@@ -584,7 +592,9 @@ TEST(UnitTestEvaluator, getIndependentVariables_twoIdenticalVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 1u);
-  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_FALSE(eval.is_independent_variable("x"));
+  EXPECT_TRUE(eval.is_independent_variable("y"));
+  EXPECT_FALSE(eval.is_independent_variable("z"));
 }
 
 TEST(UnitTestEvaluator, getIndependentVariables_twoVariables)
@@ -593,8 +603,10 @@ TEST(UnitTestEvaluator, getIndependentVariables_twoVariables)
   eval.parse();
   std::vector<std::string> variableNames = eval.get_independent_variable_names();
   EXPECT_EQ(variableNames.size(), 2u);
-  EXPECT_TRUE(has_variable(variableNames, "x"));
-  EXPECT_TRUE(has_variable(variableNames, "z"));
+  EXPECT_TRUE(eval.is_independent_variable("x"));
+  EXPECT_FALSE(eval.is_independent_variable("y"));
+  EXPECT_TRUE(eval.is_independent_variable("z"));
+  EXPECT_FALSE(eval.is_independent_variable("w"));
 }
 
 TEST( UnitTestEvaluator, testEvaluateEmptyString)
@@ -3412,13 +3424,15 @@ void checkUniformDist(std::vector<double> const& vals) {
   const int maxN = *std::max_element(bins.begin(), bins.end());
   const int minN = *std::min_element(bins.begin(), bins.end());
 
-  EXPECT_NEAR(maxN, NUM_SAMPLES/10, 100);
-  EXPECT_NEAR(minN, NUM_SAMPLES/10, 100);
+  const int EXPECTED_NUMBER_PER_BIN = NUM_SAMPLES / 10;
+  const int TOLERANCE = EXPECTED_NUMBER_PER_BIN / 10;
+  EXPECT_NEAR(maxN, EXPECTED_NUMBER_PER_BIN, TOLERANCE);
+  EXPECT_NEAR(minN, EXPECTED_NUMBER_PER_BIN, TOLERANCE);
 }
 
 void testRandom(const char * expression)
 {
-  const int NUM_SAMPLES = 10000;
+  const int NUM_SAMPLES = 100000;
   std::vector<double> results(NUM_SAMPLES);
   for (int i = 0; i < NUM_SAMPLES; ++i) {
     results[i] = evaluate(expression);

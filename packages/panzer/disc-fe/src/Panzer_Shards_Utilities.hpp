@@ -18,10 +18,20 @@
 #include "Shards_CellTopology.hpp"
 
 namespace panzer {
-  
+
+  /** This function takes a list of GIDs defined on
+    * a cell and returns the local side Shards index for
+    * a side described by its node GIDs.
+    *
+    * \param[in] cellGIDs Node GIDs for the cell
+    * \param[in] sideGIDs Node GIDs for the side to be found
+    * \param[in] cell Shards cell topology used to find local index
+    *
+    * \returns Local Shards index for the side described by sideGIDs
+    */
   template<typename ArrayCellGIDs, typename ArraySideGIDs>
-    unsigned 
-    getLocalSideIndexFromGlobalNodeList(const ArrayCellGIDs& cellGIDs, 
+    unsigned
+    getLocalSideIndexFromGlobalNodeList(const ArrayCellGIDs& cellGIDs,
 					const ArraySideGIDs& sideGIDs,
 					const shards::CellTopology& cell)
   {

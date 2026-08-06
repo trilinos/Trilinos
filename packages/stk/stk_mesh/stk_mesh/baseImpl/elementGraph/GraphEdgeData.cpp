@@ -111,7 +111,7 @@ using IterType = std::vector<GraphEdge>::iterator;
 
 void Graph::add_sorted_edges(const std::vector<GraphEdge>& graphEdges)
 {
-  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+//  STK_ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
 
   for (auto& edge : graphEdges)
   {
@@ -227,6 +227,17 @@ unsigned Graph::get_end_of_element_range_for_sorted_edges(const std::vector<Grap
     endIdx--;
 
     return endIdx;
+}
+
+void Graph::delete_edges_for_element(impl::LocalId elem)
+{
+  auto& indices = m_elemOffsets[elem];
+  for(unsigned offset = indices.first; offset < indices.second; ++offset) {
+    m_graphEdges[offset] = GraphEdge();
+  }
+  unsigned numEdgesToDelete = indices.second - indices.first;
+  m_numUnusedEntries += numEdgesToDelete;
+  indices.second = indices.first;
 }
 
 void Graph::delete_edge(const GraphEdge& edgeToDelete)

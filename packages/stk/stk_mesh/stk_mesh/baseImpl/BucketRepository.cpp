@@ -303,20 +303,6 @@ namespace {
 
 inline bool is_null(stk::mesh::impl::Partition *p) { return (p ? false : true);}
 
-struct bucket_less_by_first_entity_identifier
-{
-    bool operator()(const Bucket* first, const Bucket* second) const
-    {
-        bool result = false;
-        if ((first->size() > 0) && (second->size() > 0))
-        {
-            const stk::mesh::BulkData& mesh = first->mesh();
-            result = EntityLess(mesh)((*first)[0], (*second)[0]);
-        }
-        return (first->size() == 0) || result;
-    }
-};
-
 }
 
 void BucketRepository::sync_from_partitions(EntityRank rank)
@@ -361,22 +347,10 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
         size_t new_size = new_end - partitions.begin();  // OK because has_hole is true.
         partitions.resize(new_size);
       }
-  }
 
-  if(m_mesh.should_sort_buckets_by_first_entity_identifier())
-  {
-    std::sort(m_buckets[rank].begin(), m_buckets[rank].end(), bucket_less_by_first_entity_identifier());
-    for(Partition* partition : m_partitions[rank]) {
-      std::sort(partition->begin(), partition->end(), bucket_less_by_first_entity_identifier());
-    }
-  }
-
-  if (m_need_sync_from_partitions[rank] == true || m_mesh.should_sort_buckets_by_first_entity_identifier())
-  {
       sync_bucket_ids(rank);
+      m_need_sync_from_partitions[rank] = false;
   }
-
-  m_need_sync_from_partitions[rank] = false;
 }
 
 Bucket *BucketRepository::allocate_bucket(EntityRank entityRank,

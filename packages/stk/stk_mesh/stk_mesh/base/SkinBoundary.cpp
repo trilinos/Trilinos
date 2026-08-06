@@ -48,11 +48,8 @@
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/baseImpl/ConnectEdgesImpl.hpp>
 
-namespace stk
-{
-namespace mesh
-{
-
+namespace stk {
+namespace mesh {
 
 ///////////////////////////////////////////////////////////////////////////
 

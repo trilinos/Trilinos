@@ -72,12 +72,12 @@ TEST(ParsedEval, isVariable)
   EXPECT_TRUE(evalTwoVar.is_variable("y"));
   EXPECT_FALSE(evalTwoVar.is_variable("z"));
 
-  stk::expreval::Eval evalInsVar("lambda + Lambda");
-  evalInsVar.parse();
-  EXPECT_EQ(evalInsVar.get_variable_names().size(), 1u);
-  EXPECT_TRUE(evalInsVar.is_variable("LAMBDA"));
-  EXPECT_TRUE(evalInsVar.is_variable("lambda"));
-  EXPECT_TRUE(evalInsVar.is_variable("Lambda"));
+  stk::expreval::Eval evalCaseInsensitive("lambda + Lambda");
+  evalCaseInsensitive.parse();
+  EXPECT_EQ(evalCaseInsensitive.get_variable_names().size(), 1u);
+  EXPECT_TRUE(evalCaseInsensitive.is_variable("LAMBDA"));
+  EXPECT_TRUE(evalCaseInsensitive.is_variable("lambda"));
+  EXPECT_TRUE(evalCaseInsensitive.is_variable("Lambda"));
 
 }
 

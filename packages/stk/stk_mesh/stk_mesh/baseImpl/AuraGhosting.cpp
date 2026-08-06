@@ -84,20 +84,22 @@ void AuraGhosting::fill_send_aura_entities(BulkData& bulkData,
   impl::for_each_selected_entity_run_no_threads(bulkData, stk::topology::NODE_RANK, shared,
     [&sendAuraEntityProcs, &sharingProcs, &endRank, &maxRank]
     (const BulkData& bulk, const MeshIndex& meshIndex) {
-      const Bucket& bucket = *meshIndex.bucket;
-      const unsigned bucketOrd = meshIndex.bucket_ordinal;
+      if (meshIndex.bucket != nullptr) {
+        const Bucket& bucket = *meshIndex.bucket;
+        const unsigned bucketOrd = meshIndex.bucket_ordinal;
 
-      bulk.comm_shared_procs(bucket[bucketOrd], sharingProcs);
+        bulk.comm_shared_procs(bucket[bucketOrd], sharingProcs);
 
-      static constexpr EntityRank nextHigherRank = stk::topology::EDGE_RANK;
-      for (EntityRank higherRank = nextHigherRank; higherRank < endRank; ++higherRank) {
-        const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
-        if (num_rels > 0) {
-          const Entity* rels     = bucket.begin(bucketOrd, higherRank);
+        static constexpr EntityRank nextHigherRank = stk::topology::EDGE_RANK;
+        for (EntityRank higherRank = nextHigherRank; higherRank < endRank; ++higherRank) {
+          const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
+          if (num_rels > 0) {
+            const Entity* rels     = bucket.begin(bucketOrd, higherRank);
 
-          for (unsigned r = 0; r < num_rels; ++r) {
-            if (bulk.parallel_rank() == bulk.parallel_owner_rank(rels[r])) {
-              stk::mesh::impl::insert_upward_relations_for_owned(bulk, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+            for (unsigned r = 0; r < num_rels; ++r) {
+              if (bulk.is_valid(rels[r]) && bulk.parallel_rank() == bulk.parallel_owner_rank(rels[r])) {
+                stk::mesh::impl::insert_upward_relations_for_owned(bulk, rels[r], higherRank, maxRank, sharingProcs, sendAuraEntityProcs);
+              }
             }
           }
         }
@@ -229,6 +231,8 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   sendAuraEntityProcs.swap_vec(sendAuraGhosts);
   sendAuraEntityProcs.deallocate();
   stk::util::sort_and_unique(sendAuraGhosts, entityLess);
+
+  bulkData.m_modSummary.track_change_ghosting(bulkData.aura_ghosting(), sendAuraGhosts, removedSendGhosts);
 
   const bool isFullRegen = true;
   bulkData.ghost_entities_and_fields(bulkData.aura_ghosting(), std::move(sendAuraGhosts), isFullRegen, removedSendGhosts);

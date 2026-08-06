@@ -35,11 +35,9 @@
 #include <gtest/gtest.h>
 #include "stk_mesh/base/BucketConnectivity.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
-#include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Ngp.hpp"
 #include "stk_mesh/base/GetNgpMesh.hpp"
-#include "stk_mesh/base/NgpFieldParallel.hpp"
 #include "stk_mesh/baseImpl/DeviceBucketRepository.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_io/FillMesh.hpp"

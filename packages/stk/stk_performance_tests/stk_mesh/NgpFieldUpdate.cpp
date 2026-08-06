@@ -37,6 +37,7 @@
 #include <gtest/gtest.h>
 #include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -353,11 +354,11 @@ TEST_F( NgpMeshCreateEntityWithFields, Timing )
   if (get_parallel_size() != 1) return;
 
   const unsigned NUM_RUNS = 5;
-  #ifdef STK_ENABLE_GPU
+#ifdef STK_ENABLE_GPU
   const int numModCycles = 50;
-  #else
+#else
   const int numModCycles = 4000;
-  #endif
+#endif
   const int numFakeModCycles = 4000;
   const int numElemsToCreatePerModCycle = 40;
 
@@ -422,12 +423,15 @@ TEST_F(NgpFieldSyncTest, PartialSyncTiming)
   setup_fields(numComponents, tensorFieldSizePerElem, vectorFieldSizePerElem);
   setup_mesh_with_many_blocks_many_elements(numBlocks, numElemPerDim);
 
-  stk::mesh::FieldBase* fieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "intField");
+  stk::mesh::FieldBase* intFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "intField");
   stk::mesh::FieldBase* tensorFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "TensorField");
   stk::mesh::FieldBase* vectorFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "VectorField");
-  stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(*fieldBase);
-  stk::mesh::NgpField<double>& ngpTensorField = stk::mesh::get_updated_ngp_field<double>(*tensorFieldBase);
-  stk::mesh::NgpField<double>& ngpVectorField = stk::mesh::get_updated_ngp_field<double>(*vectorFieldBase);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(0, *intFieldBase);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(0., *tensorFieldBase);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(0., *vectorFieldBase);
+  intFieldBase->sync_to_host();
+  tensorFieldBase->sync_to_host();
+  vectorFieldBase->sync_to_host();
   stk::mesh::Selector selector;
   
   if(contiguousBlocks) {
@@ -441,18 +445,82 @@ TEST_F(NgpFieldSyncTest, PartialSyncTiming)
     batchTimer.start_batch_timer();
     for(unsigned i = 0; i < NUM_ITERS; i++) {
       if(justSyncAll) {
-        ngpIntField.modify_on_host();
-        ngpTensorField.modify_on_host();
-        ngpVectorField.modify_on_host();
+        intFieldBase->modify_on_host();
+        tensorFieldBase->modify_on_host();
+        vectorFieldBase->modify_on_host();
       } 
       else {
-        ngpIntField.modify_on_host(selector);
-        ngpTensorField.modify_on_host(selector);
-        ngpVectorField.modify_on_host(selector);
+        intFieldBase->modify_on_host(selector);
+        tensorFieldBase->modify_on_host(selector);
+        vectorFieldBase->modify_on_host(selector);
       }
-      ngpIntField.sync_to_device();
-      ngpTensorField.sync_to_device();
-      ngpVectorField.sync_to_device();
+      intFieldBase->sync_to_device();
+      tensorFieldBase->sync_to_device();
+      vectorFieldBase->sync_to_device();
+    }
+      batchTimer.stop_batch_timer();
+  }
+
+  std::cout << "Blocks: " << numBlocks << " Blocks to sync: "
+            << numBlocksToSync << " (" << (numBlocksToSync * 100.0 / numBlocks) << " %)" << std::endl;
+  batchTimer.print_batch_timing(NUM_ITERS);
+}
+
+TEST_F(NgpFieldSyncTest, PartialSyncToHostTiming)
+{
+  if(get_parallel_size() != 1) return;
+
+  const unsigned NUM_RUNS = 5;
+  const unsigned NUM_ITERS = stk::unit_test_util::get_command_line_option("-r", 20000000);
+  unsigned numComponents = stk::unit_test_util::get_command_line_option("-c", 1);
+  unsigned numBlocks = stk::unit_test_util::get_command_line_option("-b", 20);
+  unsigned numBlocksToSync = stk::unit_test_util::get_command_line_option("-s", 5);
+  unsigned numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 100);
+  unsigned tensorFieldSizePerElem = stk::unit_test_util::get_command_line_option("--tensorField", 72);
+  unsigned vectorFieldSizePerElem = stk::unit_test_util::get_command_line_option("-vectorField", 8);
+  bool justSyncAll = stk::unit_test_util::get_command_line_option("-a", false);
+  bool contiguousBlocks = stk::unit_test_util::get_command_line_option("-t", true);
+  numBlocksToSync = std::min(numBlocks, numBlocksToSync);
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  setup_fields(numComponents, tensorFieldSizePerElem, vectorFieldSizePerElem);
+  setup_mesh_with_many_blocks_many_elements(numBlocks, numElemPerDim);
+
+  stk::mesh::FieldBase* intFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "intField");
+  stk::mesh::FieldBase* tensorFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "TensorField");
+  stk::mesh::FieldBase* vectorFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "VectorField");
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(0, *intFieldBase);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(0., *tensorFieldBase);
+  stk::mesh::field_fill<stk::ngp::DeviceSpace>(0., *vectorFieldBase);
+  intFieldBase->sync_to_host();
+  tensorFieldBase->sync_to_host();
+  vectorFieldBase->sync_to_host();
+  stk::mesh::Selector selector;
+  
+  if(contiguousBlocks) {
+    selector = get_contiguous_partial_selector(numBlocksToSync);
+  } else {
+    selector = get_non_contiguous_partial_selector(numBlocksToSync);
+  }
+
+  batchTimer.initialize_batch_timer();
+  for (unsigned j = 0; j < NUM_RUNS; j++) {
+    batchTimer.start_batch_timer();
+    for(unsigned i = 0; i < NUM_ITERS; i++) {
+      if(justSyncAll) {
+        intFieldBase->modify_on_device();
+        tensorFieldBase->modify_on_device();
+        vectorFieldBase->modify_on_device();
+      } 
+      else {
+        intFieldBase->modify_on_device(selector);
+        tensorFieldBase->modify_on_device(selector);
+        vectorFieldBase->modify_on_device(selector);
+      }
+      intFieldBase->sync_to_host();
+      tensorFieldBase->sync_to_host();
+      vectorFieldBase->sync_to_host();
     }
       batchTimer.stop_batch_timer();
   }

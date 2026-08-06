@@ -33,7 +33,6 @@
 //
 
 #include "DisconnectBlocksMeshConstruction.hpp"
-#include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include "stk_unit_test_utils/getOption.h"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
@@ -42,10 +41,11 @@
 #include <stk_io/WriteMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_tools/mesh_tools/DetectHingesImpl.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
+#include <stk_tools/mesh_tools/DetectHinges.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
 #include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
 #include <stk_tools/mesh_tools/DisconnectUtils.hpp>
@@ -873,6 +873,144 @@ stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge_manual(stk
   return {&block1};
 }
 
+stk::mesh::PartVector setup_mesh_two_tet10_hinge_at_edge(stk::mesh::BulkData& bulk)
+{
+  // Create mesh with two tet10 elements which are connected along the edge 3----10----4
+  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::TET_10, "block_1", 1);
+
+  std::string meshDesc = "0,1,TET_10, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,block_1\n"
+                         "0,2,TET_10,11,12, 3, 4,15,16,17,18,19,10,block_1";
+  std::vector<double> coordinates{ 2,0,0, 0, 2,0, 0,0,2, 0,0,0,  1, 1,0, 0, 1,1,  1,0,1,  1,0,0, 0, 1,0, 0,0,1,
+                                  -2,0,0, 0,-2,0,               -1,-1,0, 0,-1,1, -1,0,1, -1,0,0, 0,-1,0       };
+
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
+
+  return {&block1};
+}
+
+stk::mesh::PartVector setup_mesh_two_tet10_hinge_at_edge_mid_nodes(stk::mesh::BulkData& bulk)
+{
+  // Create mesh with two tet10 elements which are connected at mid-edge-node 5
+  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::TET_10, "block_1", 1);
+
+  std::string meshDesc = "0,1,TET_10, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,block_1\n"
+                         "0,2,TET_10,11,12,13,14,15,16,17,18,19, 5,block_1";
+  std::vector<double> coordinates{2,0, 0, 0,2, 0, 0,0,2, 0,0, 0, 1,1, 0, 0,1,1, 1,0,1, 1,0, 0, 0,1, 0, 0,0,1,
+                                  3,1,-1, 1,3,-1, 1,1,1, 1,1,-1, 2,2,-1, 1,2,0, 2,1,0, 2,1,-1, 1,2,-1       };
+
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
+
+  return {&block1};
+}
+
+stk::mesh::PartVector setup_mesh_two_tet10_hinge_at_vertex_and_edge_mid_node(stk::mesh::BulkData& bulk)
+{
+  // Create mesh with two tet10 elements where mid-edge-node 5 on the first is a vertex on the other
+  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::TET_10, "block_1", 1);
+
+  std::string meshDesc = "0,1,TET_10, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,block_1\n"
+                         "0,2,TET_10,11,12,13, 5,15,16,17,18,19,20,block_1";
+  std::vector<double> coordinates{2,0,0, 0,2,0, 0,0,2, 0,0,0, 1,1,0, 0,1,1, 1,0,1, 1,0,0, 0,1,0, 0,0,1,
+                                  3,1,0, 1,3,0, 1,1,2,        2,2,0, 1,2,1, 2,1,1, 2,1,0, 1,2,0, 1,1,1};
+
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
+
+  return {&block1};
+}
+
+stk::mesh::PartVector setup_mesh_tet10_use_case(stk::mesh::BulkData& bulk)
+{
+  // This is the reproducer for tet10 hinge detection from Kevin Manktelow
+  stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::TET_10, "block_1", 1);
+  std::string meshDesc = "0,4,TET_10,239455,254003,247857,229039,305213,314051,344772,288609,540046,288610,block_1\n"
+                         "0,6,TET_10,239455,254003,228958,247857,305213,314052,344773,344772,314051,344774,block_1\n"
+                         "0,9,TET_10,261571,228958,247857,239455,344778,344774,344775,351107,344773,344772,block_1\n"
+                         "0,43,TET_10,247857,239368,239374,228958,344776,289587,314056,344774,344777,314055,block_1\n"
+                         "0,49,TET_10,247857,228958,256195,254003,344774,314053,314054,314051,314052,316880,block_1\n"
+                         "0,50,TET_10,256195,228958,247857,239374,314053,344774,314054,314138,314055,314056,block_1\n"
+                         "0,51,TET_10,247857,228958,261571,239368,344774,344778,344775,344776,344777,354827,block_1\n"
+                         "0,67,TET_10,247857,254003,228957,229039,314051,516844,314049,288610,540046,516846,block_1\n"
+                         "0,74,TET_10,228957,255156,229039,254003,516845,534530,516846,516844,534528,540046,block_1\n"
+                         "0,80,TET_10,229039,255156,228957,239460,534530,516845,516846,516848,516850,516847,block_1\n"
+                         "0,90,TET_10,239374,239368,247857,228957,289587,344776,314056,314134,289588,314049,block_1\n"
+                         "0,91,TET_10,256195,247857,228957,239374,314054,314049,314136,314138,314056,314134,block_1\n"
+                         "0,99,TET_10,239368,239374,228875,228957,289587,278853,278826,289588,314134,278854,block_1\n"
+                         "0,100,TET_10,239373,239374,228963,228957,278852,314137,278857,278856,314134,314135,block_1\n"
+                         "0,101,TET_10,239373,239374,228957,228875,278852,314134,278856,340657,278853,278854,block_1\n"
+                         "0,102,TET_10,239373,239460,228957,228963,344478,516847,278856,278857,308435,314135,block_1\n"
+                         "0,103,TET_10,239460,255156,228957,228963,516850,516845,516847,308435,314141,314135,block_1\n"
+                         "0,104,TET_10,228957,228963,256195,239374,314135,314140,314136,314134,314137,314138,block_1\n"
+                         "0,105,TET_10,256195,228963,228957,255156,314140,314135,314136,316878,314141,516845,block_1";
+  std::vector<double> coordinates{43.87145997753787, 10.5321452236797, 344.0436568434805,
+                                  43.818468259727, 10.5486990115, 345.10827391971,
+                                  44.75930753573112, 10.54153162899183, 344.9315039718736,
+                                  43.88084656664847, 11.41999259807449, 344.9315039718736,
+                                  43.85700070118821, 10.51768251219101, 345.7861157480965,
+                                  44.4187876188752, 10.20100982681208, 344.3935663664018,
+                                  43.28877194238039, 10.82791743011858, 344.6451163170171,
+                                  44.3200770511898, 10.98076211353316, 344.4922734873322,
+                                  44.54993700496586, 10.10230121752089, 345.3707384356732,
+                                  43.44161280661659, 10.74016618997771, 345.3707361593086,
+                                  44.2243743664808, 10.3143490115, 345.10827391971,
+                                  44.50762207110525, 10.80494842703687, 345.10827391971,
+                                  44.16138531281121, 11.14264877022361, 345.10827391971,
+                                  44.32007219086316, 10.98075689455368, 344.8749236154951,
+                                  44.7593089008606, 9.972975952455679, 344.9315034031451,
+                                  44.14767706123297, 10.37100187627512, 344.2186556044977,
+                                  43.80442449678509, 10.90433977182587, 344.5686949021747,
+                                  44.09576851436383, 10.75645366860643, 344.2679651654064,
+                                  43.84523323059051, 10.54090331042328, 344.5759715483167,
+                                  43.55411352590613, 10.68927405377896, 344.8767079867547,
+                                  43.58480925451443, 11.12395501409653, 344.7883101444453,
+                                  44.20766782666713, 10.31726793979698, 345.5785385917372,
+                                  44.0406875338345, 10.41601576184551, 345.4471948339033,
+                                  44.3694323350325, 10.59088597017262, 344.442919926867,
+                                  44.1186279393011, 10.37485441915604, 344.7509201430559,
+                                  44.52877953803555, 10.45362482227888, 345.2395061776916,
+                                  43.66122968663253, 11.0800793940261, 345.1511200655911,
+                                  44.0214213131039, 10.4315240115, 345.10827391971,
+                                  44.36599821879302, 10.55964871926843, 345.10827391971,
+                                  44.63346480341819, 10.67324002801435, 345.0198889457918,
+                                  44.53968986329714, 10.76114426177276, 344.9032137936844,
+                                  44.27222327867199, 10.64755295302684, 344.9915987676026,
+                                  44.53969229346046, 10.7611468712625, 344.7118887296029,
+                                  44.2722257088353, 10.64755556251658, 344.8002737035211,
+                                  44.0692726554584, 10.76473056251658, 344.8002737035211,
+                                  43.84965741318774, 10.98434580478724, 345.0198889457918,
+                                  44.06927022529509, 10.76472795302684, 344.9915987676026,
+                                  44.10046180891914, 11.20037735580382, 344.7118887296029,
+                                  44.32007462102648, 10.98075950404342, 344.6835985514136,
+                                  44.10045937875582, 11.20037474631408, 344.9032137936844,
+                                  44.02111593972984, 11.28132068414905, 345.0198889457918,
+                                  44.24072875183719, 11.06170283238865, 344.9915987676026,
+                                  44.41384713098421, 10.89285266079527, 344.9915987676026,
+                                  43.5813518857897, 10.68245053604385, 344.3444188128715,
+                                  43.36519237449849, 10.78404181004814, 345.0079262381629,
+                                  44.38770515324963, 10.20917393170593, 345.2395181747969,
+                                  44.65462227034849, 10.32191642325636, 345.1511212037734,
+                                  44.49184095110596, 10.42794032024592, 345.0198889457918,
+                                  44.49239110119695, 10.14451129917326, 345.0199006585328,
+                                  44.321580992678, 10.25767941915604, 344.7509201430559,
+                                  44.58904757730316, 10.37127072790196, 344.6625351691377,
+                                  44.75930821829586, 10.25725379072376, 344.9315036875093,
+                                  44.65462295291332, 10.03763858498843, 345.1511209194092,
+                                  44.58904825986785, 10.08699288963381, 344.6625348847735,
+                                  44.16304516541612, 10.67682371926843, 345.10827391971,
+                                  43.98992678626911, 10.84567389086181, 345.10827391971,
+                                  43.8377344804576, 10.53319076184551, 345.4471948339033,
+                                  43.63053395802424, 10.64539843370853, 345.2395179079005,
+                                  43.65026596969419, 10.63080192622508, 345.5784509697996,
+                                  43.8014990597139, 10.94140748010066, 345.2395050395093,
+                                  44.22811844204578, 11.03522015127872, 344.9098754924717,
+                                  44.00919300699971, 10.83016564120731, 345.4471948339033,
+                                  44.18231138614672, 10.66131546961394, 345.4471948339033,
+  };
+
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
+
+  return {&block1};
+}
+
 stk::mesh::ConnectivityOrdinal destroy_element_node_relation(stk::mesh::BulkData& bulk, stk::mesh::Entity element, stk::mesh::Entity node)
 {
   const stk::mesh::Entity* nodes = bulk.begin_nodes(element);
@@ -1028,21 +1166,34 @@ stk::mesh::PartVector setup_mesh_3block_3quad_1hinge(stk::mesh::BulkData& bulk)
 
 
 void print_hinge_info(const stk::mesh::BulkData& bulk,
-                      const stk::tools::impl::HingeNodeVector& hingeNodes,
-                      const stk::tools::impl::HingeEdgeVector& hingeEdges)
+                      const stk::tools::HingeNodeVector& hingeNodes,
+                      const stk::tools::HingeEdgeVector& hingeEdges)
 {
   std::ostringstream os;
   if(hingeNodes.size() > 0) {
     os << "PRINTING HINGE NODES on Proc " << bulk.parallel_rank() << " : " << std::endl;
-    for(const stk::tools::impl::HingeNode& node : hingeNodes) {
-      os << "\tHinge node id: " << bulk.identifier(node.get_node()) << std::endl;
+    for(const stk::tools::HingeNode& node : hingeNodes) {
+      os << "\tHinge node id: " << bulk.identifier(node.get_node()) << ": ";
+      auto elems = bulk.get_connected_entities(node.get_node(), stk::topology::ELEM_RANK);
+      for(stk::mesh::Entity elem : elems) {
+        stk::mesh::Part* blockPart = stk::mesh::get_element_block_part(bulk, elem);
+        os << "element " << bulk.identifier(elem) << ", block: " << blockPart->name() << "; ";
+      }
+
+      os << std::endl;
     }
   }
   if(hingeEdges.size() > 0) {
     os << "PRINTING HINGE EDGES on Proc " << bulk.parallel_rank() << " : " << std::endl;
-    for(const stk::tools::impl::HingeEdge& edge : hingeEdges) {
+    for(const stk::tools::HingeEdge& edge : hingeEdges) {
       os << "\tHinge edge ids: " << bulk.identifier(edge.first.get_node())
-         << ", " << bulk.identifier(edge.second.get_node()) << std::endl;
+         << ", " << bulk.identifier(edge.second.get_node()) << " ";
+      stk::mesh::EntityVector elems = stk::tools::get_common_elements(bulk, edge.first.get_node(), edge.second.get_node());
+      for(stk::mesh::Entity elem : elems) {
+        stk::mesh::Part* blockPart = stk::mesh::get_element_block_part(bulk, elem);
+        os << "element " << bulk.identifier(elem) << ", block: " << blockPart->name() << "; ";
+      }
+      os << std::endl;
     }
   }
 

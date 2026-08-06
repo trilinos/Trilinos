@@ -12,6 +12,33 @@ MiniTensor is a library for the use, manipulation, algebra and optimization of s
 *    Emphasis in accurate algorithms.
 *    Fully templated, plays well with Sacado.
 
+## Headers: include what you need
+
+`MiniTensor.h` brings in the containers plus linear algebra, geometry and
+mechanics. Each module header is also self-contained and can be included
+on its own:
+
+| Header | Contents |
+|---|---|
+| `MiniTensor.h` | Umbrella: everything below except the solvers |
+| `MiniTensor_Vector.h` | Vectors |
+| `MiniTensor_Tensor.h` | Second-order tensors and their algebra |
+| `MiniTensor_Tensor3.h`, `MiniTensor_Tensor4.h` | Third- and fourth-order tensors |
+| `MiniTensor_Matrix.h` | General M×N matrices |
+| `MiniTensor_Traits.h` | Scalar/AD type traits (Sacado promotion, index types) |
+| `MiniTensor_Scalar.h` | Scalar helpers: `machine_epsilon`, `not_a_number`, `random`, ... |
+| `MiniTensor_Norms.h` | Norms, determinant, trace, invariants, argmax queries |
+| `MiniTensor_Inverse.h` | Inversion, rank-one updates, preconditioners, linear solves |
+| `MiniTensor_Factorizations.h` | Givens, Cholesky, eigen, SVD, polar, condition numbers |
+| `MiniTensor_MatrixFunctions.h` | `exp`, `log`, `sqrt` families, integer powers, BCH |
+| `MiniTensor_Rotations.h` | SO(N) logarithmic and exponential maps, axial vector |
+| `MiniTensor_LinearAlgebra.h` | Umbrella over the five linear-algebra modules |
+| `MiniTensor_Quaternion.h` | Quaternions and rotation-representation conversions |
+| `MiniTensor_Geometry.h` | Element lengths, areas, volumes, centroids |
+| `MiniTensor_Mechanics.h` | Continuum-mechanics operations |
+| `MiniTensor_Solvers.h` | Nonlinear solvers and optimization (opt-in) |
+| `MiniTensor_TestFunctions.h` | Benchmark objectives for the solvers |
+
 ## Documentation
 
 MiniTensor is part of the [Trilinos Project](https://trilinos.github.io), and additional information (e.g., examples, tutorials, and source code documentation) is available through [MiniTensor's Doxygen webpages](https://trilinos.github.io/docs/minitensor/index.html).

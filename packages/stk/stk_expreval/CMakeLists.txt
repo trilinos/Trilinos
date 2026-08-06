@@ -34,6 +34,8 @@
 
 STK_SUBPACKAGE(ExprEval)
 
+message("STKExprEval")
+
 ADD_SUBDIRECTORY(stk_expreval)
 
 STK_SUBPACKAGE_POSTPROCESS()

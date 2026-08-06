@@ -7,7 +7,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_ArithTraits.hpp>
-#include <Kokkos_InnerProductSpaceTraits.hpp>
+#include <KokkosKernels_InnerProductSpaceTraits.hpp>
 
 namespace KokkosSparse {
 namespace Impl {

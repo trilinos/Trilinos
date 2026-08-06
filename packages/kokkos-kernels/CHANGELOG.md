@@ -1,14 +1,130 @@
 # Change Log
 
-## [5.1.1](https://github.com/kokkos/kokkos-kernels/tree/5.1.1)
-[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.1.0...5.1.1)
+## [5.2.0](https://github.com/kokkos/kokkos-kernels/tree/5.2.0)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.1.1...5.2.0)
+
+### New Features
+
+#### LAPACK updates
+
+- Lapack - gegqr: adding kernels to compute Q [\#3056](https://github.com/kokkos/kokkos-kernels/pull/3056)
+- Lapack {or,un}mqr [\#2962](https://github.com/kokkos/kokkos-kernels/pull/2962)
+- Adds potrs tpl wrappers to lapack [\#3061](https://github.com/kokkos/kokkos-kernels/pull/3061)
+- Cholesky factorization TPL wrappers for Kokkos Kernels [\#3010](https://github.com/kokkos/kokkos-kernels/pull/3010)
+
+#### Batched updates
+
+- Add scaled l2 norm computation [\#3130](https://github.com/kokkos/kokkos-kernels/pull/3130)
+- Add serial, team and teamvector implementations of the rot [\#2960](https://github.com/kokkos/kokkos-kernels/pull/2960), rotg [\#3049](https://github.com/kokkos/kokkos-kernels/pull/3049), rotm [\#3080](https://github.com/kokkos/kokkos-kernels/pull/3080) and rotmg [\#3088](https://github.com/kokkos/kokkos-kernels/pull/3088) functions.
+- Add batched swap [\#3147](https://github.com/kokkos/kokkos-kernels/pull/3147)
+- Implement Team and TeamVector Iamax [\#3138](https://github.com/kokkos/kokkos-kernels/pull/3138)
+- Add batched norm [\#3120](https://github.com/kokkos/kokkos-kernels/pull/3120)
+
+#### Sparse updates
+
+- Add option to conjugate values to sparse matrix transpose [\#3052](https://github.com/kokkos/kokkos-kernels/pull/3052)
+- Merge-Based SpMV wrap-up [\#1501](https://github.com/kokkos/kokkos-kernels/pull/1501)
+
+### Enhancements
+
+#### BLAS
+
+- KokkosBlas axpby unification refactor [\#3055](https://github.com/kokkos/kokkos-kernels/pull/3055)
+
+#### Batched
+
+- Reintroduce ConjTrans support for TeamGemm [\#3085](https://github.com/kokkos/kokkos-kernels/pull/3085)
+- Refactor batched dot [\#3110](https://github.com/kokkos/kokkos-kernels/pull/3110)
+- Make batched rotm to align with rotmg [\#3089](https://github.com/kokkos/kokkos-kernels/pull/3089)
+- Batched: allowing dynrankview in get_extent get_stride [\#3036](https://github.com/kokkos/kokkos-kernels/pull/3036)
+- ConjTrans support for blocked serial trsv [\#2651](https://github.com/kokkos/kokkos-kernels/pull/2651)
+- ConjTrans support for batched TeamVector gemm [\#2628](https://github.com/kokkos/kokkos-kernels/pull/2628)
+
+#### Sparse
+
+- Sparse - SpMV: updating MKL SYCL gemv call [\#3131](https://github.com/kokkos/kokkos-kernels/pull/3131)
+- cuSPARSE spmv/spmm preprocess [\#3062](https://github.com/kokkos/kokkos-kernels/pull/3062)
+- SpGEMM: cusparse algorithm selection [\#3060](https://github.com/kokkos/kokkos-kernels/pull/3060)
+
+#### Common utilities
+
+- Compatibility updates for deprecated out-of-rank extent usages [\#3162](https://github.com/kokkos/kokkos-kernels/pull/3162)
+- Default construct max_first_loc [\#3145](https://github.com/kokkos/kokkos-kernels/pull/3145)
+- Host space instantiation [\#3111](https://github.com/kokkos/kokkos-kernels/pull/3111)
+- Use Intel extension to query SYCL device free memory [\#3067](https://github.com/kokkos/kokkos-kernels/pull/3067)
+- Add long double support to MagnitudeScalarType [\#3059](https://github.com/kokkos/kokkos-kernels/pull/3059)
+- generate_eti: A new script for generating boilerplate for new kernels [\#3004](https://github.com/kokkos/kokkos-kernels/pull/3004)
+
+### Build System
+
+- CMake: Fix for warning C4530, error C1128, error LNK2001 and undefined reference to 'rank()' on Windows [\#3113](https://github.com/kokkos/kokkos-kernels/pull/3113)
+- Fix build path for kokkos kernels [\#3106](https://github.com/kokkos/kokkos-kernels/pull/3106)
+
+### Documentation and Testing
+
+- Fixing the olcf workflow [\#3148](https://github.com/kokkos/kokkos-kernels/pull/3148)
+- add v100 ci job with cuda using cmake language feature [\#3146](https://github.com/kokkos/kokkos-kernels/pull/3146)
+- .gitlab - Aurora: fixing sycl flags in Aurora nightly [\#3122](https://github.com/kokkos/kokkos-kernels/pull/3122)
+- Implement a macro version of GTEST like helper [\#3121](https://github.com/kokkos/kokkos-kernels/pull/3121)
+- Fixing issues of alcf-ctest.cmake [\#3105](https://github.com/kokkos/kokkos-kernels/pull/3105)
+- nightly - alcf: similar update to olcf PR \#3090 [\#3098](https://github.com/kokkos/kokkos-kernels/pull/3098)
+- Small fix for the config on Aurora [\#3066](https://github.com/kokkos/kokkos-kernels/pull/3066)
+- add pv.yml for SYCL testing on PVC arch [\#2676](https://github.com/kokkos/kokkos-kernels/pull/2676)
+- [Docs] Remove duplicated SCAL in blas docs [\#3157](https://github.com/kokkos/kokkos-kernels/pull/3157)
+- [Docs] batched swap [\#3152](https://github.com/kokkos/kokkos-kernels/pull/3152)
+- [Docs] Update documentation for batched iamax [\#3144](https://github.com/kokkos/kokkos-kernels/pull/3144)
+- [Docs] Batched norm and fix in KokkosBatched_Nrm.hpp [\#3136](https://github.com/kokkos/kokkos-kernels/pull/3136)
+- [Docs] batched dot [\#3125](https://github.com/kokkos/kokkos-kernels/pull/3125)
+- [Docs] clean-up build_requirements.txt [\#3101](https://github.com/kokkos/kokkos-kernels/pull/3101)
+- [Docs] Add docs rotm/rotmg [\#3097](https://github.com/kokkos/kokkos-kernels/pull/3097)
+- [Docs] - examples: adding examples for abs, scal, swap [\#3086](https://github.com/kokkos/kokkos-kernels/pull/3086)
+- [Docs] Add batched rot/rotg [\#3065](https://github.com/kokkos/kokkos-kernels/pull/3065)
+- check_api_updates.py: Enhance this tool a bit [\#3064](https://github.com/kokkos/kokkos-kernels/pull/3064)
+- SYCL: disabling device blas tests [\#3103](https://github.com/kokkos/kokkos-kernels/pull/3103)
+
+### Benchmarks
+
+- Benchmark - Blas1: result of nrminf on host [\#3135](https://github.com/kokkos/kokkos-kernels/pull/3135)
+- Alcf push benchmark results [\#3109](https://github.com/kokkos/kokkos-kernels/pull/3109)
+- Alcf build directory fix [\#3108](https://github.com/kokkos/kokkos-kernels/pull/3108)
+- Add more device info to benchmark context [\#3107](https://github.com/kokkos/kokkos-kernels/pull/3107)
+- Blas1 benchmark [\#3083](https://github.com/kokkos/kokkos-kernels/pull/3083)
+- Benchmarks: fixing command line parameters for backend [\#3054](https://github.com/kokkos/kokkos-kernels/pull/3054)
+- Cleanup par_ilut performance benchmark. [\#3053](https://github.com/kokkos/kokkos-kernels/pull/3053)
+
+### Cleanup
+
+- SYCL: remove Experimental namespace [\#3134](https://github.com/kokkos/kokkos-kernels/pull/3134)
+- Drop KokkosBatched::view_rank and use Kokkos::rank instead [\#3173](https://github.com/kokkos/kokkos-kernels/pull/3173)
+- Remove old code [\#3084](https://github.com/kokkos/kokkos-kernels/pull/3084)
+- Removing screen output for file ETI [\#3038](https://github.com/kokkos/kokkos-kernels/pull/3038)
+- Remove KOKKOS_ENABLE_CUDA_LAMBDA checks [\#3020](https://github.com/kokkos/kokkos-kernels/pull/3020)
+- Move `InnerProductSpaceTraits` to `KokkosKernels::Details` [\#3006](https://github.com/kokkos/kokkos-kernels/pull/3006)
+
+### Deprecations:
+
+- Accomodate cuSPARSE 12.7 deprecations [\#3037](https://github.com/kokkos/kokkos-kernels/pull/3037)
+- Move diagonal blocks extraction functions into Experimental namespace [\#3000](https://github.com/kokkos/kokkos-kernels/pull/3000)
 
 ### Bug Fixes
-- Fix max vector_length usage in graph coarsening [\#3012](https://github.com/kokkos/kokkos-kernels/pull/3012), [\#3018](https://github.com/kokkos/kokkos-kernels/pull/3018)
-- LAPACK SVD test - adjust tolerance around 0 [\#3008](https://github.com/kokkos/kokkos-kernels/pull/3008)
-- Fix a few -Wformat warnings with int64_t ordinals [\#3027](https://github.com/kokkos/kokkos-kernels/pull/3027)
-- Benchmark - parILUt: call libraries initialize first [\#3022](https://github.com/kokkos/kokkos-kernels/pull/3022)
-- Improve matrix market and batched sparse file readers to handle bad I/O [\#3032](https://github.com/kokkos/kokkos-kernels/pull/3032)
+
+- [BLAS][Windows] Fix non-portable rand()/RAND_MAX usage in test_gauss_seidel_long_rows; Reformatted file [\#3072](https://github.com/kokkos/kokkos-kernels/pull/3072)
+- [BLAS][Windows] Add ETI specializations for unsigned long long index type on Win64 [\#3071](https://github.com/kokkos/kokkos-kernels/pull/3071)
+- Explicitly include Kokkos_Half.hpp when using Kokkos::Experimental::[b]half_t [\#3159](https://github.com/kokkos/kokkos-kernels/pull/3159)
+- TPL - gtest: fixing warning coming out of gtest.h [\#3132](https://github.com/kokkos/kokkos-kernels/pull/3132)
+- Adding parentheses where needed for ETI prints [\#3137](https://github.com/kokkos/kokkos-kernels/pull/3137)
+- Lapack - geqrf: fixing test that assumes Kokkos::Serial [\#3104](https://github.com/kokkos/kokkos-kernels/pull/3104)
+- Fix maybe-uninitialized warnings [\#3167](https://github.com/kokkos/kokkos-kernels/pull/3167)
+- Fix #3153: spgemm tpls not getting called [\#3160](https://github.com/kokkos/kokkos-kernels/pull/3160)
+- Sparse - SpMV: Fix for BsrSpMV with tensore cores [\#3133](https://github.com/kokkos/kokkos-kernels/pull/3133)
+- Fix batched rotmg [\#3099](https://github.com/kokkos/kokkos-kernels/pull/3099)
+- Fix: batched serial trsv macro interfaces [\#3070](https://github.com/kokkos/kokkos-kernels/pull/3070)
+- spgemm algorithm choice and TPL fixes [\#3069](https://github.com/kokkos/kokkos-kernels/pull/3069)
+- Batched Serial Householder: Fix for Sacado types [\#3051](https://github.com/kokkos/kokkos-kernels/pull/3051)
+- Avoid custom comparator for Kokkos::sort in par_ilut [\#3044](https://github.com/kokkos/kokkos-kernels/pull/3044)
+- More graph coarsening fixes for team policy violations [\#3018](https://github.com/kokkos/kokkos-kernels/pull/3018)
+- `PredicMaxRowNNZ` -> `PredictMaxRowNNZ` (typo?) [\#3017](https://github.com/kokkos/kokkos-kernels/pull/3017)
+- Fixing call to scal in GEMM, it is missing space param making the function possibly blocking on a different stream [\#3185](https://github.com/kokkos/kokkos-kernels/pull/3185)
 
 ## [5.1.0](https://github.com/kokkos/kokkos-kernels/tree/5.1.0)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/5.0.2...5.1.0)

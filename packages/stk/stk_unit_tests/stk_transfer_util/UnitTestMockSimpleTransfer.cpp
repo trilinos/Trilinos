@@ -94,55 +94,159 @@ class MockSimpleTransferTest : public ::testing::Test
 
   MockSimpleTransferTest() = default;
 
-  void test_expected_indexed_value_at_location(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* field,
-                                               unsigned recvIndex, unsigned fieldDimension, unsigned numCopies,
-                                               stk::mesh::Entity& entity, const stk::unit_test_util::FieldEvaluator& eval,
-                                               const double* location, double tolerance = 1.0e-6)
+  template <typename T, stk::mesh::FieldAccessTag FieldAccess, typename Alg>
+  inline
+  void field_data_test(const stk::mesh::FieldBase& fieldBase, const stk::mesh::Entity entity, Alg&& alg)
   {
-    const unsigned nDim = bulk.mesh_meta_data().spatial_dimension();
-    const double* data = static_cast<const double *>(stk::mesh::field_data(*field, entity));
-    for(unsigned i = 0; i < numCopies; ++i) {
-      double x = location[nDim * i + 0];
-      double y = location[nDim * i + 1];
-      double z = (nDim == 2 ? 0.0 : location[nDim * i + 2]);
-
-      double expectedValue = eval(entity, x, y, z);
-
-      for(unsigned j = 0; j < fieldDimension; ++j) {
-        if((recvIndex == 0) || j == (recvIndex - 1)) {
-          EXPECT_NEAR(expectedValue, data[fieldDimension * i + j], tolerance)
-              << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entity)
-              << " at location (" << x << "," << y << "," << z << ")";
-        }
-        else {
-          EXPECT_EQ(0, data[fieldDimension * i + j])
-                  << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entity)
-                  << " at location (" << x << "," << y << "," << z << ")";
-        }
-      }
+    if (fieldBase.host_data_layout() == stk::mesh::Layout::Right) {
+      auto fieldData = fieldBase.data<T, FieldAccess, stk::ngp::HostSpace, stk::mesh::Layout::Right>();
+      alg(fieldData, entity);
+    }
+    else if (fieldBase.host_data_layout() == stk::mesh::Layout::Left) {
+      auto fieldData = fieldBase.data<T, FieldAccess, stk::ngp::HostSpace, stk::mesh::Layout::Left>();
+      alg(fieldData, entity);
+    }
+    else {
+      STK_ThrowErrorMsg("Unsupported host Field data layout: " << fieldBase.host_data_layout());
     }
   }
 
-  void test_expected_value_at_location(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* field,
-                                       unsigned fieldDimension, unsigned numCopies, stk::mesh::Entity& entity,
-                                       const stk::unit_test_util::FieldEvaluator& eval, const double* location,
-                                       double tolerance = 1.0e-6)
+  void test_expected_indexed_value_at_location(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* field, unsigned recvIndex,
+                                               stk::mesh::Entity& entity, const stk::unit_test_util::FieldEvaluator& eval,
+                                               const double* loc, double tolerance = 1.0e-6)
   {
+    // Coordinate data at one point e.g centroid or node
     const unsigned nDim = bulk.mesh_meta_data().spatial_dimension();
-    const double* data = static_cast<const double *>(stk::mesh::field_data(*field, entity));
-    for(unsigned i = 0; i < numCopies; ++i) {
-      double x = location[nDim * i + 0];
-      double y = location[nDim * i + 1];
-      double z = (nDim == 2 ? 0.0 : location[nDim * i + 2]);
 
-      double expectedValue = eval(entity, x, y, z);
+    auto alg = [&](auto& fieldData, stk::mesh::Entity entityArg) {
+                 auto data = fieldData.entity_values(entityArg);
 
-      for(unsigned j = 0; j < fieldDimension; ++j) {
-        EXPECT_NEAR(expectedValue, data[fieldDimension * i + j], tolerance)
-            << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entity)
-            << " at location (" << x << "," << y << "," << z << ")";
-      }
-    }
+                 double x = loc[0];
+                 double y = loc[1];
+                 double z = (nDim != 3 ? 0.0 : loc[2]);
+                 double expectedValue = eval(entity, x, y, z);
+
+                 for (stk::mesh::CopyIdx copy : data.copies()) {
+                   for(stk::mesh::ComponentIdx comp : data.components()) {
+                     double value = data(copy, comp);
+
+                     unsigned index = comp;
+                     if((recvIndex == 0) || index == (recvIndex - 1)) {
+                       EXPECT_NEAR(expectedValue, value, tolerance)
+                           << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entityArg)
+                           << " at location (" << x << "," << y << "," << z << ")";
+                     }
+                     else {
+                       EXPECT_EQ(0, value)
+                           << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entityArg)
+                           << " at location (" << x << "," << y << "," << z << ")";
+                     }
+                   }
+                 }
+      };
+
+    field_data_test<double, stk::mesh::ReadOnly>(*field, entity, alg);
+  }
+
+  void test_expected_indexed_value_at_locations(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* field, unsigned recvIndex,
+                                                stk::mesh::Entity& entity, const stk::unit_test_util::FieldEvaluator& eval,
+                                                const double* loc, const unsigned locCompStride, const unsigned locCopyStride,
+                                                double tolerance = 1.0e-6)
+  {
+    // Coordinate data per copy e.g gauss points
+    const unsigned nDim = bulk.mesh_meta_data().spatial_dimension();
+
+    auto alg = [&](auto& fieldData, stk::mesh::Entity entityArg) {
+                 auto data = fieldData.entity_values(entityArg);
+
+                 for (stk::mesh::CopyIdx copy : data.copies()) {
+                   unsigned copyIndex = copy;
+                   double x = loc[copyIndex*locCopyStride + 0*locCompStride];
+                   double y = loc[copyIndex*locCopyStride + 1*locCompStride];
+                   double z = (nDim != 3 ? 0.0 : loc[copyIndex*locCopyStride + 2*locCompStride]);
+                   double expectedValue = eval(entityArg, x, y, z);
+
+                   for(stk::mesh::ComponentIdx comp : data.components()) {
+                     double value = data(copy, comp);
+
+                     unsigned index = comp;
+                     if((recvIndex == 0) || index == (recvIndex - 1)) {
+                       EXPECT_NEAR(expectedValue, value, tolerance)
+                           << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entityArg)
+                           << " at location (" << x << "," << y << "," << z << ")";
+                     }
+                     else {
+                       EXPECT_EQ(0, value)
+                           << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entityArg)
+                           << " at location (" << x << "," << y << "," << z << ")";
+                     }
+                   }
+                 }
+      };
+
+    field_data_test<double, stk::mesh::ReadOnly>(*field, entity, alg);
+  }
+
+  void test_expected_value_at_location(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* field,
+                                       stk::mesh::Entity& entity, const stk::unit_test_util::FieldEvaluator& eval,
+                                       unsigned numComponentsUsed,
+                                       const double* loc, double tolerance = 1.0e-6)
+  {
+    // Coordinate data at one point e.g centroid or node
+    const unsigned nDim = bulk.mesh_meta_data().spatial_dimension();
+
+    auto alg = [&](auto& fieldData, stk::mesh::Entity entityArg) {
+                 auto data = fieldData.entity_values(entityArg);
+
+                 double x = loc[0];
+                 double y = loc[1];
+                 double z = (nDim != 3 ? 0.0 : loc[2]);
+                 double expectedValue = eval(entityArg, x, y, z);
+
+                 for (stk::mesh::CopyIdx copy : data.copies()) {
+                   for (stk::mesh::ComponentIdx comp=0_comp; comp < static_cast<stk::mesh::ComponentIdx>(numComponentsUsed); ++comp) {
+                     double value = data(copy, comp);
+
+                     EXPECT_NEAR(expectedValue, value, tolerance)
+                         << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entityArg)
+                         << " at loc (" << x << "," << y << "," << z << ")";
+                   }
+                 }
+    };
+
+    field_data_test<double, stk::mesh::ReadOnly>(*field, entity, alg);
+  }
+
+  void test_expected_value_at_locations(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* field,
+                                        stk::mesh::Entity& entity, const stk::unit_test_util::FieldEvaluator& eval,
+                                        unsigned numComponentsUsed,
+                                        const double* loc, const unsigned locCompStride, const unsigned locCopyStride,
+                                        double tolerance = 1.0e-6)
+  {
+    // Coordinate data per copy e.g gauss points
+    const unsigned nDim = bulk.mesh_meta_data().spatial_dimension();
+
+    auto alg = [&](auto& fieldData, stk::mesh::Entity entityArg) {
+                 auto data = fieldData.entity_values(entityArg);
+
+                 for (stk::mesh::CopyIdx copy : data.copies()) {
+                   unsigned copyIndex = copy;
+                   double x = loc[copyIndex*locCopyStride + 0*locCompStride];
+                   double y = loc[copyIndex*locCopyStride + 1*locCompStride];
+                   double z = (nDim != 3 ? 0.0 : loc[copyIndex*locCopyStride + 2*locCompStride]);
+                   double expectedValue = eval(entityArg, x, y, z);
+
+                   for (stk::mesh::ComponentIdx comp=0_comp; comp < static_cast<stk::mesh::ComponentIdx>(numComponentsUsed); ++comp) {
+                     double value = data(copy, comp);
+
+                     EXPECT_NEAR(expectedValue, value, tolerance)
+                         << " for processor " << sierra::Env::parallel_rank() << " with entity " << bulk.entity_key(entityArg)
+                         << " at loc (" << x << "," << y << "," << z << ")";
+                   }
+                 }
+    };
+
+    field_data_test<double, stk::mesh::ReadOnly>(*field, entity, alg);
   }
 
   void setup_mesh_with_field(stk::mesh::BulkData& bulk,
@@ -160,26 +264,15 @@ class MockSimpleTransferTest : public ::testing::Test
     stk::io::fill_mesh(meshSpec, bulk);
   }
 
-  void setup_transfer(stk::transfer::spmd::SimpleTransfer& transfer,
-                      stk::mesh::EntityRank sendRank,
-                      stk::mesh::EntityRank recvRank,
-                      stk::search::SearchTopology* topo = nullptr,
-                      unsigned expectedNumRecvCopies = 0)
+  void internal_setup_transfer(stk::transfer::spmd::SimpleTransfer& transfer,
+                               stk::mesh::EntityRank sendRank,
+                               stk::mesh::EntityRank recvRank)
   {
-    m_sendBulk = stk::unit_test_util::build_mesh(m_spatialDim, m_comm);
-    m_recvBulk = stk::unit_test_util::build_mesh(m_spatialDim, m_comm);
+    m_sendBulk = stk::unit_test_util::build_mesh(m_sendSpatialDim, m_comm);
+    m_recvBulk = stk::unit_test_util::build_mesh(m_recvSpatialDim, m_comm);
 
     stk::mesh::MetaData& sendMeta = m_sendBulk->mesh_meta_data();
     stk::mesh::MetaData& recvMeta = m_recvBulk->mesh_meta_data();
-
-    m_masterElemProvider = std::make_shared<stk::transfer_util::MasterElementProvider>();
-
-    m_numSendCopies = 1;
-    m_numRecvCopies = (nullptr != topo) ? m_masterElemProvider->num_integration_points(*topo) : 1;
-
-    if(nullptr != topo) {
-      EXPECT_EQ(expectedNumRecvCopies, m_numRecvCopies);
-    }
 
     setup_mesh_with_field(*m_sendBulk, m_sendMeshSpec, m_sendFieldName, sendRank, m_numSendCopies);
     setup_mesh_with_field(*m_recvBulk, m_recvMeshSpec, m_recvFieldName, recvRank, m_numRecvCopies);
@@ -197,6 +290,42 @@ class MockSimpleTransferTest : public ::testing::Test
     transfer.add_recv_part_name(m_recvPartName);
   }
 
+  void setup_copies(unsigned numCopies,
+                    stk::search::SearchTopology* topo = nullptr,
+                    unsigned expectedNumRecvCopies = 0)
+  {
+    m_masterElemProvider = std::make_shared<stk::unit_test_util::MasterElementProvider>();
+
+    m_numSendCopies = numCopies;
+    m_numRecvCopies = (nullptr != topo) ? m_masterElemProvider->num_integration_points(*topo)*numCopies : numCopies;
+
+    if(nullptr != topo) {
+      EXPECT_EQ(expectedNumRecvCopies, m_numRecvCopies);
+    }
+  }
+
+  void setup_transfer(stk::transfer::spmd::SimpleTransfer& transfer,
+                      stk::mesh::EntityRank sendRank,
+                      stk::mesh::EntityRank recvRank,
+                      unsigned numCopies,
+                      stk::search::SearchTopology& topo,
+                      unsigned expectedNumRecvCopies)
+  {
+    setup_copies(numCopies, &topo, expectedNumRecvCopies);
+
+    internal_setup_transfer(transfer, sendRank, recvRank);
+  }
+
+  void setup_transfer(stk::transfer::spmd::SimpleTransfer& transfer,
+                      stk::mesh::EntityRank sendRank,
+                      stk::mesh::EntityRank recvRank,
+                      unsigned numCopies = 1)
+  {
+    setup_copies(numCopies);
+
+    internal_setup_transfer(transfer, sendRank, recvRank);
+  }
+
   void test_indexed_node_transfer(stk::unit_test_util::FieldEvaluator& eval,
                                   stk::mesh::EntityRank recvRank, unsigned recvIndex)
   {
@@ -209,10 +338,10 @@ class MockSimpleTransferTest : public ::testing::Test
 
     stk::mesh::get_selected_entities(selector, m_recvBulk->buckets(recvRank), entities);
 
+    std::vector<double> location;
     for(stk::mesh::Entity entity : entities) {
-      const double* location = static_cast<const double *>(stk::mesh::field_data(*recvCoordinateField, entity));
-      test_expected_indexed_value_at_location(*m_recvBulk, m_recvField, recvIndex,
-                                              m_spatialDim, 1, entity, eval, location);
+      stk::search::determine_centroid(m_sendSpatialDim, entity, *recvCoordinateField, location);
+      test_expected_indexed_value_at_location(*m_recvBulk, m_recvField, recvIndex, entity, eval, location.data());
     }
   }
 
@@ -229,9 +358,10 @@ class MockSimpleTransferTest : public ::testing::Test
 
     stk::mesh::get_selected_entities(selector, m_recvBulk->buckets(recvRank), entities);
 
+    std::vector<double> location;
     for(stk::mesh::Entity entity : entities) {
-      const double* location = static_cast<const double *>(stk::mesh::field_data(*recvCoordinateField, entity));
-      test_expected_value_at_location(*m_recvBulk, m_recvField, m_spatialDim, 1, entity, eval, location, tolerance);
+      stk::search::determine_centroid(m_recvSpatialDim, entity, *recvCoordinateField, location);
+      test_expected_value_at_location(*m_recvBulk, m_recvField, entity, eval, std::min(m_sendSpatialDim, m_recvSpatialDim), location.data(), tolerance);
     }
   }
 
@@ -249,13 +379,12 @@ class MockSimpleTransferTest : public ::testing::Test
 
     std::vector<double> location;
     for(stk::mesh::Entity entity : entities) {
-      stk::search::determine_centroid(m_spatialDim, entity, *recvCoordinateField, location);
-      test_expected_indexed_value_at_location(*m_recvBulk, m_recvField, recvIndex,
-                                              m_spatialDim, 1, entity, eval, location.data());
+      stk::search::determine_centroid(m_sendSpatialDim, entity, *recvCoordinateField, location);
+      test_expected_indexed_value_at_location(*m_recvBulk, m_recvField, recvIndex, entity, eval, location.data());
     }
   }
 
-  void test_centroid_transfer(stk::unit_test_util::FieldEvaluator& eval, stk::mesh::EntityRank recvRank)
+  void test_centroid_transfer(stk::unit_test_util::FieldEvaluator& eval, stk::mesh::EntityRank recvRank, [[maybe_unused]] unsigned numCopies = 1)
   {
     stk::mesh::MetaData& recvMeta = m_recvBulk->mesh_meta_data();
     const stk::mesh::FieldBase* recvCoordinateField = recvMeta.coordinate_field();
@@ -268,8 +397,8 @@ class MockSimpleTransferTest : public ::testing::Test
 
     std::vector<double> location;
     for(stk::mesh::Entity entity : entities) {
-      stk::search::determine_centroid(m_spatialDim, entity, *recvCoordinateField, location);
-      test_expected_value_at_location(*m_recvBulk, m_recvField, m_spatialDim, 1, entity, eval, location.data());
+      stk::search::determine_centroid(m_recvSpatialDim, entity, *recvCoordinateField, location);
+      test_expected_value_at_location(*m_recvBulk, m_recvField, entity, eval, std::min(m_sendSpatialDim, m_recvSpatialDim), location.data());
     }
   }
 
@@ -285,11 +414,13 @@ class MockSimpleTransferTest : public ::testing::Test
 
     stk::mesh::get_selected_entities(selector, m_recvBulk->buckets(recvRank), entities);
 
+    unsigned coordCompStride = 1;
+    unsigned coordCopyStride = 3;
     std::vector<double> gpCoordinates;
     for(stk::mesh::Entity entity : entities) {
       stk::search::determine_gauss_points(*m_recvBulk, entity, *m_masterElemProvider, *recvCoordinateField, gpCoordinates);
-      test_expected_indexed_value_at_location(*m_recvBulk, m_recvField, recvIndex, m_spatialDim,
-                                              m_numRecvCopies, entity, eval, gpCoordinates.data());
+      test_expected_indexed_value_at_locations(*m_recvBulk, m_recvField, recvIndex, entity, eval,
+                                               gpCoordinates.data(), coordCompStride, coordCopyStride);
     }
   }
 
@@ -304,10 +435,13 @@ class MockSimpleTransferTest : public ::testing::Test
 
     stk::mesh::get_selected_entities(selector, m_recvBulk->buckets(recvRank), entities);
 
+    unsigned coordCompStride = 1;
+    unsigned coordCopyStride = 3;
     std::vector<double> gpCoordinates;
     for(stk::mesh::Entity entity : entities) {
       stk::search::determine_gauss_points(*m_recvBulk, entity, *m_masterElemProvider, *recvCoordinateField, gpCoordinates);
-      test_expected_value_at_location(*m_recvBulk, m_recvField, m_spatialDim, m_numRecvCopies, entity, eval, gpCoordinates.data());
+      test_expected_value_at_locations(*m_recvBulk, m_recvField, entity, eval, std::min(m_sendSpatialDim, m_recvSpatialDim),
+                                       gpCoordinates.data(), coordCompStride, coordCopyStride);
     }
   }
 
@@ -321,11 +455,7 @@ class MockSimpleTransferTest : public ::testing::Test
     oss << ny << "x";
     oss << nz;
 
-    m_sendMeshSpec = oss.str();
-    m_recvMeshSpec = oss.str();
-
-    m_sendPartName = "block_1";
-    m_recvPartName = "block_1";
+    initialize_transfer_variables(oss.str(), oss.str(), "block_1", "block_1");
   }
 
   void initialize_surface_transfer_variables(unsigned nx = 1, unsigned ny = 1, unsigned nz = 1)
@@ -338,17 +468,27 @@ class MockSimpleTransferTest : public ::testing::Test
     oss << ny << "x";
     oss << nz << "|sideset:xXyYzZ";
 
-    m_sendMeshSpec = oss.str();
-    m_recvMeshSpec = oss.str();
+    initialize_transfer_variables(oss.str(), oss.str(), "surface_1", "surface_1");
+  }
 
-    m_sendPartName = "surface_1";
-    m_recvPartName = "surface_1";
+  void initialize_transfer_variables(const std::string& sendMeshSpec, const std::string& recvMeshSpec,
+                                     const std::string& sendPartName, const std::string& recvPartName,
+                                     int sendSpatialDimension=3,    int recvSpatialDimension=3)
+  {
+    m_sendMeshSpec = sendMeshSpec;
+    m_recvMeshSpec = recvMeshSpec;
+    m_sendPartName = sendPartName;
+    m_recvPartName = recvPartName;
+
+    m_sendSpatialDim = sendSpatialDimension;
+    m_recvSpatialDim = recvSpatialDimension;
   }
 
  protected:
   stk::ParallelMachine m_comm{MPI_COMM_WORLD};
 
-  unsigned m_spatialDim{3u};
+  unsigned m_sendSpatialDim{3u};
+  unsigned m_recvSpatialDim{3u};
 
   std::string m_sendFieldName{"field1"};
   std::string m_recvFieldName{"field1"};
@@ -382,7 +522,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_masterElementInterpolationToNode)
 
   initialize_surface_transfer_variables();
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -407,7 +547,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_masterElementInterpolationToNode)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -434,7 +574,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_masterElementInterpolationToCentroid
 
   initialize_surface_transfer_variables();
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::FACE_RANK;
@@ -459,7 +599,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_masterElementInterpolationToCentr
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -486,7 +626,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_masterElementInterpolationToGaussPoi
 
   initialize_surface_transfer_variables();
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::FACE_RANK;
@@ -494,7 +634,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_masterElementInterpolationToGaussPoi
   stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
 
   stk::search::SearchTopology quad4Topo(stk::topology::QUAD_4);
-  setup_transfer(transfer, sendRank, recvRank, &quad4Topo, 4u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, quad4Topo, 4u);
   stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
@@ -512,7 +652,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_masterElementInterpolationToGauss
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -520,7 +660,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_masterElementInterpolationToGauss
   stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
@@ -541,7 +681,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_patchRecoveryInterpolationToNode)
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_surface_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::FACE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -569,7 +709,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_patchRecoveryInterpolationToNode)
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -597,7 +737,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_patchRecoveryInterpolationToCentroid
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_surface_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::FACE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::FACE_RANK;
@@ -625,7 +765,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_patchRecoveryInterpolationToCentr
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -653,7 +793,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_patchRecoveryInterpolationToGaussPoi
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_surface_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::FACE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::FACE_RANK;
@@ -661,7 +801,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_patchRecoveryInterpolationToGaussPoi
   stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
 
   stk::search::SearchTopology quad4Topo(stk::topology::QUAD_4);
-  setup_transfer(transfer, sendRank, recvRank, &quad4Topo, 4u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, quad4Topo, 4u);
   stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
@@ -682,7 +822,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_patchRecoveryInterpolationToGauss
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -690,7 +830,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_patchRecoveryInterpolationToGauss
   stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
@@ -708,7 +848,7 @@ TEST_F(MockSimpleTransferTest, nodeSendMesh_copyToNode)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -735,7 +875,7 @@ TEST_F(MockSimpleTransferTest, faceSendMesh_copyToFace)
 
   initialize_surface_transfer_variables();
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::FACE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::FACE_RANK;
@@ -760,7 +900,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_copyToElement)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -779,6 +919,58 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_copyToElement)
   test_centroid_transfer(eval, recvRank);
 }
 
+
+TEST_F(MockSimpleTransferTest, elementSendMesh_copyToElement_multiFieldCopy)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  unsigned numCopies = 3;
+  setup_transfer(transfer, sendRank, recvRank, numCopies);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.setup_copy_nearest_transfer(*m_sendBulk, *m_recvBulk,
+                                       stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::ELEMENT_CENTROID,
+                                       m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_centroid_transfer(eval, recvRank, numCopies);
+}
+
+TEST_F(MockSimpleTransferTest, elementSendMesh_copyToElement_GaussPoint)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  unsigned numCopies = 8;
+  setup_transfer(transfer, sendRank, recvRank, numCopies);
+  stk::unit_test_util::set_entity_field_gauss_point(*m_sendBulk, *m_sendField, eval, m_masterElemProvider);
+
+  transfer.setup_copy_nearest_transfer(*m_sendBulk, *m_recvBulk,
+                                       stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::ELEMENT_GAUSS_POINT,
+                                       m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_gauss_point_transfer(eval, recvRank);
+}
 
 using MockSimpleIndexedTransferTest = MockSimpleTransferTest;
 
@@ -829,7 +1021,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_masterElementInterpolation
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -858,7 +1050,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_masterElementInterpolation
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -887,7 +1079,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_masterElementInterpolation
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -899,7 +1091,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_masterElementInterpolation
   SimpleIndexedTransfer transfer("TransferTest", sendIndex, recvIndex);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
@@ -920,7 +1112,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_patchRecoveryInterpolation
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -952,7 +1144,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_patchRecoveryInterpolation
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -984,7 +1176,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_patchRecoveryInterpolation
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -996,7 +1188,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_patchRecoveryInterpolation
   SimpleIndexedTransfer transfer("TransferTest", sendIndex, recvIndex);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
@@ -1014,7 +1206,7 @@ TEST_F(MockSimpleIndexedTransferTest, nodeSendMesh_copyToNode)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1043,7 +1235,7 @@ TEST_F(MockSimpleIndexedTransferTest, elementSendMesh_copyToElement)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1118,7 +1310,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_masterElementInterpolation
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1138,7 +1330,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_masterElementInterpolation
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_node_transfer(boundedEval, recvRank);
 }
 
@@ -1149,7 +1341,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_masterElementInterpolation
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1169,7 +1361,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_masterElementInterpolation
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_centroid_transfer(boundedEval, recvRank);
 }
 
@@ -1179,7 +1371,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_masterElementInterpolation
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1191,7 +1383,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_masterElementInterpolation
   SimpleBoundedTransfer transfer("TransferTest", lowerBound, upperBound);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
@@ -1200,7 +1392,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_masterElementInterpolation
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_gauss_point_transfer(boundedEval, recvRank);
 }
 
@@ -1213,7 +1405,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_patchRecoveryInterpolation
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1233,7 +1425,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_patchRecoveryInterpolation
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_node_transfer(boundedEval, recvRank);
 }
 
@@ -1246,7 +1438,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_patchRecoveryInterpolation
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1266,7 +1458,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_patchRecoveryInterpolation
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_centroid_transfer(boundedEval, recvRank);
 }
 
@@ -1279,7 +1471,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_patchRecoveryInterpolation
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1291,7 +1483,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_patchRecoveryInterpolation
   SimpleBoundedTransfer transfer("TransferTest", lowerBound, upperBound);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
@@ -1300,7 +1492,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_patchRecoveryInterpolation
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_gauss_point_transfer(boundedEval, recvRank);
 }
 
@@ -1310,7 +1502,7 @@ TEST_F(MockSimpleBoundedTransferTest, nodeSendMesh_copyToNode)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1330,7 +1522,7 @@ TEST_F(MockSimpleBoundedTransferTest, nodeSendMesh_copyToNode)
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_node_transfer(boundedEval, recvRank);
 }
 
@@ -1340,7 +1532,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_copyToElementCentroid)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1361,7 +1553,7 @@ TEST_F(MockSimpleBoundedTransferTest, elementSendMesh_copyToElementCentroid)
   transfer.initialize();
   transfer.apply();
 
-  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_spatialDim, lowerBound, upperBound);
+  stk::unit_test_util::BoundedLinearFieldEvaluator boundedEval(m_sendSpatialDim, lowerBound, upperBound);
   test_centroid_transfer(boundedEval, recvRank);
 }
 
@@ -1419,8 +1611,8 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_masterElementInterpolati
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 4.0, 4.0, 4.0, 4.0); // x4
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 4.0, 4.0, 4.0, 4.0); // x4
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1447,8 +1639,8 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_masterElementInterpolati
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 8.0, 8.0, 8.0, 8.0); // x8
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 8.0, 8.0, 8.0, 8.0); // x8
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1474,8 +1666,8 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_masterElementInterpolati
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 4.0, 4.0, 4.0, 4.0); // x4
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 4.0, 4.0, 4.0, 4.0); // x4
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1484,7 +1676,7 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_masterElementInterpolati
   SimpleTransformTransfer transfer("TransferTest", impl::transform_scale_by_half, impl::transform_scale_by_eight);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
@@ -1505,8 +1697,8 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_patchRecoveryInterpolati
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 4.0, 4.0, 4.0, 4.0); // x4
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 4.0, 4.0, 4.0, 4.0); // x4
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1535,8 +1727,8 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_patchRecoveryInterpolati
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 4.0, 4.0, 4.0, 4.0); // x4
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 4.0, 4.0, 4.0, 4.0); // x4
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1565,8 +1757,8 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_patchRecoveryInterpolati
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 2.0, 2.0, 2.0, 2.0); // x2
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 2.0, 2.0, 2.0, 2.0); // x2
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1575,7 +1767,7 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_patchRecoveryInterpolati
   SimpleTransformTransfer transfer("TransferTest", impl::transform_scale_by_four, impl::transform_scale_by_half);
 
   stk::search::SearchTopology hex8Topo(stk::topology::HEX_8);
-  setup_transfer(transfer, sendRank, recvRank, &hex8Topo, 8u);
+  setup_transfer(transfer, sendRank, recvRank, 1u, hex8Topo, 8u);
   stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
 
   transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
@@ -1593,8 +1785,8 @@ TEST_F(MockSimpleTransformTransferTest, nodeSendMesh_copyToNode)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 4.0, 4.0, 4.0, 4.0); // x4
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 4.0, 4.0, 4.0, 4.0); // x4
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1620,8 +1812,8 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_copyToElement)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 2.0, 2.0, 2.0, 2.0); // x2
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 2.0, 2.0, 2.0, 2.0); // x2
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
@@ -1641,6 +1833,33 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_copyToElement)
   test_centroid_transfer(goldEval, recvRank);
 }
 
+TEST_F(MockSimpleTransformTransferTest, elementSendMesh_copyToElement_multiFieldCopy)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 2.0, 2.0, 2.0, 2.0); // x2
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
+
+  // Pre-transform by 0.5, then post-transform by 4 => final scale by 2
+  SimpleTransformTransfer transfer("TransferTest", impl::transform_scale_by_half, impl::transform_scale_by_four);
+
+  unsigned numCopies = 3;
+  setup_transfer(transfer, sendRank, recvRank, numCopies);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.setup_copy_nearest_transfer(*m_sendBulk, *m_recvBulk,
+                                       stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::ELEMENT_CENTROID,
+                                       m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_centroid_transfer(goldEval, recvRank, numCopies);
+}
 
 TEST_F(MockSimpleTransferTest, elementSendMesh_linearPatchRecoveryInterpolationToNode_mls)
 {
@@ -1651,7 +1870,7 @@ TEST_F(MockSimpleTransferTest, elementSendMesh_linearPatchRecoveryInterpolationT
   // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
   initialize_volume_transfer_variables(2,2,2);
 
-  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
 
   stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1819,8 +2038,8 @@ TEST_F(MockSimpleTransferTest, nodeSendMesh_sumToNode)
     GTEST_SKIP();
   }
 
-  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
-  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 2.0, 2.0, 2.0, 2.0); // x2
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_sendSpatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_sendSpatialDim, 2.0, 2.0, 2.0, 2.0); // x2
 
   stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
@@ -1841,5 +2060,194 @@ TEST_F(MockSimpleTransferTest, nodeSendMesh_sumToNode)
 
   test_node_transfer(goldEval, recvRank);
 }
+
+TEST_F(MockSimpleTransferTest, ThreeDElementToTwoDNode)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(2);
+
+  stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  std::string sendMesh = "generated:2x2x2|bbox:0,0,0,2,2,2";
+  std::string recvMesh = "textmesh:"
+                         "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
+                         "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
+                         "0,4,QUAD_4_2D,5,6,9,8,block_1\n"
+                         "|coordinates:"
+                         "0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2|dimension:2";
+
+  initialize_transfer_variables(sendMesh, recvMesh, "block_1", "block_1", 3, 2);
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
+
+  auto coordTransform = std::make_shared<stk::search::CoordTransformAddZ>("z=0");
+  transfer.add_recv_mesh_coord_transform(coordTransform);
+  transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEM_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferTest, faceSendMesh_ThreeDElementToTwoDNode)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(2);
+
+  stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  std::string sendMesh = "generated:2x2x2|sideset:Z|bbox:0,0,0,2,2,2";
+  std::string recvMesh = "textmesh:"
+                         "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
+                         "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
+                         "0,4,QUAD_4_2D,5,6,9,8,block_1\n"
+                         "|coordinates:"
+                         "0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2|dimension:2";
+
+  initialize_transfer_variables(sendMesh, recvMesh, "surface_1", "block_1", 3, 2);
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
+
+  auto coordTransform = std::make_shared<stk::search::CoordTransformAddZ>("z=2");
+  transfer.add_recv_mesh_coord_transform(coordTransform);
+  transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::FACE_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferTest, ThreeDElementToTwoDCentroid)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(2);
+
+  stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::ELEM_RANK;
+
+  std::string sendMesh = "generated:2x2x2|sideset:z|bbox:0,0,0,2,2,2";
+  std::string recvMesh = "textmesh:"
+                         "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
+                         "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
+                         "0,4,QUAD_4_2D,5,6,9,8,block_1\n"
+                         "|coordinates:"
+                         "0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2|dimension:2";
+
+  initialize_transfer_variables(sendMesh, recvMesh, "surface_1", "block_1", 3, 2);
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
+
+  auto coordTransform = std::make_shared<stk::search::CoordTransformAddZ>("z=0");
+  transfer.add_recv_mesh_coord_transform(coordTransform);
+  transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::FACE_RANK, stk::transfer::spmd::RecvMeshType::ELEMENT_CENTROID,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_centroid_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferTest, TwoDElementTo3DNode)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
+
+  stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  std::string sendMesh = "textmesh:"
+                         "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
+                         "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
+                         "0,4,QUAD_4_2D,5,6,9,8,block_1\n"
+                         "|coordinates:"
+                         "0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2|dimension:2";
+  std::string recvMesh = "generated:2x2x2|sideset:z";
+
+  initialize_transfer_variables(sendMesh, recvMesh, "block_1", "surface_1", 2, 3);
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
+
+  auto coordTransform = std::make_shared<stk::search::CoordTransformRemoveZ>();
+  transfer.add_recv_mesh_coord_transform(coordTransform);
+  transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEM_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferTest, TwoDElementToThreeDCentroid)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator eval(m_sendSpatialDim);
+
+  stk::mesh::EntityRank sendSearchEntityRank = stk::topology::ELEM_RANK;
+  stk::transfer::spmd::RecvMeshType recvSearchEntityType = stk::transfer::spmd::RecvMeshType::FACE_CENTROID;
+  stk::mesh::EntityRank sendFieldRank = stk::topology::NODE_RANK;
+  stk::mesh::EntityRank recvFieldRank = stk::topology::FACE_RANK;
+
+  std::string sendMesh = "textmesh:"
+                         "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "0,2,QUAD_4_2D,2,3,6,5,block_1\n"
+                         "0,3,QUAD_4_2D,4,5,8,7,block_1\n"
+                         "0,4,QUAD_4_2D,5,6,9,8,block_1\n"
+                         "|coordinates:"
+                         "0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2|dimension:2";
+  std::string recvMesh = "generated:2x2x2|sideset:z";
+
+
+  initialize_transfer_variables(sendMesh, recvMesh, "block_1", "surface_1", 2, 3);
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendFieldRank, recvFieldRank);
+  stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
+
+  auto coordTransform = std::make_shared<stk::search::CoordTransformRemoveZ>();
+  transfer.add_recv_mesh_coord_transform(coordTransform);
+  transfer.setup_master_element_transfer(*m_sendBulk, *m_recvBulk,
+                                         sendSearchEntityRank, recvSearchEntityType,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_centroid_transfer(eval, recvFieldRank);
+}
+
 }
 

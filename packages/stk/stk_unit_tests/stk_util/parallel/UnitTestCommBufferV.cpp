@@ -72,18 +72,18 @@ TEST(Parallel, comm_buffer_exp_double)
 
 TEST(Parallel, comm_buffer_exp_mixed)
 {
-  double double1 = 99.9;
-  int int1 = 9;
+  double double_1 = 99.9;
+  int int_1 = 9;
   const size_t num = 8;
-  std::vector<double> doubles(num, double1);
-  std::vector<int> ints(num, int1);
-  const double expected_double1 = 99.9;
-  const int expected_int1 = 9;
+  std::vector<double> doubles(num, double_1);
+  std::vector<int> ints(num, int_1);
+  const double expected_double_1 = 99.9;
+  const int expected_int_1 = 9;
 
   stk::CommBufferV buf;
 
-  buf.pack<double>(double1);
-  buf.pack<int>(int1);
+  buf.pack<double>(double_1);
+  buf.pack<int>(int_1);
   size_t expected_size_in_bytes = sizeof(double)+sizeof(int);
   EXPECT_EQ(expected_size_in_bytes, buf.size_in_bytes());
 
@@ -92,25 +92,25 @@ TEST(Parallel, comm_buffer_exp_mixed)
   expected_size_in_bytes += num*(sizeof(double)+sizeof(int));
   EXPECT_EQ(expected_size_in_bytes, buf.size_in_bytes());
 
-  buf.unpack<double>(double1);
+  buf.unpack<double>(double_1);
   expected_size_in_bytes -= sizeof(double);
   EXPECT_EQ(expected_size_in_bytes, buf.size_in_bytes());
-  EXPECT_EQ(expected_double1, double1);
+  EXPECT_EQ(expected_double_1, double_1);
 
-  buf.unpack<int>(int1);
+  buf.unpack<int>(int_1);
   expected_size_in_bytes -= sizeof(int);
   EXPECT_EQ(expected_size_in_bytes, buf.size_in_bytes());
-  EXPECT_EQ(expected_int1, int1);
+  EXPECT_EQ(expected_int_1, int_1);
 
   buf.unpack<double>(doubles.data(), num);
   buf.unpack<int>(ints.data(), num);
   expected_size_in_bytes = 0;
   EXPECT_EQ(expected_size_in_bytes, buf.size_in_bytes());
   for(double data : doubles) {
-    EXPECT_EQ(expected_double1, data);
+    EXPECT_EQ(expected_double_1, data);
   }
   for(double intdata : ints) {
-    EXPECT_EQ(expected_int1, intdata);
+    EXPECT_EQ(expected_int_1, intdata);
   }
 }
 

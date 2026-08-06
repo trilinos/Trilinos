@@ -103,6 +103,10 @@ class SourceMeshInterface
   virtual void update_ghosting(const EntityProcVec& entity_keys, const std::string& suffix = "") = 0;
 
   virtual std::vector<std::string> get_part_membership(const EntityKey& k) const = 0;
+
+  virtual void acquire_field_data() = 0;
+  virtual void release_field_data() = 0;
+  virtual bool has_acquired_field_data() const = 0;
 };
 
 template <typename RECVMESH>
@@ -129,19 +133,13 @@ class DestinationMeshInterface
 
   virtual void initialize() = 0;
 
-  virtual double* value(const EntityKey& k, const unsigned fieldIndex) const = 0;
-
-  virtual unsigned value_size(const EntityKey& k, const unsigned fieldIndex) const = 0;
-
-  virtual unsigned num_values(const EntityKey& e) const = 0;
-
-  virtual unsigned max_num_values() const = 0;
-
-  virtual unsigned value_key(const EntityKey& k, const unsigned fieldIndex) const = 0;
-
   virtual void update_values() = 0;
 
-  virtual unsigned get_index(const unsigned i) const = 0;
+  virtual void acquire_field_data() = 0;
+  virtual void release_field_data() = 0;
+  virtual bool has_acquired_field_data() const = 0;
+
+  virtual void populate_interpolation_data(const EntityKey& k, InterpolationData& data) const = 0;
 };
 //ENDTransfer_Interface
 

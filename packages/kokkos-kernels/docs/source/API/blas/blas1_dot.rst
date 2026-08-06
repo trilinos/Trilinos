@@ -6,11 +6,11 @@ Defined in header: :code:`KokkosBlas1_dot.hpp`
 .. code:: c++
 
   template <class execution_space, class XVector, class YVector>
-  typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
+  typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
   dot(const execution_space& space, const XVector& x, const YVector& y);
 
   template <class XVector, class YVector>
-  typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
+  typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::dot_type
   dot(const XVector& x, const YVector& y);
 
   template <class execution_space, class RV, class XMV, class YMV>

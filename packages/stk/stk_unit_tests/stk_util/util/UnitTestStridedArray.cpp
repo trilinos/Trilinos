@@ -139,7 +139,7 @@ void run_comparison_test_on_device()
   });
 
   int result = 0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& localResult) {
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int&, int& localResult) {
     int stride = N1;
     int wrongStride = 2;
     stk::util::StridedArray<int> sa(v1.data(), N2, stride);
@@ -174,7 +174,7 @@ void run_comparison_test_on_device_range_for()
   });
 
   int result = 0;
-  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& localResult) {
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int&, int& localResult) {
     int stride = N1;
     stk::util::StridedArray<int> sa(v1.data(), N2, stride);
 

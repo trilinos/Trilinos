@@ -1200,11 +1200,10 @@ public:
   void recreate_elem2_on_P1()
   {
     get_bulk().modification_begin();
-    stk::mesh::Entity elem2;
     if (get_bulk().parallel_rank() == 1) {
       stk::mesh::Part& hexPart = get_meta().get_topology_root_part(stk::topology::HEX_8);
       stk::mesh::PartVector parts = {&hexPart};
-      elem2 = stk::mesh::declare_element(get_bulk(), parts, 2, {5, 6, 7, 8, 9, 10, 11, 12});
+      stk::mesh::declare_element(get_bulk(), parts, 2, {5, 6, 7, 8, 9, 10, 11, 12});
     }
     get_bulk().modification_end();
   }

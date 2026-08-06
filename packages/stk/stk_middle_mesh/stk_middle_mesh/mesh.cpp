@@ -15,7 +15,6 @@ namespace middle_mesh {
 namespace mesh {
 
 const std::vector<utils::Point> NO_NODES;
-const std::vector<MeshEntityPtr> NO_DOWN;
 
 Mesh::~Mesh()
 {
@@ -566,6 +565,8 @@ void check_topology(std::shared_ptr<Mesh> mesh, int maxDim)
 
 void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::vector<MeshEntityPtr>& entitiesDown)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
   // check all downward adjacencies are not null
   std::array<int, 4> expectedNumDown = {0, 2, 3, 4};
   for (auto& entity : entities)
@@ -592,8 +593,9 @@ void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::
         if (entityDown != entitiesDown[entityDown->get_id()])
           throw std::runtime_error("downward entity ID is inconsistent");
       }
-
+ 
       std::array<MeshEntityPtr, MAX_DOWN> down;
+
       int entityDim = get_type_dimension(entity->get_type());
       for (int dim=0; dim < entityDim; ++dim)
       {
@@ -604,6 +606,7 @@ void check_topology_down(const std::vector<MeshEntityPtr>& entities, const std::
             throw std::runtime_error("duplicate downward entity");
       }
     }
+#pragma GCC diagnostic pop
 }
 
 void check_topology_up(const std::vector<MeshEntityPtr>& entities, const std::vector<MeshEntityPtr>& entitiesUp,

@@ -39,7 +39,6 @@
 #include "stk_mesh/base/Ngp.hpp"
 #include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/FieldData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/NgpForEachEntity.hpp"
@@ -47,7 +46,6 @@
 #include "stk_mesh/base/NgpProfilingBlock.hpp"
 #include "stk_mesh/base/NgpUtils.hpp"
 #include "stk_mesh/base/EntityFieldData.hpp"
-#include "stk_mesh/baseImpl/NgpFieldAux.hpp"
 
 namespace stk {
 namespace mesh {
@@ -244,8 +242,6 @@ class HostField : public NgpFieldBase
   {
     sync_to_device(execSpace);
   }
-
-  size_t synchronized_count() const override { return m_hostField->synchronized_count(); }
 
   FieldState state() const { return m_hostField->state(); }
 

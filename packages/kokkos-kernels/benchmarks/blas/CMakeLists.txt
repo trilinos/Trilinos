@@ -1,11 +1,25 @@
 kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+
 kokkoskernels_add_benchmark(
-  PerformanceTest_Benchmark
+  Blas1_Benchmark
   SOURCES
+    KokkosBlas1_axpy_benchmark.cpp
+    KokkosBlas1_axpby_benchmark.cpp
+    KokkosBlas1_scal_benchmark.cpp
+    KokkosBlas1_swap_benchmark.cpp
     KokkosBlas1_dot_benchmark.cpp
+    KokkosBlas1_nrminf_benchmark.cpp
+    KokkosBlas1_nrm1_benchmark.cpp
+    KokkosBlas1_nrm2_benchmark.cpp
+    KokkosBlas1_axpy_mv_benchmark.cpp
+    KokkosBlas1_axpby_mv_benchmark.cpp
+    KokkosBlas1_scal_mv_benchmark.cpp
     KokkosBlas1_dot_mv_benchmark.cpp
+    KokkosBlas1_nrminf_mv_benchmark.cpp
+    KokkosBlas1_nrm1_mv_benchmark.cpp
+    KokkosBlas1_nrm2_mv_benchmark.cpp
     KokkosBlas1_team_dot_benchmark.cpp
     BenchmarkMain.cpp)
 

@@ -77,7 +77,7 @@ public:
     }
 
 private:
-    int m_other_proc;
+    int m_other_proc = -1;
 };
 
 struct GraphEdgeProc
@@ -96,11 +96,11 @@ struct GraphEdgeProc
     void set_remote_processor_rank(int proc) { m_proc_id = proc; }
 
 private:
-    stk::mesh::EntityId m_localElementId;
-    stk::mesh::EntityId m_remoteElementId;
-    int m_localSide;
-    int m_remoteSide;
-    int m_proc_id;
+    stk::mesh::EntityId m_localElementId = 0;
+    stk::mesh::EntityId m_remoteElementId = 0;
+    int m_localSide = -1;
+    int m_remoteSide = -1;
+    int m_proc_id = -1;
 };
 
 struct ParallelInfo
@@ -148,73 +148,56 @@ std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
 struct SerialElementData
 {
 public:
-    SerialElementData(LocalId elementLocalId, stk::mesh::EntityId elementId, stk::topology elementTopology, unsigned sideIndex, const stk::mesh::EntityVector& sideNodes) :
-        m_elementLocalId(elementLocalId), m_elementIdentifier(elementId), m_elementTopology(elementTopology), m_sideIndex(sideIndex), m_sideNodes(sideNodes) {}
-
     SerialElementData()
     : m_elementLocalId(std::numeric_limits<impl::LocalId>::max()),
-      m_elementIdentifier(stk::mesh::InvalidEntityId),
       m_elementTopology(stk::topology::INVALID_TOPOLOGY),
-      m_sideIndex(std::numeric_limits<unsigned>::max()),
-      m_sideNodes(stk::mesh::EntityVector{}) {}
+      m_sideIndex(std::numeric_limits<unsigned>::max())
+    {}
 
-    stk::mesh::EntityId get_element_identifier() const { return m_elementIdentifier; }
     stk::topology get_element_topology() const { return m_elementTopology; }
-    const stk::mesh::EntityVector& get_side_nodes() const { return m_sideNodes; }
     LocalId get_element_local_id() const { return m_elementLocalId; }
     unsigned get_element_side_index() const { return m_sideIndex; }
     stk::mesh::Permutation get_permutation() const { return m_perm; }
 
-    bool is_parallel_edge() const { return false; }
-    int get_proc_rank_of_neighbor() const { return -1; }
-
-    void clear_side_nodes() { m_sideNodes.clear(); }
-    void resize_side_nodes(size_t n) { m_sideNodes.resize(n); }
-
     void set_element_local_id(LocalId id) { m_elementLocalId = id; }
-    void set_element_identifier(stk::mesh::EntityId id) { m_elementIdentifier = id; }
     void set_element_topology(stk::topology topo) { m_elementTopology = topo; }
     void set_element_side_index(unsigned index) { m_sideIndex = index; }
-    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
     void set_permutation(stk::mesh::Permutation perm) { m_perm = perm; }
 
-    stk::mesh::Entity * side_nodes_begin() { return m_sideNodes.data(); }
-
 private:
-    LocalId m_elementLocalId;
-    stk::mesh::EntityId m_elementIdentifier;
-    stk::topology m_elementTopology;
-    unsigned m_sideIndex;
-    stk::mesh::EntityVector m_sideNodes;
-    stk::mesh::Permutation m_perm;
+    LocalId m_elementLocalId = -1;
+    stk::topology m_elementTopology = stk::topology::INVALID_TOPOLOGY;
+    unsigned m_sideIndex = std::numeric_limits<unsigned>::max();
+    stk::mesh::Permutation m_perm = INVALID_PERMUTATION;
 };
 
 struct ParallelElementData
 {
     ParallelElementData()
     : remoteElementData(),
-      serialElementData()
+      serialElementData(),
+      m_elementIdentifier(stk::mesh::InvalidEntityId)
     {}
 
     bool is_parallel_edge() const { return get_proc_rank_of_neighbor() != -1; }
 
-    stk::mesh::EntityId get_element_identifier() const { return serialElementData.get_element_identifier(); }
+    stk::mesh::EntityId get_element_identifier() const { return m_elementIdentifier; }
     stk::topology get_element_topology() const { return serialElementData.get_element_topology(); }
-    const stk::mesh::EntityVector& get_side_nodes() const { return serialElementData.get_side_nodes(); }
+    const stk::mesh::EntityVector& get_side_nodes() const { return m_sideNodes; }
     LocalId get_element_local_id() const { return serialElementData.get_element_local_id(); }
     unsigned get_element_side_index() const { return serialElementData.get_element_side_index(); }
     stk::mesh::Permutation get_permutation() const { return serialElementData.get_permutation(); }
 
-    void clear_side_nodes() { serialElementData.clear_side_nodes(); }
-    void resize_side_nodes(size_t n) { serialElementData.resize_side_nodes(n); }
+    void clear_side_nodes() { m_sideNodes.clear(); }
+    void resize_side_nodes(size_t n) { m_sideNodes.resize(n); }
     void set_element_local_id(LocalId id) { serialElementData.set_element_local_id(id); }
-    void set_element_identifier(stk::mesh::EntityId id) { serialElementData.set_element_identifier(id); }
+    void set_element_identifier(stk::mesh::EntityId id) { m_elementIdentifier = id; }
     void set_element_topology(stk::topology topo) { serialElementData.set_element_topology(topo); }
     void set_element_side_index(unsigned index) { serialElementData.set_element_side_index(index); }
-    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { serialElementData.set_element_side_nodes(nodes); }
+    void set_element_side_nodes(const stk::mesh::EntityVector& nodes) { m_sideNodes = nodes; }
     void set_permutation(stk::mesh::Permutation perm) { serialElementData.set_permutation(perm); }
 
-    stk::mesh::Entity * side_nodes_begin() { return serialElementData.side_nodes_begin(); }
+    stk::mesh::Entity * side_nodes_begin() { return m_sideNodes.data(); }
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
@@ -225,6 +208,8 @@ struct ParallelElementData
 private:
     RemoteElementData remoteElementData;
     SerialElementData serialElementData;
+    stk::mesh::EntityId m_elementIdentifier = 0;
+    stk::mesh::EntityVector m_sideNodes;
 };
 
 struct SharedEdgeInfo

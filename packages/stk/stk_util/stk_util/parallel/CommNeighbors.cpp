@@ -63,8 +63,8 @@ CommNeighbors::~CommNeighbors()
 }
 
 stk::ParallelMachine CommNeighbors::setup_neighbor_comm(stk::ParallelMachine fullComm,
-                                                        const std::vector<int>& sendProcs,
-                                                        const std::vector<int>& recvProcs)
+                                                        [[maybe_unused]] const std::vector<int>& sendProcs,
+                                                        [[maybe_unused]] const std::vector<int>& recvProcs)
 {
   stk::ParallelMachine neighborComm = fullComm;
 #ifdef STK_MPI_SUPPORTS_NEIGHBOR_COMM
@@ -187,10 +187,10 @@ void store_recvd_data(const std::vector<unsigned char>& recvBuf,
   }
 }
 
-void CommNeighbors::perform_neighbor_communication(MPI_Comm neighborComm,
-                                                   const std::vector<unsigned char>& sendBuf,
-                                                   const std::vector<int>& sendCounts,
-                                                   const std::vector<int>& sendDispls,
+void CommNeighbors::perform_neighbor_communication([[maybe_unused]] MPI_Comm neighborComm,
+                                                   [[maybe_unused]] const std::vector<unsigned char>& sendBuf,
+                                                   [[maybe_unused]] const std::vector<int>& sendCounts,
+                                                   [[maybe_unused]] const std::vector<int>& sendDispls,
                                                          std::vector<unsigned char>& recvBuf,
                                                          std::vector<int>& recvCounts,
                                                          std::vector<int>& recvDispls)

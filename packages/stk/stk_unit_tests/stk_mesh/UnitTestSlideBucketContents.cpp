@@ -41,7 +41,6 @@ namespace {
 class TestBkt {
 public:
   TestBkt(int n) : m_x(n) {}
-  size_t size() const { return 1; }
   const int& operator[](size_t /*i*/) const { return m_x; }
 private:
   int m_x;
