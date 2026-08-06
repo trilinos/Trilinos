@@ -41,7 +41,7 @@ namespace Belos {
 
   template<class Storage, class MV, class OP, class DM>
   class PseudoBlockCGIter<Sacado::MP::Vector<Storage>, MV, OP, DM> :
-    virtual public CGIteration<Sacado::MP::Vector<Storage>, MV, OP, Teuchos::SerialDenseMatrix<int, Sacado::MP::Vector<Storage> > > {
+    virtual public CGIteration<Sacado::MP::Vector<Storage>, MV, OP, DM> {
 
   public:
 
@@ -49,8 +49,9 @@ namespace Belos {
     // Convenience typedefs
     //
     typedef Sacado::MP::Vector<Storage> ScalarType;
-    typedef Teuchos::SerialDenseMatrix<int, ScalarType> DMType;
+    typedef DM DMType;
     typedef MultiVecTraits<ScalarType,MV,DM> MVT;
+    typedef DenseMatTraits<ScalarType,DM> DMT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -382,7 +383,7 @@ namespace Belos {
     int i=0;
     std::vector<int> index(1);
     std::vector<ScalarType> rHz( numRHS_ ), rHz_old( numRHS_ ), pAp( numRHS_ );
-    Teuchos::SerialDenseMatrix<int, ScalarType> alpha( numRHS_,numRHS_ ), beta( numRHS_,numRHS_ );
+    DMType alpha( numRHS_,numRHS_ ), beta( numRHS_,numRHS_ );
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -427,9 +428,9 @@ namespace Belos {
         const int ensemble_size = pAp[i].size();
         for (int k=0; k<ensemble_size; ++k) {
           if (SVT::magnitude(pAp[i].coeff(k)) <= breakDownTol_)
-            alpha(i,i).fastAccessCoeff(k) = 0.0;
+            DMT::Value(alpha,i,i).fastAccessCoeff(k) = 0.0;
           else
-            alpha(i,i).fastAccessCoeff(k) = rHz[i].coeff(k) / pAp[i].coeff(k);
+            DMT::Value(alpha,i,i).fastAccessCoeff(k) = rHz[i].coeff(k) / pAp[i].coeff(k);
         }
       }
 
@@ -479,9 +480,9 @@ namespace Belos {
         const int ensemble_size = rHz[i].size();
         for (int k=0; k<ensemble_size; ++k) {
           if (SVT::magnitude(rHz[i].coeff(k)) <= breakDownTol_)
-            beta(i,i).fastAccessCoeff(k) = 0.0;
+            DMT::Value(beta,i,i).fastAccessCoeff(k) = 0.0;
           else
-            beta(i,i).fastAccessCoeff(k) = rHz[i].coeff(k) / rHz_old[i].coeff(k);
+            DMT::Value(beta,i,i).fastAccessCoeff(k) = rHz[i].coeff(k) / rHz_old[i].coeff(k);
         }
         index[0] = i;
         Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
@@ -499,7 +500,7 @@ namespace Belos {
           diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp[0] / rHz_old[0]);
         }
         rHz_old2 = rHz_old[0];
-        beta_old = beta(0,0);
+        beta_old = DMT::Value(beta,0,0);
         pAp_old = pAp[0];
       }
 

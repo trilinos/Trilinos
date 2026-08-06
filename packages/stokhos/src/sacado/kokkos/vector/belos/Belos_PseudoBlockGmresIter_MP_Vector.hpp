@@ -40,7 +40,7 @@ namespace Belos {
     
   template<class Storage, class MV, class OP, class DM>
   class PseudoBlockGmresIter<Sacado::MP::Vector<Storage>, MV, OP, DM> : 
-    virtual public Iteration<Sacado::MP::Vector<Storage>, MV, OP, Teuchos::SerialDenseMatrix<int, Sacado::MP::Vector<Storage> > > {
+    virtual public Iteration<Sacado::MP::Vector<Storage>, MV, OP, DM> {
     
   public:
     
@@ -48,8 +48,9 @@ namespace Belos {
     // Convenience typedefs
     //
     typedef Sacado::MP::Vector<Storage> ScalarType;
-    typedef Teuchos::SerialDenseMatrix<int, ScalarType> DMType;
-    typedef MultiVecTraits<ScalarType,MV,DMType> MVT;
+    typedef DM DMType;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
+    typedef DenseMatTraits<ScalarType,DM> DMT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -293,13 +294,13 @@ namespace Belos {
     // Projected matrices
     // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
     //
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > H_;
+    std::vector<Teuchos::RCP<DMType> > H_;
     // 
     // QR decomposition of Projected matrices for solving the least squares system HY = B.
     // R_: Upper triangular reduction of H
     // Z_: Q applied to right-hand side of the least squares system
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > R_;
-    std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > > Z_;  
+    std::vector<Teuchos::RCP<DMType> > R_;
+    std::vector<Teuchos::RCP<DMType> > Z_;  
 
     // Tolerance for ensemble breakdown
     typename SVT::magnitudeType breakDownTol_;
@@ -384,17 +385,22 @@ namespace Belos {
         //
         //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
         //
-        Teuchos::SerialDenseVector<int,ScalarType> y( Teuchos::Copy, Z_[i]->values(), curDim_ );
+        Teuchos::RCP<DM> y = DMT::SubviewCopy(*Z_[i], curDim_, 1);
+        DMT::SyncDeviceToHost( *y );
+        DMT::SyncDeviceToHost( *H_[i] );
         //
         //  Solve the least squares problem and compute current solutions.
         //
         blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
                 Teuchos::NON_UNIT_DIAG, curDim_, 1, one,
-                H_[i]->values(), H_[i]->stride(), y.values(), y.stride() );
+                DMT::GetConstRawHostPtr(*H_[i]), DMT::GetStride(*H_[i]),
+                DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
 
+        DMT::SyncHostToDevice( *y );
+        DMT::SyncHostToDevice( *H_[i] );
 
         Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
-        MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *cur_block_copy_vec );
+        MVT::MvTimesMatAddMv( one, *Vjp1, *y, zero, *cur_block_copy_vec );
       }
     }
     return currentUpdate;
@@ -421,7 +427,8 @@ namespace Belos {
         Teuchos::BLAS<int, ScalarType> blas;
         for (int j = 0; j < numRHS_; ++j)
           {
-            const ScalarType curNativeResid = (*Z_[j])(curDim_);
+            DMT::SyncDeviceToHost( *Z_[j] );
+            const ScalarType curNativeResid = DMT::ValueConst(*Z_[j],curDim_,0);
             (*norms)[j] = STS::magnitude (curNativeResid);
           }
     }
@@ -553,24 +560,23 @@ namespace Belos {
     for (int i=0; i<numRHS_; ++i) {
       // Create a vector if we need to.
       if (Z_[i] == Teuchos::null) {
-        Z_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>() );
+        Z_[i] = DMT::Create();
       }
-      if (Z_[i]->length() < numBlocks_+1) {
-        Z_[i]->shapeUninitialized(numBlocks_+1, 1);
+      if (DMT::GetNumRows(*Z_[i]) < numBlocks_+1) {
+        DMT::Reshape(*Z_[i], numBlocks_+1, 1, false);
       }
 
       // Check that the newstate vector is consistent.
-      TEUCHOS_TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
+      TEUCHOS_TEST_FOR_EXCEPTION(DMT::GetNumRows(*newstate.Z[i]) < curDim_, std::invalid_argument, errstr);
 
       // Put data into Z_, make sure old information is not still hanging around.
       if (newstate.Z[i] != Z_[i]) {
         if (curDim_==0)
-          Z_[i]->putScalar();
+          DMT::PutScalar(*Z_[i]);
 
-        Teuchos::SerialDenseVector<int,ScalarType> newZ(Teuchos::View,newstate.Z[i]->values(),curDim_+1);
-        Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > lclZ;
-        lclZ = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(Teuchos::View,Z_[i]->values(),curDim_+1) );
-        lclZ->assign(newZ);
+        Teuchos::RCP<const DM> newZ = DMT::SubviewConst(*newstate.Z[i],curDim_+1,1);
+        Teuchos::RCP<DM> lclZ = DMT::Subview(*Z_[i],curDim_+1,1);
+        DMT::Assign(*lclZ,*newZ);
 
         // Done with local pointers
 	      lclZ = Teuchos::null;
@@ -583,26 +589,25 @@ namespace Belos {
     for (int i=0; i<numRHS_; ++i) {
       // Create a matrix if we need to.
       if (H_[i] == Teuchos::null) {
-	      H_[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
+	      H_[i] = DMT::Create();
       }
-      if (H_[i]->numRows() < numBlocks_+1 || H_[i]->numCols() < numBlocks_) {
-	      H_[i]->shapeUninitialized(numBlocks_+1, numBlocks_);
+      if (DMT::GetNumRows(*H_[i]) < numBlocks_+1 || DMT::GetNumCols(*H_[i]) < numBlocks_) {
+	      DMT::Reshape(*H_[i], numBlocks_+1, numBlocks_, false);
       }
 
       // Put data into H_ if it exists, make sure old information is not still hanging around.
       if ((int)newstate.H.size() == numRHS_) {
 
         // Check that the newstate matrix is consistent.
-        TEUCHOS_TEST_FOR_EXCEPTION((newstate.H[i]->numRows() < curDim_ || newstate.H[i]->numCols() < curDim_), std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION((DMT::GetNumRows(*newstate.H[i]) < curDim_ || DMT::GetNumCols(*newstate.H[i]) < curDim_), std::invalid_argument,
               "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must have a consistent size to the current subspace dimension");
 
         if (newstate.H[i] != H_[i]) {
           // H_[i]->putScalar();
 
-          Teuchos::SerialDenseMatrix<int,ScalarType> newH(Teuchos::View,*newstate.H[i],curDim_+1, curDim_);
-          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
-          lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_[i],curDim_+1, curDim_) );
-          lclH->assign(newH);
+          Teuchos::RCP<const DM> newH = DMT::SubviewConst(*newstate.H[i],curDim_+1, curDim_);
+          Teuchos::RCP<DM> lclH = DMT::Subview(*H_[i],curDim_+1, curDim_);
+          DMT::Assign(*lclH,*newH);
 
           // Done with local pointers
           lclH = Teuchos::null;
@@ -731,14 +736,10 @@ namespace Belos {
         //
         // Get a view of the current part of the upper-hessenberg matrix.
         //
-        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > h_new
-          = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-              ( Teuchos::View, *H_[i], num_prev, 1, 0, curDim_ ) );
-        Teuchos::Array< Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > h_array( 1, h_new );
+        Teuchos::RCP<DM> h_new = DMT::Subview(*H_[i], num_prev, 1, 0, curDim_);
+        Teuchos::Array< Teuchos::RCP<DM> > h_array( 1, h_new );
 
-        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > r_new
-          = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-              ( Teuchos::View, *H_[i], 1, 1, num_prev, curDim_ ) );
+        Teuchos::RCP<DM> r_new = DMT::Subview(*H_[i], 1, 1, num_prev, curDim_);
 
         //
         // Orthonormalize the new block of the Krylov expansion
@@ -822,11 +823,13 @@ namespace Belos {
       //
       // QR factorization of Least-Squares system with Givens rotations
       //
+      DMT::SyncDeviceToHost(*H_[i]);
+      DMT::SyncDeviceToHost(*Z_[i]);
       for (j=0; j<curDim; j++) {
         //
         // Apply previous Givens rotations to new column of Hessenberg matrix
         //
-        blas.ROT( 1, &(*H_[i])(j,curDim), 1, &(*H_[i])(j+1, curDim), 1, &(*cs_[i])[j], &(*sn_[i])[j] );
+        blas.ROT( 1, &(DMT::Value(*H_[i],j,curDim)), 1, &(DMT::Value(*H_[i],j+1, curDim)), 1, &(*cs_[i])[j], &(*sn_[i])[j] );
       }
       //
       // Calculate new Givens rotation
@@ -834,18 +837,21 @@ namespace Belos {
       if ( curDim == 0)
       {
         // Initialize the lucky_breakdown_ mask to take account of perfect initial guess
-        lucky_breakdown_ = ((*Z_[i])(curDim) == zero);
+        lucky_breakdown_ = (DMT::Value(*Z_[i],curDim,0) == zero);
       }
-      auto lucky_breakdown_tmp = ((*H_[i])(curDim+1,curDim) == zero);
-      mask_assign(lucky_breakdown_,(*H_[i])(curDim,curDim)) = one;
+      auto lucky_breakdown_tmp = (DMT::Value(*H_[i],curDim+1,curDim) == zero);
+      mask_assign(lucky_breakdown_,DMT::Value(*H_[i],curDim,curDim)) = one;
       lucky_breakdown_ = lucky_breakdown_ || lucky_breakdown_tmp;
       //Teuchos::my_GivensRotator<ScalarType> GR;
-      blas.ROTG( &(*H_[i])(curDim,curDim), &(*H_[i])(curDim+1,curDim), &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
-      (*H_[i])(curDim+1,curDim) = zero;
+      blas.ROTG( &(DMT::Value(*H_[i],curDim,curDim)), &(DMT::Value(*H_[i],curDim+1,curDim)), &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
+      DMT::Value(*H_[i],curDim+1,curDim) = zero;
       //
       // Update RHS w/ new transformation
       //
-      blas.ROT( 1, &(*Z_[i])(curDim), 1, &(*Z_[i])(curDim+1), 1, &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
+      blas.ROT( 1, &(DMT::Value(*Z_[i],curDim,0)), 1, &(DMT::Value(*Z_[i],curDim+1,0)), 1, &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
+      //
+      DMT::SyncHostToDevice(*H_[i]);
+      DMT::SyncHostToDevice(*Z_[i]);
     }
 
   } // end updateLSQR()
