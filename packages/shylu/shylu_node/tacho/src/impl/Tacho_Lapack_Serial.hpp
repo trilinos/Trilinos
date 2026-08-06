@@ -123,33 +123,6 @@ template <typename T> struct LapackSerial {
         member.team_barrier();
       }
     }
-
-    template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void sytrf_lower_nopiv(const MemberType &member, const T tol, const int m,
-                                                         T *KOKKOS_RESTRICT A, const int as0, const int as1, int *info) {
-      *info = 0;
-      if (m <= 0)
-        return;
-
-      for (int p = 0; p < m; ++p) {
-        const int iend = m - p - 1;
-
-        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1, *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)*as1,
-                        *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
-
-        const auto alpha = *alpha11;
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend), [&](const int &i) { a21[i * as0] /= alpha; });
-        member.team_barrier();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, iend), [&](const int &i) {
-          const T aa = a21[i * as0];
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, i + 1), [&](const int &j) {
-            const T bb = a21[j * as0];
-            A22[i * as0 + j * as1] -= alpha * aa * bb;
-          });
-        });
-        member.team_barrier();
-      }
-    }
   };
 
   template <typename MemberType>
@@ -241,7 +214,7 @@ template <typename T> struct LapackSerial {
 
     for (int i = 0; i < m; ++i) {
       // check pivot
-      if (arith_traits::abs(A[i + i*lda]) < tol) {
+      if (arith_traits::abs(A[i + i*lda]) <= tol) { // including zero pivots with tol=0.0
         A[i + i*lda] = zero; // mark it with zero
         // zero out off-diagonal (assuming we hit null-space)
         for (int j = i+1; j < m; j++) { A[i + j*lda] = zero; }

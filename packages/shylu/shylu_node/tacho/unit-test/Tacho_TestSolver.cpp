@@ -191,16 +191,16 @@ int driver(const std::string file, const std::string rhs, const std::string meth
         if (step%3 == 0) {
           /// > default
           solver.shiftDiagonal(0);
-          solver.useDefaultPivotTolerance(0);
+          solver.useDefaultPivotTolerance(-1);
         } else if (step%3 == 1) {
           /// > test "shift diag" code path
           solver.shiftDiagonal(1);
-          solver.useDefaultPivotTolerance(0);
+          solver.useDefaultPivotTolerance(-1);
         } else {
           /// > test "replace tiny pivot" code path
           solver.shiftDiagonal(0);
           if (method == 0) {
-            // with tol = eps
+            // with tol = eps for non-pivot LDL
             solver.useDefaultPivotTolerance(1);
           } else {
             // with tol = sqrt(eps)||A||

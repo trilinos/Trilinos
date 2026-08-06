@@ -51,7 +51,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   bool storeTranspose = false;
 #endif
   bool shiftDiag = false;
-  int perturb = 0;
+  int perturb = -1;
   int nrhs = 1;
   bool randomRHS = false;
   bool onesRHS = false;
@@ -84,7 +84,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<bool>("order-connected-graph", "Flag to order connected graph separately (METIS)", &order_connected_graph_separately);
   opts.set_option<int>("graph-algo", "Type of graph algorithm (0: Natural, 1: AMD, 2: METIS)", &graph_algo_type);
   opts.set_option<bool>("store-trans", "Flag to store transpose", &storeTranspose);
-  opts.set_option<int>("perturb", "Option to replace tiny pivots (0: 0.0, 1: sqrt(eps), 2: eps, 3: sqrt(eps) * ||A||)", &perturb);
+  opts.set_option<int>("perturb", "Option to replace tiny pivots (-1: disable, 0: 0.0 (only effects non-pivot LDL), 1: eps, 2: sqrt(eps), 3: sqrt(eps) * ||A||)", &perturb);
   opts.set_option<bool>("shift", "Flag to shift diagonal", &shiftDiag);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<std::string>("method", "Solution method: ldl-nopiv, chol, ldl, lu", &method_name);
@@ -216,11 +216,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.setLevelSetOptionAlgorithmVariant(variant);
     if (!default_setup) {
       // tiny pivot options
-      if (perturb != 0) {
+      if (perturb >= 0) {
         if (verbose) std::cout << " > perturb tiny pivots (" << perturb << ")" << std::endl;
         solver.useDefaultPivotTolerance(perturb);
       } else {
-        solver.useDefaultPivotTolerance(0);
+        solver.useDefaultPivotTolerance(-1);
       }
       if (shiftDiag) {
         if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;

@@ -48,11 +48,11 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
       const auto policy_update = policy_type(exec_instance, 0, mn*mn);
       const auto policy_diag   = policy_type(exec_instance, i, i+1);
 
-      if (tol > 0.0) {
+      if (tol >= 0.0) {
         // == Factor ith row (!! Checking for tiny pivot !!) ==
         // scaling the diagonal
         Kokkos::parallel_for(policy_scale, KOKKOS_LAMBDA(const ordinal_type &j) {
-          if (arith_traits::abs(A(i, i)) < tol) {
+          if (arith_traits::abs(A(i, i)) <= tol) { // including zero pivots with tol=0.0
             // if tiny pivot, zero-out off-diagonal (assuming we hit null-space)
             A(i, j) = zero; 
           } else {
@@ -64,17 +64,17 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
         // update trailing submatrix
         Kokkos::parallel_for(policy_update, KOKKOS_LAMBDA(const ordinal_type &id) {
           // skip update if tiny pivot
-          if (arith_traits::abs(A(i, i)) >= tol) {
+          if (arith_traits::abs(A(i, i)) > tol) {
             ordinal_type k = (i+1) + id / mn;
             ordinal_type j = (i+1) + id % mn;
             A(k, j) -= (conjugate ? arith_traits::conj(A(i, k)) : A(i, k)) * A(i, i) * A(i, j);
           }
         });
 
-        // mark tiny diagonal with zero
+        // mark tiny diagonal with zero (including zero pivots with tol=0.0 to count into rval)
         // NOTE: any better way (using single)?
         Kokkos::parallel_for(policy_diag, KOKKOS_LAMBDA(const ordinal_type &id) {
-          if (arith_traits::abs(A(id, id)) < tol) {
+          if (arith_traits::abs(A(id, id)) <= tol) {
               A(id, id) = zero;
               rval_d(0) ++;
           }

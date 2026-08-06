@@ -35,7 +35,7 @@ Driver<VT, DT>::Driver()
       #else
       _variant(-1), // sequential by default
       #endif
-      _nstreams(16), _team_on_user_stream(false), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(0), _pivot_tol(0.0),
+      _nstreams(16), _team_on_user_stream(false), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(-1), _pivot_tol(-1.0),
 #if defined(KOKKOS_ENABLE_HIP)
       _store_transpose(true)
 #else
@@ -215,22 +215,29 @@ template <typename VT, typename DT> void Driver<VT, DT>::shiftDiagonal(const int
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
-  _pivot_tol = 0.0;
+  _replace_tiny_pivot = -1;
+  _pivot_tol = -1.0;
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance(const int option) {
   using arith_traits = ArithTraits<value_type>;
   _replace_tiny_pivot = option;
-  if (option == 1) {
+
+  // NOTE: in non-pivot LDL, we replace tiny pivots (diagonals that are smaller than or equal to tol) with one
+  //       while in Chol and LU, we replace tiny pivots (that are smaller than tol) with tol (so only tol>0.0 has any effects)
+  if (option == 0) {
+    // tol = 0.0 (perturbe only zero pivot)
+    _pivot_tol = 0.0;
+  } else if (option == 1) {
     // tol = eps
     _pivot_tol = arith_traits::epsilon();
   } else if (option == 2) {
     // tol = sqrt(eps)
     _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
   } else {
-    // if option == 0, then tol = 0.0
-    // if option >  2, then tol = sqrt(tol)||A||
-    _pivot_tol = 0.0;
+    // if option < 0, then tol = -1.0 (no pivot check)
+    // if option > 2, then tol = sqrt(tol)||A|| (computed in factorize)
+    _pivot_tol = -1.0;
   }
 }
 
@@ -494,8 +501,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
   // internally save the pivot tol
   if (_replace_tiny_pivot > 2) {
     _pivot_tol = shift;
-  } else if (_replace_tiny_pivot == 0) {
-    _pivot_tol = zero;
   }
 
   if (_verbose) {
@@ -523,7 +528,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     }
     alpha = Kokkos::sqrt(alpha);
     if (_shift_diag != 0) printf(" > shifting diagonal by %.2e (||A|| = %.2e)\n",_shift,alpha);
-    if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e (%d, ||A|| = %.2e)\n",_pivot_tol,_replace_tiny_pivot,alpha);
+    if (_replace_tiny_pivot >= 0) printf( " > using pivot tol = %.2e (%d, ||A|| = %.2e)\n",_pivot_tol,_replace_tiny_pivot,alpha);
     if (_m <= _small_problem_thres) {
       printf( " Small matrix\n" );
     }
@@ -888,8 +893,6 @@ template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
   printf( " nstreams            = %d\t (on device, multi streams are used)\n\n", _nstreams);
 
   printf( " pivot_tol           = %e\t (tolerance for tiny pivot perturbation)\n", _pivot_tol);
-
-
 }
 
 } // namespace Tacho

@@ -71,15 +71,16 @@ template <typename T> struct LapackTeam {
       for (int p = 0; p < m; ++p) {
         const int jend = m - p - 1;
 
-        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1, *KOKKOS_RESTRICT a12t = A + (p)*as0 + (p + 1) * as1,
-                        *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
+        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1,
+          *KOKKOS_RESTRICT a12t = A + (p)*as0 + (p + 1) * as1,
+          *KOKKOS_RESTRICT A22  = A + (p + 1) * as0 + (p + 1) * as1;
 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
+          if (arith_traits::abs(*alpha11) < tol) {
+            A[(p)*as0 + (p)*as1] = T(tol);
+          }
           if (*info == 0 && arith_traits::real(*alpha11) <= zero) {
             *info = 1+p;
-          }
-          if (*info == 0 && arith_traits::abs(*alpha11) < tol) {
-            A[(p)*as0 + (p)*as1] = T(tol);
           }
           *alpha11 = sqrt(arith_traits::real(*alpha11));
         });
@@ -409,7 +410,7 @@ template <typename T> struct LapackTeam {
         *KOKKOS_RESTRICT a12t    = A + (p)     + (p + 1) * lda,
         *KOKKOS_RESTRICT A22     = A + (p + 1) + (p + 1) * lda;
 
-      if (arith_traits::abs(*alpha11) < tol) {
+      if (arith_traits::abs(*alpha11) <= tol) { // including zero pivots with tol=0.0
         // mark tiny diagonal with zero
         *alpha11 = zero;
         // zero out off-diagonal
