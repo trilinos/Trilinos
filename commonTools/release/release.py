@@ -77,7 +77,7 @@ def main():
     # Checkout and push new branch to
     # update release branch's Version.cmake
 
-    rel_update_branch = f"update-rel-version-{dev['major']}-{dev['minor']}"
+    rel_update_branch = f"update-rel-version-{rel['major']}-{rel['minor']}"
     checkout_branch(rel_update_branch, git_root)
     dev_mode = False
     update_version_cmake(args.rel_version, rel_branch, dev_mode, git_root)
@@ -128,6 +128,8 @@ def main():
     print(f"Created GitHub label: {label_name}")
 
     return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())
 
