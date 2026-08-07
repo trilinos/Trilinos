@@ -234,7 +234,10 @@ double yetAnotherFunc()
 
   for (int i=0; i<10000; i++)
   {
-    sum += i*i*i;
+    // Use a wider type so i*i*i stays defined for i >= 1290 under UBSan.
+    const long long iCubed =
+      static_cast<long long>(i) * static_cast<long long>(i) * static_cast<long long>(i);
+    sum += static_cast<double>(iCubed);
   }
 
   return sum;
