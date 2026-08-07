@@ -59,6 +59,63 @@ Krino:
 
 Minitensor:
 
+  - New capability: quaternions and conversions among rotation
+    representations (rotation matrix, unit quaternion, principal rotation
+    vector), using a singularity-free Spurrier extraction, along with a
+    helper that keeps a rotation vector continuous across the 2 pi
+    boundary and the axial vector operator vee(). Also new are exp_sym()
+    and exp_eig_sym(), the eigendecomposition exponential of a symmetric
+    tensor, mirroring the existing log_sym() and log_eig_sym().
+    https://github.com/trilinos/Trilinos/pull/15532
+    https://github.com/trilinos/Trilinos/pull/15514
+
+  - The general log() and exp() now follow the current published
+    algorithms. For dimensions three and lower, log() uses Gauss-Legendre
+    partial-fraction Pade evaluation inside the Pade trust region and
+    Schur-based inverse scaling and squaring (Al-Mohy and Higham, SIAM J.
+    Sci. Comput. 34(4), 2012) outside it, and exp() uses the parameter
+    selection of Al-Mohy and Higham, SIAM J. Matrix Anal. Appl. 31(3),
+    2009. Measured against an 80-bit eigendecomposition reference, log()
+    is 1.8 to 4.3 times more accurate and 1.4 to 4.7 times faster away
+    from the identity, with no failures in 17,500 samples.
+    https://github.com/trilinos/Trilinos/pull/15515
+
+  - Correctness and robustness fixes. log() no longer aborts in debug
+    builds or writes out of bounds in release builds on ill-conditioned
+    symmetric positive definite tensors, where a catastrophically
+    cancelling determinant produced a non-finite scaling factor: 39
+    percent of random SPD tensors at condition 1e14 used to fail, none do
+    now. eig_sym() returns a consistent (V, D) pair in two dimensions,
+    the 2x2 singular value decomposition canonicalizes its singular
+    values, operations that require symmetric positive definite input now
+    fail loudly instead of returning garbage, and the 2x2 eigenvalue and
+    square root scaling is safe for Sacado FAD scalars, which repaired
+    downstream code that instantiates log() on a tensor of FAD scalars.
+    https://github.com/trilinos/Trilinos/pull/15513
+    https://github.com/trilinos/Trilinos/pull/15393
+    https://github.com/trilinos/Trilinos/pull/15397
+    https://github.com/trilinos/Trilinos/pull/15398
+    https://github.com/trilinos/Trilinos/pull/15520
+
+  - The headers were reorganized, with no change in functionality. The
+    .i.h and .t.h sub-headers were merged into their parents. The
+    TeuchosCore and KokkosKernels dependencies were dropped. Code that
+    includes MiniTensor.h is unaffected.
+    https://github.com/trilinos/Trilinos/pull/15523
+    https://github.com/trilinos/Trilinos/pull/15527
+    https://github.com/trilinos/Trilinos/pull/15529
+
+  - The package is now documented.
+    https://trilinos.github.io/docs/minitensor/index.html
+    https://github.com/trilinos/Trilinos/pull/15531
+    https://github.com/trilinos/Trilinos/pull/15533
+
+  - The tests were split by module, property-based tests were added for
+    the matrix decompositions, and every public header is now compiled on
+    its own so that it stays self-contained.
+    https://github.com/trilinos/Trilinos/pull/15395
+    https://github.com/trilinos/Trilinos/pull/15534
+
 
 MueLu:
 
