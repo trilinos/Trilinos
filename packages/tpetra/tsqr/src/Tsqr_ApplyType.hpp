@@ -33,7 +33,7 @@ namespace TSQR {
 /// and "H" mean the same thing).
 ///
 /// std::invalid_argument is thrown if an invalid input is given.
-class ApplyType {
+class KOKKOSTSQR_LIB_DLL_EXPORT ApplyType {
  public:
   /// \brief Constructor
   ///

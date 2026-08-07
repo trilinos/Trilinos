@@ -205,18 +205,19 @@ class MatrixBuilder {
     auto data = vec->getLocalViewHost(Tpetra::Access::ReadOnly);
 
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
-      ssize_t gid = ssize_t(vec->getMap()->getGlobalElement(i));
+      gno_t gid = vec->getMap()->getGlobalElement(i);
 
       scalar_t expected = 0;
       if (squareMatrix) {
-        for (ssize_t j = 0; j < ssize_t(nEntriesPerRow); j++) {
-          ssize_t idx = (nGlobalRow + gid - j) % nGlobalRow;
+        for (gno_t j = 0; j < gno_t(nEntriesPerRow); j++) {
+          gno_t nGR = gno_t(nGlobalRow);
+          gno_t idx = (nGR + gid - j) % nGR;
           expected += scalar_t(idx);
         }
       } else {
-        for (ssize_t j = 0; j < ssize_t(nEntriesPerRow); j++) {
-          ssize_t idx = gid - j;
-          if (idx >= 0 && idx < ssize_t(nGlobalRow))
+        for (gno_t j = 0; j < gno_t(nEntriesPerRow); j++) {
+          gno_t idx = gid - j;
+          if (idx >= 0 && idx < gno_t(nGlobalRow))
             expected += scalar_t(idx);
         }
       }
