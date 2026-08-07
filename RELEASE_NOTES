@@ -1,5 +1,100 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 17.2 Release Notes                         August XX, 2026 #
+#                                                                             #
+###############################################################################
+
+The test results from Trilinos testing (PRs and nightly builds) are now posted
+to a public CDash dashboard:
+https://my.cdash.org/index.php?project=Trilinos
+
+
+
+Amesos2:
+
+  - Pardiso, MUMPS changes?
+  
+
+Belos:
+
+  - Solvers now provide more more detailed solve status reporting.
+    The "Unconverged" return type has been split into "MaxItersReached",
+    "MaxRestartsReached". "OrthonormFailure", "NaNDetected", "BreakdownDetected",
+    "LossOfAccuracyDetected", "NonspecificException", "InconsistentState",
+    "Undetermined". 
+    https://github.com/trilinos/Trilinos/pull/15231
+
+
+Galeri:
+
+  - Added the creation of finite element mass matrices for use in testing.
+    https://github.com/trilinos/Trilinos/pull/15318
+    
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 5.2.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/15453
+    https://github.com/kokkos/kokkos/blob/develop/CHANGELOG.md
+    https://github.com/kokkos/kokkos-kernels/blob/develop/CHANGELOG.md
+
+
+Ifpack2:
+
+  -
+    https://github.com/trilinos/Trilinos/pull/15439
+
+
+Intrepid2:
+
+  - 
+    https://github.com/trilinos/Trilinos/pull/15269
+
+
+Krino:
+
+  - Snapshot
+    https://github.com/trilinos/Trilinos/pull/15526
+
+
+Minitensor:
+
+
+MueLu:
+
+  - Add a new stength-of-connection matrix that leverages an approximate inverse
+    of a mass matrix. 
+    https://github.com/trilinos/Trilinos/pull/15239
+
+
+Panzer:
+
+  - Large update to the documenation
+    https://github.com/trilinos/Trilinos/pull/15503
+
+
+STK:
+
+  - Inclusion of version 5.31.3
+    https://github.com/trilinos/Trilinos/pull/15427
+    https://github.com/trilinos/Trilinos/pull/15530
+    https://github.com/trilinos/Trilinos/blob/8aec0c9da36965e5b369dbc77ff97341f90b410b/packages/stk/CHANGELOG.md?plain=1#L3-L41
+
+
+Tempus:
+
+  - The tutorial pages and documentation have been updated and extended.
+    https://github.com/trilinos/Trilinos/pull/15365
+    https://github.com/trilinos/Trilinos/pull/15387
+    https://github.com/trilinos/Trilinos/pull/15423
+
+
+Teko:
+
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 17.1.2 Release Notes                       August 13, 2026 #
 #                                                                             #
 ###############################################################################
