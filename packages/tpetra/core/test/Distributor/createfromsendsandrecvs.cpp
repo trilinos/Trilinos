@@ -270,8 +270,8 @@ TEUCHOS_UNIT_TEST(Distributor, createfromsendsandrecvs) {
       myOut << "ProcID " << my_proc << " getProcsTo new " << bt << endl;
       success = false;
     }
-  ArrayView<const long unsigned int> c = dist.getLengthsFrom();
-  ArrayView<const long unsigned int> d = newdist.getLengthsFrom();
+  auto c = dist.getLengthsFrom();
+  auto d = newdist.getLengthsFrom();
   if (c.size() != d.size()) {
     myOut << "ProcID " << my_proc << " getLengthsFrom does not match " << b << endl;
     success = false;
@@ -283,8 +283,8 @@ TEUCHOS_UNIT_TEST(Distributor, createfromsendsandrecvs) {
       success = false;
       break;
     }
-  ArrayView<const long unsigned int> ct = dist.getLengthsTo();
-  ArrayView<const long unsigned int> dt = newdist.getLengthsTo();
+  auto ct = dist.getLengthsTo();
+  auto dt = newdist.getLengthsTo();
   if (ct.size() != dt.size()) {
     myOut << "ProcID " << my_proc << " getLengthsTo size does not match " << endl;
     success = false;

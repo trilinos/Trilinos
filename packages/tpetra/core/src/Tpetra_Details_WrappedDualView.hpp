@@ -18,7 +18,7 @@
 #include "TpetraCore_DLLExportMacro.h"
 #include <sstream>
 
-//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+// #define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
