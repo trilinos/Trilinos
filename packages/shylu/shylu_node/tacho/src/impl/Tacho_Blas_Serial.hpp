@@ -479,7 +479,6 @@ template <typename T> struct BlasSerial {
   inline static void trsm_defs(const char side, const char uplo, const char transa, const char diag,
                                int m, int n, const T alpha, const T *A, int lda,
                                                             /* */ T *B, int ldb) {
-    typedef ArithTraits<T> arith_traits;
     const T one(1.0), zero(0.0);
 
     if (alpha == zero) {
@@ -537,11 +536,11 @@ template <typename T> struct BlasSerial {
               for (int j = 0; j < n; j++) {
                 // scale
                 if (diag != 'U' && diag != 'u') {
-                  B[i + j*ldb] /= arith_traits::conj(A[i + i*lda]);
+                  B[i + j*ldb] /= ArithTraits<T>::conj(A[i + i*lda]);
                 }
                 // update
                 for (int l = i+1; l < m; l++) {
-                  B[l + j*ldb] -= arith_traits::conj(A[i + l*lda]) * B[i + j*ldb];
+                  B[l + j*ldb] -= ArithTraits<T>::conj(A[i + l*lda]) * B[i + j*ldb];
                 }
               }
             }
