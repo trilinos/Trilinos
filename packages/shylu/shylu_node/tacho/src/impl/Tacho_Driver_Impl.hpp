@@ -25,7 +25,7 @@ Driver<VT, DT>::Driver()
     : _method_setup(1), _method(1), _order_connected_graph_separately(true), _graph_algo_type(-1), _m(0), _nnz(0),
       _ap(), _h_ap(), _aj(), _h_aj(), _perm(), _h_perm(), _peri(), _h_peri(),
       _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
-      _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024),
+      _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _debug(0), _small_problem_thres(1024),
 #ifdef TACHO_DEPRECATED_PARAMETERS
       _serial_thres_size(-1), _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0),
 #endif
@@ -66,7 +66,10 @@ template <typename VT, typename DT> Driver<VT, DT> Driver<VT, DT>::duplicate() {
 ///
 /// common options
 ///
-template <typename VT, typename DT> void Driver<VT, DT>::setVerbose(const ordinal_type verbose) { _verbose = verbose; }
+template <typename VT, typename DT> void Driver<VT, DT>::setVerbose(const ordinal_type verbose, const ordinal_type debug) {
+  _verbose = verbose;
+  _debug = debug;
+}
 
 template <typename VT, typename DT>
 void Driver<VT, DT>::setSmallProblemThresholdsize(const ordinal_type small_problem_thres) {
@@ -460,6 +463,14 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     setFactorizationMethod(method);
   }
 
+  if (_debug) {
+    // save ax for debuging
+    if (_ax.extent(0) < ax.extent(0)) {
+      Kokkos::resize(_ax, ax.extent(0));
+    }
+    Kokkos::deep_copy(_ax, ax);
+  }
+
   const mag_type zero(0);
   mag_type alpha(zero); // ||A||
   mag_type shift(0.0);
@@ -547,9 +558,17 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     Kokkos::Timer timer;
 
     timer.reset();
-    _A = value_type_matrix_host("A", _m, _m);
+    if (ordinal_type(_A.extent(0)) != _m || ordinal_type(_A.extent(1)) != _m) {
+      Kokkos::resize(_A, _m, _m);
+    }
+
+    // expand A into dense format on host
+    const value_type zero(0);
     auto h_ax = Kokkos::create_mirror_view_and_copy(host_memory_space(), ax);
     for (ordinal_type i = 0; i < _m; ++i) {
+      // zero out i-th row
+      for (ordinal_type j = 0; j < _m; ++j) _A(i, j) = zero;
+      // insert non-zero values to i-th row
       const size_type jbeg = _h_ap(i), jend = _h_ap(i + 1);
       for (size_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = _h_aj(j);
@@ -564,25 +583,31 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     }
     t_copy = timer.seconds();
 
+    // factor A by Lapack on host
+    int rval (0);
     timer.reset();
     switch (_method) {
-    case LDL_nopiv:
     case Cholesky : {
-      Tacho::Chol<Uplo::Upper, Algo::External>::invoke(_A);
+      rval = Tacho::Chol<Uplo::Upper, Algo::External>::invoke(_A);
       break;
     }
+    case LDL_nopiv:
     case LDL: {
       _P = ordinal_type_array_host("P", 4 * _m);
       _D = value_type_matrix_host("D", _m, 2);
       auto W = value_type_array_host("W", 32 * _m);
-      Tacho::LDL<Uplo::Lower, Algo::External>::invoke(_A, _P, W);
-      Tacho::LDL<Uplo::Lower, Algo::External>::modify(_A, _P, _D);
+      rval = Tacho::LDL<Uplo::Lower, Algo::External>::invoke(_A, _P, W);
+      if (rval == 0) {
+        Tacho::LDL<Uplo::Lower, Algo::External>::modify(_A, _P, _D);
+      }
       break;
     }
     case SymLU: {
       _P = ordinal_type_array_host("P", 4 * _m);
-      Tacho::LU<Algo::External>::invoke(_A, _P);
-      Tacho::LU<Algo::External>::modify(_m, _P);
+      rval = Tacho::LU<Algo::External>::invoke(_A, _P);
+      if (rval == 0) {
+        Tacho::LU<Algo::External>::modify(_m, _P);
+      }
       break;
     }
     default: {
@@ -592,6 +617,10 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     }
     }
     t_factor = timer.seconds();
+    if (rval != 0) {
+      std::cout << "Error: factorize_small_host returns non-zero error code (" << rval << ")" << std::endl;
+      TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "factorize_small_host returns non-zero error code.");
+    }
   }
 
   if (_verbose) {
@@ -655,8 +684,15 @@ int Driver<VT, DT>::solve(const value_type_matrix &x, const value_type_matrix &b
     TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) || t.extent(1) < x.extent(1), std::logic_error,
                              "Temporary rhs vector t is smaller than x");
     auto tt = Kokkos::subview(t, Kokkos::pair<ordinal_type, ordinal_type>(0, x.extent(0)),
-                              Kokkos::pair<ordinal_type, ordinal_type>(0, x.extent(1)));
+                                 Kokkos::pair<ordinal_type, ordinal_type>(0, x.extent(1)));
     _N->solve(x, b, tt, _verbose);
+  }
+  if (_debug) {
+    // print current parameters
+    printParameters();
+    // compute current residuanl norm
+    Kokkos::deep_copy(t, b);
+    computeRelativeResidual(x, t);
   }
   return 0;
 }
@@ -723,12 +759,22 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
 }
 
 template <typename VT, typename DT>
+double Driver<VT, DT>::computeRelativeResidual(const value_type_matrix &x, const value_type_matrix &b,
+                                               const bool verbose) {
+  if (_debug) {
+    return computeRelativeResidual(_ax, x, b, 0.0, verbose);
+  } else {
+    return -1.0;
+  }
+}
+template <typename VT, typename DT>
 double Driver<VT, DT>::computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x,
-                                               const value_type_matrix &b, const mag_type shift) {
+                                               const value_type_matrix &b, const mag_type shift,
+                                               const bool verbose) {
   CrsMatrixBase<value_type, device_type> A;
   A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-  return Tacho::computeRelativeResidual(A, x, b, shift, _verbose);
+  return Tacho::computeRelativeResidual(A, x, b, shift, (verbose && _verbose));
 }
 
 template <typename VT, typename DT>
@@ -871,6 +917,7 @@ template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
   }
   // ** options
   printf( " verbose             = %d\n", _verbose );             // print
+  printf( " debug               = %d\n", _debug );               // debug
   printf( " store_transpose     = %s\t (store transpose explicitly)\n", (_store_transpose ? "true" : "false"));
   printf( " small_problem_thres = %d\t (smaller than this, use lapack)\n\n", _small_problem_thres);
 
@@ -892,7 +939,16 @@ template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
   printf( " device_solve_thres  = %d\t (bigger than this threshold, device function is used)\n", _device_solve_thres);
   printf( " nstreams            = %d\t (on device, multi streams are used)\n\n", _nstreams);
 
-  printf( " pivot_tol           = %e\t (tolerance for tiny pivot perturbation)\n", _pivot_tol);
+  // ** pivot/diagonal options
+  printf( " replace_tiny_pivot  = %d\t (option to replace tiny pivots)\n", _replace_tiny_pivot);
+  if (_replace_tiny_pivot >= 0) {
+    printf( " pivot_tol           = %e\t (tolerance for tiny pivot perturbation)\n", _pivot_tol);
+  }
+  printf( " shift_diagonal      = %d\t (option to globally shift diagonal)\n", _shift_diag);
+  if (_shift_diag != 0) {
+    printf( " shift               = %e\t (value to shift diagonals)\n",_shift);
+  }
+  printf("\n");
 }
 
 } // namespace Tacho

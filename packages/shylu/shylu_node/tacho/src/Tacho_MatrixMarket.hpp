@@ -257,7 +257,7 @@ template <typename ValueType> struct MatrixMarket {
       printf("  Time\n");
       printf("             time for reading A:                              %10.6f s\n", t);
       printf("\n");
-      printf("  Sparse Matrix (%s) \n", (symmetry ? "symmetric" : "non-symmetric"));
+      printf("  Sparse Matrix (%s, %s) \n", (cmplx ? "complex" : "real"), (symmetry ? "symmetric" : "non-symmetric"));
       printf("             number of rows:                                  %10d\n", m);
       printf("             number of cols:                                  %10d\n", n);
       printf("             number of nonzeros from input:                   %10d\n", ordinal_type(nnz_input));

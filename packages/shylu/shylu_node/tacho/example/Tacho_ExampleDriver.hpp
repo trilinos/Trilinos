@@ -34,6 +34,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
   int nthreads = 1;
   bool verbose = false;
+  bool debug = false;
   bool sanitize = false;
   bool duplicate = false;
   std::string file = "test.mtx";
@@ -72,6 +73,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("debug", "Flag for debug printing", &debug);
   opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<bool>("duplicate", "Flag to duplicate input graph in the solver", &duplicate);
   opts.set_option<int>("mm-base", "Base for reading matrix file", &mm_base);
@@ -211,7 +213,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     Tacho::Driver<value_type, device_type> solver;
 
     /// common options
-    solver.setVerbose(verbose);
+    solver.setVerbose(verbose, debug);
     solver.setSolutionMethod(method);
     solver.setLevelSetOptionAlgorithmVariant(variant);
     if (!default_setup) {
@@ -343,7 +345,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
           timer.reset();
           solver.solve(x, b, t);
           double warmup_solve_time = timer.seconds();
-          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift);
+          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift, !debug);
           std::cout << "TachoSolver (warm-up): residual = " << res
                     << " time " << warmup_facto_time << " + " << warmup_solve_time;
           if (shiftDiag) std::cout << " using shift = " << shift;
@@ -362,7 +364,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
           solver.solve(x, b, t);
           solve_time += timer.seconds();
 #endif
-          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b, shift);
+          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b, shift, !debug);
           if (res > tol) pass = false;
           std::cout << "TachoSolver: residual = " << res;
           if (shiftDiag) std::cout << " using shift = " << shift;
