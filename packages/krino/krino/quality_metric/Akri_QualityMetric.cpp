@@ -12,34 +12,93 @@
 namespace krino
 {
 
+double tet4_mean_ratio_from_edges(const std::array<stk::math::Vector3d,6> &edges)
+{
+  static const double sqrt2 = std::sqrt(2.);
+  const double tetVolumeTimes6 = Dot(edges[3], Cross(edges[2], edges[0]));
+  const double sum = (edges[0].length_squared() + edges[1].length_squared() + edges[2].length_squared() +
+      edges[3].length_squared() + edges[4].length_squared() + edges[5].length_squared()) / 6;
+  return sqrt2 * tetVolumeTimes6 / (sum*std::sqrt(sum));
+}
+
 template <typename CONTAINER>
 double tet4_mean_ratio(const CONTAINER &nodeLocations)
 {
   STK_ThrowAssert(nodeLocations.size() == 4 || nodeLocations.size() == 10);
-
-  const stk::math::Vector3d edge0 = nodeLocations[1] - nodeLocations[0];
-  const stk::math::Vector3d edge1 = nodeLocations[2] - nodeLocations[1];
-  const stk::math::Vector3d edge2 = nodeLocations[0] - nodeLocations[2];
-  const stk::math::Vector3d edge3 = nodeLocations[3] - nodeLocations[0];
-  const stk::math::Vector3d edge4 = nodeLocations[3] - nodeLocations[1];
-  const stk::math::Vector3d edge5 = nodeLocations[3] - nodeLocations[2];
-
-  static const double sqrt2 = std::sqrt(2.);
-  const double tetVolumeTimes6 = Dot(edge3, Cross(edge2, edge0));
-  const double sum = (edge0.length_squared() + edge1.length_squared() + edge2.length_squared() +
-      edge3.length_squared() + edge4.length_squared() + edge5.length_squared()) / 6;
-  return sqrt2 * tetVolumeTimes6 / std::pow(sum, 3. / 2.);
+  return tet4_mean_ratio_from_edges(
+        {{
+          nodeLocations[1] - nodeLocations[0],
+          nodeLocations[2] - nodeLocations[1],
+          nodeLocations[0] - nodeLocations[2],
+          nodeLocations[3] - nodeLocations[0],
+          nodeLocations[3] - nodeLocations[1],
+          nodeLocations[3] - nodeLocations[2]
+        }}
+      );
 }
 
-double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations)
+using CONSTPTRCONSTPTR = double const * const *;
+
+template <>
+double tet4_mean_ratio(const CONSTPTRCONSTPTR & nodeLocations)
+{
+  return tet4_mean_ratio_from_edges(
+      {{
+        stk::math::Vector3d(nodeLocations[1][0] - nodeLocations[0][0], nodeLocations[1][1] - nodeLocations[0][1], nodeLocations[1][2] - nodeLocations[0][2]),
+        stk::math::Vector3d(nodeLocations[2][0] - nodeLocations[1][0], nodeLocations[2][1] - nodeLocations[1][1], nodeLocations[2][2] - nodeLocations[1][2]),
+        stk::math::Vector3d(nodeLocations[0][0] - nodeLocations[2][0], nodeLocations[0][1] - nodeLocations[2][1], nodeLocations[0][2] - nodeLocations[2][2]),
+        stk::math::Vector3d(nodeLocations[3][0] - nodeLocations[0][0], nodeLocations[3][1] - nodeLocations[0][1], nodeLocations[3][2] - nodeLocations[0][2]),
+        stk::math::Vector3d(nodeLocations[3][0] - nodeLocations[1][0], nodeLocations[3][1] - nodeLocations[1][1], nodeLocations[3][2] - nodeLocations[1][2]),
+        stk::math::Vector3d(nodeLocations[3][0] - nodeLocations[2][0], nodeLocations[3][1] - nodeLocations[2][1], nodeLocations[3][2] - nodeLocations[2][2])
+      }}
+    );
+}
+
+double tri3_2d_mean_ratio_from_ptrs(const double * v0, const double * v1, const double * v2)
+{
+  const stk::math::Vector2d edge0(v1[0] - v0[0], v1[1] - v0[1]);
+  const stk::math::Vector2d edge1(v2[0] - v1[0], v2[1] - v1[1]);
+  const stk::math::Vector2d edge2(v0[0] - v2[0], v0[1] - v2[1]);
+  static const double coeff = 2./std::sqrt(3.);
+  const double triAreaTimes2 = (edge2[0]*edge0[1]-edge0[0]*edge2[1]);
+  const double sumSq = (edge0.length_squared() + edge1.length_squared() + edge2.length_squared()) / 3;
+  return coeff * triAreaTimes2 / sumSq;
+}
+
+template <typename CONTAINER>
+double tri3_2d_mean_ratio(const CONTAINER &nodeLocations)
+{
+  STK_ThrowAssert(nodeLocations.size() == 3 || nodeLocations.size() == 6);
+  return tri3_2d_mean_ratio_from_ptrs(nodeLocations[0].data(), nodeLocations[1].data(), nodeLocations[2].data());
+}
+
+template <>
+double tri3_2d_mean_ratio(const CONSTPTRCONSTPTR & nodeLocations)
+{
+  return tri3_2d_mean_ratio_from_ptrs(nodeLocations[0], nodeLocations[1], nodeLocations[2]);
+}
+
+template<typename ELEMCOORDS>
+double MeanRatioQualityMetric::tet_mean_ratio(const ELEMCOORDS &nodeLocations)
 {
   return tet4_mean_ratio(nodeLocations);
 }
 
-double MeanRatioQualityMetric::tet_mean_ratio(const std::array<stk::math::Vector3d,4> &nodeLocations)
+template<typename ELEMCOORDS>
+double MeanRatioQualityMetric::tri2d_mean_ratio(const ELEMCOORDS &nodeLocations)
 {
-  return tet4_mean_ratio(nodeLocations);
+  return tri3_2d_mean_ratio(nodeLocations);
 }
+
+// explicit template instantiation
+template double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations);
+template double MeanRatioQualityMetric::tet_mean_ratio(const std::array<stk::math::Vector3d,4> &nodeLocations);
+template double MeanRatioQualityMetric::tet_mean_ratio(const CONSTPTRCONSTPTR &nodeLocations);
+template double MeanRatioQualityMetric::tri2d_mean_ratio(const std::vector<stk::math::Vector2d> &nodeLocations);
+template double MeanRatioQualityMetric::tri2d_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations);
+template double MeanRatioQualityMetric::tri2d_mean_ratio(const std::array<stk::math::Vector2d,3> &nodeLocations);
+template double MeanRatioQualityMetric::tri2d_mean_ratio(const std::array<stk::math::Vector3d,3> &nodeLocations);
+template double MeanRatioQualityMetric::tri2d_mean_ratio(const CONSTPTRCONSTPTR &nodeLocations);
 
 double ScaledJacobianQualityMetric::tet_scaled_jacobian(const std::vector<stk::math::Vector3d> &nodeLocations)
 {

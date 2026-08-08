@@ -98,7 +98,6 @@ void pack_entity_info(const BulkData& mesh,
 {
   const EntityKey & key   = mesh.entity_key(entity);
   const unsigned    owner = mesh.parallel_owner_rank(entity);
-
   buf.pack<EntityKey>( key );
   buf.pack<unsigned>( owner );
   pack_bucket_part_list(mesh.bucket(entity), buf);
@@ -119,16 +118,15 @@ void pack_entity_info(const BulkData& mesh,
     if (nrel > 0) {
       Entity const *rel_entities = bucket.begin(ebo, irank);
       ConnectivityOrdinal const *rel_ordinals = bucket.begin_ordinals(ebo, irank);
+      STK_ThrowAssert(rel_ordinals);
       Permutation const *rel_permutations = bucket.begin_permutations(ebo, irank);
       for ( unsigned i = 0 ; i < nrel ; ++i ) {
-        if (mesh.is_valid(rel_entities[i])) {
-          STK_ThrowAssert(rel_ordinals);
-          buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
-          buf.pack<unsigned>( rel_ordinals[i] );
-          if (should_store_permutations(bucket.entity_rank(),irank)) {
-            STK_ThrowAssert(rel_permutations);
-            buf.pack<unsigned>( rel_permutations[i] );
-          }
+        STK_ThrowAssertMsg(mesh.is_valid(rel_entities[i]),"pack_entity_info "<<key<<" invalid rel "<<mesh.entity_key(rel_entities[i]));
+        buf.pack<EntityKey>( mesh.entity_key(rel_entities[i]) );
+        buf.pack<unsigned>( rel_ordinals[i] );
+        if (should_store_permutations(bucket.entity_rank(),irank)) {
+          STK_ThrowAssert(rel_permutations);
+          buf.pack<unsigned>( rel_permutations[i] );
         }
       }
     }
@@ -174,7 +172,9 @@ void unpack_entity_info(
     }
     Entity const entity =
       mesh.get_entity( rel_key.rank(), rel_key.id() );
-    if ( mesh.is_valid(entity) ) {
+    const bool isValid = mesh.is_valid(entity);
+    STK_ThrowRequireMsg(rel_key.rank() > key.rank() || isValid,"P"<<mesh.parallel_rank()<<" unpack_entity_info "<<key<<" invalid rel "<<rel_key);
+    if (isValid) {
       Relation rel(entity, mesh.entity_rank(entity), rel_id );
       rel.set_attribute(rel_attr);
       relations.push_back( rel );

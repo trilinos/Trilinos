@@ -24,10 +24,8 @@
 #endif
 
 #include <TpetraCore_config.h>
+#include <Tpetra_Core.hpp>
 #include <Tpetra_Details_KokkosTeuchosTimerInjection.hpp>
-
-#include <KokkosKernels_config.h>
-#include <KokkosKernels_Controls.hpp>
 
 #ifndef MUELU_AUTOMATIC_TEST_ETI_NAME
 #error "The macro MUELU_AUTOMATIC_TEST_ETI_NAME was not defined"
@@ -55,28 +53,12 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   if (comm->getSize() > 1) {
     out->setOutputToRootOnly(0);
   }
-#endif
-
-  // Tpetra nodes call Kokkos::execution_space::initialize if the execution
-  // space is not initialized, but they don't call Kokkos::initialize.
-  // Teuchos::GlobalMPISession captures its command-line arguments for later
-  // use that Tpetra takes advantage of.
-  //
-  // We call Kokkos::initialize() after MPI so that MPI has the chance to bind
-  // processes correctly before Kokkos touches things.
-  Kokkos::initialize(argc, argv);
-
-  // Create handles for cuBLAS and cuSPARSE. Otherwise they get
-  // created on the first call to these libraries, and that can mess
-  // up timings.
-  KokkosKernels::Experimental::Controls controls;
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
-  controls.getCublasHandle();
-#endif
-#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  controls.getCusparseHandle();
+  Tpetra::initialize(&argc, &argv, comm);
+#else
+  Tpetra::initialize(&argc, &argv);
 #endif
   Kokkos::fence();
+
   bool success = true;
   bool verbose = true;
   try {
@@ -346,7 +328,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  Kokkos::finalize();
+  Tpetra::finalize();
 
   return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }

@@ -11,22 +11,23 @@ exe() {
 
 trilinos_dir=${1:?"Must pass directory to clone Trilinos into!"}
 sierra_proj=${2:?"Must pass path to sierra!"}
+reset_trilinos=${3:?"true"}
 
 if [ ! -d ${trilinos_dir} ] ; then
   exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
 else
-  exe cd "${trilinos_dir}"
-  exe git checkout develop
-  exe git reset --hard origin/develop
-  exe git pull
+  if [[ ${reset_trilinos} == "true" ]] ; then
+    exe cd "${trilinos_dir}"
+    exe git checkout develop
+    exe git reset --hard origin/develop
+    exe git pull
+  fi
 fi
 
-if [ -d ${trilinos_dir}/packages/stk ] ; then
-  exe rm -rf ${trilinos_dir}/packages/stk;
-fi
-if [ ! -L ${trilinos_dir}/packages/stk ] ; then
+if [[ -L ${trilinos_dir}/packages/stk ]] ; then
+  echo "${trilinos_dir}/packages/stk is sym-link..."
+else
+  exe rm -rf ${trilinos_dir}/packages/stk
   exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
 fi
 
-# we do not want to pay attention to the Trilinos configuration
-#rm -rf ${trilinos_dir}/CTestConfig.cmake

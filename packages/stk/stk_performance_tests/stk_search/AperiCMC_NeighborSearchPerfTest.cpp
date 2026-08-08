@@ -16,7 +16,7 @@
 #include <stk_mesh/base/NgpField.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
-#include <stk_mesh/base/NgpFieldBLAS.hpp>
+#include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_search/BoxIdent.hpp>
 #include <stk_search/CoarseSearch.hpp>
@@ -406,13 +406,10 @@ public:
 
   void zero_fields()
   {
-    stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace{};
-
-    constexpr double zero = 0.0;
-    stk::mesh::field_fill(zero, *m_numNeighborsField, execSpace);
-    stk::mesh::field_fill(zero, *m_neighborsField, execSpace);
-    stk::mesh::field_fill(zero, *m_kernelRadiusField, execSpace);
-    stk::mesh::field_fill(zero, *m_functionValuesField, execSpace);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(0.0, *m_numNeighborsField);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(0.0, *m_neighborsField);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(0.0, *m_kernelRadiusField);
+    stk::mesh::field_fill<stk::ngp::DeviceSpace>(0.0, *m_functionValuesField);
   }
 
 private:

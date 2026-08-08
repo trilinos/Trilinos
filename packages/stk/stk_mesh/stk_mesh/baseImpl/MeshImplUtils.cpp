@@ -42,6 +42,7 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/StaticAssert.hpp>
@@ -50,10 +51,12 @@
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/EntityGhostData.hpp>
+#include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/baseImpl/Visitors.hpp>
 
 #include <vector>
 #include <numeric>
+#include <limits>
 
 //----------------------------------------------------------------------
 
@@ -977,7 +980,7 @@ void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
   }
 }
 
-void pack_downward_relations_if_valid_permutation_exists(stk::mesh::BulkData& mesh, stk::mesh::Entity some_entity, std::vector<stk::mesh::Relation>& recv_relations1)
+void pack_downward_relations_if_valid_permutation_exists(const BulkData& mesh, Entity some_entity, std::vector<Relation>& recv_relations1)
 {
     recv_relations1.clear();
     unsigned bucket_ordinal = mesh.bucket_ordinal(some_entity);
@@ -1004,7 +1007,7 @@ void pack_downward_relations_if_valid_permutation_exists(stk::mesh::BulkData& me
     }
 }
 
-bool check_permutations_on_all(stk::mesh::BulkData& mesh)
+bool check_permutations_on_all(const stk::mesh::BulkData& mesh)
 {
     std::ostringstream os;
     bool all_ok = true;
@@ -1056,6 +1059,74 @@ bool check_permutations_on_all(stk::mesh::BulkData& mesh)
     all_ok = verified_ok == 1;
 
     return all_ok;
+}
+
+uint16_t calc_owned_closure_count(const BulkData& mesh, Entity entity)
+{
+  const Bucket* bptr = mesh.bucket_ptr(entity);
+  if (bptr == nullptr) {
+    return 0;
+  }
+
+  uint ownedClosureCount = bptr->owned() ? 1 : 0;
+
+  EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+  EntityRank beginRank = static_cast<EntityRank>(mesh.entity_rank(entity)+1);
+
+  for(EntityRank rank=beginRank; rank<endRank; ++rank) {
+    const auto conn = mesh.get_connected_entities(entity, rank);
+    for(Entity upwardEntity : conn) {
+      bptr = mesh.bucket_ptr(upwardEntity);
+      const bool owned = bptr != nullptr ? bptr->owned() : false;
+      if (owned) {
+        ++ownedClosureCount;
+      }
+    }
+  }
+
+  return ownedClosureCount;
+}
+
+bool check_owned_closure_on_shared(const BulkData& mesh)
+{
+  if (mesh.parallel_size() == 1) {
+    return true;
+  }
+
+  bool allCountsCorrect = true;
+  std::ostringstream oss;
+
+  for(EntityRank rank : {stk::topology::NODE_RANK, stk::topology::EDGE_RANK, stk::topology::FACE_RANK}) {
+    const BucketVector& bkts = mesh.get_buckets(rank, mesh.mesh_meta_data().globally_shared_part());
+    for(const Bucket* bptr : bkts) {
+      for(Entity ent : *bptr) {
+        const uint16_t ownedClosureCount = mesh.owned_closure_count(ent);
+        const uint16_t calculatedCount = calc_owned_closure_count(mesh, ent);
+        //There are a couple reasons why ownedClosureCount might be greater than
+        //calculatedCount: orphan-node-protection, (although orphan-node-protection
+        //should never be present for a shared node)
+        //or degenerate (repeated) connectivities.
+        //But it shouldn't be less...
+        if (ownedClosureCount < calculatedCount) {
+          oss << "P" << mesh.parallel_rank() << mesh.entity_key(ent)
+              << " has owned_closure_count=" << ownedClosureCount
+              << " but calculated count is " << calculatedCount << std::endl;
+          allCountsCorrect = false;
+          break;
+        }
+      }
+      if (!allCountsCorrect) {
+        break;
+      }
+    }
+  }
+
+  if (stk::is_true_on_any_proc(mesh.parallel(), !allCountsCorrect)) {
+    std::cerr<<oss.str();
+    return false;
+  }
+
+  return true;
 }
 
 void comm_sync_send_recv(const BulkData & mesh ,

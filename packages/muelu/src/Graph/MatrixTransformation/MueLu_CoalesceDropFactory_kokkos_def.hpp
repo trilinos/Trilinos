@@ -102,6 +102,11 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   validParamList->set<RCP<const FactoryBase>>("Minv", Teuchos::null, "Generating factory for Minv");
   validParamList->set<RCP<const FactoryBase>>("MinvA", Teuchos::null, "Generating factory for MinvA");
 
+  // Make sure we don't recursively validate options for project auxiliary matrices
+  ParameterList norecurse;
+  norecurse.disableRecursiveValidation();
+  validParamList->set<ParameterList>("project auxiliary matrices", norecurse, "matrices that will be projected on coarse levels");
+
   return validParamList;
 }
 
@@ -125,8 +130,14 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Decl
     if (distLaplMetric == "material")
       Input(currentLevel, "Material");
   }
-  if (needM)
-    Input(currentLevel, "M");
+  if (needM && (currentLevel.GetLevelID() != 0)) {
+    if (pL.isSublist("project auxiliary matrices")) {
+      auto projectList = pL.sublist("project auxiliary matrices");
+      if (projectList.isParameter("M")) Input(currentLevel, "M");
+      if (projectList.isParameter("Minv")) Input(currentLevel, "Minv");
+      if (projectList.isParameter("MinvA")) Input(currentLevel, "MinvA");
+    }
+  }
 
   bool useBlocking = pL.get<bool>("aggregation: use blocking");
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
@@ -377,38 +388,43 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       if (socUsesMatrix == "A")
         A_drop = A;
       else if (socUsesMatrix == "MinvA") {
-        if (currentLevel.IsAvailable("MinvA", NoFactory::get())) {
-          A_drop = currentLevel.Get<RCP<Matrix>>("MinvA", NoFactory::get());
+        bool storeMinvOnLevel = false, storeMinvAOnLevel = false;
+        if (pL.isSublist("project auxiliary matrices")) {
+          auto projectList = pL.sublist("project auxiliary matrices");
+          if (projectList.isParameter("Minv")) storeMinvOnLevel = true;
+          if (projectList.isParameter("MinvA")) storeMinvAOnLevel = true;
+          // project list appears to be empty, so default behavior is to store MinvA
+          if (!projectList.isParameter("M") && !storeMinvOnLevel && !storeMinvAOnLevel) storeMinvAOnLevel = true;
+        } else
+          storeMinvAOnLevel = true;  // default behavior is to project MinvA
+
+        if (IsAvailable(currentLevel, "MinvA")) {
+          A_drop = Get<RCP<Matrix>>(currentLevel, "MinvA");
         } else {
           RCP<Matrix> Minv;
-          if (currentLevel.IsAvailable("Minv", NoFactory::get())) {
+          if (IsAvailable(currentLevel, "Minv")) {
             Minv = Get<RCP<Matrix>>(currentLevel, "Minv");
-          } else {
-            auto M = Get<RCP<Matrix>>(currentLevel, "M");
-            // Create Minv via sparse approximate inverse
-            Minv = Utilities::SPAI(M);
-          }
+          } else {  // get M and create Minv
+            if (currentLevel.GetLevelID() == 0) {
+              auto M = currentLevel.Get<RCP<Matrix>>("M", NoFactory::get());
+              // Create Minv via sparse approximate inverse
+              Minv = Utilities::SPAI(M);
+            } else {
+              auto M = Get<RCP<Matrix>>(currentLevel, "M");
+              // Create Minv via sparse approximate inverse
+              Minv = Utilities::SPAI(M);
+            }
+            if (storeMinvOnLevel) currentLevel.Set("Minv", Minv);
+          }  // finished if/else (currentLevel.IsAvailable("Minv", *mtf)
 
           // build MinvA matrix with same sparsity pattern as A.
           A_drop      = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(A);
           auto params = Teuchos::rcp(new Teuchos::ParameterList());
           params->set("MM Throw For Non-Existent Entries", false);
           A_drop = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Minv, false, *A, false, A_drop, GetOStream(Statistics2), true, true, std::string("MinvA"), params);
-
-#ifdef JustUsingDiagMforInverse
-          {
-            // could perhaps be useful for debugging?
-            //
-            // get the diagonal inverse of M (TODO: using InverseApproximationFactory is likely better)
-            Teuchos::RCP<Vector> MinvDiag = Utilities::GetMatrixDiagonalInverse(*M);
-            // build MinvA using the graph of A
-            A_drop = MatrixFactory::BuildCopy(A);
-            // multiply MinvDiag through
-            A_drop->leftScale(*MinvDiag);
-          }
-#endif
-        }
-      }
+          if (storeMinvAOnLevel) currentLevel.Set("MinvA", A_drop);
+        }  // finished if/else  (currentLevel.IsAvailable("MinvA", NoFactory::get()))
+      }    // else if (socUsesMatrix == "MinvA") {
     }
   }
 

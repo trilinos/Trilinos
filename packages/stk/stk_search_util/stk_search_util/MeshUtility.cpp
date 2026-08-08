@@ -69,17 +69,21 @@ stk::search::Box<double> get_mesh_bounding_box(const stk::mesh::FieldBase* coord
   std::array<double, 3> min_corner = { { m, m, m } };
   std::array<double, 3> max_corner = { { -m, -m, -m } };
 
-  for(auto&& b_ptr : buckets) {
-    stk::mesh::Bucket& b = *b_ptr;
-    const size_t length = b.size();
-    for(size_t k = 0; k < length; ++k) {
-      const double* c = static_cast<const double *>(stk::mesh::field_data(*coords, b[k]));
-      for(int d = 0; d < ndim; ++d) {
-        min_corner[d] = std::min(min_corner[d], c[d]);
-        max_corner[d] = std::max(max_corner[d], c[d]);
+  stk::mesh::field_data_execute<double,stk::mesh::ReadOnly>(*coords,
+    [&](auto& fieldData) {
+      for(auto&& b_ptr : buckets) {
+        stk::mesh::Bucket& b = *b_ptr;
+        const size_t length = b.size();
+        for(size_t k = 0; k < length; ++k) {
+          auto values = fieldData.entity_values(b[k]);
+          for (stk::mesh::ComponentIdx component : values.components()) {
+            int d = static_cast<int>(component);
+            min_corner[d] = std::min(min_corner[d], values(component));
+            max_corner[d] = std::max(max_corner[d], values(component));
+          }
+        }
       }
-    }
-  }
+    });
 
   std::array<double, 3> g_min_corner = { { 0, 0, 0 } };
   std::array<double, 3> g_max_corner = { { 0, 0, 0 } };

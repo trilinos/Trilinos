@@ -2,6 +2,7 @@
 
 #include <Akri_DiagWriter.hpp>
 #include <Akri_DistributedVector.hpp>
+#include <Akri_ObjectiveInterface.hpp>
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_StatusTest.hpp"
@@ -17,90 +18,71 @@
 
 namespace krino {
 
-std::vector<double> & get_vector_from_ROL(ROL::Vector<double>& x)
+template<typename VEC>
+VEC get_from_ROL(const ROL::Vector<double>& x)
 {
-  ROL::Ptr<std::vector<double>> xPtr = dynamic_cast<ROL::StdVector<double>&>(x).getVector();
-  return *xPtr;
+  ROL::Ptr<const std::vector<double>> xROLPtr = dynamic_cast<const ROL::StdVector<double>&>(x).getVector();
+  VEC xVec(xROLPtr->size());
+  std::copy(xROLPtr->begin(), xROLPtr->end(), xVec.begin());
+  return xVec;
 }
 
-const std::vector<double> & get_vector_from_ROL(const ROL::Vector<double>& x)
+template<>
+stk::math::Vector3d get_from_ROL(const ROL::Vector<double>& x)
 {
-  ROL::Ptr<const std::vector<double>> xPtr = dynamic_cast<const ROL::StdVector<double>&>(x).getVector();
-  return *xPtr;
-}
-
-double compute_objective(const std::function<double(const DistributedVector&)> & computeObjective, const ROL::Vector<double> &xRol)
-{
-  const auto & x = get_vector_from_ROL(xRol);
-  DistributedVector xVec(x.size());
-  std::copy(x.begin(), x.end(), xVec.begin());
-  return computeObjective(xVec);
-}
-
-void fill_gradient(const std::function<void(const DistributedVector&, DistributedVector&)> & fillGradient, const ROL::Vector<double> &xRol, ROL::Vector<double> &gRol)
-{
-  const auto & x = get_vector_from_ROL(xRol);
-  DistributedVector xVec(x.size());
-  std::copy(x.begin(), x.end(), xVec.begin());
-  DistributedVector gradAtX;
-  fillGradient(xVec, gradAtX);
-  STK_ThrowRequireMsg(gradAtX.size() == gradAtX.local_size(), "rol_optimize not yet implemented in parallel");
-  std::copy(gradAtX.begin(), gradAtX.end(), get_vector_from_ROL(gRol).begin());
-}
-
-double compute_objective(const std::function<double(const stk::math::Vector3d&)> & computeObjective, const ROL::Vector<double> &xRol)
-{
-  const auto & x = get_vector_from_ROL(xRol);
-  stk::math::Vector3d xVec(x.data(), x.size());
-  return computeObjective(xVec);
-}
-
-void fill_gradient(const std::function<void(const stk::math::Vector3d&, stk::math::Vector3d&)> & fillGradient, const ROL::Vector<double> &xRol, ROL::Vector<double> &gRol)
-{
-  const auto & x = get_vector_from_ROL(xRol);
-  stk::math::Vector3d xVec(x.data(), x.size());
-  stk::math::Vector3d gradAtX;
-  fillGradient(xVec, gradAtX);
-  std::copy(gradAtX.begin(), gradAtX.end(), get_vector_from_ROL(gRol).begin());
+  ROL::Ptr<const std::vector<double>> xROLPtr = dynamic_cast<const ROL::StdVector<double>&>(x).getVector();
+  return stk::math::Vector3d(xROLPtr->data(), xROLPtr->size());
 }
 
 template<typename VEC>
-class ROLObjective : public ROL::Objective<double>
+void fill_ROL(const VEC &xVec, ROL::Vector<double>& xROL)
+{
+  ROL::Ptr<std::vector<double>> xROLPtr = dynamic_cast<ROL::StdVector<double>&>(xROL).getVector();
+  std::copy(xVec.begin(), xVec.end(), xROLPtr->begin());
+}
+
+template<typename ObjectiveType, typename VEC>
+class ScaledROLObjective : public ROL::Objective<double>
 {
 public:
-  ROLObjective(const std::function<double(const VEC&)> & calc_objective,
-               const std::function<void(const VEC&, VEC&)> & fill_gradient)
-  : myComputeObjective(calc_objective), myFillGradient(fill_gradient) {}
+  ScaledROLObjective(const ObjectiveType & objectiveFn, double scale)
+  : myObjFn(objectiveFn), myScale(scale) {}
 
   double value( const ROL::Vector<double> &xRol, double &tol )
   {
-    return compute_objective(myComputeObjective, xRol);
+    return myObjFn.compute_value(get_from_ROL<VEC>(xRol)) / myScale;
   }
 
   void gradient( ROL::Vector<double> &gRol, const ROL::Vector<double> &xRol, double &tol )
   {
-    fill_gradient(myFillGradient, xRol, gRol);
+    VEC g;
+    myObjFn.fill_gradient(get_from_ROL<VEC>(xRol), g);
+    for (size_t i = 0; i < g.size(); ++i)
+      g[i] /= myScale;
+    fill_ROL(g, gRol);
   }
 
 private:
-  std::function<double(const VEC&)> myComputeObjective;
-  std::function<void(const VEC&, VEC&)> myFillGradient;
+  const ObjectiveType & myObjFn;
+  double myScale;
 };
 
-
-template<typename VEC>
-void rol_optimize(const std::function<double(const VEC&)> & calc_objective,
-    const std::function<void(const VEC&, VEC&)> & fill_gradient,
+template<typename ObjectiveType, typename VEC>
+void rol_optimize(const ObjectiveType & objFn,
     VEC& x,
     const double xTol,
     const double gradTol,
-    const int maxIter)
+    const double objectiveScale,
+    const int maxIter,
+    const bool doOutput)
 {
   ROL::ParameterList parlist;
 
   // BFGS
   parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");
   parlist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
+  parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type", "Backtracking");
+  parlist.sublist("Step").sublist("Line Search").set("Function Evaluation Limit", 45);
 
   // Newton-Krylov
   //parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Newton-Krylov");
@@ -123,29 +105,28 @@ void rol_optimize(const std::function<double(const VEC&)> & calc_objective,
   std::copy(x.begin(), x.end(), xPtr->begin());
   ROL::StdVector<double> xRol(xPtr);
 
-  ROLObjective<VEC> obj(calc_objective, fill_gradient);
+  ScaledROLObjective<ObjectiveType, VEC> rolObj(objFn, objectiveScale);
 
-  // Run Algorithm
-  ROL::nullstream nullStream; // outputs nothing
-  algo.run(xRol, obj, true, nullStream);
-  //algo.run(xRol, obj, true);
+  algo.run(xRol, rolObj, doOutput, std::cout);
 
   std::copy(xPtr->begin(), xPtr->end(), x.begin());
 }
 
-template void rol_optimize(const std::function<double(const DistributedVector&)> & calc_objective,
-    const std::function<void(const DistributedVector&, DistributedVector&)> & fill_gradient,
+template void rol_optimize(const ObjectiveInterface & objFn,
     DistributedVector& x,
     const double xTol,
     const double gradTol,
-    const int maxIter);
+    const double objectiveScale,
+    const int maxIter,
+    const bool doOutput);
 
-template void rol_optimize(const std::function<double(const stk::math::Vector3d&)> & calc_objective,
-    const std::function<void(const stk::math::Vector3d&, stk::math::Vector3d&)> & fill_gradient,
+template void rol_optimize(const Objective3DInterface & objFn,
     stk::math::Vector3d& x,
     const double xTol,
     const double gradTol,
-    const int maxIter);
+    const double objectiveScale,
+    const int maxIter,
+    const bool doOutput);
 
 }
 

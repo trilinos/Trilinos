@@ -227,7 +227,7 @@ TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createCachedMembersVi
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasInCoreView(
-  const Range1D& rng_in, const EViewType viewType, const EStrideType strideType
+  const Range1D& rng_in, const EViewType  /*viewType*/, const EStrideType  /*strideType*/
   ) const
 {
   const Range1D rng = full_range(rng_in,0,this->dim()-1);

@@ -24,6 +24,8 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "Thyra_DefaultProductMultiVector_decl.hpp"
+#include "Thyra_TpetraThyraWrappers_decl.hpp"
 
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
@@ -31,6 +33,12 @@
 #ifdef HAVE_BELOS_TSQR
 #  include <Thyra_TsqrAdaptor.hpp>
 #endif // HAVE_BELOS_TSQR
+
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+#include "BelosMultiVecTraits_Tpetra.hpp"
+#include "Thyra_DefaultProductMultiVector.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
+#endif
 
 #ifdef HAVE_STRATIMIKOS_BELOS_TIMERS
 # include <Teuchos_TimeMonitor.hpp>
@@ -65,6 +73,40 @@ namespace Belos {
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
     typedef Teuchos::ScalarTraits<ScalarType> ST;
     typedef typename ST::magnitudeType magType;
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+    using TpMap = Tpetra::Map<Tpetra::MultiVector<>::local_ordinal_type,
+                              Tpetra::MultiVector<>::global_ordinal_type,
+                              Tpetra::MultiVector<>::node_type>;
+    using TpMV = Tpetra::MultiVector<ScalarType, Tpetra::MultiVector<>::local_ordinal_type,
+                                     Tpetra::MultiVector<>::global_ordinal_type,
+                                     Tpetra::MultiVector<>::node_type>;
+    using Extraction = Thyra::TpetraOperatorVectorExtraction<ScalarType,
+                                                             Tpetra::MultiVector<>::local_ordinal_type,
+                                                             Tpetra::MultiVector<>::global_ordinal_type,
+                                                             Tpetra::MultiVector<>::node_type>;
+
+    private:
+    static Teuchos::RCP<TMVB> BuildProductMultiVectorMaybe(Teuchos::RCP<const TMVB> &mv_rcp, const int numvecs) {
+      auto pmv_rcp = Teuchos::rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<ScalarType>>(mv_rcp);
+      if (!pmv_rcp.is_null()) {
+        auto ps = Teuchos::rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<ScalarType>>(pmv_rcp->range());
+        const int numBlocks = ps->numBlocks();
+        Teuchos::Array<Teuchos::RCP<Thyra::MultiVectorBase<ScalarType>>> multiVecs;
+        for (int k = 0; k < numBlocks; ++k) {
+          auto vs = ps->getBlock(k);
+          Teuchos::RCP<const TpMap> map = Extraction::getTpetraMap(vs);
+          if (map.is_null())
+            break;
+          auto tp_mv = impl::getMultiVectorFromPool<ScalarType>(map, numvecs);
+          auto thy_mv = createMultiVector(tp_mv, vs);
+          multiVecs.push_back(thy_mv);
+        }
+        if (multiVecs.size() == numBlocks)
+          return Thyra::defaultProductMultiVector<ScalarType>(ps, multiVecs);
+      }
+      return Teuchos::null;
+    }
+#endif
 
   public:
 
@@ -77,7 +119,24 @@ namespace Belos {
     */
     static Teuchos::RCP<TMVB> Clone( const TMVB& mv, const int numvecs )
     {
-      Teuchos::RCP<TMVB> c = Thyra::createMembers( mv.range(), numvecs );
+      Teuchos::RCP<TMVB> c;
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+      auto mv_rcp = Teuchos::rcpFromRef(mv);
+      try {
+        Teuchos::RCP<const TpMV> X = Extraction::getConstTpetraMultiVector(mv_rcp);
+        auto X_copy = ::Belos::MultiVecTraits<ScalarType, TpMV>::Clone(*X, numvecs);
+        c = Thyra::createMultiVector(X_copy);
+      } catch (std::logic_error&)
+#endif
+      {
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+        c = BuildProductMultiVectorMaybe(mv_rcp, numvecs);
+        if (c.is_null())
+#endif
+        {
+          c = Thyra::createMembers(mv.range(), numvecs);
+        }
+      }
       return c;
     }
 
@@ -87,11 +146,28 @@ namespace Belos {
     */
     static Teuchos::RCP<TMVB> CloneCopy( const TMVB& mv )
     {
-      int numvecs = mv.domain()->dim();
-      // create the new multivector
-      Teuchos::RCP< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
-      // copy the data from the source multivector to the new multivector
-      Thyra::assign(cc.ptr(), mv);
+      Teuchos::RCP< TMVB > cc;
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+      auto mv_rcp = Teuchos::rcpFromRef(mv);
+      try {
+        Teuchos::RCP<const TpMV> X = Extraction::getConstTpetraMultiVector(mv_rcp);
+        auto X_copy = ::Belos::MultiVecTraits<ScalarType, TpMV>::CloneCopy(*X);
+        cc = Thyra::createMultiVector(X_copy);
+      } catch (std::logic_error&)
+#endif
+      {
+        int numvecs = mv.domain()->dim();
+        // create the new multivector
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+        cc = BuildProductMultiVectorMaybe(mv_rcp, numvecs);
+        if (cc.is_null())
+#endif
+        {
+          cc = Thyra::createMembers(mv.range(), numvecs);
+        }
+        // copy the data from the source multivector to the new multivector
+        Thyra::assign(cc.ptr(), mv);
+      }
       return cc;
     }
 
@@ -102,26 +178,60 @@ namespace Belos {
     */
     static Teuchos::RCP<TMVB> CloneCopy( const TMVB& mv, const std::vector<int>& index )
     {
-      int numvecs = index.size();
-      // create the new multivector
-      Teuchos::RCP<TMVB> cc = Thyra::createMembers( mv.range(), numvecs );
-      // create a view to the relevant part of the source multivector
-      Teuchos::RCP<const TMVB> view = mv.subView(index);
-      // copy the data from the relevant view to the new multivector
-      Thyra::assign(cc.ptr(), *view);
+      Teuchos::RCP<TMVB> cc;
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+      auto mv_rcp = Teuchos::rcpFromRef(mv);
+      try {
+        Teuchos::RCP<const TpMV> X = Extraction::getConstTpetraMultiVector(mv_rcp);
+        auto X_copy = ::Belos::MultiVecTraits<ScalarType, TpMV>::CloneCopy(*X, index);
+        cc = Thyra::createMultiVector(X_copy);
+      } catch (std::logic_error&)
+#endif
+      {
+        int numvecs = index.size();
+        // create the new multivector
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+        cc = BuildProductMultiVectorMaybe(mv_rcp, numvecs);
+        if (cc.is_null())
+#endif
+        {
+          cc = Thyra::createMembers(mv.range(), numvecs);
+        }
+        // create a view to the relevant part of the source multivector
+        Teuchos::RCP<const TMVB> view = mv.subView(index);
+        // copy the data from the relevant view to the new multivector
+        Thyra::assign(cc.ptr(), *view);
+      }
       return cc;
     }
 
     static Teuchos::RCP<TMVB>
     CloneCopy (const TMVB& mv, const Teuchos::Range1D& index)
     {
-      const int numVecs = index.size();
-      // Create the new multivector
-      Teuchos::RCP<TMVB> cc = Thyra::createMembers (mv.range(), numVecs);
-      // Create a view to the relevant part of the source multivector
-      Teuchos::RCP<const TMVB> view = mv.subView (index);
-      // Copy the data from the view to the new multivector.
-      Thyra::assign (cc.ptr(), *view);
+      Teuchos::RCP<TMVB> cc;
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+      auto mv_rcp = Teuchos::rcpFromRef(mv);
+      try {
+        Teuchos::RCP<const TpMV> X = Extraction::getConstTpetraMultiVector(mv_rcp);
+        auto X_copy = ::Belos::MultiVecTraits<ScalarType, TpMV>::CloneCopy(*X, index);
+        cc = Thyra::createMultiVector(X_copy);
+      } catch (std::logic_error&)
+#endif
+      {
+        const int numVecs = index.size();
+        // Create the new multivector
+#if defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && defined(HAVE_BELOS_TPETRA)
+        cc = BuildProductMultiVectorMaybe(mv_rcp, numVecs);
+        if (cc.is_null())
+#endif
+        {
+          cc = Thyra::createMembers(mv.range(), numVecs);
+        }
+        // Create a view to the relevant part of the source multivector
+        Teuchos::RCP<const TMVB> view = mv.subView (index);
+        // Copy the data from the view to the new multivector.
+        Thyra::assign (cc.ptr(), *view);
+      }
       return cc;
     }
 

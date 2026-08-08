@@ -46,7 +46,7 @@ testApply(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           const MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>& smoother,
           Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
           const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& RHS,
-          Teuchos::FancyOStream& out, bool& success) {
+          Teuchos::FancyOStream& out, bool& /*success*/) {
 #include "MueLu_UseShortNames.hpp"
   typedef Teuchos::ScalarTraits<SC> ST;
 
@@ -121,7 +121,7 @@ testApply_X0_RandomRHS(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal,
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void setupSmoother(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                    MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node>& smoother,
-                   Teuchos::FancyOStream& out, bool& success) {
+                   Teuchos::FancyOStream& /*out*/, bool& /*success*/) {
 #include "MueLu_UseShortNames.hpp"
 
   Level level;

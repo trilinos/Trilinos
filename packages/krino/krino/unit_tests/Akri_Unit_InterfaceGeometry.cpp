@@ -69,6 +69,17 @@ void IntersectionPointFromNodalLevelsetInterfaceGeometry::set_nodal_levelset(con
   }
 }
 
+void PhasePerElementInterfaceGeometry::set_element_phases(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::EntityId> & elemIds, const std::vector<int> & elemPhases)
+{
+  STK_ThrowRequire(elemIds.size() == elemPhases.size());
+  for (size_t n=0; n<elemIds.size(); ++n)
+  {
+    stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEMENT_RANK, elemIds[n]);
+    if (mesh.is_valid(elem))
+      myUncutElementPhases[elem] = elemPhases[n];
+  }
+}
+
 class TetIntersectionFixture : public StkMeshTetFixture
 {
 public:

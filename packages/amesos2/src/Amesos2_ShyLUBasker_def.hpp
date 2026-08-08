@@ -295,8 +295,9 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       if (ShyLUbasker->Options.partial_facto != 0) {
         if (schur_out_ptr != nullptr) {
           // copy schur out if the output pointer is valid (assuming enough space has been allocated)
-          for (size_t i = 0; i < schur_size; i++) {
-            for (size_t j = 0; j < schur_size; j++) {
+          // Schur complement is stored in column-major
+          for (size_t j = 0; j < schur_size; j++) {
+            for (size_t i = 0; i < schur_size; i++) {
               schur_out_ptr[i+j*schur_size] = schur_out[i+j*schur_size];
             }
           }

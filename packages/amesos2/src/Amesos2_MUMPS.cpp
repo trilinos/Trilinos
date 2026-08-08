@@ -7,6 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
+#include "Amesos2_config.h"
 #include "Amesos2_MUMPS_decl.hpp"
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
@@ -17,11 +18,17 @@
 #include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Tpetra_ETIHelperMacros.h"
 
-#define AMESOS2_MUMPS_LOCAL_INSTANT(SC,LO,GO,N)                        \
-  template class Amesos2::MUMPS<Tpetra::CrsMatrix<SC, LO, GO, N>,      \
-                                  Tpetra::MultiVector<SC, LO, GO,  N> >;
+namespace Amesos2 {
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(AMESOS2_MUMPS_LOCAL_INSTANT)
+  #define AMESOS2_MUMPS_LOCAL_INSTANT(SC,LO,GO,N)                      \
+  template class Amesos2::MUMPS<Tpetra::CrsMatrix<SC, LO, GO, N>,      \
+                                Tpetra::MultiVector<SC, LO, GO,  N> >;
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(AMESOS2_MUMPS_LOCAL_INSTANT)
+
+  #define AMESOS2_KOKKOS_IMPL_SOLVER_NAME MUMPS
+  #include "Amesos2_Kokkos_Impl.hpp"
+}
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

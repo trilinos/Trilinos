@@ -1527,6 +1527,97 @@ TEST_F(FieldDataSynchronization, lateFieldsDoNotAbandonModifiedDataOnDevice)
   }
 }
 
+TEST_F(FieldDataSynchronization, syncToDeviceAlwaysUpdates)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_two_element_mesh_with_nodal_field();
 
+  // Initial host values implicitly synced to device during construction
+  auto ngpField = stk::mesh::get_updated_ngp_field<int>(*m_field);
+
+  // Modify the host mesh
+  get_bulk().modification_begin();
+  get_bulk().declare_node(100);
+  get_bulk().modification_end();
+
+  // Should implicitly update device data structure even though host data was not modified
+  m_field->sync_to_device();
+
+  // Modify data on device
+  m_field->modify_on_device();
+
+  // Sync back to the host without fear of un-updated data on device
+  //   NOTE: Until the currently-blocked throw inside sync_to_host() upon finding un-updated
+  //   device data can be merged, this test cannot fail.  It will only silently corrupt
+  //   memory.  Avoid for the moment and reactivate later.
+  // m_field->sync_to_host();
+}
+
+TEST_F(FieldDataSynchronization, hostMeshModWithModifiedDeviceField)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_two_element_mesh_with_nodal_field();
+
+  // Initialize and modify device data
+  {
+    auto deviceFieldData = m_field->data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+  }
+
+  // Start host mesh modification.  All modified device Fields are automatically synced
+  // to the host first to avoid data loss.
+#if defined(STK_USE_DEVICE_MESH)
+  EXPECT_EQ(m_field->need_sync_to_host(), true);
+#else
+  EXPECT_EQ(m_field->need_sync_to_host(), false);
+#endif
+  get_bulk().modification_begin();
+  EXPECT_EQ(m_field->need_sync_to_host(), false);
+
+  get_bulk().declare_node(100);
+  get_bulk().modification_end();
+
+  {
+    EXPECT_NO_THROW((m_field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>()));
+  }
+}
+
+using DeviceEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
+using DevicePartOrdinalsType = Kokkos::View<stk::mesh::PartOrdinal*, stk::ngp::MemSpace>;
+
+TEST_F(FieldDataSynchronization, deviceMeshModWithModifiedHostField)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_two_element_mesh_with_nodal_field();
+
+  // Initialize device data
+  {
+    auto deviceFieldData = m_field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  }
+
+  // Modify host data
+  {
+    auto hostFieldData = m_field->data<stk::mesh::ReadWrite, stk::ngp::HostSpace>();
+  }
+
+  // Modify the device mesh
+  DeviceEntitiesType entities("deviceEntities", 0);
+  DevicePartOrdinalsType addPartOrdinals("deviceAddParts", 0);
+  DevicePartOrdinalsType removePartOrdinals("deviceRemoveParts", 0);
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+
+  // Perform device mesh modification.  All modified host Fields are automatically
+  // synced to the device first to avoid data loss.
+  EXPECT_EQ(m_field->need_sync_to_device(), true);
+  ngpMesh.batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
+#if defined(STK_USE_DEVICE_MESH)
+  EXPECT_EQ(m_field->need_sync_to_device(), false);
+#else
+  EXPECT_EQ(m_field->need_sync_to_device(), true);
+#endif
+
+  EXPECT_NO_THROW((ngpMesh.update_bulk_data()));
+  EXPECT_NO_THROW((m_field->data<stk::mesh::ReadOnly, stk::ngp::HostSpace>()));
+
+}
 
 }

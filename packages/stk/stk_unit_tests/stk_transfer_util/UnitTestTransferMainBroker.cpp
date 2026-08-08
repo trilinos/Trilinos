@@ -34,30 +34,12 @@
 #include "gtest/gtest.h"
 #include "stk_transfer_util/TransferMainBroker.hpp"
 #include "stk_unit_test_utils/ioUtils.hpp"
-#include "stk_unit_test_utils/GeneratedMeshToFile.hpp"
+#include "stk_unit_test_utils/meshCreationHelpers.hpp"
 #include "stk_unit_test_utils/CommandLineArgs.hpp"
 #include "stk_unit_test_utils/BuildMesh.hpp"
 #include "stk_mesh/base/ForEachEntity.hpp"
 
 namespace {
-
-std::shared_ptr<stk::mesh::BulkData>
-create_mesh_with_field(const stk::ParallelMachine comm,
-                       const std::string& fieldName,
-                       const double fieldValue,
-                       const stk::mesh::EntityRank fieldRank = stk::topology::NODE_RANK,
-                       const Ioss::Field::RoleType fieldRole = Ioss::Field::TRANSIENT,
-                       const std::string generatedMeshString = "generated:4x1x1")
-{
-  std::shared_ptr<stk::mesh::BulkData> bulk = stk::unit_test_util::build_mesh(3u, comm);
-  stk::mesh::Field<double> &field=
-          bulk->mesh_meta_data().declare_field<double>(fieldRank, fieldName, 1);
-  stk::io::set_field_role(field, fieldRole);
-  stk::mesh::put_field_on_mesh(field, bulk->mesh_meta_data().universal_part(), &fieldValue);
-  stk::io::fill_mesh(generatedMeshString, *bulk);
-
-  return bulk;
-}
 
 void check_field_values(const std::shared_ptr<stk::mesh::BulkData> bulk, 
                         const std::string& fieldName,
@@ -70,7 +52,60 @@ void check_field_values(const std::shared_ptr<stk::mesh::BulkData> bulk,
   auto checkFieldValues = [&](const stk::mesh::BulkData& , stk::mesh::Entity node) {
     auto dataForNode = fieldData.entity_values(node);
     for(stk::mesh::ComponentIdx i=0_comp; i<dataForNode.num_components(); ++i) {
-      EXPECT_EQ(expectedValue, dataForNode(i));
+      EXPECT_NEAR(expectedValue, dataForNode(i), 1.0e-6);
+    }
+  };
+
+  stk::mesh::for_each_entity_run(*bulk, fieldRank, checkFieldValues);
+}
+
+void check_field_values(const std::shared_ptr<stk::mesh::BulkData> bulk, 
+                        const std::string& fieldName,
+                        const stk::unit_test_util::FieldEvaluator& expectedValue,
+                        const stk::mesh::EntityRank fieldRank = stk::topology::NODE_RANK)
+{
+  auto field = bulk->mesh_meta_data().get_field(fieldRank, fieldName);
+  const auto* coordField = bulk->mesh_meta_data().coordinate_field();
+  auto fieldData = field->data<double, stk::mesh::ReadOnly>();
+  auto coordFieldData = coordField->data<double, stk::mesh::ReadOnly>();
+  
+  auto checkFieldValues = [&](const stk::mesh::BulkData& , stk::mesh::Entity node) {
+    auto dataForNode = fieldData.entity_values(node);
+    auto nodeCoord = coordFieldData.entity_values(node);
+    for(stk::mesh::ComponentIdx i=0_comp; i<dataForNode.num_components(); ++i) {
+      double x = nodeCoord(0_comp);
+      double y = nodeCoord(1_comp);
+      double z = nodeCoord.num_components()==3 ? nodeCoord(2_comp) : 0.0;
+      EXPECT_NEAR(expectedValue(node,x,y,z), dataForNode(i), 1.0e-6);
+    }
+  };
+
+  stk::mesh::for_each_entity_run(*bulk, fieldRank, checkFieldValues);
+  
+}
+
+template<class CoordCondition>
+void check_field_values(const std::shared_ptr<stk::mesh::BulkData> bulk, 
+                        const std::string& fieldName,
+                        const stk::unit_test_util::FieldEvaluator& expectedValue,
+                        const CoordCondition& condition,
+                        const stk::mesh::EntityRank fieldRank = stk::topology::NODE_RANK)
+{
+  auto* field = bulk->mesh_meta_data().get_field(fieldRank, fieldName);
+  const auto* coordField = bulk->mesh_meta_data().coordinate_field();
+  auto fieldData = field->data<double, stk::mesh::ReadOnly>();
+  auto coordFieldData = coordField->data<double, stk::mesh::ReadOnly>();
+  
+  auto checkFieldValues = [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node) {
+    auto dataForNode = fieldData.entity_values(node);
+    auto nodeCoord = coordFieldData.entity_values(node);
+    for(stk::mesh::ComponentIdx i=0_comp; i<dataForNode.num_components(); ++i) {
+      double x = nodeCoord(0_comp);
+      double y = nodeCoord(1_comp);
+      double z = nodeCoord.num_components()==3 ? nodeCoord(2_comp) : 0.0;
+      if (condition(x, y, z)) {
+        EXPECT_NEAR(expectedValue(node, x,y,z), dataForNode(i), 1.0e-6)<<"nodeId="<<mesh.identifier(node)<<" x="<<x<<" y="<<y<<" z="<<z;
+      }
     }
   };
 
@@ -92,11 +127,11 @@ TEST(TransferMainBroker, basicTransferSameSendRecvFieldName)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
   std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
@@ -104,7 +139,19 @@ TEST(TransferMainBroker, basicTransferSameSendRecvFieldName)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
+  EXPECT_TRUE(broker.get_send_fields_for_transfer().empty());
+  EXPECT_TRUE(broker.get_recv_fields_for_transfer().empty());
+
+  broker.check_and_create_fields();
+
+  auto sendFieldNames = broker.get_send_fields_for_transfer();
+  ASSERT_EQ(1u, sendFieldNames.size());
+  EXPECT_EQ(sendFieldName, sendFieldNames[0]);
+
+  auto recvFieldNames = broker.get_recv_fields_for_transfer();
+  ASSERT_EQ(1u, recvFieldNames.size());
+  EXPECT_EQ(recvFieldName, recvFieldNames[0]);
+
   broker.check_parts();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
@@ -114,11 +161,199 @@ TEST(TransferMainBroker, basicTransferSameSendRecvFieldName)
   std::vector<std::string> expectedFields = {recvFieldName};
   check_recv_tranfer_fields(recvFieldsForTransfer, expectedFields);
 
-  broker.transfer();
+  broker.transfer_initialize();
+  broker.transfer_apply();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
   check_field_values(recvBulk, recvFieldName, sendFieldValue);
 
+}
+
+TEST(TransferMainBroker, basicTransfer_3D_to_2D)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string meshSpec3D = "generated:2x2x8|bbox:0,0,0,2,2,8";
+  std::string sendFieldName = "field_1";
+  constexpr int numCopies = 1;
+  constexpr int spatialDim = 3;
+  stk::unit_test_util::PlanarLinearFieldEvaluator fieldEval(spatialDim);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm,
+                        sendFieldName, fieldEval, stk::topology::NODE_RANK,
+                        Ioss::Field::TRANSIENT, meshSpec3D, numCopies, spatialDim);
+
+  std::string meshSpec2D = "textmesh:0,1,QUAD_4_2D,1,2,5,4\n"
+                                    "0,2,QUAD_4_2D,2,3,6,5\n"
+                                    "0,3,QUAD_4_2D,4,5,8,7\n"
+                                    "0,4,QUAD_4_2D,5,6,9,8"
+          "|coordinates: 0,0, 1,0, 2,0,  0,1, 1,1, 2,1,  0,2, 1,2, 2,2 "
+          "|dimension:2";
+  std::string recvFieldName = "field_1";
+  double recvFieldValue = 4.321;
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field_2d(comm, recvFieldName, recvFieldValue, stk::topology::NODE_RANK, Ioss::Field::TRANSIENT, meshSpec2D);
+
+  stk::transfer_util::TransferMainSettings settings;
+  std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
+  settings.set_transfer_field(fieldList[0]);
+
+  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
+
+  broker.check_and_create_fields();
+  broker.check_parts();
+
+  check_field_values(sendBulk, sendFieldName, fieldEval);
+  check_field_values(recvBulk, recvFieldName, recvFieldValue);
+
+  broker.transfer_initialize();
+  broker.transfer_apply();
+
+  check_field_values(sendBulk, sendFieldName, fieldEval);
+  check_field_values(recvBulk, recvFieldName, fieldEval);
+}
+
+TEST(TransferMainBroker, basicTransfer_2D_to_3D_extrude)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string meshSpec2D = "textmesh:0,1,QUAD_4_2D,1,2,5,4\n"
+                                    "0,2,QUAD_4_2D,2,3,6,5\n"
+                                    "0,3,QUAD_4_2D,4,5,8,7\n"
+                                    "0,4,QUAD_4_2D,5,6,9,8"
+          "|coordinates: 0,0, 1,0, 2,0,  0,1, 1,1, 2,1,  0,2, 1,2, 2,2 "
+          "|dimension:2";
+  std::string sendFieldName = "field_1";
+  constexpr int numCopies = 1;
+  constexpr int spatialDim = 2;
+  stk::unit_test_util::LinearFieldEvaluator linearFieldEval(spatialDim);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm,
+                        sendFieldName, linearFieldEval, stk::topology::NODE_RANK,
+                        Ioss::Field::TRANSIENT, meshSpec2D, numCopies, spatialDim);
+
+  std::string meshSpec3D = "generated:2x2x8|bbox:0,0,0,2,2,8";
+  std::string recvFieldName = "field_1";
+  double recvFieldValue = 4.321;
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue, stk::topology::NODE_RANK, Ioss::Field::TRANSIENT, meshSpec3D);
+
+  stk::transfer_util::TransferMainSettings settings;
+  std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
+  settings.set_transfer_field(fieldList[0]);
+
+  settings.set_2d_to_3d_mapping_type("EXTRUDE");
+
+  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
+
+  broker.check_and_create_fields();
+  broker.check_parts();
+
+  check_field_values(sendBulk, sendFieldName, linearFieldEval);
+  check_field_values(recvBulk, recvFieldName, recvFieldValue);
+
+  broker.transfer_initialize();
+  broker.transfer_apply();
+
+  check_field_values(sendBulk, sendFieldName, linearFieldEval);
+  check_field_values(recvBulk, recvFieldName, linearFieldEval);
+}
+
+TEST(TransferMainBroker, basicTransfer_2D_to_3D_zequal0)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string meshSpec2D = "textmesh:0,1,QUAD_4_2D,1,2,5,4\n"
+                                    "0,2,QUAD_4_2D,2,3,6,5\n"
+                                    "0,3,QUAD_4_2D,4,5,8,7\n"
+                                    "0,4,QUAD_4_2D,5,6,9,8"
+          "|coordinates: 0,0, 1,0, 2,0,  0,1, 1,1, 2,1,  0,2, 1,2, 2,2 "
+          "|dimension:2";
+  std::string sendFieldName = "field_1";
+  constexpr int numCopies = 1;
+  constexpr int spatialDim = 2;
+  stk::unit_test_util::LinearFieldEvaluator linearFieldEval(spatialDim);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm,
+                        sendFieldName, linearFieldEval, stk::topology::NODE_RANK,
+                        Ioss::Field::TRANSIENT, meshSpec2D, numCopies, spatialDim);
+
+  std::string meshSpec3D = "generated:2x2x8|bbox:0,0,0,2,2,8";
+  std::string recvFieldName = "field_1";
+  double recvFieldValue = 0.0;
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue, stk::topology::NODE_RANK, Ioss::Field::TRANSIENT, meshSpec3D);
+
+  stk::transfer_util::TransferMainSettings settings;
+  std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
+  settings.set_transfer_field(fieldList[0]);
+
+  settings.set_2d_to_3d_mapping_type("ZPLANE");
+
+  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
+
+  broker.check_and_create_fields();
+  broker.check_parts();
+
+  check_field_values(sendBulk, sendFieldName, linearFieldEval);
+  check_field_values(recvBulk, recvFieldName, recvFieldValue);
+
+  broker.transfer_initialize();
+  broker.transfer_apply();
+
+  check_field_values(sendBulk, sendFieldName, linearFieldEval);
+
+  auto zEquals0 = [](double /*x*/, double /*y*/, double z) -> bool
+  { return std::abs(z) < std::numeric_limits<double>::epsilon(); };
+
+  check_field_values(recvBulk, recvFieldName, linearFieldEval, zEquals0);
+}
+
+TEST(TransferMainBroker, basicTransfer_2D_to_3D_zequalConstant)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string meshSpec2D = "textmesh:0,1,QUAD_4_2D,1,2,5,4\n"
+                                    "0,2,QUAD_4_2D,2,3,6,5\n"
+                                    "0,3,QUAD_4_2D,4,5,8,7\n"
+                                    "0,4,QUAD_4_2D,5,6,9,8"
+          "|coordinates: 0,0, 1,0, 2,0,  0,1, 1,1, 2,1,  0,2, 1,2, 2,2 "
+          "|dimension:2";
+  std::string sendFieldName = "field_1";
+  constexpr int numCopies = 1;
+  constexpr int spatialDim = 2;
+  stk::unit_test_util::LinearFieldEvaluator linearFieldEval(spatialDim);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm,
+                        sendFieldName, linearFieldEval, stk::topology::NODE_RANK,
+                        Ioss::Field::TRANSIENT, meshSpec2D, numCopies, spatialDim);
+
+  std::string meshSpec3D = "generated:2x2x8|bbox:0,0,0,2,2,8";
+  std::string recvFieldName = "field_1";
+  double recvFieldValue = 0.0;
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue, stk::topology::NODE_RANK, Ioss::Field::TRANSIENT, meshSpec3D);
+
+  stk::transfer_util::TransferMainSettings settings;
+  std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
+  settings.set_transfer_field(fieldList[0]);
+
+  settings.set_2d_to_3d_mapping_type("ZPLANE");
+  settings.set_coord_transf_z_expr("z=1");
+
+  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
+
+  broker.check_and_create_fields();
+  broker.check_parts();
+
+  check_field_values(sendBulk, sendFieldName, linearFieldEval);
+  check_field_values(recvBulk, recvFieldName, recvFieldValue);
+
+  broker.transfer_initialize();
+  broker.transfer_apply();
+
+  check_field_values(sendBulk, sendFieldName, linearFieldEval);
+
+  auto zEquals1 = [](double /*x*/, double /*y*/, double z) -> bool
+  { return std::abs(z) == 1.0; };
+
+  check_field_values(recvBulk, recvFieldName, linearFieldEval, zEquals1);
 }
 
 TEST(TransferMainBroker, basicTransferDifferentSendRecvFieldName)
@@ -128,11 +363,11 @@ TEST(TransferMainBroker, basicTransferDifferentSendRecvFieldName)
 
   std::string sendFieldName = "send_field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "recv_field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
   std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
@@ -140,7 +375,7 @@ TEST(TransferMainBroker, basicTransferDifferentSendRecvFieldName)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
+  broker.check_and_create_fields();
   broker.check_parts();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
@@ -150,7 +385,8 @@ TEST(TransferMainBroker, basicTransferDifferentSendRecvFieldName)
   std::vector<std::string> expectedFields = {recvFieldName};
   check_recv_tranfer_fields(recvFieldsForTransfer, expectedFields);
 
-  broker.transfer();
+  broker.transfer_initialize();
+  broker.transfer_apply();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
   check_field_values(recvBulk, recvFieldName, sendFieldValue);
@@ -164,7 +400,7 @@ TEST(TransferMainBroker, basicTransferSendFieldOnly)
 
   std::string sendFieldName = "send_field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::shared_ptr<stk::mesh::BulkData> recvBulk = stk::unit_test_util::build_mesh(3u, comm);
   stk::io::fill_mesh("generated:4x1x1", *recvBulk);
@@ -175,7 +411,7 @@ TEST(TransferMainBroker, basicTransferSendFieldOnly)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
+  broker.check_and_create_fields();
   broker.check_parts();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
@@ -184,7 +420,8 @@ TEST(TransferMainBroker, basicTransferSendFieldOnly)
   std::vector<std::string> expectedFields = {sendFieldName};
   check_recv_tranfer_fields(recvFieldsForTransfer, expectedFields);
 
-  broker.transfer();
+  broker.transfer_initialize();
+  broker.transfer_apply();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
   check_field_values(recvBulk, sendFieldName, sendFieldValue);
@@ -198,17 +435,17 @@ TEST(TransferMainBroker, basicTransferNoFieldListSendRecvFieldName)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
+  broker.check_and_create_fields();
   broker.check_parts();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
@@ -232,7 +469,7 @@ TEST(TransferMainBroker, basicTransferNoFieldListSendFieldOnly)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::shared_ptr<stk::mesh::BulkData> recvBulk = stk::unit_test_util::build_mesh(3u, comm);
   stk::io::fill_mesh("generated:4x1x1", *recvBulk);
@@ -241,7 +478,7 @@ TEST(TransferMainBroker, basicTransferNoFieldListSendFieldOnly)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
+  broker.check_and_create_fields();
   broker.check_parts();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
@@ -257,153 +494,124 @@ TEST(TransferMainBroker, basicTransferNoFieldListSendFieldOnly)
 
 }
 
-TEST(TransferMainBroker, sendFieldWrongRank)
+TEST(TransferMainBroker, basicTransferNoFieldListSendFieldOnlyRecvFieldDiffRank)
 {
   stk::ParallelMachine comm = stk::parallel_machine_world();
   if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue, stk::topology::ELEM_RANK);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+
+  std::shared_ptr<stk::mesh::BulkData> recvBulk = stk::unit_test_util::build_mesh(3u, comm);
+  stk::io::fill_mesh("generated:4x1x1", *recvBulk);
+
+  stk::transfer_util::TransferMainSettings settings;
+  settings.set_recv_type("ELEMENT_CENTROID");
+
+  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
+
+  EXPECT_NO_THROW(broker.check_and_create_fields());
+
+}
+
+TEST(TransferMainBroker, basicTransferNoFieldListSendFieldOnlyRecvFieldDiffRankGaussPoint)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string sendFieldName = "field_1";
+  double sendFieldValue = 1.234;
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+
+  std::shared_ptr<stk::mesh::BulkData> recvBulk = stk::unit_test_util::build_mesh(3u, comm);
+  stk::io::fill_mesh("generated:4x1x1", *recvBulk);
+
+  stk::transfer_util::TransferMainSettings settings;
+  settings.set_recv_type("ELEMENT_GAUSS_POINT");
+
+  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
+
+  EXPECT_NO_THROW(broker.check_and_create_fields());
+
+}
+
+TEST(TransferMainBroker, sendPartInvalid)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+
+  std::string sendFieldName = "field_1";
+  std::vector<std::string> sendPartNames = {"part_1234"};
+  double sendFieldValue = 1.234;
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "field_1";
+  std::vector<std::string> defaultRecvPartNames = {"block_1"};
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
   std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
   settings.set_transfer_field(fieldList[0]);
+  settings.set_transfer_send_parts(sendPartNames);
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  EXPECT_ANY_THROW(broker.check_fields());
+  auto expectedSendPartNames = broker.get_send_parts_for_transfer();
+  auto expectedRecvPartNames = broker.get_recv_parts_for_transfer();
+  EXPECT_EQ(sendPartNames, expectedSendPartNames);
+  EXPECT_EQ(defaultRecvPartNames, expectedRecvPartNames);
+  EXPECT_ANY_THROW(broker.check_parts());
 
 }
 
-TEST(TransferMainBroker, sendFieldWrongRankNoFieldList)
+TEST(TransferMainBroker, recvPartInvalid)
 {
   stk::ParallelMachine comm = stk::parallel_machine_world();
   if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
 
   std::string sendFieldName = "field_1";
+  std::vector<std::string> defaultSendPartNames = {"block_1"};
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue, stk::topology::ELEM_RANK);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "field_1";
+  std::vector<std::string> recvPartNames = {"part_1234"};
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
-
-  stk::transfer_util::TransferMainSettings settings;
-
-  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
-
-  EXPECT_ANY_THROW(broker.check_fields());
-
-}
-
-TEST(TransferMainBroker, recvFieldWrongRank)
-{
-  stk::ParallelMachine comm = stk::parallel_machine_world();
-  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
-
-  std::string sendFieldName = "field_1";
-  double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
-
-  std::string recvFieldName = "field_1";
-  double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue, stk::topology::ELEM_RANK);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
   std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
   settings.set_transfer_field(fieldList[0]);
+  settings.set_transfer_recv_parts(recvPartNames);
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
-  broker.check_parts();
-
-  check_field_values(sendBulk, sendFieldName, sendFieldValue);
-
-  std::vector<std::string> recvFieldsForTransfer = broker.get_recv_fields_for_transfer();
-  std::vector<std::string> expectedFields = {recvFieldName};
-  check_recv_tranfer_fields(recvFieldsForTransfer, expectedFields);
-
-  broker.transfer();
-
-  check_field_values(sendBulk, sendFieldName, sendFieldValue);
-  check_field_values(recvBulk, recvFieldName, sendFieldValue);
-  check_field_values(recvBulk, recvFieldName, recvFieldValue, stk::topology::ELEM_RANK);
+  auto expectedSendPartNames = broker.get_send_parts_for_transfer();
+  auto expectedRecvPartNames = broker.get_recv_parts_for_transfer();
+  EXPECT_EQ(defaultSendPartNames, expectedSendPartNames);
+  EXPECT_EQ(recvPartNames, expectedRecvPartNames);
+  EXPECT_ANY_THROW(broker.check_parts());
 
 }
 
-TEST(TransferMainBroker, recvFieldWrongRankNoFieldList)
+TEST(TransferMainBroker, noRecvPart)
 {
   stk::ParallelMachine comm = stk::parallel_machine_world();
   if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
-  std::string recvFieldName = "field_1";
-  double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue, stk::topology::ELEM_RANK);
-
-  stk::transfer_util::TransferMainSettings settings;
-
-  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
-
-  broker.check_fields();
-  broker.check_parts();
-
-  check_field_values(sendBulk, sendFieldName, sendFieldValue);
-
-  std::vector<std::string> recvFieldsForTransfer = broker.get_recv_fields_for_transfer();
-  std::vector<std::string> expectedFields = {recvFieldName};
-  check_recv_tranfer_fields(recvFieldsForTransfer, expectedFields);
-
-  broker.transfer();
-
-  check_field_values(sendBulk, sendFieldName, sendFieldValue);
-  check_field_values(recvBulk, recvFieldName, sendFieldValue);
-  check_field_values(recvBulk, recvFieldName, recvFieldValue, stk::topology::ELEM_RANK);
-
-}
-
-TEST(TransferMainBroker, recvFieldWrongRankDifferentSendRecv)
-{
-  stk::ParallelMachine comm = stk::parallel_machine_world();
-  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
-
-  std::string sendFieldName = "send_field_1";
-  double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
-
-  std::string recvFieldName = "recv_field_1";
-  double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue, stk::topology::ELEM_RANK);
+  std::shared_ptr<stk::mesh::BulkData> recvBulk = stk::unit_test_util::build_mesh(3u, comm);
+  stk::io::fill_mesh("generated:4x1x1", *recvBulk);
 
   stk::transfer_util::TransferMainSettings settings;
-  std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
-  settings.set_transfer_field(fieldList[0]);
+  settings.set_recv_type("EDGE_GAUSS_POINT");
 
-  stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
-
-  broker.check_fields();
-  broker.check_parts();
-
-  check_field_values(sendBulk, sendFieldName, sendFieldValue);
-
-  std::vector<std::string> recvFieldsForTransfer = broker.get_recv_fields_for_transfer();
-  std::vector<std::string> expectedFields = {recvFieldName};
-  check_recv_tranfer_fields(recvFieldsForTransfer, expectedFields);
-
-  broker.transfer();
-
-  check_field_values(sendBulk, sendFieldName, sendFieldValue);
-  check_field_values(recvBulk, recvFieldName, sendFieldValue);
-  check_field_values(recvBulk, recvFieldName, recvFieldValue, stk::topology::ELEM_RANK);
+  EXPECT_ANY_THROW(stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings));
 
 }
 
@@ -414,11 +622,11 @@ TEST(TransferMainBroker, basicTransferDifferentSendRecvFieldNameOnlySendFieldInL
 
   std::string sendFieldName = "send_field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "recv_field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
   std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, sendFieldName}};
@@ -426,8 +634,8 @@ TEST(TransferMainBroker, basicTransferDifferentSendRecvFieldNameOnlySendFieldInL
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
   broker.check_parts();
+  broker.check_and_create_fields();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
   check_field_values(recvBulk, recvFieldName, recvFieldValue);
@@ -451,11 +659,11 @@ TEST(TransferMainBroker, sendFieldNotInFieldList)
 
   std::string sendFieldName = "send_field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "recv_field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
   std::vector<std::pair<std::string, std::string>> fieldList = {{recvFieldName, recvFieldName}};
@@ -463,7 +671,7 @@ TEST(TransferMainBroker, sendFieldNotInFieldList)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  EXPECT_ANY_THROW(broker.check_fields());
+  EXPECT_ANY_THROW(broker.check_and_create_fields());
 
 }
 
@@ -474,12 +682,12 @@ TEST(TransferMainBroker, sendFieldNotTransient)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue,
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::MESH);
 
   std::string recvFieldName = "field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
   std::vector<std::pair<std::string, std::string>> fieldList = {{sendFieldName, recvFieldName}};
@@ -487,7 +695,7 @@ TEST(TransferMainBroker, sendFieldNotTransient)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  EXPECT_ANY_THROW(broker.check_fields());
+  EXPECT_ANY_THROW(broker.check_and_create_fields());
 
 }
 
@@ -498,18 +706,18 @@ TEST(TransferMainBroker, sendFieldNotTransientNoFieldList)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue,
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::MESH);
 
   std::string recvFieldName = "field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  EXPECT_ANY_THROW(broker.check_fields());
+  EXPECT_ANY_THROW(broker.check_and_create_fields());
 
 }
 
@@ -520,11 +728,11 @@ TEST(TransferMainBroker, recvFieldNotTransientSameSendandReceive)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue,
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::MESH);
 
   stk::transfer_util::TransferMainSettings settings;
@@ -533,7 +741,7 @@ TEST(TransferMainBroker, recvFieldNotTransientSameSendandReceive)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  EXPECT_ANY_THROW(broker.check_fields());
+  EXPECT_ANY_THROW(broker.check_and_create_fields());
 
 }
 
@@ -544,18 +752,18 @@ TEST(TransferMainBroker, recvFieldNotTransientSameSendandReceiveNoFieldList)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue,
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::MESH);
 
   stk::transfer_util::TransferMainSettings settings;
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  EXPECT_ANY_THROW(broker.check_fields());
+  EXPECT_ANY_THROW(broker.check_and_create_fields());
 
 }
 
@@ -566,11 +774,11 @@ TEST(TransferMainBroker, recvFieldNotTransientDifferentSendandReceive)
 
   std::string sendFieldName = "send_field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "recv_field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue,
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::MESH);
 
   stk::transfer_util::TransferMainSettings settings;
@@ -579,7 +787,7 @@ TEST(TransferMainBroker, recvFieldNotTransientDifferentSendandReceive)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  EXPECT_ANY_THROW(broker.check_fields());
+  EXPECT_ANY_THROW(broker.check_and_create_fields());
 
 }
 
@@ -590,19 +798,19 @@ TEST(TransferMainBroker, recvFieldNotTransientDifferentSendandReceiveNoFieldList
 
   std::string sendFieldName = "send_field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "recv_field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue,
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::MESH);
 
   stk::transfer_util::TransferMainSettings settings;
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
   broker.check_parts();
+  broker.check_and_create_fields();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
   check_field_values(recvBulk, recvFieldName, recvFieldValue);
@@ -626,25 +834,28 @@ TEST(TransferMainBroker, sendMeshTets)
 
   std::string sendFieldName = "field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue,
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::TRANSIENT,
                                          "generated:4x1x1|tets");
 
   std::string recvFieldName = "field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue);
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue);
 
   stk::transfer_util::TransferMainSettings settings;
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
   broker.check_parts();
+  broker.check_and_create_fields();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
   check_field_values(recvBulk, recvFieldName, recvFieldValue);
 
-  EXPECT_ANY_THROW(broker.transfer());
+  broker.transfer();
+  
+  check_field_values(sendBulk, sendFieldName, sendFieldValue);
+  check_field_values(recvBulk, sendFieldName, sendFieldValue);
 
 }
 
@@ -655,11 +866,11 @@ TEST(TransferMainBroker, recvMeshTets)
 
   std::string sendFieldName = "send_field_1";
   double sendFieldValue = 1.234;
-  auto sendBulk = create_mesh_with_field(comm, sendFieldName, sendFieldValue);
+  auto sendBulk = stk::unit_test_util::create_mesh_with_field(comm, sendFieldName, sendFieldValue);
 
   std::string recvFieldName = "recv_field_1";
   double recvFieldValue = 4.321;
-  auto recvBulk = create_mesh_with_field(comm, recvFieldName, recvFieldValue,
+  auto recvBulk = stk::unit_test_util::create_mesh_with_field(comm, recvFieldName, recvFieldValue,
                                          stk::topology::NODE_RANK, Ioss::Field::TRANSIENT,
                                          "generated:4x1x1|tets");
 
@@ -667,8 +878,8 @@ TEST(TransferMainBroker, recvMeshTets)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
   broker.check_parts();
+  broker.check_and_create_fields();
 
   check_field_values(sendBulk, sendFieldName, sendFieldValue);
   check_field_values(recvBulk, recvFieldName, recvFieldValue);
@@ -725,8 +936,8 @@ TEST(TransferMainBroker, basicTransferTwoFieldsBothTransferred)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
   broker.check_parts();
+  broker.check_and_create_fields();
 
   check_field_values(sendBulk, sendFieldNames[0], sendFieldValues[0]);
   check_field_values(sendBulk, sendFieldNames[1], sendFieldValues[1]);
@@ -762,8 +973,8 @@ TEST(TransferMainBroker, basicTransferTwoFieldsBothTransferredNoFieldList)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
   broker.check_parts();
+  broker.check_and_create_fields();
 
   check_field_values(sendBulk, sendFieldNames[0], sendFieldValues[0]);
   check_field_values(sendBulk, sendFieldNames[1], sendFieldValues[1]);
@@ -801,8 +1012,8 @@ TEST(TransferMainBroker, basicTransferTwoFieldsOneTransferred)
 
   stk::transfer_util::TransferMainBroker broker(comm, sendBulk, recvBulk, settings);
 
-  broker.check_fields();
   broker.check_parts();
+  broker.check_and_create_fields();
 
   check_field_values(sendBulk, sendFieldNames[0], sendFieldValues[0]);
   check_field_values(sendBulk, sendFieldNames[1], sendFieldValues[1]);
@@ -821,6 +1032,5 @@ TEST(TransferMainBroker, basicTransferTwoFieldsOneTransferred)
   check_field_values(recvBulk, recvFieldNames[1], sendFieldValues[1]);
 
 }
-
 
 }

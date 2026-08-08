@@ -85,7 +85,7 @@ void RfromP_Or_TransP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(L
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RfromP_Or_TransP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+void RfromP_Or_TransP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& /*fineLevel*/, Level& coarseLevel) const {
   FactoryMonitor m(*this, "Transpose P", coarseLevel);
   std::string label = "MueLu::TransP-" + Teuchos::toString(coarseLevel.GetLevelID());
 

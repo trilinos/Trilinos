@@ -63,9 +63,14 @@
 
 #cmakedefine STK_UNIFIED_MEMORY
 
+#cmakedefine STK_FIELD_BOUNDS_CHECK
+
+#cmakedefine STK_ASAN_FIELD_ACCESS
+
 #cmakedefine STK_VOLATILE_SIMD
 
 #cmakedefine STK_HAS_SEACAS_IOSS
+#cmakedefine STK_HAS_SEACAS_IOSS_ZOLTAN
 
 #cmakedefine STK_HAS_SEACAS_EXODUS
 

@@ -3927,6 +3927,15 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   friend struct Tpetra::MMdetails::KernelWrappers;
   template <typename S, typename LO, typename GO, typename NODE, typename LOV>
   friend struct Tpetra::MMdetails::KernelWrappers2;
+  // Really we want to friend:
+  // template <typename S, typename LO, typename GO, typename NODE, typename LOV>
+  // friend void Tpetra::MMdetails::kokkos_kernels_mult_A_B_newmatrix(...),
+  // but nvcc seemingly doesn't reliably honor this friendship (because it's a template class?)
+  // Instead, we defined a little non-template wrapper class over by kokkos_kernels_mult_A_B_newmatrix so we
+  // can friend that here instead, which seems to work.
+  // This is needed so kokkos_kernels_mult_A_B_newmatrix can access the lazy integer row pointer
+  // helpers
+  friend struct Tpetra::MMdetails::CrsMatrixApplyHelperAccess;
 
   // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
   friend void Tpetra::MMdetails::import_and_extract_views<Scalar, LocalOrdinal, GlobalOrdinal, Node>(

@@ -42,6 +42,7 @@
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
 #include <type_traits>
+#include "Kokkos_Core.hpp"
 
 namespace stk { class CommBuffer; }
 namespace stk { namespace mesh { class DataTraits; } }
@@ -53,9 +54,11 @@ class DataTraits ;
 
 template <typename T>
 struct is_field_datatype {
-  static constexpr bool value = std::is_arithmetic<T>::value ||
-                                std::is_same<std::complex<float>, T>::value ||
-                                std::is_same<std::complex<double>, T>::value;
+  static constexpr bool value = std::is_arithmetic_v<T> ||
+                                std::is_same_v<std::complex<float>, T> ||
+                                std::is_same_v<std::complex<double>, T> ||
+                                std::is_same_v<Kokkos::complex<float>, T> ||
+                                std::is_same_v<Kokkos::complex<double>, T>;
 };
 
 template <typename T>
@@ -74,39 +77,43 @@ const DataTraits & data_traits( const T & ) { return data_traits<T>(); }
 //----------------------------------------------------------------------
 // Data traits for the fundamental computational data types:
 
-template<> const DataTraits & data_traits< void >();
-template<> const DataTraits & data_traits< signed   char >();
-template<> const DataTraits & data_traits< unsigned char >();
-template<> const DataTraits & data_traits< signed   short >();
-template<> const DataTraits & data_traits< unsigned short >();
-template<> const DataTraits & data_traits< signed   int >();
-template<> const DataTraits & data_traits< unsigned int >();
-template<> const DataTraits & data_traits< signed   long >();
-template<> const DataTraits & data_traits< signed   long long>();
-template<> const DataTraits & data_traits< unsigned long >();
-template<> const DataTraits & data_traits< unsigned long long>();
-template<> const DataTraits & data_traits< float >();
-template<> const DataTraits & data_traits< double >();
-template<> const DataTraits & data_traits< long double >();
-template<> const DataTraits & data_traits< std::complex<float> >();
-template<> const DataTraits & data_traits< std::complex<double> >();
+template<> const DataTraits & data_traits<void>();
+template<> const DataTraits & data_traits<signed   char>();
+template<> const DataTraits & data_traits<unsigned char>();
+template<> const DataTraits & data_traits<signed   short>();
+template<> const DataTraits & data_traits<unsigned short>();
+template<> const DataTraits & data_traits<signed   int>();
+template<> const DataTraits & data_traits<unsigned int>();
+template<> const DataTraits & data_traits<signed   long>();
+template<> const DataTraits & data_traits<unsigned long>();
+template<> const DataTraits & data_traits<signed   long long>();
+template<> const DataTraits & data_traits<unsigned long long>();
+template<> const DataTraits & data_traits<float>();
+template<> const DataTraits & data_traits<double>();
+template<> const DataTraits & data_traits<long double>();
+template<> const DataTraits & data_traits<std::complex<float>>();
+template<> const DataTraits & data_traits<std::complex<double>>();
+template<> const DataTraits & data_traits<Kokkos::complex<float>>();
+template<> const DataTraits & data_traits<Kokkos::complex<double>>();
 
-template<> const DataTraits & data_traits< void * >();
-template<> const DataTraits & data_traits< signed   char * >();
-template<> const DataTraits & data_traits< unsigned char * >();
-template<> const DataTraits & data_traits< signed   short * >();
-template<> const DataTraits & data_traits< unsigned short * >();
-template<> const DataTraits & data_traits< signed   int * >();
-template<> const DataTraits & data_traits< unsigned int * >();
-template<> const DataTraits & data_traits< signed   long * >();
-template<> const DataTraits & data_traits< signed   long long * >();
-template<> const DataTraits & data_traits< unsigned long * >();
-template<> const DataTraits & data_traits< unsigned long long * >();
-template<> const DataTraits & data_traits< float * >();
-template<> const DataTraits & data_traits< double * >();
-template<> const DataTraits & data_traits< long double * >();
-template<> const DataTraits & data_traits< std::complex<float> * >();
-template<> const DataTraits & data_traits< std::complex<double> * >();
+template<> const DataTraits & data_traits<void *>();
+template<> const DataTraits & data_traits<signed   char*>();
+template<> const DataTraits & data_traits<unsigned char*>();
+template<> const DataTraits & data_traits<signed   short*>();
+template<> const DataTraits & data_traits<unsigned short*>();
+template<> const DataTraits & data_traits<signed   int*>();
+template<> const DataTraits & data_traits<unsigned int*>();
+template<> const DataTraits & data_traits<signed   long*>();
+template<> const DataTraits & data_traits<signed   long long*>();
+template<> const DataTraits & data_traits<unsigned long*>();
+template<> const DataTraits & data_traits<unsigned long long*>();
+template<> const DataTraits & data_traits<float*>();
+template<> const DataTraits & data_traits<double*>();
+template<> const DataTraits & data_traits<long double*>();
+template<> const DataTraits & data_traits<std::complex<float>*>();
+template<> const DataTraits & data_traits<std::complex<double>*>();
+template<> const DataTraits & data_traits<Kokkos::complex<float>*>();
+template<> const DataTraits & data_traits<Kokkos::complex<double>*>();
 
 //----------------------------------------------------------------------
 

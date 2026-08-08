@@ -7,6 +7,12 @@ INCLUDE(TrilinosCreateClientTemplateHeaders)
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
 
+# Windows shared-library import/export for DATA symbols in rtop.dll
+# (e.g. RTOpPack::transpMap). Consumers need __declspec(dllimport) or LNK2019.
+SET(CURRENT_PACKAGE RTOP)
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
+
 #
 # B) Define the header and source files (and directories)
 #
@@ -71,6 +77,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_Config.h )
+APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
 
 #
 # C) Define the targets for package's library(s)
@@ -80,4 +87,5 @@ TRIBITS_ADD_LIBRARY(
   rtop
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEFINES -DRTOP_LIB_EXPORTS_MODE
   )

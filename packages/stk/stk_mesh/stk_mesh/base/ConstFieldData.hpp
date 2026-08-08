@@ -63,10 +63,10 @@ public:
   static constexpr Layout layout = DataLayout;
 
   KOKKOS_FUNCTION ConstFieldData();
-  ConstFieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes);
+  ConstFieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, FieldDataCopyTracking* copyTracking);
   KOKKOS_FUNCTION virtual ~ConstFieldData() override;
 
-  ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag);
+  ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag, const char* file, int line);
   KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData);
   KOKKOS_FUNCTION ConstFieldData(ConstFieldData&& fieldData);
   KOKKOS_FUNCTION ConstFieldData& operator=(const ConstFieldData& fieldData);
@@ -88,9 +88,8 @@ public:
                                                          int line = STK_DEVICE_LINE) const;
 
 protected:
-  template <typename _T, typename _MemSpace> friend class DeviceField;
+  template <typename T_, typename MemSpace_> friend class DeviceField;
 
-  virtual void update_device_field_metadata() override;
   virtual void sync_to_host(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) override;
   virtual void sync_to_device(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) override;
   virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout, bool needsSync) override;
@@ -113,11 +112,10 @@ public:
   static constexpr Layout layout = Layout::Right;
 
   ConstFieldData();
-  ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
-                 const DataTraits& dataTraits);
-  KOKKOS_FUNCTION ~ConstFieldData() override;
+  ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal, const DataTraits& dataTraits);
+  KOKKOS_FUNCTION virtual ~ConstFieldData() override;
 
-  ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag);
+  ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag, const char* file, int line);
   KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData);
   KOKKOS_FUNCTION ConstFieldData(ConstFieldData&& fieldData);
   KOKKOS_FUNCTION ConstFieldData& operator=(const ConstFieldData& fieldData);
@@ -149,12 +147,7 @@ public:
                                                                           int line = STK_HOST_LINE) const;
 
 protected:
-  template <typename _T, typename _MemSpace> friend class HostField;
-
-  virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout, bool needsSync) override;
-  virtual void fence(const stk::ngp::ExecSpace&) override {}
+  template <typename T_, typename MemSpace_> friend class HostField;
 };
 
 //------------------------------------------------------------------------------
@@ -169,11 +162,10 @@ public:
   static constexpr Layout layout = Layout::Left;
 
   ConstFieldData();
-  ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
-                 const DataTraits& dataTraits);
-  KOKKOS_FUNCTION ~ConstFieldData() override;
+  ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal, const DataTraits& dataTraits);
+  KOKKOS_FUNCTION virtual ~ConstFieldData() override;
 
-  ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag);
+  ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag, const char* file, int line);
   KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData);
   KOKKOS_FUNCTION ConstFieldData(ConstFieldData&& fieldData);
   KOKKOS_FUNCTION ConstFieldData& operator=(const ConstFieldData& fieldData);
@@ -205,12 +197,7 @@ public:
                                                                          int line = STK_HOST_LINE) const;
 
 protected:
-  template <typename _T, typename _MemSpace> friend class HostField;
-
-  virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout, bool needsSync) override;
-  virtual void fence(const stk::ngp::ExecSpace&) override {}
+  template <typename T_, typename MemSpace_> friend class HostField;
 };
 
 //------------------------------------------------------------------------------
@@ -225,8 +212,9 @@ public:
   static constexpr Layout layout = Layout::Auto;
 
   ConstFieldData();
-  ConstFieldData(const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag);
-  KOKKOS_FUNCTION ~ConstFieldData() override;
+  ConstFieldData(const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag,
+                 const char* file, int line);
+  KOKKOS_FUNCTION virtual ~ConstFieldData() override;
 
   KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData);
   KOKKOS_FUNCTION ConstFieldData(ConstFieldData&& fieldData);
@@ -259,12 +247,7 @@ public:
                                                                          int line = STK_HOST_LINE) const;
 
 protected:
-  template <typename _T, typename _MemSpace> friend class HostField;
-
-  virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout, bool needsSync) override;
-  virtual void fence(const stk::ngp::ExecSpace&) override {}
+  template <typename T_, typename MemSpace_> friend class HostField;
 };
 
 
@@ -280,8 +263,9 @@ ConstFieldData<T, Space, DataLayout>::ConstFieldData()
 
 //------------------------------------------------------------------------------
 template <typename T, typename Space, Layout DataLayout>
-ConstFieldData<T, Space, DataLayout>::ConstFieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes)
-  : FieldDataBytes<Space>(hostFieldBytes, DataLayout)
+ConstFieldData<T, Space, DataLayout>::ConstFieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes,
+                                                     FieldDataCopyTracking* copyTracking)
+  : FieldDataBytes<Space>(hostFieldBytes, DataLayout, copyTracking)
 {}
 
 //------------------------------------------------------------------------------
@@ -296,11 +280,11 @@ ConstFieldData<T, Space, DataLayout>::~ConstFieldData()
 
 //------------------------------------------------------------------------------
 template <typename T, typename Space, Layout DataLayout>
-ConstFieldData<T, Space, DataLayout>::ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag)
+ConstFieldData<T, Space, DataLayout>::ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag,
+                                                     const char* file, int line)
   : FieldDataBytes<Space>(fieldData)
 {
-  this->track_copy(accessTag);
-  this->update_field_meta_data_mod_count();
+  this->track_copy(accessTag, file, line);
 }
 
 //------------------------------------------------------------------------------
@@ -426,19 +410,13 @@ ConstFieldData<T, Space, DataLayout>::bucket_values(int bucketId,
 //------------------------------------------------------------------------------
 template <typename T, typename Space, Layout DataLayout>
 void
-ConstFieldData<T, Space, DataLayout>::update_device_field_metadata()
-{
-  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
-  deviceFieldDataManager->set_device_field_meta_data(*this);
-  this->m_deviceMeshSyncCountAtLastSync = deviceFieldDataManager->synchronized_count();
-}
-
-//------------------------------------------------------------------------------
-template <typename T, typename Space, Layout DataLayout>
-void
 ConstFieldData<T, Space, DataLayout>::sync_to_host(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout)
 {
-  impl::transpose_to_pinned_and_mapped_memory<T>(execSpace, this->m_deviceFieldMetaData, hostDataLayout);
+  impl::transpose_to_pinned_and_mapped_memory<T>(execSpace,
+                                                 this->m_deviceFieldMetaData,
+                                                 this->mesh().mesh_meta_data().get_fields()[this->m_ordinal]->max_size(),
+                                                 this->m_numBuckets,
+                                                 hostDataLayout);
   execSpace.fence();
 }
 
@@ -447,7 +425,11 @@ template <typename T, typename Space, Layout DataLayout>
 void
 ConstFieldData<T, Space, DataLayout>::sync_to_device(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout)
 {
-  impl::transpose_from_pinned_and_mapped_memory<T>(execSpace, this->m_deviceFieldMetaData, hostDataLayout);
+  impl::transpose_from_pinned_and_mapped_memory<T>(execSpace,
+                                                   this->m_deviceFieldMetaData,
+                                                   this->mesh().mesh_meta_data().get_fields()[this->m_ordinal]->max_size(),
+                                                   this->m_numBuckets,
+                                                   hostDataLayout);
   execSpace.fence();
 }
 
@@ -459,7 +441,7 @@ ConstFieldData<T, Space, DataLayout>::update(const stk::ngp::ExecSpace& execSpac
 {
   ProfilingBlock prof("ConstFieldData::update()");
 
-  this->m_fieldDataSynchronizedCount = this->mesh().synchronized_count();
+  this->set_up_to_date();
 
   DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
   STK_ThrowRequire(deviceFieldDataManager != nullptr);
@@ -470,11 +452,14 @@ ConstFieldData<T, Space, DataLayout>::update(const stk::ngp::ExecSpace& execSpac
 
   deviceFieldDataManager->set_device_field_meta_data(*this);
 
-
   if (not deviceFieldDataManager->has_unified_device_storage(this->field_ordinal())) {
     if (needsSync) {
       // Sync everything in one shot, in addition to just the modified Buckets
-      impl::transpose_from_pinned_and_mapped_memory<T>(execSpace, this->m_deviceFieldMetaData, hostDataLayout);
+      impl::transpose_from_pinned_and_mapped_memory<T>(execSpace,
+                                                       this->m_deviceFieldMetaData,
+                                                       this->mesh().mesh_meta_data().get_fields()[this->m_ordinal]->max_size(),
+                                                       this->m_numBuckets,
+                                                       hostDataLayout);
     }
     else {
       // Just sync the modified Buckets
@@ -482,15 +467,19 @@ ConstFieldData<T, Space, DataLayout>::update(const stk::ngp::ExecSpace& execSpac
       const auto deviceBucketsModified = std::any_cast<DeviceBucketsModifiedCollectionType<mem_space>>(
               deviceFieldDataManager->get_device_bucket_is_modified(this->field_ordinal(), rankedOrdinal));
 
-      impl::transpose_modified_buckets_to_device<T>(execSpace, this->m_deviceFieldMetaData, rankedOrdinal,
-                                                    deviceBucketsModified, hostDataLayout);
+      impl::transpose_modified_buckets_to_device<T>(execSpace,
+                                                    this->m_deviceFieldMetaData,
+                                                    this->mesh().mesh_meta_data().get_fields()[this->m_ordinal]->max_size(),
+                                                    this->m_numBuckets,
+                                                    rankedOrdinal, deviceBucketsModified, hostDataLayout);
     }
   }
   execSpace.fence();
 
   deviceFieldDataManager->clear_bucket_is_modified(this->field_ordinal());
 
-  this->m_deviceFastMeshIndices = this->mesh().template get_updated_fast_mesh_indices<mem_space>();
+  auto& deviceFastMeshIndices = this->mesh().template get_updated_fast_mesh_indices<mem_space>();
+  this->set_fast_mesh_indices(deviceFastMeshIndices.data(), deviceFastMeshIndices.extent(0));
 }
 
 //------------------------------------------------------------------------------
@@ -514,9 +503,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::ConstFieldData()
 //------------------------------------------------------------------------------
 template <typename T>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                                      const std::string& fieldName,
                                                                       const DataTraits& dataTraits)
-  : FieldDataBytes<stk::ngp::HostSpace>(entityRank, fieldOrdinal, fieldName, dataTraits, Layout::Right)
+  : FieldDataBytes<stk::ngp::HostSpace>(entityRank, fieldOrdinal, dataTraits, Layout::Right)
 {}
 
 //------------------------------------------------------------------------------
@@ -532,11 +520,11 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::~ConstFieldData()
 //------------------------------------------------------------------------------
 template <typename T>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::ConstFieldData(const ConstFieldData& fieldData,
-                                                                      FieldAccessTag accessTag)
+                                                                      FieldAccessTag accessTag,
+                                                                      const char* file, int line)
   : FieldDataBytes<stk::ngp::HostSpace>(fieldData)
 {
-  this->track_copy(accessTag);
-  this->update_field_meta_data_mod_count();
+  this->track_copy(accessTag, file, line);
 }
 
 //------------------------------------------------------------------------------
@@ -563,9 +551,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::ConstFieldData(ConstField
 
 //------------------------------------------------------------------------------
 template <typename T>
-KOKKOS_FUNCTION
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>&
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::operator=(const ConstFieldData& fieldData)
+KOKKOS_FUNCTION ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>&
+ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::operator=([[maybe_unused]] const ConstFieldData& fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
@@ -578,9 +565,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::operator=(const ConstFiel
 
 //------------------------------------------------------------------------------
 template <typename T>
-KOKKOS_FUNCTION
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>&
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::operator=(ConstFieldData&& fieldData)
+KOKKOS_FUNCTION ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>&
+ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::operator=([[maybe_unused]] ConstFieldData&& fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
@@ -597,9 +583,9 @@ inline EntityValues<const T, stk::ngp::HostSpace, Layout::Right>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::entity_values(Entity entity,
                                                                      const char* file, int line) const
 {
-  const MeshIndex& mi = this->mesh().mesh_index(entity);
-
   this->check_updated_field(file, line);
+
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
   this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
@@ -684,14 +670,6 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::bucket_values(int bucketI
         fieldMetaData.m_bucketSize, this->field_name());
 }
 
-//------------------------------------------------------------------------------
-template <typename T>
-void
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>::update(const stk::ngp::ExecSpace&, Layout, bool)
-{
-  this->m_fieldDataSynchronizedCount = this->mesh().synchronized_count();
-}
-
 
 //==============================================================================
 // Host ConstFieldData definitions: Layout::Left
@@ -705,9 +683,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::ConstFieldData()
 //------------------------------------------------------------------------------
 template <typename T>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                                     const std::string& fieldName,
                                                                      const DataTraits& dataTraits)
-  : FieldDataBytes<stk::ngp::HostSpace>(entityRank, fieldOrdinal, fieldName, dataTraits, Layout::Left)
+  : FieldDataBytes<stk::ngp::HostSpace>(entityRank, fieldOrdinal, dataTraits, Layout::Left)
 {}
 
 //------------------------------------------------------------------------------
@@ -723,11 +700,11 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::~ConstFieldData()
 //------------------------------------------------------------------------------
 template <typename T>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::ConstFieldData(const ConstFieldData& fieldData,
-                                                                     FieldAccessTag accessTag)
+                                                                     FieldAccessTag accessTag,
+                                                                     const char* file, int line)
   : FieldDataBytes<stk::ngp::HostSpace>(fieldData)
 {
-  this->track_copy(accessTag);
-  this->update_field_meta_data_mod_count();
+  this->track_copy(accessTag, file, line);
 }
 
 //------------------------------------------------------------------------------
@@ -754,9 +731,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::ConstFieldData(ConstFieldD
 
 //------------------------------------------------------------------------------
 template <typename T>
-KOKKOS_FUNCTION
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>&
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::operator=(const ConstFieldData& fieldData)
+KOKKOS_FUNCTION ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>&
+ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::operator=([[maybe_unused]] const ConstFieldData& fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
@@ -769,9 +745,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::operator=(const ConstField
 
 //------------------------------------------------------------------------------
 template <typename T>
-KOKKOS_FUNCTION
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>&
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::operator=(ConstFieldData&& fieldData)
+KOKKOS_FUNCTION ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>&
+ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::operator=([[maybe_unused]] ConstFieldData&& fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
@@ -788,9 +763,9 @@ inline EntityValues<const T, stk::ngp::HostSpace, Layout::Left>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::entity_values(Entity entity,
                                                                     const char* file, int line) const
 {
-  const MeshIndex& mi = this->mesh().mesh_index(entity);
-
   this->check_updated_field(file, line);
+
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
   this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
@@ -880,14 +855,6 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::bucket_values(int bucketId
         fieldMetaData.m_bucketCapacity, this->field_name());
 }
 
-//------------------------------------------------------------------------------
-template <typename T>
-void
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>::update(const stk::ngp::ExecSpace&, Layout, bool)
-{
-  this->m_fieldDataSynchronizedCount = this->mesh().synchronized_count();
-}
-
 
 //==============================================================================
 // Host ConstFieldData definitions: Layout::Auto
@@ -901,11 +868,10 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::ConstFieldData()
 //------------------------------------------------------------------------------
 template <typename T>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::ConstFieldData(
-    const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag)
+    const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag, const char* file, int line)
   : FieldDataBytes<stk::ngp::HostSpace>(hostFieldBytes)
 {
-  this->track_copy(accessTag);
-  this->update_field_meta_data_mod_count();
+  this->track_copy(accessTag, file, line);
 }
 
 //------------------------------------------------------------------------------
@@ -942,9 +908,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::ConstFieldData(ConstFieldD
 
 //------------------------------------------------------------------------------
 template <typename T>
-KOKKOS_FUNCTION
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>&
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::operator=(const ConstFieldData& fieldData)
+KOKKOS_FUNCTION ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>&
+ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::operator=([[maybe_unused]] const ConstFieldData& fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
@@ -957,9 +922,8 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::operator=(const ConstField
 
 //------------------------------------------------------------------------------
 template <typename T>
-KOKKOS_FUNCTION
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>&
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::operator=(ConstFieldData&& fieldData)
+KOKKOS_FUNCTION ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>&
+ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::operator=([[maybe_unused]] ConstFieldData&& fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
@@ -976,9 +940,9 @@ inline EntityValues<const T, stk::ngp::HostSpace, Layout::Auto>
 ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::entity_values(Entity entity,
                                                                     const char* file, int line) const
 {
-  const MeshIndex& mi = this->mesh().mesh_index(entity);
-
   this->check_updated_field(file, line);
+
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
   this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
@@ -1134,15 +1098,6 @@ ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::bucket_values(int bucketId
     return BucketValues<const T, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
   }
 }
-
-//------------------------------------------------------------------------------
-template <typename T>
-void
-ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>::update(const stk::ngp::ExecSpace&, Layout, bool)
-{
-  this->m_fieldDataSynchronizedCount = this->mesh().synchronized_count();
-}
-
 
 //==============================================================================
 }

@@ -63,7 +63,7 @@ using kkhandle_t  = KokkosKernels::Experimental::KokkosKernelsHandle<size_type_t
 
 ///////////////////////////////////////////////////////////////////////////////
 auto try_lu_prec(kkhandle_t& kh, const sp_matrix_t& A, const result_t& results, const int max_subspace,
-                 const bool do_baseline = false)
+                 const std::string& name, const int verbosity)
 ///////////////////////////////////////////////////////////////////////////////
 {
   // Unpack
@@ -73,10 +73,14 @@ auto try_lu_prec(kkhandle_t& kh, const sp_matrix_t& A, const result_t& results, 
   const auto m       = max_subspace;
   constexpr auto tol = 1e-8;
 
+  if (verbosity > 0) {
+    std::cout << "Running GMRES with ILU from " << name << " with max_subspace " << m << std::endl;
+  }
+
   // Create gmres handle
   kh.create_gmres_handle(m, tol);
   auto gmres_handle = kh.get_gmres_handle();
-  gmres_handle->set_verbose(false);
+  gmres_handle->set_verbose(verbosity > 1);
   using GMRESHandle    = typename std::remove_reference<decltype(*gmres_handle)>::type;
   using ViewVectorType = typename GMRESHandle::nnz_value_view_t;
 
@@ -92,11 +96,15 @@ auto try_lu_prec(kkhandle_t& kh, const sp_matrix_t& A, const result_t& results, 
   // Make rhs ones so that results are repeatable:
   Kokkos::deep_copy(B, 1.0);
 
-  int num_iters_plain(9999), num_iters_precond(0);
+  int num_iters_precond(0);
 
-  // Solve Ax = b
+  // Solve Ax = b with no preconditioner. We only need to do this once and we only do this
+  // to see how much the preconditioner improves the solve.
+  static int num_iters_plain = 9999;
+  static bool do_baseline    = true;
   if (do_baseline) {
-    auto start = std::chrono::steady_clock::now();
+    do_baseline = false;
+    auto start  = std::chrono::steady_clock::now();
     gmres(&kh, A, B, X);
 
     // Double check residuals at end of solve:
@@ -109,24 +117,27 @@ auto try_lu_prec(kkhandle_t& kh, const sp_matrix_t& A, const result_t& results, 
     num_iters_plain      = gmres_handle->get_num_iters();
 
     KK_REQUIRE(num_iters_plain > 0);
-    if (conv_flag == GMRESHandle::Flag::Conv || endRes < gmres_handle->get_tol()) {
+    if (conv_flag != GMRESHandle::Flag::Conv || endRes > gmres_handle->get_tol()) {
       std::cout << "WARNING: baseline did not converge" << std::endl;
     }
     auto end                                       = std::chrono::steady_clock::now();
     std::chrono::duration<double> seconds_duration = end - start;
-    std::cout << "Baseline gmres took " << seconds_duration.count() << " seconds" << std::endl;
+    if (verbosity > 0) {
+      std::cout << "Baseline gmres took " << seconds_duration.count() << " seconds" << std::endl;
+    }
   }
 
   // Solve Ax = b with LU preconditioner.
   {
     auto start = std::chrono::steady_clock::now();
     gmres_handle->reset_handle(m, tol);
-    gmres_handle->set_verbose(false);
+    gmres_handle->set_verbose(verbosity > 1);
 
     // Make precond
     KokkosSparse::Experimental::LUPrec<sp_matrix_t, kkhandle_t> myPrec(L, U);
 
-    // reset X for next gmres call
+    // reset B, X for next gmres call
+    Kokkos::deep_copy(B, 1.0);
     Kokkos::deep_copy(X, 0.0);
 
     gmres(&kh, A, B, X, &myPrec);
@@ -146,8 +157,12 @@ auto try_lu_prec(kkhandle_t& kh, const sp_matrix_t& A, const result_t& results, 
 
     auto end                                       = std::chrono::steady_clock::now();
     std::chrono::duration<double> seconds_duration = end - start;
-    std::cout << "LUPrec gmres took " << seconds_duration.count() << " seconds with max subspace " << max_subspace
-              << std::endl;
+    if (verbosity > 0) {
+      std::cout << "GMRES w/ LUPrec results for ILU from " << name << ": " << std::endl;
+      std::cout << "  Took " << seconds_duration.count() << " seconds" << std::endl;
+      std::cout << "  Iters " << num_iters_precond << " (compared to " << num_iters_plain << " without prec)"
+                << std::endl;
+    }
   }
 
   return std::tuple<int, int>{num_iters_plain, num_iters_precond};
@@ -185,11 +200,12 @@ lu_result_t copy_to_kokkos_and_dealloc(GkoMtxT& factor, const int nrows)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void run_par_ilut_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t& A, int& num_iters, result_t& result,
-                       const bool validate, const int gmres_max_subspace, bool compare = false)
+void run_par_ilut_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t& A, int& num_iters,
+                       const bool validate, const int gmres_max_subspace, const int verbosity)
 ///////////////////////////////////////////////////////////////////////////////
 {
-  const int rows = state.range(0);
+  const std::string name = "kk::par_ilut";
+  const int rows         = state.range(0);
 
   auto par_ilut_handle = kh.get_par_ilut_handle();
 
@@ -208,7 +224,15 @@ void run_par_ilut_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_
   entries_t U_entries("U_entries", 0);
   values_t U_values("U_values", 0);
 
+  if (verbosity > 0) {
+    std::cout << "Starting testing of " << name << " with " << num_iters << " iters" << std::endl;
+  }
+
   for (auto _ : state) {
+    if (verbosity > 1) {
+      std::cout << "Running " << name << " with " << num_iters << " iters" << std::endl;
+    }
+
     // Reset inputs
     Kokkos::deep_copy(L_row_map, 0);
     Kokkos::deep_copy(U_row_map, 0);
@@ -235,23 +259,21 @@ void run_par_ilut_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_
 
     // Check worked
     num_iters = par_ilut_handle->get_num_iters();
-    std::cout << "PAR_ILUT finished in " << num_iters << " iters" << std::endl;
     KK_REQUIRE_MSG(num_iters <= par_ilut_handle->get_max_iter(), "par_ilut hit max iters");
+
+    if (verbosity > 1) {
+      std::cout << name << " finished in " << num_iters << " iters" << std::endl;
+    }
   }
 
-  result = {L_row_map, L_entries, L_values, U_row_map, U_entries, U_values};
+  result_t result = {L_row_map, L_entries, L_values, U_row_map, U_entries, U_values};
 
   if (validate) {
-    auto [plain, pr] = try_lu_prec(kh, A, result, gmres_max_subspace, true /*do a baseline (no prec) run*/);
-    std::cout << "LUPrec results: " << std::endl;
-    std::cout << "  num iters no prec: " << plain << std::endl;
-    std::cout << "  num iters par_ilut: " << pr << std::endl;
+    try_lu_prec(kh, A, result, gmres_max_subspace, name, verbosity);
   }
 
-  // If we want to compare results, we store the results. This can dramatically increase the memory
-  // requirement.
-  if (!compare) {
-    result = result_t();
+  if (verbosity > 0) {
+    std::cout << "Completed testing of " << name << std::endl;
   }
 }
 
@@ -278,18 +300,17 @@ std::shared_ptr<gko::CudaExecutor> get_ginkgo_exec<gko::CudaExecutor>() {
 
 ///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test_ginkgo(benchmark::State& state, kkhandle_t& kh, sp_matrix_t& A, const int& num_iters,
-                              result_t& result, const bool validate, const int gmres_max_subspace, bool compare = false)
+                              const bool validate, const int gmres_max_subspace, const int verbosity)
 ///////////////////////////////////////////////////////////////////////////////
 {
   using gko_par_ilut_t   = typename gko::factorization::ParIlut<scalar_t, lno_t>;
   using gko_matrix_t     = typename gko_par_ilut_t::matrix_type;
   using gko_matrix_ptr_t = typename std::shared_ptr<const gko_matrix_t>;
 
-  const int rows = state.range(0);
+  const int rows         = state.range(0);
+  const std::string name = "gko::par_ilut";
 
   auto par_ilut_handle = kh.get_par_ilut_handle();
-
-  std::cout << "Running ginkgo par_ilut with " << num_iters << " iters" << std::endl;
 
   // Pull out views from CRS
   auto A_row_map = A.graph.row_map;
@@ -302,6 +323,10 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, kkhandle_t& kh, sp_matrix
 
   gko_matrix_ptr_t l_factor, u_factor;
 
+  if (verbosity > 0) {
+    std::cout << "Starting testing of " << name << " with " << num_iters << " iters" << std::endl;
+  }
+
   {
     // Populate mtx
     auto a_mtx_uniq = gko_matrix_t::create_const(
@@ -312,6 +337,10 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, kkhandle_t& kh, sp_matrix
     gko_matrix_ptr_t a_mtx = std::move(a_mtx_uniq);
 
     for (auto _ : state) {
+      if (verbosity > 1) {
+        std::cout << "Running " << name << " with " << num_iters << " iters" << std::endl;
+      }
+
       state.ResumeTiming();
       auto fact = gko::factorization::ParIlut<scalar_t, lno_t>::build()
                       .with_fill_in_limit(par_ilut_handle->get_fill_in_limit())
@@ -324,6 +353,10 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, kkhandle_t& kh, sp_matrix
       // Store for later use
       l_factor = fact->get_l_factor();
       u_factor = fact->get_u_factor();
+
+      if (verbosity > 1) {
+        std::cout << name << " finished" << std::endl;
+      }
     }
   }  // This should deallocate all the gko stuff except for l and u factors
 
@@ -331,29 +364,26 @@ void run_par_ilut_test_ginkgo(benchmark::State& state, kkhandle_t& kh, sp_matrix
   auto [L_row_map, L_entries, L_values] = copy_to_kokkos_and_dealloc(l_factor, rows);
   auto [U_row_map, U_entries, U_values] = copy_to_kokkos_and_dealloc(u_factor, rows);
 
-  result = {L_row_map, L_entries, L_values, U_row_map, U_entries, U_values};
+  result_t result = {L_row_map, L_entries, L_values, U_row_map, U_entries, U_values};
 
   if (validate) {
-    auto [plain, pr] = try_lu_prec(kh, A, result, gmres_max_subspace);
-    std::cout << "LUPrec results: " << std::endl;
-    std::cout << "  num iters ginkgo: " << pr << std::endl;
+    try_lu_prec(kh, A, result, gmres_max_subspace, name, verbosity);
   }
 
-  // If we want to compare results, we store the results. This can dramatically increase the memory
-  // requirement.
-  if (!compare) {
-    result = result_t();
+  if (verbosity > 0) {
+    std::cout << "Completed testing of " << name << std::endl;
   }
 }
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
 void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t& A, const int& team_size,
-                     const bool measure_symbolic, result_t& result, const bool validate, const int gmres_max_subspace,
-                     bool compare = false)
+                     const bool measure_symbolic, const bool validate, const int gmres_max_subspace,
+                     const int verbosity)
 ///////////////////////////////////////////////////////////////////////////////
 {
-  const int rows = state.range(0);
+  const int rows         = state.range(0);
+  const std::string name = std::string("spiluk_") + (measure_symbolic ? "symbolic" : "numeric");
 
   constexpr int EXPAND_FACT    = 4;  // Be careful with this. Too high of a value can make you run out of mem
   const lno_t fill_lev         = 2;
@@ -377,7 +407,15 @@ void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t&
   entries_t U_entries("U_entries", handle_nnz);
   values_t U_values("U_values", handle_nnz);
 
+  if (verbosity > 0) {
+    std::cout << "Starting testing of " << name << std::endl;
+  }
+
   for (auto _ : state) {
+    if (verbosity > 1) {
+      std::cout << "Running " << name << std::endl;
+    }
+
     // Reset inputs
     Kokkos::deep_copy(L_row_map, 0);
     Kokkos::deep_copy(U_row_map, 0);
@@ -412,34 +450,37 @@ void run_spiluk_test(benchmark::State& state, kkhandle_t& kh, const sp_matrix_t&
       Kokkos::fence();
       state.PauseTiming();
     }
+
+    if (verbosity > 1) {
+      std::cout << name << " finished" << std::endl;
+    }
   }
-  result = {L_row_map, L_entries, L_values, U_row_map, U_entries, U_values};
+  result_t result = {L_row_map, L_entries, L_values, U_row_map, U_entries, U_values};
 
   if (validate && !measure_symbolic) {
-    auto [plain, pr] = try_lu_prec(kh, A, result, gmres_max_subspace);
-    std::cout << "LUPrec results: " << std::endl;
-    std::cout << "  num iters spiluk: " << pr << std::endl;
+    try_lu_prec(kh, A, result, gmres_max_subspace, name, verbosity);
   }
 
-  // If we want to compare results, we store the results. This can dramatically increase the memory
-  // requirement.
-  if (!compare) {
-    result = result_t();
+  if (verbosity > 0) {
+    std::cout << "Completed testing of " << name << std::endl;
   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int run_ilu_perf_tests(const std::string& matrix_file, int rows, int nnz_per_row, const int bandwidth, int team_size,
                        const int loop, const int test, const bool validate, const int gmres_max_subspace,
-                       const int max_iter, const double fill_in_limit, const double residual_norm_delta_stop)
+                       const int max_iter, const double fill_in_limit, const double residual_norm_delta_stop,
+                       const int verbosity)
 ///////////////////////////////////////////////////////////////////////////////
 {
   kkhandle_t kh;
   kh.create_par_ilut_handle(max_iter, residual_norm_delta_stop, fill_in_limit);
 
-  std::cout << "Running par_ilut with max_iter=" << max_iter
-            << ", residual_norm_delta_stop=" << residual_norm_delta_stop << ", fill_in_limit=" << fill_in_limit
-            << std::endl;
+  if (verbosity > 0) {
+    std::cout << "Running par_ilut with max_iter=" << max_iter
+              << ", residual_norm_delta_stop=" << residual_norm_delta_stop << ", fill_in_limit=" << fill_in_limit
+              << std::endl;
+  }
 
   // Generate or read A
   auto start = std::chrono::steady_clock::now();
@@ -469,31 +510,35 @@ int run_ilu_perf_tests(const std::string& matrix_file, int rows, int nnz_per_row
   auto par_ilut_handle = kh.get_par_ilut_handle();
   par_ilut_handle->set_team_size(team_size);
   par_ilut_handle->set_nrows(rows);
+  par_ilut_handle->set_verbose(verbosity > 1);
 
   const auto default_policy = par_ilut_handle->get_default_team_policy();
 
   // Report test config to user
-  std::cout << "A generated/read in " << seconds_duration.count() << " seconds" << std::endl;
-  if (matrix_file == "") {
-    std::cout << "Testing ILU with rows=" << rows << "\n  nnz_per_row=" << nnz_per_row << "\n  bandwidth=" << bandwidth;
-  } else {
-    std::cout << "Testing ILU with input matrix=" << matrix_file;
+  if (verbosity > 0) {
+    std::cout << "A generated/read in " << seconds_duration.count() << " seconds" << std::endl;
+    if (matrix_file == "") {
+      std::cout << "Testing ILU with rows=" << rows << "\n  nnz_per_row=" << nnz_per_row
+                << "\n  bandwidth=" << bandwidth;
+    } else {
+      std::cout << "Testing ILU with input matrix=" << matrix_file;
+    }
+    std::cout << "\n  total nnz=" << A.nnz() << "\n  league_size=" << default_policy.league_size()
+              << "\n  team_size=" << default_policy.team_size()
+              << "\n  concurrent teams=" << exe_space_t().concurrency() / default_policy.team_size()
+              << "\n  loop=" << loop << std::endl;
   }
-  std::cout << "\n  total nnz=" << A.nnz() << "\n  league_size=" << default_policy.league_size()
-            << "\n  team_size=" << default_policy.team_size()
-            << "\n  concurrent teams=" << exe_space_t().concurrency() / default_policy.team_size()
-            << "\n  loop=" << loop << std::endl;
 
-  std::string name     = "KokkosSparse_par_ilut";
+  std::string name = "KokkosSparse_par_ilut";
+  // If kk::par_ilut runs, it will set num_iters for ginkgo::par_ilut so that the
+  // comparison is fair
   int num_iters        = max_iter;
   const auto arg_names = std::vector<std::string>{"rows"};
   const auto args      = std::vector<int64_t>{rows};
 
-  result_t parilut_results, ginkgo_results, spiluk_results;
-
   if (test & 1) {
     auto plambda = [&](benchmark::State& state) {
-      run_par_ilut_test(state, kh, A, num_iters, parilut_results, validate, gmres_max_subspace);
+      run_par_ilut_test(state, kh, A, num_iters, validate, gmres_max_subspace, verbosity);
     };
     KokkosKernelsBenchmark::register_benchmark_real_time((name + "_par_ilut").c_str(), plambda, arg_names, args, loop);
   }
@@ -501,9 +546,9 @@ int run_ilu_perf_tests(const std::string& matrix_file, int rows, int nnz_per_row
   if (test & 2) {
 #ifdef USE_GINKGO
     auto glambda = [&](benchmark::State& state) {
-      run_par_ilut_test_ginkgo(state, kh, A, num_iters, ginkgo_results, validate, gmres_max_subspace);
+      run_par_ilut_test_ginkgo(state, kh, A, num_iters, validate, gmres_max_subspace, verbosity);
     };
-    KokkosKernelsBenchmark::register_benchmark_real_time((name + "_gingko").c_str(), glambda, arg_names, args, loop);
+    KokkosKernelsBenchmark::register_benchmark_real_time((name + "_ginkgo").c_str(), glambda, arg_names, args, loop);
 #else
     KK_REQUIRE_MSG(false, "Requested ginkgo perf test but it is not enabled");
 #endif
@@ -511,10 +556,10 @@ int run_ilu_perf_tests(const std::string& matrix_file, int rows, int nnz_per_row
 
   if (test & 4) {
     auto s1lambda = [&](benchmark::State& state) {
-      run_spiluk_test(state, kh, A, team_size, true, spiluk_results, false, gmres_max_subspace);
+      run_spiluk_test(state, kh, A, team_size, true, false, gmres_max_subspace, verbosity);
     };
     auto s2lambda = [&](benchmark::State& state) {
-      run_spiluk_test(state, kh, A, team_size, false, spiluk_results, validate, gmres_max_subspace);
+      run_spiluk_test(state, kh, A, team_size, false, validate, gmres_max_subspace, verbosity);
     };
     KokkosKernelsBenchmark::register_benchmark_real_time((name + "_spiluk_symbolic").c_str(), s1lambda, arg_names, args,
                                                          loop);
@@ -540,6 +585,7 @@ void print_help_par_ilut()
   printf("  -b [B]  : bandwidth per row. Default is max(2 * n^(1/2), nnz).\n");
   printf("  -v      : Validate ILU results by doing luprec+gmres.\n");
   printf("  -m [M]  : For GMRES, set the max subspace size.\n");
+  printf("  -V [V]  : Set verbosity level. Default 0 (minimizes output)\n");
   printf("  -i [I]  : For par_ilut, set max iters.\n");
   printf("  -l [L]  : For par_ilut, set fill in limit.\n");
   printf("  -r [R]  : For par_ilut, set residual norm delta stop. \n");
@@ -597,19 +643,15 @@ int main(int argc, char** argv)
     bool no_context                 = false;
     int gmres_max_subspace          = 50;
     int max_iter                    = 20;
+    int verbosity                   = 0;
     double fill_in_limit            = 0.75;
     double residual_norm_delta_stop = 1e-2;
 
     std::map<std::string, int*> option_map = {{"-n", &rows},       {"-z", &nnz_per_row}, {"-b", &bandwidth},
                                               {"-ts", &team_size}, {"-t", &test},        {"-m", &gmres_max_subspace},
-                                              {"-i", &max_iter}};
+                                              {"-i", &max_iter},   {"-V", &verbosity}};
 
     std::map<std::string, double*> foption_map = {{"-l", &fill_in_limit}, {"-r", &residual_norm_delta_stop}};
-
-    if (argc == 1) {
-      print_help_par_ilut();
-      return 0;
-    }
 
     // Handle common params
     benchmark::CommonInputParams common_params;
@@ -631,15 +673,21 @@ int main(int argc, char** argv)
       }
     }
 
+    // If neither a -n or -f were provided, default to a 5000-row random matrix.
+    // This is what will be run by automated testing.
+    if (rows == -1 && mfile == "") {
+      rows = 5000;
+    }
+
     // Determine where A is coming from
     if (rows != -1) {
       // We are randomly generating the input A
       KK_USER_REQUIRE_MSG(rows >= 100, "Need to have at least 100 rows");
 
-      KK_USER_REQUIRE_MSG(mfile == "", "Need provide either -n or -f argument to this program, not both");
+      KK_USER_REQUIRE_MSG(mfile == "", "Need to provide either -n or -f argument to this program, not both");
     } else {
       // We are reading A from a file
-      KK_USER_REQUIRE_MSG(mfile != "", "Need provide either -n or -f argument to this program, not both");
+      KK_USER_REQUIRE_MSG(mfile != "", "Need to provide either -n or -f argument to this program, not both");
     }
 
     // Set dependent defaults. Default team_size cannot be set
@@ -657,7 +705,7 @@ int main(int argc, char** argv)
     }
 
     run_ilu_perf_tests(mfile, rows, nnz_per_row, bandwidth, team_size, common_params.repeat, test, validate,
-                       gmres_max_subspace, max_iter, fill_in_limit, residual_norm_delta_stop);
+                       gmres_max_subspace, max_iter, fill_in_limit, residual_norm_delta_stop, verbosity);
 
     benchmark::Shutdown();
   }

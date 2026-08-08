@@ -22,8 +22,15 @@
 
 namespace panzer {
 
+  /** \brief A PHX::TemplateManager holding one
+    * panzer::ClosureModelFactory<EvalT> per evaluation type in
+    * Traits::EvalTypes, accessible through the common
+    * panzer::ClosureModelFactoryBase interface.
+    *
+    * \tparam Traits the traits class supplying the set of evaluation types to manage (e.g. panzer::Traits).
+    */
   template<typename Traits>
-  class ClosureModelFactory_TemplateManager : 
+  class ClosureModelFactory_TemplateManager :
     public PHX::TemplateManager<typename Traits::EvalTypes,
 				                        panzer::ClosureModelFactoryBase,
                                 panzer::ClosureModelFactory<_> > {

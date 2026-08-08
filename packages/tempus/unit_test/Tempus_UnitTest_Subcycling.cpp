@@ -288,7 +288,7 @@ class StepperSubcyclingObserverTest
   /// Observe Subcycling Stepper at action location.
   virtual void observe(
       Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
-      Teuchos::RCP<const Tempus::StepperSubcycling<double> > stepper,
+      Teuchos::RCP<const Tempus::StepperSubcycling<double> > /*stepper*/,
       const typename Tempus::StepperSubcyclingAppAction<double>::ACTION_LOCATION
           actLoc)
   {

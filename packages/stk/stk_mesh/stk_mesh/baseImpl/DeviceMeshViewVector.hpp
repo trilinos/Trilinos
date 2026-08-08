@@ -48,18 +48,24 @@ template <typename T, typename MemSpace = stk::ngp::HostMemSpace, typename SizeT
 class ImplDeviceMeshViewVector : public ViewVector<T, MemSpace, SizeT> {
  private:
   using base_t = ViewVector<T, MemSpace, SizeT>;
+  using active_entries_size_view = Kokkos::View<SizeT, stk::ngp::UVMMemSpace>;
 
  public:
-  KOKKOS_FUNCTION
-  ImplDeviceMeshViewVector()
-    : numActiveEntries(SizeT{}) {}
-  ImplDeviceMeshViewVector(const std::string& name)
+   ImplDeviceMeshViewVector(const std::string& name)
     : base_t(name),
-      numActiveEntries(SizeT{}) {}
+      m_numActiveEntries("numActiveEntries")
+  {
+    clear_active_entries();
+  }
+
   ImplDeviceMeshViewVector(const std::string& name, SizeT size)
     : base_t(name, size),
-      numActiveEntries(size) {}
+      m_numActiveEntries("numActiveEntries")
+  {
+    clear_active_entries();
+  }
 
+  KOKKOS_DEFAULTED_FUNCTION ImplDeviceMeshViewVector() = default;
   KOKKOS_DEFAULTED_FUNCTION ImplDeviceMeshViewVector(const ImplDeviceMeshViewVector& other) = default;
   KOKKOS_DEFAULTED_FUNCTION ImplDeviceMeshViewVector(ImplDeviceMeshViewVector&& other) = default;
   KOKKOS_DEFAULTED_FUNCTION ImplDeviceMeshViewVector& operator=(const ImplDeviceMeshViewVector& rhs) = default;
@@ -68,33 +74,33 @@ class ImplDeviceMeshViewVector : public ViewVector<T, MemSpace, SizeT> {
 
   void clear() {
     base_t::clear();
-    numActiveEntries = 0;
+    m_numActiveEntries() = 0;
   }
 
   void push_back(const T& value) {
     base_t::push_back(value);
-    numActiveEntries++;
+    increment_num_active_entries();
   }
 
   void push_back(T&& value) {
     base_t::push_back(value);
-    numActiveEntries++;
+    increment_num_active_entries();
   }
 
   template <typename... Args>
   void emplace_back(Args&&... args) {
     base_t::emplace_back(args...);
-    numActiveEntries++;
+    increment_num_active_entries();
   }
 
-  KOKKOS_FUNCTION SizeT num_active_entries() const { return numActiveEntries; }
-  void set_active_entries(SizeT size) { numActiveEntries = size; }
-  void clear_active_entries() { numActiveEntries = 0; }
-  void increment_num_active_entries() { ++numActiveEntries; }
-  void decrement_num_active_entries() { --numActiveEntries; }
+  KOKKOS_INLINE_FUNCTION SizeT num_active_entries() const { return m_numActiveEntries(); }
+  KOKKOS_INLINE_FUNCTION void set_active_entries(SizeT size) { m_numActiveEntries() = size; }
+  KOKKOS_INLINE_FUNCTION void clear_active_entries() { m_numActiveEntries() = 0; }
+  KOKKOS_INLINE_FUNCTION void increment_num_active_entries() { ++m_numActiveEntries(); }
+  KOKKOS_INLINE_FUNCTION void decrement_num_active_entries() { --m_numActiveEntries(); }
 
  private:
-  SizeT numActiveEntries;
+  active_entries_size_view m_numActiveEntries;
 };
 
 } } }

@@ -159,7 +159,7 @@ public:
         FieldState thisState)
     : FieldBase(meta, entityRank, ordinal, rankedOrdinal, name, dataTraits, numberOfStates, thisState,
                 host_layout, device_layout,
-                new FieldData<T, stk::ngp::HostSpace, HostLayout>(entityRank, ordinal, name, dataTraits))
+                new FieldData<T, stk::ngp::HostSpace, HostLayout>(entityRank, ordinal, dataTraits))
   {
   }
 
@@ -205,7 +205,8 @@ public:
     return out;
   }
 
-  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo, const std::string fieldName = "") const override
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo, const std::string fieldName = "",
+                            const EntityRank fieldRank = InvalidEntityRank) const override
   {
     FieldBase * f[MaximumFieldStates] {nullptr};
 
@@ -219,6 +220,7 @@ public:
     };
 
     std::string clonedFieldName = (fieldName == "") ? name() : fieldName;
+    EntityRank  clonedFieldRank = (fieldRank == InvalidEntityRank) ? entity_rank() : fieldRank;
 
     for (unsigned i = 0 ; i < 6 ; ++i) {
       const int len_name   = clonedFieldName.size();
@@ -249,9 +251,9 @@ public:
 
     for (unsigned i = 0; i < number_of_states(); ++i) {
       f[i] = new Field(&fieldRepo.mesh_meta_data(),
-                       entity_rank(),
+                       clonedFieldRank,
                        fieldRepo.get_fields().size(),
-                       fieldRepo.get_fields(entity_rank()).size(),
+                       fieldRepo.get_fields(clonedFieldRank).size(),
                        fieldNames[i],
                        data_traits(),
                        number_of_states(),
@@ -323,9 +325,10 @@ public:
   template <FieldAccessTag FieldAccess = ReadOnly,
             typename Space = stk::ngp::HostSpace>
   typename FieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout>::FieldDataType
-  data() const
+  data(
+       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
   {
-    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout>();
+    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout>(file, line);
   }
 
 
@@ -337,9 +340,10 @@ public:
             typename Space = stk::ngp::HostSpace,
             typename ExecSpace = stk::ngp::ExecSpace>
   typename AsyncFieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>::FieldDataType
-  data(const ExecSpace& execSpace) const
+  data(const ExecSpace& execSpace,
+       const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const
   {
-    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>(execSpace);
+    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>(execSpace, file, line);
   }
 
 private:

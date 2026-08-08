@@ -34,11 +34,7 @@
 #ifndef COMMON_SEARCH_UTILS_INSTRUMENTED_H_
 #define COMMON_SEARCH_UTILS_INSTRUMENTED_H_
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-#include <set>
+#include <Kokkos_Core.hpp>
 #include "stk_util/environment/WallTime.hpp"
 #include "stk_search/kdtree/KDTree_BoundingBox.hpp"
 #include "stk_search/kdtree/KDTree.hpp"
@@ -143,6 +139,30 @@ namespace stk {
     }
   }
 
+  template <typename T>
+  struct BoxReducer {
+    using value_type = stk::search::ObjectBoundingBox_T<T>;
+    using reducer = BoxReducer;
+    using result_view_type = Kokkos::View<value_type*, Kokkos::DefaultHostExecutionSpace, Kokkos::MemoryUnmanaged>;
+
+    BoxReducer(value_type& val) : value(val) {}
+
+    void init(value_type& val) const {
+      val = value_type{};
+    }
+
+    void join(value_type& dst, const value_type& src) const {
+      stk::search::add_to_box(dst.GetBox(), src.GetBox());
+    }
+
+    value_type& reference() const { return value; }
+
+    bool references_scalar() const { return true; }
+
+    result_view_type view() const { return result_view_type(&value, 1); }
+
+    value_type& value;
+  };
 
   template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
   void
@@ -161,12 +181,12 @@ namespace stk {
     using domainValueType = typename DomainObjType::value_type;
     using DomainBox       = stk::search::Box<domainValueType>;
 
-#ifdef _OPENMP
-#pragma omp parallel for default(shared)
-#endif
-    for (size_t i = 0; i < numBoxRange; i++) {
-      rangeBoxes[i] = local_range[i].first;
-    }
+    Kokkos::parallel_for(
+      Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, numBoxRange),
+      [&](size_t i) {
+        rangeBoxes[i] = local_range[i].first;
+      }
+    );
     //
     //  Determine the total number of processors involved in the communication and the current processor number
     //
@@ -184,33 +204,14 @@ namespace stk {
     SplitTimer stopwatch;
 
     stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc;
-#ifdef _OPENMP
-    std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > threadBoxes( omp_get_max_threads() );
-#endif
-
-#ifdef _OPENMP
-#pragma omp parallel default(shared)
-#endif
-    {
-#ifdef _OPENMP
-      stk::search::ObjectBoundingBox_T<DomainBox>& curBox = threadBoxes[omp_get_thread_num()];
-#else
-      stk::search::ObjectBoundingBox_T<DomainBox>& curBox = boxA_proc;
-#endif
-#ifdef _OPENMP
-#pragma omp for
-#endif
-      for(unsigned iboxA = 0; iboxA < numBoxDomain; ++iboxA) {
-        stk::search::add_to_box(curBox.GetBox(), local_domain[iboxA].first);
-      }
-
-    }
-
-#ifdef _OPENMP
-    for(unsigned i=0; i<threadBoxes.size(); ++i) {
-      stk::search::add_to_box(boxA_proc.GetBox(), threadBoxes[i].GetBox());
-    }
-#endif
+    Kokkos::parallel_reduce(
+      "ComputeBoundingBox",
+      Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, numBoxDomain),
+      [&](const unsigned iboxA, stk::search::ObjectBoundingBox_T<DomainBox>& localBox) {
+        stk::search::add_to_box(localBox.GetBox(), local_domain[iboxA].first);
+      },
+      BoxReducer<DomainBox>(boxA_proc)
+    );
 
     std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array;
     boxA_proc_box_array.reserve(num_procs);
@@ -223,9 +224,6 @@ namespace stk {
     std::vector<DomainBox> boxGather;
 
     stk::search::all_gather_helper(boxA_proc.GetBox(), boxGather, comm);
-
-
-
 
     for(int iproc = 0; iproc < num_procs; ++iproc) {
       boxA_proc_box_array.emplace_back(boxGather[iproc], iproc);
@@ -290,19 +288,10 @@ namespace stk {
 
     vectorOut.resize(totSize);
 
-#ifdef _OPENMP
-#pragma omp parallel default(shared)
-    {
-      const unsigned ithread = omp_get_thread_num();
-      const std::vector<DataType> &data = vectorIn[ithread];
-      std::copy(data.begin(), data.end(), &vectorOut[offsets[ithread]]);
-    }
-#else
-    for (unsigned ithread = 0; ithread < numThreadLists; ++ithread) {
-      const std::vector<DataType> &data = vectorIn[ithread];
-      std::copy(data.begin(), data.end(), &vectorOut[offsets[ithread]]);
-    }
-#endif
+    auto policy = Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, numThreadLists);
+    Kokkos::parallel_for(policy, [&](unsigned ithread) {
+      std::ranges::copy(vectorIn[ithread], &vectorOut[offsets[ithread]]);
+    });
 
   } } }
 }

@@ -24,7 +24,6 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Behavior.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "MueLu_Behavior.hpp"
 
 namespace MueLu {
 

@@ -79,17 +79,6 @@ report_symmetric_doomed(
   report_message(message, MSG_SYMMETRIC | MSG_DOOMED, message_code);
 }
  
-
-void
-report_deferred_doomed(
-  const char *          message,
-  const char *          aggregate,
-  const MessageCode &   message_code)
-{
-  add_deferred_message(MSG_DOOMED, message_code.m_id, message_code.m_throttle.m_cutoff, message_code.m_throttle.m_group, message, aggregate);
-}
-
-
 RuntimeDoomedAdHoc::RuntimeDoomedAdHoc(
   const MessageCode & message_code)
   : m_messageCode(message_code)
@@ -116,22 +105,6 @@ RuntimeDoomedSymmetric::~RuntimeDoomedSymmetric()
 {
   try {
     report_symmetric_doomed(message.str().c_str(), m_messageCode);
-  }
-  catch (std::exception &)
-  {}
-}
-
-
-RuntimeDoomedDeferred::RuntimeDoomedDeferred(
-  const MessageCode & message_code)
-  : m_messageCode(message_code)
-{}
-
-
-RuntimeDoomedDeferred::~RuntimeDoomedDeferred()
-{
-  try {
-    report_deferred_doomed(message.str().c_str(), aggregate.str().c_str(), m_messageCode);
   }
   catch (std::exception &)
   {}

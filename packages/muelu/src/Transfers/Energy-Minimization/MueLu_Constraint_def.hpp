@@ -35,7 +35,6 @@
 #include "KokkosBatched_QR_Decl.hpp"
 #include "KokkosBatched_QR_Serial_Impl.hpp"
 #include "KokkosBatched_QR_TeamVector_Impl.hpp"
-#include "KokkosBatched_QR_FormQ_TeamVector_Internal.hpp"
 #include "KokkosBatched_LU_Decl.hpp"
 #include "KokkosBatched_LU_Team_Impl.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
@@ -46,7 +45,6 @@
 #include "KokkosBatched_Gemv_Team_Impl.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_Copy_Impl.hpp"
-#include "KokkosBlas1_set.hpp"
 
 namespace MueLu {
 

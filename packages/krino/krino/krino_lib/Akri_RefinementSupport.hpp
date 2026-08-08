@@ -36,7 +36,12 @@ public:
   int get_interface_maximum_refinement_level() const { return my_interface_maximum_refinement_level; }
   void set_post_adapt_refinement_levels(int levels) { my_post_adapt_uniform_refinement_levels = levels; }
   int get_post_adapt_refinement_levels() const { return my_post_adapt_uniform_refinement_levels; }
+  void set_interface_refinement_curvature_tolerance(const double interfaceRefinementCurvatureTol) { myInterfaceRefinementCurvatureTol = interfaceRefinementCurvatureTol; }
   double get_interface_refinement_curvature_tolerance() const { return myInterfaceRefinementCurvatureTol; }
+  void set_interface_refinement_curvature_angle_tolerance(const double interfaceRefinementCurvatureAngleTol) { myInterfaceRefinementCurvatureAngleTol = interfaceRefinementCurvatureAngleTol; }
+  double get_interface_refinement_curvature_angle_tolerance() const { return myInterfaceRefinementCurvatureAngleTol; }
+  void set_interface_refinement_chordal_error_tolerance(const double interfaceRefinementChordalErrorTol) { myInterfaceRefinementChordalErrorTol = interfaceRefinementChordalErrorTol; }
+  double get_interface_refinement_chordal_error_tolerance() const { return myInterfaceRefinementChordalErrorTol; }
   void set_rebalance_interval(int rebalanceInterval) { myRebalanceInterval = rebalanceInterval; }
   int get_rebalance_interval() const { return myRebalanceInterval; }
 
@@ -77,7 +82,9 @@ private:
   std::string my_nonconformal_adapt_indicator_name;
   RefinementManager * myNonInterfaceConformingRefinement{nullptr};
   bool myFlagDoNearbyRefinementBeforeInterfaceRefinement{false};
-  double myInterfaceRefinementCurvatureTol{0.2};
+  double myInterfaceRefinementCurvatureTol{0};
+  double myInterfaceRefinementCurvatureAngleTol{10.0}; // default 10 deg
+  double myInterfaceRefinementChordalErrorTol{0};
   int myRebalanceInterval{2};
   mutable stk::diag::Timer myTimer;
 };

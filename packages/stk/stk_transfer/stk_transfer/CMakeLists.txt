@@ -6,7 +6,7 @@ FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(NOT STK_ENABLE_STKMiddle_mesh)
-  message(STATUS "STKTransfer: STKMiddle_mesh not enabled")
+  message(STATUS "STKTransfer: optional STKMiddle_mesh not enabled")
   LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/ConservativeTransfer.hpp")
   LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/ConservativeTransferUser.hpp")
   LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ConservativeTransfer.cpp")

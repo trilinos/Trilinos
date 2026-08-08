@@ -5,8 +5,8 @@
  *  The primary goal of \ref example-05 is to introduce
  *  \ref Tempus::Stepper through \ref Tempus::StepperForwardEuler while
  *  preserving the same \ref Thyra::ModelEvaluator-based van der Pol model,
- *  the same \ref Tempus::SolutionHistory, and the same application-managed
- *  time loop used in \ref example-04.
+ *  the same \ref Tempus::SolutionHistory, the same simple tabular output, and
+ *  the same application-managed time loop used in \ref example-04.
  *
  *  \ref Tempus::Stepper performs a single time step by applying the
  *  algorithm associated with a particular ODE formulation, such as an
@@ -17,12 +17,10 @@
  *  Upon completion of the step, the \ref Tempus::Stepper updates the next
  *  \ref Tempus::SolutionState (the working state), reports the solution
  *  status (for example, passed or failed), and may propose a timestep size
- *  for the next step.  In this way, \ref Tempus::Stepper separates the
+ *  for a future step. In this way, \ref Tempus::Stepper separates the
  *  time-stepping algorithm from the details of the governing equations in
  *  the \ref Thyra::ModelEvaluator, the linear and nonlinear solver
- *  infrastructure (for example, Belos and NOX), and the orchestration of
- *  multiple time steps, which is introduced later in
- *  \ref example-07 "Utilize IntegratorBasic".
+ *  infrastructure, and the orchestration of multiple time steps.
  *
  *  New concepts introduced are:
  *
@@ -31,7 +29,8 @@
  *  - \ref Tempus::StepperForwardEuler
  *    - implements the Forward Euler method as a Tempus stepper
  *  - `setModel(...)`
- *    - attaches the application model to the stepper (i.e., \ref Thyra::ModelEvaluator)
+ *    - attaches the application model to the stepper (i.e.,
+ *      \ref Thyra::ModelEvaluator)
  *  - `initialize()`
  *    - prepares the stepper for use
  *  - `setInitialConditions(...)`
@@ -52,7 +51,7 @@
  *  \f}
  *
  *  This is the first step in separating the stepping algorithm from the
- *  surrounding application logic.  Rather than coding the Forward Euler
+ *  surrounding application logic. Rather than coding the Forward Euler
  *  right-hand-side evaluation and update directly in the time loop, the
  *  application now delegates that work to a Tempus stepper object.
  *
@@ -61,8 +60,10 @@
  *  - The van der Pol model is still provided by a \ref Thyra::ModelEvaluator.
  *  - The application still manages the overall time loop directly.
  *  - The application still manages the \ref Tempus::SolutionHistory.
- *  - The timestep size is still selected manually.
- *  - The regression check follows the same pattern.
+ *  - The timestep size is still selected manually and assigned to the
+ *    working state by the application.
+ *  - The output table still reports the step index, time, \f$x_0\f$, and \f$x_1\f$.
+ *  - The regression check remains a separate final comparison.
  *
  *  \section tempus_tutorial_transition_04_05_snippets Selected code excerpts
  *
@@ -72,13 +73,14 @@
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_04_05_snippet1 Construct and initialize the stepper
  *
- *  <b>Create and initialize a StepperForwardEuler.</b>  The application now
- *  constructs a \ref Tempus::StepperForwardEuler.  A \ref Tempus::Stepper
+ *  <b>Create and initialize a StepperForwardEuler.</b> The application now
+ *  constructs a \ref Tempus::StepperForwardEuler. A \ref Tempus::Stepper
  *  needs access to the governing equations through a
  *  \ref Thyra::ModelEvaluator, so the model is attached to the stepper.
  *  Because the stepper is constructed in stages, `initialize()` is then called
- *  to complete its setup before stepping begins.  Finally, `setInitialConditions(...)`
- *  ensures that the initial \ref Tempus::SolutionHistory is consistent with both the
+ *  to complete its setup before stepping begins. Finally,
+ *  `setInitialConditions(...)` ensures that the initial
+ *  \ref Tempus::SolutionHistory is consistent with both the
  *  governing equations and the stepper.
  *
  *  <b>Before</b>
@@ -94,15 +96,12 @@
  *  stepper->setInitialConditions(solHistory);
  *  @endcode
  *
- *  This introduces the first Tempus stepping abstraction in the progression
- *  tutorial.
- *
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \subsection tempus_tutorial_transition_04_05_snippet2 Replace the hand-written update
  *
- *  <b>Delegate the step to the stepper.</b>  The details of the Forward Euler
+ *  <b>Delegate the step to the stepper.</b> The details of the Forward Euler
  *  update, including interaction with the \ref Thyra::ModelEvaluator, are now
- *  handled by \ref Tempus::StepperForwardEuler.  In this way, the stepper
+ *  handled by \ref Tempus::StepperForwardEuler. In this way, the stepper
  *  encapsulates everything needed to perform a single Forward Euler time step.
  *  This also makes it easier to replace Forward Euler with another
  *  \ref Tempus::Stepper while leaving the surrounding application-level
@@ -130,12 +129,12 @@
  *  The stepper now performs the model evaluation and Forward Euler update.
  *
  *  <hr style="border:0; border-top:5px solid #ccc;">
- *  \subsection tempus_tutorial_transition_04_05_snippet3 Checking the Solution Status
+ *  \subsection tempus_tutorial_transition_04_05_snippet3 Use the status assigned by the stepper
  *
- *  <b>Use the solution status set by the stepper.</b>  The
+ *  <b>Use the solution status set by the stepper.</b> The
  *  \ref Tempus::Stepper sets the status of the working state as part of
- *  `takeStep(...)`.  As a result, the application no longer needs to set the
- *  pass/fail status explicitly after the Forward Euler update.  The remaining
+ *  `takeStep(...)`. As a result, the application no longer needs to set the
+ *  pass/fail status explicitly after the Forward Euler update. The remaining
  *  task is to promote the working state through the solution history.
  *
  *  <b>Before</b>
@@ -156,6 +155,9 @@
  *  The time loop is still application-controlled; only the single-step
  *  algorithm and step-status assignment have moved into the stepper.
  *
+ *  As in the updated examples, final tutorial success is determined after the
+ *  loop by combining the final state status with the separate regression test.
+ *
  *  <hr style="border:0; border-top:5px solid #ccc;">
  *  \section tempus_tutorial_transition_04_05_compare How to compare the examples
  *
@@ -169,8 +171,8 @@
  *
  *  @code{.sh}
  *  git diff --no-index \
- *    <(sed -n '79,157p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp) \
- *    <(sed -n '77,138p' examples/05_Intro_Stepper/05_Intro_Stepper.cpp)
+ *    <(sed -n '87,195p' examples/04_Adding_SolutionHistory/04_Adding_SolutionHistory.cpp) \
+ *    <(sed -n '86,177p' examples/05_Intro_Stepper/05_Intro_Stepper.cpp)
  *  @endcode
  *
  *  This ignores leading header lines (e.g., `#include` statements and

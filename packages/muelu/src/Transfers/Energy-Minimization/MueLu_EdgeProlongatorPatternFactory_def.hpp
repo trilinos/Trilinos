@@ -46,7 +46,8 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
   auto Dc = Get<RCP<Matrix> >(coarseLevel, "D0", "CoarseD0");
   auto Pn = Get<RCP<Matrix> >(coarseLevel, "PnodalEmin");
 
-  const auto one = Teuchos::ScalarTraits<Scalar>::one();
+  const auto one     = Teuchos::ScalarTraits<Scalar>::one();
+  const auto invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
   // |FineD| * |Pnodal| * |CoarseD^T|
 
@@ -71,17 +72,17 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
       auto lib = absD_absPn->getRowMap()->lib();
       if (Dc.is_null()) {
         Kokkos::View<GlobalOrdinal*, typename Node::memory_space> dummy("", 0);
-        auto big_coarse_nodal_map    = MapFactory::Build(lib, -1, dummy, 0, comm);
-        auto big_coarse_edge_map     = MapFactory::Build(lib, -1, dummy, 0, comm);
-        auto big_coarse_nodal_colmap = MapFactory::Build(lib, -1, dummy, 0, comm);
+        auto big_coarse_nodal_map    = MapFactory::Build(lib, invalid, dummy, 0, comm);
+        auto big_coarse_edge_map     = MapFactory::Build(lib, invalid, dummy, 0, comm);
+        auto big_coarse_nodal_colmap = MapFactory::Build(lib, invalid, dummy, 0, comm);
 
         typename Matrix::local_matrix_device_type dummyLocalMatrix;
         Dc = MatrixFactory::Build(dummyLocalMatrix, big_coarse_edge_map, big_coarse_nodal_colmap, big_coarse_nodal_map, big_coarse_edge_map);
 
       } else {
-        auto big_coarse_nodal_map    = MapFactory::Build(lib, -1, Dc->getDomainMap()->getMyGlobalIndicesDevice(), 0, comm);
-        auto big_coarse_edge_map     = MapFactory::Build(lib, -1, Dc->getRangeMap()->getMyGlobalIndicesDevice(), 0, comm);
-        auto big_coarse_nodal_colmap = MapFactory::Build(lib, -1, Dc->getColMap()->getMyGlobalIndicesDevice(), 0, comm);
+        auto big_coarse_nodal_map    = MapFactory::Build(lib, invalid, Dc->getDomainMap()->getMyGlobalIndicesDevice(), 0, comm);
+        auto big_coarse_edge_map     = MapFactory::Build(lib, invalid, Dc->getRangeMap()->getMyGlobalIndicesDevice(), 0, comm);
+        auto big_coarse_nodal_colmap = MapFactory::Build(lib, invalid, Dc->getColMap()->getMyGlobalIndicesDevice(), 0, comm);
 
         Dc = MatrixFactory::Build(Dc->getLocalMatrixDevice(), big_coarse_edge_map, big_coarse_nodal_colmap, big_coarse_nodal_map, big_coarse_edge_map);
       }
@@ -119,7 +120,7 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
     // Filter matrix using criterion
     filtered = Xpetra::applyFilter_LID(
         absD_absPn_absDcT,
-        KOKKOS_LAMBDA(const LocalOrdinal row,
+        KOKKOS_LAMBDA(const LocalOrdinal /*row*/,
                       const LocalOrdinal col,
                       const typename Matrix::impl_scalar_type val) {
           return ((ATS::magnitude(val - 2.0) < eps) || ((lclSingleParent(col, 0) == 1.0) && (ATS::magnitude(val - 1.0) < eps)));

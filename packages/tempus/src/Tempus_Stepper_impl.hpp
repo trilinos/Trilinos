@@ -117,7 +117,7 @@ Teuchos::RCP<Thyra::VectorBase<Scalar> > Stepper<Scalar>::getStepperXDotDot(
 
 template <class Scalar>
 void Stepper<Scalar>::describe(Teuchos::FancyOStream& out,
-                               const Teuchos::EVerbosityLevel verbLevel) const
+                               const Teuchos::EVerbosityLevel /*verbLevel*/) const
 {
   auto l_out = Teuchos::fancyOStream(out.getOStream());
   Teuchos::OSTab ostab(*l_out, 2, this->description());

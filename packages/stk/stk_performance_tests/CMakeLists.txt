@@ -1,5 +1,7 @@
 STK_SUBPACKAGE(STKPerformance_tests)
 
+message("STKPerformance_tests")
+
 if(HAVE_STK_Trilinos)
 
   message("STK performance tests are not currently supported for Trilinos.")

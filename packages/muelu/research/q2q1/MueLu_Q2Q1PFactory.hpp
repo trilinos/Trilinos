@@ -70,7 +70,7 @@ RCP<const ParameterList> Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+void Q2Q1PFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& /*coarseLevel*/) const {
   Input(fineLevel, "A");
 }
 

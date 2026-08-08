@@ -352,6 +352,16 @@ ENDIF()
 ##### PARDISO_MKL Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    PardisoMKL_UnitTests
+    SOURCES
+      PardisoMKL_UnitTests.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    STANDARD_PASS_OUTPUT
+    )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyPardisoMKLFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES pardiso_mkl_test.xml
@@ -367,7 +377,7 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
     )
 ENDIF()
 
-##### PARDISO_CSS Tests #####
+##### CSS_MKL Tests #####
 
 IF (${PACKAGE_NAME}_ENABLE_CSS_MKL)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyCssMKLFiles
@@ -468,6 +478,20 @@ ENDIF()
 ##### MUMPS Tests ####
 #MUMPS requires int/int type
 IF (${PACKAGE_NAME}_ENABLE_MUMPS AND Tpetra_INST_INT_INT)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyMumpsFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES mumps_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME MUMPS_Solver_Test
+    ARGS "--xml-params=mumps_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --resymbol"
+    STANDARD_PASS_OUTPUT
+    COMM serial mpi
+    )
+
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
    MUMPS_UnitTests
    SOURCES

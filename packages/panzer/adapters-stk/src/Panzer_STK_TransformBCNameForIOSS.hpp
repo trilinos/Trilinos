@@ -22,8 +22,17 @@ namespace panzer_stk {
       lowercase letters. This function allows you to use the name
       labels used in Cubit and tie them to the correct nodeset or
       sideset in a STK mesh database.
+
+      @param bc_name String to be converted - this object is transformed in-place
+      @param make_lower_case If set to true, convert to lower case.
+      @return Returns the transformed name
+
+      NOTE: On 2026.05.30, IOSS was changed to allow for upper case in
+      sideset names. We now only have to account for the spaces being
+      changed to underscores. This behavior can be reversed with IOSS
+      properties.
   */
-  std::string transformBCNameForIOSS(std::string& bc_name);
+  std::string transformBCNameForIOSS(std::string& bc_name, const bool make_lower_case=false);
 }
 
 #endif

@@ -196,30 +196,37 @@ std::vector<double> get_default_field_values(const std::vector<stk::transfer::Fi
   return defaultFieldValues;
 }
 
-void apply_bounds(const unsigned length, double* fieldData, const double lowerBound, const double upperBound)
+void apply_bounds(const unsigned length, const int stride, double* fieldData, const double lowerBound, const double upperBound)
 {
   static constexpr double doubleMax = std::numeric_limits<double>::max();
   static constexpr double doubleMin = std::numeric_limits<double>::lowest();
 
   if(doubleMin != lowerBound) {
     for(unsigned i(0); i < length; ++i) {
-      if(fieldData[i] < lowerBound) {
-        fieldData[i] = lowerBound;
+      const unsigned offset = i*stride;
+      if(fieldData[offset] < lowerBound) {
+        fieldData[offset] = lowerBound;
       }
     }
   }
   if(doubleMax != upperBound) {
     for(unsigned i(0); i < length; ++i) {
-      if(upperBound < fieldData[i]) {
-        fieldData[i] = upperBound;
+      const unsigned offset = i*stride;
+      if(upperBound < fieldData[offset]) {
+        fieldData[offset] = upperBound;
       }
     }
   }
 }
 
+void apply_bounds(const unsigned length, double* fieldData, const double lowerBound, const double upperBound)
+{
+  apply_bounds(length, 1, fieldData, lowerBound, upperBound);
+}
+
 void apply_bounds(std::vector<double>& fieldData, const double lowerBound, const double upperBound)
 {
-  apply_bounds(fieldData.size(), fieldData.data(), lowerBound, upperBound);
+  apply_bounds(fieldData.size(), 1, fieldData.data(), lowerBound, upperBound);
 }
 
 unsigned get_size_of_field(const stk::mesh::FieldBase* field)
@@ -231,6 +238,44 @@ unsigned get_size_of_field(const stk::mesh::FieldBase* field)
 
 
   return 0;
+}
+
+void fill_cached_field_data(const std::vector<IndexedField>& fieldVec, std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > &cachedFieldData)
+{
+  cachedFieldData.clear();
+
+  for(unsigned i=0; i<fieldVec.size(); i++) {
+    const stk::mesh::FieldBase* field = fieldVec[i].field;
+
+    if(field->host_data_layout() == stk::mesh::Layout::Left) {
+      auto fieldData = field->data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>();
+      auto entry = std::make_shared< stk::search::CachedFieldData<double, stk::mesh::Layout::Left> >(fieldData, field, i);
+      cachedFieldData.push_back(entry);
+    } else if(field->host_data_layout() == stk::mesh::Layout::Right) {
+      auto fieldData = field->data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>();
+      auto entry = std::make_shared< stk::search::CachedFieldData<double, stk::mesh::Layout::Right> >(fieldData, field, i);
+      cachedFieldData.push_back(entry);
+    }
+  }
+}
+
+void fill_cached_const_field_data(const std::vector<IndexedField>& fieldVec, std::vector< std::shared_ptr<stk::search::CachedFieldDataBase> > &cachedFieldData)
+{
+  cachedFieldData.clear();
+
+  for(unsigned i=0; i<fieldVec.size(); i++) {
+    const stk::mesh::FieldBase* field = fieldVec[i].field;
+
+    if(field->host_data_layout() == stk::mesh::Layout::Left) {
+      auto fieldData = field->data<double, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>();
+      auto entry = std::make_shared< stk::search::ConstCachedFieldData<double, stk::mesh::Layout::Left> >(fieldData, field, i);
+      cachedFieldData.push_back(entry);
+    } else if(field->host_data_layout() == stk::mesh::Layout::Right) {
+      auto fieldData = field->data<double, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>();
+      auto entry = std::make_shared< stk::search::ConstCachedFieldData<double, stk::mesh::Layout::Right> >(fieldData, field, i);
+      cachedFieldData.push_back(entry);
+    }
+  }
 }
 
 } // namespace transfer

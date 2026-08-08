@@ -7,17 +7,16 @@
 #ifndef __Teko_ALOperator_hpp__
 #define __Teko_ALOperator_hpp__
 
-#include "Teko_BlockedEpetraOperator.hpp"
+#include "Teko_BlockedTpetraOperator.hpp"
 #include "Teko_Utilities.hpp"
+#include "Teko_ConfigDefs.hpp"
 
-namespace Teko {
+namespace Teko::NS {
 
-namespace NS {
-
-/** \brief Sparse matrix vector multiplication
+/** \brief Sparse matrix-vector multiplication
  * for augmented Lagrangian-based preconditioners.
  *
- * This class implements sparse matrix vector multiplication
+ * This class implements sparse matrix-vector multiplication
  * for augmented Lagrangian-based preconditioners.
  * Details can be found in the following papers:
  *
@@ -77,8 +76,7 @@ namespace NS {
  * This class implements the matrix vector product with
  * \f$ \widehat{\mathcal{A}} \f$.
  */
-
-class ALOperator : public Teko::Epetra::BlockedEpetraOperator {
+class ALOperator : public Teko::TpetraHelpers::BlockedTpetraOperator {
  public:
   /** Build an augmented Lagrangian operator based on a vector of vector
    * of global IDs.
@@ -95,9 +93,9 @@ class ALOperator : public Teko::Epetra::BlockedEpetraOperator {
    * \param[in] label
    *            Label for name the operator
    */
-  ALOperator(const std::vector<std::vector<int> >& vars,
-             const Teuchos::RCP<Epetra_Operator>& content, LinearOp pressureMassMatrix,
-             double gamma = 0.05, const std::string& label = "<ANYM>");
+  ALOperator(const std::vector<std::vector<GO> >& vars,
+             const Teuchos::RCP<Tpetra::Operator<ST, LO, GO, NT> >& content,
+             LinearOp pressureMassMatrix, double gamma = 0.05, const std::string& label = "<ANYM>");
 
   /** Build a modified augmented Lagrangian operator based on a vector of vector
    * of global IDs.
@@ -112,116 +110,70 @@ class ALOperator : public Teko::Epetra::BlockedEpetraOperator {
    * \param[in] label
    *            Name of the operator
    */
-  ALOperator(const std::vector<std::vector<int> >& vars,
-             const Teuchos::RCP<Epetra_Operator>& content, double gamma = 0.05,
+  ALOperator(const std::vector<std::vector<GO> >& vars,
+             const Teuchos::RCP<Tpetra::Operator<ST, LO, GO, NT> >& content, double gamma = 0.05,
              const std::string& label = "<ANYM>");
 
-  // Destructor
   virtual ~ALOperator() {}
 
-  /** Set the pressure mass matrix.
-   *
-   * \param[in] pressureMassMatrix
-   *            Pressure mass matrix.
-   *
-   */
+  /** Set the pressure mass matrix. */
   void setPressureMassMatrix(LinearOp pressureMassMatrix);
 
-  /**
-   * \returns Pressure mass matrix that can be used to construct preconditioner.
-   */
+  /** Returns pressure mass matrix that can be used to construct preconditioner. */
   const LinearOp& getPressureMassMatrix() const { return pressureMassMatrix_; }
 
-  /** Set gamma.
-   *
-   * \param[in] gamma
-   *            Augmentation parameter.
-   */
+  /** Set gamma. */
   void setGamma(double gamma);
 
-  /**
-   * \returns Gamma
-   *          Augmentation parameter.
-   */
+  /** Returns augmentation parameter gamma. */
   const double& getGamma() const { return gamma_; }
 
-  /**
+  /** Build augmented RHS.
+   *
    * \param[in] b
    *            Right-hand side.
    * \param[out] bAugmented
    *             Augmented right-hand side.
    */
-  void augmentRHS(const Epetra_MultiVector& b, Epetra_MultiVector& bAugmented);
+  void augmentRHS(const Tpetra::MultiVector<ST, LO, GO, NT>& b,
+                  Tpetra::MultiVector<ST, LO, GO, NT>& bAugmented);
 
-  /**
-   * \returns Number of rows.
-   */
+  /** Returns number of block rows. */
   int getNumberOfBlockRows() const { return numBlockRows_; }
 
-  /**
-   * Force a rebuild of the blocked operator from the stored
-   * content operator.
-   */
+  /** Force a rebuild of the blocked operator from the stored content operator. */
   virtual void RebuildOps() { BuildALOperator(); }
 
-  /** Get the (i,j) block of the original (non-augmented) operator.
-   *
-   * \param[in] i
-   *            Row index.
-   * \param[in] j
-   *            Column index.
-   */
-  const Teuchos::RCP<const Epetra_Operator> GetBlock(int i, int j) const;
+  /** Get the (i,j) block of the original (non-augmented) operator. */
+  const Teuchos::RCP<const Tpetra::Operator<ST, LO, GO, NT> > GetBlock(int i, int j) const;
 
  protected:
-  /**
-   * AL operator.
-   */
-  Teuchos::RCP<Thyra::LinearOpBase<double> > alOperator_;
+  /** AL operator. */
+  Teuchos::RCP<Thyra::LinearOpBase<ST> > alOperator_;
 
-  /**
-   * Operator for augmenting the right-hand side.
-   */
-  Teuchos::RCP<Thyra::LinearOpBase<double> > alOperatorRhs_;
+  /** Operator for augmenting the right-hand side. */
+  Teuchos::RCP<Thyra::LinearOpBase<ST> > alOperatorRhs_;
 
-  /**
-   * Pressure mass matrix and its inverse.
-   */
+  /** Pressure mass matrix and inverse pressure mass matrix. */
   LinearOp pressureMassMatrix_;
-
-  /**
-   * Inverse of the pressure mass matrix.
-   */
   LinearOp invPressureMassMatrix_;
 
-  /**
-   * Augmentation parameter.
-   */
+  /** Augmentation parameter. */
   double gamma_;
 
-  /**
-   * Dimension of the problem.
-   */
+  /** Dimension of the problem. */
   int dim_;
 
-  /**
-   * Number of block rows.
-   */
+  /** Number of block rows. */
   int numBlockRows_;
 
-  /**
-   * Check dimension. Only implemente for 2D and 3D problems.
-   */
-  void checkDim(const std::vector<std::vector<int> >& vars);
+  /** Check dimension. Only implemented for 2D and 3D problems. */
+  void checkDim(const std::vector<std::vector<GO> >& vars);
 
-  /**
-   * Build AL operator.
-   */
+  /** Build AL operator. */
   void BuildALOperator();
 };
 
-}  // end namespace NS
-
-}  // end namespace Teko
+}  // end namespace Teko::NS
 
 #endif /* __Teko_ALOperator_hpp__ */

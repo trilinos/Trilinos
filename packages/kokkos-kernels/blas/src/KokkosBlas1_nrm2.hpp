@@ -23,7 +23,7 @@ namespace KokkosBlas {
 /// \return The nrm2 product result; a single value.
 template <class execution_space, class XVector,
           typename std::enable_if<Kokkos::is_execution_space<execution_space>::value, int>::type = 0>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2(
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2(
     const execution_space& space, const XVector& x) {
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "KokkosBlas::nrm2: execution_space must be a valid"
@@ -34,7 +34,8 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm2: "
                 "XVector must have rank 1.");
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type mag_type;
+  typedef typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type
+      mag_type;
 
   typedef Kokkos::View<typename XVector::const_value_type*,
                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
@@ -66,7 +67,7 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
 ///
 /// \return The nrm2 product result; a single value.
 template <class XVector>
-typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2(
+typename KokkosKernels::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type nrm2(
     const XVector& x) {
   return nrm2(typename XVector::execution_space{}, x);
 }
@@ -108,7 +109,8 @@ void nrm2(const execution_space& space, const RV& R, const XMV& X,
                 "KokkosBlas::nrm2: "
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
+  typedef
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type mag_type;
   static_assert(std::is_same<typename RV::value_type, mag_type>::value,
                 "KokkosBlas::nrm2: R must have the magnitude type of"
                 "the xvectors value_type it is an output argument "
@@ -165,8 +167,9 @@ void nrm2(const RV& R, const XMV& X, typename std::enable_if<Kokkos::is_view<RV>
 /// Serial nrm2
 ///
 template <class XMV>
-KOKKOS_INLINE_FUNCTION typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type
-serial_nrm2(const XMV X) {
+KOKKOS_INLINE_FUNCTION
+    typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type
+    serial_nrm2(const XMV X) {
   static_assert(Kokkos::is_view<XMV>::value, "KokkosBlas::serial_nrm2: XMV is not a Kokkos::View");
   static_assert(XMV::rank == 1, "KokkosBlas::serial_nrm2: XMV must have rank 1");
 
@@ -187,7 +190,8 @@ KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
                 "RV and XMV must either have rank 0 and 1 or rank 1 and 2.");
 
 #ifndef NDEBUG
-  using norm_type = typename Kokkos::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
+  using norm_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<typename XMV::non_const_value_type>::mag_type;
   static_assert(std::is_same<typename RV::non_const_value_type, norm_type>::value,
                 "KokkosBlas::serial_nrm2: RV must have same value_type as"
                 " KokkosKernels::ArithTraits<XMV::value_type>::mag_type");

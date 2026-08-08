@@ -9,7 +9,7 @@
 #include <Akri_CramersRuleSolver.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MathUtil.hpp>
-#include <Akri_Unit_LogRedirecter.hpp>
+#include <Akri_LogRedirecter.hpp>
 #include <gtest/gtest.h>
 #include <functional>
 

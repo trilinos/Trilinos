@@ -1,6 +1,8 @@
 
 STK_SUBPACKAGE(Search)
 
+message("STKSearch")
+
 ADD_SUBDIRECTORY(stk_search)
 
 STK_SUBPACKAGE_POSTPROCESS()

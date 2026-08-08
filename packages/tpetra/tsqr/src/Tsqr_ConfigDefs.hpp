@@ -16,6 +16,7 @@
 // Users should not include TpetraTSQR_config.h directly.
 // Include Tsqr_ConfigDefs.hpp instead.
 #include "TpetraTSQR_config.h"
+#include "Tsqr_DLLExportMacro.h"  // IWYU pragma: keep
 
 /// \namespace TSQR
 /// \brief Implementation of the Tall Skinny QR (TSQR) factorization.

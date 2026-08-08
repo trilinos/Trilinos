@@ -1176,12 +1176,10 @@ GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>
 
   const unsigned numBoxRange  = local_range.size();
 
-#ifdef _OPENMP
-#pragma omp parallel for default(shared)
-#endif
-  for (size_t i = 0; i < numBoxRange; ++i) {
+  auto policy = Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, numBoxRange);
+  Kokkos::parallel_for(policy, [&](size_t i) {
     rangeBoxes[i] = local_range[i].first;
-  }
+  });
   if(pSize == 0) {
     return;
   }

@@ -193,6 +193,43 @@ void add_nodes_to_disconnect(const stk::mesh::BulkData & bulk,
   }
 }
 
+std::pair<bool, bool> get_internal_face_reference_to_block_pair(const std::vector<const stk::mesh::Part*>& firstBlockSurfaces,
+                                                                const std::vector<const stk::mesh::Part*>& secondBlockSurfaces,
+                                                                const stk::mesh::Bucket* faceBucket)
+{
+  std::pair<bool, bool> blockPairReference = {false, false};
+
+  auto check_is_in_blocks = [](auto& inBlock, auto& surfaces, auto partOrdinal) {
+    for (auto surface : surfaces) {
+      if (partOrdinal == surface->mesh_meta_data_ordinal()) {
+        inBlock = true;
+        break;
+      }
+    }};
+
+  stk::mesh::PartVector bucketSidesetParts;
+
+  const stk::mesh::PartVector& superset = faceBucket->supersets();
+  for (stk::mesh::Part* part : superset) {
+    if (stk::mesh::is_side_set(*part)) {
+      bucketSidesetParts.push_back(part);
+    }
+  }
+
+  for (auto part : bucketSidesetParts) {
+    auto ordinal = part->mesh_meta_data_ordinal();
+
+    check_is_in_blocks(blockPairReference.first, firstBlockSurfaces, ordinal);
+    check_is_in_blocks(blockPairReference.second, secondBlockSurfaces, ordinal);
+  }
+
+  if(bucketSidesetParts.empty()) {
+    blockPairReference = {true, true};
+  }
+
+  return blockPairReference;
+}
+
 void add_faces_to_disconnect(stk::mesh::BulkData& bulk,
                              BlockPair const& blockPair,
                              LinkInfo& info)
@@ -204,39 +241,18 @@ void add_faces_to_disconnect(stk::mesh::BulkData& bulk,
   auto firstBlockSurfaces = meta.get_surfaces_touched_by_block(blockPair.first);
   auto secondBlockSurfaces = meta.get_surfaces_touched_by_block(blockPair.second);
 
-  auto check_is_in_blocks = [](auto& inBlock, auto& surfaces, auto partOrdinal) {
-    for (auto surface : surfaces) {
-      if (partOrdinal == surface->mesh_meta_data_ordinal()) {
-        inBlock = true;
-        break;
-      }
-    }};
-
   stk::mesh::Selector blockBoundary = firstBlock & secondBlock &
                                       (meta.locally_owned_part() | meta.globally_shared_part());
   const stk::mesh::BucketVector & onBlockBoundaryFaces = bulk.get_buckets(meta.side_rank(), blockBoundary);
   for (auto bucket : onBlockBoundaryFaces) {
-    stk::mesh::PartVector bucketSidesetParts;
-
-    const stk::mesh::PartVector& superset = bucket->supersets();
-    for (stk::mesh::Part* part : superset) {
-      if (stk::mesh::is_side_set(*part)) {
-        bucketSidesetParts.push_back(part);
-      }
-    }
+    std::pair<bool, bool> blockReferenceForFaceBucket = get_internal_face_reference_to_block_pair(firstBlockSurfaces,
+                                                                                                  secondBlockSurfaces,
+                                                                                                  bucket);
 
     for (auto face : *bucket) {
       auto elems = bulk.begin_elements(face);
       auto numElems = bulk.num_elements(face);
       STK_ThrowRequire(numElems == 2u);
-
-      std::pair<bool, bool> isInBlocks = {false, false};
-      for (auto part : bucketSidesetParts) {
-        auto ordinal = part->mesh_meta_data_ordinal();
-
-        check_is_in_blocks(isInBlocks.first, firstBlockSurfaces, ordinal);
-        check_is_in_blocks(isInBlocks.second, secondBlockSurfaces, ordinal);
-      }
 
       auto ordinals = bulk.begin_ordinals(face, stk::topology::ELEM_RANK);
 
@@ -245,7 +261,7 @@ void add_faces_to_disconnect(stk::mesh::BulkData& bulk,
           InternalFaceInfo faceInfo(blockPair,
                                     elems[1u-i], ordinals[1u-i],
                                     elems[i], ordinals[i], face,
-                                    isInBlocks);
+                                    blockReferenceForFaceBucket);
           stk::util::insert_keep_sorted_and_unique(faceInfo, info.internalSides);
         }
       }
@@ -626,11 +642,11 @@ void detach_and_duplicate_internal_face(stk::mesh::BulkData& bulk,
 
 InternalFaceDisconnectState get_internal_face_disconnect_state(stk::mesh::BulkData& bulk,
                                                                stk::mesh::Entity elemInBlock,
-                                                               bool isSidesetAttachedToBlock)
+                                                               bool isFaceDefinedRelativeToBlock)
 {
   InternalFaceDisconnectState blockState = InternalFaceDisconnectState::NOOP;
 
-  if(isSidesetAttachedToBlock) {
+  if(isFaceDefinedRelativeToBlock) {
     if(bulk.is_valid(elemInBlock) && bulk.bucket(elemInBlock).owned()) {
       blockState = InternalFaceDisconnectState::KEEP;
     } else {
@@ -668,10 +684,10 @@ void disconnect_internal_face(stk::mesh::BulkData& bulk, const InternalFaceInfo&
 
   InternalFaceDisconnectState firstBlockState = get_internal_face_disconnect_state(bulk,
                                                                                    faceInfo.elemInFirstBlock,
-                                                                                   faceInfo.isInBlockPairSideset.first);
+                                                                                   faceInfo.isDefinedRelativeToBlockPair.first);
   InternalFaceDisconnectState secondBlockState = get_internal_face_disconnect_state(bulk,
                                                                                     faceInfo.elemInSecondBlock,
-                                                                                    faceInfo.isInBlockPairSideset.second);
+                                                                                    faceInfo.isDefinedRelativeToBlockPair.second);
 
   bool wedgedSidesetAttachedToBothBlocksWithOneLocalElement =
       ( firstBlockState == InternalFaceDisconnectState::KEEP && secondBlockState == InternalFaceDisconnectState::DESTROY) ||

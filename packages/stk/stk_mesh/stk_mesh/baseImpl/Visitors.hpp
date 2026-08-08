@@ -289,8 +289,7 @@ void VisitUpwardClosureGeneral(
 {
     for (FORWARD_ITERATOR entity_iterator = start ; entity_iterator != finish ; ++entity_iterator)
     {
-        Entity entity = get_entity(entity_iterator);
-        VisitUpwardClosureGeneral<DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE,DESIRED_ENTITY>(mesh,entity,entityRank,endRank,do_this,desired_entity);
+        VisitUpwardClosureGeneral<DO_THIS_FOR_ENTITY_IN_UPWARD_CLOSURE,DESIRED_ENTITY>(mesh,get_entity(entity_iterator),entityRank,endRank,do_this,desired_entity);
     }
 }
 
@@ -345,6 +344,7 @@ struct StoreEntity
     {
       stk::util::sort_and_unique(visitedEntities);
       entities.clear();
+      entities.reserve(visitedEntities.size());
       for(Entity ent : visitedEntities) {
         entities.emplace_back(ent);
       }

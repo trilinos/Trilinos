@@ -227,6 +227,9 @@ void initializeCollection() {
     // ignore
   }
 
+  // preload
+  registerEnvironmentVariable("LD_PRELOAD");
+
   // CPUs
   registerCommand("lscpu");
 
@@ -256,12 +259,14 @@ void initializeCollection() {
 
   // ROCm
   registerCommand("rocm-smi", "rocm-smi --showallinfo", "rocm-smi");
+  registerEnvironmentVariablePrefix("HIP");
+  registerEnvironmentVariablePrefix("HSA");
 
   // SYCL
   registerCommand("sycl-ls", "sycl-ls --verbose", "sycl-ls");
 
   // package namespaced environment variables
-  for (auto &prefix : {"TEUCHOS", "KOKKOS", "TPETRA", "STK", "MUELU", "IFPACK2"})
+  for (auto &prefix : {"TRILINOS", "TEUCHOS", "KOKKOS", "TPETRA", "STK", "MUELU", "IFPACK2"})
     registerEnvironmentVariablePrefix(prefix);
 }
 

@@ -13,7 +13,6 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
-#include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 

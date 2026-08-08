@@ -107,7 +107,7 @@ protected:
     { return space_; }
 
   /** \brief . */
-  bool opSupportedImpl(Thyra::EOpTransp M_trans) const
+  bool opSupportedImpl(Thyra::EOpTransp  /*M_trans*/) const
     { return true; }  // This class supports everything!
 
   /** \brief . */

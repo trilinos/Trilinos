@@ -1,4 +1,4 @@
-IF (Tpetra_INST_INT_INT)
+IF(Tpetra_INST_INT_INT)
   # This example requires GlobalOrdinal = int, so that Epetra and
   # Tpetra can use the same global index lists.  It would not be hard
   # to make this example use the default GlobalOrdinal type instead.
@@ -6,8 +6,8 @@ IF (Tpetra_INST_INT_INT)
     import
     SOURCES import.cpp
     COMM mpi
-    )
-ENDIF ()
+  )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE(
   vector

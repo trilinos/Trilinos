@@ -45,7 +45,7 @@
 #include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_mesh/base/Field.hpp"
 #include "stk_transfer/copy_by_id/TransferCopyById.hpp"
-#include "stk_transfer/copy_by_id/TransferCopyByIdStkMeshAdapter.hpp"
+#include "stk_transfer_util/TransferCopyByIdStkMeshAdapter.hpp"
 #include "stk_transfer/copy_by_id/SearchByIdGeometric.hpp"
 
 namespace

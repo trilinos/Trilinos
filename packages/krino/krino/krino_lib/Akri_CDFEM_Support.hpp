@@ -8,8 +8,6 @@
 
 #ifndef Akri_CDFEM_Support_h
 #define Akri_CDFEM_Support_h
-//
-#include "Akri_CDFEM_Support.hpp"
 
 #include <Akri_FieldRef.hpp>
 #include <Akri_AuxMetaData.hpp>

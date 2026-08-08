@@ -403,7 +403,7 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplNotAvailTa
  public:
   BlockTriDiContainer(const Teuchos::RCP<const row_matrix_type>& matrix,
                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
-                      const Teuchos::RCP<const import_type>& importer,
+                      const Teuchos::RCP<const import_type>& /*importer*/,
                       bool pointIndexed)
     : Container<MatrixType>(matrix, partitions, pointIndexed) {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: BlockTriDiContainer is not available for this scalar_type");
@@ -446,7 +446,7 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplNotAvailTa
 
   void
   describe(Teuchos::FancyOStream& out,
-           const Teuchos::EVerbosityLevel verbLevel =
+           const Teuchos::EVerbosityLevel /*verbLevel*/ =
                Teuchos::Describable::verbLevel_default) const override {
     out << "Ifpack2::BlockTriDiContainer::ImplNotAvailTag";
   }

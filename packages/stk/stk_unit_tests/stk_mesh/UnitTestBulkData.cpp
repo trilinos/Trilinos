@@ -2006,6 +2006,20 @@ TEST(BulkData, testParallelSideCreationWithoutAura)
   testParallelSideCreation(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
+TEST(BulkData, testMeshDiagnosticObserverOnlyRegisteredWhenRuleIsEnabled)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  unsigned spatialDim = 2;
+  std::shared_ptr<BulkData> bulkPtr = stk::unit_test_util::build_mesh(spatialDim, pm);
+  stk::mesh::BulkData& mesh = *bulkPtr;
+
+  EXPECT_FALSE(mesh.has_observer_type<stk::mesh::MeshDiagnosticObserver>());
+
+  mesh.enable_mesh_diagnostic_rule(stk::mesh::RULE_1);
+
+  EXPECT_TRUE(mesh.has_observer_type<stk::mesh::MeshDiagnosticObserver>());
+}
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 class BulkDataWithHexes : public stk::mesh::fixtures::TestHexFixture {};
@@ -2491,7 +2505,7 @@ TEST(BulkData, get_ghost_data)
           + string("P0:  (Entity_gid=8, rank=0, direction=SEND, processor=2, ghosting level=AURA)\n")
           + string("P0:  rank=EDGE_RANK\n")
           + string("P0:  rank=FACE_RANK\n")
-          + string("P0:  rank=ELEMENT_RANK\n")
+          + string("P0:  rank=ELEM_RANK\n")
           + string("P0:  (Entity_gid=1, rank=3, direction=NONE, processor=0, ghosting level=LOCALLY_OWNED)\n")
           + string("P0:  (Entity_gid=1, rank=3, direction=SEND, processor=1, ghosting level=AURA)\n")
           + string("P0:  (Entity_gid=2, rank=3, direction=RECEIVE, processor=1, ghosting level=AURA)\n");
@@ -2532,7 +2546,7 @@ TEST(BulkData, get_ghost_data)
           + string("P1:  (Entity_gid=12, rank=0, direction=SEND, processor=0, ghosting level=AURA)\n")
           + string("P1:  rank=EDGE_RANK\n")
           + string("P1:  rank=FACE_RANK\n")
-          + string("P1:  rank=ELEMENT_RANK\n")
+          + string("P1:  rank=ELEM_RANK\n")
           + string("P1:  (Entity_gid=2, rank=3, direction=NONE, processor=1, ghosting level=LOCALLY_OWNED)\n")
           + string("P1:  (Entity_gid=2, rank=3, direction=SEND, processor=0, ghosting level=AURA)\n")
           + string("P1:  (Entity_gid=2, rank=3, direction=SEND, processor=2, ghosting level=AURA)\n")
@@ -2543,7 +2557,7 @@ TEST(BulkData, get_ghost_data)
     else
     { // if (stkMeshBulkData.parallel_rank() == 2)
       std::ostringstream oss;
-      for(stk::topology::rank_t rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEMENT_RANK; ++rank)
+      for(stk::topology::rank_t rank = stk::topology::NODE_RANK; rank <= stk::topology::ELEM_RANK; ++rank)
       {
         oss << printGhostDataByRank(stkMeshBulkData, rank);
       }
@@ -2567,7 +2581,7 @@ TEST(BulkData, get_ghost_data)
           + string("P2:  (Entity_gid=8, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n")
           + string("P2:  rank=EDGE_RANK\n")
           + string("P2:  rank=FACE_RANK\n")
-          + string("P2:  rank=ELEMENT_RANK\n")
+          + string("P2:  rank=ELEM_RANK\n")
           + string("P2:  (Entity_gid=3, rank=3, direction=NONE, processor=2, ghosting level=LOCALLY_OWNED)\n")
           + string("P2:  (Entity_gid=3, rank=3, direction=SEND, processor=1, ghosting level=AURA)\n")
           + string("P2:  (Entity_gid=2, rank=3, direction=RECEIVE, processor=1, ghosting level=AURA)\n");

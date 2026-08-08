@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
-// Note: Luc Berger-Vergiat 04/14/21
-//       This tests uses KOKKOS_LAMBDA so we need
-//       to make sure that these are enabled in
-//       the CUDA backend before including this test.
-#if !defined(TEST_CUDA_BLAS_CPP) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -314,5 +309,3 @@ TEST_F(TestCategory, team_mult_mv_int) { test_team_mult_mv<int, int, int, TestDe
 TEST_F(TestCategory, team_mult_double_int) { test_team_mult<double, int, float, TestDevice>(); }
 TEST_F(TestCategory, team_mult_double_mv_int) { test_team_mult_mv<double, int, float, TestDevice>(); }
 #endif
-
-#endif  // Check for lambda availability in CUDA backend

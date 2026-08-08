@@ -68,7 +68,7 @@ class StratimikosSmoother : public SmootherPrototype<Scalar, LocalOrdinal, Globa
   friend class StratimikosSmoother;
 #endif
 
-  StratimikosSmoother(const std::string type, const Teuchos::ParameterList& paramList = Teuchos::ParameterList()){
+  StratimikosSmoother(const std::string /*type*/, const Teuchos::ParameterList& /*paramList*/ = Teuchos::ParameterList()){
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Stratimikos only works for Scalar=double.")};
 
   //! Destructor

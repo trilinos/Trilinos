@@ -508,24 +508,27 @@ SolverCore<ConcreteSolver,Matrix,Vector>::setParameters(
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
 #endif
+  Teuchos::RCP<Teuchos::ParameterList> pl;
+  if (parameterList->name() == "Amesos2")
+    pl = parameterList;
+  else
+    pl = Teuchos::rcp(new Teuchos::ParameterList());
 
-  if( parameterList->name() == "Amesos2" ){
-    // First, validate the parameterList
-    Teuchos::RCP<const Teuchos::ParameterList> valid_params = getValidParameters();
-    parameterList->validateParameters(*valid_params);
+  // First, validate the parameterList
+  Teuchos::RCP<const Teuchos::ParameterList> valid_params = getValidParameters();
+  pl->validateParameters(*valid_params);
 
-    // Do everything here that is for generic status and control parameters
-    control_.setControlParameters(parameterList);
+  // Do everything here that is for generic status and control parameters
+  control_.setControlParameters(pl);
 
-    // Finally, hook to the implementation's parameter list parser
-    // First check if there is a dedicated sublist for this solver and use that if there is
-    if( parameterList->isSublist(name()) ){
-      // Have control look through the solver's parameter list to see if
-      // there is anything it recognizes (mostly the "Transpose" parameter)
-      control_.setControlParameters(Teuchos::sublist(parameterList, name()));
+  // Finally, hook to the implementation's parameter list parser
+  // First check if there is a dedicated sublist for this solver and use that if there is
+  if( pl->isSublist(name()) ){
+    // Have control look through the solver's parameter list to see if
+    // there is anything it recognizes (mostly the "Transpose" parameter)
+    control_.setControlParameters(Teuchos::sublist(pl, name()));
 
-      static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(parameterList, name()));
-    }
+    static_cast<solver_type*>(this)->setParameters_impl(Teuchos::sublist(parameterList, name()));
   }
 
   return *this;

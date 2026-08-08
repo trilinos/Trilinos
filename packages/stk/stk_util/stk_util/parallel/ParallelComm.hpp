@@ -102,9 +102,6 @@ bool pack_and_communicate(CommBroadcast & comm, const PACK_ALGORITHM & algorithm
       || (comm.parallel_rank() != comm.root_rank() && comm.recv_buffer().capacity() > 0);
 }
 
-std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator);
-
-
 //
 //  Parallel_Data_Exchange: General object exchange template with unknown comm plan
 //

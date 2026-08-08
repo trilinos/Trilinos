@@ -15,6 +15,18 @@
 #include <KokkosKernels_PrintConfiguration.hpp>
 #include <KokkosKernels_Version_Info.hpp>
 
+#if defined(KOKKOS_ENABLE_CUDA)
+#include <cuda_runtime.h>
+#endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+#include <hip/hip_runtime.h>
+#endif
+
+#if defined(KOKKOS_ENABLE_SYCL)
+#include <sycl/sycl.hpp>
+#endif
+
 namespace KokkosKernelsBenchmark {
 
 /// \brief Remove unwanted spaces and colon signs from input string. In case of
@@ -88,11 +100,86 @@ inline void add_env_info() {
   }
 }
 
+/// \brief Add GPU architecture information to benchmark context.
+/// Queries device properties via CUDA/HIP runtime APIs or SYCL device info.
+inline void add_gpu_context() {
+#if defined(KOKKOS_ENABLE_CUDA)
+  int num_devices = 0;
+  if (cudaGetDeviceCount(&num_devices) != cudaSuccess) return;
+  for (int dev = 0; dev < num_devices; ++dev) {
+    cudaDeviceProp prop;
+    if (cudaGetDeviceProperties(&prop, dev) != cudaSuccess) continue;
+
+    std::string prefix = "GPU" + std::to_string(dev) + "_";
+
+    benchmark::AddCustomContext(prefix + "name", prop.name);
+    benchmark::AddCustomContext(prefix + "compute_capability",
+                                std::to_string(prop.major) + "." + std::to_string(prop.minor));
+    benchmark::AddCustomContext(prefix + "num_multiprocessors", std::to_string(prop.multiProcessorCount));
+    benchmark::AddCustomContext(prefix + "total_global_mem_GiB", std::to_string(prop.totalGlobalMem / (1 << 30)));
+    benchmark::AddCustomContext(prefix + "l2_cache_size_MiB", std::to_string(prop.l2CacheSize / (1 << 20)));
+    benchmark::AddCustomContext(prefix + "clock_rate_MHz", std::to_string(prop.clockRate / 1000));
+    benchmark::AddCustomContext(prefix + "memory_clock_rate_MHz", std::to_string(prop.memoryClockRate / 1000));
+    benchmark::AddCustomContext(prefix + "memory_bus_width_bits", std::to_string(prop.memoryBusWidth));
+    // Peak memory bandwidth in GB/s: 2 * memClk(Hz) * busWidth(bits) / 8
+    double peak_bw = 2.0 * (prop.memoryClockRate * 1000.0) * (prop.memoryBusWidth / 8.0) / 1e9;
+    benchmark::AddCustomContext(prefix + "peak_memory_bandwidth_GBs", std::to_string(static_cast<int>(peak_bw + 0.5)));
+  }
+#endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+  int num_devices = 0;
+  if (hipGetDeviceCount(&num_devices) != hipSuccess) return;
+  for (int dev = 0; dev < num_devices; ++dev) {
+    hipDeviceProp_t prop;
+    if (hipGetDeviceProperties(&prop, dev) != hipSuccess) continue;
+
+    std::string prefix = "GPU" + std::to_string(dev) + "_";
+
+    benchmark::AddCustomContext(prefix + "name", prop.name);
+    benchmark::AddCustomContext(prefix + "compute_capability",
+                                std::to_string(prop.major) + "." + std::to_string(prop.minor));
+    benchmark::AddCustomContext(prefix + "num_multiprocessors", std::to_string(prop.multiProcessorCount));
+    benchmark::AddCustomContext(prefix + "total_global_mem_GiB", std::to_string(prop.totalGlobalMem / (1 << 30)));
+    benchmark::AddCustomContext(prefix + "l2_cache_size_MiB", std::to_string(prop.l2CacheSize / (1 << 20)));
+    benchmark::AddCustomContext(prefix + "clock_rate_MHz", std::to_string(prop.clockRate / 1000));
+    benchmark::AddCustomContext(prefix + "memory_clock_rate_MHz", std::to_string(prop.memoryClockRate / 1000));
+    benchmark::AddCustomContext(prefix + "memory_bus_width_bits", std::to_string(prop.memoryBusWidth));
+    double peak_bw = 2.0 * (prop.memoryClockRate * 1000.0) * (prop.memoryBusWidth / 8.0) / 1e9;
+    benchmark::AddCustomContext(prefix + "peak_memory_bandwidth_GBs", std::to_string(static_cast<int>(peak_bw + 0.5)));
+  }
+#endif
+
+#if defined(KOKKOS_ENABLE_SYCL)
+  int dev = 0;
+  for (const auto& platform : sycl::platform::get_platforms()) {
+    for (const auto& device : platform.get_devices()) {
+      if (device.is_gpu()) {
+        std::string prefix = "GPU" + std::to_string(dev) + "_";
+        benchmark::AddCustomContext(prefix + "name", device.get_info<sycl::info::device::name>());
+        benchmark::AddCustomContext(prefix + "vendor", device.get_info<sycl::info::device::vendor>());
+        benchmark::AddCustomContext(prefix + "num_compute_units",
+                                    std::to_string(device.get_info<sycl::info::device::max_compute_units>()));
+        benchmark::AddCustomContext(
+            prefix + "total_global_mem_GiB",
+            std::to_string(device.get_info<sycl::info::device::global_mem_size>() / (1ULL << 30)));
+        benchmark::AddCustomContext(prefix + "max_clock_frequency_MHz",
+                                    std::to_string(device.get_info<sycl::info::device::max_clock_frequency>()));
+        benchmark::AddCustomContext(prefix + "local_mem_size_KiB",
+                                    std::to_string(device.get_info<sycl::info::device::local_mem_size>() / 1024));
+        ++dev;
+      }
+    }
+  }
+#endif
+}
+
 /// \brief Gather all context information and add it to benchmark context
 inline void add_benchmark_context(bool verbose = false) {
   add_kokkos_configuration(verbose);
   add_version_info();
   add_env_info();
+  add_gpu_context();
 }
 
 template <class FuncType, class... ArgsToCallOp>

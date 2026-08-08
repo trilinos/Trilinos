@@ -13,20 +13,21 @@
 #include <algorithm>
 #include <cctype>
 
-std::string panzer_stk::transformBCNameForIOSS(std::string& name)
+std::string panzer_stk::transformBCNameForIOSS(std::string& name, const bool make_lower_case)
 {
   // strip off leading and trailing whitespace just in case this comes
   // in from input file.
   panzer::trim(name);
 
-  // replace internal whitespace with underscores and upper case with lower case.
   std::transform(name.begin(), name.end(), name.begin(),
-                 [](const char c)
+                 [&make_lower_case](const char c)
                  {
                    if (c == ' ')
                      return '_';
-                   else
+                   else if (make_lower_case)
                      return char(std::tolower(c));
+
+                   return char(c);
                  });
   return name;
 }

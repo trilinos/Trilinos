@@ -24,10 +24,10 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
 #include "Zoltan2_PartitioningProblem.hpp"
-#include "Zoltan2_XpetraCrsMatrixAdapter.hpp"
-#include "Zoltan2_XpetraMultiVectorAdapter.hpp"
+#include "Zoltan2_TpetraCrsMatrixAdapter.hpp"
+#include "Zoltan2_TpetraMultiVectorAdapter.hpp"
 #endif
 
 #include "read_matrix.hpp"
@@ -194,9 +194,9 @@ build_problem(Teuchos::ParameterList& test_params,
   }
 
   if (useZoltan2) {
-#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+#if defined(HAVE_IFPACK2_ZOLTAN2)
     // Create an input adapter for the Tpetra matrix.
-    Zoltan2::XpetraCrsMatrixAdapter<crs_matrix_type>
+    Zoltan2::TpetraCrsMatrixAdapter<crs_matrix_type>
         zoltan_matrix(A);
 
     // Specify partitioning parameters
@@ -218,7 +218,7 @@ build_problem(Teuchos::ParameterList& test_params,
     }
 
     // Create and solve partitioning problem
-    Zoltan2::PartitioningProblem<Zoltan2::XpetraCrsMatrixAdapter<crs_matrix_type>>
+    Zoltan2::PartitioningProblem<Zoltan2::TpetraCrsMatrixAdapter<crs_matrix_type>>
         problem(&zoltan_matrix, &zoltan_params);
     problem.solve();
 
@@ -230,21 +230,21 @@ build_problem(Teuchos::ParameterList& test_params,
 
     // Redistribute RHS
     RCP<TMV> zoltan_b;
-    Zoltan2::XpetraMultiVectorAdapter<TMV> adapterRHS(rcpFromRef(*b));
+    Zoltan2::TpetraMultiVectorAdapter<TMV> adapterRHS(rcpFromRef(*b));
     adapterRHS.applyPartitioningSolution(*b, zoltan_b, problem.getSolution());
     // Set it as RHS
     b = zoltan_b;
 
     // Redistribute Sol
     RCP<TMV> zoltan_x;
-    Zoltan2::XpetraMultiVectorAdapter<TMV> adapterSol(rcpFromRef(*x));
+    Zoltan2::TpetraMultiVectorAdapter<TMV> adapterSol(rcpFromRef(*x));
     adapterSol.applyPartitioningSolution(*x, zoltan_x, problem.getSolution());
     // Set it as Sol
     x = zoltan_x;
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
         useZoltan2, std::invalid_argument,
-        "Both Xpetra and Zoltan2 are needed to use Zoltan2.");
+        "Both Zoltan2 are needed to use Zoltan2.");
 #endif
   }
 

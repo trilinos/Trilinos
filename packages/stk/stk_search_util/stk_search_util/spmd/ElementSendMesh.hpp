@@ -48,7 +48,9 @@
 #include "stk_search/IdentProc.hpp"                   // for IdentProc
 #include "stk_search/Point.hpp"                       // for Point
 #include "stk_util/parallel/Parallel.hpp"             // for ParallelMachine
+#include "stk_search_util/CoordTransform.hpp"
 #include "stk_search_util/CachedEntity.hpp"
+#include "stk_search_util/CachedFieldData.hpp"
 #include "stk_search_util/ExternalPointHandler.hpp"   // for ExternalPoin...
 #include "stk_search_util/FindParametricCoordinates.hpp"  // for FindParametr...
 #include "stk_search_util/MasterElementProvider.hpp"  // for ProvideMaste...
@@ -101,7 +103,8 @@ class ElementSendMesh : public ElementSendMeshSearchBaseClass {
                   const stk::ParallelMachine sendComm,
                   std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
                   std::shared_ptr<HandleExternalPointInterface> externalPointHandler,
-                  std::shared_ptr<MasterElementProviderInterface> masterElemProvider);
+                  std::shared_ptr<MasterElementProviderInterface> masterElemProvider,
+                  std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
                   const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
@@ -109,20 +112,23 @@ class ElementSendMesh : public ElementSendMeshSearchBaseClass {
                   const stk::ParallelMachine sendComm,
                   std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
                   std::shared_ptr<HandleExternalPointInterface> externalPointHandler,
-                  std::shared_ptr<MasterElementProviderInterface> masterElemProvider);
+                  std::shared_ptr<MasterElementProviderInterface> masterElemProvider,
+                  std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
                   const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
                   const stk::ParallelMachine sendComm,
                   std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
-                  std::shared_ptr<HandleExternalPointInterface> externalPointHandler);
+                  std::shared_ptr<HandleExternalPointInterface> externalPointHandler,
+                  std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
                   const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
                   const stk::mesh::Selector& activeSelector,
                   const stk::ParallelMachine sendComm,
                   std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
-                  std::shared_ptr<HandleExternalPointInterface> externalPointHandler);
+                  std::shared_ptr<HandleExternalPointInterface> externalPointHandler,
+                  std::shared_ptr<CoordTransformInterface> coordTransform = std::make_shared<CoordTransformIdentity>());
 
   virtual ~ElementSendMesh() = default;
 
@@ -194,6 +200,10 @@ class ElementSendMesh : public ElementSendMeshSearchBaseClass {
   const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
   const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
+  void acquire_field_data() override;
+  void release_field_data() override;
+  bool has_acquired_field_data() const override { return m_hasAcquiredFieldData; }
+
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
   stk::mesh::MetaData* m_meta{nullptr};
@@ -214,13 +224,19 @@ class ElementSendMesh : public ElementSendMeshSearchBaseClass {
 
   std::shared_ptr<stk::search::MasterElementProviderInterface> m_masterElementProvider;
 
+  std::shared_ptr<CachedFieldDataBase> m_cachedCoordinateFieldData;
+
   mutable std::vector<double> m_coordVector;
 
   size_t m_syncCount{0};
 
   bool m_isInitialized{false};
 
+  bool m_hasAcquiredFieldData{false};
+
   stk::search::ObjectOutsideDomainPolicy m_extrapolateOption{stk::search::ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG};
+
+  std::shared_ptr<CoordTransformInterface> m_coordTransform;
 
   void consistency_check();
 

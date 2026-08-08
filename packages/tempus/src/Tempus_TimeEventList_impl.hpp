@@ -173,7 +173,7 @@ bool TimeEventList<Scalar>::eventInRange(Scalar time1, Scalar time2) const
 
 template <class Scalar>
 void TimeEventList<Scalar>::describe(
-    Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+    Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel /*verbLevel*/) const
 {
   auto l_out = Teuchos::fancyOStream(out.getOStream());
   Teuchos::OSTab ostab(*l_out, 2, "TimeEventList");

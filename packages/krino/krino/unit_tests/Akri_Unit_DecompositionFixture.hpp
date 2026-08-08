@@ -13,9 +13,10 @@
 #include <Akri_CDMesh.hpp>
 #include <Akri_CreateInterfaceGeometry.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <Akri_Unit_LogRedirecter.hpp>
+#include <Akri_LogRedirecter.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_LevelSetPolicy.hpp>
+#include <Akri_MeshHelpers.hpp>
 
 namespace krino {
 
@@ -38,24 +39,12 @@ CDFEM_Support & cdfem_support() { return CDFEM_Support::get(mMesh.mesh_meta_data
 
 FieldRef get_coordinates_field() { return this->get_aux_meta().get_current_coordinates(); }
 
-void connect_all_surfaces_to_all_blocks()
-{
-  std::vector<const stk::mesh::Part*> blocks;
-  for (auto && volumePart : mMesh.mesh_meta_data().get_mesh_parts())
-    if (volumePart->primary_entity_rank() == stk::topology::ELEMENT_RANK)
-      blocks.push_back(volumePart);
-
-  for (auto && surfacePart : mMesh.mesh_meta_data().get_mesh_parts())
-    if (surfacePart->primary_entity_rank() == mMesh.mesh_meta_data().side_rank())
-      mMesh.mesh_meta_data().set_surface_to_block_mapping(surfacePart, blocks);
-}
-
 void setup_ls_fields_with_options(const bool isDeath, const bool doRegisterField)
 {
   mMesh.mesh_meta_data().enable_late_fields();
 
   if (false)
-  connect_all_surfaces_to_all_blocks();
+  connect_all_surfaces_to_all_blocks(mMesh.mesh_meta_data());
   Block_Surface_Connectivity blockSurfaceConnectivity(mMesh.mesh_meta_data());
 
   if (isDeath)
@@ -67,6 +56,8 @@ void setup_ls_fields_with_options(const bool isDeath, const bool doRegisterField
   {
     myLSFields = LS_FIELD_POLICY::setup_levelsets_on_blocks(mMesh.mesh_meta_data(), NUM_LS, mBuilder.get_block_parts(), blockSurfaceConnectivity, doRegisterField);
   }
+
+  cdfem_support().finalize_fields();
 }
 
 void setup_ls_fields_for_death()
@@ -212,6 +203,11 @@ void setup_cdfem_support()
   cdfem_support().register_parent_node_ids_field();
 
   cdfem_support().set_prolongation_model(INTERPOLATION);
+}
+
+void reset_cdmesh()
+{
+  cdmesh = std::make_unique<CDMesh>(mMesh);
 }
 
 protected:

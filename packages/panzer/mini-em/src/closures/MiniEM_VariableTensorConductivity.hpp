@@ -29,11 +29,41 @@ namespace mini_em {
   using panzer::Cell;
   using panzer::Point;
 
+  /** \brief Computes a piecewise-constant magnetized (Hall-effect)
+    * conductivity tensor field, using one of three (sigma,beta)
+    * parameter sets depending on which of two nested, hardcoded
+    * axis-aligned boxes centered at the origin the point falls in:
+    * (sigma0,beta0) inside [0.4,0.6]^dim, (sigma1,beta1) inside
+    * [0.2,0.8]^dim but outside the first box, and (sigma2,beta2)
+    * outside both boxes. Each tensor has the form
+    * sigma*(I + beta⊗beta - [beta]_x) (see
+    * mini_em::TensorConductivity for the constant single-region
+    * version).
+    */
   template<typename EvalT, typename Traits>
   class VariableTensorConductivity : public panzer::EvaluatorWithBaseImpl<Traits>,
                        public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   public:
+    /** \brief Constructor.
+      *
+      * \param[in] name name of the field to output.
+      * \param[in] ir integration rule to evaluate at.
+      * \param[in] fl field layout library used to look up the field's data layout.
+      * \param[in] sigma0_ conductivity of the inner box region [0.4,0.6]^dim.
+      * \param[in] sigma1_ conductivity of the middle region, inside [0.2,0.8]^dim but outside the inner box.
+      * \param[in] sigma2_ conductivity outside both boxes.
+      * \param[in] betax0_ x-component of the inner region's Hall parameter vector.
+      * \param[in] betay0_ y-component of the inner region's Hall parameter vector.
+      * \param[in] betaz0_ z-component of the inner region's Hall parameter vector.
+      * \param[in] betax1_ x-component of the middle region's Hall parameter vector.
+      * \param[in] betay1_ y-component of the middle region's Hall parameter vector.
+      * \param[in] betaz1_ z-component of the middle region's Hall parameter vector.
+      * \param[in] betax2_ x-component of the outer region's Hall parameter vector.
+      * \param[in] betay2_ y-component of the outer region's Hall parameter vector.
+      * \param[in] betaz2_ z-component of the outer region's Hall parameter vector.
+      * \param[in] DoF_ name of the DOF whose basis supplies the coordinates to evaluate at.
+      */
     VariableTensorConductivity(const std::string & name,
                                const panzer::IntegrationRule & ir,
                                const panzer::FieldLayoutLibrary & fl,
@@ -51,9 +81,11 @@ namespace mini_em {
                                const double & betaz2_,
                                const std::string& DoF_);
 
+    /// \brief Looks up the integration rule index needed by evaluateFields(). Called once before the first evaluation.
     void postRegistrationSetup(typename Traits::SetupData d,
                                PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the conductivity tensor field for this workset per the class description.
     void evaluateFields(typename Traits::EvalData d);
 
 

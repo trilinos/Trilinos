@@ -196,6 +196,11 @@ BulkData & Part::mesh_bulk_data() const
     return mesh_meta_data().mesh_bulk_data();
 }
 
+void Part::entity_membership_is_parallel_consistent(bool trueOrFalse)
+{
+  m_entity_membership_is_parallel_consistent = trueOrFalse;
+}
+
 bool Part::contains(const Part& part) const
 {
   if (this == &part) { // same part

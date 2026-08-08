@@ -147,8 +147,8 @@ void reciprocal_threshold(Tpetra::Vector<S, L, G, N>& V, const S& minVal) {
 template <class ScalarType, const bool lapackSupportsScalarType = LapackSupportsScalar<ScalarType>::value>
 struct LapackHelper {
   static ScalarType
-  tri_diag_spectral_radius(Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> diag,
-                           Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> offdiag) {
+  tri_diag_spectral_radius(Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> /*diag*/,
+                           Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> /*offdiag*/) {
     throw std::runtime_error("LAPACK does not support the scalar type.");
   }
 };
@@ -1040,7 +1040,7 @@ void Chebyshev<ScalarType, MV>::
 template <class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::
     computeResidual(MV& R, const MV& B, const op_type& A, const MV& X,
-                    const Teuchos::ETransp mode) {
+                    const Teuchos::ETransp /*mode*/) {
   Tpetra::Details::residual(A, X, B, R);
 }
 
@@ -1267,7 +1267,7 @@ void Chebyshev<ScalarType, MV>::
 
 template <class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::
-    fourthKindApplyImpl(const op_type& A,
+    fourthKindApplyImpl(const op_type& /*A*/,
                         const MV& B,
                         MV& X,
                         const int numIters,
@@ -1343,7 +1343,7 @@ Chebyshev<ScalarType, MV>::maxNormInf(const MV& X) {
 
 template <class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::
-    ifpackApplyImpl(const op_type& A,
+    ifpackApplyImpl(const op_type& /*A*/,
                     const MV& B,
                     MV& X,
                     const int numIters,

@@ -39,17 +39,22 @@ void VersionNumber::set_current_version(const VersionNumber & v)
 
 void VersionNumber::set_current_version(const std::string & version_string)
 {
-  std::runtime_error err("Failed to parse version string " + version_string);
-
   std::string delimiter = ".";
   size_t indexOfFirst = version_string.find(delimiter);
   size_t indexOfSecond = (indexOfFirst==std::string::npos) ?
      std::string::npos : version_string.find(delimiter, indexOfFirst+1);
 
-  const int major = (indexOfFirst==std::string::npos) ? -1 : std::stoi(version_string.substr(0, indexOfFirst));
-  const int minor = (indexOfFirst==std::string::npos) ? -1 : std::stoi(version_string.substr(indexOfFirst+1, indexOfSecond));
+  try
+  {
+    const int major = (indexOfFirst==std::string::npos) ? -1 : std::stoi(version_string.substr(0, indexOfFirst));
+    const int minor = (indexOfFirst==std::string::npos) ? -1 : std::stoi(version_string.substr(indexOfFirst+1, indexOfSecond));
 
-  set_current_version(VersionNumber{major, minor});
+    set_current_version(VersionNumber{major, minor});
+  }
+  catch (const std::invalid_argument &)
+  {
+    set_current_version(VersionNumber{-1, -1});
+  }
 }
 
 bool operator<(const VersionNumber & lhs, const VersionNumber & rhs)

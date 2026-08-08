@@ -44,7 +44,7 @@
 #include <unistd.h>                          // for access, getdomainname, geteuid, gethostname
 #include <cstdlib>                           // for getenv
 #include <cstring>                           // for strlen
-#include <fstream>                           // for ifstream, basic_istream, operator|, ios_base
+#include <fstream>
 
 #if defined(__GNUC__)
   #include <sys/time.h>
@@ -56,9 +56,6 @@
     #include <sys/malloc.h>
   #endif
 
-  #if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5
-    #include <cxxabi.h>
-  #endif
 #elif defined(__PGI)
   #include <malloc.h>
   #include <sys/time.h>
@@ -76,31 +73,12 @@
   #include <netdb.h>
 #endif
 
-#include "stk_util/util/MallocUsed.h"
-
 namespace sierra {
 namespace Env {
 
-#if defined(_AIX)
-// Cleanup AIX locale initialization problems
-void
-startup_preparallel_platform()
-{
-  std::locale loc("POSIX");
-
-  std::locale::global(loc);
-  std::cout.imbue(loc);
-  std::cin.imbue(loc);
-
-  std::ostringstream strout;
-  strout << "Don't ask why the IBM locale works if I do this " << 10000000 << std::endl;
-}
-
-#else
 void
 startup_preparallel_platform()
 {}
-#endif
 
 void
 get_heap_info(
@@ -112,28 +90,31 @@ get_heap_info(
 
 #if defined(SIERRA_HEAP_INFO)
 
-# if defined(SIERRA_PTMALLOC3_ALLOCATOR) || defined(SIERRA_PTMALLOC2_ALLOCATOR)
-  heap_size = malloc_used();
-  
-# elif defined(__linux__) && ! defined(__IBMCPP__)
-  static struct mallinfo minfo;
-  minfo = mallinfo();
-  heap_size = static_cast<unsigned int>(minfo.uordblks) + static_cast<unsigned int>(minfo.hblkhd);
-  largest_free = static_cast<unsigned int>(minfo.fordblks);
+#if defined(__linux__) && ! defined(__IBMCPP__)
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33))
+    // mallinfo2 is available
+    struct mallinfo2 minfo = mallinfo2();
+#else
+    // Fallback to mallinfo
+    struct mallinfo minfo = mallinfo();
+#endif
+  heap_size = minfo.uordblks + minfo.hblkhd;
+  largest_free = minfo.fordblks;
 
   slibout.m(Slib::LOG_MEMORY) << "size_t size " << sizeof(size_t)*8 << " bits"
                               << ", heap size " << heap_size
-                              << ", arena " << static_cast<unsigned int>(minfo.arena)
+                              << ", arena " << static_cast<size_t>(minfo.arena)
 			      << ", ordblks " << minfo.ordblks
 			      << ", smblks " << minfo.smblks
 			      << ", hblks " << minfo.hblks
-			      << ", hblkhd " << static_cast<unsigned int>(minfo.hblkhd)
+			      << ", hblkhd " << static_cast<size_t>(minfo.hblkhd)
 			      << ", usmblks " << minfo.usmblks
 			      << ", fsmblks " << minfo.fsmblks
-			      << ", uordblks " << static_cast<unsigned int>(minfo.uordblks)
-			      << ", fordblks " << static_cast<unsigned int>(minfo.fordblks)
+			      << ", uordblks " << static_cast<size_t>(minfo.uordblks)
+			      << ", fordblks " << static_cast<size_t>(minfo.fordblks)
 			      << ", keepcost " << minfo.keepcost << Diag::dendl;
-# endif
+#endif
+
 #endif // defined(SIERRA_HEAP_INFO)
 }
 
@@ -261,36 +242,30 @@ osversion()
   return uts_name.release;
 }
 
-int
-pid()
+int pid()
 {
   return ::getpid();
 }
 
-int
-pgrp()
+int pgrp()
 {
   return ::getpgrp();
 }
 
 bool
-path_access(
-  const std::string &	name,
-  int			mode)
+path_access( const std::string & name, int mode)
 {
   return !name.empty() && ::access(name.c_str(), mode) == 0;
 }
 
 bool
-path_exists(
-  const std::string &	name)
+path_exists(const std::string&	name)
 {
   return path_access(name, F_OK);
 }
 
 bool
-path_read_access(
-  const std::string &	name)
+path_read_access(const std::string& name)
 {
   return path_access(name, R_OK);
 }

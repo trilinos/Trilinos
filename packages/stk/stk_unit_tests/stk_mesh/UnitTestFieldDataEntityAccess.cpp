@@ -126,6 +126,34 @@ TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters_async)
 }
 
 //==============================================================================
+template <typename FieldDataType>
+void test_host_scalar_default_construction(const stk::mesh::BulkData& bulk, const FieldDataType& fieldData)
+{
+  const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
+
+  {
+    for (stk::mesh::Bucket* bucket : buckets) {
+      std::vector<stk::mesh::EntityValues<int, stk::ngp::HostSpace>> valuesCache(bucket->size());
+
+      for (unsigned i = 0; i < bucket->size(); ++i) {
+        const stk::mesh::Entity entity = (*bucket)[i];
+        valuesCache[i] = fieldData.entity_values(entity);
+      }
+
+      int value = 0;
+      for (unsigned i = 0; i < bucket->size(); ++i) {
+        valuesCache[i]() = ++value*10;
+      }
+
+      value = 0;
+      for (unsigned i = 0; i < bucket->size(); ++i) {
+        EXPECT_EQ(valuesCache[i](), ++value*10);
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 template <typename FieldDataType, typename ConstFieldDataType>
 void test_host_scalar(const stk::mesh::BulkData& bulk,
                       const FieldDataType& fieldData, const ConstFieldDataType& constFieldData)
@@ -192,6 +220,18 @@ void test_host_scalar(const stk::mesh::BulkData& bulk,
       }
     }
   }
+}
+
+//------------------------------------------------------------------------------
+TEST_F(FieldDataEntityAccess, host_default_construction)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_mesh_with_scalar_field();
+
+  const stk::mesh::Field<int>& field = *m_field;
+
+  test_host_scalar_default_construction(get_bulk(),
+                                        field.data<stk::mesh::ReadWrite>());
 }
 
 //------------------------------------------------------------------------------
@@ -1815,6 +1855,36 @@ TEST_F(FieldDataEntityAccess, host_multiScalar_pointer_layoutRight)
 
 
 //==============================================================================
+template <typename FieldType, typename FieldDataType>
+void test_device_scalar_default_construction(const stk::mesh::BulkData& bulk, FieldType& field,
+                                             const FieldDataType& fieldData)
+{
+  ASSERT_EQ(bulk.buckets(stk::topology::NODE_RANK).size(), 1u);
+
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  Kokkos::View<stk::mesh::EntityValues<int, stk::ngp::DeviceSpace>*> valuesCache("valuesCache",
+                                                                                 bulk.get_maximum_bucket_capacity());
+
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
+      valuesCache(fmi.bucket_ord) = fieldData.entity_values(fmi);
+    }
+  );
+
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
+      valuesCache(fmi.bucket_ord)() = (fmi.bucket_id*100 + fmi.bucket_ord*10);
+    }
+  );
+
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
+      NGP_EXPECT_EQ(valuesCache(fmi.bucket_ord)(), static_cast<int>(fmi.bucket_id*100 + fmi.bucket_ord*10));
+    }
+  );
+}
+
 template <typename FieldType, typename FieldDataType, typename ConstFieldDataType>
 void test_device_scalar(const stk::mesh::BulkData& bulk, FieldType& field,
                         const FieldDataType& fieldData, const ConstFieldDataType& constFieldData)
@@ -1852,6 +1922,18 @@ void test_device_scalar(const stk::mesh::BulkData& bulk, FieldType& field,
       NGP_EXPECT_EQ(constEntityValues(), static_cast<int>(fmi.bucket_id*200 + fmi.bucket_ord*20));
     }
   );
+}
+
+//------------------------------------------------------------------------------
+NGP_TEST_F(FieldDataEntityAccess, device_scalar_default_construction)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  build_mesh_with_scalar_field();
+
+  const stk::mesh::Field<int>& field = *m_field;
+
+  test_device_scalar_default_construction(get_bulk(), field,
+                                          field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -3181,7 +3263,9 @@ TEST_F(FieldDataEntityAccess, device_isFieldDefined)
 TEST_F(FieldDataEntityAccess, host_consistencyCheck_entity)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  const unsigned initialBucketCapacity = 1;
+  const unsigned maximumBucketCapacity = 1;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, initialBucketCapacity, maximumBucketCapacity);
 
   stk::mesh::Field<int>& elemField = get_meta().declare_field<int>(stk::topology::ELEM_RANK, "elemField1");
   stk::mesh::Field<int>& nodeField = get_meta().declare_field<int>(stk::topology::NODE_RANK, "nodeField1");
@@ -3215,17 +3299,31 @@ TEST_F(FieldDataEntityAccess, host_consistencyCheck_entity)
   {
     get_bulk().modification_begin();
 
-    auto elemFieldData = elemField.data<stk::mesh::ReadWrite>();
-    auto constElemFieldData = elemField.data();
-    auto nodeFieldData = nodeField.data<stk::mesh::ReadWrite>();
-    auto constNodeFieldData = nodeField.data();
+    {
+      auto elemFieldData = elemField.data<stk::mesh::ReadWrite>();
+      auto constElemFieldData = elemField.data();
+      auto nodeFieldData = nodeField.data<stk::mesh::ReadWrite>();
+      auto constNodeFieldData = nodeField.data();
 
-    get_bulk().declare_node(101);
+      get_bulk().declare_node(101);
 
-    EXPECT_NO_THROW(elemFieldData.entity_values(elem1));        // Unmodified during mesh mod
-    EXPECT_NO_THROW(constElemFieldData.entity_values(elem1));   // Unmodified during mesh mod
-    EXPECT_ANY_THROW(nodeFieldData.entity_values(node1));       // Stale FieldData during mesh mod
-    EXPECT_ANY_THROW(constNodeFieldData.entity_values(node1));  // Stale FieldData during mesh mod
+      EXPECT_NO_THROW(elemFieldData.entity_values(elem1));        // Unmodified during mesh mod
+      EXPECT_NO_THROW(constElemFieldData.entity_values(elem1));   // Unmodified during mesh mod
+      EXPECT_ANY_THROW(nodeFieldData.entity_values(node1));       // Stale FieldData during mesh mod
+      EXPECT_ANY_THROW(constNodeFieldData.entity_values(node1));  // Stale FieldData during mesh mod
+    }
+    {
+      auto elemFieldData = elemField.data<stk::mesh::ReadWrite>();
+      auto constElemFieldData = elemField.data();
+      auto nodeFieldData = nodeField.data<stk::mesh::ReadWrite>();
+      auto constNodeFieldData = nodeField.data();
+      get_bulk().buckets(stk::topology::NODE_RANK);  // Trigger an update of Buckets from partition, if needed
+
+      EXPECT_NO_THROW(elemFieldData.entity_values(elem1));        // Unmodified during mesh mod
+      EXPECT_NO_THROW(constElemFieldData.entity_values(elem1));   // Unmodified during mesh mod
+      EXPECT_NO_THROW(nodeFieldData.entity_values(node1));       // Reacquired after modification
+      EXPECT_NO_THROW(constNodeFieldData.entity_values(node1));  // Reacquired after modification
+    }
 
     get_bulk().modification_end();
   }

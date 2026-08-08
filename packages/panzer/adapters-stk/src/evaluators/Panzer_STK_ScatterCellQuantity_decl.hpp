@@ -45,14 +45,17 @@ class ScatterCellQuantity
 {
   public:
 
+    /// \brief Construct from a ParameterList as documented in the class description.
     ScatterCellQuantity(
       const Teuchos::ParameterList& p);
 
+    /// \brief Looks up the STK field pointers needed by evaluateFields(). Called once before the first evaluation.
     void
     postRegistrationSetup(
       typename Traits::SetupData d,
       PHX::FieldManager<Traits>& fm);
 
+    /// \brief Writes this workset's (optionally scaled) cell field values to the STK mesh per the class description.
     void
     evaluateFields(
       typename Traits::EvalData d);

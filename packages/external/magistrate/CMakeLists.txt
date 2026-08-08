@@ -17,7 +17,7 @@ if(${PROJECT_NAME}_ENABLE_magistrate)
     message(STATUS "Downloading the magistrate package with FetchContent.")
     fetchcontent_declare(magistrate_repo
       GIT_REPOSITORY https://github.com/darma-tasking/magistrate.git
-      GIT_TAG develop
+      GIT_TAG 0c9f3e00679e077c142bd53e27ef092cfbdd7d4d
     )
     fetchcontent_makeavailable(magistrate_repo)
     fetchcontent_getproperties(magistrate_repo SOURCE_DIR MAGISTRATE_REPO_SOURCE_DIR)

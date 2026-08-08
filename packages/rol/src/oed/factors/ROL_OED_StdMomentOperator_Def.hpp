@@ -45,7 +45,7 @@ void StdMomentOperator<Real>::build(const Vector<Real> &p) {
         for (int j = 0; j < nfactors; ++j) X(i,j) *= wt;
       }
       // Compute M0 = p(SX)*X = pX*SX via M0 = 0 M0 + 1/2 (pX)*(SX) + 1/2 (SX)*(pX)
-      //blas_->SYR2K(Teuchos::UPPER_TRI,Teuchos::TRANS,nfactors,nsamples,
+      //blas_->SYR2K('U','T',nfactors,nsamples,
       //             half,X.values(),nsamples,SX.values(),nsamples,zero,M0.values(),nfactors);
       blas_->GEMM(Teuchos::TRANS,Teuchos::NO_TRANS,nfactors,nfactors,nsamples,
                   one,X.values(),nsamples,SX.values(),nsamples,zero,M0.values(),nfactors);
@@ -151,7 +151,7 @@ StdMomentOperator<Real>::StdMomentOperator(RegressionType regType,
                   bool alwaysUseSVD, Real SVDtol)
   : MomentOperator<Real>(regType,noise),
     lapack_(makePtr<LAPACK<int,Real>>()),
-    blas_(makePtr<Teuchos::BLAS<int,Real>>()),
+    blas_(makePtr<BLAS<int,Real>>()),
     isBuilt_(false), isFactorized_(false), isSet_(false),
     isFullSet_(false), useSVD_(false), isPset_(false),
     alwaysUseSVD_(alwaysUseSVD), SVDtol_(SVDtol) {
@@ -228,7 +228,7 @@ void StdMomentOperator<Real>::applyInverse(Vector<Real> &Mx,
     else {
       const Real zero(0), one(1);
       std::vector<Real> Ux(nfactors);
-      //blas_->GEMV(Teuchos::TRANS,nfactors,nfactors,one,U_.values(),nfactors,
+      //blas_->GEMV('T',nfactors,nfactors,one,U_.values(),nfactors,
       //            &xdata[0],1,zero,&Ux[0],1);
       blas_->GEMV(Teuchos::TRANS,nfactors,nfactors,one,Minv_.values(),nfactors,
                   &xdata[0],1,zero,&Ux[0],1);
@@ -245,7 +245,7 @@ void StdMomentOperator<Real>::applyInverse(Vector<Real> &Mx,
           Ux[i] = zero;
         }
       }
-      //blas_->GEMV(Teuchos::TRANS,nfactors,nfactors,one,V_.values(),nfactors,
+      //blas_->GEMV('T',nfactors,nfactors,one,V_.values(),nfactors,
       //            &Ux[0],1,zero,&Mxdata[0],1);
       blas_->GEMV(Teuchos::NO_TRANS,nfactors,nfactors,one,Minv_.values(),nfactors,
                   &Ux[0],1,zero,&Mxdata[0],1);

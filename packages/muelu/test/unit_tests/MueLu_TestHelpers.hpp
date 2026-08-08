@@ -737,7 +737,7 @@ class TestFactory {
     return bop;
   }
 
-  static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> CreateBlocked3x3MatrixThyra(const Teuchos::Comm<int>& comm, Xpetra::UnderlyingLib lib) {
+  static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> CreateBlocked3x3MatrixThyra(const Teuchos::Comm<int>& /*comm*/, Xpetra::UnderlyingLib lib) {
     std::vector<RCP<const Map>> maps = std::vector<RCP<const Map>>(3, Teuchos::null);
     maps[0]                          = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
     maps[1]                          = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);

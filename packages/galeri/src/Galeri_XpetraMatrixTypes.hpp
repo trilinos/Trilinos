@@ -1469,6 +1469,8 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
   ///////////////////////////
   // Step 1 - rowptr
 
+  Teuchos::RCP<TimeMonitor> tm1 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: " + matLabel + " generation: rowptr")));
+
   LocalOrdinal numMyElements = map->getLocalNumElements();
   // The hash map that collects all off-rank entries that we encounter.
   // We need to provide sufficient capacity so that no insertions fail.
@@ -1509,6 +1511,8 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
   ///////////////////////////
   // Step 2 - Column map
 
+  tm1 = Teuchos::null;
+  tm1 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: " + matLabel + " generation: column map")));
   auto columnMap_entries = Kokkos::View<GlobalOrdinal*, memory_space>("columnMap_entries", numMyElements + stencil.off_rank_indices.size());
   // Copy over on-rank entries from rowmap
   Kokkos::deep_copy(Kokkos::subview(columnMap_entries, Kokkos::make_pair(0, numMyElements)),
@@ -1579,6 +1583,8 @@ StencilMatrix(const Teuchos::RCP<const Map>& map,
   ///////////////////////////
   // Step 3 - Fill
 
+  tm1 = Teuchos::null;
+  tm1 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: " + matLabel + " generation: fill")));
   stencil.lclColMap = ghosted_map->getLocalMap();
   stencil.colidx    = colidx_type("colidx", myNNZ);
   stencil.values    = values_type("values", myNNZ);

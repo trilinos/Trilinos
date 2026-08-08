@@ -85,7 +85,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     //+ Declare a field
     //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
     //+       since it commits the meta data.
-    const std::string fieldName = "disp";
+    const std::string fieldName = "field1";
     stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 1);
     stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), nullptr);
 
@@ -99,8 +99,8 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
 
     //-BEGIN
-    //+ The field 'fieldName' will be output to the results file with the name 'alternateFieldName'
-    std::string alternateFieldName("displacement");
+    //+ The field 'field1' will be output to the results file with the name 'nodalField'
+    std::string alternateFieldName("nodalField");
     stkIo.add_field(fh, field, alternateFieldName);
     //-END
 

@@ -229,11 +229,11 @@ testResiduals (bool& success,
     out << "]" << endl;
   }
 
-  if (ret != Belos::Converged || badRes) {
+  if (ret == Belos::Converged && !badRes) {
+    out << "Belos converged!" << endl;
+  } else {
     success = false;
     out << "Belos did NOT converge!" << endl;
-  } else {
-    out << "Belos converged!" << endl;
   }
 }
 

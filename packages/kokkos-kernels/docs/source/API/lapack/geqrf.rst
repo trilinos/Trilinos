@@ -55,5 +55,6 @@ Type Requirements
 Example
 =======
 
-TBD
+.. literalinclude:: ../../../../example/docs/lapack/KokkosLapack_docs_geqrf.cpp
+  :language: c++
 

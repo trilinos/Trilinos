@@ -20,21 +20,35 @@
 
 namespace mini_em {
 
+  /** \brief The curl-curl (mixed E-B) time-dependent Maxwell equation
+    * set: epsilon*dE/dt = (1/mu)*curl(B) - J - sigma*E, dB/dt =
+    * -curl(E), where E is the electric field and B is the magnetic
+    * field.
+    */
   template <typename EvalT>
     class EquationSet_Maxwell : public panzer::EquationSet_DefaultImpl<EvalT> {
 
   public:
 
+    /// \brief Construct from a ParameterList specifying the basis/integration order, permittivity, conductivity, (inverse) permeability, and current-source closure model names, as documented in the class description.
     EquationSet_Maxwell(const Teuchos::RCP<Teuchos::ParameterList>& params,
            const int& default_integration_order,
            const panzer::CellData& cell_data,
            const Teuchos::RCP<panzer::GlobalData>& gd,
            const bool build_transient_support);
 
+      /** \brief Registers the evaluators implementing the Maxwell weak form per the class description.
+        *
+        * \param[in] fm the field manager to register evaluators with.
+        * \param[in] field_library field data layouts available for this physics block.
+        * \param[in] user_data user-supplied parameters passed through to the equation-set evaluators.
+        */
       void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
              const panzer::FieldLibrary& field_library,
              const Teuchos::ParameterList& user_data) const;
+      //! Returns the DOF name of the electric field E.
       std::string EFieldName() const {return m_Efield_dof_name;}
+      //! Returns the DOF name of the magnetic field B.
       std::string BFieldName() const {return m_Bfield_dof_name;}
   private:
       int dimension;

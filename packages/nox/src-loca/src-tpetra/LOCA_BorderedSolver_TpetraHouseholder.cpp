@@ -838,11 +838,11 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
 
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::TpetraHouseholder::solveTranspose(
-                  Teuchos::ParameterList& params,
-                  const NOX::Abstract::MultiVector* F,
-                  const NOX::Abstract::MultiVector::DenseMatrix* G,
-                  NOX::Abstract::MultiVector& X,
-                  NOX::Abstract::MultiVector::DenseMatrix& Y) const
+                  Teuchos::ParameterList&  /*params*/,
+                  const NOX::Abstract::MultiVector*  /*F*/,
+                  const NOX::Abstract::MultiVector::DenseMatrix*  /*G*/,
+                  NOX::Abstract::MultiVector&  /*X*/,
+                  NOX::Abstract::MultiVector::DenseMatrix&  /*Y*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "ERROR - LOCA::BorderedSolver::TpetraHouseholder::solveTranspose(): TRANSPOSE SOLVE NOT SUPPORTED YET!");
@@ -1174,7 +1174,7 @@ updateCrsMatrixForPreconditioner(const NOX::Abstract::MultiVector& UU,
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::BorderedSolver::TpetraHouseholder::createBlockMV(
-                    const NOX::Abstract::MultiVector& v) const
+                    const NOX::Abstract::MultiVector&  /*v*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "ERROR: LOCA::BorderedSolver::TpetraHouseholder::createBlockMV - Support for COMPLEX systems not supported!");
@@ -1214,8 +1214,8 @@ LOCA::BorderedSolver::TpetraHouseholder::createBlockMV(
 
 void
 LOCA::BorderedSolver::TpetraHouseholder::setBlockMV(
-                       const NOX::Abstract::MultiVector& bv,
-                       NOX::Abstract::MultiVector& v) const
+                       const NOX::Abstract::MultiVector&  /*bv*/,
+                       NOX::Abstract::MultiVector&  /*v*/) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "ERROR: LOCA::BorderedSolver::TpetraHouseholder::setBlockMV - Support for COMPLEX systems not supported!");

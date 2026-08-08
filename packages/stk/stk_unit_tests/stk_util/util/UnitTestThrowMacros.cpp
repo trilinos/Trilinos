@@ -330,7 +330,7 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
 #ifndef NDEBUG
 void testNGPThrowAssertMsg()
 {
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & i){
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int & /*i*/){
     bool test = false;
     STK_NGP_ThrowAssertMsg(test == true, "Error testing whatever");
   });

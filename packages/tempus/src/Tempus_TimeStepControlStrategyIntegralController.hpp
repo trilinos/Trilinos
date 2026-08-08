@@ -105,7 +105,7 @@ class TimeStepControlStrategyIntegralController
 
   /** \brief Set the time step size.*/
   virtual void setNextTimeStep(
-      const TimeStepControl<Scalar> &tsc,
+      const TimeStepControl<Scalar> & /*tsc*/,
       Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory,
       Status & /* integratorStatus */) override
   {

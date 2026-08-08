@@ -90,9 +90,11 @@ class GeometricInterp {
                     const EntityProcRelationVec& RangeToDomain,
                     const stk::search::FilterCoarseSearchResult<RecvMesh>& filterResult)
   {
-    const int maxNumFields = recvMesh.max_num_values();
+    // pre-transfer
+    sendMesh.acquire_field_data();
+    recvMesh.acquire_field_data();
 
-    InterpolationData data(maxNumFields);
+    InterpolationData data;
 
     const unsigned spatialDimension = recvMesh.spatial_dimension();
     std::vector<double> coordVec(spatialDimension, 0.0);
@@ -106,17 +108,15 @@ class GeometricInterp {
 
       recvMesh.coordinates(recvEntity, coordVec);
 
-      data.nFields = recvMesh.num_values(recvEntity);
-      for(unsigned n = 0; n < data.nFields; ++n) {
-        data.fieldPtr[n]       = recvMesh.value(recvEntity, n);
-        data.fieldSize[n]      = recvMesh.value_size(recvEntity, n);
-        data.fieldKey[n]       = recvMesh.value_key(recvEntity, n);
-        data.fieldDataIndex[n] = recvMesh.get_index(n);
-      }
-
+      recvMesh.populate_interpolation_data(recvEntity, data);
       data.debug = false;
+
       sendMesh.interpolate_fields(sendEntity, coordVec, parametricCoords, data);
     }
+
+    // post-transfer
+    sendMesh.release_field_data();
+    recvMesh.release_field_data();
   }
 };
 

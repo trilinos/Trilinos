@@ -20,6 +20,7 @@
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_DLLExportMacro.h"
 
 /*! \file
 
@@ -95,7 +96,7 @@ struct CudaInfo {
   CudaInfo(const CudaInfo &other) = delete;
   CudaInfo(CudaInfo &&other)      = delete;
 };
-extern CudaInfo cudaInfo;
+extern TPETRACORE_LIB_DLL_EXPORT CudaInfo cudaInfo;
 #endif  // KOKKOS_ENABLE_CUDA
 
 // Tpetra's managed spaces
@@ -310,19 +311,19 @@ class InstanceLifetimeManager {
 };
 
 #if defined(KOKKOS_ENABLE_CUDA)
-extern InstanceLifetimeManager<Kokkos::Cuda> cudaSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::Cuda> cudaSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_SERIAL)
-extern InstanceLifetimeManager<Kokkos::Serial> serialSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::Serial> serialSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_OPENMP)
-extern InstanceLifetimeManager<Kokkos::OpenMP> openMPSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::OpenMP> openMPSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-extern InstanceLifetimeManager<Kokkos::HIP> HIPSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::HIP> HIPSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-extern InstanceLifetimeManager<Kokkos::Experimental::SYCL> SYCLSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::Experimental::SYCL> SYCLSpaces;
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)

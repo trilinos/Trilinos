@@ -27,6 +27,9 @@
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosLinearProblem.hpp"
+
 #include "ROL_Ptr.hpp"
 
 // Forward declarations.
@@ -41,11 +44,6 @@ namespace MueLu {
 
 namespace Ifpack2 {
   template <typename tSC, typename tLO, typename tGO, typename tNO> class Preconditioner;
-}
-
-namespace Belos {
-  template <typename tSC, typename tMV, typename tOP> class BlockGmresSolMgr;
-  template <typename tSC, typename tMV, typename tOP> class LinearProblem;
 }
 
 

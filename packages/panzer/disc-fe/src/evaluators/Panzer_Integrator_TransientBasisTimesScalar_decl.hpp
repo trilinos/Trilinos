@@ -20,7 +20,13 @@
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
-    
+
+/** This integrates a scalar quantity times a basis function over each
+  * cell, contributing to the residual only when the workset indicates
+  * transient (time derivative) terms should be evaluated. It is
+  * useful for building the mass-matrix-like terms of a time-dependent
+  * weak form.
+  */
 template<typename EvalT, typename Traits>
 class Integrator_TransientBasisTimesScalar
   :
@@ -29,14 +35,17 @@ class Integrator_TransientBasisTimesScalar
 {
   public:
 
+    /// \brief Construct from a ParameterList specifying the residual field name, integrand name, basis, integration rule, scaling multiplier, and optional field multipliers.
     Integrator_TransientBasisTimesScalar(
       const Teuchos::ParameterList& p);
 
+    /// \brief Looks up the basis index needed by evaluateFields(). Called once before the first evaluation.
     void
     postRegistrationSetup(
       typename Traits::SetupData d,
       PHX::FieldManager<Traits>& fm);
 
+    /// \brief Computes the residual field for this workset per the class description, when the workset indicates transient terms should be evaluated.
     void
     evaluateFields(
       typename Traits::EvalData d);
@@ -63,6 +72,7 @@ class Integrator_TransientBasisTimesScalar
   Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> tmp;
 
 private:
+  /// \brief Returns the ParameterList of valid parameters/defaults for this evaluator's constructor.
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
 }; // end of class Integrator_TransientBasisTimesScalar

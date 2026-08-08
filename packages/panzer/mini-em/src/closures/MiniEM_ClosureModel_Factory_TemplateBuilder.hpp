@@ -18,15 +18,19 @@
 
 namespace mini_em {
 
+/** \brief Builder functor used with Sacado::mpl::TemplateManager to
+  * construct one mini_em::ModelFactory<EvalT> per evaluation type.
+  */
 class ClosureModelFactory_TemplateBuilder {
 public:
-    
+
+   /// \brief Constructs a mini_em::ModelFactory<EvalT> for the given evaluation type.
    template <typename EvalT>
-   Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const 
+   Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const
    {
       return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>(new mini_em::ModelFactory<EvalT>) );
    }
-    
+
 };
   
 }

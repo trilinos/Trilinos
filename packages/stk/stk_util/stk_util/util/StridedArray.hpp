@@ -72,7 +72,6 @@ public:
   {
   }
 
-  KOKKOS_INLINE_FUNCTION
   StridedArray(PairIter<T*> data,
                [[maybe_unused]] int stride_in=defaultStride)
   : dataPointer(data.begin()),

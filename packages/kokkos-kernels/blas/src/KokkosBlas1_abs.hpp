@@ -52,11 +52,20 @@ void abs(const execution_space& space, const RMV& R, const XMV& X) {
                 "RMV and XMV must either have rank 1 or rank 2.");
 
   // Check compatibility of dimensions at run time.
-  if (X.extent(0) != R.extent(0) || X.extent(1) != R.extent(1)) {
-    std::ostringstream os;
-    os << "KokkosBlas::abs (MV): Dimensions of R and X do not match: "
-       << "R: " << R.extent(0) << " x " << R.extent(1) << ", X: " << X.extent(0) << " x " << X.extent(1);
-    KokkosKernels::Impl::throw_runtime_exception(os.str());
+  if constexpr (RMV::rank == 1) {
+    if (X.extent(0) != R.extent(0)) {
+      std::ostringstream os;
+      os << "KokkosBlas::abs (MV): Dimensions of R and X do not match: "
+         << "R: " << R.extent(0) << ", X: " << X.extent(0);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+  } else if constexpr (RMV::rank == 2) {
+    if (X.extent(0) != R.extent(0) || X.extent(1) != R.extent(1)) {
+      std::ostringstream os;
+      os << "KokkosBlas::abs (MV): Dimensions of R and X do not match: "
+         << "R: " << R.extent(0) << " x " << R.extent(1) << ", X: " << X.extent(0) << " x " << X.extent(1);
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
   }
 
   // Create unmanaged versions of the input Views.  RMV and XMV may be

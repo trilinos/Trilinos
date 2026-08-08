@@ -77,7 +77,7 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
             const Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> arrayOfCoords,
             const int nBlks,
             Teuchos::ParameterList& List,
-            bool ComputePrec                                                    = true,
+            bool /*ComputePrec*/                                                = true,
             const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials = Teuchos::null,
             bool OmitSubblockSmoother                                           = true)
     : AmatMultiphysics_(AmatMultiPhysics)

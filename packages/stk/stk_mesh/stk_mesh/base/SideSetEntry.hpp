@@ -164,8 +164,6 @@ public:
   , m_selector(selector)
   { }
 
-  SideSetSelector(const SideSetSelector&) = default;
-
   inline bool operator<(const stk::mesh::SideSetSelector& rhs) const
   {
     if(m_sideset->get_part()->mesh_meta_data_ordinal() < rhs.m_sideset->get_part()->mesh_meta_data_ordinal()) {
@@ -199,8 +197,6 @@ private:
   const Part* m_part = nullptr;
   SideSet* m_sideset = nullptr;
   const Selector* m_selector = nullptr;
-
-  SideSetSelector();
 };
 
 using SideSetVector = std::vector<SideSet*>;

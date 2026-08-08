@@ -28,16 +28,40 @@
 
 namespace panzer {
 
+/**
+ * \brief Abstract interface for scattering a functional response's derivative back into global sensitivity vectors.
+ *
+ * ResponseScatterEvaluator_Functional computes a scalar functional
+ * integral per cell; a FunctionalScatterBase implementation is
+ * responsible for taking that per-cell integral's derivative (with
+ * respect to local solution unknowns) and accumulating it into the
+ * appropriate entries of the response's global gradient (`dgdx`) or,
+ * if enabled, Hessian-vector product (`d2gdx2`).
+ */
 class FunctionalScatterBase {
 public:
   virtual ~FunctionalScatterBase() {}
 
+  /**
+   * \brief Accumulates dg/dx contributions from one workset's cell integrals into the global gradient vector(s).
+   * \param cellIntegral per-cell functional integral for this workset, carrying Jacobian (first-derivative) sensitivities.
+   * \param workset the workset being processed.
+   * \param wda accessor used to pull cell/block details out of \p workset.
+   * \param dgdx one global gradient vector per global indexer (block), to be accumulated into.
+   */
   virtual void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                                  panzer::Traits::EvalData workset,
                                  WorksetDetailsAccessor& wda,
                                  const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const = 0;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  /**
+   * \brief Accumulates d2g/dx2 contributions from one workset's cell integrals into the global Hessian-vector product(s). Only defined when built with Hessian support.
+   * \param cellIntegral per-cell functional integral for this workset, carrying Hessian (second-derivative) sensitivities.
+   * \param workset the workset being processed.
+   * \param wda accessor used to pull cell/block details out of \p workset.
+   * \param d2gdx2 one global Hessian-vector product vector per global indexer (block), to be accumulated into.
+   */
   virtual void scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
                               panzer::Traits::EvalData workset,
                               WorksetDetailsAccessor& wda,
@@ -45,24 +69,33 @@ public:
 #endif
 };
 
+/**
+ * \brief Concrete FunctionalScatterBase that scatters using one or more panzer::GlobalIndexer objects.
+ * \tparam LO local ordinal type.
+ * \tparam GO global ordinal type.
+ */
 template <typename LO,typename GO>
 class FunctionalScatter : public FunctionalScatterBase {
 public:
+   /// \brief Construct for a single global indexer (single-block problem); no-op if \p globalIndexer is null.
    FunctionalScatter(const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer)
    {
      if(globalIndexer!=Teuchos::null)
        ugis_.push_back(globalIndexer);
    }
 
+   /// \brief Construct for a blocked problem with one global indexer per block.
    FunctionalScatter(const std::vector<Teuchos::RCP<const panzer::GlobalIndexer> > & ugis)
      : ugis_(ugis) {}
 
+   /// \copydoc FunctionalScatterBase::scatterDerivative
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
                          panzer::Traits::EvalData workset,
                          WorksetDetailsAccessor& wda,
                          const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
+   /// \copydoc FunctionalScatterBase::scatterHessian
    void scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
                        panzer::Traits::EvalData workset,
                        WorksetDetailsAccessor& wda,
@@ -71,11 +104,20 @@ public:
 
 private:
 
+   /// One global indexer per block; a single entry for non-blocked problems.
    std::vector<Teuchos::RCP<const panzer::GlobalIndexer> > ugis_;
 };
 
 /** This class handles responses with values aggregated
   * on each finite element cell.
+  *
+  * It depends on a "Cell Integral" field (an integrand already
+  * integrated over each cell) having been computed upstream in the
+  * evaluation DAG under the integrand name; evaluateFields() sums that
+  * field into the associated Response_Functional, and for the
+  * Jacobian/Hessian evaluation types, hands its derivatives off to a
+  * FunctionalScatterBase to accumulate into the response's global
+  * gradient / Hessian-vector product.
   */
 template<typename EvalT, typename Traits>
 class ResponseScatterEvaluator_Functional : public panzer::EvaluatorWithBaseImpl<Traits>,
@@ -83,23 +125,41 @@ class ResponseScatterEvaluator_Functional : public panzer::EvaluatorWithBaseImpl
 public:
 
   //! A constructor with concrete arguments instead of a parameter list.
+  /** \brief Construct where the response name and the upstream integrand field name are the same.
+    *
+    * \param[in] name name of both the upstream "Cell Integral" field to sum and the response it feeds.
+    * \param[in] cd cell data (dimension, workset size) for the field data layout.
+    * \param[in] functionalScatter used to scatter derivative/Hessian information into the response's global vectors.
+    */
   ResponseScatterEvaluator_Functional(const std::string & name,const CellData & cd,
                                       const Teuchos::RCP<FunctionalScatterBase> & functionalScatter);
+  /** \brief Construct with distinct names for the upstream integrand field and the response it feeds.
+    *
+    * \param[in] integrandName name of the upstream "Cell Integral" field to sum.
+    * \param[in] responseName name of the response this evaluator contributes to.
+    * \param[in] cd cell data (dimension, workset size) for the field data layout.
+    * \param[in] functionalScatter used to scatter derivative/Hessian information into the response's global vectors.
+    */
   ResponseScatterEvaluator_Functional(const std::string & integrandName,const std::string & responseName,const CellData & cd,
                                       const Teuchos::RCP<FunctionalScatterBase> & functionalScatter);
 
+  /// \brief Sums this workset's per-cell integrand values (and scatters derivatives, via #scatterObj_) into the response.
   void evaluateFields(typename Traits::EvalData d);
 
+  /// \brief Looks up the Response_Functional to accumulate into for the upcoming fill.
   void preEvaluate(typename Traits::PreEvalData d);
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
+  /// Name of the response this evaluator contributes to.
   std::string responseName_;
+  /// The response object accumulated into by evaluateFields().
   Teuchos::RCP<Response_Functional<EvalT> > responseObj_;
 
   Teuchos::RCP<PHX::FieldTag> scatterHolder_; // dummy target
   PHX::MDField<const ScalarT,panzer::Cell> cellIntegral_; // holds cell integrals
+  /// Used to scatter derivative/Hessian information into the response's global vectors. \sa FunctionalScatterBase
   Teuchos::RCP<FunctionalScatterBase> scatterObj_;
 };
 

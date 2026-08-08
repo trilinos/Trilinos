@@ -1,5 +1,7 @@
 STK_SUBPACKAGE(Simd)
 
+message("STKSimd")
+
 ADD_SUBDIRECTORY(stk_simd)
 ADD_SUBDIRECTORY(stk_simd_view)
 

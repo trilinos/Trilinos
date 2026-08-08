@@ -34,6 +34,8 @@
 
 STK_SUBPACKAGE(Coupling)
 
+message("STKCoupling")
+
 ADD_SUBDIRECTORY(stk_coupling)
 
 STK_SUBPACKAGE_POSTPROCESS()

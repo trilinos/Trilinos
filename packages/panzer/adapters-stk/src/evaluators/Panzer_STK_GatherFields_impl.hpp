@@ -80,29 +80,34 @@ evaluateFields(typename Traits::EvalData workset)
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
  
-   // gather operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
-      stk::mesh::Entity const* relations = mesh_->getBulkData()->begin_nodes(localElements[cellLocalId]);
+  // loop over the fields to be gathered
+  for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
+     VariableField * field = stkFields_[fieldIndex];
 
-      // loop over the fields to be gathered
-      for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
-         VariableField * field = stkFields_[fieldIndex];
+     auto field_view_d = gatherFields_[fieldIndex].get_static_view();
+     auto field_view_h = Kokkos::create_mirror_view(field_view_d);
+     Kokkos::deep_copy(field_view_h, field_view_d);
 
-         std::size_t basisCnt = gatherFields_[fieldIndex].extent(1);
+     std::size_t basisCnt = field_view_h.extent(1);
+
+     // gather operation for each cell in workset
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+        std::size_t cellLocalId = localCellIds[worksetCellIndex];
+        stk::mesh::Entity const* relations = mesh_->getBulkData()->begin_nodes(localElements[cellLocalId]);
 
          if(isConstant_) {
            // loop over basis functions and fill the fields
-           (gatherFields_[fieldIndex])(worksetCellIndex,0) = *stk::mesh::field_data(*field, localElements[cellLocalId]);
+           field_view_h(worksetCellIndex,0) = *stk::mesh::field_data(*field, localElements[cellLocalId]);
          }
          else {
            // loop over basis functions and fill the fields
            for(std::size_t basis=0;basis<basisCnt;basis++) {
               stk::mesh::Entity node = relations[basis];
-              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = *stk::mesh::field_data(*field, node);
+              field_view_h(worksetCellIndex,basis) = *stk::mesh::field_data(*field, node);
            }
          }
       }
+      Kokkos::deep_copy(field_view_d, field_view_h);
    }
 }
 

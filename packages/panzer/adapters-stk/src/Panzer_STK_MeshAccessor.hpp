@@ -16,12 +16,14 @@ namespace panzer_stk {
   class STKMeshAccessor {
     Teuchos::RCP<panzer_stk::STK_Interface> mesh_;
   public:
+    /// \brief Returns the mesh set by setMesh(). Asserts that a mesh has been set.
     Teuchos::RCP<panzer_stk::STK_Interface> getMesh() const
     {
       TEUCHOS_ASSERT(Teuchos::nonnull(mesh_));
       return mesh_;
     }
 
+    /// \brief Sets the mesh to be returned by getMesh().
     void setMesh(const Teuchos::RCP<STK_Interface>& mesh){mesh_ = mesh;}
   };
 

@@ -65,10 +65,10 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
                                  const stk::mesh::PartVector& recvParts,
                                  const stk::ParallelMachine recvComm,
                                  std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator,
-                                 double parametricTolerance, double geometricTolerance)
+                                 double parametricTolerance, double geometricTolerance,
+                                 std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(recvBulk)
   , m_meta(recvBulk != nullptr ? &recvBulk->mesh_meta_data() : nullptr)
-  , m_coordinateField(coordinateField)
   , m_transferEntityRank(transferEntityRank)
   , m_fieldSpecs(fieldSpecs)
   , m_fieldVec(stk::transfer::get_fields(m_meta, m_fieldSpecs, m_transferEntityRank))
@@ -78,8 +78,8 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
   , m_pointEvaluator(pointEvaluator)
   , m_parametricTolerance(parametricTolerance)
   , m_searchTolerance(geometricTolerance)
-  , m_searchMesh(m_bulk, m_coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
-                 m_comm, m_pointEvaluator, m_parametricTolerance, m_searchTolerance)
+  , m_searchMesh(m_bulk, coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
+                 m_comm, m_pointEvaluator, m_parametricTolerance, m_searchTolerance, coordTransform)
 {
   initialize();
 }
@@ -92,10 +92,10 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
                                  const stk::mesh::Selector& activeSelector,
                                  const stk::ParallelMachine recvComm,
                                  std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator,
-                                 double parametricTolerance, double geometricTolerance)
+                                 double parametricTolerance, double geometricTolerance,
+                                 std::shared_ptr<stk::search::CoordTransformInterface> coordTransform)
   : m_bulk(recvBulk)
   , m_meta(recvBulk != nullptr ? &recvBulk->mesh_meta_data() : nullptr)
-  , m_coordinateField(coordinateField)
   , m_transferEntityRank(transferEntityRank)
   , m_fieldSpecs(fieldSpecs)
   , m_fieldVec(stk::transfer::get_fields(m_meta, m_fieldSpecs, m_transferEntityRank))
@@ -105,8 +105,8 @@ ElementRecvMesh::ElementRecvMesh(stk::mesh::BulkData* recvBulk,
   , m_pointEvaluator(pointEvaluator)
   , m_parametricTolerance(parametricTolerance)
   , m_searchTolerance(geometricTolerance)
-  , m_searchMesh(m_bulk, m_coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
-                 m_comm, m_pointEvaluator, m_parametricTolerance, m_searchTolerance)
+  , m_searchMesh(m_bulk, coordinateField, m_transferEntityRank, m_meshParts, m_activeSelector,
+                 m_comm, m_pointEvaluator, m_parametricTolerance, m_searchTolerance, coordTransform)
 {
   initialize();
 }
@@ -166,12 +166,14 @@ unsigned ElementRecvMesh::spatial_dimension() const {
 void ElementRecvMesh::bounding_boxes(std::vector<BoundingBox>& v_box) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.bounding_boxes(v_box);
 }
 
 void ElementRecvMesh::coordinates(const EntityKey &k, std::vector<double>& coords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.coordinates(k, coords);
 }
 
@@ -191,12 +193,14 @@ stk::mesh::Entity ElementRecvMesh::entity(const EntityKey& k) const
 double ElementRecvMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   return m_searchMesh.get_distance_from_nearest_node(k, toCoords);
 }
 
 void ElementRecvMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
   m_searchMesh.centroid(k, centroid);
 }
 
@@ -207,25 +211,41 @@ void ElementRecvMesh::fill_entity_keys(const stk::mesh::EntityKeyVector& rangeEn
   m_searchMesh.fill_entity_keys(rangeEntities, elementEntityKeys);
 }
 
-double* ElementRecvMesh::value(const EntityKey& k, const unsigned i) const
+void ElementRecvMesh::update_values()
 {
   STK_ThrowAssert(m_isInitialized);
 
-  stk::mesh::Entity elem = k.first;
-  unsigned gp = k.second;
-
-  unsigned lengthPerPoint = value_size(k, i);
-
-  const stk::mesh::FieldBase* field = m_fieldVec[i].field;
-
-  field->sync_to_host();
-  field->modify_on_host();
-
-  double* data = static_cast<double *>(stk::mesh::field_data(*field, elem));
-  return &data[gp * lengthPerPoint];
+  std::vector<const stk::mesh::FieldBase*> fields = stk::transfer::extract_field_pointers(m_fieldVec);
+  stk::mesh::communicate_field_data(*m_bulk, fields);
 }
 
-unsigned ElementRecvMesh::value_size(const EntityKey& k, const unsigned i) const
+void ElementRecvMesh::acquire_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_searchMesh.acquire_field_data();
+
+  m_pointEvaluator->acquire_field_data();
+
+  fill_cached_field_data(m_fieldVec, m_cachedFieldData);
+
+  m_hasAcquiredFieldData = true;
+}
+
+void ElementRecvMesh::release_field_data()
+{
+  STK_ThrowAssert(m_isInitialized);
+
+  m_searchMesh.release_field_data();
+
+  m_pointEvaluator->release_field_data();
+
+  clear_cached_field_data(m_cachedFieldData);
+
+  m_hasAcquiredFieldData = false;
+}
+
+unsigned ElementRecvMesh::field_size(const EntityKey& k, const unsigned fieldIndex) const
 {
   STK_ThrowAssert(m_isInitialized);
   stk::mesh::Entity elem = k.first;
@@ -233,36 +253,39 @@ unsigned ElementRecvMesh::value_size(const EntityKey& k, const unsigned i) const
   stk::topology topo = m_bulk->bucket(elem).topology();
   size_t numPoints = m_pointEvaluator->num_points(k.first, topo);
 
-  unsigned lengthPerPoint = stk::mesh::field_scalars_per_entity(*m_fieldVec[i].field, elem) / numPoints;
+  unsigned lengthPerPoint = stk::mesh::field_scalars_per_entity(*m_fieldVec[fieldIndex].field, elem) / numPoints;
 
   return lengthPerPoint;
 }
 
-unsigned ElementRecvMesh::num_values(const EntityKey& /*e*/) const { return m_fieldVec.size(); }
-
-unsigned ElementRecvMesh::max_num_values() const { return m_fieldVec.size(); }
-
-unsigned ElementRecvMesh::value_key(const EntityKey& /*k*/, const unsigned i) const
-{
-  return i;
-}
-
-void ElementRecvMesh::update_values()
+void ElementRecvMesh::populate_interpolation_data(const EntityKey& k, InterpolationData& data) const
 {
   STK_ThrowAssert(m_isInitialized);
+  STK_ThrowAssert(m_hasAcquiredFieldData);
 
-  for(auto field : m_fieldVec) {
-    field.field->sync_to_host();
-    field.field->modify_on_host();
+  data.resize(m_fieldVec.size());
+
+  data.nFields = m_fieldVec.size();
+
+  stk::mesh::Entity elem = k.first;
+  unsigned gaussPoint = k.second;
+  stk::search::CachedEntityFieldData entityData;
+
+  for(const auto& fieldEntry : m_cachedFieldData) {
+    const unsigned fieldIndex = fieldEntry->m_fieldIndex;
+
+    fieldEntry->populate_entity_data(elem, entityData);
+    double* fieldPointer      = entityData.pointer;
+
+    data.fieldPtr[fieldIndex]             = &fieldPointer[gaussPoint * entityData.copyStride];
+    data.fieldSize[fieldIndex]            = field_size(k, fieldIndex); // entityData.numComponents;
+    data.fieldComponents[fieldIndex]      = entityData.numComponents;
+    data.fieldComponentStride[fieldIndex] = entityData.componentStride;
+    data.fieldCopies[fieldIndex]          = entityData.numCopies;
+    data.fieldCopyStride[fieldIndex]      = entityData.copyStride;
+    data.fieldKey[fieldIndex]             = fieldIndex;
+    data.fieldDataIndex[fieldIndex]       = m_fieldVec[fieldIndex].index;
   }
-
-  std::vector<const stk::mesh::FieldBase*> fields = stk::transfer::extract_field_pointers(m_fieldVec);
-  stk::mesh::communicate_field_data(*m_bulk, fields);
-}
-
-unsigned ElementRecvMesh::get_index(const unsigned i) const
-{
-  return m_fieldVec[i].index;
 }
 
 } // namespace spmd

@@ -192,25 +192,7 @@ using native_abi = typename ForSpace<Space>::template simd_abi<T, N>;
 
 }  // namespace Impl
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-template <class T, class Space>
-using ForSpace =
-    typename Impl::ForSpace<typename Space::execution_space>::template type<T>;
-
-template <class T>
-using native = ForSpace<T, Kokkos::DefaultExecutionSpace>;
-#endif
-
 }  // namespace simd_abi
-
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-template <class T>
-using native_simd KOKKOS_DEPRECATED_WITH_COMMENT("Use simd<T> instead") =
-    basic_simd<T, simd_abi::native<T>>;
-template <class T>
-using native_simd_mask KOKKOS_DEPRECATED_WITH_COMMENT(
-    "Use simd_mask<T> instead") = basic_simd_mask<T, simd_abi::native<T>>;
-#endif
 
 template <class T, Impl::simd_size_t N = 0>
 using simd = basic_simd<T, simd_abi::Impl::native_abi<T, N>>;
@@ -348,10 +330,10 @@ using host_abi_set =
 using data_type_set = data_types<std::int32_t, std::uint32_t, std::int64_t,
                                  std::uint64_t, double, float>;
 #elif defined(KOKKOS_ARCH_ARM_NEON)
-using host_abi_set = abi_set<simd_abi::scalar, simd_abi::neon_fixed_size<2>,
+using host_abi_set  = abi_set<simd_abi::scalar, simd_abi::neon_fixed_size<2>,
                              simd_abi::neon_fixed_size<4>>;
-using data_type_set =
-    data_types<std::int32_t, std::int64_t, std::uint64_t, double, float>;
+using data_type_set = data_types<std::int32_t, std::uint32_t, std::int64_t,
+                                 std::uint64_t, double, float>;
 #else
 using host_abi_set    = abi_set<simd_abi::scalar>;
 using data_type_set   = data_types<std::int32_t, std::uint32_t, std::int64_t,

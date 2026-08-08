@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #pragma once
-// exclude from Cuda builds without lambdas enabled
-#if !defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
 #include <limits>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -1123,5 +1121,3 @@ class coarsen_heuristics {
 
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
-// exclude from Cuda builds without lambdas enabled
-#endif

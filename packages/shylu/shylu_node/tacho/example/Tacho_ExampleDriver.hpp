@@ -301,15 +301,22 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
     bool success = true;
     mag_type tol = sqrt(arith_traits::epsilon()); // loose accuracy tol..
+#ifndef TACHO_HAVE_TEUCHOS
+    double facto_time = 0.0;
+    double solve_time = 0.0;
+#endif
     for (int iter = 0; iter < niters; iter++) {
       try {
         /// symbolic structure can be reused
         std::cout << "\n === Iteration " << iter << " === " << "\n";
 
         /// factorize
+        double warmup_facto_time = 0.0;
         if (!no_warmup) {
           // warm-up
+          timer.reset();
           solver.factorize(values_on_device);
+          warmup_facto_time = timer.seconds();
         }
 
 #ifdef TACHO_HAVE_TEUCHOS
@@ -322,20 +329,20 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         for (int i = 0; i < nfacts; ++i) {
           solver.factorize(values_on_device);
         }
-        double facto_time = timer.seconds();
+        facto_time += timer.seconds();
 #endif
 
         /// solve
         bool pass = true;
-        double solve_time = 0.0;
         mag_type shift = solver.currentShift();
         if (!no_warmup) {
           // warm-up
           timer.reset();
           solver.solve(x, b, t);
-          solve_time = timer.seconds();
+          double warmup_solve_time = timer.seconds();
           const double res = solver.computeRelativeResidual(values_on_device, x, b, shift);
-          std::cout << "TachoSolver (warm-up): residual = " << res << " time " << solve_time;
+          std::cout << "TachoSolver (warm-up): residual = " << res
+                    << " time " << warmup_facto_time << " + " << warmup_solve_time;
           if (shiftDiag) std::cout << " using shift = " << shift;
           std::cout << "\n";
           if (res > tol) pass = false;
@@ -398,8 +405,13 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     std::cout << std::endl;
 #else
     std::cout << " Initi Time " << initi_time << std::endl;
-    std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
-    std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
+    std::cout << " Facto Time " << facto_time / (double)(niters*nfacts)
+              << ",\t avg. over (" << niters << " x " << nfacts << ") calls" << std::endl;
+    std::cout << " Solve Time " << solve_time / (double)(niters*nsolves)
+              << ",\t avg. over (" << niters << " x " << nsolves << ") calls" << std::endl;
+    if (!success) {
+      std::cerr << "\n Error: Some of the residual norms were too large\n\n";
+    }
 #endif
     if (verbose) {
       std::cout << std::endl;

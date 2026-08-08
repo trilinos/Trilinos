@@ -52,6 +52,10 @@ TEST(TransferMainSettings, defaultSettings)
   std::string settingsOODPString = settings.get_extrapolate_option_string();
   EXPECT_EQ(settingsOODPConvertedString, "IGNORE");
   EXPECT_EQ(settingsOODPString, "IGNORE");
+
+  EXPECT_EQ(settings.get_recv_type_string(), "NODE");
+
+  EXPECT_EQ(settings.get_coord_transf_z_expr(), "z=0");
 }
 
 TEST(TransferMainSettings, filenames)
@@ -60,22 +64,33 @@ TEST(TransferMainSettings, filenames)
  
   EXPECT_EQ(settings.get_sendMesh_filename(), "");
   EXPECT_EQ(settings.get_recvMesh_filename(), "");
+  EXPECT_EQ(settings.get_outputMesh_filename(), "");
   
   settings.set_sendMesh_filename("source.g");
 
   EXPECT_EQ(settings.get_sendMesh_filename(), "source.g");
   EXPECT_EQ(settings.get_recvMesh_filename(), "");
+  EXPECT_EQ(settings.get_outputMesh_filename(), "");
 
   settings.set_recvMesh_filename("target.g");
 
   EXPECT_EQ(settings.get_sendMesh_filename(), "source.g");
   EXPECT_EQ(settings.get_recvMesh_filename(), "target.g");
+  EXPECT_EQ(settings.get_outputMesh_filename(), "");
+
+  settings.set_outputMesh_filename("output.exo");
+
+  EXPECT_EQ(settings.get_sendMesh_filename(), "source.g");
+  EXPECT_EQ(settings.get_recvMesh_filename(), "target.g");
+  EXPECT_EQ(settings.get_outputMesh_filename(), "output.exo");
 
   settings.set_sendMesh_filename("changed_source.g");
   settings.set_recvMesh_filename("changed_target.g");
+  settings.set_outputMesh_filename("changed_output.exo");
 
   EXPECT_EQ(settings.get_sendMesh_filename(), "changed_source.g");
   EXPECT_EQ(settings.get_recvMesh_filename(), "changed_target.g");
+  EXPECT_EQ(settings.get_outputMesh_filename(), "changed_output.exo");
 }
 
 TEST(TransferMainSettings, processorCounts)
@@ -109,6 +124,29 @@ TEST(TransferMainSettings, fields)
 
   std::string fieldListString = "send_field_1:recv_field_1, send_field_2:recv_field_2";
   EXPECT_EQ(settings.get_field_list_string(), fieldListString);
+}
+
+TEST(TransferMainSettings, parts)
+{
+  stk::transfer_util::TransferMainSettings settings;
+  
+  EXPECT_EQ(settings.get_transfer_send_parts().size(), 0u);
+  EXPECT_EQ(settings.get_transfer_recv_parts().size(), 0u);
+   
+  std::vector<std::string> sendPartList = {"send_part_1", "send_part_2"};
+  std::vector<std::string> recvPartList = {"recv_part_1", "recv_part_2", "recv_part_3"};
+
+  settings.set_transfer_send_parts(sendPartList);
+  settings.set_transfer_recv_parts(recvPartList);
+
+  std::vector<std::string> sendParts = settings.get_transfer_send_parts();
+  EXPECT_EQ(sendPartList, sendParts);
+
+  std::vector<std::string> recvParts = settings.get_transfer_recv_parts();
+  EXPECT_EQ(recvPartList, recvParts);
+
+  std::string partListString = "send_part_1, send_part_2:recv_part_1, recv_part_2, recv_part_3";
+  EXPECT_EQ(settings.get_part_list_string(), partListString);
 }
 
 TEST(TransferMainSettings, extrapolateOption)
@@ -151,6 +189,121 @@ TEST(TransferMainSettings, extrapolateOption)
   EXPECT_EQ(settingsOODPBadString, "UNDEFINED");
   EXPECT_EQ(settings.get_extrapolate_option_string(), "UNDEFINED");
 
+}
+
+TEST(TransferMainSettings, recvType)
+{
+  stk::transfer_util::TransferMainSettings settings;
+
+  settings.set_recv_type("NODE");
+  auto settingsDefaultRecvType = settings.get_recv_type();
+  auto settingsDefaultRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsDefaultRecvType, stk::transfer::spmd::RecvMeshType::NODE);
+  EXPECT_EQ(settingsDefaultRecvTypeString, "NODE");
+
+  settings.set_recv_type("EDGE_CENTROID");
+  auto settingsEdgeCentRecvType = settings.get_recv_type();
+  auto settingsEdgeCentRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsEdgeCentRecvType, stk::transfer::spmd::RecvMeshType::EDGE_CENTROID);
+  EXPECT_EQ(settingsEdgeCentRecvTypeString, "EDGE_CENTROID");
+
+  settings.set_recv_type("EDGE_GAUSS_POINT");
+  auto settingsEdgeGPRecvType = settings.get_recv_type();
+  auto settingsEdgeGPRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsEdgeGPRecvType, stk::transfer::spmd::RecvMeshType::EDGE_GAUSS_POINT);
+  EXPECT_EQ(settingsEdgeGPRecvTypeString, "EDGE_GAUSS_POINT");
+
+  settings.set_recv_type("FACE_CENTROID");
+  auto settingsFaceCentRecvType = settings.get_recv_type();
+  auto settingsFaceCentRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsFaceCentRecvType, stk::transfer::spmd::RecvMeshType::FACE_CENTROID);
+  EXPECT_EQ(settingsFaceCentRecvTypeString, "FACE_CENTROID");
+
+  settings.set_recv_type("FACE_GAUSS_POINT");
+  auto settingsFaceGPRecvType = settings.get_recv_type();
+  auto settingsFaceGPRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsFaceGPRecvType, stk::transfer::spmd::RecvMeshType::FACE_GAUSS_POINT);
+  EXPECT_EQ(settingsFaceGPRecvTypeString, "FACE_GAUSS_POINT");
+
+  settings.set_recv_type("ELEMENT_CENTROID");
+  auto settingsElemCentRecvType = settings.get_recv_type();
+  auto settingsElemCentRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsElemCentRecvType, stk::transfer::spmd::RecvMeshType::ELEMENT_CENTROID);
+  EXPECT_EQ(settingsElemCentRecvTypeString, "ELEMENT_CENTROID");
+
+  settings.set_recv_type("ELEMENT_GAUSS_POINT");
+  auto settingsElemGPRecvType = settings.get_recv_type();
+  auto settingsElemGPRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsElemGPRecvType, stk::transfer::spmd::RecvMeshType::ELEMENT_GAUSS_POINT);
+  EXPECT_EQ(settingsElemGPRecvTypeString, "ELEMENT_GAUSS_POINT");
+
+  settings.set_recv_type("FAKE_CENTROID");
+  auto settingsInvalidRecvType = settings.get_recv_type();
+  auto settingsInvalidRecvTypeString = settings.get_recv_type_string();
+  EXPECT_EQ(settingsInvalidRecvType, stk::transfer::spmd::RecvMeshType::INVALID);
+  EXPECT_EQ(settingsInvalidRecvTypeString, "FAKE_CENTROID");
+}
+
+TEST(TransferMainSettings, defaultRecvPartRank)
+{
+  stk::transfer_util::TransferMainSettings settings;
+
+  settings.set_recv_type("NODE");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::ELEMENT_RANK);
+
+  settings.set_recv_type("EDGE_CENTROID");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::EDGE_RANK);
+
+  settings.set_recv_type("EDGE_GAUSS_POINT");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::EDGE_RANK);
+
+  settings.set_recv_type("FACE_CENTROID");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::FACE_RANK);
+
+  settings.set_recv_type("FACE_GAUSS_POINT");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::FACE_RANK);
+
+  settings.set_recv_type("ELEMENT_CENTROID");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::ELEMENT_RANK);
+
+  settings.set_recv_type("ELEMENT_GAUSS_POINT");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::ELEMENT_RANK);
+
+  settings.set_recv_type("FAKE_CENTROID");
+  EXPECT_EQ(settings.get_default_recv_part_rank(), stk::topology::INVALID_RANK);
+}
+
+TEST(TransferMainSettings, transferType)
+{
+  stk::transfer_util::TransferMainSettings settings;
+
+  auto settingsDefaultTransferType = settings.get_transfer_type();
+  EXPECT_EQ(settingsDefaultTransferType, "INTERP");
+
+  settings.set_transfer_type("COPY");
+  EXPECT_EQ(settings.get_transfer_type(), "COPY");
+
+  settings.set_transfer_type("PATCH");
+  EXPECT_EQ(settings.get_transfer_type(), "PATCH");
+
+  settings.set_transfer_type("INTERP");
+  EXPECT_EQ(settings.get_transfer_type(), "INTERP");
+
+  EXPECT_FALSE(settings.set_transfer_type("FAKE"));
+}
+
+TEST(TransferMainSettings, coordTransformZExpression)
+{
+  stk::transfer_util::TransferMainSettings settings;
+
+  auto settingsDefaultExpr = settings.get_coord_transf_z_expr();
+  EXPECT_EQ(settingsDefaultExpr, "z=0");
+
+  settings.set_coord_transf_z_expr("z=x+y");
+  EXPECT_EQ(settings.get_coord_transf_z_expr(), "z=x+y");
+
+  settings.set_coord_transf_z_expr("1.5");
+  EXPECT_EQ(settings.get_coord_transf_z_expr(), "1.5");
 }
 
 }
