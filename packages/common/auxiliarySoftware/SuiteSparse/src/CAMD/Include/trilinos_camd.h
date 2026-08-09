@@ -323,7 +323,7 @@ UF_long trilinos_camd_l_cvalid
  * that CAMD uses. */
 
 #ifndef EXTERN
-#define EXTERN extern
+#define EXTERN extern TRILINOSSS_LIB_DLL_EXPORT
 #endif
 
 EXTERN void *(*trilinos_camd_malloc) (size_t) ;		    /* pointer to malloc */
