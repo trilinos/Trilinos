@@ -17,8 +17,17 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_OpenMP
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
+# Windows shared-library import/export for DATA symbols in trilinosss.dll
+# (e.g. trilinos_amd_malloc/free/calloc/realloc function-pointer globals).
+# CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS exports via .def, but consumers still need
+# __declspec(dllimport) for DATA or LNK2019 results.
+SET(CURRENT_PACKAGE TRILINOSSS)
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
+
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h
   )
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -85,4 +94,5 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   IMPORTEDLIBS ${IMPORTEDLIBS}
+  DEFINES -DTRILINOSSS_LIB_EXPORTS_MODE
   )

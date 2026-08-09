@@ -295,7 +295,7 @@ GLOBAL void TRILINOS_AMD_preprocess
 #include <assert.h>
 
 #ifndef EXTERN
-#define EXTERN extern
+#define EXTERN extern TRILINOSSS_LIB_DLL_EXPORT
 #endif
 
 EXTERN Int TRILINOS_AMD_debug ;
