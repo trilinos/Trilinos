@@ -245,7 +245,6 @@ template <typename T> struct LapackSerial {
     if (m <= 0 || n <= 0)
       return *info;
 
-
     using arith_traits = ArithTraits<T>;
     using mag_type = typename arith_traits::mag_type;
     const T zero(0);

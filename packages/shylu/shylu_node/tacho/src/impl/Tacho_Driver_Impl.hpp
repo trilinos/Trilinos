@@ -572,8 +572,8 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       const size_type jbeg = _h_ap(i), jend = _h_ap(i + 1);
       for (size_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = _h_aj(j);
-        const bool flag = ((_method == LDL_nopiv && i <= col) || /// upper
-                           (_method == Cholesky  && i <= col) || /// upper
+        const bool flag = ((_method == Cholesky  && i <= col) || /// upper
+                           (_method == LDL_nopiv && i >= col) || /// lower (calls ldl)
                            (_method == LDL && i >= col) ||       /// lower
                            (_method == SymLU));                  /// full matrix
         if (flag)
@@ -692,7 +692,7 @@ int Driver<VT, DT>::solve(const value_type_matrix &x, const value_type_matrix &b
     printParameters();
     // compute current residuanl norm
     Kokkos::deep_copy(t, b);
-    computeRelativeResidual(x, t);
+    computeRelativeResidual(x, t, true);
   }
   return 0;
 }
@@ -709,7 +709,6 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
 
     timer.reset();
     switch (_method) {
-    case LDL_nopiv:
     case Cholesky : {
       auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x);
       Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
@@ -717,6 +716,7 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
       Kokkos::deep_copy(x, h_x);
       break;
     }
+    case LDL_nopiv:
     case LDL: {
       auto perm = ordinal_type_array_host(_P.data() + 2 * _m, _m);
       auto peri = ordinal_type_array_host(_P.data() + 3 * _m, _m);
@@ -774,7 +774,7 @@ double Driver<VT, DT>::computeRelativeResidual(const value_type_array &ax, const
   CrsMatrixBase<value_type, device_type> A;
   A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-  return Tacho::computeRelativeResidual(A, x, b, shift, (verbose && _verbose));
+  return Tacho::computeRelativeResidual(A, x, b, shift, verbose);
 }
 
 template <typename VT, typename DT>
