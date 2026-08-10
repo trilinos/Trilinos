@@ -41,8 +41,11 @@ Kokkos, KokkosKernels:
 
 Ifpack2:
 
-  -
+  - Cache local CRS structure in par_ILUT to improve setup related costs
     https://github.com/trilinos/Trilinos/pull/15439
+    
+  - Use KSPTRSV as default triangular solver on GPU platforms
+    https://github.com/trilinos/Trilinos/pull/15490
 
 
 Intrepid2:
@@ -119,6 +122,9 @@ Minitensor:
 
 MueLu:
 
+  - Improve support for Teko-based smoothers via specifying `smoother: type = teko`
+    https://github.com/trilinos/Trilinos/pull/15238
+    
   - Add a new stength-of-connection matrix that leverages an approximate inverse
     of a mass matrix. 
     https://github.com/trilinos/Trilinos/pull/15239
@@ -148,7 +154,17 @@ Tempus:
 
 Teko:
 
+  - Port ProbingPreconditionerFactory to Tpetra
+    https://github.com/trilinos/Trilinos/pull/15386
+  
+  - Port majority of tests/examples to Tpetra
 
+
+Zoltan2:
+
+  - Provide option to opt-out of potentially expensive symmetrization in metis algorithm
+    https://github.com/trilinos/Trilinos/pull/15496
+  
 
 ###############################################################################
 #                                                                             #
