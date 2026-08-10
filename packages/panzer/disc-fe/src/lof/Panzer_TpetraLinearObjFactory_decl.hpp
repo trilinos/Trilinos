@@ -194,7 +194,20 @@ public:
    Teuchos::RCP<FECrsMatrixType> getFEMatrix() const;
 
    //! Build a new Tpetra::FEMultiVector compatible with the FE graph.
+   /** \brief Build a range-space (residual-side) FE multivector.
+     *
+     * Its owned+shared view is over getGhostedMap(), i.e. the same ghosted ROW map the
+     * scatter evaluators index with the GlobalIndexer's local ids, and the same map
+     * getGhostedExport() migrates from. Mirrors getGhostedTpetraVector().
+     */
    Teuchos::RCP<FEMultiVectorType> getFEMultiVector(std::size_t numVectors=1) const;
+
+   /** \brief Build a domain-space (solution-side) FE multivector.
+     *
+     * Its owned+shared view is over getGhostedColMap(). Mirrors getGhostedTpetraColVector();
+     * use this for x/dxdt, and getFEMultiVector() for f.
+     */
+   Teuchos::RCP<FEMultiVectorType> getFEColMultiVector(std::size_t numVectors=1) const;
 
 /*************** Generic helper functions for container setup *******************/
 

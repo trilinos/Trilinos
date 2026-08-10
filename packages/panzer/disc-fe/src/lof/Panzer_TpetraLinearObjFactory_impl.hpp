@@ -971,8 +971,32 @@ getFEMultiVector(std::size_t numVectors) const
       "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
       "are not available. Pass useFEAssembly=true to the constructor to opt in.");
 
-   Teuchos::RCP<FECrsGraphType> feGraph = getFEGraph();
-   return Teuchos::rcp(new FEMultiVectorType(getMap(),feGraph->getImporter(),numVectors));
+   // Built over getGhostedImport() (owned map -> ghosted ROW map), NOT the FE graph's own
+   // importer. Tpetra's FEMultiVector documentation suggests the graph importer as the
+   // "canonical" choice, and the Tpetra example does that, but its target is the graph's
+   // COLUMN map -- which the cross-rank clique merge widens beyond the ghosted row map. A
+   // residual is indexed by ROW local ids (what GlobalIndexer::getLIDs() yields) and is
+   // migrated by getGhostedExport(), whose source map is getGhostedMap(); a column-map
+   // vector matches neither. It only appears to work because the ghosted map is a locally
+   // fitted prefix of the column map, so row lids happen to land correctly and the extra
+   // trailing entries are simply never written -- fragile, and wrong for the export.
+   return Teuchos::rcp(new FEMultiVectorType(getMap(),getGhostedImport(),numVectors));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FEMultiVectorType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEColMultiVector(std::size_t numVectors) const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEColMultiVector: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   // Domain-space counterpart of getFEMultiVector(): owned col map -> ghosted col map.
+   // Both accessors collapse to the row-map versions when there is no separate column
+   // GlobalIndexer, since getColMap()/getGhostedColMap() fall back to the row maps.
+   return Teuchos::rcp(new FEMultiVectorType(getColMap(),getGhostedColImport(),numVectors));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

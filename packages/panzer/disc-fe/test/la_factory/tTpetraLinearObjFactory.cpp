@@ -800,27 +800,29 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_opt_in)
       TEST_ASSERT(feMatrix!=Teuchos::null);
       TEST_ASSERT(feMatrix->getLocalNumRows()>0);
 
-      // getFEMultiVector() builds `new FEMultiVectorType(getMap(), feGraph->getImporter(),
-      // numVectors)`. FEMultiVector's constructor uses `importer.is_null() ? map :
-      // importer->getTargetMap()` as its active map -- since our importer is feGraph's own
-      // (domainMap -> colMap) importer, its target map IS feGraph->getColMap(), so feVec's
-      // map should be exactly that (isSameAs, not just fitted -- this is a direct
-      // construction identity, not merely a compatibility guarantee).
+      // A range-space (residual-side) FE multivector's owned+shared view must be over the
+      // ghosted ROW map exactly -- that is the map the scatter evaluators index with the
+      // GlobalIndexer's local ids, and the source map getGhostedExport() migrates from.
+      // isSameAs, not merely isLocallyFitted: anything weaker would not be a legal source
+      // for that export.
       RCP<LOFType::FEMultiVectorType> feVec = la_factory->getFEMultiVector();
       TEST_ASSERT(feVec!=Teuchos::null);
       TEST_EQUALITY(feVec->getNumVectors(),static_cast<std::size_t>(1));
       TEST_ASSERT(feVec->getLocalLength()>0);
-      TEST_ASSERT(feVec->getMap()->isSameAs(*feGraph->getColMap()));
+      TEST_ASSERT(feVec->getMap()->isSameAs(*la_factory->getGhostedMap()));
+      TEST_EQUALITY(feVec->getLocalLength(),la_factory->getGhostedMap()->getLocalNumElements());
 
-      // The actual "does the multivector have the same GID/row numbering" question: since
-      // feGraph's column map is only guaranteed *locally fitted* to the traditional ghosted
-      // map (getGhostedMap()) -- not identical to it, per the V2 FECrsGraph column-map
-      // discussion in fe_owned_shared_matches_ghosted -- checking isSameAs() against
-      // la_factory->getGhostedMap() here would not generally hold. isLocallyFitted() is the
-      // correct, weaker check: every local id in the traditional ghosted map must map to the
-      // same GID at the same local id in feVec's map, i.e. local assembly code indexing into
-      // feVec using the GlobalIndexer's own (ghosted) local ids lands on the correct rows.
-      TEST_ASSERT(feVec->getMap()->isLocallyFitted(*la_factory->getGhostedMap()));
+      // It must specifically NOT be the FE graph's column map, which the cross-rank clique
+      // merge widens beyond the ghosted row map. Building the residual over that map was the
+      // original bug this asserts against.
+      TEST_ASSERT(!feVec->getMap()->isSameAs(*feGraph->getColMap()));
+
+      // The domain-space counterpart is over the ghosted COLUMN map. With no separate column
+      // GlobalIndexer the col maps fall back to the row maps, so here the two agree; the
+      // accessors are still distinct so a rectangular/blocked setup gets the right one.
+      RCP<LOFType::FEMultiVectorType> feColVec = la_factory->getFEColMultiVector();
+      TEST_ASSERT(feColVec!=Teuchos::null);
+      TEST_ASSERT(feColVec->getMap()->isSameAs(*la_factory->getGhostedColMap()));
    }
 }
 
@@ -984,11 +986,9 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_container_visibility)
    // GlobalIndexer's ghosted LIDs with no change.
    TEST_ASSERT(feMatrix->getRowMap()->isSameAs(*la_factory->getGhostedMap()));
 
-   // NOTE: the FEMultiVector's map is the FE GRAPH's column map, which the cross-rank merge
-   // widens beyond the ghosted row map, so it does NOT match getGhostedMap() and is NOT
-   // compatible with getGhostedExport() (whose source map is getGhostedMap()). That is why
-   // Step 3 wires up the MATRIX only and leaves the residual vector on the traditional path.
-   TEST_ASSERT(!feVec->getMap()->isSameAs(*la_factory->getGhostedMap()));
+   // The range-space FE multivector is over the ghosted ROW map, so it IS a legal source for
+   // getGhostedExport() and is indexed by the same local ids the scatter evaluators use.
+   TEST_ASSERT(feVec->getMap()->isSameAs(*la_factory->getGhostedMap()));
 
    // Drive the fill cycle: beginFill() puts the FE matrix into its owned+shared assembly
    // state, endFill() runs the owned+shared -> owned migration and switches the active view.
@@ -1103,6 +1103,77 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_shared_matrix_assembly_cycle)
       TEST_FLOATING_EQUALITY(diag,expected,1e-14);
    }
    TEST_ASSERT(ownedMap->getLocalNumElements()>0);
+}
+
+// The range-space FE multivector must be a legal, correct source for the traditional
+// ghost->global export. This is the point of building it over getGhostedImport() rather than
+// the FE graph's (column-map) importer: with the column map its local length exceeds the
+// ghosted map's and getGhostedExport() -- whose source map is getGhostedMap() -- cannot
+// consume it. Here it is filled through ghosted local ids exactly as a scatter evaluator
+// would, then migrated, and the cross-rank sums are checked.
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_multivector_exports_like_ghosted)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+   typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOCType;
+   typedef panzer::LinearObjContainer LOC;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   // ghosted container gets the FE residual; the global container keeps a plain owned vector
+   // (which is what NOX supplies in practice, since f_out comes from the Thyra vector space).
+   RCP<LinearObjContainer> gLoc = la_factory->buildLinearObjContainer();
+   RCP<LinearObjContainer> ghLoc = la_factory->buildGhostedLinearObjContainer();
+   la_factory->initializeContainer(LOC::F,*gLoc);
+
+   RCP<LOCType> gt = rcp_dynamic_cast<LOCType>(gLoc);
+   RCP<LOCType> ght = rcp_dynamic_cast<LOCType>(ghLoc);
+
+   RCP<LOFType::FEMultiVectorType> feF = la_factory->getFEMultiVector();
+   ght->set_f(feF);
+   feF->putScalar(0.0);
+   gt->get_f_mv()->putScalar(0.0);
+
+   // "scatter": write 1.0 at every ghosted local id, exactly as an element loop would.
+   {
+      auto host = feF->getLocalViewHost(Tpetra::Access::ReadWrite);
+      for(size_t i=0;i<feF->getLocalLength();i++)
+         host(i,0) = 1.0;
+   }
+
+   // migrate ghosted -> owned through the factory's normal path
+   TEST_NOTHROW(la_factory->ghostToGlobalContainer(*ghLoc,*gLoc,LOC::F));
+
+   // Owned entries also visible (ghosted) on the other rank were written by both ranks, so
+   // they must sum to 2.0; rank-local entries stay at 1.0. Getting 1.0 everywhere would mean
+   // the export silently moved nothing.
+   std::vector<panzer::GlobalOrdinal> ownedIdx;
+   indexer->getOwnedIndices(ownedIdx);
+   std::set<panzer::GlobalOrdinal> sharedGids;
+   if(myRank==0) { sharedGids.insert(2); sharedGids.insert(3); }
+   else          { sharedGids.insert(4); sharedGids.insert(5); }
+
+   RCP<const Map> ownedMap = la_factory->getMap();
+   auto ownedHost = gt->get_f_mv()->getLocalViewHost(Tpetra::Access::ReadOnly);
+   for(std::size_t i=0;i<ownedIdx.size();i++) {
+      panzer::GlobalOrdinal gid = ownedIdx[i];
+      int lid = ownedMap->getLocalElement(gid);
+      TEST_ASSERT(lid>=0);
+      const double expected = (sharedGids.find(gid)!=sharedGids.end()) ? 2.0 : 1.0;
+      TEST_FLOATING_EQUALITY(ownedHost(lid,0),expected,1e-14);
+   }
 }
 
 }
