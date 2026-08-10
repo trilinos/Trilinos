@@ -221,7 +221,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dotsImpl(
   // If the cast succeeded, call Tpetra directly.
   // Otherwise, fall back to the RTOp implementation.
   if (nonnull(tmv)) {
-    tpetraMultiVector_.getConstObj()->dot(*tmv, prods);
+    tpetraMultiVector_.getConstObj()->dot(*tmv, prods(0, tmv->getNumVectors()));
   } else {
     MultiVectorDefaultBase<Scalar>::dotsImpl(mv, prods);
   }

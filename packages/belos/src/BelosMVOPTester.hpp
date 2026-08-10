@@ -919,6 +919,23 @@ namespace Belos {
           return false;
         }
       }
+      if constexpr (Teuchos::ScalarTraits<ScalarType>::isComplex) {
+        auto J = ScalarType(0., 1.);
+        MVT::MvInit(*B, J);
+        MVT::MvInit(*C, STS::one());
+        MVT::MvDot( *B, *C, iprods );
+        // We expect all entries to be 1j*conj(1)*size
+        auto size = MVT::GetGlobalLength(*B);
+        auto expected = Teuchos::as<ScalarType>(size)*J;
+        for (int i=0; i<p; i++) {
+          if ( STS::magnitude(iprods[i]-expected) > STS::eps()) {
+            om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products gave bad value: " << iprods[i] << ". Expected: " << expected << endl;
+            return false;
+          }
+        }
+      }
     }
 
 
