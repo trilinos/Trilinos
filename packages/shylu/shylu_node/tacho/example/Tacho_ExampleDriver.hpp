@@ -345,7 +345,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
           timer.reset();
           solver.solve(x, b, t);
           double warmup_solve_time = timer.seconds();
-          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift, !debug);
+          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift, (!debug && verbose));
           std::cout << "TachoSolver (warm-up): residual = " << res
                     << " time " << warmup_facto_time << " + " << warmup_solve_time;
           if (shiftDiag) std::cout << " using shift = " << shift;
@@ -364,7 +364,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
           solver.solve(x, b, t);
           solve_time += timer.seconds();
 #endif
-          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b, shift, !debug);
+          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b, shift, (!debug && verbose));
           if (res > tol) pass = false;
           std::cout << "TachoSolver: residual = " << res;
           if (shiftDiag) std::cout << " using shift = " << shift;
@@ -419,7 +419,6 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     }
 #endif
     if (verbose) {
-      std::cout << std::endl;
       std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl << std::endl;
     }
     std::cout << std::endl;
