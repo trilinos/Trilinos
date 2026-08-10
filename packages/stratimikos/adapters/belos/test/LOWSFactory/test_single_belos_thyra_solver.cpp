@@ -8,25 +8,38 @@
 // @HEADER
 
 #include "test_single_belos_thyra_solver.hpp"
-
-#ifndef SUN_CXX
+#include "Stratimikos_InternalConfig.h"
+#include "Tpetra_Core.hpp"
 
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
-#include "EpetraExt_readEpetraLinearSystem.h"
-#include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
-#ifdef HAVE_BELOS_IFPACK
-#  include "Thyra_IfpackPreconditionerFactory.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+
+#include "Galeri_XpetraMaps.hpp"
+#include "Galeri_XpetraProblemFactory.hpp"
+#include "Galeri_XpetraParameters.hpp"
+
+#ifdef HAVE_STRATIMIKOS_IFPACK2
+#  include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #endif
 
-#endif // SUN_CXX
+Teuchos::RCP<const Thyra::LinearOpBase<double> > getFwdLinearOp(const std::string &matrixFileName)
+{
+  using crs_type = Tpetra::CrsMatrix<>;
+  using op_type = Tpetra::Operator<>;
+  using reader_type = Tpetra::MatrixMarket::Reader<crs_type>;
+  auto comm = Tpetra::getDefaultComm();
+  auto tpetraCrsMatrix = reader_type::readSparseFile(matrixFileName, comm, true);
+  auto fwdLinearOp = Thyra::createLinearOp(Teuchos::rcp_dynamic_cast<op_type>(tpetraCrsMatrix, true));
+  return fwdLinearOp;
+}
 
 bool Thyra::test_single_belos_thyra_solver(
   const std::string                       matrixFile
@@ -52,8 +65,6 @@ bool Thyra::test_single_belos_thyra_solver(
 
   try {
 
-#ifndef SUN_CXX
-
     if(out.get()) {
       *out << "\n***"
            << "\n*** Testing Thyra::BelosLinearOpWithSolveFactory (and Thyra::BelosLinearOpWithSolve)"
@@ -71,13 +82,7 @@ bool Thyra::test_single_belos_thyra_solver(
            << std::endl;
     }
 
-    if(out.get()) *out << "\nA) Reading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
-  
-    Epetra_SerialComm comm;
-    Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
-    EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
-
-    Teuchos::RCP<const LinearOpBase<double> > A = epetraLinearOp(epetra_A);
+    auto A = getFwdLinearOp(matrixFile);
 
     if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 
@@ -97,15 +102,16 @@ bool Thyra::test_single_belos_thyra_solver(
     }
 
     if(usePreconditioner) {
-#ifdef HAVE_BELOS_IFPACK
+#ifdef HAVE_STRATIMIKOS_IFPACK2
       if(out.get()) {
-        *out << "\nSetting an Ifpack preconditioner factory ...\n";
+        *out << "\nSetting an Ifpack2 preconditioner factory ...\n";
       }
+      using crs_type = Tpetra::CrsMatrix<>;
       RCP<PreconditionerFactoryBase<double> >
-        precFactory = Teuchos::rcp(new IfpackPreconditionerFactory());
+        precFactory = Teuchos::rcp(new Ifpack2PreconditionerFactory<crs_type>());
       if (precPL)
         precFactory->setParameterList(rcp(precPL,false));
-      lowsFactory->setPreconditionerFactory(precFactory,"Ifpack");
+      lowsFactory->setPreconditionerFactory(precFactory,"Ifpack2");
 #else
       TEUCHOS_TEST_FOR_EXCEPT(usePreconditioner);
 #endif
@@ -176,14 +182,6 @@ bool Thyra::test_single_belos_thyra_solver(
       *out << "\nbelosLOWSFPL after solving:\n";
       belosLOWSFPL->print(OSTab(out).o(),0,true);
     }
-    
-#else // SUN_CXX
-    
-    if(out.get()) *out << "\nTest failed since is was not even compiled since SUN_CXX was defined!\n";
-    success = false;
-
-#endif // SUN_CXX
-
   }
   catch( const std::exception &excpt ) {
     if(out.get()) *out << std::flush;
