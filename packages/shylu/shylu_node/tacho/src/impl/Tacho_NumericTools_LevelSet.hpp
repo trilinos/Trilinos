@@ -2398,7 +2398,7 @@ public:
         const auto policy = policy_type(_exec_instances[0], 0, _m);
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &i) {
-              for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i); 
+              for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i);
             });
       }
     } else {
@@ -3337,6 +3337,7 @@ public:
 
         const auto &s = _h_supernodes(sid);
         {
+          // full-diagonal scaling (ones on diagonal for non-active supernodal blocks at this level)
           if (s.m > 0) {
             const ordinal_type m = s.m;
             const ordinal_type offm = s.row_begin;
@@ -3789,9 +3790,7 @@ public:
       {
         typedef TeamFunctor_FactorizeChol<supernode_info_type> functor_type;
         functor_type functor(_info, _factorize_mode, _level_sids, _buf, t_rval.data());
-        if (pivot_tol > 0.0) {
-          functor.setDiagPertubationTol(pivot_tol);
-        }
+        functor.setDiagPertubationTol(pivot_tol); // always re-set pivot-tol (for chol, only checked if tol > 0.0)
         if (this->getSolutionMethod() == 0) {
           functor.setIndefiniteFactorization(true);
         }
