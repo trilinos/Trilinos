@@ -149,7 +149,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<LOC> tpetraContainer 
           = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_f();
+    dirichletCounter_ = tpetraContainer->get_f_mv();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
@@ -246,9 +246,9 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
-  Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
-    tpetraContainer_->get_f() :
-    tpetraContainer_->get_x(); 
+  Teuchos::RCP<typename LOC::MultiVectorType> r = (!scatterIC_) ? 
+    tpetraContainer_->get_f_mv() :
+    tpetraContainer_->get_x_mv(); 
 
   if (scatterIC_) {
     ScatterDirichletResidualIC_Residual_Functor<ScalarT,LO,GO,NodeT> functor;
@@ -406,7 +406,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<LOC> tpetraContainer 
           = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_f();
+    dirichletCounter_ = tpetraContainer->get_f_mv();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 
@@ -420,8 +420,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
   dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size());
 
   for(std::size_t i=0;i<activeParameters.size();i++) {
-    RCP<typename LOC::VectorType> vec =
-      rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
+    RCP<typename LOC::MultiVectorType> vec =
+      rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f_mv();
     auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     dfdpFieldsVoV_.addView(dfdp_view,i);
@@ -537,9 +537,9 @@ evaluateFields(typename TRAITS::EvalData workset)
      
   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
-   Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ?
-     tpetraContainer_->get_f() :
-     tpetraContainer_->get_x();
+   Teuchos::RCP<typename LOC::MultiVectorType> r = (!scatterIC_) ?
+     tpetraContainer_->get_f_mv() :
+     tpetraContainer_->get_x_mv();
 
   if (scatterIC_) {
     ScatterDirichletResidualIC_Tangent_Functor<ScalarT,LO,GO,NodeT> functor;
@@ -672,7 +672,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     Teuchos::RCP<LOC> tpetraContainer 
           = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
-    dirichletCounter_ = tpetraContainer->get_f();
+    dirichletCounter_ = tpetraContainer->get_f_mv();
     TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
   }
 }
@@ -688,7 +688,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
+   Teuchos::RCP<typename LOC::MultiVectorType> r = tpetraContainer_->get_f_mv(); 
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();

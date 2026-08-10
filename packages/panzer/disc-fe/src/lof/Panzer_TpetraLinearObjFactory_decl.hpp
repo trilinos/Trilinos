@@ -17,6 +17,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_FECrsGraph.hpp"
@@ -48,6 +49,7 @@ class TpetraLinearObjFactory : public LinearObjFactory<Traits>
 public:
    typedef TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ContainerType;
    typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
+   typedef Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> MultiVectorType;
    typedef Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> CrsMatrixType;
    typedef Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> CrsGraphType;
    typedef Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> MapType;
@@ -264,12 +266,12 @@ public:
 
 protected:
 
-   void ghostToGlobalTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                                  Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const;
+   void ghostToGlobalTpetraVector(const Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
+                                  Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const;
    void ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
                                   Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out) const;
-   void globalToGhostTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>& in,
-                                  Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const;
+   void globalToGhostTpetraVector(const Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>& in,
+                                  Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const;
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildMap() const;

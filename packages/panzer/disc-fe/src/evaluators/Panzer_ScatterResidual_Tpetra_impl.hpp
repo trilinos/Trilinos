@@ -205,8 +205,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
   dfdpFieldsVoV_.initialize("ScatterResidual_Tpetra<Tangent>::dfdpFieldsVoV_",activeParameters.size());
 
   for(std::size_t i=0;i<activeParameters.size();i++) {
-    RCP<typename LOC::VectorType> vec =
-      rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f();
+    RCP<typename LOC::MultiVectorType> vec =
+      rcp_dynamic_cast<LOC>(d.gedc->getDataObject(activeParameters[i]),true)->get_f_mv();
     auto dfdp_view = vec->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     dfdpFieldsVoV_.addView(dfdp_view,i);
@@ -444,7 +444,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   // for convenience pull out some objects from workset
   std::string blockId = this->wda(workset).block_id;
 
-  Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
+  Teuchos::RCP<typename LOC::MultiVectorType> r = tpetraContainer_->get_f_mv();
 
   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
@@ -473,7 +473,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
 
-   Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
+   Teuchos::RCP<typename LOC::MultiVectorType> r = tpetraContainer_->get_f_mv();
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
    // Cache scratch lids. For interface bc problems the derivative
@@ -517,7 +517,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   // for convenience pull out some objects from workset
   std::string blockId = this->wda(workset).block_id;
 
-  Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
+  Teuchos::RCP<typename LOC::MultiVectorType> r = tpetraContainer_->get_f_mv();
 
   globalIndexer_->getElementLIDs(this->wda(workset).getLocalCellIDs(),scratch_lids_);
 

@@ -107,14 +107,14 @@ globalToGhostContainer(const LinearObjContainer & in,
 
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
-   if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     globalToGhostTpetraVector(*t_in.get_x(),*t_out.get_x(),true);
+   if ( !is_null(t_in.get_x_mv()) && !is_null(t_out.get_x_mv()) && ((mem & LOC::X)==LOC::X))
+     globalToGhostTpetraVector(*t_in.get_x_mv(),*t_out.get_x_mv(),true);
 
-   if ( !is_null(t_in.get_dxdt()) && !is_null(t_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
-     globalToGhostTpetraVector(*t_in.get_dxdt(),*t_out.get_dxdt(),true);
+   if ( !is_null(t_in.get_dxdt_mv()) && !is_null(t_out.get_dxdt_mv()) && ((mem & LOC::DxDt)==LOC::DxDt))
+     globalToGhostTpetraVector(*t_in.get_dxdt_mv(),*t_out.get_dxdt_mv(),true);
 
-   if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
-      globalToGhostTpetraVector(*t_in.get_f(),*t_out.get_f(),false);
+   if ( !is_null(t_in.get_f_mv()) && !is_null(t_out.get_f_mv()) && ((mem & LOC::F)==LOC::F))
+      globalToGhostTpetraVector(*t_in.get_f_mv(),*t_out.get_f_mv(),false);
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -132,11 +132,11 @@ ghostToGlobalContainer(const LinearObjContainer & in,
 
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
-   if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     ghostToGlobalTpetraVector(*t_in.get_x(),*t_out.get_x(),true);
+   if ( !is_null(t_in.get_x_mv()) && !is_null(t_out.get_x_mv()) && ((mem & LOC::X)==LOC::X))
+     ghostToGlobalTpetraVector(*t_in.get_x_mv(),*t_out.get_x_mv(),true);
 
-   if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
-     ghostToGlobalTpetraVector(*t_in.get_f(),*t_out.get_f(),false);
+   if ( !is_null(t_in.get_f_mv()) && !is_null(t_out.get_f_mv()) && ((mem & LOC::F)==LOC::F))
+     ghostToGlobalTpetraVector(*t_in.get_f_mv(),*t_out.get_f_mv(),false);
 
    if ( !is_null(t_in.get_A()) && !is_null(t_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
      ghostToGlobalTpetraMatrix(*t_in.get_A(),*t_out.get_A());
@@ -145,8 +145,8 @@ ghostToGlobalContainer(const LinearObjContainer & in,
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-ghostToGlobalTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
+ghostToGlobalTpetraVector(const Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
+                          Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
 {
    using Teuchos::RCP;
 
@@ -176,8 +176,8 @@ ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOr
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-globalToGhostTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
+globalToGhostTpetraVector(const Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
+                          Tpetra::MultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
 {
    using Teuchos::RCP;
 
@@ -201,17 +201,17 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    const ContainerType & t_globalBCRows = Teuchos::dyn_cast<const ContainerType>(globalBCRows);
    ContainerType & t_ghosted = Teuchos::dyn_cast<ContainerType>(ghostedObjs);
 
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_f()));
-   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_f()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_localBCRows.get_f_mv()));
+   TEUCHOS_ASSERT(!Teuchos::is_null(t_globalBCRows.get_f_mv()));
 
    // pull out jacobian and vector
    Teuchos::RCP<CrsMatrixType> A = t_ghosted.get_A();
-   Teuchos::RCP<VectorType> f = t_ghosted.get_f();
-   if(adjustX) f = t_ghosted.get_x();
+   Teuchos::RCP<MultiVectorType> f = t_ghosted.get_f_mv();
+   if(adjustX) f = t_ghosted.get_x_mv();
    Teuchos::ArrayRCP<double> f_array = f!=Teuchos::null ? f->get1dViewNonConst() : Teuchos::null;
 
-   const VectorType & local_bcs  = *(t_localBCRows.get_f());
-   const VectorType & global_bcs = *(t_globalBCRows.get_f());
+   const MultiVectorType & local_bcs  = *(t_localBCRows.get_f_mv());
+   const MultiVectorType & global_bcs = *(t_globalBCRows.get_f_mv());
    Teuchos::ArrayRCP<const double> local_bcs_array = local_bcs.get1dView();
    Teuchos::ArrayRCP<const double> global_bcs_array = global_bcs.get1dView();
 
@@ -957,8 +957,17 @@ beginFill(LinearObjContainer & loc) const
 {
   ContainerType & tloc = Teuchos::dyn_cast<ContainerType>(loc);
   Teuchos::RCP<CrsMatrixType> A = tloc.get_A();
-  if(A!=Teuchos::null)
-    A->resumeFill();
+  if(A!=Teuchos::null) {
+    // If A is actually an FECrsMatrix, calling the plain CrsMatrix::resumeFill()
+    // (inherited, unoverridden) would silently bypass FECrsMatrix's own owned/owned+shared
+    // state machine -- ghost-row contributions accumulated during local assembly would
+    // never get migrated to the owned rows. Must go through beginAssembly() instead.
+    Teuchos::RCP<FECrsMatrixType> feA = Teuchos::rcp_dynamic_cast<FECrsMatrixType>(A);
+    if(feA!=Teuchos::null)
+      feA->beginAssembly();
+    else
+      A->resumeFill();
+  }
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -967,8 +976,15 @@ endFill(LinearObjContainer & loc) const
 {
   ContainerType & tloc = Teuchos::dyn_cast<ContainerType>(loc);
   Teuchos::RCP<CrsMatrixType> A = tloc.get_A();
-  if(A!=Teuchos::null)
-    A->fillComplete(A->getDomainMap(),A->getRangeMap());
+  if(A!=Teuchos::null) {
+    // See beginFill(): must go through endAssembly() for an FECrsMatrix, not the plain
+    // CrsMatrix::fillComplete(), so the owned+shared -> owned cross-rank merge happens.
+    Teuchos::RCP<FECrsMatrixType> feA = Teuchos::rcp_dynamic_cast<FECrsMatrixType>(A);
+    if(feA!=Teuchos::null)
+      feA->endAssembly();
+    else
+      A->fillComplete(A->getDomainMap(),A->getRangeMap());
+  }
 }
 
 }

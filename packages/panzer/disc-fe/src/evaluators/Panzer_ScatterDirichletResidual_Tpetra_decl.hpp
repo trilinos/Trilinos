@@ -102,7 +102,7 @@ private:
 
   ScatterDirichletResidual_Tpetra() {}
 
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+  Teuchos::RCP<typename LOC::MultiVectorType> dirichletCounter_;
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const LOC> tpetraContainer_;
@@ -174,7 +174,7 @@ private:
 
   ScatterDirichletResidual_Tpetra() {}
 
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+  Teuchos::RCP<typename LOC::MultiVectorType> dirichletCounter_;
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const LOC> tpetraContainer_;
@@ -251,7 +251,7 @@ private:
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
 
-  Teuchos::RCP<typename LOC::VectorType> dirichletCounter_;
+  Teuchos::RCP<typename LOC::MultiVectorType> dirichletCounter_;
 
   ScatterDirichletResidual_Tpetra();
 
