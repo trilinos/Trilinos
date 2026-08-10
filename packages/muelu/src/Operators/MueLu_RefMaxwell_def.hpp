@@ -2527,6 +2527,52 @@ bool RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasTransposeApply() 
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::pair<std::set<std::string>, std::set<std::string>>
+RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    requiredAndOptionalUserData(const Teuchos::ParameterList &params) {
+  std::set<std::string> requiredUserData;
+  int spaceNumber = 1;
+  if (params.isType<int>("refmaxwell: space number"))
+    spaceNumber = params.get<int>("refmaxwell: space number");
+  bool disable_addon = MasterList::getDefault<bool>("refmaxwell: disable addon");
+  if (params.isType<bool>("refmaxwell: disable addon"))
+    disable_addon = params.get<bool>("refmaxwell: disable addon");
+  bool disable_addon22 = true;
+  if (params.isType<bool>("refmaxwell: disable addon 22"))
+    disable_addon22 = params.get<bool>("refmaxwell: disable addon 22");
+
+  requiredUserData.insert("Coordinates");
+  requiredUserData.insert("Dk_1");
+
+  requiredUserData.insert("M1_beta");
+  if (spaceNumber >= 2)
+    requiredUserData.insert("M1_alpha");
+
+  if (!disable_addon) {
+    requiredUserData.insert("Mk_one");
+    requiredUserData.insert("invMk_1_invBeta");
+  }
+
+  if ((spaceNumber >= 2) && (!disable_addon22)) {
+    requiredUserData.insert("Dk_2");
+    requiredUserData.insert("Mk_1_one");
+    requiredUserData.insert("invMk_2_invAlpha");
+  }
+
+  auto [requiredUserData11, optionalUserData11] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 11list"));
+  auto [requiredUserData22, optionalUserData22] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 22list"));
+
+  if (requiredUserData11.contains("Material") || requiredUserData22.contains("Material"))
+    requiredUserData.insert("Material");
+
+  std::set<std::string> optionalUserData;
+  optionalUserData.insert("Nullspace11");
+  optionalUserData.insert("Nullspace22");
+
+  return std::make_pair(requiredUserData, optionalUserData);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RefMaxwell(const Teuchos::RCP<Matrix> &SM_Matrix,
                Teuchos::ParameterList &List,

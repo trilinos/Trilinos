@@ -114,7 +114,7 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
       @param[in] facadeFact (RCP<FacadeFactory>): Optional parameter containing a FacadeFactory class. The user can register its own facade classes in the FacadeFactory and provide it to the ParameterListInterpreter. (default: Teuchos::null, means, only standard FacadeClass that come with MueLu are available)
 
    */
-  ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::null, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null, Teuchos::RCP<FacadeClassFactory> facadeFact = Teuchos::null);
+  ParameterListInterpreter(Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::null, Teuchos::RCP<FactoryFactory> factFact = Teuchos::null, Teuchos::RCP<FacadeClassFactory> facadeFact = Teuchos::null);
 
   /*! @brief Constructor that reads parameters from an XML file.
 
@@ -153,6 +153,12 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
 
   //! Call the SetupHierarchy routine from the HiearchyManager object.
   void SetupHierarchy(Hierarchy& H) const;
+
+  static bool needCoordinates(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList = Teuchos::null, int maxLevel = 0);
+  static bool needBlockNumber(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList = Teuchos::null, int maxLevel = 0);
+  static bool needMaterial(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList = Teuchos::null, int maxLevel = 0);
+  static bool needMass(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList = Teuchos::null, int maxLevel = 0);
+  static std::pair<std::set<std::string>, std::set<std::string>> requiredAndOptionalUserData(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList = Teuchos::null, int maxLevel = 0);
 
  private:
   //! Setup Operator object
@@ -248,8 +254,8 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
   //@{
   void SetFactoryParameterList(const Teuchos::ParameterList& paramList);
 
-  typedef std::map<std::string, RCP<const FactoryBase> > FactoryMap;  // TODO: remove this line
-  typedef std::map<std::string, RCP<FactoryManagerBase> > FactoryManagerMap;
+  typedef std::map<std::string, RCP<const FactoryBase>> FactoryMap;  // TODO: remove this line
+  typedef std::map<std::string, RCP<FactoryManagerBase>> FactoryManagerMap;
 
   void BuildFactoryMap(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const;
 
@@ -257,7 +263,7 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
   Teuchos::RCP<FactoryFactory> factFact_;
 
   //! FacadeClass factory
-  Teuchos::RCP<MueLu::FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> > facadeFact_;
+  Teuchos::RCP<MueLu::FacadeClassFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>> facadeFact_;
 
   //@}
 };
