@@ -149,10 +149,18 @@ public:
      x = Teuchos::rcp_const_cast<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(x_const); 
    } 
    // Thyra::createVector() requires a genuine Tpetra::Vector, so these go through the
-   // narrowing get_x()/get_dxdt()/get_f() accessors. That is always satisfied in practice:
-   // the Thyra bridge (used to hand vectors to/from NOX/Piro) only ever touches the *global*
-   // (owned) container, which never holds an FE object -- only the ghosted container does,
-   // and it never crosses this bridge.
+   // narrowing get_x()/get_dxdt()/get_f() accessors, which throw if the field holds an
+   // FEMultiVector.
+   //
+   // That is safe today only because x/dxdt/f are never FE objects: the FE path currently
+   // wires up the MATRIX alone (the residual vector cannot ride the same mechanism, since
+   // f_out is built by Thyra::createMember(f_space_) rather than by this factory).
+   //
+   // Do NOT assume this bridge is reached only for the owned container -- it is not.
+   // panzer::ModelEvaluator calls thGhostedContainer->get_f_th() to zero the ghosted
+   // residual (Panzer_ModelEvaluator_impl.hpp, in the f-and-J and Jacobian-only paths). So
+   // if an FEMultiVector is ever stored in x/dxdt/f, these accessors will throw and must be
+   // reworked first (e.g. to hand back a Vector view of column 0).
    virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_x_th() const
    { return (x==Teuchos::null) ? Teuchos::null : Thyra::createVector(get_x(),domainSpace); }
 

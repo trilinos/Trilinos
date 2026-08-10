@@ -295,6 +295,22 @@ protected:
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > graph_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedGraph_;
    mutable Teuchos::RCP<FECrsGraphType> feGraph_;
+   mutable Teuchos::RCP<FECrsMatrixType> feMatrix_;
+
+   /** Which FE matrix (if any) currently has an assembly open, tracked so the paired
+     * beginFill()/endFill() calls AssemblyEngine makes on the ghosted AND global containers
+     * -- which in FE mode hold the same matrix -- collapse into a single
+     * beginAssembly()/endAssembly() pair.
+     *
+     * This cannot be derived from the matrix itself: Tpetra::FECrsMatrix keeps its assembly
+     * state in a private fillState_ member with no public accessor, and the public
+     * isFillActive()/isFillComplete() report the *underlying CrsMatrix* fill state, which is
+     * decoupled from it -- a freshly built FECrsMatrix is fill-active while its fillState_
+     * is still "closed", so those are not usable as a proxy.
+     *
+     * Non-owning: only ever compared for identity, never dereferenced.
+     */
+   mutable const FECrsMatrixType * feAssemblyOpenOn_ = nullptr;
    mutable Teuchos::RCP<ImportType> ghostedImporter_;
    mutable Teuchos::RCP<ImportType> ghostedColImporter_;
    mutable Teuchos::RCP<ExportType> ghostedExporter_;

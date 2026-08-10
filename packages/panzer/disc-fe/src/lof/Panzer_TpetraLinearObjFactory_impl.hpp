@@ -138,7 +138,14 @@ ghostToGlobalContainer(const LinearObjContainer & in,
    if ( !is_null(t_in.get_f_mv()) && !is_null(t_out.get_f_mv()) && ((mem & LOC::F)==LOC::F))
      ghostToGlobalTpetraVector(*t_in.get_f_mv(),*t_out.get_f_mv(),false);
 
-   if ( !is_null(t_in.get_A()) && !is_null(t_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
+   // In FE mode the ghosted and global containers hold the SAME FECrsMatrix, so there is
+   // nothing to export here: the owned+shared -> owned migration is done in place by
+   // endAssembly() (driven from endFill()). Exporting an object into itself would at best
+   // be wasted work and at worst corrupt the values, so skip it. The pointer comparison
+   // deliberately keys off object identity rather than the useFEAssembly_ flag, so a
+   // container the caller populated by hand still behaves predictably.
+   if ( !is_null(t_in.get_A()) && !is_null(t_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat)
+        && t_in.get_A().get()!=t_out.get_A().get())
      ghostToGlobalTpetraMatrix(*t_in.get_A(),*t_out.get_A());
 }
 
@@ -897,6 +904,17 @@ Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraMatrix() const
 {
+   // In FE mode return the single shared FECrsMatrix. This is what makes the FE path work
+   // end-to-end: panzer::ModelEvaluator::create_W_op() calls getThyraMatrix() -> here, so
+   // the operator NOX/Piro allocates and hands back as W_out IS this FE matrix (wrapped in
+   // Thyra). set_A_th() then dynamic_casts it back down to CrsMatrixType, which succeeds
+   // because FECrsMatrix IS-A CrsMatrix. The owned container and the ghosted container
+   // therefore hold the SAME object, which is exactly the "one object, two views" model
+   // FECrsMatrix is built around -- endAssembly() migrates owned+shared -> owned in place,
+   // with no separate ghost->global matrix export needed.
+   if(useFEAssembly_)
+     return getFEMatrix();
+
    Teuchos::RCP<CrsGraphType> tGraph = getGraph();
    Teuchos::RCP<CrsMatrixType> tMat =  Teuchos::rcp(new CrsMatrixType(tGraph));
    tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
@@ -909,6 +927,12 @@ Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraMatrix() const
 {
+   // FE mode: hand back the same shared FECrsMatrix as getTpetraMatrix(). Its owned+shared
+   // view is over getGhostedMap(), so scatter evaluators writing through ghosted LIDs are
+   // unaffected. See getTpetraMatrix() for why both containers share one object.
+   if(useFEAssembly_)
+     return getFEMatrix();
+
    Teuchos::RCP<CrsGraphType> tGraph = getGhostedGraph();
    Teuchos::RCP<CrsMatrixType> tMat =  Teuchos::rcp(new CrsMatrixType(tGraph));
    tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
@@ -926,7 +950,15 @@ getFEMatrix() const
       "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
       "are not available. Pass useFEAssembly=true to the constructor to opt in.");
 
-   return Teuchos::rcp(new FECrsMatrixType(getFEGraph()));
+   // Cached, unlike the non-FE getTpetraMatrix()/getGhostedTpetraMatrix() which mint a new
+   // matrix per call. The FE model REQUIRES a single shared instance: the owned container
+   // (via ModelEvaluator::create_W_op -> getThyraMatrix -> getTpetraMatrix) and the ghosted
+   // container (via initializeGhostedContainer -> getGhostedTpetraMatrix) must end up
+   // holding the very same object for endAssembly()'s in-place owned+shared -> owned
+   // migration to be what delivers the assembled Jacobian.
+   if(feMatrix_==Teuchos::null) feMatrix_ = Teuchos::rcp(new FECrsMatrixType(getFEGraph()));
+
+   return feMatrix_;
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -962,9 +994,20 @@ beginFill(LinearObjContainer & loc) const
     // (inherited, unoverridden) would silently bypass FECrsMatrix's own owned/owned+shared
     // state machine -- ghost-row contributions accumulated during local assembly would
     // never get migrated to the owned rows. Must go through beginAssembly() instead.
+    //
+    // The guard matters because in FE mode the owned and ghosted containers hold the SAME
+    // FECrsMatrix, and AssemblyEngine::evaluate() calls beginFill() on both (ghosted first,
+    // then the global container). FECrsMatrix::beginAssembly() asserts its fill state is
+    // "closed", so the second call would throw; tracking which matrix already has an
+    // assembly open collapses the pair into the single begin the FE state machine expects.
+    // See feAssemblyOpenOn_ for why the matrix cannot be asked this directly.
     Teuchos::RCP<FECrsMatrixType> feA = Teuchos::rcp_dynamic_cast<FECrsMatrixType>(A);
-    if(feA!=Teuchos::null)
-      feA->beginAssembly();
+    if(feA!=Teuchos::null) {
+      if(feAssemblyOpenOn_!=feA.get()) {
+        feA->beginAssembly();
+        feAssemblyOpenOn_ = feA.get();
+      }
+    }
     else
       A->resumeFill();
   }
@@ -979,9 +1022,19 @@ endFill(LinearObjContainer & loc) const
   if(A!=Teuchos::null) {
     // See beginFill(): must go through endAssembly() for an FECrsMatrix, not the plain
     // CrsMatrix::fillComplete(), so the owned+shared -> owned cross-rank merge happens.
+    // This single endAssembly() IS the ghost->global migration for the Jacobian in FE mode,
+    // which is why ghostToGlobalContainer() skips the matrix export there.
+    //
+    // Mirror of the beginFill() guard: endFill() is likewise called on both containers
+    // (global then ghosted) holding the same matrix, and endAssembly() asserts its fill
+    // state is "open", so only the first call may run it.
     Teuchos::RCP<FECrsMatrixType> feA = Teuchos::rcp_dynamic_cast<FECrsMatrixType>(A);
-    if(feA!=Teuchos::null)
-      feA->endAssembly();
+    if(feA!=Teuchos::null) {
+      if(feAssemblyOpenOn_==feA.get()) {
+        feA->endAssembly();
+        feAssemblyOpenOn_ = nullptr;
+      }
+    }
     else
       A->fillComplete(A->getDomainMap(),A->getRangeMap());
   }
