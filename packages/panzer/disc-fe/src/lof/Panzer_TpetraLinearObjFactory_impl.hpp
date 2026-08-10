@@ -39,8 +39,9 @@ using Teuchos::RCP;
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                       const Teuchos::RCP<const GlobalIndexer> & gidProvider)
-   : comm_(comm), gidProvider_(gidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                       bool useFEAssembly)
+   : comm_(comm), gidProvider_(gidProvider), useFEAssembly_(useFEAssembly)
 {
    hasColProvider_ = colGidProvider_!=Teuchos::null;
 
@@ -53,8 +54,9 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                        const Teuchos::RCP<const GlobalIndexer> & gidProvider,
-                       const Teuchos::RCP<const GlobalIndexer> & colGidProvider)
-   : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider)
+                       const Teuchos::RCP<const GlobalIndexer> & colGidProvider,
+                       bool useFEAssembly)
+   : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider), useFEAssembly_(useFEAssembly)
 {
    hasColProvider_ = colGidProvider_!=Teuchos::null;
 
@@ -492,6 +494,21 @@ getGhostedGraph() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsGraphType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEGraph() const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEGraph: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   if(feGraph_==Teuchos::null) feGraph_ = buildFEGraph();
+
+   return feGraph_;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedImport() const
@@ -723,6 +740,122 @@ buildGhostedGraph() const
    return graph;
 }
 
+// build the FE graph: same element/associated-neighbor traversal as buildGhostedGraph(),
+// but inserted into a single Tpetra::FECrsGraph (V2 constructor) instead of two separate
+// CrsGraph objects joined by a manual doExport.
+//
+// NOTE: Tpetra::FECrsGraph::setup() requires the owned row/domain map's global ids to
+// appear, in the same order, as a leading prefix of the owned+shared row/domain map. This
+// holds by construction for every concrete panzer::GlobalIndexer in the tree (DOFManager
+// and Filtered_GlobalIndexer both build getOwnedAndGhostedIndices() as owned_ followed by
+// ghosted_), so getGhostedMap()/getGhostedColMap() can be used directly here.
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsGraphType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildFEGraph() const
+{
+   // row maps are always the unique/ghosted row maps; domain maps must go through
+   // the column-provider-aware accessors so the blocked/rectangular case still works
+   //
+   // NOTE: these must be RCP<const MapType> (not RCP<MapType>). FECrsGraph has both a
+   // "V1" ctor (4th positional arg = importer) and "V2" ctor (4th positional arg =
+   // ownedPlusSharedDomainMap); Teuchos::RCP's converting constructor is an unconstrained
+   // template, so an RCP<MapType> argument is equally "convertible" to RCP<const ImportType>
+   // and RCP<const MapType> as far as overload resolution is concerned, making the call
+   // ambiguous. Typing the locals as RCP<const MapType> makes them bind to the V2 domain-map
+   // parameter with no conversion at all, which resolves the ambiguity in V2's favor.
+   Teuchos::RCP<const MapType> rMap = getMap();
+   Teuchos::RCP<const MapType> ownedAndGhostedRowMap = getGhostedMap();
+   Teuchos::RCP<const MapType> ownedDomainMap = getColMap();
+   Teuchos::RCP<const MapType> ownedAndGhostedDomainMap = getGhostedColMap();
+
+   std::vector<std::string> elementBlockIds;
+   gidProvider_->getElementBlockIds(elementBlockIds);
+
+   const Teuchos::RCP<const GlobalIndexer>
+     colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
+   const Teuchos::RCP<const ConnManager> conn_mgr = colGidProvider->getConnManager();
+   const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
+
+   // count number of entries per ghosted row, exactly as buildGhostedGraph() does
+   std::vector<size_t> nEntriesPerRow(ownedAndGhostedRowMap->getLocalNumElements(), 0);
+
+   std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+
+      const std::vector<LocalOrdinalT> & elements = gidProvider_->getElementBlock(blockId);
+
+      std::vector<GlobalOrdinalT> gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      for(std::size_t i=0;i<elements.size();i++) {
+         gidProvider_->getElementGIDs(elements[i],gids);
+
+         colGidProvider->getElementGIDs(elements[i],col_gids);
+         if (han) {
+           const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[i]);
+           for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
+                eit != aes.end(); ++eit) {
+             std::vector<GlobalOrdinalT> other_col_gids;
+             colGidProvider->getElementGIDs(*eit, other_col_gids);
+             col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
+           }
+         }
+
+         for(std::size_t j=0;j<gids.size();j++){
+            LocalOrdinalT lid = ownedAndGhostedRowMap->getLocalElement(gids[j]);
+            nEntriesPerRow[lid] += col_gids.size();
+         }
+      }
+   }
+
+   size_t maxNumRowEntries = 0;
+   for(std::size_t i=0;i<nEntriesPerRow.size();i++)
+      maxNumRowEntries = std::max(maxNumRowEntries,nEntriesPerRow[i]);
+
+   // V2 constructor: Panzer partitions by element/cell, so we must supply the owned+shared
+   // domain map explicitly to guarantee the ghosted GlobalIndexer's local ids coincide with
+   // the FE graph's column-map local ids (see Tpetra_FECrsGraph_decl.hpp doxygen).
+   Teuchos::RCP<FECrsGraphType> feGraph = Teuchos::rcp(new FECrsGraphType(
+       rMap, ownedAndGhostedRowMap, maxNumRowEntries,
+       ownedAndGhostedDomainMap,
+       Teuchos::null,
+       ownedDomainMap));
+
+   // Now insert entries into the graph
+   feGraph->beginAssembly();
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+
+      const std::vector<LocalOrdinalT> & elements = gidProvider_->getElementBlock(blockId);
+
+      std::vector<GlobalOrdinalT> gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      for(std::size_t i=0;i<elements.size();i++) {
+         gidProvider_->getElementGIDs(elements[i],gids);
+
+         colGidProvider->getElementGIDs(elements[i],col_gids);
+         if (han) {
+           const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[i]);
+           for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
+                eit != aes.end(); ++eit) {
+             std::vector<GlobalOrdinalT> other_col_gids;
+             colGidProvider->getElementGIDs(*eit, other_col_gids);
+             col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
+           }
+         }
+
+         for(std::size_t j=0;j<gids.size();j++)
+            feGraph->insertGlobalIndices(gids[j],col_gids);
+      }
+   }
+   feGraph->endAssembly();
+
+   return feGraph;
+}
+
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -781,6 +914,33 @@ getGhostedTpetraMatrix() const
    tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
 
    return tMat;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsMatrixType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEMatrix() const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEMatrix: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   return Teuchos::rcp(new FECrsMatrixType(getFEGraph()));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FEMultiVectorType>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEMultiVector(std::size_t numVectors) const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "TpetraLinearObjFactory::getFEMultiVector: This factory was not constructed with "
+      "useFEAssembly=true, so FE (Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector) objects "
+      "are not available. Pass useFEAssembly=true to the constructor to opt in.");
+
+   Teuchos::RCP<FECrsGraphType> feGraph = getFEGraph();
+   return Teuchos::rcp(new FEMultiVectorType(getMap(),feGraph->getImporter(),numVectors));
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

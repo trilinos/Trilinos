@@ -19,6 +19,9 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
+#include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
+#include "Tpetra_FEMultiVector.hpp"
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_GlobalIndexer.hpp"
@@ -50,13 +53,22 @@ public:
    typedef Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> MapType;
    typedef Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> ImportType;
    typedef Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> ExportType;
+   typedef Tpetra::FECrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> FECrsGraphType;
+   typedef Tpetra::FECrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> FECrsMatrixType;
+   typedef Tpetra::FEMultiVector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> FEMultiVectorType;
 
+   /** \param[in] useFEAssembly Opt in to building Tpetra::FECrsGraph/FECrsMatrix/FEMultiVector
+     *            objects via getFEGraph()/getFEMatrix()/getFEMultiVector(). Defaults to false,
+     *            which preserves prior behavior exactly and leaves those methods unusable.
+     */
    TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                          const Teuchos::RCP<const GlobalIndexer> & gidProvider);
+                          const Teuchos::RCP<const GlobalIndexer> & gidProvider,
+                          bool useFEAssembly = false);
 
    TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                           const Teuchos::RCP<const GlobalIndexer> & rowProvider,
-                          const Teuchos::RCP<const GlobalIndexer> & colProvider);
+                          const Teuchos::RCP<const GlobalIndexer> & colProvider,
+                          bool useFEAssembly = false);
 
    virtual ~TpetraLinearObjFactory();
 
@@ -168,6 +180,20 @@ public:
    Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getTpetraMatrix() const;
    Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedTpetraMatrix() const;
 
+/*************** FE (finite-element) construction functions *******************/
+
+   //! True if this factory was constructed with FE assembly enabled.
+   bool useFEAssembly() const { return useFEAssembly_; }
+
+   //! Get the (cached) FE graph, built via the Tpetra::FECrsGraph "V2" constructor.
+   Teuchos::RCP<FECrsGraphType> getFEGraph() const;
+
+   //! Build a new Tpetra::FECrsMatrix over the FE graph.
+   Teuchos::RCP<FECrsMatrixType> getFEMatrix() const;
+
+   //! Build a new Tpetra::FEMultiVector compatible with the FE graph.
+   Teuchos::RCP<FEMultiVectorType> getFEMultiVector(std::size_t numVectors=1) const;
+
 /*************** Generic helper functions for container setup *******************/
 
    /** Initialize container with a specific set of member values.
@@ -255,6 +281,9 @@ protected:
    virtual const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildGraph() const;
    virtual const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildGhostedGraph() const;
 
+   // build the FE graph (owned+shared/owned unified via Tpetra::FECrsGraph)
+   virtual const Teuchos::RCP<FECrsGraphType> buildFEGraph() const;
+
    // storage for Tpetra graphs and maps
    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
    mutable Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > map_;
@@ -263,6 +292,7 @@ protected:
    mutable Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > cGhostedMap_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > graph_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedGraph_;
+   mutable Teuchos::RCP<FECrsGraphType> feGraph_;
    mutable Teuchos::RCP<ImportType> ghostedImporter_;
    mutable Teuchos::RCP<ImportType> ghostedColImporter_;
    mutable Teuchos::RCP<ExportType> ghostedExporter_;
@@ -272,6 +302,7 @@ protected:
    Teuchos::RCP<const GlobalIndexer> colGidProvider_;
 
    bool hasColProvider_;
+   bool useFEAssembly_;
 
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;

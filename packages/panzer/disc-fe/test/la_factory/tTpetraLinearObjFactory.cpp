@@ -15,6 +15,8 @@
 
 #include <string>
 #include <iostream>
+#include <set>
+#include <algorithm>
 
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
@@ -700,6 +702,224 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
       TEST_ASSERT(tGhostedContainer->get_dxdt()!=Teuchos::null);
       TEST_ASSERT(tGhostedContainer->get_f()!=Teuchos::null);
       TEST_ASSERT(tGhostedContainer->get_A()!=Teuchos::null);
+   }
+}
+
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_opt_in)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+
+   // default construction: FE assembly is not enabled, so the FE accessors must throw
+   {
+      Teuchos::RCP<LOFType> la_factory
+            = Teuchos::rcp(new LOFType(tComm.getConst(),indexer));
+
+      TEST_ASSERT(!la_factory->useFEAssembly());
+      TEST_THROW(la_factory->getFEGraph(),std::logic_error);
+      TEST_THROW(la_factory->getFEMatrix(),std::logic_error);
+      TEST_THROW(la_factory->getFEMultiVector(),std::logic_error);
+   }
+
+   // opt in to FE assembly
+   {
+      Teuchos::RCP<LOFType> la_factory
+            = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+      TEST_ASSERT(la_factory->useFEAssembly());
+
+      // getFEGraph() returns the graph in the ACTIVE_OWNED state. Tpetra::FECrsGraph/
+      // FECrsMatrix have no public accessor to ask "what state are you in" (activeCrsGraph_/
+      // activeCrsMatrix_ are private, toggled only by the private switchActiveCrsGraph()/
+      // switchActiveCrsMatrix(), invoked from the public beginAssembly()/endAssembly()), so
+      // this is known from control flow, not queried: buildFEGraph() (the function backing
+      // getFEGraph()) itself calls feGraph->endAssembly() right before returning the graph --
+      // that call is what performs the ACTIVE_OWNED_PLUS_SHARED -> ACTIVE_OWNED toggle. So by
+      // the time this test ever sees the graph, the toggle has already happened; nothing here
+      // does it. The isSameAs() check just below is a deliberate, direct proof of that (rather
+      // than just trusting the comment) -- if the graph were still owned+shared, its row map
+      // would be the larger ghosted map and this would fail outright.
+      RCP<LOFType::FECrsGraphType> feGraph = la_factory->getFEGraph();
+      TEST_ASSERT(feGraph!=Teuchos::null);
+      TEST_ASSERT(feGraph->isFillComplete());
+      TEST_ASSERT(feGraph->getRowMap()->isSameAs(*la_factory->getMap()));
+
+      // the FE graph (built via the V2 FECrsGraph constructor) must have the same
+      // sparsity pattern as the "old" owned graph built via buildGraph()/buildGhostedGraph().
+      // Both graphs perform the same cross-rank structural merge by this point (the FE graph
+      // via FECrsGraph::endFill()'s self-export; the legacy graph via buildGraph()'s explicit
+      // doExport(INSERT) from the ghosted graph), so this must be an EXACT match, row for row,
+      // GID for GID -- not just matching entry counts.
+      RCP<LOFType::CrsGraphType> oldGraph = la_factory->getGraph();
+      TEST_EQUALITY(feGraph->getGlobalNumRows(),oldGraph->getGlobalNumRows());
+      TEST_EQUALITY(feGraph->getGlobalNumEntries(),oldGraph->getGlobalNumEntries());
+
+      RCP<const Map> ownedMap = feGraph->getRowMap();
+      RCP<const Map> feColMap = feGraph->getColMap();
+      RCP<const Map> oldColMap = oldGraph->getColMap();
+      for(size_t lclRow=0;lclRow<ownedMap->getLocalNumElements();lclRow++) {
+         LOFType::CrsGraphType::local_inds_host_view_type feIndices, oldIndices;
+         feGraph->getLocalRowView(lclRow,feIndices);
+         oldGraph->getLocalRowView(lclRow,oldIndices);
+
+         std::set<panzer::GlobalOrdinal> feGids, oldGids;
+         for(std::size_t k=0;k<feIndices.size();k++)
+            feGids.insert(feColMap->getGlobalElement(feIndices(k)));
+         for(std::size_t k=0;k<oldIndices.size();k++)
+            oldGids.insert(oldColMap->getGlobalElement(oldIndices(k)));
+
+         TEST_EQUALITY(feGids.size(),oldGids.size());
+         TEST_ASSERT(feGids==oldGids);
+      }
+
+      // getFEGraph() is cached -- repeated calls must return the same object
+      TEST_EQUALITY(la_factory->getFEGraph().get(),feGraph.get());
+
+      // getFEMatrix() presents the OWNED_PLUS_SHARED (ghosted) view -- but unlike feGraph
+      // above, that's not because anything here (or in getFEMatrix()) calls beginAssembly()/
+      // endAssembly() -- getFEMatrix() just does `new FECrsMatrixType(getFEGraph())`, no
+      // assembly call at all. The starting state is a Tpetra::FECrsMatrix CONSTRUCTOR
+      // default: it reads an optional "start owned" ParameterList entry (defaulting to
+      // false when, as here, no params are passed), and starts in OWNED_PLUS_SHARED unless
+      // that's explicitly set true. So this state comes from construction, not a toggle.
+      // The graph-level checks above already verify the FE sparsity pattern matches the
+      // non-FE path exactly, so these are just sanity/non-null checks on the thin wrappers
+      // (see fe_owned_shared_matches_ghosted for a real content check of this ghosted state).
+      RCP<LOFType::FECrsMatrixType> feMatrix = la_factory->getFEMatrix();
+      TEST_ASSERT(feMatrix!=Teuchos::null);
+      TEST_ASSERT(feMatrix->getLocalNumRows()>0);
+
+      // getFEMultiVector() builds `new FEMultiVectorType(getMap(), feGraph->getImporter(),
+      // numVectors)`. FEMultiVector's constructor uses `importer.is_null() ? map :
+      // importer->getTargetMap()` as its active map -- since our importer is feGraph's own
+      // (domainMap -> colMap) importer, its target map IS feGraph->getColMap(), so feVec's
+      // map should be exactly that (isSameAs, not just fitted -- this is a direct
+      // construction identity, not merely a compatibility guarantee).
+      RCP<LOFType::FEMultiVectorType> feVec = la_factory->getFEMultiVector();
+      TEST_ASSERT(feVec!=Teuchos::null);
+      TEST_EQUALITY(feVec->getNumVectors(),static_cast<std::size_t>(1));
+      TEST_ASSERT(feVec->getLocalLength()>0);
+      TEST_ASSERT(feVec->getMap()->isSameAs(*feGraph->getColMap()));
+
+      // The actual "does the multivector have the same GID/row numbering" question: since
+      // feGraph's column map is only guaranteed *locally fitted* to the traditional ghosted
+      // map (getGhostedMap()) -- not identical to it, per the V2 FECrsGraph column-map
+      // discussion in fe_owned_shared_matches_ghosted -- checking isSameAs() against
+      // la_factory->getGhostedMap() here would not generally hold. isLocallyFitted() is the
+      // correct, weaker check: every local id in the traditional ghosted map must map to the
+      // same GID at the same local id in feVec's map, i.e. local assembly code indexing into
+      // feVec using the GlobalIndexer's own (ghosted) local ids lands on the correct rows.
+      TEST_ASSERT(feVec->getMap()->isLocallyFitted(*la_factory->getGhostedMap()));
+   }
+}
+
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_owned_shared_matches_ghosted)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   // A freshly built Tpetra::FECrsMatrix starts life presenting the owned+shared
+   // ("ghosted") active view -- this is exactly the view local element-loop assembly
+   // (beginAssembly()/scatter/endAssembly()) writes into.
+   //
+   // It is NOT expected to be byte-identical, row for row, to the traditional ghosted
+   // Tpetra::CrsMatrix built by the non-FE path (getGhostedTpetraMatrix()/getGhostedGraph()).
+   // FECrsGraph::endFill() performs a genuine cross-rank STRUCTURAL merge as part of
+   // finishing the graph (FECrsGraph::doOwnedPlusSharedToOwned(), a self-export with
+   // Tpetra::ADD): for every row this rank OWNS, it unions in whatever entries ANY other
+   // rank locally inserted for that same row (e.g. two elements on different ranks sharing
+   // an interface node). The traditional ghosted graph never does this merge -- it only ever
+   // reflects what THIS rank's own local elements inserted; cross-rank merging is deferred to
+   // a separate, later VALUE-level Export (ghostToGlobalTpetraMatrix). So:
+   //   - For rows NOT owned by this rank (pure ghost rows): FECrsGraph never touches them
+   //     during the merge (the reverse direction, doOwnedToOwnedPlusShared(), is a documented
+   //     no-op), so they must match the traditional ghosted row EXACTLY.
+   //   - For rows OWNED by this rank: the FE row is the traditional row PLUS whatever any
+   //     other rank's elements also contributed to that row, i.e. a (non-strict) superset.
+   // This is by design, and is exactly what makes it correct to use FE's owned+shared matrix
+   // as the local assembly target: each rank still only ever scatters its own elements' data
+   // using its own ghosted LIDs, and the pre-sized structure is what lets the matrix's own
+   // endAssembly() correctly sum in every rank's contribution afterward, without the
+   // legacy path's separate explicit ghostToGlobalContainer export step.
+   RCP<LOFType::FECrsMatrixType> feMatrix = la_factory->getFEMatrix();
+   RCP<const LOFType::CrsGraphType> feMatrixGraph = feMatrix->getCrsGraph();
+   RCP<const LOFType::CrsGraphType> oldGhostedGraph = la_factory->getGhostedGraph();
+
+   // Row maps must match exactly: both are built directly from getGhostedMap(), with no
+   // Tpetra-internal reordering involved (unlike column maps, row maps are supplied
+   // directly rather than derived from the insertion pattern).
+   RCP<const Map> feRowMap = feMatrixGraph->getRowMap();
+   RCP<const Map> oldRowMap = oldGhostedGraph->getRowMap();
+   TEST_ASSERT(feRowMap->isSameAs(*oldRowMap));
+
+   // Column maps need NOT be identical: the FE graph was built with the "V2" FECrsGraph
+   // constructor, which only guarantees that its column map is *locally fitted* to the
+   // owned+shared domain map supplied at construction (getGhostedColMap()) -- i.e. the
+   // traditional ghosted column map's global ids must appear, in the same order, as a
+   // leading prefix of the FE column map. Any additional columns beyond that prefix
+   // (from the cross-rank merge described above) are appended afterward by Tpetra and are
+   // not part of the guarantee. This ordering is the entire reason V2 was chosen over V1: it
+   // is what lets local (ghosted) element assembly use the GlobalIndexer's own local ids
+   // directly as FE matrix local column indices.
+   RCP<const Map> feColMap = feMatrixGraph->getColMap();
+   RCP<const Map> oldColMap = oldGhostedGraph->getColMap();
+   TEST_ASSERT(feColMap->isLocallyFitted(*oldColMap));
+
+   // Per row: exact match for rows this rank doesn't own, superset for rows it does (see the
+   // explanation above). Order within a row is not checked: a row's local storage order is an
+   // internal CrsGraph implementation detail, not a documented guarantee -- the per-column
+   // *map* ordering checked above (isLocallyFitted) is the property that actually matters for
+   // local-index-based assembly, not row-local storage order.
+   std::vector<panzer::GlobalOrdinal> ownedIndices;
+   indexer->getOwnedIndices(ownedIndices);
+   std::set<panzer::GlobalOrdinal> ownedSet(ownedIndices.begin(),ownedIndices.end());
+
+   for(size_t lclRow=0;lclRow<feRowMap->getLocalNumElements();lclRow++) {
+      LOFType::CrsGraphType::local_inds_host_view_type feIndices, oldIndices;
+      feMatrixGraph->getLocalRowView(lclRow,feIndices);
+      oldGhostedGraph->getLocalRowView(lclRow,oldIndices);
+
+      std::set<panzer::GlobalOrdinal> feGids, oldGids;
+      for(std::size_t k=0;k<feIndices.size();k++)
+         feGids.insert(feColMap->getGlobalElement(feIndices(k)));
+      for(std::size_t k=0;k<oldIndices.size();k++)
+         oldGids.insert(oldColMap->getGlobalElement(oldIndices(k)));
+
+      const panzer::GlobalOrdinal rowGid = feRowMap->getGlobalElement(lclRow);
+      if(ownedSet.count(rowGid)>0) {
+         // owned row: FE row must be at least the traditional row's entries (superset)
+         TEST_ASSERT(std::includes(feGids.begin(),feGids.end(),oldGids.begin(),oldGids.end()));
+      }
+      else {
+         // ghost-only row: FE never touches it during the merge, so it must match exactly
+         TEST_EQUALITY(feGids.size(),oldGids.size());
+         TEST_ASSERT(feGids==oldGids);
+      }
    }
 }
 
