@@ -564,21 +564,21 @@ namespace Belos {
       Tpetra::deep_copy (C, C_mv);
     }
 
-    //! For all columns j of A, set <tt>dots[j] := A[j]^T * B[j]</tt>.
+    //! For all columns j of A, set <tt>dots[j] := A[j]^H * B[j]</tt>.
     static void
-    MvDot (const MV& A, const MV& B, std::vector<Scalar> &dots)
+    MvDot (const MV& B, const MV& A, std::vector<Scalar> &dots)
     {
       const size_t numVecs = A.getNumVectors ();
       TEUCHOS_TEST_FOR_EXCEPTION(
         numVecs != B.getNumVectors (), std::invalid_argument,
-        "Belos::MultiVecTraits::MvDot(A,B,dots): "
+        "Belos::MultiVecTraits::MvDot(B,A,dots): "
         "A and B must have the same number of columns.  "
         "A has " << numVecs << " column(s), "
         "but B has " << B.getNumVectors () << " column(s).");
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         dots.size() < numVecs, std::invalid_argument,
-        "Belos::MultiVecTraits::MvDot(A,B,dots): "
+        "Belos::MultiVecTraits::MvDot(B,A,dots): "
         "The output array 'dots' must have room for all dot products.  "
         "A and B each have " << numVecs << " column(s), "
         "but 'dots' only has " << dots.size() << " entry(/ies).");
