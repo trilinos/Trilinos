@@ -135,3 +135,29 @@ SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
 DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 EXEDEPS PoissonExample
 )
+
+# FE assembly (Tpetra::FECrsMatrix) must produce the same answer as the classic path.
+# Both runs solve the identical problem; the only difference is whether the Jacobian is
+# assembled into a shared FECrsMatrix migrated by endAssembly(), or into separate
+# owned/ghosted matrices joined by an explicit export.
+TRIBITS_ADD_ADVANCED_TEST(
+  PoissonExample-FEAssembly
+  TEST_0 EXEC PoissonExample
+    ARGS --cell="Quad" --x-elements=10 --y-elements=10 --basis-order=2 --use-fe-assembly
+    PASS_REGULAR_EXPRESSION "ALL PASSED"
+    NUM_MPI_PROCS 4
+    OUTPUT_FILE PoissonExample-FEAssembly-fe.out
+  TEST_1 EXEC PoissonExample
+    ARGS --cell="Quad" --x-elements=10 --y-elements=10 --basis-order=2 --use-classic-assembly
+    PASS_REGULAR_EXPRESSION "ALL PASSED"
+    NUM_MPI_PROCS 4
+    OUTPUT_FILE PoissonExample-FEAssembly-classic.out
+  # The error norms are printed to full precision, so an exact match of the "* Error = *"
+  # lines is a strong check that the two assembly paths agree numerically.
+  TEST_2 CMND python3
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/compareAssemblyModes.py
+         PoissonExample-FEAssembly-fe.out
+         PoissonExample-FEAssembly-classic.out
+    PASS_REGULAR_EXPRESSION "Test Passed"
+  COMM mpi
+  )

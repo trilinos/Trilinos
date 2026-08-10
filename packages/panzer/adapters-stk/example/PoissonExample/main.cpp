@@ -98,6 +98,7 @@ int main(int argc,char * argv[])
    std::string celltype = "Quad"; // or "Tri"
    std::string mesh_name = "";
    std::string problem_name = "rectangle";
+   bool use_fe_assembly = false;
    Teuchos::CommandLineProcessor clp;
    clp.throwExceptions(false);
    clp.setDocString("This example solves a Poisson problem with Quad and Tri inline mesh on a square domain"
@@ -109,6 +110,10 @@ int main(int argc,char * argv[])
    clp.setOption("basis-order",&basis_order);
    clp.setOption("mesh-filename",&mesh_name);
    clp.setOption("problem",&problem_name,"Problem type: rectangle or annulus. Defaults to rectangle.");
+   clp.setOption("use-fe-assembly","use-classic-assembly",&use_fe_assembly,
+                 "Assemble the Jacobian into a Tpetra::FECrsMatrix (owned+shared views of one "
+                 "object, migrated by endAssembly) instead of the classic separate owned/ghosted "
+                 "matrices joined by an explicit export. Results should be identical.");
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -220,8 +225,9 @@ int main(int argc,char * argv[])
          = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
    // construct some linear algebra object, build object to pass to evaluators
+   out << "Assembly mode: " << (use_fe_assembly ? "FE (Tpetra::FECrsMatrix)" : "classic") << std::endl;
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-     = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(tComm,dofManager));
+     = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(tComm,dofManager,use_fe_assembly));
 
    // build worksets
    ////////////////////////////////////////////////////////
