@@ -264,6 +264,211 @@ static inline bool test_param_2list(const Teuchos::ParameterList& paramList, con
     varName = rcp(new newFactory());
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    needCoordinates(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList, int maxLevel) {
+  if (defaultList.is_null())
+    defaultList = Teuchos::rcpFromRef(paramList);
+
+  bool useCoordinates_ = false;
+
+  if (paramList.isSublist("Hierarchy")) {
+    useCoordinates_ = true;
+  } else {
+    // distance Laplacian
+    if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: strength-of-connection: matrix", "distance laplacian"))
+      useCoordinates_ = true;
+    if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "distance laplacian") ||
+        test_param_2list<std::string>(paramList, *defaultList, "aggregation: type", "brick") ||
+        test_param_2list<bool>(paramList, *defaultList, "aggregation: export visualization data", true)) {
+      useCoordinates_ = true;
+    } else if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal distance laplacian")) {
+      useCoordinates_ = true;
+    }
+
+    // Rotations need coordinates
+    if (test_param_2list<bool>(paramList, *defaultList, "nullspace: calculate rotations", true))
+      useCoordinates_ = true;
+
+    // Line smoothing with partitioning
+    if (paramList.isSublist("smoother: params")) {
+      const auto smooParamList = paramList.sublist("smoother: params");
+      if (smooParamList.isParameter("partitioner: type") &&
+          (smooParamList.get<std::string>("partitioner: type") == "line")) {
+        useCoordinates_ = true;
+      }
+    }
+
+    // Rebalacing
+    if (test_param_2list<bool>(paramList, *defaultList, "repartition: enable", true)) {
+      // We don't need coordinates if we're doing the in-place restriction
+      if (test_param_2list<bool>(paramList, *defaultList, "repartition: use subcommunicators", true) &&
+          test_param_2list<bool>(paramList, *defaultList, "repartition: use subcommunicators in place", true)) {
+        // do nothing --- these don't need coordinates
+      } else if (!paramList.isSublist("repartition: params")) {
+        useCoordinates_ = true;
+      } else {
+        const ParameterList& repParams = paramList.sublist("repartition: params");
+        if (repParams.isType<std::string>("algorithm")) {
+          const std::string algo = repParams.get<std::string>("algorithm");
+          if (algo == "multijagged" || algo == "rcb") {
+            useCoordinates_ = true;
+          }
+        } else {
+          useCoordinates_ = true;
+        }
+      }
+    }
+
+    // Check level lists
+    if ((!useCoordinates_) && (maxLevel > 0)) {
+      for (int levelID = 0; levelID < maxLevel; levelID++) {
+        std::string levelStr = "level " + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          useCoordinates_ |= needCoordinates(levelList, Teuchos::rcpFromRef(paramList), /*maxLevel=*/0);
+        }
+      }
+    }
+  }
+
+  return useCoordinates_;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::needBlockNumber(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList, int maxLevel) {
+  if (defaultList.is_null())
+    defaultList = Teuchos::rcpFromRef(paramList);
+
+  bool useBlockNumber_ = false;
+
+  if (paramList.isSublist("Hierarchy")) {
+    useBlockNumber_ = true;
+  } else {
+    if (test_param_2list<bool>(paramList, *defaultList, "aggregation: use blocking", true))
+      useBlockNumber_ = true;
+    if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal distance laplacian")) {
+      useBlockNumber_ = true;
+    } else if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal") ||
+               test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal classical") ||
+               test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal signed classical") ||
+               test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "block diagonal colored signed classical") ||
+               test_param_2list<std::string>(paramList, *defaultList, "aggregation: drop scheme", "signed classical")) {
+      useBlockNumber_ = true;
+    }
+
+    // Check level lists
+    if ((!useBlockNumber_) && (maxLevel > 0)) {
+      for (int levelID = 0; levelID < maxLevel; levelID++) {
+        std::string levelStr = "level " + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          useBlockNumber_ |= needBlockNumber(levelList, Teuchos::rcpFromRef(paramList), /*maxLevel=*/0);
+        }
+      }
+    }
+  }
+
+  return useBlockNumber_;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    needMaterial(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList, int maxLevel) {
+  if (defaultList.is_null())
+    defaultList = Teuchos::rcpFromRef(paramList);
+
+  bool useMaterial_ = false;
+
+  if (paramList.isSublist("Hierarchy")) {
+    useMaterial_ = true;
+  } else {
+    // Material based aggregation
+    if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: distance laplacian metric", "material")) {
+      useMaterial_ = true;
+    }
+
+    // Check level lists
+    if ((!useMaterial_) && (maxLevel > 0)) {
+      for (int levelID = 0; levelID < maxLevel; levelID++) {
+        std::string levelStr = "level " + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          useMaterial_ |= needMaterial(levelList, Teuchos::rcpFromRef(paramList), /*maxLevel=*/0);
+        }
+      }
+    }
+  }
+
+  return useMaterial_;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    needMass(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList, int maxLevel) {
+  if (defaultList.is_null())
+    defaultList = Teuchos::rcpFromRef(paramList);
+
+  bool useMass_ = false;
+
+  if (paramList.isSublist("Hierarchy")) {
+    useMass_ = false;
+  } else {
+    // Material based aggregation
+    if (test_param_2list<std::string>(paramList, *defaultList, "aggregation: strength-of-connection: matrix", "MinvA")) {
+      useMass_ = true;
+    }
+
+    // Check level lists
+    if ((!useMass_) && (maxLevel > 0)) {
+      for (int levelID = 0; levelID < maxLevel; levelID++) {
+        std::string levelStr = "level " + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          useMass_ |= needMass(levelList, Teuchos::rcpFromRef(paramList), /*maxLevel=*/0);
+        }
+      }
+    }
+  }
+
+  return useMass_;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::pair<std::set<std::string>, std::set<std::string>> ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    requiredAndOptionalUserData(const Teuchos::ParameterList& paramList, Teuchos::RCP<const Teuchos::ParameterList> defaultList, int maxLevel) {
+  std::set<std::string> requiredUserData;
+  if (needCoordinates(paramList, Teuchos::null, maxLevel))
+    requiredUserData.insert("Coordinates");
+  if (needBlockNumber(paramList, Teuchos::null, maxLevel))
+    requiredUserData.insert("BlockNumber");
+  if (needMaterial(paramList, Teuchos::null, maxLevel))
+    requiredUserData.insert("Material");
+
+  std::set<std::string> optionalUserData;
+  optionalUserData.insert("Nullspace");
+  optionalUserData.insert("M");
+  optionalUserData.insert("Minv");
+  optionalUserData.insert("MinvA");
+
+  optionalUserData.insert("pcoarsen: element to node map");
+  optionalUserData.insert("Node Comm");
+  optionalUserData.insert("DualNodeID2PrimalNodeID");
+  optionalUserData.insert("Primal interface DOF map");
+  optionalUserData.insert("dropMap1");
+  optionalUserData.insert("dropMap2");
+
+  return std::make_pair(requiredUserData, optionalUserData);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     SetMinvAProjectionVariables(const ParameterList& constParamList) {
   ParameterList paramList;
@@ -392,106 +597,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   //  - we use Ifpack2 line partitioner
   // This is not ideal, as we may have "repartition: enable" turned on by default
   // and not present in the list, but it is better than nothing.
-  useCoordinates_ = false;
-  useBlockNumber_ = false;
-  if (test_param_2list<std::string>(paramList, paramList, "aggregation: strength-of-connection: matrix", "distance laplacian"))
-    useCoordinates_ = true;
-  if (test_param_2list<bool>(paramList, paramList, "aggregation: use blocking", true))
-    useBlockNumber_ = true;
-  if (test_param_2list<std::string>(paramList, paramList, "aggregation: drop scheme", "distance laplacian") ||
-      test_param_2list<std::string>(paramList, paramList, "aggregation: type", "brick") ||
-      test_param_2list<bool>(paramList, paramList, "aggregation: export visualization data", true)) {
-    useCoordinates_ = true;
-  } else if (test_param_2list<std::string>(paramList, paramList, "aggregation: drop scheme", "block diagonal distance laplacian")) {
-    useCoordinates_ = true;
-    useBlockNumber_ = true;
-  } else if (test_param_2list<std::string>(paramList, paramList, "aggregation: drop scheme", "block diagonal") ||
-             test_param_2list<std::string>(paramList, paramList, "aggregation: drop scheme", "block diagonal classical") ||
-             test_param_2list<std::string>(paramList, paramList, "aggregation: drop scheme", "block diagonal signed classical") ||
-             test_param_2list<std::string>(paramList, paramList, "aggregation: drop scheme", "block diagonal colored signed classical") ||
-             test_param_2list<std::string>(paramList, paramList, "aggregation: drop scheme", "signed classical")) {
-    useBlockNumber_ = true;
-  } else if (paramList.isSublist("smoother: params")) {
-    const auto smooParamList = paramList.sublist("smoother: params");
-    if (smooParamList.isParameter("partitioner: type") &&
-        (smooParamList.get<std::string>("partitioner: type") == "line")) {
-      useCoordinates_ = true;
-    }
-  } else {
-    for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-      std::string levelStr = "level " + toString(levelID);
-
-      if (paramList.isSublist(levelStr)) {
-        const ParameterList& levelList = paramList.sublist(levelStr);
-
-        if (test_param_2list<std::string>(levelList, paramList, "aggregation: drop scheme", "distance laplacian") ||
-            test_param_2list<std::string>(levelList, paramList, "aggregation: type", "brick") ||
-            test_param_2list<bool>(levelList, paramList, "aggregation: export visualization data", true)) {
-          useCoordinates_ = true;
-        } else if (test_param_2list<std::string>(levelList, paramList, "aggregation: drop scheme", "block diagonal distance laplacian")) {
-          useCoordinates_ = true;
-          useBlockNumber_ = true;
-        } else if (test_param_2list<std::string>(levelList, paramList, "aggregation: drop scheme", "block diagonal") ||
-                   test_param_2list<std::string>(levelList, paramList, "aggregation: drop scheme", "block diagonal classical") ||
-                   test_param_2list<std::string>(levelList, paramList, "aggregation: drop scheme", "block diagonal signed classical") ||
-                   test_param_2list<std::string>(levelList, paramList, "aggregation: drop scheme", "block diagonal colored signed classical") ||
-                   test_param_2list<std::string>(levelList, paramList, "aggregation: drop scheme", "signed classical")) {
-          useBlockNumber_ = true;
-        }
-      }
-    }
-  }
-
-  useMaterial_ = false;
-  if (test_param_2list<std::string>(paramList, paramList, "aggregation: distance laplacian metric", "material")) {
-    useMaterial_ = true;
-  }
-
-  if (test_param_2list<bool>(paramList, paramList, "repartition: enable", true)) {
-    // We don't need coordinates if we're doing the in-place restriction
-    if (test_param_2list<bool>(paramList, paramList, "repartition: use subcommunicators", true) &&
-        test_param_2list<bool>(paramList, paramList, "repartition: use subcommunicators in place", true)) {
-      // do nothing --- these don't need coordinates
-    } else if (!paramList.isSublist("repartition: params")) {
-      useCoordinates_ = true;
-    } else {
-      const ParameterList& repParams = paramList.sublist("repartition: params");
-      if (repParams.isType<std::string>("algorithm")) {
-        const std::string algo = repParams.get<std::string>("algorithm");
-        if (algo == "multijagged" || algo == "rcb") {
-          useCoordinates_ = true;
-        }
-      } else {
-        useCoordinates_ = true;
-      }
-    }
-  }
-  for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-    std::string levelStr = "level " + toString(levelID);
-
-    if (paramList.isSublist(levelStr)) {
-      const ParameterList& levelList = paramList.sublist(levelStr);
-
-      if (test_param_2list<bool>(levelList, paramList, "repartition: enable", true)) {
-        if (!levelList.isSublist("repartition: params")) {
-          useCoordinates_ = true;
-          break;
-        } else {
-          const ParameterList& repParams = levelList.sublist("repartition: params");
-          if (repParams.isType<std::string>("algorithm")) {
-            const std::string algo = repParams.get<std::string>("algorithm");
-            if (algo == "multijagged" || algo == "rcb") {
-              useCoordinates_ = true;
-              break;
-            }
-          } else {
-            useCoordinates_ = true;
-            break;
-          }
-        }
-      }
-    }
-  }
+  useCoordinates_ = needCoordinates(paramList, Teuchos::null, this->numDesiredLevel_);
+  useBlockNumber_ = needBlockNumber(paramList, Teuchos::null, this->numDesiredLevel_);
+  useMaterial_    = needMaterial(paramList, Teuchos::null, this->numDesiredLevel_);
 
   // Detect if we do implicit P and R rebalance
   changedPRrebalance_        = false;

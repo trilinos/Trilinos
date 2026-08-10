@@ -926,6 +926,34 @@ bool Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasTransposeApply() co
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::pair<std::set<std::string>, std::set<std::string>> Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(const Teuchos::ParameterList& params) {
+  std::set<std::string> requiredUserData;
+  std::set<std::string> optionalUserData;
+
+  requiredUserData.insert("D0");
+
+  // auto [requiredUserData11, optionalUserData11] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("maxwell1: 11list"));
+  auto [requiredUserData22, optionalUserData22] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("maxwell1: 22list"));
+
+  if (requiredUserData22.contains("Coordinates"))
+    requiredUserData.insert("Coordinates");
+  if (requiredUserData22.contains("Material"))
+    requiredUserData.insert("Material");
+
+  if (params.sublist("maxwell1: 11list").isType<std::string>("multigrid algorithm") &&
+      params.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "smoothed reitzinger" &&
+      (!params.sublist("maxwell1: 11list").isType<double>("sa: damping factor") ||
+       params.sublist("maxwell1: 11list").get<double>("sa: damping factor") == 0.))
+    requiredUserData.insert("CurlCurl");
+
+  optionalUserData.insert("Nullspace");
+  optionalUserData.insert("Kn");
+  optionalUserData.insert("GmhdA");
+
+  return std::make_pair(requiredUserData, optionalUserData);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void scaleD0(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& D0) {
   // We assume that D0 has entries +-1.
   // Construction D0 via interpolation can instead give +-0.5
