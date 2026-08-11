@@ -11,11 +11,13 @@
 #include <Akri_CDMesh.hpp>
 #include <Akri_CDMesh_Refinement.hpp>
 #include <Akri_CDMesh_Utils.hpp>
+#include <Akri_CurvatureErrorEstimator.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Intersection_Points.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_NodeMarker.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_RefinementManager.hpp>
@@ -211,27 +213,6 @@ resolve_fine_features(const stk::mesh::BulkData& mesh,
   refine_edges_with_nodes_with_multiple_snapped_interfaces(mesh, refinement, edgeIntersections, interface_max_refine_level, elem_marker_field, node_snapped_interfaces);
 }
 
-void
-mark_nearest_node_on_cut_edges(const stk::mesh::BulkData& mesh,
-    const std::vector<IntersectionPoint> & edgeIntersections,
-    FieldRef node_marker_field)
-{
-  const double overlap = 0.25;
-
-  stk::mesh::field_fill(0, node_marker_field);
-
-  for (auto && edgeIntersection : edgeIntersections)
-  {
-    const EdgeIntersection edge(edgeIntersection);
-
-    if (edge.crossingLocation < 0.5+overlap)
-      *field_data<int>(node_marker_field, edge.nodes[0]) = 1;
-    if (edge.crossingLocation > 0.5-overlap)
-      *field_data<int>(node_marker_field, edge.nodes[1]) = 1;
-  }
-  stk::mesh::parallel_max(mesh, {&node_marker_field.field()});
-}
-
 static void initialize_marker(const stk::mesh::BulkData& /*mesh*/,
       const RefinementManager & refinement,
       const bool isDefaultCoarsen)
@@ -255,14 +236,14 @@ Refinement_Marker determine_interface_refinement_marker(const bool isElementOnIn
   return marker;
 }
 
-Refinement_Marker determine_interface_refinement_marker_with_error_estimate(const bool isElementOnInterface,
+Refinement_Marker determine_interface_refinement_marker_with_error_estimate(const stk::mesh::BulkData & mesh,
+  const bool isElementOnInterface,
   const int interfaceMinRefineLevel,
   const int interfaceMaxRefineLevel,
   const int elementRefineLevel,
   const bool isDefaultCoarsen,
-  const std::function<double()> & estimate_error,
-  const double refineErrTol,
-  const double unrefineErrTol)
+  const CurvatureErrorEstimator & errorEstimator,
+  const stk::mesh::Entity elem)
 
 {
   Refinement_Marker marker = determine_interface_refinement_marker(isElementOnInterface, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
@@ -275,11 +256,11 @@ Refinement_Marker determine_interface_refinement_marker_with_error_estimate(cons
     const bool markerDependsOnErrorEst = doRefineIfErrorLargerThanTol || doUnrefineIfErrorSmallerThanTol;
     if (markerDependsOnErrorEst)
     {
-      const double elemErrEst = estimate_error();
+      const double elemErrEst = errorEstimator.estimate_element_error(mesh, elem);
 
-      if (doRefineIfErrorLargerThanTol && elemErrEst > refineErrTol)
+      if (doRefineIfErrorLargerThanTol && elemErrEst > errorEstimator.refine_tolerance())
         marker = Refinement_Marker::REFINE;
-      else if (doUnrefineIfErrorSmallerThanTol && elemErrEst < unrefineErrTol)
+      else if (doUnrefineIfErrorSmallerThanTol && elemErrEst < errorEstimator.unrefine_tolerance())
         marker = Refinement_Marker::COARSEN;
     }
   }
@@ -398,19 +379,6 @@ void write_refinement_level_sizes(const stk::mesh::BulkData& mesh,
   }
 }
 
-bool element_has_marked_node(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem, const FieldRef nodeMarkerField)
-{
-  const unsigned num_nodes = mesh.num_nodes(elem);
-  const stk::mesh::Entity * const elemNodes = mesh.begin_nodes(elem);
-  for(unsigned i=0; i < num_nodes; ++i)
-  {
-    const int nodeMarker = *field_data<int>(nodeMarkerField, elemNodes[i]);
-    if(nodeMarker)
-      return true;
-  }
-  return false;
-}
-
 void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
     const RefinementManager & refinement,
@@ -435,12 +403,16 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
   const bool isDefaultCoarsen = should_continue_to_coarsen(numRefinements, interfaceMinRefineLevel);
 
   FieldRef nodeMarkerField = refinementSupport.get_nonconforming_refinement_node_marker_field();
-  mark_nearest_node_on_cut_edges(mesh, edgeIntersections, nodeMarkerField);
+  mark_nodes_near_edge_intersections(mesh, edgeIntersections, nodeMarkerField);
 
-  const double refineErrTol = refinementSupport.get_interface_refinement_curvature_tolerance();
-  const double unrefineErrTol = refineErrTol/4;
+  std::unique_ptr<CurvatureErrorEstimator> errorEstimator;
+  if (interfaceMaxRefineLevel > interfaceMinRefineLevel)
+    errorEstimator = build_curvature_error_estimator(refinementSupport, interfaceGeometry, refinementSupport.get_timer());
+  if (errorEstimator)
+    errorEstimator->precompute(mesh, coordsField, !refinement.parent_part(), nodeMarkerField);
 
   stk::mesh::get_selected_entities( locallyOwnedNotParent, mesh.buckets( stk::topology::ELEMENT_RANK ), entities );
+
   for( auto&& elem : entities )
   {
     bool hasNearbyCrossing = element_has_marked_node(mesh, elem, nodeMarkerField);
@@ -449,15 +421,10 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
 
     Refinement_Marker refMarker;
 
-    if (interfaceMaxRefineLevel > interfaceMinRefineLevel)
-    {
-      const auto estimate_error = [&]() { return interfaceGeometry.estimate_element_distance_error(mesh, elem); };
-      refMarker = determine_interface_refinement_marker_with_error_estimate(hasNearbyCrossing, interfaceMinRefineLevel, interfaceMaxRefineLevel, elementRefineLevel, isDefaultCoarsen, estimate_error, refineErrTol, unrefineErrTol);
-    }
+    if (errorEstimator)
+      refMarker = determine_interface_refinement_marker_with_error_estimate(mesh, hasNearbyCrossing, interfaceMinRefineLevel, interfaceMaxRefineLevel, elementRefineLevel, isDefaultCoarsen, *errorEstimator, elem);
     else
-    {
       refMarker = determine_interface_refinement_marker(hasNearbyCrossing, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
-    }
 
     int & marker = *field_data<int>(elementMarkerField, elem);
     marker = static_cast<int>(refMarker);

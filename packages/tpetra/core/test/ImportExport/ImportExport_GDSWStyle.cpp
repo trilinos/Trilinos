@@ -23,8 +23,18 @@
 #include <sstream>
 #include <ostream>
 #include <fstream>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+
+#include <psapi.h>
+#else
 #include <unistd.h>
 #include <sys/resource.h>
+#endif
 
 #include <Tpetra_Distributor.hpp>
 #include "Teuchos_FancyOStream.hpp"
@@ -87,7 +97,7 @@ createLaplace1D(const Teuchos::RCP<const Tpetra::Map<LocalOrdinalType, GlobalOrd
   typedef typename matrix_type::local_matrix_device_type LMT;
 
   RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
-  //#define OLD_AND_MEMORY_HOGGING
+  // #define OLD_AND_MEMORY_HOGGING
 #ifndef OLD_AND_MEMORY_HOGGING
   ST ONE = Teuchos::ScalarTraits<ST>::one();
 
@@ -298,7 +308,13 @@ bool compareCrsMatrix(const CrsMatrixType& A_orig, const CrsMatrixType& A) {
 
 // return current memory usage in kilobytes
 size_t get_memory_usage_now() {
-  size_t memory = 0;
+#ifdef _WIN32
+  constexpr SIZE_T kBytesPerKb = 1024;
+  PROCESS_MEMORY_COUNTERS pmc{};
+  pmc.cb = sizeof(pmc);
+  return ((GetProcessMemoryInfo(GetCurrentProcess(), std::addressof(pmc), sizeof(pmc))) != 0) ? static_cast<size_t>(pmc.WorkingSetSize / kBytesPerKb) : 0;
+#else
+  size_t memory           = 0;
 
 #ifdef PROC_STAT
   unsigned long rss_pages = 0;
@@ -325,8 +341,8 @@ size_t get_memory_usage_now() {
   memory = (unsigned long)sys_resources.ru_maxrss / RU_MAXRSS_UNITS;
 #endif
 
-  /* Success */
   return memory;
+#endif  // _WIN32
 }
 
 template <class crs_matrix_type, class map_type>

@@ -65,6 +65,15 @@ double calculate_tetrahedron_gradient_magnitude(const std::array<stk::math::Vect
   return calculate_tetrahedron_gradient(x,d).length();
 }
 
+stk::math::Vector3d calculate_simplex_gradient(const std::vector<stk::math::Vector3d> & x, const std::vector<double> & d)
+{
+  const unsigned dim = x.size()-1;
+  const stk::math::Vector3d grad = (2 == dim) ?
+    calculate_triangle2d_gradient({{x[0], x[1], x[2]}}, {{d[0], d[1], d[2]}}) :
+    calculate_tetrahedron_gradient({{x[0], x[1], x[2], x[3]}}, {{d[0], d[1], d[2], d[3]}});
+  return grad;
+}
+
 }
 
 

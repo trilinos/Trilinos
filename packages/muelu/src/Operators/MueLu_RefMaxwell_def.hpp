@@ -14,6 +14,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Xpetra_CrsMatrix.hpp"
@@ -466,6 +467,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
   if (!coarseA11_.is_null()) {
     VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
     std::string label("coarseA11");
+    if (!precList11_.isType<std::string>("hierarchy label"))
+      precList11_.set("hierarchy label", solverName_ + " coarse (1,1)");
     setupSubSolve(HierarchyCoarse11_, thyraPrecOpH_, coarseA11_, NullspaceCoarse11_, CoordsCoarse11_, Material_beta_, precList11_, label, reuse);
     VerboseObject::SetDefaultVerbLevel(verbosityLevel);
   }
@@ -506,6 +509,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     if (!A22_.is_null()) {
       VerbLevel verbosityLevel = VerboseObject::GetDefaultVerbLevel();
       std::string label("A22");
+      if (!precList22_.isType<std::string>("hierarchy label"))
+        precList22_.set("hierarchy label", solverName_ + " (2,2)");
       if (!P22_.is_null()) {
         precList22_.sublist("level 1 user data").set("A", coarseA22_);
         precList22_.sublist("level 1 user data").set("P", P22_);
@@ -691,9 +696,35 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if ((numProcsCoarseA11 < 0) || (numProcsA22 < 0) || (numProcsCoarseA11 + numProcsA22 > numProcs)) {
-      GetOStream(Warnings0) << solverName_ + "::compute(): Disabling rebalancing of subsolves, since partition heuristic resulted "
-                            << "in undesirable number of partitions: " << numProcsCoarseA11 << ", " << numProcsA22 << std::endl;
-      doRebalancing = false;
+      std::stringstream ss;
+      ss << solverName_ + "::compute(): Partition heuristic resulted "
+         << "in undesirable number of partitions: " << numProcsCoarseA11 << ", " << numProcsA22 << ".";
+
+      if (numProcsCoarseA11 < 0)
+        numProcsCoarseA11 = numProcs;
+      if (numProcsA22 < 0)
+        numProcsA22 = numProcs;
+
+      double ratioCoarseA11 = ((double)numProcsCoarseA11) / ((double)(numProcsCoarseA11 + numProcsA22));
+      double ratioA22       = ((double)numProcsA22) / ((double)(numProcsCoarseA11 + numProcsA22));
+      numProcsCoarseA11     = std::round(ratioCoarseA11 * numProcs);
+      numProcsA22           = std::round(ratioA22 * numProcs);
+
+      if (numProcsCoarseA11 == 0) {
+        numProcsCoarseA11 = 1;
+        numProcsA22       = numProcs - 1;
+      }
+      if (numProcsA22 == 0) {
+        numProcsCoarseA11 = numProcs - 1;
+        numProcsA22       = 1;
+      }
+
+      ss << ". Adjusting to fit: " << numProcsCoarseA11 << ", " << numProcsA22 << std::endl;
+
+      GetOStream(Warnings0) << ss.str();
+      TEUCHOS_ASSERT_INEQUALITY(numProcsCoarseA11, >, 0);
+      TEUCHOS_ASSERT_INEQUALITY(numProcsA22, >, 0);
+      TEUCHOS_ASSERT_EQUALITY(numProcsCoarseA11 + numProcsA22, numProcs);
     }
   }
 #else
@@ -2860,12 +2891,18 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   oss << "block " << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " << std::setw(9) << " nnz/row" << std::endl;
   oss << "(1, 1)" << std::setw(rowspacer) << numRows << std::setw(nnzspacer) << nnz << std::setw(9) << as<double>(nnz) / numRows << std::endl;
 
+  GlobalOrdinal numRowsGlobal;
+  GlobalOrdinal numNNZGlobal;
+  numRows = 0;
+  nnz     = 0;
   if (!A22_.is_null()) {
     numRows = A22_->getGlobalNumRows();
     nnz     = A22_->getGlobalNumEntries();
-
-    oss << "(2, 2)" << std::setw(rowspacer) << numRows << std::setw(nnzspacer) << nnz << std::setw(9) << as<double>(nnz) / numRows << std::endl;
   }
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, numRows, Teuchos::ptr(&numRowsGlobal));
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, nnz, Teuchos::ptr(&numNNZGlobal));
+
+  oss << "(2, 2)" << std::setw(rowspacer) << numRowsGlobal << std::setw(nnzspacer) << numNNZGlobal << std::setw(9) << as<double>(numNNZGlobal) / numRowsGlobal << std::endl;
 
   oss << std::endl;
 

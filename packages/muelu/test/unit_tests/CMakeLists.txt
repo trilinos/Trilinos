@@ -228,6 +228,11 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
 )
 
+# depending on the category (e.g. PERFORMANCE builds), these targets may not have been created
+IF(TARGET MueLu_UnitTests AND TARGET MueLu_MueLu_Repartition_cp)
+  ADD_DEPENDENCIES(MueLu_UnitTests MueLu_MueLu_Repartition_cp)
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE(
   UnitTests_Intrepid2
   SOURCES ${SOURCES_INTREPID2}

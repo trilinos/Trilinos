@@ -12,29 +12,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
 permissions:
   contents: read
 
 jobs:
-  # Jobs depend on the output of pre-checks to run.
-  # Cancels new workflows if prior runs were successful (same tree hash)
-  pre-checks:
-        runs-on: ubuntu-latest
-        # actions: write needed by skip-duplicate-actions
-        permissions:
-          actions: write
-        outputs:
-            should_skip: ${{ steps.skip_check.outputs.should_skip }}
-        steps:
-        - id: skip_check
-          uses: fkirc/skip-duplicate-actions@b974a9395958c231af965b70070979a577efa578 # v5.3.2
-          with:
-            skip_after_successful_duplicate: 'true'
-
   gcc12-openmpi4:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
@@ -44,10 +26,9 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   clang19-openmpi4:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
@@ -57,10 +38,9 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   cuda12:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507', 'gpu:A100']"
@@ -71,10 +51,9 @@ jobs:
       max-cores-allowed: 56
       num-concurrent-tests: 112
       slots-per-gpu: 8
+      target-branch: ${{ github.base_ref }}
 
   gcc14:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-14', '20260507']"
@@ -84,10 +63,9 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   cuda12-uvm:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507']"
@@ -97,10 +75,9 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_uvm
       max-cores-allowed: 56
       skip-run-tests: true
+      target-branch: ${{ github.base_ref }}
 
   oneapi2024:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'oneapi-2024.2', '20260507']"
@@ -110,10 +87,9 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   openmp:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
@@ -123,10 +99,9 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_static_openmp
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   framework-tests:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'python-3.9', '20260507']"
@@ -135,10 +110,9 @@ jobs:
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_framework-tests
       skip-create-packageenables: true
+      target-branch: ${{ github.base_ref }}
 
   ramses-openmp:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
@@ -150,4 +124,5 @@ jobs:
       num-concurrent-tests: 16
       skip-create-packageenables: true
       extra-pr-driver-args: --extra-configure-args=-C;${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake
+      target-branch: ${{ github.base_ref }}
 

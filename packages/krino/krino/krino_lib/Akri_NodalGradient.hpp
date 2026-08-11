@@ -10,7 +10,7 @@ class FieldRef;
 std::string get_nodal_gradient_field_name(const std::string & scalarFieldName);
 FieldRef get_nodal_gradient_for_scalar_field(const stk::mesh::MetaData & meta, const FieldRef scalarField);
 
-FieldRef register_nodal_gradient_for_scalar_field(stk::mesh::MetaData & meta, FieldRef scalarField);
+FieldRef register_nodal_gradient_for_scalar_field(stk::mesh::MetaData & meta, FieldRef scalarField, unsigned nStates = 1);
 
 void update_nodal_gradient(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const FieldRef scalarField);
 void update_nodal_gradient(const stk::mesh::BulkData & mesh, const FieldRef coords, const FieldRef scalarField, const FieldRef gradientField);

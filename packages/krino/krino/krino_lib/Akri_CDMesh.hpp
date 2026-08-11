@@ -83,7 +83,6 @@ public:
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs = {} );
   static void reset_mesh_to_original_undecomposed_state(stk::mesh::BulkData & mesh);
   static void nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const InterfaceGeometry & interfaceGeometry);
-  static void fixup_adapted_element_parts(stk::mesh::BulkData & mesh);
   static void rebuild_from_restart_mesh(stk::mesh::BulkData & mesh);
   static void prepare_for_resnapping(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
   void rebuild_after_rebalance_or_failed_step();
@@ -253,6 +252,7 @@ private:
   SubElementMeshNode * add_managed_mesh_node( std::unique_ptr<SubElementMeshNode> node );
 
   void store_child_node_parent_ids_and_weights_fields() const;
+  void cleanup_small_clusters();
   bool modify_mesh();
   void handle_single_coincident_subelement(const Mesh_Element & elem, const SubElement * subelem, std::vector<SideDescription> & side_requests);
   void create_subelement_mesh_entities(const Mesh_Element & elem,
