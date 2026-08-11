@@ -64,7 +64,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teuchos:
     Teuchos::ParameterList newList;
 
     // interpret ML list
-    newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list, "Maxwell"));
+    newList.sublist("maxwell1: 22list") = *MueLu::ML2MueLuParameterTranslator::translate(list, "Maxwell");
 
     // Hardwiring options to ensure ML compatibility
     newList.sublist("maxwell1: 22list").set("use kokkos refactor", false);

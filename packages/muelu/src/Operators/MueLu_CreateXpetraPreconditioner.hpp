@@ -102,8 +102,7 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
   std::string syntaxStr = "parameterlist: syntax";
   if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
     paramList.remove(syntaxStr);
-    std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
-    paramList            = *Teuchos::getParametersFromXmlString(paramXML);
+    paramList = *MueLu::ML2MueLuParameterTranslator::translate(paramList, "");
   }
   //  Need to check if Muelu option is inconsistent with user data provided
   bool Minv_Supplied = false, M_Supplied = false, MinvA_Supplied = false;

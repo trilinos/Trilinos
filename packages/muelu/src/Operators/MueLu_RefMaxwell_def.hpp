@@ -202,7 +202,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
   if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
     Teuchos::ParameterList newList;
     {
-      Teuchos::ParameterList newList2                = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell"));
+      Teuchos::ParameterList newList2                = *MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell");
       RCP<Teuchos::ParameterList> validateParameters = getValidParamterList();
       for (auto it = newList2.begin(); it != newList2.end(); ++it) {
         const std::string &entry_name = it->first;
@@ -214,9 +214,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
     }
 
     if (list.isSublist("refmaxwell: 11list") && list.sublist("refmaxwell: 11list").isSublist("edge matrix free: coarse"))
-      newList.sublist("refmaxwell: 11list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA"));
+      newList.sublist("refmaxwell: 11list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA");
     if (list.isSublist("refmaxwell: 22list"))
-      newList.sublist("refmaxwell: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA"));
+      newList.sublist("refmaxwell: 22list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA");
     list = newList;
   }
 
