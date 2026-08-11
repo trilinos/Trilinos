@@ -17,6 +17,7 @@
 #include <iostream>
 #include <set>
 #include <algorithm>
+#include <cmath>
 
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
@@ -39,6 +40,7 @@
 #include "Tpetra_MultiVector.hpp"
 
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -973,6 +975,26 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_container_visibility)
    // The FEMultiVector is visible through the _mv() accessor...
    TEST_ASSERT(tloc->get_f_mv()!=Teuchos::null);
    TEST_EQUALITY(tloc->get_f_mv().get(),static_cast<LOFType::MultiVectorType*>(feVec.get()));
+   // The Thyra bridge must survive an FEMultiVector rather than throwing, because
+   // panzer::ModelEvaluator calls get_f_th() on the GHOSTED container to zero the residual.
+   // Critically it must hand back a VIEW: Thyra::assign(...,0.0) through the wrapper has to
+   // reach the real FE data, or the residual would silently carry stale values into the
+   // next assembly. Seed a nonzero value, zero it through Thyra, and read the FE object back.
+   {
+      feVec->putScalar(3.5);
+      Teuchos::RCP<Thyra::VectorBase<double> > f_th;
+      TEST_NOTHROW(f_th = tloc->get_f_th());
+      TEST_ASSERT(f_th!=Teuchos::null);
+
+      Thyra::assign(f_th.ptr(),0.0);
+
+      auto host = feVec->getLocalViewHost(Tpetra::Access::ReadOnly);
+      double maxAbs = 0.0;
+      for(size_t i=0;i<feVec->getLocalLength();i++)
+         maxAbs = std::max(maxAbs,std::fabs(host(i,0)));
+      TEST_FLOATING_EQUALITY(maxAbs,0.0,1e-14);
+   }
+
    // ...and the narrowing get_f() throws loudly rather than silently returning null,
    // since an FEMultiVector is not a Tpetra::Vector.
    TEST_THROW(tloc->get_f(),std::bad_cast);

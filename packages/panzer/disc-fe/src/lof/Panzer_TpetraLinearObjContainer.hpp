@@ -148,21 +148,8 @@ public:
          = TOE::getConstTpetraVector(in);
      x = Teuchos::rcp_const_cast<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(x_const); 
    } 
-   // Thyra::createVector() requires a genuine Tpetra::Vector, so these go through the
-   // narrowing get_x()/get_dxdt()/get_f() accessors, which throw if the field holds an
-   // FEMultiVector.
-   //
-   // That is safe today only because x/dxdt/f are never FE objects: the FE path currently
-   // wires up the MATRIX alone (the residual vector cannot ride the same mechanism, since
-   // f_out is built by Thyra::createMember(f_space_) rather than by this factory).
-   //
-   // Do NOT assume this bridge is reached only for the owned container -- it is not.
-   // panzer::ModelEvaluator calls thGhostedContainer->get_f_th() to zero the ghosted
-   // residual (Panzer_ModelEvaluator_impl.hpp, in the f-and-J and Jacobian-only paths). So
-   // if an FEMultiVector is ever stored in x/dxdt/f, these accessors will throw and must be
-   // reworked first (e.g. to hand back a Vector view of column 0).
    virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_x_th() const
-   { return (x==Teuchos::null) ? Teuchos::null : Thyra::createVector(get_x(),domainSpace); }
+   { return toThyraVector(x,domainSpace); }
 
    virtual void set_dxdt_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in)
    { 
@@ -172,15 +159,13 @@ public:
          = TOE::getConstTpetraVector(in);
      dxdt = Teuchos::rcp_const_cast<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(dxdt_const); 
    } 
-   // see get_x_th() -- same narrowing-back-to-Vector reasoning applies here.
    virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_dxdt_th() const
-   { return (dxdt==Teuchos::null) ? Teuchos::null : Thyra::createVector(get_dxdt(),domainSpace); }
+   { return toThyraVector(dxdt,domainSpace); }
 
    virtual void set_f_th(const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & in)
    { f = (in==Teuchos::null) ? Teuchos::null : TOE::getTpetraVector(in); } 
-   // see get_x_th() -- same narrowing-back-to-Vector reasoning applies here.
    virtual Teuchos::RCP<Thyra::VectorBase<ScalarT> > get_f_th() const
-   { return (f==Teuchos::null) ? Teuchos::null : Thyra::createVector(get_f(),rangeSpace); }
+   { return toThyraVector(f,rangeSpace); }
 
    virtual void set_A_th(const Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > & in) 
    { A = (in==Teuchos::null) ? Teuchos::null : Teuchos::rcp_dynamic_cast<CrsMatrixType>(TOE::getTpetraOperator(in),true); }
@@ -189,6 +174,43 @@ public:
    //@}
 
 private:
+   /** \brief Wrap one of x/dxdt/f as a Thyra vector, whatever concrete kind it is.
+     *
+     * Thyra::createVector() needs a genuine Tpetra::Vector, but these fields are stored as
+     * MultiVector so they can also hold a Tpetra::FEMultiVector (which derives from
+     * MultiVector, not Vector). Two cases:
+     *
+     *  - a plain Vector: passed through with the container's own space, exactly as before,
+     *    so the traditional path is bit-for-bit unchanged.
+     *  - anything else (an FEMultiVector): handed back as getVectorNonConst(0), which
+     *    Tpetra documents as "a Vector that views a single column" -- a genuine alias, so
+     *    writes through the Thyra wrapper (e.g. Thyra::assign(...,0.0), which is how
+     *    panzer::ModelEvaluator zeroes the ghosted residual) reach the real data.
+     *
+     * The FE case deliberately derives its space from the vector's CURRENT map instead of
+     * reusing the container's stored space. An FEMultiVector's active map switches between
+     * its owned and owned+shared views across beginAssembly()/endAssembly(), and
+     * Thyra::createVector does NOT check the supplied space against the vector's map -- it
+     * uses the space verbatim whenever one is given (see getOrCreateTpetraVectorSpace in
+     * Thyra_TpetraThyraWrappers_def.hpp). Passing the stored space blindly would therefore
+     * yield a Thyra vector silently claiming a space its data does not match, rather than
+     * an error.
+     */
+   Teuchos::RCP<Thyra::VectorBase<ScalarT> >
+   toThyraVector(const Teuchos::RCP<MultiVectorType> & mv,
+                 const Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > & space) const
+   {
+     if(mv==Teuchos::null) return Teuchos::null;
+
+     Teuchos::RCP<VectorType> v = Teuchos::rcp_dynamic_cast<VectorType>(mv);
+     if(v!=Teuchos::null)
+       return Thyra::createVector(v,space);
+
+     // explicitly typed: a bare Teuchos::null cannot deduce the space template parameter
+     const Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > deriveFromMap = Teuchos::null;
+     return Thyra::createVector(mv->getVectorNonConst(0),deriveFromMap);
+   }
+
    typedef Thyra::TpetraOperatorVectorExtraction<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> TOE;
 
    Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > domainSpace;
