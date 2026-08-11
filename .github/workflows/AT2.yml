@@ -44,6 +44,7 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   clang19-openmpi4:
     needs: pre-checks
@@ -57,6 +58,7 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   cuda12:
     needs: pre-checks
@@ -71,6 +73,7 @@ jobs:
       max-cores-allowed: 56
       num-concurrent-tests: 112
       slots-per-gpu: 8
+      target-branch: ${{ github.base_ref }}
 
   gcc14:
     needs: pre-checks
@@ -84,6 +87,7 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   cuda12-uvm:
     needs: pre-checks
@@ -97,6 +101,7 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_uvm
       max-cores-allowed: 56
       skip-run-tests: true
+      target-branch: ${{ github.base_ref }}
 
   oneapi2024:
     needs: pre-checks
@@ -110,6 +115,7 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_shared
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   openmp:
     needs: pre-checks
@@ -123,6 +129,7 @@ jobs:
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release-debug_static_openmp
       max-cores-allowed: 29
       num-concurrent-tests: 16
+      target-branch: ${{ github.base_ref }}
 
   framework-tests:
     needs: pre-checks
@@ -135,6 +142,7 @@ jobs:
       cdash-track: "Pull Request"
       dashboard-build-name: PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_framework-tests
       skip-create-packageenables: true
+      target-branch: ${{ github.base_ref }}
 
   ramses-openmp:
     needs: pre-checks
@@ -150,4 +158,5 @@ jobs:
       num-concurrent-tests: 16
       skip-create-packageenables: true
       extra-pr-driver-args: --extra-configure-args=-C;${GITHUB_WORKSPACE}/packages/framework/cmake-fragments/ramses/gcc-mpi-openmp.cmake
+      target-branch: ${{ github.base_ref }}
 
