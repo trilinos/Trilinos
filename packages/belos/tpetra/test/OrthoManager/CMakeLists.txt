@@ -1,11 +1,12 @@
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_OrthoManager_test
   SOURCES belos_orthomanager_tpetra.cpp
-  ARGS "--ortho=ICGS --verbose"
-  ARGS "--ortho=IMGS --verbose"
-  ARGS "--ortho=DGKS --verbose"
+  ARGS
+    "--ortho=ICGS --verbose"
+    "--ortho=IMGS --verbose"
+     "--ortho=DGKS --verbose"
   COMM serial mpi
   )
 # This "test" passes trivially with the given arguments.  That is

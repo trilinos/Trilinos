@@ -11,9 +11,11 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include <random>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <ctime>
 
 // sparsity_example
 //
@@ -347,7 +349,9 @@ int main(int argc, char **argv)
     Teuchos::Array<int> part_IDs(num_parts);
     for (int i=0; i<num_parts; ++i)
       part_IDs[i] = i;
-    std::random_shuffle(part_IDs.begin(), part_IDs.end());
+
+    std::mt19937 rng(std::time(nullptr));
+    std::shuffle(part_IDs.begin(), part_IDs.end(), rng);
 
     // Assign part IDs
     int pp = 0;

@@ -10,7 +10,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
     CATEGORIES BASIC PERFORMANCE
   )
 
-  TRIBITS_ADD_TEST(
+  BELOS_ADD_TEUCHOS_AND_KOKKOS_TEST(
     SolverFactory_Tpetra_Galeri_Ex
     NAME SolverFactory_Tpetra_Galeri_Ex
     COMM serial mpi
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
   WHILE(COUNTER LESS MAX_COUNT)
     math(EXPR NP "${COUNTER} * ${COUNTER}")
 
-    TRIBITS_ADD_TEST(
+    BELOS_ADD_TEUCHOS_AND_KOKKOS_TEST(
       SolverFactory_Tpetra_Galeri_Ex
       NAME PerfTest_PseudoBlockCG
       COMM serial mpi
@@ -35,7 +35,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
       CATEGORIES PERFORMANCE
     )
 
-    TRIBITS_ADD_TEST(
+    BELOS_ADD_TEUCHOS_AND_KOKKOS_TEST(
       SolverFactory_Tpetra_Galeri_Ex
       NAME PerfTest_BlockCG
       COMM serial mpi
@@ -46,7 +46,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
       CATEGORIES PERFORMANCE
     )
 
-    TRIBITS_ADD_TEST(
+    BELOS_ADD_TEUCHOS_AND_KOKKOS_TEST(
       SolverFactory_Tpetra_Galeri_Ex
       NAME PerfTest_SingleReduceCG
       COMM serial mpi
@@ -57,7 +57,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
       CATEGORIES PERFORMANCE
     )
 
-    TRIBITS_ADD_TEST(
+    BELOS_ADD_TEUCHOS_AND_KOKKOS_TEST(
       SolverFactory_Tpetra_Galeri_Ex
       NAME PerfTest_PseudoBlockGMRES
       COMM serial mpi
@@ -68,7 +68,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
       CATEGORIES PERFORMANCE
     )
 
-    TRIBITS_ADD_TEST(
+    BELOS_ADD_TEUCHOS_AND_KOKKOS_TEST(
       SolverFactory_Tpetra_Galeri_Ex
       NAME PerfTest_BlockGMRES
       COMM serial mpi
@@ -79,7 +79,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
       CATEGORIES PERFORMANCE
     )
 
-    TRIBITS_ADD_TEST(
+    BELOS_ADD_TEUCHOS_AND_KOKKOS_TEST(
       SolverFactory_Tpetra_Galeri_Ex
       NAME PerfTest_BiCGStab
       COMM serial mpi

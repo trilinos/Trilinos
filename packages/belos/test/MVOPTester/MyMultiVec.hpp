@@ -29,8 +29,8 @@
  *
  * \date Last modified on 01-Nov-05
  */
-template <class ScalarType>
-class MyMultiVec : public Belos::MultiVec<ScalarType>
+template <class ScalarType, class DM = Belos::DefaultDenseMatrix<int, ScalarType>>
+class MyMultiVec : public Belos::MultiVec<ScalarType, DM>
 {
 public:
 
@@ -173,7 +173,7 @@ public:
   }
 
   // Update *this with alpha * A * B + beta * (*this).
-  void MvTimesMatAddMv (const ScalarType alpha, const Belos::MultiVec<ScalarType> &A,
+  void MvTimesMatAddMv (const ScalarType alpha, const Belos::MultiVec<ScalarType, DM> &A,
                         const Teuchos::SerialDenseMatrix<int, ScalarType> &B,
                         const ScalarType beta)
   {
@@ -181,7 +181,7 @@ public:
     assert (B.numRows() == A.GetNumberVecs());
     assert (B.numCols() <= NumberVecs_);
 
-    MyMultiVec* MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A));
+    MyMultiVec* MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType, DM> &>(A));
     TEUCHOS_ASSERT(MyA != NULL);
 
     if ((*this)[0] == (*MyA)[0]) {
@@ -224,13 +224,13 @@ public:
   }
 
   // Replace *this with alpha * A + beta * B.
-  void MvAddMv (const ScalarType alpha, const Belos::MultiVec<ScalarType>& A,
-                const ScalarType beta,  const Belos::MultiVec<ScalarType>& B)
+  void MvAddMv (const ScalarType alpha, const Belos::MultiVec<ScalarType, DM>& A,
+                const ScalarType beta,  const Belos::MultiVec<ScalarType, DM>& B)
   {
-    MyMultiVec* MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A));
+    MyMultiVec* MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType, DM> &>(A));
     TEUCHOS_ASSERT(MyA != NULL);
 
-    MyMultiVec* MyB = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(B));
+    MyMultiVec* MyB = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType, DM> &>(B));
     TEUCHOS_ASSERT(MyB != NULL);
 
     assert (NumberVecs_ == A.GetNumberVecs());
@@ -268,11 +268,11 @@ public:
   }
 
   // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this).
-  void MvTransMv (const ScalarType alpha, const Belos::MultiVec<ScalarType>& A,
+  void MvTransMv (const ScalarType alpha, const Belos::MultiVec<ScalarType, DM>& A,
                   Teuchos::SerialDenseMatrix< int, ScalarType >& B) const
   {
     MyMultiVec* MyA;
-    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A));
+    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType, DM> &>(A));
     TEUCHOS_ASSERT(MyA != NULL);
 
     assert (A.GetGlobalLength() == Length_);
@@ -292,10 +292,10 @@ public:
 
 
   // Compute a std::vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A.
-  void MvDot (const Belos::MultiVec<ScalarType>& A, std::vector<ScalarType>& b) const
+  void MvDot (const Belos::MultiVec<ScalarType, DM>& A, std::vector<ScalarType>& b) const
   {
     MyMultiVec* MyA;
-    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A));
+    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType, DM> &>(A));
     TEUCHOS_ASSERT(MyA != NULL);
 
     assert (NumberVecs_ <= (int)b.size());
@@ -333,11 +333,11 @@ public:
   // A are copied to a subset of vectors in *this indicated by the indices given
   // in index.
   // FIXME: not so clear what the size of A and index.size() are...
-  void SetBlock (const Belos::MultiVec<ScalarType>& A,
+  void SetBlock (const Belos::MultiVec<ScalarType, DM>& A,
                  const std::vector<int> &index)
   {
     MyMultiVec* MyA;
-    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A));
+    MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType, DM> &>(A));
     TEUCHOS_ASSERT(MyA != NULL);
 
     assert (A.GetNumberVecs() >= (int)index.size());

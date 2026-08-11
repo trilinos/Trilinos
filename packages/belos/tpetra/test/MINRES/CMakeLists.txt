@@ -14,9 +14,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT 
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_minres_hb
-  SOURCES test_minres_hb.cpp 
+  SOURCES test_minres_hb.cpp
   COMM serial mpi
   ARGS
     "--verbose --filename=bcsstk14.hb --tol=1e-5"
@@ -27,8 +27,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
 IF (Tpetra_INST_COMPLEX_DOUBLE)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Tpetra_minres_complex_hb_test
+  BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
+    Tpetra_minres_complex_hb
     SOURCES test_minres_complex_hb.cpp
     ARGS
       "--verbose"
@@ -40,7 +40,7 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
     Tpetra_CopyComplexTestMinresFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES mhd1280b.cua
-    EXEDEPS Tpetra_minres_complex_hb_test
+    EXEDEPS Tpetra_minres_complex_hb
   )
 
 ENDIF()
@@ -49,4 +49,4 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestMinresFiles
   SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb
   EXEDEPS Tpetra_minres_hb
-)
+  )

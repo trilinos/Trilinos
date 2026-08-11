@@ -31,8 +31,8 @@
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 
 
-template <typename ScalarType>
-int run(int argc, char *argv[]) {
+template <class ScalarType, class DM>
+int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
 
   using ST = typename Tpetra::CrsMatrix<ScalarType>::scalar_type;
   using LO = typename Tpetra::CrsMatrix<>::local_ordinal_type;
@@ -46,7 +46,7 @@ int run(int argc, char *argv[]) {
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
 
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
 
   using Teuchos::RCP;
@@ -76,7 +76,6 @@ int run(int argc, char *argv[]) {
     MT tol = 1.0e-5;       // relative residual tolerance
     MT aug_tol = 1.0e-5;   // relative residual tolerance for augmented system
 
-    Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
@@ -133,7 +132,7 @@ int run(int argc, char *argv[]) {
     MVT::MvRandom( *initX );
     OPT::Apply( *A, *initX, *initB );
     initX->putScalar( 0.0 );
-    Belos::LinearProblem<ST,MV,OP> initProblem( A, initX, initB );
+    Belos::LinearProblem<ST,MV,OP,DM> initProblem( A, initX, initB );
     initProblem.setLabel("Belos Init");
 
     bool set = initProblem.setProblem();
@@ -148,16 +147,16 @@ int run(int argc, char *argv[]) {
     // *********************Perform initial solve*************************
     // *******************************************************************
 
-    RCP< Belos::SolverManager<ST,MV,OP> > initSolver
-      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( rcp(&initProblem,false), rcp(&belosList,false) ) );
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > initSolver
+      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>( rcp(&initProblem,false), rcp(&belosList,false) ) );
 
     // Perform solve
     Belos::ReturnType ret = initSolver->solve();
 
     // Compute actual residuals
     bool badRes = false;
-    std::vector<ST> actualResids( initNumRHS );
-    std::vector<ST> rhsNorm( initNumRHS );
+    std::vector<MT> actualResids( initNumRHS );
+    std::vector<MT> rhsNorm( initNumRHS );
     MV initR( Map, initNumRHS );
     OPT::Apply( *A, *initX, initR );
     MVT::MvAddMv( -1.0, initR, 1.0, *initB, initR );
@@ -166,7 +165,7 @@ int run(int argc, char *argv[]) {
     if (procVerbose) {
       std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
       for (int i=0; i<initNumRHS; i++) {
-        ST actRes = actualResids[i]/rhsNorm[i];
+        MT actRes = actualResids[i]/rhsNorm[i];
         std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
         if (actRes > tol) badRes = true;
       }
@@ -197,7 +196,7 @@ int run(int argc, char *argv[]) {
     tmpX->scale( 1.0, *augX );
     tmpB->scale( 1.0, *augB );
 
-    Belos::LinearProblem<ST,MV,OP> augProblem( A, augX, augB );
+    Belos::LinearProblem<ST,MV,OP,DM> augProblem( A, augX, augB );
     augProblem.setLabel("Belos Aug");
 
     set = augProblem.setProblem();
@@ -217,8 +216,8 @@ int run(int argc, char *argv[]) {
     belosList.set( "Timer Label", "Belos Aug" );          // Label used by the timers in this solver
     belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
     belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
-    RCP< Belos::SolverManager<ST,MV,OP> > augSolver
-      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( rcp(&augProblem,false), rcp(&belosList,false) ) );
+    RCP< Belos::SolverManager<ST,MV,OP,DM> > augSolver
+      = rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP,DM>( rcp(&augProblem,false), rcp(&belosList,false) ) );
 
     // Perform solve
     ret = augSolver->solve();
@@ -261,7 +260,7 @@ int run(int argc, char *argv[]) {
     if (procVerbose) {
       std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<total_numrhs; i++) {
-        ST actRes = actualResids[i]/rhsNorm[i];
+        MT actRes = actualResids[i]/rhsNorm[i];
         std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
         if (actRes > tol ) badRes = true;
       }
@@ -281,8 +280,8 @@ int run(int argc, char *argv[]) {
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 } // run
 
-int main(int argc, char *argv[]) {
-  // run with different ST
-  return run<double>(argc,argv);
-  // run<float>(argc,argv); // FAILS
+#include "BelosTpetraTestMain.hpp"
+
+int main(int argc, char* argv[]) {
+  return common_main(argc, argv);
 }

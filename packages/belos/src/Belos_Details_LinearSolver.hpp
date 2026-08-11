@@ -40,15 +40,15 @@ namespace Details {
 /// clone themselves in an uninitialized state.  This means that
 /// LinearSolver cannot wrap the SolverManager directly; it must be
 /// able to create Belos solvers inside.
-template<class MV, class OP, class ScalarType, class NormType>
+template<class MV, class OP, class ScalarType, class NormType, class DM>
 class LinearSolver :
     public Trilinos::Details::LinearSolver<MV, OP, NormType>
 {
 private:
   //! Belos::LinearProblem specialization used by this class.
-  typedef Belos::LinearProblem<ScalarType, MV, OP> problem_type;
+  typedef Belos::LinearProblem<ScalarType, MV, OP, DM> problem_type;
   //! Belos' own solver type.
-  typedef Belos::SolverManager<ScalarType, MV, OP> solver_type;
+  typedef Belos::SolverManager<ScalarType, MV, OP, DM> solver_type;
 
 public:
 
@@ -106,7 +106,7 @@ public:
     // actually need it.  This aligns with Belos' preference for lazy
     // initialization.
     if (solver_.is_null ()) {
-      Belos::SolverFactory<ScalarType, MV, OP> factory;
+      Belos::SolverFactory<ScalarType, MV, OP, DM> factory;
       solver_ = factory.create (solverName_, params_);
       solver_->setProblem (problem_);
     }

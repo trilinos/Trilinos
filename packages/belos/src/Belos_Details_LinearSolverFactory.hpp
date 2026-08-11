@@ -22,7 +22,7 @@ namespace Details {
 
 /// \class LinearSolver
 /// \brief Belos' implementation of Trilinos::Details::LinearSolverFactory.
-template<class MV, class OP, class ScalarType, class NormType>
+template<class MV, class OP, class ScalarType, class NormType, class DM>
 class LinearSolverFactory :
     public Trilinos::Details::LinearSolverFactory<MV, OP, NormType>
 {
@@ -40,7 +40,7 @@ public:
   getLinearSolver (const std::string& solverName)
   {
     using Teuchos::rcp;
-    return rcp (new Belos::Details::LinearSolver<MV, OP, ScalarType, NormType> (solverName));
+    return rcp (new Belos::Details::LinearSolver<MV, OP, ScalarType, NormType, DM> (solverName));
   }
 
   /// \brief Register this LinearSolverFactory with the central registry.
@@ -58,7 +58,7 @@ public:
   /// repository, for all enabled template parameter combinations.
   static void registerLinearSolverFactory ()
   {
-    typedef Belos::Details::LinearSolverFactory<MV, OP, ScalarType, NormType> this_type;
+    typedef Belos::Details::LinearSolverFactory<MV, OP, ScalarType, NormType, DM> this_type;
 
 #ifdef HAVE_TEUCHOSCORE_CXX11
     typedef std::shared_ptr<this_type> ptr_type;

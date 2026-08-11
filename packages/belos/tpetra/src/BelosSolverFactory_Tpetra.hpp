@@ -17,8 +17,8 @@
 
 namespace Belos {
 
-template<class SC, class MV, class OP>
-class TpetraSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP>
+template<class SC, class MV, class OP, class DM = DefaultDenseMatrix<int, SC>>
+class TpetraSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP, DM>
 {
   public:
     TpetraSolverFactory() {
@@ -28,10 +28,10 @@ class TpetraSolverFactory : public Impl::SolverFactoryParent<SC, MV, OP>
 
 namespace Impl {
 
-template<class SC, class LO, class GO, class NT>
-class SolverFactorySelector<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> {
+template<class SC, class LO, class GO, class NT, class DM>
+class SolverFactorySelector<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>,DM> {
   public:
-    typedef TpetraSolverFactory<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>> type;
+    typedef TpetraSolverFactory<SC,Tpetra::MultiVector<SC, LO, GO, NT>,Tpetra::Operator<SC, LO, GO, NT>, DM> type;
 };
 
 } // namespace Impl

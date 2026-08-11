@@ -25,9 +25,9 @@ class SolverManager :
     public SolverManagerBase<SC, MV, OP>
 {
 private:
-  using solver_impl_type = KrylovSubclassType<SC, MV, OP>;  
+  using solver_impl_type = KrylovSubclassType<SC, MV, OP>;
   using solver_base_type = Krylov<SC, MV, OP>;
-  
+
   static Teuchos::RCP<solver_base_type>
   makeSolverImplementation ()
   {
@@ -42,12 +42,12 @@ public:
 
   virtual ~SolverManager () = default;
 
-  virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP> >
+  virtual Teuchos::RCP<Belos::SolverManager<SC, MV, OP, Teuchos::SerialDenseMatrix<int, SC>> >
   clone () const override
   {
     using this_type = SolverManager<SC, MV, OP, KrylovSubclassType>;
     Teuchos::RCP<this_type> solver (new this_type);
-    return Teuchos::rcp_implicit_cast<Belos::SolverManager<SC, MV, OP>> (solver);
+    return Teuchos::rcp_implicit_cast<Belos::SolverManager<SC, MV, OP, Teuchos::SerialDenseMatrix<int, SC>>> (solver);
   }
 };
 

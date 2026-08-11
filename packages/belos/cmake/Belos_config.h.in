@@ -49,6 +49,9 @@
 /* Define if we are building with experimental code enabled */
 #cmakedefine HAVE_BELOS_EXPERIMENTAL
 
+/* Use Kokkos::DualView as the default for dense matrices */
+#cmakedefine HAVE_BELOS_DENSEMATRIXKOKKOSDEFAULT
+
 /* Add macros for declaring functions deprecated */
 @BELOS_DEPRECATED_DECLARATIONS@
 
