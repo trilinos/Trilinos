@@ -12,29 +12,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
 permissions:
   contents: read
 
 jobs:
-  # Jobs depend on the output of pre-checks to run.
-  # Cancels new workflows if prior runs were successful (same tree hash)
-  pre-checks:
-        runs-on: ubuntu-latest
-        # actions: write needed by skip-duplicate-actions
-        permissions:
-          actions: write
-        outputs:
-            should_skip: ${{ steps.skip_check.outputs.should_skip }}
-        steps:
-        - id: skip_check
-          uses: fkirc/skip-duplicate-actions@b974a9395958c231af965b70070979a577efa578 # v5.3.2
-          with:
-            skip_after_successful_duplicate: 'true'
-
   gcc12-openmpi4:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
@@ -46,8 +28,6 @@ jobs:
       num-concurrent-tests: 16
 
   clang19-openmpi4:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
@@ -59,8 +39,6 @@ jobs:
       num-concurrent-tests: 16
 
   cuda12:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507', 'gpu:A100']"
@@ -73,8 +51,6 @@ jobs:
       slots-per-gpu: 8
 
   gcc14:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-14', '20260507']"
@@ -86,8 +62,6 @@ jobs:
       num-concurrent-tests: 16
 
   cuda12-uvm:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20260507']"
@@ -99,8 +73,6 @@ jobs:
       skip-run-tests: true
 
   oneapi2024:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'oneapi-2024.2', '20260507']"
@@ -112,8 +84,6 @@ jobs:
       num-concurrent-tests: 16
 
   openmp:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
@@ -125,8 +95,6 @@ jobs:
       num-concurrent-tests: 16
 
   framework-tests:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'python-3.9', '20260507']"
@@ -137,8 +105,6 @@ jobs:
       skip-create-packageenables: true
 
   ramses-openmp:
-    needs: pre-checks
-    if: ${{ !cancelled() && needs.pre-checks.outputs.should_skip != 'true' }}
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'gcc-12.3.0-openmpi-4.1.6', '20260507']"
