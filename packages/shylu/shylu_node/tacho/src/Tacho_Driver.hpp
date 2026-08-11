@@ -237,7 +237,7 @@ public:
   mag_type currentShift() { return _shift; }
   void setPivotTolerance(const mag_type pivot_tol);
   void useNoPivotTolerance();
-  void useDefaultPivotTolerance(const int option = 1);
+  void useDefaultPivotTolerance(const int option = 1); // default is tol = eps
   void storeExplicitTranspose(bool flag);
 
   ///
