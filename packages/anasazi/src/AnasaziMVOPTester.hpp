@@ -96,7 +96,6 @@ namespace Anasazi {
          MvDot 
           USER: Results vector will be large enough for results.
                 Both multivectors will have the same number of vectors.
-                    (Epetra crashes, otherwise.)
             MV: Inner products will satisfy |a'*b| <= |a|*|b|
                 Results vector will not be resized.
 
@@ -762,6 +761,7 @@ namespace Anasazi {
         1) Results vector not resized
         2) Inner product inequalities are satisfied
         3) Zero vectors give zero inner products
+        4) Complex-valued dot-products have the right vector conjugated
     *********************************************************************/
     {
       const int p = 7;
@@ -815,8 +815,24 @@ namespace Anasazi {
           return false;
         }
       }
+      if constexpr (SCT::isComplex) {
+        auto J = ScalarType(0., 1.);
+        MVT::MvInit(*B, J);
+        MVT::MvInit(*C, SCT::one());
+        MVT::MvDot( *B, *C, iprods );
+        // We expect all entries to be 1j*conj(1)*size
+        auto size = MVT::GetGlobalLength(*B);
+        auto expected = Teuchos::as<ScalarType>(size)*J;
+        for (int i=0; i<p; i++) {
+          if ( SCT::magnitude(iprods[i]-expected) > SCT::eps()) {
+            om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products gave bad value: " << iprods[i] << ". Expected: " << expected << endl;
+            return false;
+          }
+        }
+      }
     }
-
 
     /*********** MvAddMv() ***********************************************
        D = alpha*B + beta*C
