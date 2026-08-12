@@ -270,9 +270,9 @@ def push(branch: str, repo_path: str, remote: str="origin", force: bool=False):
         git_repo = git.Repo(git_root)
 
         if force:
-            git_repo.git.push(origin, branch)
+            git_repo.git.push(remote, '-f', branch)
         else:
-            git_repo.git.push(remote, '-f' ,branch)
+            git_repo.git.push(remote, branch)
     except Exception as e:
         raise RuntimeError(f"Failed to push: {e}") from e
 
