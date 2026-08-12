@@ -199,21 +199,61 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
            Teuchos::ParameterList& List,
            bool ComputePrec = true)
     : mode_(MODE_STANDARD) {
-    RCP<MultiVector> Nullspace        = List.get<RCP<MultiVector>>("Nullspace", Teuchos::null);
-    RCP<RealValuedMultiVector> Coords = List.get<RCP<RealValuedMultiVector>>("Coordinates", Teuchos::null);
-    RCP<MultiVector> Material         = List.get<RCP<MultiVector>>("Material", Teuchos::null);
-    RCP<Matrix> D0_Matrix             = List.get<RCP<Matrix>>("D0");
+    auto& userData = List.sublist("user data");
+
+    RCP<MultiVector> Nullspace;
+    if (List.isType<RCP<MultiVector>>("Nullspace"))
+      Nullspace = List.get<RCP<MultiVector>>("Nullspace", Teuchos::null);
+    if (userData.isType<RCP<MultiVector>>("Nullspace"))
+      Nullspace = userData.get<RCP<MultiVector>>("Nullspace", Teuchos::null);
+
+    RCP<RealValuedMultiVector> Coords;
+    if (List.isType<RCP<RealValuedMultiVector>>("Coordinates"))
+      Coords = List.get<RCP<RealValuedMultiVector>>("Coordinates", Teuchos::null);
+    if (userData.isType<RCP<RealValuedMultiVector>>("Coordinates"))
+      Coords = userData.get<RCP<RealValuedMultiVector>>("Coordinates", Teuchos::null);
+
+    RCP<MultiVector> Material;
+    if (List.isType<RCP<MultiVector>>("Material"))
+      Material = List.get<RCP<MultiVector>>("Material", Teuchos::null);
+    if (userData.isType<RCP<MultiVector>>("Material"))
+      Material = userData.get<RCP<MultiVector>>("Material", Teuchos::null);
+
+    RCP<Matrix> D0_Matrix;
+    if (List.isType<RCP<Matrix>>("D0"))
+      D0_Matrix = List.get<RCP<Matrix>>("D0");
+    if (userData.isType<RCP<Matrix>>("D0"))
+      D0_Matrix = userData.get<RCP<Matrix>>("D0");
+
     RCP<Matrix> Kn_Matrix;
     if (List.isType<RCP<Matrix>>("Kn"))
       Kn_Matrix = List.get<RCP<Matrix>>("Kn");
+    if (userData.isType<RCP<Matrix>>("Kn"))
+      Kn_Matrix = userData.get<RCP<Matrix>>("Kn");
+
     RCP<Matrix> CurlCurl_Matrix;
     if (List.isType<RCP<Matrix>>("CurlCurl"))
       CurlCurl_Matrix = List.get<RCP<Matrix>>("CurlCurl");
+    if (userData.isType<RCP<Matrix>>("CurlCurl"))
+      CurlCurl_Matrix = userData.get<RCP<Matrix>>("CurlCurl");
 
     initialize(D0_Matrix, Kn_Matrix, Nullspace, Coords, CurlCurl_Matrix, Material, List);
 
     if (SM_Matrix != Teuchos::null)
       resetMatrix(SM_Matrix, ComputePrec);
+
+    RCP<Matrix> GmhdA_Matrix;
+    if (List.isType<RCP<Matrix>>("GmhdA"))
+      GmhdA_Matrix = List.get<RCP<Matrix>>("GmhdA");
+    if (userData.isType<RCP<Matrix>>("GmhdA"))
+      GmhdA_Matrix = userData.get<RCP<Matrix>>("GmhdA");
+
+    if (!GmhdA_Matrix.is_null()) {
+      mode_          = MODE_GMHD_STANDARD;
+      GmhdA_Matrix_  = GmhdA_Matrix;
+      HierarchyGmhd_ = rcp(new Hierarchy("HierarchyGmhd"));
+      GMHDSetupHierarchy(List);
+    }
   }
 
   //! Destructor.
