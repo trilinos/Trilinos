@@ -149,14 +149,6 @@ namespace mini_em {
 
           updateParams("solverMueLu.xml", lin_solver_pl, comm, out);
 
-          if (dim == 2)
-            updateParams("solverMueLu2D.xml", lin_solver_pl, comm, out);
-
-          if (panzer::TpetraNodeType::is_cpu && !panzer::TpetraNodeType::is_serial)
-            updateParams("solverMueLuOpenMP.xml", lin_solver_pl, comm, out);
-          if (panzer::TpetraNodeType::is_gpu)
-            updateParams("solverMueLuCuda.xml", lin_solver_pl, comm, out);
-
           if (truncateMueLuHierarchy)
             updateParams("solverMueLuTruncated.xml", lin_solver_pl, comm, out);
           if (preferTPLs)
