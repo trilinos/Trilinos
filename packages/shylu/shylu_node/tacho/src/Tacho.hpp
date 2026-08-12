@@ -43,8 +43,9 @@ typedef int size_type;
 typedef int ordinal_type;
 typedef size_t size_type;
 #else
+// default is int_int
 typedef int ordinal_type;
-typedef size_t size_type;
+typedef int size_type;
 #endif
 
 ///
