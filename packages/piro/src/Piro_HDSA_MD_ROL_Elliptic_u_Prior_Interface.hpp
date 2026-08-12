@@ -1,3 +1,12 @@
+// @HEADER
+// *****************************************************************************
+//        Piro: Strategy package for embedded analysis capabilitites
+//
+// Copyright 2010 NTESS and the Piro contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
 #ifndef PIRO_HDSA_MD_ROL_ELLIPTIC_U_PRIOR_INTERFACE_HPP
 #define PIRO_HDSA_MD_ROL_ELLIPTIC_U_PRIOR_INTERFACE_HPP
 
