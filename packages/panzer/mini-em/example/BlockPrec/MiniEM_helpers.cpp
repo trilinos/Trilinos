@@ -126,10 +126,6 @@ namespace mini_em {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    if (solver == AUGMENTATION) {
-      TEUCHOS_ASSERT(physics == MAXWELL);
-    }
-
     RCP<Teuchos::ParameterList> lin_solver_pl = Teuchos::rcp(new Teuchos::ParameterList("Linear Solver"));
     {
       if (xml == "") {
@@ -139,9 +135,7 @@ namespace mini_em {
         // * linear algebra library
         // * spatial dimension
         // * node type
-        if (solver == AUGMENTATION)
-          updateParams("solverAugmentation.xml", lin_solver_pl, comm, out);
-        else if (solver == CG)
+        if (solver == CG)
           updateParams("solverCG.xml", lin_solver_pl, comm, out);
         else if (solver == GMRES)
           updateParams("solverGMRES.xml", lin_solver_pl, comm, out);
