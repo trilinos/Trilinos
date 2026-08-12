@@ -5,10 +5,7 @@ The FE assembly path (Tpetra::FECrsMatrix, one object with owned/owned+shared vi
 migrated by endAssembly) and the classic path (separate owned/ghosted matrices joined
 by an explicit export) solve the identical problem, so the reported scalars must agree.
 
-Values are parsed as doubles and compared with a RELATIVE tolerance rather than by
-string equality: identical text would be a stricter check, but it makes the test
-sensitive to last-digit roundoff differences across compilers, MPI rank counts and
-machines, which is instability unrelated to what is being verified.
+Values are parsed as doubles and compared with a RELATIVE tolerance.
 
 Usage: compareAssemblyModes.py <fe_output> <classic_output> <spec> [<spec> ...]
 

@@ -151,6 +151,11 @@ namespace panzer_stk {
         p.set<bool>("Use DOFManager FEI",false);
         p.set<bool>("Load Balance DOFs",false);
         p.set<bool>("Use Tpetra",false);
+        // Assemble the Jacobian into a Tpetra::FECrsMatrix instead of separate owned and
+        // ghosted matrices joined by an explicit export. Requires "Use Tpetra"=true and a
+        // non-blocked field order; requesting it elsewhere is an error rather than a
+        // silent no-op, so a run that asks for FE assembly and does not get it fails loudly.
+        p.set<bool>("Use FE Assembly",false);
         p.set<bool>("Use Epetra ME",true);
         p.set<bool>("Lump Explicit Mass",false);
         p.set<bool>("Constant Mass Matrix",true);
@@ -273,7 +278,16 @@ namespace panzer_stk {
     bool use_dofmanager_fei  = assembly_params.get<bool>("Use DOFManager FEI"); // use FEI if true, otherwise use internal dof manager
     bool use_load_balance = assembly_params.get<bool>("Load Balance DOFs");
     bool useTpetra = assembly_params.get<bool>("Use Tpetra");
+    bool useFEAssembly = assembly_params.get<bool>("Use FE Assembly");
     bool useThyraME = !assembly_params.get<bool>("Use Epetra ME");
+
+    // Only the flat (non-blocked) Tpetra linear object factory implements FE assembly.
+    // Fail here rather than quietly falling through to a classic factory, which would let a
+    // run that requested FE assembly silently not use it.
+    TEUCHOS_TEST_FOR_EXCEPTION(useFEAssembly && !useTpetra,std::logic_error,
+      "panzer_stk::ModelEvaluatorFactory: Assembly parameter \"Use FE Assembly\"=true "
+      "requires \"Use Tpetra\"=true; FE assembly is only implemented for the Tpetra "
+      "linear object factory.");
 
     // this is weird...we are accessing the solution control to determine if things are transient
     // it is backwards!
@@ -466,6 +480,14 @@ namespace panzer_stk {
     }
     else if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && useTpetra) {
 
+       // as above: BlockedTpetraLinearObjFactory has no FE assembly path, so refuse rather
+       // than build a classic factory for a run that asked for FE assembly.
+       TEUCHOS_TEST_FOR_EXCEPTION(useFEAssembly,std::logic_error,
+         "panzer_stk::ModelEvaluatorFactory: Assembly parameter \"Use FE Assembly\"=true is "
+         "not supported with a blocked field order; FE assembly is only implemented for the "
+         "flat (non-blocked) Tpetra linear object factory.");
+
+
        // Can't yet handle interface conditions for this system
        TEUCHOS_TEST_FOR_EXCEPTION(has_interface_condition,
                                   Teuchos::Exceptions::InvalidParameter,
@@ -528,7 +550,7 @@ namespace panzer_stk {
          checkInterfaceConnections(conn_manager, dofManager->getComm());
 
        TEUCHOS_ASSERT(!useDiscreteAdjoint); // safety check
-       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,dofManager));
+       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,dofManager,useFEAssembly));
 
        // build load balancing string for informative output
        loadBalanceString = printUGILoadBalancingInformation(*dofManager);

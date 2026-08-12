@@ -152,12 +152,12 @@ TRIBITS_ADD_ADVANCED_TEST(
     PASS_REGULAR_EXPRESSION "ALL PASSED"
     NUM_MPI_PROCS 4
     OUTPUT_FILE PoissonExample-FEAssembly-classic.out
-  # The error norms are printed to full precision, so an exact match of the "* Error = *"
-  # lines is a strong check that the two assembly paths agree numerically.
   TEST_2 CMND python3
     ARGS ${CMAKE_CURRENT_SOURCE_DIR}/compareAssemblyModes.py
          PoissonExample-FEAssembly-fe.out
          PoissonExample-FEAssembly-classic.out
+         "L2 Error"
+         "H1 Error"
     PASS_REGULAR_EXPRESSION "Test Passed"
   COMM mpi
   )

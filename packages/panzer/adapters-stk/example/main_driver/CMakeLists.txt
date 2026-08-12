@@ -29,6 +29,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   SOURCE_FILES
     energy-ss.xml
     energy-ss-tp.xml
+    energy-ss-tp-fe-assembly.xml
     energy-ss-point-calc.xml
     energy-ss-tp-delay-prec.xml
     energy-ss-loca-eigenvalue.xml
@@ -73,6 +74,29 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-tp.xml --exodus-io-num-procs=1
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+  )
+
+# Assembling the Jacobian into a Tpetra::FECrsMatrix.  Tested against
+# analytic solution and the classic assembly path.
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-tp-FEAssembly
+  TEST_0 EXEC main_driver
+    ARGS  --i=energy-ss-tp-fe-assembly.xml --exodus-io-num-procs=1 --use-fe-assembly
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    OUTPUT_FILE main_driver-FEAssembly-fe.out
+  TEST_1 EXEC main_driver
+    ARGS  --i=energy-ss-tp-fe-assembly.xml --exodus-io-num-procs=1 --use-classic-assembly
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    OUTPUT_FILE main_driver-FEAssembly-classic.out
+  TEST_2 CMND python3
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/compareAssemblyModes.py
+         main_driver-FEAssembly-fe.out
+         main_driver-FEAssembly-classic.out
+         "Temperature Integral=0.5"
+    PASS_REGULAR_EXPRESSION "Test Passed"
+  COMM mpi
   )
 
 TRIBITS_ADD_ADVANCED_TEST(
