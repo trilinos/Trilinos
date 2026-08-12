@@ -23,15 +23,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   darcyTet.xml darcyHex.xml
   darcyTetAnalytic.xml darcyHexAnalytic.xml
   solverCG.xml solverGMRES.xml
-  solverMueLu.xml solverMueLu2D.xml solverMueLuBarrier.xml
-  solverMueLuOpenMP.xml solverMueLuCuda.xml solverMueLuTruncated.xml solverMueLuTPL.xml
+  solverMueLu.xml solverMueLuBarrier.xml
+  solverMueLuTruncated.xml solverMueLuTPL.xml
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
-  solverML.xml
   solverDirect.xml
   maxwell-large.xml
-  solverMueLu.xml solverMueLu2D.xml
-  solverMueLuOpenMP.xml solverMueLuCuda.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   CATEGORIES BASIC PERFORMANCE
