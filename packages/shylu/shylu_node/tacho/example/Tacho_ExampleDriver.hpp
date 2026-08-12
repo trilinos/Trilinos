@@ -34,6 +34,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
   int nthreads = 1;
   bool verbose = false;
+  bool debug = false;
   bool sanitize = false;
   bool duplicate = false;
   std::string file = "test.mtx";
@@ -51,7 +52,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   bool storeTranspose = false;
 #endif
   bool shiftDiag = false;
-  bool perturbPivot = false;
+  int perturb = -1;
   int nrhs = 1;
   bool randomRHS = false;
   bool onesRHS = false;
@@ -72,6 +73,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<bool>("debug", "Flag for debug printing", &debug);
   opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<bool>("duplicate", "Flag to duplicate input graph in the solver", &duplicate);
   opts.set_option<int>("mm-base", "Base for reading matrix file", &mm_base);
@@ -84,7 +86,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<bool>("order-connected-graph", "Flag to order connected graph separately (METIS)", &order_connected_graph_separately);
   opts.set_option<int>("graph-algo", "Type of graph algorithm (0: Natural, 1: AMD, 2: METIS)", &graph_algo_type);
   opts.set_option<bool>("store-trans", "Flag to store transpose", &storeTranspose);
-  opts.set_option<bool>("perturb", "Flag to perturb tiny pivots", &perturbPivot);
+  opts.set_option<int>("perturb", "Option to replace tiny pivots (-1: disable, 0: 0.0 (only effects non-pivot LDL), 1: eps, 2: sqrt(eps), 3: sqrt(eps) * ||A||)", &perturb);
   opts.set_option<bool>("shift", "Flag to shift diagonal", &shiftDiag);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<std::string>("method", "Solution method: ldl-nopiv, chol, ldl, lu", &method_name);
@@ -141,7 +143,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     } else {
       std::cout << "   Using non default Parameters " << std::endl;
       std::cout << "       # Streams:: " << nstreams
-                << (team_on_user_stream ? "(Team on stream-0)" : "(Team on default stream)") <<std::endl;
+                << (team_on_user_stream ? " (Team on stream-0)" : " (Team on default stream)") <<std::endl;
       std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
       std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
     }
@@ -211,19 +213,22 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     Tacho::Driver<value_type, device_type> solver;
 
     /// common options
-    solver.setVerbose(verbose);
+    solver.setVerbose(verbose, debug);
     solver.setSolutionMethod(method);
     solver.setLevelSetOptionAlgorithmVariant(variant);
-    if (shiftDiag) {
-      if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;
-      solver.shiftDiagonal();
-    }
-    if (perturbPivot) {
-      if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
-      solver.useDefaultPivotTolerance();
-    }
-
     if (!default_setup) {
+      // tiny pivot options
+      if (perturb >= 0) {
+        if (verbose) std::cout << " > perturb tiny pivots (" << perturb << ")" << std::endl;
+        solver.useDefaultPivotTolerance(perturb);
+      } else {
+        solver.useDefaultPivotTolerance(-1);
+      }
+      if (shiftDiag) {
+        if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;
+        solver.shiftDiagonal();
+      }
+
       /// graph options
       if (order_connected_graph_separately) {
         solver.setOrderConnectedGraphSeparately();
@@ -340,7 +345,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
           timer.reset();
           solver.solve(x, b, t);
           double warmup_solve_time = timer.seconds();
-          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift);
+          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift, (!debug && verbose));
           std::cout << "TachoSolver (warm-up): residual = " << res
                     << " time " << warmup_facto_time << " + " << warmup_solve_time;
           if (shiftDiag) std::cout << " using shift = " << shift;
@@ -359,7 +364,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
           solver.solve(x, b, t);
           solve_time += timer.seconds();
 #endif
-          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b, shift);
+          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b, shift, (!debug && verbose));
           if (res > tol) pass = false;
           std::cout << "TachoSolver: residual = " << res;
           if (shiftDiag) std::cout << " using shift = " << shift;
@@ -414,7 +419,6 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     }
 #endif
     if (verbose) {
-      std::cout << std::endl;
       std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl << std::endl;
     }
     std::cout << std::endl;

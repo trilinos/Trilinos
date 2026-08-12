@@ -87,13 +87,16 @@ template <> struct LU<Algo::External> {
         for (ordinal_type i = 0; i < m; ++i)
           perm[i] = i;
         for (ordinal_type i = 0; i < m; ++i) {
-          const ordinal_type fla_pivot = ipiv[i] - i - 1;
+          const ordinal_type pidx = ipiv[i] - 1;
+          const ordinal_type fla_pivot = pidx - i;
           fpiv[i] = fla_pivot;
 
           /// apply pivots to perm vector
-          if (fpiv[i]) {
-            const ordinal_type pidx = i + fpiv[i];
-            swap(perm[i], perm[pidx]);
+          if (i != pidx) {
+            //swap(perm[i], perm[pidx]); // unknown issues with factorize_small_host
+            ordinal_type pi = perm[i];
+            perm[i] = perm[pidx];
+            perm[pidx] = pi;
           }
         }
         for (ordinal_type i = 0; i < m; ++i)

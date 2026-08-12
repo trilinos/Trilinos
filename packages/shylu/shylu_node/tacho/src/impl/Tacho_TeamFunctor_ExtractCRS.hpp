@@ -160,7 +160,8 @@ public:
                                  int id_2 = i; // source
                                  _rowptr[1+id_1+offm] = 0;
                                  for (ordinal_type j = id_2; j < s.n; j++) {
-                                   if (_keep_zeros || AT(id_2,j) != zero) {
+                                   // diagonal is kept (even if zero, or unit-diagonal is inserted)
+                                   if (_keep_zeros || AT(id_2,j) != zero || id_2 == j) {
                                      _rowptr[1+id_1+offm] ++;
                                    }
                                  }
@@ -223,7 +224,8 @@ public:
                                    j ++;
                                  }
                                  for (; j < s.m; j++) {
-                                   if (_keep_zeros || AT(id_2,j) != zero) {
+                                   // diagonal is kept, even if zero and if not unit_diag
+                                   if (_keep_zeros || AT(id_2,j) != zero || id_2 == j) {
                                      int nnz = _rowptr[id_1+offm];
                                      _colind[nnz] = j+offm;
                                      _nzvals[nnz] = AT(id_2,j);

@@ -139,7 +139,10 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
           /// apply pivots to perm vector
           if (fpiv[i]) {
             const ordinal_type pidx = i + fpiv[i];
-            swap(perm[i], perm[pidx]);
+            //swap(perm[i], perm[pidx]); // unknown issues with factorize_small_host
+            ordinal_type pi = perm[i];
+            perm[i] = perm[pidx];
+            perm[pidx] = pi;
           }
         }
         for (ordinal_type i = 0; i < m; ++i)
@@ -170,8 +173,8 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
 template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::External> {
   // just call serial for now
   template <typename MemberType, typename ViewTypeA>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const bool conjugate) {
-    return LDL_nopiv<ArgUplo, Algo::Serial>::invoke(member, A, conjugate);
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A, const bool conjugate) {
+    return LDL_nopiv<ArgUplo, Algo::Serial>::invoke(member, tol, A, conjugate);
   }
 };
 } // namespace Tacho

@@ -123,6 +123,7 @@ private:
   using base_type::track_alloc;
   using base_type::track_free;
 
+  using rval_view = Kokkos::View<int *, device_type>;
   using rowptr_view = Kokkos::View<int *, device_type>;
   using colind_view = Kokkos::View<int *, device_type>;
   using nzvals_view = Kokkos::View<value_type *, device_type>;
@@ -905,9 +906,11 @@ public:
   ///
   /// Non-pivot LDL
   ///
-  inline int factorizeNoPivotLDLOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+  inline int factorizeNoPivotLDLOnDeviceVar0(const mag_type pivot_tol,
+                                             const ordinal_type pbeg, const ordinal_type pend,
                                              const size_type_array_host &h_buf_factor_ptr,
-                                             const value_type_array &work) {
+                                             const value_type_array &work,
+                                             const rval_view &r_val) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
@@ -940,16 +943,22 @@ public:
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
-            checkDeviceLapackStatus("chol");
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
 
               // Apply L^{-1} on off-diagonal
-              _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
-                  handle_blas, Diag::Unit(), one, ATL, ATR);
+              if (ndefs > 0) {
+                _status = Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    exec_instance, Diag::Unit(), one, ATL, ATR);
+                LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+              } else {
+                _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    handle_blas, Diag::Unit(), one, ATL, ATR);
+              }
               checkDeviceBlasStatus("trsm");
 
               // Save ATR in workspace
@@ -963,6 +972,8 @@ public:
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   handle_blas, minus_one, ATR, T, zero, ABR);
               checkDeviceBlasStatus("gemm");
+            } else if (ndefs > 0) {
+              LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
             }
             num_device_calls ++;
           }
@@ -972,9 +983,11 @@ public:
     return num_device_calls;
   }
 
-  inline int factorizeNoPivotLDLOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+  inline int factorizeNoPivotLDLOnDeviceVar1(const mag_type pivot_tol,
+                                             const ordinal_type pbeg, const ordinal_type pend,
                                              const size_type_array_host &h_buf_factor_ptr,
-                                             const value_type_array &work) {
+                                             const value_type_array &work,
+                                             const rval_view &r_val) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
@@ -1009,8 +1022,25 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
-            checkDeviceLapackStatus("chol");
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
+
+            // Apply TRSM to off-diagonal blocks
+            if (n_m > 0) {
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+
+              if (ndefs > 0) {
+                _status = Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    exec_instance, Diag::Unit(), one, ATL, ATR);
+                LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+              } else {
+                _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    handle_blas, Diag::Unit(), one, ATL, ATR);
+              }
+              checkDeviceBlasStatus("trsm");
+            } else if (ndefs > 0) {
+              LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+            }
 
             // Compute inverse of diagonal block (in T)
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -1020,6 +1050,7 @@ public:
 
             _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                 handle_blas, Diag::Unit(), one, ATL, T);
+            checkDeviceBlasStatus("trsm");
 
             // Copy original diagonal into T
             using policy_type = Kokkos::RangePolicy<exec_space>;
@@ -1027,19 +1058,16 @@ public:
             Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
               T(i,i) = ATL(i,i);
             });
-            checkDeviceBlasStatus("trsm");
+
+            // Copy T back to ATL (inverse)
+            _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
+            checkDeviceBlasStatus("Copy");
+
+            // Update trailing submatrix
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m); // shared with T
               UnmanagedViewType<value_type_matrix> K(bptr+(n_m * n_m), m, n_m);
-
-              _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
-                  handle_blas, Diag::Unit(), one, ATL, ATR);
-              checkDeviceBlasStatus("trsm");
-
-              // Copy T back to ATL (inverse)
-              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
-              checkDeviceBlasStatus("Copy");
 
               // Save ATR in workspace
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, K, ATR);
@@ -1051,9 +1079,6 @@ public:
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   handle_blas, minus_one, ATR, K, zero, ABR);
               checkDeviceBlasStatus("gemm");
-            } else {
-              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
-              checkDeviceBlasStatus("Copy");
             }
             num_device_calls ++;
           }
@@ -1063,9 +1088,11 @@ public:
     return num_device_calls;
   }
 
-  inline int factorizeNoPivotLDLOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+  inline int factorizeNoPivotLDLOnDeviceVar2(const mag_type pivot_tol,
+                                             const ordinal_type pbeg, const ordinal_type pend,
                                              const size_type_array_host &h_buf_factor_ptr,
-                                             const value_type_array &work) {
+                                             const value_type_array &work,
+                                             const rval_view &r_val) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
@@ -1099,8 +1126,8 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
-            checkDeviceLapackStatus("chol");
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             if (n_m > 0) {
@@ -1108,8 +1135,15 @@ public:
               bptr += ABR.span();
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               {
-                _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
-                    handle_blas, Diag::Unit(), one, ATL, ATR);
+                // Apply TRSM to off-diagonal blocks
+                if (ndefs > 0) {
+                  _status = Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                      exec_instance, Diag::Unit(), one, ATL, ATR);
+                  LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+                } else {
+                  _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                      handle_blas, Diag::Unit(), one, ATL, ATR);
+                }
                 checkDeviceBlasStatus("trsm");
 
                 // Save ATR in workspace
@@ -1146,6 +1180,10 @@ public:
                 });
               }
             } else {
+              if (ndefs > 0) {
+                LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+              }
+
               /// additional things
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
@@ -1173,14 +1211,14 @@ public:
     return num_device_calls;
   }
 
-  inline int factorizeNoPivotLDLOnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                          const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline int factorizeNoPivotLDLOnDevice(const mag_type pivot_tol, const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_factor_ptr, const value_type_array &work, const rval_view &r_val) {
     if (variant == 0)
-      return factorizeNoPivotLDLOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar0(pivot_tol, pbeg, pend, h_buf_factor_ptr, work, r_val);
     else if (variant == 1)
-      return factorizeNoPivotLDLOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar1(pivot_tol, pbeg, pend, h_buf_factor_ptr, work, r_val);
     else if (variant == 2 || variant == 3)
-      return factorizeNoPivotLDLOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar2(pivot_tol, pbeg, pend, h_buf_factor_ptr, work, r_val);
     else {
       std::string msg = "Error: LevelSetTools::factorizeNoPivotLDLOnDevice, algorithm variant ("
                         + std::to_string(variant) + ") is not supported.\n";
@@ -2197,7 +2235,7 @@ public:
               checkDeviceBlasStatus("gemv");
             }
 
-            // Apply D^{-1} on off-diagonal
+            // Apply D^{-1} on off-diagonal (note: this checks for zero-diag, and skip if zero)
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, tT);
             checkDeviceBlasStatus("scale");
 
@@ -2264,7 +2302,7 @@ public:
               checkDeviceBlasStatus("gemv");
             }
 
-            // Apply D^{-1} on off-diagonal
+            // Apply D^{-1} on off-diagonal (note: this checks for zero-diag, and skip if zero)
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, bT);
             checkDeviceBlasStatus("scale");
 
@@ -2322,6 +2360,7 @@ public:
             checkDeviceBlasStatus("trmv");
 
             // Apply D^{-1} on diagonal (already updated using this block, also n >= m so diagonal block is stored first in aptr)
+            // (note: this checks for zero-diag, and skip if zero)
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, dx);
             checkDeviceBlasStatus("scale");
@@ -2359,7 +2398,7 @@ public:
         const auto policy = policy_type(_exec_instances[0], 0, _m);
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &i) {
-              for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i); 
+              for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i);
             });
       }
     } else {
@@ -3298,6 +3337,7 @@ public:
 
         const auto &s = _h_supernodes(sid);
         {
+          // full-diagonal scaling (ones on diagonal for non-active supernodal blocks at this level)
           if (s.m > 0) {
             const ordinal_type m = s.m;
             const ordinal_type offm = s.row_begin;
@@ -3744,14 +3784,13 @@ public:
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
       const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
       // returned value from team Chol
-      colind_view d_rval("rval",1);
-      auto h_rval = Kokkos::create_mirror_view(host_memory_space(), d_rval);
+      rval_view t_rval("t_rval",1); // rval from team call
+      rval_view d_rval("d_rval",1); // rval from device call
+      auto h_rval = Kokkos::create_mirror_view(host_memory_space(), t_rval);
       {
         typedef TeamFunctor_FactorizeChol<supernode_info_type> functor_type;
-        functor_type functor(_info, _factorize_mode, _level_sids, _buf, d_rval.data());
-        if (pivot_tol > 0.0) {
-          functor.setDiagPertubationTol(pivot_tol);
-        }
+        functor_type functor(_info, _factorize_mode, _level_sids, _buf, t_rval.data());
+        functor.setDiagPertubationTol(pivot_tol); // always re-set pivot-tol (for chol, only checked if tol > 0.0)
         if (this->getSolutionMethod() == 0) {
           functor.setIndefiniteFactorization(true);
         }
@@ -3793,8 +3832,8 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());;
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());;
 
               // create policies
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
@@ -3819,7 +3858,7 @@ public:
             }
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             if (this->getSolutionMethod() == 0) {
-              factorizeNoPivotLDLOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
+              factorizeNoPivotLDLOnDevice(pivot_tol, pbeg, pend, h_buf_factor_ptr, _work, d_rval);
             } else {
               factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             }
@@ -3827,7 +3866,7 @@ public:
               Kokkos::fence(); time_device += tick.seconds();
               tick.reset();
             }
-            Kokkos::deep_copy(h_rval, d_rval);
+            Kokkos::deep_copy(h_rval, t_rval);
             int rval = h_rval(0);
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
@@ -4135,7 +4174,7 @@ public:
 #endif
       const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
       // returned value from team LDL
-      colind_view d_rval("rval",1);
+      rval_view d_rval("rval",1);
       auto h_rval = Kokkos::create_mirror_view(host_memory_space(), d_rval);
       {
         typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
@@ -4178,8 +4217,8 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());
 
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
@@ -4509,7 +4548,7 @@ public:
       const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 
       // returned value from team LU
-      colind_view d_rval("rval",1);
+      rval_view d_rval("rval",1);
       auto h_rval = Kokkos::create_mirror_view(host_memory_space(), d_rval);
       {
         typedef TeamFunctor_FactorizeLU<supernode_info_type> functor_type;
@@ -4552,8 +4591,8 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());
 
               // create policies
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);

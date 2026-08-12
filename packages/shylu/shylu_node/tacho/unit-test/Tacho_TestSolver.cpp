@@ -78,9 +78,9 @@ int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A, bool conj) {
 
 // main test driver
 template <typename value_type>
-int driver(const std::string file, const std::string method_name, const int variant, const int nrhs, const bool conj = true,
+int driver(const std::string file, const std::string rhs, const std::string method_name, const int variant, const int nrhs, const bool conj = true,
            const bool store_transpose = false, const bool single_solve = true, const bool single_setup = true,
-           const bool team_on_user_stream = false) {
+           const bool team_on_user_stream = false, const bool perturb = false) {
   int nx = 100;
   int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
   if (method_name == "ldl-nopiv")
@@ -111,7 +111,8 @@ int driver(const std::string file, const std::string method_name, const int vari
   std::cout << "     Method Name:: " << method_name << std::endl;
   std::cout << "     Solver Type:: " << variant << std::endl;
   std::cout << "          # RHSs:: " << nrhs << std::endl;
-  std::cout << "          Matrix:: " << file << std::endl;
+  std::cout << "     Matrix File:: " << file << std::endl;
+  std::cout << "        RHS File:: " << rhs << std::endl;
   if (!single_setup) std::cout << "     Multiple Init calls" << std::endl;
   if (!single_solve) std::cout << "     Mixed LU/Chol solve" << std::endl;
   std::cout << "    --------------------- " << std::endl << std::endl;
@@ -125,15 +126,12 @@ int driver(const std::string file, const std::string method_name, const int vari
     /// read a spd matrix of matrix market format
     CrsMatrixBaseTypeHost A;
     if (file != "") {
-      std::cout << " Read matrix from " << file << std::endl;
-      std::ifstream in;
-      in.open(file);
-      if (!in.good()) {
+      int mm_base = 1;
+      bool sanitize = false;
+      if (Tacho::MatrixMarket<value_type>::read(file, A, mm_base, sanitize, verbose) != 0) {
         std::cout << "Failed in open the file: " << file << std::endl;
         return -1;
       }
-      bool sanitize = false;
-      Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
     } else {
       std::cout << " Generate 2D Laplace matrix(nx = " << nx << ")" << std::endl;
       generate2dLaplace(nx, A, conj);
@@ -162,7 +160,13 @@ int driver(const std::string file, const std::string method_name, const int vari
     int device_factor_thres = 10;
     int device_solve_thres = 10;
     solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
-
+    if (perturb) {
+      // Special case: to test non-pivot LDL with singular matrix
+      //  with 10-by-10 and 80-by-80 block with zero row/col
+      solver.setSmallProblemThresholdsize(0);
+      solver.setLevelSetOptionDeviceFunctionThreshold(20, device_solve_thres);
+      std::cout << " Testing non-pivot LDL with singular matrix" << std::endl;
+    }
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
 
     int num_setups = (single_setup ? 1 : 2); // number of symbolic calls
@@ -175,26 +179,33 @@ int driver(const std::string file, const std::string method_name, const int vari
       if(r_val == 0) {
         r_val = solver.initialize();
       }
+      int start_step = (perturb ? 2 : 0);
       int num_solves = 3; // number of numeric + solve calls
-      for (int step = 0; step < num_solves && r_val == 0; step++) {
+      for (int step = start_step; step < num_solves && r_val == 0; step++) {
         if (step > 0) {
           // perturb the first element (diagonal if Laplace), on host
           A.Values()[0]+=value_type(step);
         }
         // copy A to device
         Kokkos::deep_copy(values_on_device, A.Values());
-        if (step%2 == 0) {
+        if (step%3 == 0) {
           /// > default
           solver.shiftDiagonal(0);
-          solver.useDefaultPivotTolerance(0);
-        } else if (step%2 == 1) {
+          solver.useDefaultPivotTolerance(-1);
+        } else if (step%3 == 1) {
           /// > test "shift diag" code path
           solver.shiftDiagonal(1);
-          solver.useDefaultPivotTolerance(0);
+          solver.useDefaultPivotTolerance(-1);
         } else {
           /// > test "replace tiny pivot" code path
           solver.shiftDiagonal(0);
-          solver.useDefaultPivotTolerance(1);
+          if (method == 0) {
+            // with tol = eps for non-pivot LDL
+            solver.useDefaultPivotTolerance(1);
+          } else {
+            // with tol = sqrt(eps)||A||
+            solver.useDefaultPivotTolerance(3);
+          }
         }
         /// do numerical factorization
         if (single_solve) {
@@ -221,11 +232,18 @@ int driver(const std::string file, const std::string method_name, const int vari
         if(r_val == 0) {
           const value_type zero(0.0);
           const value_type one (1.0);
-          if (true) {
-            Kokkos::deep_copy (b, one);
+          if (rhs != "") {
+            if(Tacho::MatrixMarket<value_type>::readDenseVectors(rhs, b, verbose) != 0) {
+              std::cout << "Failed in open the rhs file: " << rhs << std::endl;
+              return -1;
+            }
           } else {
-            Kokkos::deep_copy (x, one);
-            solver.computeSpMV(values_on_device, x, b);
+            if (true) {
+              Kokkos::deep_copy (b, one);
+            } else {
+              Kokkos::deep_copy (x, one);
+              solver.computeSpMV(values_on_device, x, b);
+            }
           }
           Kokkos::deep_copy (x, zero);
           Kokkos::deep_copy (t, zero);
@@ -255,32 +273,33 @@ int driver(const std::string file, const std::string method_name, const int vari
 // tests
 //  Cholesky
 #define TACHO_CHOL_TEST( SCALAR ) \
-  /* Chol */                                                        \
-  /* > single RHS */                                                \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 0, 1, conj), 0);           \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 1, 1, conj), 0);           \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 2, 1, conj), 0);           \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 1, conj), 0);           \
-  /* > explicit transpose */                                        \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 1, conj, true), 0);     \
-  /* > multiple RHSs */                                             \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 0, 5, conj), 0);           \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 1, 5, conj), 0);           \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 2, 5, conj), 0);           \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 5, conj), 0);           \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 3, 5, conj, true), 0);     \
-  /* > one-stream */                                                \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 0, 1, conj, false, true, true, true), 0); \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 1, 1, conj, false, true, true, true), 0); \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", 2, 1, conj, false, true, true, true), 0);
+  /* Chol */                                                          \
+  /* > single RHS */                                                  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 0, 1, conj), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 1, 1, conj), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 2, 1, conj), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 3, 1, conj), 0);        \
+  /* > explicit transpose */                                          \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 3, 1, conj, true), 0);  \
+  /* > multiple RHSs */                                               \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 0, 5, conj), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 1, 5, conj), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 2, 5, conj), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 3, 5, conj), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 3, 5, conj, true), 0);  \
+  /* > one-stream */                                                  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 0, 1, conj, false, true, true, true), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 1, 1, conj, false, true, true, true), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", 2, 1, conj, false, true, true, true), 0);
 
 #define TACHO_CHOL_SEQ_TEST( SCALAR ) \
-  /* > sequential path */                                   \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", -1, 1, conj), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "chol", -1, 5, conj), 0);
+  /* > sequential path */                                        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", -1, 1, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "chol", -1, 5, conj), 0);
 
 TEST( Solver, Chol ) {
   std::string file = ""; 
+  std::string  rhs = ""; 
   const bool conj = true;
   TACHO_CHOL_TEST( double )
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
@@ -298,43 +317,44 @@ TEST( Solver, Chol ) {
 
 //  LU
 #define TACHO_LU_TEST( SCALAR ) \
-  /* > single RHS */                                                              \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 1, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 1, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 1, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 1, conj), 0);                           \
-  /* > multiple RHSs */                                                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 5, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 5, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 5, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 5, conj), 0);                           \
-  /* > one-stream */                                                              \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 1, conj, false, true, true, true), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 1, conj, false, true, true, true), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 1, conj, false, true, true, true), 0);
+  /* > single RHS */                                                                  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 0, 1, conj), 0);                          \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 1, 1, conj), 0);                          \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 2, 1, conj), 0);                          \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 3, 1, conj), 0);                          \
+  /* > multiple RHSs */                                                               \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 0, 5, conj), 0);                          \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 1, 5, conj), 0);                          \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 2, 5, conj), 0);                          \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 3, 5, conj), 0);                          \
+  /* > one-stream */                                                                  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 0, 1, conj, false, true, true, true), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 1, 1, conj, false, true, true, true), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 2, 1, conj, false, true, true, true), 0);
 
 #define TACHO_LU_CHOL_TEST( SCALAR ) \
   /* multiple symbolic calls */                                                   \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 5, conj, false, false, false), 0);      \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 3, 5, conj, false, false, false), 0); \
   /* with mixed LU or Chol */                                                     \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 1, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 1, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 1, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 0, 1, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 1, 1, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 2, 1, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 3, 1, conj, false, false), 0);        \
   /* multiple RHSs */                                                             \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 0, 5, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 1, 5, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 2, 5, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", 3, 5, conj, false, false), 0);
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 0, 5, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 1, 5, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 2, 5, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", 3, 5, conj, false, false), 0);
 
 #define TACHO_LU_SEQ_TEST( SCALAR ) \
   /* > sequential path */                           \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", -1, 1, conj), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "lu", -1, 5, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", -1, 1, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "lu", -1, 5, conj), 0);  \
 
 TEST( Solver, LU ) {
   // LU
   std::string file = "";
+  std::string  rhs = "";
   // > conjugate
   bool conj = true;
   TACHO_LU_TEST( double )
@@ -363,44 +383,45 @@ TEST( Solver, LU ) {
 
 //  LDL
 #define TACHO_LDL_TEST( SCALAR ) \
-  /* > single RHS */                                                               \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 1, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 1, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 1, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 1, conj), 0);                           \
-  /* > explicit transpose */                                                       \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 1, conj, true), 0);                     \
-  /* > multiple RHSs */                                                            \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 5, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 5, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 5, conj), 0);                           \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 5, conj), 0);                           \
-  /* > one-stream */                                                               \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 1, conj, false, true, true, true), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 1, conj, false, true, true, true), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 1, conj, false, true, true, true), 0); 
+  /* > single RHS */                                                                    \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 0, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 1, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 2, 1, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 3, 1, conj), 0);                           \
+  /* > explicit transpose */                                                            \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 3, 1, conj, true), 0);                     \
+  /* > multiple RHSs */                                                                 \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 0, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 1, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 2, 5, conj), 0);                           \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 3, 5, conj), 0);                           \
+  /* > one-stream */                                                                    \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 0, 1, conj, false, true, true, true), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 1, 1, conj, false, true, true, true), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 2, 1, conj, false, true, true, true), 0); 
 
 #define TACHO_LDL_CHOL_TEST( SCALAR ) \
   /* with mixed LDL or Chol, only for double or float */                           \
   /* Chol is for Hermitian, LDL for Symmetrix */                                   \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 1, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 1, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 1, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 1, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 0, 1, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 1, 1, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 2, 1, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 3, 1, conj, false, false), 0);        \
   /* with multiple RHSs */                                                         \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 0, 5, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 1, 5, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 2, 5, conj, false, false), 0);             \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", 3, 5, conj, false, false), 0);             \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 0, 5, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 1, 5, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 2, 5, conj, false, false), 0);        \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", 3, 5, conj, false, false), 0);        \
 
 #define TACHO_LDL_SEQ_TEST( SCALAR ) \
-  /* > sequential path */                                 \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", -1, 1, conj), 0); \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl", -1, 5, conj), 0); \
+  /* > sequential path */                                      \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", -1, 1, conj), 0); \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl", -1, 5, conj), 0); \
 
 TEST( Solver, LDL ) {
   // LDL
   std::string file = "";
+  std::string  rhs = "";
   const bool conj = false;
   TACHO_LDL_TEST( double )
   TACHO_LDL_CHOL_TEST( double )
@@ -421,38 +442,43 @@ TEST( Solver, LDL ) {
 
 // Non-piv LDL
 #define TACHO_NOPIV_TEST( SCALAR ) \
-  /* > single RHS */                                                          \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 1, conj), 0);                \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 1, conj), 0);                \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 1, conj), 0);                \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 1, conj), 0);                \
-  /* > multiple RHSs */                                                       \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 5, conj), 0);                \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 5, conj), 0);                \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 5, conj), 0);                \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 5, conj), 0);
+  /* > single RHS */                                                 \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 0, 1, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 1, 1, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 2, 1, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 3, 1, conj), 0);  \
+  /* > multiple RHSs */                                              \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 0, 5, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 1, 5, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 2, 5, conj), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 3, 5, conj), 0);  \
 // Mix Non-piv LDL & Chol (cannot do for complex)
 #define TACHO_NOPIV_CHOL_TEST( SCALAR ) \
-  /* with mixed nopiv-LDL or Chol, only for double or float */                \
-  /* Chol for Hermitian and LDL for symmetrix */                              \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 1, conj, false, false), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 1, conj, false, false), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 1, conj, false, false), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 1, conj, false, false), 0);  \
-  /*EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, conj, true), 0);*/      \
-  /* with mixed nopiv-LDL or Chol */                                          \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 0, 5, conj, false, false), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 1, 5, conj, false, false), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 2, 5, conj, false, false), 0);  \
-  EXPECT_EQ(driver<SCALAR>(file, "ldl-nopiv", 3, 5, conj, false, false), 0);  \
-  /*EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, conj, true), 0);*/      \
+  /* with mixed nopiv-LDL or Chol, only for double or float */                     \
+  /* Chol for Hermitian and LDL for symmetrix */                                   \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 0, 1, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 1, 1, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 2, 1, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 3, 1, conj, false, false), 0);  \
+  /*EXPECT_EQ(driver<double>(file, rhs, "ldl-nopiv", 3, 1, conj, true), 0);*/      \
+  /* with mixed nopiv-LDL or Chol */                                               \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 0, 5, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 1, 5, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 2, 5, conj, false, false), 0);  \
+  EXPECT_EQ(driver<SCALAR>(file, rhs, "ldl-nopiv", 3, 5, conj, false, false), 0);  \
+  /*EXPECT_EQ(driver<double>(file, rhs, "ldl-nopiv", 3, 5, conj, true), 0);*/      \
+// Singular problem 
+#define TACHO_NOPIV_PERTURB_TEST( SCALAR ) \
+  EXPECT_EQ(driver<SCALAR>("small_singular.mtx", "small_singular_b.mtx", "ldl-nopiv", 0, 1, conj, false, true, true, false, true), 0);
 
 TEST( Solver, NonPivLDL ) {
   // Non-piv LDL
   std::string file = "";
+  std::string  rhs = "";
   const bool conj = false;
   TACHO_NOPIV_TEST( double )
   TACHO_NOPIV_CHOL_TEST( double ) 
+  TACHO_NOPIV_PERTURB_TEST( double )
   //#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   //// > sequential path
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", -1, 1), 0);
