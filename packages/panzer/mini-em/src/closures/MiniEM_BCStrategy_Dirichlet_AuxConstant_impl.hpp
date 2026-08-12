@@ -197,7 +197,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // get the unique global indexer for just this field
   Teuchos::RCP<panzer::GlobalIndexer> ugi = blockedDOFMngr->getFieldDOFManagers()[blockIndex];
    
-  // build a new epetra linear object factory 
+  // build a new tpetra linear object factory
   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > elof
      = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(Teuchos::rcp(new Teuchos::MpiComm<int>(blof.getComm())).getConst(),ugi));
 
