@@ -80,6 +80,7 @@ APPEND_SET(
   Smoothers/SmootherFactory.cpp
   StructuredAggregationFactory.cpp
   StructuredLineDetection.cpp
+  StructuredRAPFactory.cpp
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp

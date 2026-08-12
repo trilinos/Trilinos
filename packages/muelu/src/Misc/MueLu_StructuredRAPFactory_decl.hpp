@@ -22,6 +22,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_StructuredRAPFactory_fwd.hpp"
+#include "MueLu_RAPFactory_fwd.hpp"
 
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
@@ -114,8 +115,11 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
 
   void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
                           const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
-                          const Teuchos::Array<int>& processorGrid,
                           const StructuredGraphSpec& graphSpec) const;
+
+  void ConfigureRAPFactoryDelegate() const;
+
+  mutable RCP<MueLu::RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>> rapFactoryDelegate_;
 
   //}
 
