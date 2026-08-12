@@ -115,7 +115,7 @@ namespace mini_em {
 
 
   Teuchos::RCP<Teuchos::ParameterList>
-  getSolverParameters(linearAlgebraType linAlgebra, physicsType physics,
+  getSolverParameters(physicsType physics,
                       solverType solver, int dim,
                       Teuchos::RCP<const Teuchos::MpiComm<int>> &comm,
                       Teuchos::RCP<Teuchos::FancyOStream> &out,
@@ -140,48 +140,23 @@ namespace mini_em {
         // * spatial dimension
         // * node type
         if (solver == AUGMENTATION)
-          if (linAlgebra == linAlgTpetra)
-            updateParams("solverAugmentation.xml", lin_solver_pl, comm, out);
-          else
-            updateParams("solverAugmentationEpetra.xml", lin_solver_pl, comm, out);
+          updateParams("solverAugmentation.xml", lin_solver_pl, comm, out);
         else if (solver == CG)
-          if (linAlgebra == linAlgTpetra)
-            updateParams("solverCG.xml", lin_solver_pl, comm, out);
-          else
-            throw;
+          updateParams("solverCG.xml", lin_solver_pl, comm, out);
         else if (solver == GMRES)
-          if (linAlgebra == linAlgTpetra)
-            updateParams("solverGMRES.xml", lin_solver_pl, comm, out);
-          else
-            throw;
-        else if (solver == ML) {
-          updateParams("solverML.xml", lin_solver_pl, comm, out);
-        } else if ((solver == MUELU) || (solver == MAXWELL1_RS) || (solver == MAXWELL1_SA_RS) || (solver == MAXWELL1_EMIN)) {
-          if (linAlgebra == linAlgTpetra) {
-            updateParams("solverMueLu.xml", lin_solver_pl, comm, out);
+          updateParams("solverGMRES.xml", lin_solver_pl, comm, out);
+        else if ((solver == MUELU) || (solver == MAXWELL1_RS) || (solver == MAXWELL1_SA_RS) || (solver == MAXWELL1_EMIN)) {
 
-            if (dim == 2)
-              updateParams("solverMueLu2D.xml", lin_solver_pl, comm, out);
+          updateParams("solverMueLu.xml", lin_solver_pl, comm, out);
 
-            if (panzer::TpetraNodeType::is_cpu && !panzer::TpetraNodeType::is_serial) {
-              if (linAlgebra == linAlgTpetra)
-                updateParams("solverMueLuOpenMP.xml", lin_solver_pl, comm, out);
-              else {
-                std::cout << std::endl
-                          << "WARNING" << std::endl
-                          << "MueLu RefMaxwell + Epetra + OpenMP does currently not work." << std::endl
-                          << "The Xpetra-Epetra interface is missing \"setAllValues\" with kokkos views." << std::endl << std::endl;
-                throw;
-              }
-            }
-            if (panzer::TpetraNodeType::is_gpu)
-              updateParams("solverMueLuCuda.xml", lin_solver_pl, comm, out);
-          } else {
-            updateParams("solverMueLuEpetra.xml", lin_solver_pl, comm, out);
+          if (dim == 2)
+            updateParams("solverMueLu2D.xml", lin_solver_pl, comm, out);
 
-            if (dim == 2)
-              updateParams("solverMueLu2D.xml", lin_solver_pl, comm, out);
-          }
+          if (panzer::TpetraNodeType::is_cpu && !panzer::TpetraNodeType::is_serial)
+            updateParams("solverMueLuOpenMP.xml", lin_solver_pl, comm, out);
+          if (panzer::TpetraNodeType::is_gpu)
+            updateParams("solverMueLuCuda.xml", lin_solver_pl, comm, out);
+
           if (truncateMueLuHierarchy)
             updateParams("solverMueLuTruncated.xml", lin_solver_pl, comm, out);
           if (preferTPLs)
@@ -370,12 +345,12 @@ namespace mini_em {
           opPostfix = "";
         }
 
-        if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS || solver == MAXWELL1_EMIN)
+        if (solver == MUELU || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS || solver == MAXWELL1_EMIN)
           auxFieldOrder += " "+auxNodalField+" "+auxEdgeField;
         else
           auxFieldOrder += " "+auxEdgeField;
 
-        if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
+        if (solver == MUELU || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
           // discrete gradient
           auto gradPL = Teuchos::ParameterList();
           gradPL.set("Source", auxNodalField);
@@ -399,7 +374,7 @@ namespace mini_em {
           schurComplementPL.set("Integration Order", 2*polynomialOrder);
           auxPhysicsBlocksPL.sublist("Auxiliary Edge SchurComplement Physics" + opPostfix) = schurComplementPL;
 
-          if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
+          if (solver == MUELU || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
             // Projected Schur complement
             auto projectedSchurComplementPL = Teuchos::ParameterList();
             projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
@@ -430,12 +405,12 @@ namespace mini_em {
           opPostfix = "";
         }
 
-        if ((solver == MUELU) || (solver == ML))
+        if (solver == MUELU)
           auxFieldOrder += " "+auxEdgeField + " "+auxFaceField;
         else
           auxFieldOrder += " "+auxFaceField;
 
-        if ((solver == MUELU) || (solver == ML)) {
+        if (solver == MUELU) {
           // discrete curl
           auto curlPL = Teuchos::ParameterList();
           curlPL.set("Source", auxEdgeField);
@@ -457,7 +432,7 @@ namespace mini_em {
         schurComplementPL.set("Integration Order", 2*polynomialOrder);
         auxPhysicsBlocksPL.sublist("Auxiliary Face DarcySchurComplement Physics"+opPostfix) = schurComplementPL;
 
-        if (solver == MUELU || solver == ML) {
+        if (solver == MUELU) {
           // Projected Schur complement
           auto projectedSchurComplementPL = Teuchos::ParameterList();
           projectedSchurComplementPL.set("Type", "Auxiliary ProjectedDarcySchurComplement");
@@ -475,7 +450,7 @@ namespace mini_em {
 
     // Set up additional mass matrices for RefMaxwell
     if ((physics == MAXWELL) &&
-        ((solver == MUELU) || (solver == ML))) {
+        (solver == MUELU)) {
       std::string auxNodalField, auxEdgeField, opPostfix;
       if (basis_order != 1) {
         auxNodalField = "AUXILIARY_NODE_" + std::to_string(1);
@@ -523,7 +498,7 @@ namespace mini_em {
       auxPhysicsBlocksPL.sublist("Auxiliary Node Mass Physics"+opPostfix) = massNodePL;
 
     } else if (physics == DARCY &&
-               (solver == MUELU || solver == ML)) {
+               (solver == MUELU)) {
 
       std::string auxEdgeField, auxFaceField, auxNodalField, opPostfix;
       if (basis_order != 1) {
