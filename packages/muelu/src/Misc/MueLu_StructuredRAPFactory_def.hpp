@@ -28,6 +28,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Behavior.hpp"
+#include "MueLu_RAPFactory_def.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
@@ -35,7 +36,8 @@ namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::StructuredRAPFactory()
-  : hasDeclaredInput_(false) {}
+  : hasDeclaredInput_(false)
+  , rapFactoryDelegate_(rcp(new MueLu::RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>())) {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~StructuredRAPFactory() = default;
@@ -45,9 +47,6 @@ RCP<const ParameterList> StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdina
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<std::string>(
       "rap: matrix type", "", "Galeri matrix type used to infer the structured RAP graph.");
-  validParamList->set<int>("rap: processor grid x", -1, "Number of processor subdomains in x direction.");
-  validParamList->set<int>("rap: processor grid y", -1, "Number of processor subdomains in y direction.");
-  validParamList->set<int>("rap: processor grid z", -1, "Number of processor subdomains in z direction.");
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("rap: triple product");         // in the long term this has to be the only option for multiplication
@@ -79,6 +78,25 @@ RCP<const ParameterList> StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdina
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConfigureRAPFactoryDelegate() const {
+  const Teuchos::ParameterList& pL = GetParameterList();
+
+  ParameterList rapParams;
+  RCP<const ParameterList> validRAPParams = rapFactoryDelegate_->GetValidParameterList();
+  for (ParameterList::ConstIterator it = validRAPParams->begin(); it != validRAPParams->end(); ++it) {
+    const std::string& paramName = validRAPParams->name(it);
+    if (pL.isParameter(paramName))
+      rapParams.setEntry(paramName, pL.getEntry(paramName));
+    else if (pL.isSublist(paramName))
+      rapParams.sublist(paramName) = pL.sublist(paramName);
+  }
+
+  rapFactoryDelegate_->SetParameterList(rapParams);
+  rapFactoryDelegate_->SetFactory("A", GetFactory("A"));
+  rapFactoryDelegate_->SetFactory("P", GetFactory("P"));
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
   const Teuchos::ParameterList& pL = GetParameterList();
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -86,10 +104,18 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInp
       "StructuredRAPFactory requires \"transpose: use implicit\" = true because "
       "the prebuilt coarse graph assumes the Galerkin product P^T A P.");
 
+  const bool prebuildCoarseGraph = pL.get<bool>("rap: prebuild coarse graph");
+
+  if (!prebuildCoarseGraph) {
+    ConfigureRAPFactoryDelegate();
+    coarseLevel.DeclareInput("A", rapFactoryDelegate_.get(), this);
+    coarseLevel.DeclareInput("RAP reuse data", rapFactoryDelegate_.get(), this);
+    hasDeclaredInput_ = true;
+    return;
+  }
+
   Input(fineLevel, "A");
   Input(coarseLevel, "P");
-
-  const bool prebuildCoarseGraph = pL.get<bool>("rap: prebuild coarse graph");
 
   if (prebuildCoarseGraph) {
     Input(fineLevel, "lCoarseNodesPerDim");
@@ -166,7 +192,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructuredGraph(
     RCP<Matrix>& Ac, RCP<Matrix> P,
     const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
-    const Teuchos::Array<int>& processorGrid,
     const StructuredGraphSpec& graphSpec) const {
   TEUCHOS_TEST_FOR_EXCEPTION(graphSpec.numDimensions < 1 || graphSpec.numDimensions > 3, Exceptions::RuntimeError,
                              "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
@@ -182,14 +207,11 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
                                                                          << "): stencil must contain at least one offset.");
 
   Teuchos::Array<GO> localNodes(3, Teuchos::as<GO>(1));
-  Teuchos::Array<int> procGrid(3, 1);
   for (int dim = 0; dim < graphSpec.numDimensions; ++dim) {
     localNodes[dim] = Teuchos::as<GO>(lCoarseNodesPerDim[dim]);
     TEUCHOS_TEST_FOR_EXCEPTION(localNodes[dim] <= 0, Exceptions::RuntimeError,
                                "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
                                                                            << "): local coarse dimensions must be positive.");
-    if (dim < processorGrid.size())
-      procGrid[dim] = processorGrid[dim];
   }
   for (typename std::vector<StencilOffset>::const_iterator offset = graphSpec.stencilOffsets.begin();
        offset != graphSpec.stencilOffsets.end(); ++offset) {
@@ -238,28 +260,6 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   RCP<const Teuchos::Comm<int>> comm = rowMap->getComm();
   const int myRank                   = comm->getRank();
   const int numRanks                 = comm->getSize();
-  if (graphSpec.numDimensions == 1) {
-    if (procGrid[0] <= 0) procGrid[0] = numRanks;
-  } else if (graphSpec.numDimensions == 2) {
-    if (procGrid[0] <= 0) procGrid[0] = 1;
-    if (procGrid[1] <= 0) procGrid[1] = numRanks / procGrid[0];
-  } else {
-    if (procGrid[0] <= 0) procGrid[0] = 1;
-    if (procGrid[1] <= 0) procGrid[1] = 1;
-    if (procGrid[2] <= 0) procGrid[2] = numRanks / (procGrid[0] * procGrid[1]);
-  }
-  const int procXY = procGrid[0] * procGrid[1];
-  TEUCHOS_TEST_FOR_EXCEPTION(procGrid[0] <= 0 || procGrid[1] <= 0 || procGrid[2] <= 0 ||
-                                 procXY * procGrid[2] != numRanks,
-                             Exceptions::RuntimeError,
-                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
-                                                                         << "): invalid processor grid "
-                                                                         << procGrid[0] << "x" << procGrid[1] << "x" << procGrid[2]
-                                                                         << " for " << numRanks << " ranks.");
-
-  const int myProcX = myRank % procGrid[0];
-  const int myProcY = (myRank % procXY) / procGrid[0];
-  const int myProcZ = myRank / procXY;
   const GO localMinGid = rowMap->getMinGlobalIndex();
   const GO localMaxGid = rowMap->getMaxGlobalIndex();
   TEUCHOS_TEST_FOR_EXCEPTION((localMinGid - globalMinGid) % dofsPerNodeGO != 0, Exceptions::RuntimeError,
@@ -283,6 +283,67 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   localRankData[4] = localNumNodes;
   Teuchos::Array<GO> rankData(5 * numRanks);
   Teuchos::gatherAll(*comm, 5, localRankData.getRawPtr(), 5 * numRanks, rankData.getRawPtr());
+
+  Teuchos::Array<int> procGrid(3, 1);
+  if (graphSpec.numDimensions == 1) {
+    procGrid[0] = numRanks;
+  } else if (graphSpec.numDimensions == 2) {
+    procGrid[0] = 1;
+    while ((procGrid[0] + 1) * (procGrid[0] + 1) <= numRanks)
+      ++procGrid[0];
+    procGrid[1] = numRanks / procGrid[0];
+    while (procGrid[0] * procGrid[1] != numRanks)
+      procGrid[1] = numRanks / (--procGrid[0]);
+  } else {
+    int cubeRootNumRanks = 1;
+    while ((cubeRootNumRanks + 1) * (cubeRootNumRanks + 1) * (cubeRootNumRanks + 1) <= numRanks)
+      ++cubeRootNumRanks;
+    procGrid[0] = cubeRootNumRanks;
+    procGrid[1] = cubeRootNumRanks;
+    procGrid[2] = cubeRootNumRanks;
+
+    if (procGrid[0] * procGrid[1] * procGrid[2] != numRanks) {
+      procGrid[0] = 1;
+      procGrid[1] = 1;
+      procGrid[2] = 1;
+
+      int procTemp = numRanks;
+      int factors[50];
+      for (int factor = 0; factor < 50; ++factor)
+        factors[factor] = 0;
+      for (int factor = 2; factor < 50; ++factor) {
+        while (procTemp % factor == 0) {
+          ++factors[factor];
+          procTemp /= factor;
+        }
+      }
+      procGrid[0] = procTemp;
+      for (int factor = 49; factor > 0; --factor) {
+        while (factors[factor] != 0) {
+          if (procGrid[0] <= procGrid[1] && procGrid[0] <= procGrid[2])
+            procGrid[0] *= factor;
+          else if (procGrid[1] <= procGrid[0] && procGrid[1] <= procGrid[2])
+            procGrid[1] *= factor;
+          else
+            procGrid[2] *= factor;
+          --factors[factor];
+        }
+      }
+    }
+  }
+
+  const int procXY = procGrid[0] * procGrid[1];
+  TEUCHOS_TEST_FOR_EXCEPTION(procGrid[0] <= 0 || procGrid[1] <= 0 || procGrid[2] <= 0 ||
+                                 procXY * procGrid[2] != numRanks,
+                             Exceptions::RuntimeError,
+                             "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
+                                                                         << "): invalid inferred processor grid "
+                                                                         << procGrid[0] << "x" << procGrid[1] << "x" << procGrid[2]
+                                                                         << " for " << numRanks << " ranks.");
+
+  const int myProcX = myRank % procGrid[0];
+  const int myProcY = (myRank % procXY) / procGrid[0];
+  const int myProcZ = myRank / procXY;
 
   Teuchos::Array<GO> globalNodes(3, Teuchos::as<GO>(0));
   for (int px = 0; px < procGrid[0]; ++px)
@@ -558,25 +619,35 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
 
   RCP<Matrix> Ac;
 
+  TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_ == false, Exceptions::RuntimeError,
+                             "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
+
+  if (!prebuildCoarseGraph) {
+    if (coarseLevel.IsAvailable("RAP reuse data", this)) {
+      RCP<ParameterList> RAPparams = coarseLevel.Get<RCP<ParameterList>>("RAP reuse data", this);
+      coarseLevel.Set("RAP reuse data", RAPparams, rapFactoryDelegate_.get());
+    }
+
+    // If prebuildCoarseGraph is false, we delegate the whole RAP computation to RAPFactory.
+    rapFactoryDelegate_->Build(fineLevel, coarseLevel);
+
+    Ac = coarseLevel.Get<RCP<Matrix>>("A", rapFactoryDelegate_.get());
+    Set(coarseLevel, "A", Ac);
+
+    if (coarseLevel.IsAvailable("RAP reuse data", rapFactoryDelegate_.get())) {
+      RCP<ParameterList> RAPparams = coarseLevel.Get<RCP<ParameterList>>("RAP reuse data", rapFactoryDelegate_.get());
+      Set(coarseLevel, "RAP reuse data", RAPparams);
+    }
+
+    return;
+  }
+
   {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
 
     std::ostringstream levelstr;
     levelstr << coarseLevel.GetLevelID();
     std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
-
-    TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_ == false, Exceptions::RuntimeError,
-                               "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
-
-    RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
-    RCP<Matrix> P = Get<RCP<Matrix>>(coarseLevel, "P");
-    // We don't have a valid P (e.g., # global aggregates = 0) so we bail.
-    // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
-    if (P.is_null()) {
-      Ac = Teuchos::null;
-      Set(coarseLevel, "A", Ac);
-      return;
-    }
 
 #ifdef KOKKOS_ENABLE_CUDA
     bool isCuda = typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name();
@@ -590,6 +661,16 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
     TEUCHOS_TEST_FOR_EXCEPTION(
         isCuda, Exceptions::RuntimeError,
         "StructuredRAPFactory does not currently support CUDA.");
+
+    RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
+    RCP<Matrix> P = Get<RCP<Matrix>>(coarseLevel, "P");
+    // We don't have a valid P (e.g., # global aggregates = 0) so we bail.
+    // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
+    if (P.is_null()) {
+      Ac = Teuchos::null;
+      Set(coarseLevel, "A", Ac);
+      return;
+    }
 
     {
       RCP<ParameterList> RAPparams = rcp(new ParameterList);
@@ -621,19 +702,11 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
         Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim =
             Get<Teuchos::Array<LocalOrdinal>>(fineLevel, "lCoarseNodesPerDim");
         const int interpolationOrder = Get<int>(fineLevel, "structuredInterpolationOrder");
-        const int procX              = pL.get<int>("rap: processor grid x");
-        const int procY              = pL.get<int>("rap: processor grid y");
-        const int procZ              = pL.get<int>("rap: processor grid z");
-
         const StructuredGraphSpec graphSpec = GetStructuredGraphSpec(matrixType, interpolationOrder);
-        Teuchos::Array<int> processorGrid(3);
-        processorGrid[0] = procX;
-        processorGrid[1] = procY;
-        processorGrid[2] = procZ;
         GetOStream(Statistics1) << "StructuredRAP: Using " << graphSpec.description
                                 << " stencil with " << graphSpec.stencilOffsets.size()
                                 << " nodal entries." << std::endl;
-        GetStructuredGraph(Ac, P, lCoarseNodesPerDim, processorGrid, graphSpec);
+        GetStructuredGraph(Ac, P, lCoarseNodesPerDim, graphSpec);
       }
 
       // We *always* need global constants for the RAP, but not for the temps
@@ -745,6 +818,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddTransfe
                              "This is very strange. (Note: you can remove this exception if there's a good reason for)");
   TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::StructuredRAPFactory::AddTransferFactory: Factory is being added after we have already declared input");
   transferFacts_.push_back(factory);
+  rapFactoryDelegate_->AddTransferFactory(factory);
 }
 
 }  // namespace MueLu
