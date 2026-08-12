@@ -93,7 +93,7 @@ typedef Thyra::TpetraOperatorVectorExtraction<
     //! Destructor
     virtual ~DfDpOp() = default;
 
-    inline void set(const Teuchos::RCP<const Tpetra_Vector> p_vec) {p_vec_ = p_vec;}
+    inline void set_p(const Teuchos::RCP<const Tpetra_Vector> p_vec) {p_vec_ = p_vec;}
 
     //! Overrides Thyra::LinearOpBase purely virtual method
     inline Teuchos::RCP<const Thyra::VectorSpaceBase<double>> domain() const {

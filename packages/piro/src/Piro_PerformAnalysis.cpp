@@ -1678,7 +1678,6 @@ Piro::PerformHDSAAnalysis(
     rolOutput->setOutputToRootOnly(0);
 
     HDSA::Ptr<HDSA::MD_Opt_Prob_Interface<double> > opt_prob_interface = HDSA::makePtr<HDSA::MD_ROL_Opt_Prob_Interface<double> >(obj_ptr, constr_ptr, rol_x_ptr, rol_p_ptr);
-    HDSA::Ptr<HDSA::Random_Number_Generator<double> > random_number_generator = HDSA::makePtr<HDSA::Random_Number_Generator<double> >(42);
     ROL::Ptr<ROL::Vector<double> > rol_opt_p_ptr = rol_p_ptr->clone(); rol_opt_p_ptr->set(*rol_p_ptr);
     ROL::Ptr<ROL::Vector<double> > rol_opt_x_ptr = rol_x_ptr->clone(); rol_opt_x_ptr->set(*rol_x_ptr);
     HDSA::Ptr<Piro::HDSA_MD_ROL_Data_Interface<double> > data_interface = HDSA::makePtr<Piro::HDSA_MD_ROL_Data_Interface<double> >(rol_opt_x_ptr, rol_opt_p_ptr);
@@ -1692,6 +1691,7 @@ Piro::PerformHDSAAnalysis(
 
     double alpha_u = hdsaParams.sublist("MD Prior").get<double>("alpha_u", 0.25);
     double alpha_z = hdsaParams.sublist("MD Prior").get<double>("alpha_z", 0.0001);
+    HDSA::Ptr<HDSA::Random_Number_Generator<double> > random_number_generator = HDSA::makePtr<HDSA::Random_Number_Generator<double> >(42);
     HDSA::Ptr<HDSA::MD_u_Prior_Interface<double> > u_prior_interface = HDSA::makePtr<Piro::HDSA_MD_ROL_Elliptic_u_Prior_Interface<double> >(alpha_u,random_number_generator,invEllOp,massOp);
     HDSA::Ptr<HDSA::MD_z_Prior_Interface<double> > z_prior_interface = HDSA::makePtr<Piro::HDSA_MD_ROL_Elliptic_z_Prior_Interface<double> >(alpha_z,priorEllOp,invPriorEllOp,priorMassOp,invPriorMassOp, priorMassCholOp);
 
@@ -1719,8 +1719,9 @@ Piro::PerformHDSAAnalysis(
     int num_evals = hdsaParams.sublist("MD Hessian Analysis").get<int>("Rank", 20);
     oversampling = hdsaParams.sublist("MD Hessian Analysis").get<int>("Oversampling Factor", 10);
     hessian_analysis->Compute_Hessian_GEVP(data_interface->Get_z_opt(),num_evals,oversampling);
-  
-    HDSA::Ptr<HDSA::MD_Update<double> > update = HDSA::makePtr<HDSA::MD_Update<double> >(data_interface,u_prior_interface,z_prior_interface,opt_prob_interface,post_sampling,hessian_analysis);
+    
+    int num_continuation_steps = hdsaParams.sublist("MD Continuation Update").get("Number of Continuation Steps", 0); 
+    HDSA::Ptr<HDSA::MD_Update<double> > update = HDSA::makePtr<HDSA::MD_Update<double> >(data_interface,u_prior_interface,z_prior_interface,opt_prob_interface,post_sampling,hessian_analysis,random_number_generator,num_continuation_steps);
   
     //HDSA::Ptr<HDSA::MD_Posterior_Vectors<double> > posterior_update_samples = update->Posterior_Update_Samples();
     //HDSA::Ptr<HDSA::Vector<double> > z_update = posterior_update_samples->mean;

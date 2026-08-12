@@ -680,7 +680,7 @@ void MockModelEval_H_Tpetra::evalModelImpl(
     double diag=1.0;
     for (int i=0; i<myVecLength; i++)
       W_out_crs->replaceLocalValues(i, 1, &diag, &i);
-      W_out_crs->fillComplete();
+    W_out_crs->fillComplete();
   }
 
   {
@@ -959,7 +959,7 @@ void MockModelEval_H_Tpetra::evalModelImpl(
   if (Teuchos::nonnull(dfdp_0_out)) {
     Teuchos::RCP<DfDpOp> dfdp_op =
         Teuchos::rcp_dynamic_cast<DfDpOp>(dfdp_0_out);
-    dfdp_op->set(p_vec_0);
+    dfdp_op->set_p(p_vec_0);
   }
 
   if (Teuchos::nonnull(g0_out)) {

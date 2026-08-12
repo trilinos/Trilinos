@@ -112,8 +112,11 @@ IF (Piro_ENABLE_ROL)
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/analysis/prior
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/analysis/posterior
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/analysis/auxiliary
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/model_discrepancy/analysis/posterior/continuation
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/pseudo_time_continuation/interfaces
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/pseudo_time_continuation/analysis
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/pseudo_time_continuation/analysis/trajectories
+      ${HDSALIB_REPO_SOURCE_DIR}/src/core/pseudo_time_continuation/analysis/preconditioners
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/base/auxiliary
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/base/linear_algebra
       ${HDSALIB_REPO_SOURCE_DIR}/src/core/base/vectors
