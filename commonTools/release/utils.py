@@ -87,6 +87,27 @@ def fetch_branch(branch: str, repo_path: str, merge: bool=False) -> None:
         raise RuntimeError(f"Failed to fetch branch {branch}: {e}") from e
 
 
+def verify_remote_branch_exists(branch: str, repo_path: str) -> None:
+    """Verify that a branch exists on the origin remote.
+    """
+    try:
+        git_root = get_git_root(repo_path)
+        git_repo = git.Repo(git_root)
+
+        refs = git_repo.git.ls_remote("--heads", "origin", branch)
+        logger.debug(f"ls-remote for {branch}:\n{refs}")
+        if not refs.strip():
+            raise RuntimeError(
+                f"Branch '{branch}' does not exist on the origin remote."
+            )
+    except git.InvalidGitRepositoryError as e:
+        raise ValueError(f"Invalid git repository at {repo_path}: {e}") from e
+    except RuntimeError:
+        raise
+    except Exception as e:
+        raise RuntimeError(f"Failed to verify remote branch {branch}: {e}") from e
+
+
 def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:
     """Checkout a git branch.
 
@@ -171,6 +192,54 @@ def update_version_cmake(version: str, rel_branch: str, dev_mode: bool, repo_pat
             f.write(new_content)
     except Exception as e:
         raise RuntimeError(f"Failed to update Version.cmake: {e}") from e
+
+
+def read_version_cmake(repo_path: str) -> dict:
+    """
+    Read the current version information from the Version.cmake file in the
+    root of the Trilinos repo.
+
+    Args:
+        repo_path: Path to the git repository
+    Returns:
+        Dictionary with keys:
+            - "version": value of SET(Trilinos_VERSION X.Y.Z)
+            - "version_string": value of SET(Trilinos_VERSION_STRING "...")
+            - "dev_mode": True if Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT is ON,
+              False if OFF
+    """
+    try:
+        file_path = f"{repo_path}/Version.cmake"
+        with open(file_path, 'r') as f:
+            content = f.read()
+    except Exception as e:
+        raise RuntimeError(f"Failed to read Version.cmake: {e}") from e
+
+    version_m = re.search(r'SET\(Trilinos_VERSION (\d+\.\d+\.\d+)\)', content)
+    version_string_m = re.search(r'SET\(Trilinos_VERSION_STRING "([^"]+)"\)', content)
+    dev_mode_m = re.search(r'SET\(Trilinos_ENABLE_DEVELOPMENT_MODE_DEFAULT (ON|OFF)\)', content)
+
+    if not version_m or not version_string_m or not dev_mode_m:
+        raise RuntimeError(
+            f"Failed to parse expected version fields from {file_path}"
+        )
+
+    info = {
+        "version": version_m.group(1),
+        "version_string": version_string_m.group(1),
+        "dev_mode": dev_mode_m.group(1) == "ON",
+    }
+    logger.debug(f"Read Version.cmake: {info}")
+    return info
+
+
+def is_release_mode(info: dict) -> bool:
+    """
+    Determine whether a Version.cmake info dict (see read_version_cmake) is in
+    release mode: the version string carries no "-dev" (or other) prerelease
+    suffix and development mode is disabled.
+    """
+    return info["dev_mode"] is False and "-" not in info["version_string"]
 
 
 def commit_tracked(msg: str, repo_path: str):
@@ -351,14 +420,3 @@ def create_release_label(label_name: str, color: str="658045"):
         raise RuntimeError(f"GitHub API error when creating label '{label_name}'.") from e
     finally:
         gh.close()
-
-
-
-
-
-
-
-
-
-
-
