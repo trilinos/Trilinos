@@ -36,15 +36,13 @@ PhiEvaluatorPFD<Scalar>::getValidParameters() const
       "Only 'CN' is implemented. Other values issue a warning and use the "
       "Crank-Nicolson solve.");
 
-  //pl->set("?", *member_->getNonconstParameterList());
-
   return pl;
 }
 
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
-							       const int k, const Scalar cdt,
-							       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b)
+                                                               const int k, const Scalar cdt,
+                                                               const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b)
 {
   // TODO: right now, hard-codes 'CN' method and k == 1. Generalize.
 
