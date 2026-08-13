@@ -19,8 +19,8 @@ namespace Tempus {
 /** \brief Creates supported PhiEvaluator implementations.
  *
  * The recognized type strings are "PFD", "Leja", and "Taylor".  The
- * type overload defaults an empty string to "PFD"; the parameter-list
- * overload reads "PhiEvaluator Type", also defaulting to "PFD".
+ * type overload defaults an empty string to "Leja"; the parameter-list
+ * overload reads "PhiEvaluator Type", also defaulting to "Leja".
  *
  * @tparam Scalar Scalar type of the evaluator and model.
  */
@@ -38,7 +38,7 @@ class PhiEvaluatorFactory {
   /** \brief Creates an evaluator selected by a type string.
    *
    * @param phiEvaluatorType std::string type selector: "PFD", "Leja", or
-   * "Taylor".  An empty string selects "PFD".
+   * "Taylor".  An empty string selects "Leja".
    * @param model Const Teuchos::RCP to a Thyra::ModelEvaluator<Scalar>.
    * Currently ignored by this implementation.
    * @return Teuchos::RCP owning the selected PhiEvaluator<Scalar>.

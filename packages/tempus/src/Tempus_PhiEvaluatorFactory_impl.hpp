@@ -24,7 +24,7 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
     std::string phiEvaluatorType,
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 {
-  if (phiEvaluatorType == "") phiEvaluatorType = "PFD";
+  if (phiEvaluatorType == "") phiEvaluatorType = "Leja";
   return this->createPhiEvaluator(phiEvaluatorType, Teuchos::null, model);
 }
 
@@ -35,9 +35,9 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
 {
   std::string phiEvaluatorType;
   if (phiEvaluatorPL == Teuchos::null)
-    phiEvaluatorType = "PFD";
+    phiEvaluatorType = "Leja";
   else
-    phiEvaluatorType = phiEvaluatorPL->get<std::string>("PhiEvaluator Type", "PFD");
+    phiEvaluatorType = phiEvaluatorPL->get<std::string>("PhiEvaluator Type", "Leja");
   return this->createPhiEvaluator(phiEvaluatorType, phiEvaluatorPL, model);
 }
 
