@@ -114,7 +114,7 @@ def pre_release(args):
     checkout_branch(rel_branch, git_root)
     push(rel_branch, git_root)
     set_release_branch_protection(rel_branch)
-    print(f"Pushed created {rel_branch} to origin repository")
+    print(f"> Pushed created {rel_branch} to origin repository")
 
     #####################################
     # Checkout and push new branch to
@@ -133,7 +133,7 @@ def pre_release(args):
     title = f"Framework: Update {args.rel_version} release Version.cmake"
     body = "@trilinos/framework"
     pr = create_pull_request(rel_branch, f"{fork_owner}:{rel_update_branch}", title, body)
-    print(f"Created release branch update PR: {pr.html_url}")
+    print(f"> Created release branch update PR: {pr.html_url}")
 
     #####################################
     # Checkout and push new branch from
@@ -151,14 +151,14 @@ def pre_release(args):
     # Create PR to update Version.cmake in develop branch
     title = "Framework: Update develop release Version.cmake"
     pr = create_pull_request(dev_branch, f"{fork_owner}:{dev_update_branch}", title, body)
-    print(f"Created dev branch update PR: {pr.html_url}")
+    print(f"> Created dev branch update PR: {pr.html_url}")
 
     #####################################
     # Create a GitHub issue label for the next set of release notes
 
     label_name = f"{dev['major']}.{dev['minor']} release note"
     create_release_label(label_name)
-    print(f"Created GitHub label: {label_name}")
+    print(f"> Created GitHub label: {label_name}")
 
     return 0
 
@@ -196,7 +196,7 @@ def release(args):
     tag_message = f"Trilinos release {version}"
     create_tag(tag_name, tag_message, rel_branch, git_root)
     push_tag(tag_name, git_root)
-    print(f"Created and pushed tag: {tag_name}")
+    print(f"> Created and pushed tag: {tag_name}")
 
     return 0
 
@@ -227,7 +227,7 @@ def patch(args):
     minor = current['minor']
     new_patch = int(current['patch']) + 1
     new_version = f"{major}.{minor}.{new_patch}"
-    print(f"Bumping {rel_branch} from {version_info['version']} to {new_version}")
+    print(f"> Bumping {rel_branch} from {version_info['version']} to {new_version}")
 
     #####################################
     # Checkout and push a new branch to update the release branch's Version.cmake
@@ -246,7 +246,7 @@ def patch(args):
     title = f"Framework: Bump {new_version} patch version"
     body = "@trilinos/framework"
     pr = create_pull_request(rel_branch, f"{fork_owner}:{patch_update_branch}", title, body)
-    print(f"Created patch release update PR: {pr.html_url}")
+    print(f"> Created patch release update PR: {pr.html_url}")
 
     return 0
 
