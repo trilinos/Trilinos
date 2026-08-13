@@ -243,11 +243,10 @@ def patch(args):
     #####################################
     # Create Pull Request for the patch version update
 
-    title = f"Framework: Update {new_version} patch release"
+    title = f"Framework: Bump {new_version} patch version"
     body = "@trilinos/framework"
     pr = create_pull_request(rel_branch, f"{fork_owner}:{patch_update_branch}", title, body)
     print(f"Created patch release update PR: {pr.html_url}")
-    print(f"After merging, run: release.py release {rel_branch}")
 
     return 0
 
