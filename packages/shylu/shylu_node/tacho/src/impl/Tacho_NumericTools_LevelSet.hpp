@@ -137,10 +137,6 @@ private:
 
   // 0: device level function, 1: team policy, 2: team policy recursive
   ordinal_type _device_factorize_thres, _device_solve_thres;
-#ifdef TACHO_DEPRECATED_PARAMETERS
-  // fixed as _device_level_cut = 0, _team_serial_level_cut = nlvl; (which are default and never changed)
-  ordinal_type _device_level_cut, _team_serial_level_cut;
-#endif
 
   ordinal_type _num_fact_calls;
   ordinal_type_array_host _h_factorize_mode, _h_solve_mode;
@@ -593,9 +589,6 @@ public:
     ///
     timer.reset();
 
-#ifdef TACHO_DEPRECATED_PARAMETERS
-    _device_level_cut = min(device_level_cut, _nlevel);
-#endif
     _device_factorize_thres = device_factorize_thres;
     _device_solve_thres = (variant == 3 ? 0 : device_solve_thres);
 
