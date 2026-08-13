@@ -98,7 +98,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
       }
     } else if (droppingMethod == "cut-drop") {
       auto comparison = CutDrop::make_dlap_vector_comparison_functor<SoC>(A, mergedA, dist2, results, rowTranslation, colTranslation);
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
+      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold, blkPartSize);
 
       if (symmetrizeDroppedGraph) {
         auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
