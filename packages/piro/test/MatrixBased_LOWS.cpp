@@ -53,6 +53,8 @@ MatrixBased_LOWS::
     auto lows_factory = strat.createLinearSolveStrategy(solverType);
     solver_ = lows_factory->createOp();
     Thyra::initializeOp<double>(*lows_factory, mat_, solver_.ptr(), Thyra::SUPPORT_SOLVE_FORWARD_ONLY);
+    trans_solver_ = lows_factory->createOp();
+    Thyra::initializeOp<double>(*lows_factory, Thyra::transpose<double>(mat_), trans_solver_.ptr(), Thyra::SUPPORT_SOLVE_FORWARD_ONLY);
   #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Error! MatrixBased_LOWS::initializeSolver, Implementation requires Stratimikos.\n");
   #endif
@@ -84,6 +86,9 @@ MatrixBased_LOWS::
         const Teuchos::Ptr<Thyra::MultiVectorBase<double>> &X,
         const Teuchos::Ptr<const Thyra::SolveCriteria<double>> solveCriteria) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(solver_), std::runtime_error, "Error! MatrixBased_LOWS::solveImpl, Solver not initialized, call initializeSolver first.\n");
-  return solver_->solve(transp, B, X, solveCriteria);
+  TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(solver_) || Teuchos::is_null(trans_solver_), std::runtime_error, "Error! MatrixBased_LOWS::solveImpl, Solver not initialized, call initializeSolver first.\n");
+  if (transp == Thyra::EOpTransp::TRANS)
+    return trans_solver_->solve(Thyra::EOpTransp::NOTRANS, B, X, solveCriteria);
+  else
+    return solver_->solve(Thyra::EOpTransp::NOTRANS, B, X, solveCriteria);
 }
