@@ -137,11 +137,12 @@ private:
 
   // 0: device level function, 1: team policy, 2: team policy recursive
   ordinal_type _device_factorize_thres, _device_solve_thres;
-  ordinal_type _device_level_cut, _team_serial_level_cut;
 
+  ordinal_type _num_fact_calls;
   ordinal_type_array_host _h_factorize_mode, _h_solve_mode;
   ordinal_type_array _factorize_mode, _solve_mode;
   ordinal_type_array_host _h_num_device_calls_factor, _h_num_device_calls_solve;
+  ordinal_type_array_host _h_num_team_calls_factor, _h_num_team_calls_solve;
 
   // level details on host
   ordinal_type _nlevel;
@@ -588,7 +589,6 @@ public:
     ///
     timer.reset();
 
-    _device_level_cut = min(device_level_cut, _nlevel);
     _device_factorize_thres = device_factorize_thres;
     _device_solve_thres = (variant == 3 ? 0 : device_solve_thres);
 
@@ -599,60 +599,39 @@ public:
     Kokkos::deep_copy(_h_solve_mode, -1);
 
     _h_num_device_calls_factor = ordinal_type_array_host(do_not_initialize_tag("h_num_device_calls_factor"), _nlevel);
+    _h_num_team_calls_factor = ordinal_type_array_host(do_not_initialize_tag("h_num_team_calls_factor"), _nlevel);
+
     _h_num_device_calls_solve = ordinal_type_array_host(do_not_initialize_tag("h_num_device_calls_solve"), _nlevel);
+    _h_num_team_calls_solve = ordinal_type_array_host(do_not_initialize_tag("h_num_team_calls_solve"), _nlevel);
 
-    if (_device_level_cut > 0) {
-      for (ordinal_type lvl = 0; lvl < _device_level_cut; ++lvl) {
-        _h_num_device_calls_solve(lvl) = 0;
-        _h_num_device_calls_factor(lvl) = 0;
+    for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
+      _h_num_device_calls_solve(lvl) = 0;
+      _h_num_team_calls_solve(lvl) = 0;
+      _h_num_device_calls_factor(lvl) = 0;
+      _h_num_team_calls_factor(lvl) = 0;
 
-        const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
-        for (ordinal_type p = pbeg; p < pend; ++p) {
-          const ordinal_type sid = _h_level_sids(p);
+      const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
+      for (ordinal_type p = pbeg; p < pend; ++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        const auto s = _h_supernodes(sid);
+        const ordinal_type m = s.m;    //, n_m = s.n-s.m;
+        if (m > _device_solve_thres) { // || n > _device_solve_thres)
           _h_solve_mode(sid) = 0;
-          _h_factorize_mode(sid) = 0;
+          _h_num_device_calls_solve(lvl) ++;
           ++stat_level.n_device_solve;
-          ++stat_level.n_device_factorize;
-
-          const auto s = _h_supernodes(sid);
-          const ordinal_type m = s.m;
-          if (m > _device_solve_thres) {
-            _h_num_device_calls_solve(lvl) ++;
-          }
-          if (m > _device_factorize_thres) {
-            _h_num_device_calls_factor(lvl) ++;
-          }
+        } else {
+          _h_solve_mode(sid) = 1;
+          _h_num_team_calls_solve(lvl) ++;
+          ++stat_level.n_team_solve;
         }
-      }
-    }
-
-    _team_serial_level_cut = _nlevel;
-    {
-      for (ordinal_type lvl = _device_level_cut; lvl < _team_serial_level_cut; ++lvl) {
-        _h_num_device_calls_solve(lvl) = 0;
-        _h_num_device_calls_factor(lvl) = 0;
-
-        const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
-        for (ordinal_type p = pbeg; p < pend; ++p) {
-          const ordinal_type sid = _h_level_sids(p);
-          const auto s = _h_supernodes(sid);
-          const ordinal_type m = s.m;    //, n_m = s.n-s.m;
-          if (m > _device_solve_thres) { // || n > _device_solve_thres)
-            _h_solve_mode(sid) = 0;
-            _h_num_device_calls_solve(lvl) ++;
-            ++stat_level.n_device_solve;
-          } else {
-            _h_solve_mode(sid) = 1;
-            ++stat_level.n_team_solve;
-          }
-          if (m > _device_factorize_thres) { // || n_m > _device_factorize_thres)
-            _h_factorize_mode(sid) = 0;
-            _h_num_device_calls_factor(lvl) ++;
-            ++stat_level.n_device_factorize;
-          } else {
-            _h_factorize_mode(sid) = 1;
-            ++stat_level.n_team_factorize;
-          }
+        if (m > _device_factorize_thres) { // || n_m > _device_factorize_thres)
+          _h_factorize_mode(sid) = 0;
+          _h_num_device_calls_factor(lvl) ++;
+          ++stat_level.n_device_factorize;
+        } else {
+          _h_factorize_mode(sid) = 1;
+          _h_num_team_calls_factor(lvl) ++;
+          ++stat_level.n_team_factorize;
         }
       }
     }
@@ -729,6 +708,7 @@ public:
   }
 
   NumericToolsLevelSet() : base_type() {
+    _num_fact_calls = 0;
     _nlevel = 0;
     _bufsize_factorize = 0;
     _bufsize_solve = 0;
@@ -2121,7 +2101,7 @@ public:
   ///
   inline void setupCRS(bool store_transpose, bool verbose) {
     const int method = this->getSolutionMethod();
-    _spmv->Setup(store_transpose, verbose, method, _m, _team_serial_level_cut,
+    _spmv->Setup(store_transpose, verbose, method, _m, _nlevel,
                 _h_level_ptr, _level_sids, _h_level_sids, _h_solve_mode, _info, _h_supernodes, _solve_mode, _piv,
                 _streams[0],
                 _w_vec);
@@ -3813,7 +3793,7 @@ public:
         // get max vector size
         const ordinal_type vmax = policy_factor.vector_length_max();
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -3839,19 +3819,14 @@ public:
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("factor lower", policy_factor, functor);
-            } else {
-              if (verbose) {
-                Kokkos::fence(); tick.reset();
-              }
-              Kokkos::parallel_for("factor", policy_factor, functor);
-              if (verbose) {
-                Kokkos::fence(); time_parallel += tick.seconds();
-              }
-              ++stat_level.n_kernel_launching;
+            if (verbose) {
+              Kokkos::fence(); tick.reset();
             }
+            Kokkos::parallel_for("factor", policy_factor, functor);
+            if (verbose) {
+              Kokkos::fence(); time_parallel += tick.seconds();
+            }
+            ++stat_level.n_kernel_launching;
 
             if (verbose) {
               Kokkos::fence(); tick.reset();
@@ -3971,7 +3946,7 @@ public:
 
         //  1. U^{H} w = t
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -3997,19 +3972,14 @@ public:
             const auto policy_update_with_work_property = policy_update;
 #endif
             if (variant != 3) {
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve lower", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              solveNoPivotLDLLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveNoPivotLDLLowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              solveCholeskyLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveCholeskyLowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             }
             if (variant != 3) {
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
@@ -4048,7 +4018,7 @@ public:
 
         //  2. U t = w;
         {
-          for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+          for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4078,19 +4048,14 @@ public:
                 team_exec_instance.fence(); // sync default, before next device solve-upper calls
               ++stat_level.n_kernel_launching;
 
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve upper", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching; // no need to synch because synched after next update if needed
-              }
+              Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching; // no need to synch because synched after next update if needed
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              solveNoPivotLDLUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveNoPivotLDLUpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              solveCholeskyUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveCholeskyUpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             }
             if (need_fence && _h_num_device_calls_solve(lvl) > 0)
               Kokkos::fence(); // synch device calls before next update
@@ -4198,7 +4163,7 @@ public:
         team_policy_update policy_update(1, 1, 1);
         const ordinal_type vmax = policy_factor.vector_length_max();
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4223,19 +4188,14 @@ public:
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("factor lower", policy_factor, functor);
-            } else {
-              if (verbose) {
-                Kokkos::fence(); tick.reset();
-              }
-              Kokkos::parallel_for("factor", policy_factor, functor);
-              if (verbose) {
-                Kokkos::fence(); time_parallel += tick.seconds();
-              }
-              ++stat_level.n_kernel_launching;
+            if (verbose) {
+              Kokkos::fence(); tick.reset();
             }
+            Kokkos::parallel_for("factor", policy_factor, functor);
+            if (verbose) {
+              Kokkos::fence(); time_parallel += tick.seconds();
+            }
+            ++stat_level.n_kernel_launching;
 
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
 
@@ -4353,7 +4313,7 @@ public:
 
         //  1. L^{-1}t = t
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4379,16 +4339,11 @@ public:
             const auto policy_update_with_work_property = policy_update;
 #endif
             if (variant != 3) {
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve lower", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLDL_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLDL_LowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (need_fence && _h_num_device_calls_solve(lvl) > 0)
               Kokkos::fence(); // fence solve on device before updating on default
 
@@ -4424,7 +4379,7 @@ public:
 
         //  2. U^{-1} t = t;
         {
-          for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+          for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4454,17 +4409,12 @@ public:
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 team_exec_instance.fence(); // synch update befor solve on device
 
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve upper", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
 
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLDL_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLDL_UpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (need_fence && _h_num_device_calls_solve(lvl) > 0)
               Kokkos::fence(); // synch solve on device before next update
           }
@@ -4573,7 +4523,7 @@ public:
         // get max vector length
         const ordinal_type vmax = policy_factor.vector_length_max();
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4598,19 +4548,14 @@ public:
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("factor lower", policy_factor, functor);
-            } else {
-              if (verbose) {
-                Kokkos::fence(); tick.reset();
-              }
-              Kokkos::parallel_for("factor", policy_factor, functor);
-              if (verbose) {
-                Kokkos::fence(); time_parallel += tick.seconds();
-              }
-              ++stat_level.n_kernel_launching;
+            if (verbose) {
+              Kokkos::fence(); tick.reset();
             }
+            Kokkos::parallel_for("factor", policy_factor, functor);
+            if (verbose) {
+              Kokkos::fence(); time_parallel += tick.seconds();
+            }
+            ++stat_level.n_kernel_launching;
 
             if (verbose) {
               Kokkos::fence(); tick.reset();
@@ -4730,7 +4675,7 @@ public:
 
         //  1. L w = t
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
 
@@ -4755,16 +4700,11 @@ public:
             const auto policy_update_with_work_property = policy_update;
 #endif
             if (variant != 3) {
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve lower", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLU_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLU_LowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (variant != 3) {
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 Kokkos::fence(); // synch solve device before update
@@ -4800,7 +4740,7 @@ public:
 
         //  2. U t = w;
         {
-          for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+          for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4830,20 +4770,15 @@ public:
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 team_exec_instance.fence(); // synch update on default before solve on device
 
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve upper", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLU_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLU_UpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (variant != 3) {
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 Kokkos::fence(); // synch solve on device before the next update on default
-              //else if (lvl == _team_serial_level_cut-1 || _h_num_device_calls_solve(lvl+1) > 0)
+              //else if (lvl == _nlevel-1 || _h_num_device_calls_solve(lvl+1) > 0)
               //  exec_space().fence(); // synch bached solve-upper calls
             }
           }
@@ -4917,6 +4852,7 @@ public:
       break;
     }
     }
+    _num_fact_calls ++;
   }
 
   inline void solve(const value_type_matrix &x, // solution
