@@ -73,6 +73,8 @@ def parse_args():
 
 
 def pre_checks(args):
+    # GITHB_TOKEN check should probably go here
+    # maybe check if release branch exists in here?
     git_root = get_git_root(args.dir if args.dir else script_path)
     logger.debug(f"git = {git_cmd}")
 
@@ -175,6 +177,7 @@ def release(args):
 
     #####################################
     # Ensure the release branch exists on origin and sync to the remote tip.
+
     verify_remote_branch_exists(rel_branch, git_root)
     fetch_branch(rel_branch, git_root)
     checkout_branch(rel_branch, git_root, remote=True)

@@ -2,7 +2,10 @@
 
 Requirements:
 - Python 3.9+
-- Local copy of Trilinos repository that has a remote `origin` to the SSH authenticated Trilinos
+- Local copy of Trilinos repository
+  - Remotes with the name exists:
+    - `origin` pointing to upstream repo
+    - `fork` pointing to your own Trilinos fork
 - Valid SSH key that is registered with your GitHub account.
 - `GITHUB_TOKEN` environment variable set to a token for the target repository.
   - GitHub fine-grain token with:
