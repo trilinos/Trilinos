@@ -219,10 +219,23 @@ inverse_fast23(Tensor<T, N> const & A)
   Index const
   dimension = A.get_dimension();
 
-  switch (dimension) {
+  // As in det, the branches that a statically sized tensor can never
+  // reach are discarded, since they index past its storage.
 
-  case 3:
-    {
+  if (dimension == 1) {
+    return Tensor<T, N>(1, Filler::ONES) / A(0,0);
+  }
+
+  if constexpr (dimension_reachable<N, 2>) {
+    if (dimension == 2) {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
+    }
+  }
+
+  if constexpr (dimension_reachable<N, 3>) {
+    if (dimension == 3) {
       T const determinant = det(A);
       assert(determinant != 0.0);
       return Tensor<T, N>(
@@ -237,22 +250,15 @@ inverse_fast23(Tensor<T, N> const & A)
         -A(0,1)*A(1,0) + A(0,0)*A(1,1)
         ) / determinant;
     }
-
-  case 2:
-    {
-      T const determinant = det(A);
-      assert(determinant != 0.0);
-      return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
-    }
-
-  case 1:
-    return Tensor<T, N>(1, Filler::ONES) / A(0,0);
-
-  default:
-    break;
   }
 
-  return inverse_full_pivot(A);
+  if constexpr (dimension_reachable<N, 4>) {
+    return inverse_full_pivot(A);
+  }
+
+  // Unreachable: a statically sized tensor of dimension three or less
+  // has been inverted above.
+  return A;
 }
 
 //
