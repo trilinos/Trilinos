@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-ORG_REPO = "trilinos-cicd2/Trilinos-test"
+ORG_REPO = "trilinos/Trilinos"
 
 
 def get_git_root(path: str) -> str:
