@@ -14,7 +14,8 @@ ORG_REPO = "trilinos-cicd2/Trilinos-test"
 
 
 def get_git_root(path: str) -> str:
-    """Get the root directory of a git repository.
+    """
+    Get the root directory of a git repository.
 
     Args:
         path: Path to a file or directory within a git repository
@@ -58,7 +59,8 @@ def parse_semver(version: str) -> dict:
 
 
 def fetch_branch(branch: str, repo_path: str, merge: bool=False) -> None:
-    """Fetch a git branch from remote.
+    """
+    Fetch a git branch from remote.
 
     Args:
         branch: Name of the branch to fetch
@@ -88,7 +90,8 @@ def fetch_branch(branch: str, repo_path: str, merge: bool=False) -> None:
 
 
 def verify_remote_branch_exists(branch: str, repo_path: str) -> None:
-    """Verify that a branch exists on the origin remote.
+    """
+    Verify that a branch exists on the origin remote.
     """
     try:
         git_root = get_git_root(repo_path)
@@ -106,6 +109,35 @@ def verify_remote_branch_exists(branch: str, repo_path: str) -> None:
         raise
     except Exception as e:
         raise RuntimeError(f"Failed to verify remote branch {branch}: {e}") from e
+
+
+def does_remote_exists(remote: str, repo_path: str) -> bool:
+    """
+    Check that a remote of the given name exists in local repo.
+    """
+    try:
+        git_root = get_git_root(repo_path)
+        git_repo = git.Repo(git_root)
+
+        remotes = [r.name for r in git_repo.remotes]
+        return remote in remotes
+    except Exception as e:
+        raise RuntimeError(f"Failed to get remotes: {e}") from e
+
+
+def get_remote_owner(remote: str, repo_path: str) -> str:
+    """
+    Get the "owner" from a remote's URL
+
+    Assumes an SSH URL (git@host:owner/repo)
+    """
+    git_root = get_git_root(repo_path)
+    git_repo = git.Repo(git_root)
+    url = git_repo.remote(remote).url
+
+    owner = url.split(":")[1].split("/")[-2]
+    logger.debug(f"Found owner {owner} from {remote} URL {url}")
+    return owner
 
 
 def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:

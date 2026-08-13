@@ -73,10 +73,16 @@ def parse_args():
 
 
 def pre_checks(args):
+    git_root = get_git_root(args.dir if args.dir else script_path)
     logger.debug(f"git = {git_cmd}")
+
     if git_cmd is None:
         raise FileNotFoundError(f"Cannot find git executable")
         exit(1)
+    if (not does_remote_exists("fork", git_root) or not does_remote_exists("origin", git_root)):
+        raise RuntimeError(f"Missing remotes 'fork' or 'origin'")
+        exit(1)
+
 
 def pre_release(args):
     """Pre-release phase.
@@ -93,6 +99,8 @@ def pre_release(args):
 
     main_branch = "master"
     dev_branch = "develop"
+
+    fork_owner = get_remote_owner("fork", git_root)
 
     #####################################
     # Fetch latest master and develop
@@ -118,13 +126,13 @@ def pre_release(args):
     update_version_cmake(args.rel_version, rel_branch, dev_mode, git_root)
     release_commit_msg = "Update release Version.cmake"
     commit_tracked(release_commit_msg, git_root)
-    push(rel_update_branch, git_root)
+    push(rel_update_branch, git_root, remote="fork")
 
     #####################################
     # Create Pull Request for release branch version update
     title = f"Framework: Update {args.rel_version} release Version.cmake"
     body = "@trilinos/framework"
-    pr = create_pull_request(rel_branch, rel_update_branch, title, body)
+    pr = create_pull_request(rel_branch, f"{fork_owner}:{rel_update_branch}", title, body)
     print(f"Created release branch update PR: {pr.html_url}")
 
     #####################################
@@ -137,12 +145,12 @@ def pre_release(args):
     update_version_cmake(args.dev_version, dev_update_branch, dev_mode, git_root)
     dev_commit_msg = "Update develop Version.cmake"
     commit_tracked(dev_commit_msg, git_root)
-    push(dev_update_branch, git_root)
+    push(dev_update_branch, git_root, remote="fork")
 
     #####################################
     # Create PR to update Version.cmake in develop branch
     title = "Framework: Update develop release Version.cmake"
-    pr = create_pull_request(dev_branch, dev_update_branch, title, body)
+    pr = create_pull_request(dev_branch, f"{fork_owner}:{dev_update_branch}", title, body)
     print(f"Created dev branch update PR: {pr.html_url}")
 
     #####################################
@@ -167,7 +175,6 @@ def release(args):
 
     #####################################
     # Ensure the release branch exists on origin and sync to the remote tip.
-
     verify_remote_branch_exists(rel_branch, git_root)
     fetch_branch(rel_branch, git_root)
     checkout_branch(rel_branch, git_root, remote=True)
@@ -202,6 +209,8 @@ def patch(args):
     git_root = get_git_root(args.dir if args.dir else script_path)
     rel_branch = args.rel_branch
 
+    fork_owner = get_remote_owner("fork", git_root)
+
     #####################################
     # Ensure the release branch exists on origin and sync to the remote tip.
 
@@ -229,14 +238,14 @@ def patch(args):
     update_version_cmake(new_version, rel_branch, dev_mode, git_root)
     patch_commit_msg = "Update patch release Version.cmake"
     commit_tracked(patch_commit_msg, git_root)
-    push(patch_update_branch, git_root)
+    push(patch_update_branch, git_root, remote="fork")
 
     #####################################
     # Create Pull Request for the patch version update
 
     title = f"Framework: Update {new_version} patch release"
     body = "@trilinos/framework"
-    pr = create_pull_request(rel_branch, patch_update_branch, title, body)
+    pr = create_pull_request(rel_branch, f"{fork_owner}:{patch_update_branch}", title, body)
     print(f"Created patch release update PR: {pr.html_url}")
     print(f"After merging, run: release.py release {rel_branch}")
 
