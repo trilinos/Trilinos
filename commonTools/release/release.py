@@ -55,18 +55,18 @@ def parse_args():
     add_common_args(rel)
     rel.set_defaults(func=release)
 
-    patch = subparsers.add_parser(
+    pat = subparsers.add_parser(
         "patch",
         help="Bump the patch number of an existing release "
              "branch's Version.cmake via a pull request. User is expected to use 'release' subcommand "
              "to finalize the patch release."
     )
-    patch.add_argument(
+    pat.add_argument(
         "rel_branch",
         help="Name of an existing release branch (e.g., trilinos-release-17-1-branch)"
     )
-    add_common_args(patch)
-    patch.set_defaults(func=patch)
+    add_common_args(pat)
+    pat.set_defaults(func=patch)
 
     args = parser.parse_args()
     return args
