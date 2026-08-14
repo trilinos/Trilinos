@@ -1,0 +1,55 @@
+<ParameterList>
+  <ParameterList name="Linear Solver Builder">
+
+  <!-- ================================================== -->
+  <!-- KRYLOV SOLVER CONFIGURATION                        -->
+  <!-- ================================================== -->
+
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Solver Type" type="string" value="Fixed Point"/>
+
+        <ParameterList name="Solver Types">
+          <ParameterList name="Fixed Point">
+            <Parameter name="Convergence Tolerance" type="double" value="0e-06"/>
+            <Parameter name="Maximum Iterations" type="int" value="3"/>
+            <Parameter name="Output Frequency" type="int" value="1"/>
+            <Parameter name="Output Style" type="int" value="1"/>
+            <Parameter name="Verbosity" type="int" value="33"/>
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="high"/>
+        </ParameterList>
+
+      </ParameterList>
+    </ParameterList>
+
+  <!-- ================================================== -->
+  <!-- PRECONDITIONER CONFIGURATION                       -->
+  <!-- ================================================== -->
+    <ParameterList name="Preconditioner Types">
+      <ParameterList name="Ifpack2">
+	<!-- Settings for 1-level Ifpack2 preconditioners -->
+        <Parameter name="Prec Type" type="string" value="block relaxation"/>
+        <Parameter name="half precision" type="bool" value="true"/>
+        <ParameterList name="Ifpack2 Settings">
+          <Parameter name="relaxation: container" type="string" value="BlockTriDi"/>
+          <Parameter name="relaxation: type" type="string" value="MT Split Jacobi"/>
+          <Parameter name="relaxation: sweeps" type="int" value="5"/>
+          <Parameter name="partitioner: block size" type="int" value="7"/>
+          <Parameter name="partitioner: explicit convert to BlockCrs" type="bool" value="true"/>
+          <Parameter name="partitioner: type" type="string" value="user"/>
+        </ParameterList>
+	<!-- -->
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+  <!-- ================================================== -->
+  </ParameterList>
+</ParameterList>

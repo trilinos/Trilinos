@@ -506,12 +506,6 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
-    {
-      Belos::PseudoBlockStochasticCGSolMgr<Scalar,MV_t,LO_t> mgr;
-      solverTypesSL.sublist(PseudoBlockStochasticCG_name).setParameters(
-        *mgr.getValidParameters()
-        );
-    }
     if (lapackSupportsScalar) {
       Belos::GCRODRSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(GCRODR_name).setParameters(
@@ -521,6 +515,12 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
     if (lapackSupportsScalar && scalarIsReal) {
       Belos::RCGSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(RCG_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Belos::PseudoBlockStochasticCGSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(PseudoBlockStochasticCG_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -548,7 +548,7 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
-#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && !defined( HAVE_TPETRA_INST_KOKKOS_EXPERIMENTAL_HALF_T)
     {
       Thyra::BelosTpetraGmres<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(TpetraGmres_name).setParameters(
@@ -972,7 +972,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       break;
     }
-#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS) && !defined( HAVE_TPETRA_INST_KOKKOS_EXPERIMENTAL_HALF_T)
     case SOLVER_TYPE_TPETRA_GMRES:
     {
       // Get the PL

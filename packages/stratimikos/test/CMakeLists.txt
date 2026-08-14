@@ -49,6 +49,12 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
     COMM serial mpi
   )
 
+  TRIBITS_ADD_EXECUTABLE(
+    BlockTriDiagonalSolver_strat
+    SOURCES BlockTriDi_strat.cpp
+    COMM serial mpi
+    )
+
   TRIBITS_ADD_TEST(
     test_tpetra_belos
     NAME test_tpetra_belos
@@ -111,6 +117,7 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
       stratimikos_BelosPrec_ParameterList.xml
       stratimikos_HalfBelosPrec_ParameterList.xml
       stratimikos_GMRES_IR_ParameterList.xml
+      stratimikos_BTDS_IR_ParameterList.xml
     EXEDEPS test_tpetra_belos
   )
 
