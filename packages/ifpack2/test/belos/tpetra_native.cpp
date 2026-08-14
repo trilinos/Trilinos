@@ -997,15 +997,17 @@ int main(int argc, char* argv[]) {
   // using mag_type = MV::mag_type;
   using reader_type = Tpetra::MatrixMarket::Reader<crs_matrix_type>;
 
+#ifndef HAVE_TPETRA_INST_HALF // To be consistent with CMakeList
   constexpr bool verbose = false;
-  // BelosTpetra::Impl::register_Cg (verbose);
-  // BelosTpetra::Impl::register_CgPipeline (verbose);
-  // BelosTpetra::Impl::register_CgSingleReduce (verbose);
   BelosTpetra::Impl::register_Gmres(verbose);
   BelosTpetra::Impl::register_GmresPipeline(verbose);
   BelosTpetra::Impl::register_GmresS(verbose);
   BelosTpetra::Impl::register_GmresSingleReduce(verbose);
   BelosTpetra::Impl::register_GmresSstep(verbose);
+#endif
+  // BelosTpetra::Impl::register_Cg (verbose);
+  // BelosTpetra::Impl::register_CgPipeline (verbose);
+  // BelosTpetra::Impl::register_CgSingleReduce (verbose);
 
   TpetraInstance tpetraInstance(&argc, &argv);
   auto comm = Tpetra::getDefaultComm();

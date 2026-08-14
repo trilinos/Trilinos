@@ -28,7 +28,10 @@ namespace tif_utest {
 template <typename Scalar, typename LO, typename GO>
 struct BlockCrsMatrixMaker {
   typedef LO Int;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  typedef typename STS::magnitudeType Magnitude;
+  using STM = Teuchos::ScalarTraits<Magnitude>;
+
   typedef Tpetra::Map<LO, GO> Tpetra_Map;
   typedef typename Tpetra_Map::node_type::device_type DeviceType;
   typedef Tpetra::Import<LO, GO> Tpetra_Import;
@@ -210,7 +213,7 @@ struct BlockCrsMatrixMaker {
   }
 
   template <typename T>
-  static KOKKOS_INLINE_FUNCTION T abs(const T& v) { return std::abs(v); }
+  static KOKKOS_INLINE_FUNCTION T abs(const T& v) { return Kokkos::abs(v); }
   template <typename T>
   static KOKKOS_INLINE_FUNCTION T abs(const Kokkos::complex<T>& v) { return Kokkos::abs(v); }
   template <typename T>
@@ -646,8 +649,8 @@ struct BlockCrsMatrixMaker {
       num += num_norm2[i] * num_norm2[i];
       den += den_norm2[i] * den_norm2[i];
     }
-    const Magnitude rd = std::sqrt(num / den);
-    return (std::isnan(rd) || std::isinf(rd)) ? 1 : rd;
+    const Magnitude rd = STM::squareroot(num / den);
+    return (STM::isnaninf(rd)) ? 1 : rd;
   }
 
   // Check the manufactured test matrix for parallel consistency by comparing a

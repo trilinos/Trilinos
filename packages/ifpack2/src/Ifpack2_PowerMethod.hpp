@@ -163,7 +163,7 @@ powerMethodWithInitGuess(const OperatorType& A,
           return zero;
         } else {
           lambdaMaxOld = lambdaMax;
-          lambdaMax    = pow(norm, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq);
+          lambdaMax    = STS::pow(norm, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq);
           if (Teuchos::ScalarTraits<ST>::magnitude(lambdaMax - lambdaMaxOld) < tolerance * Teuchos::ScalarTraits<ST>::magnitude(lambdaMax)) {
             if (verbose) {
               *out << "  lambdaMax: " << lambdaMax << endl;
@@ -219,7 +219,7 @@ powerMethodWithInitGuess(const OperatorType& A,
           return zero;
         } else {
           lambdaMaxOld = lambdaMax;
-          lambdaMax    = pow(xDinvAx, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq);
+          lambdaMax    = STS::pow(xDinvAx, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq);
           if (Teuchos::ScalarTraits<ST>::magnitude(lambdaMax - lambdaMaxOld) < tolerance * Teuchos::ScalarTraits<ST>::magnitude(lambdaMax)) {
             if (verbose) {
               *out << "  lambdaMax: " << lambdaMax << endl;
