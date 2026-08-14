@@ -1053,6 +1053,7 @@ GLOBAL_SET(Tpetra_INST_HALF_DEFAULT OFF)
 
 # Set up the Tpetra_INST_LONG_DOUBLE option: whether to instantiate / test
 # Scalar = float.
+# Do we need half-is-float check?
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_HALF
   HAVE_TPETRA_INST_HALF
@@ -1060,6 +1061,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Tpetra_INST_HALF_DEFAULT}
 )
 ASSERT_DEFINED(Tpetra_INST_HALF)
+GLOBAL_SET(HAVE_TPETRA_INST_KOKKOS_EXPERIMENTAL_HALF_T ${Tpetra_INST_HALF})
 GLOBAL_SET(HAVE_TPETRA_KOKKOS_EXPERIMENTAL_HALF_T ${Tpetra_INST_HALF})
 
 # Make sure that it's OK to instantiate/test over Scalar = float.
