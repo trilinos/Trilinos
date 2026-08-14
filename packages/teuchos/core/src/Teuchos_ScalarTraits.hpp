@@ -1299,7 +1299,7 @@ struct ScalarTraits<mp_real>
 #endif // HAVE_TEUCHOS_ARPREC
 
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if 1//def HAVE_TEUCHOS_COMPLEX
 
 
 // Partial specialization for std::complex numbers templated on real type T
