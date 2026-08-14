@@ -1347,6 +1347,17 @@ public:
   static inline unsigned short defaultPrecision() { return 100; }
 };
 
+#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template<>
+class EnhancedNumberTraits<Kokkos::Experimental::half_t>{
+public:
+  static inline Kokkos::Experimental::half_t min() { return -std::numeric_limits<Kokkos::Experimental::half_t>::max(); }
+  static inline Kokkos::Experimental::half_t max() { return  std::numeric_limits<Kokkos::Experimental::half_t>::max(); }
+  static inline Kokkos::Experimental::half_t defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 100; }
+};
+#endif
+
 /** \brief Class uesd to validate a particular type of number.
  *
  * Please see <tt>EnhancedNumberValidatorXMLConverter</tt> for documenation

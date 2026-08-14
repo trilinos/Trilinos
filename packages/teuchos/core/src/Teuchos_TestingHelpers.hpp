@@ -715,7 +715,7 @@ bool Teuchos::compareFloatingArrays(
 
   // Compare elements
   for( int i = 0; i < n; ++i ) {
-    const ScalarMag err = relErr( a1[i], a2[i] );
+    const ScalarMag err = ScalarMag(relErr( a1[i], a2[i] ));
     if ( !(err <= tol) ) {
       out
         <<"\nError, relErr("<<a1_name<<"["<<i<<"],"

@@ -608,6 +608,33 @@ public:
   }
 };
 
+#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+//! Specialization for T = unsigned short.
+template<>
+class MpiTypeTraits<Kokkos::Experimental::half_t> {
+public:
+  //! Whether this is a defined specialization of MpiTypeTraits (it is).
+  static const bool isSpecialized = true;
+
+  /// \brief Whether you must call MPI_Type_free on the return value
+  ///   of getType (both versions) after use.
+  static const bool needsFree = false;
+
+  //! MPI_Datatype corresponding to the given T instance.
+  static MPI_Datatype getType (const Kokkos::Experimental::half_t&) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "MPI with HALF not supported");
+    return MPI_FLOAT;
+  }
+
+  //! MPI_Datatype corresponding to the type T.
+  static MPI_Datatype getType () {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "MPI with HALF not supported");
+    return MPI_FLOAT;
+  }
+};
+#endif
+
+
 } // namespace Details
 } // namespace Teuchos
 

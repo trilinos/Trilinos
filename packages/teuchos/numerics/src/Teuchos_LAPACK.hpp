@@ -1297,6 +1297,139 @@ namespace Teuchos
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
+  // BEGIN INT, HALF SPECIALIZATION DECLARATION //
+#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  template<>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, Kokkos::Experimental::half_t>
+  {
+  public:
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<int, Kokkos::Experimental::half_t>& /*lapack*/) {}
+    inline virtual ~LAPACK(void) {}
+
+    // Symmetric positive definite linear system routines
+    void PTTRF(const int& n, Kokkos::Experimental::half_t* d, Kokkos::Experimental::half_t* e, int* info) const;
+    void PTTRS(const int& n, const int& nrhs, const Kokkos::Experimental::half_t* d, const Kokkos::Experimental::half_t* e, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+    void POTRF(const char& UPLO, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int*  info) const;
+    void POTRS(const char& UPLO, const int& n, const int& nrhs, const Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+    void POTRI(const char& UPLO, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* info) const;
+    void POCON(const char& UPLO, const int& n, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t& anorm, Kokkos::Experimental::half_t* rcond, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+    void POSV(const char& UPLO, const int& n, const int& nrhs, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+    void POEQU(const int& n, const Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* S, Kokkos::Experimental::half_t* scond, Kokkos::Experimental::half_t* amax, int* info) const;
+    void PORFS(const char& UPLO, const int& n, const int& nrhs, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* AF, const int& ldaf, const Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* X, const int& ldx, Kokkos::Experimental::half_t* FERR, Kokkos::Experimental::half_t* BERR, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+
+    void POSVX(const char& FACT, const char& UPLO, const int& n, const int& nrhs, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* AF, const int& ldaf, char* EQUED, Kokkos::Experimental::half_t* S, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* X, const int& ldx, Kokkos::Experimental::half_t* rcond, Kokkos::Experimental::half_t* FERR, Kokkos::Experimental::half_t* BERR, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+
+    // General Linear System Routines
+    void GELS(const char& TRANS, const int& m, const int& n, const int& nrhs, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void GELSS(const int& m, const int& n, const int& nrhs, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* S, const Kokkos::Experimental::half_t& rcond, int* rank, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* RWORK, int* info) const;
+    void GELSS(const int& m, const int& n, const int& nrhs, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* S, const Kokkos::Experimental::half_t& rcond, int* rank, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void GGLSE(const int& m, const int& n, const int& p, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* C, Kokkos::Experimental::half_t* D, Kokkos::Experimental::half_t* X, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void GEQRF(const int& m, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void GEQR2(const int& m, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, int* const info) const;
+
+    void GETRF(const int& m, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* IPIV, int* info) const;
+    void GETRS(const char& TRANS, const int& n, const int& nrhs, const Kokkos::Experimental::half_t* A, const int& lda, const int* IPIV, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+    void LASCL(const char& TYPE, const int& kl, const int& ku, const Kokkos::Experimental::half_t& cfrom, const Kokkos::Experimental::half_t& cto, const int& m, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* info) const;
+
+    void GEQP3 (const int& m, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* jpvt, Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* RWORK, int* info) const;
+    void LASWP (const int& N, Kokkos::Experimental::half_t* A, const int& LDA, const int& K1, const int& K2, const int* IPIV, const int& INCX) const;
+
+    void GBTRF(const int& m, const int& n, const int& kl, const int& ku, Kokkos::Experimental::half_t* A, const int& lda, int* IPIV, int* info) const;
+    void GBTRS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const Kokkos::Experimental::half_t* A, const int& lda, const int* IPIV, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+    void GTTRF(const int& n, Kokkos::Experimental::half_t* dl, Kokkos::Experimental::half_t* d, Kokkos::Experimental::half_t* du, Kokkos::Experimental::half_t* du2, int* IPIV, int* info) const;
+    void GTTRS(const char& TRANS, const int& n, const int& nrhs, const Kokkos::Experimental::half_t* dl, const Kokkos::Experimental::half_t* d, const Kokkos::Experimental::half_t* du, const Kokkos::Experimental::half_t* du2, const int* IPIV, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+
+
+    void GETRI(const int& n, Kokkos::Experimental::half_t* A, const int& lda, const int* IPIV, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void LATRS (const char& UPLO, const char& TRANS, const char& DIAG, const char& NORMIN, const int& N, const Kokkos::Experimental::half_t* A, const int& LDA, Kokkos::Experimental::half_t* X, Kokkos::Experimental::half_t* SCALE, Kokkos::Experimental::half_t* CNORM, int* INFO) const;
+    void GECON(const char& NORM, const int& n, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t& anorm, Kokkos::Experimental::half_t* rcond, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+    void GBCON(const char& NORM, const int& n, const int& kl, const int& ku, const Kokkos::Experimental::half_t* A, const int& lda, const int* IPIV, const Kokkos::Experimental::half_t& anorm, Kokkos::Experimental::half_t* rcond, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+    Kokkos::Experimental::half_t LANGB(const char& NORM, const int& n, const int& kl, const int& ku, const Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* WORK) const;
+    void GESV(const int& n, const int& nrhs, Kokkos::Experimental::half_t* A, const int& lda, int* IPIV, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+    void GEEQU(const int& m, const int& n, const Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* R, Kokkos::Experimental::half_t* C, Kokkos::Experimental::half_t* rowcond, Kokkos::Experimental::half_t* colcond, Kokkos::Experimental::half_t* amax, int* info) const;
+    void GERFS(const char& TRANS, const int& n, const int& nrhs, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* AF, const int& ldaf, const int* IPIV, const Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* X, const int& ldx, Kokkos::Experimental::half_t* FERR, Kokkos::Experimental::half_t* BERR, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+    void GBEQU(const int& m, const int& n, const int& kl, const int& ku, const Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* R, Kokkos::Experimental::half_t* C, Kokkos::Experimental::half_t* rowcond, Kokkos::Experimental::half_t* colcond, Kokkos::Experimental::half_t* amax, int* info) const;
+    void GBRFS(const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* AF, const int& ldaf, const int* IPIV, const Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* X, const int& ldx, Kokkos::Experimental::half_t* FERR, Kokkos::Experimental::half_t* BERR, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+
+    void GESVX(const char& FACT, const char& TRANS, const int& n, const int& nrhs, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* AF, const int& ldaf, int* IPIV, char* EQUED, Kokkos::Experimental::half_t* R, Kokkos::Experimental::half_t* C, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* X, const int& ldx, Kokkos::Experimental::half_t* rcond, Kokkos::Experimental::half_t* FERR, Kokkos::Experimental::half_t* BERR, Kokkos::Experimental::half_t* WORK, int* IWORK, int* info) const;
+
+    void SYTRD(const char& UPLO, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* D, Kokkos::Experimental::half_t* E, Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void GEHRD(const int& n, const int& ilo, const int& ihi, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void TRTRS(const char& UPLO, const char& TRANS, const char& DIAG, const int& n, const int& nrhs, const Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, int* info) const;
+    void TRTRI(const char& UPLO, const char& DIAG, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* info) const;
+
+    // Symmetric eigenvalue routines.
+    void STEQR(const char& COMPZ, const int& n, Kokkos::Experimental::half_t* D, Kokkos::Experimental::half_t* E, Kokkos::Experimental::half_t* Z, const int& ldz, Kokkos::Experimental::half_t* WORK, int* info) const;
+    void PTEQR(const char& COMPZ, const int& n, Kokkos::Experimental::half_t* D, Kokkos::Experimental::half_t* E, Kokkos::Experimental::half_t* Z, const int& ldz, Kokkos::Experimental::half_t* WORK, int* info) const;
+    void SPEV(const char& JOBZ, const char& UPLO, const int& n, Kokkos::Experimental::half_t* AP, Kokkos::Experimental::half_t* W, Kokkos::Experimental::half_t* Z, const int& ldz, Kokkos::Experimental::half_t* WORK, int* info) const;
+    void SYEV(const char& JOBZ, const char& UPLO, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* W, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void SYGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* W, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void HEEV(const char& JOBZ, const char& UPLO, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* W, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* RWORK, int* info) const;
+    void HEGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* W, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* RWORK, int* info) const;
+
+    // Non-Hermitian eigenvalue routines.
+    void HSEQR(const char& JOB, const char& COMPZ, const int& n, const int& ilo, const int& ihi, Kokkos::Experimental::half_t* H, const int& ldh, Kokkos::Experimental::half_t* WR, Kokkos::Experimental::half_t* WI, Kokkos::Experimental::half_t* Z, const int& ldz, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void GEES(const char& JOBVS, const char& SORT, int (*ptr2func)(Kokkos::Experimental::half_t*, Kokkos::Experimental::half_t*), const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* sdim, Kokkos::Experimental::half_t* WR, Kokkos::Experimental::half_t* WI, Kokkos::Experimental::half_t* VS, const int& ldvs, Kokkos::Experimental::half_t* WORK, const int& lwork, int* BWORK, int* info) const;
+    void GEES(const char& JOBVS, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* sdim, Kokkos::Experimental::half_t* WR, Kokkos::Experimental::half_t* WI, Kokkos::Experimental::half_t* VS, const int& ldvs, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* RWORK, int* BWORK, int* info) const;
+
+    void GEEV(const char& JOBVL, const char& JOBVR, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* WR, Kokkos::Experimental::half_t* WI, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void GEEV(const char& JOBVL, const char& JOBVR, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* WR, Kokkos::Experimental::half_t* WI, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* rwork, int* info) const;
+
+    void GEEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* WR, Kokkos::Experimental::half_t* WI, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, int* ilo, int* ihi, Kokkos::Experimental::half_t* SCALE, Kokkos::Experimental::half_t* abnrm, Kokkos::Experimental::half_t* RCONDE, Kokkos::Experimental::half_t* RCONDV, Kokkos::Experimental::half_t* WORK, const int& lwork, int* IWORK, int* info) const;
+    void GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* ALPHAR, Kokkos::Experimental::half_t* ALPHAI, Kokkos::Experimental::half_t* BETA, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, int* ilo, int* ihi, Kokkos::Experimental::half_t* lscale, Kokkos::Experimental::half_t* rscale, Kokkos::Experimental::half_t* abnrm, Kokkos::Experimental::half_t* bbnrm, Kokkos::Experimental::half_t* RCONDE, Kokkos::Experimental::half_t* RCONDV, Kokkos::Experimental::half_t* WORK, const int& lwork, int* IWORK, int* BWORK, int* info) const;
+    void GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* ALPHAR, Kokkos::Experimental::half_t* ALPHAI, Kokkos::Experimental::half_t* BETA, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, int* ilo, int* ihi, Kokkos::Experimental::half_t* lscale, Kokkos::Experimental::half_t* rscale, Kokkos::Experimental::half_t* abnrm, Kokkos::Experimental::half_t* bbnrm, Kokkos::Experimental::half_t* RCONDE, Kokkos::Experimental::half_t* RCONDV, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* rwork, int* IWORK, int* BWORK, int* info) const;
+    void GGEV(const char& JOBVL, const char& JOBVR, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* ALPHAR, Kokkos::Experimental::half_t* ALPHAI, Kokkos::Experimental::half_t* BETA, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void TRSEN(const char& JOB, const char& COMPQ, const int* SELECT, const int& n, Kokkos::Experimental::half_t* T, const int& ldt, Kokkos::Experimental::half_t* Q, const int& ldq, Kokkos::Experimental::half_t* WR, Kokkos::Experimental::half_t* WI, int* M, Kokkos::Experimental::half_t* S, Kokkos::Experimental::half_t* SEP, Kokkos::Experimental::half_t* WORK, const int& lwork, int* IWORK, const int& liwork, int* info ) const;
+    void TGSEN(const int& ijob, const int& wantq, const int& wantz, const int* SELECT, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, Kokkos::Experimental::half_t* ALPHAR, Kokkos::Experimental::half_t* ALPHAI, Kokkos::Experimental::half_t* BETA, Kokkos::Experimental::half_t* Q, const int& ldq, Kokkos::Experimental::half_t* Z, const int& ldz, int* M, Kokkos::Experimental::half_t* PL, Kokkos::Experimental::half_t* PR, Kokkos::Experimental::half_t* DIF, Kokkos::Experimental::half_t* WORK, const int& lwork, int* IWORK, const int& liwork, int* info ) const;
+    void GGES(const char& JOBVL, const char& JOBVR, const char& SORT, int (*ptr2func)(Kokkos::Experimental::half_t*, Kokkos::Experimental::half_t*, Kokkos::Experimental::half_t*), const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* B, const int& ldb, int* sdim, Kokkos::Experimental::half_t* ALPHAR, Kokkos::Experimental::half_t* ALPHAI, Kokkos::Experimental::half_t* BETA, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, Kokkos::Experimental::half_t* WORK, const int& lwork, int* bwork, int* info ) const;
+
+    // SVD routine
+    void GESVD(const char& JOBU, const char& JOBVT, const int& m, const int& n, Kokkos::Experimental::half_t* A, const int& lda, Kokkos::Experimental::half_t* S, Kokkos::Experimental::half_t* U, const int& ldu, Kokkos::Experimental::half_t* V, const int& ldv, Kokkos::Experimental::half_t* WORK, const int& lwork, Kokkos::Experimental::half_t* RWORK, int* info) const;
+
+    // Orthogonal matrix routines.
+    void ORMQR(const char& SIDE, const char& TRANS, const int& m, const int& n, const int& k, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* C, const int& ldc, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void ORM2R(const char& SIDE, const char& TRANS, const int& m, const int& n, const int& k, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* C, const int& ldc, Kokkos::Experimental::half_t* WORK, int* const info) const;
+    void UNMQR(const char& SIDE, const char& TRANS, const int& m, const int& n, const int& k, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* C, const int& ldc, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void UNM2R(const char& SIDE, const char& TRANS, const int& M, const int& N, const int& K, const Kokkos::Experimental::half_t* A, const int& LDA, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* C, const int& LDC, Kokkos::Experimental::half_t* WORK, int* const INFO) const;
+    void ORGQR(const int& m, const int& n, const int& k, Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void UNGQR(const int& m, const int& n, const int& k, Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void ORGHR(const int& n, const int& ilo, const int& ihi, Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+    void ORMHR(const char& SIDE, const char& TRANS, const int& m, const int& n, const int& ilo, const int& ihi, const Kokkos::Experimental::half_t* A, const int& lda, const Kokkos::Experimental::half_t* TAU, Kokkos::Experimental::half_t* C, const int& ldc, Kokkos::Experimental::half_t* WORK, const int& lwork, int* info) const;
+
+    // Triangular matrix routines.
+    void TREVC(const char& SIDE, const char& HOWMNY, int* select, const int& n, const Kokkos::Experimental::half_t* T, const int& ldt, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, const int& mm, int* m, Kokkos::Experimental::half_t* WORK, int* info) const;
+    void TREVC(const char& SIDE, const int& n, const Kokkos::Experimental::half_t* T, const int& ldt, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, const int& mm, int* m, Kokkos::Experimental::half_t* WORK, Kokkos::Experimental::half_t* RWORK, int* info) const;
+
+    void TREXC(const char& COMPQ, const int& n, Kokkos::Experimental::half_t* T, const int& ldt, Kokkos::Experimental::half_t* Q, const int& ldq, int* ifst, int* ilst, Kokkos::Experimental::half_t* WORK, int* info) const;
+
+    void TGEVC(const char& SIDE, const char& HOWMNY, const int* SELECT, const int& n, const Kokkos::Experimental::half_t* S, const int& lds, const Kokkos::Experimental::half_t* P, const int& ldp, Kokkos::Experimental::half_t* VL, const int& ldvl, Kokkos::Experimental::half_t* VR, const int& ldvr, const int& mm, int* M, Kokkos::Experimental::half_t* WORK, int* info) const;
+
+    // Rotation/reflection generators
+    void LARTG( const Kokkos::Experimental::half_t& f, const Kokkos::Experimental::half_t& g, Kokkos::Experimental::half_t* c, Kokkos::Experimental::half_t* s, Kokkos::Experimental::half_t* r ) const;
+    void LARFG( const int& n, Kokkos::Experimental::half_t* alpha, Kokkos::Experimental::half_t* x, const int& incx, Kokkos::Experimental::half_t* tau ) const;
+
+    // Matrix balancing routines.
+
+    void GEBAL(const char& JOBZ, const int& n, Kokkos::Experimental::half_t* A, const int& lda, int* ilo, int* ihi, Kokkos::Experimental::half_t* scale, int* info) const;
+
+    void GEBAK(const char& JOBZ, const char& SIDE, const int& n, const int& ilo, const int& ihi, const Kokkos::Experimental::half_t* scale, const int& m, Kokkos::Experimental::half_t* V, const int& ldv, int* info) const;
+
+    // Random number generators
+    Kokkos::Experimental::half_t LARND( const int& idist, int* seed ) const;
+    void LARNV( const int& idist, int* seed, const int& n, Kokkos::Experimental::half_t* v ) const;
+
+    // Machine characteristics.
+    Kokkos::Experimental::half_t LAMCH(const char& CMACH) const;
+    int ILAENV( const int& ispec, const std::string& NAME, const std::string& OPTS, const int& N1 = -1, const int& N2 = -1, const int& N3 = -1, const int& N4 = -1 ) const;
+
+    // Miscellaneous routines.
+    Kokkos::Experimental::half_t LAPY2(const Kokkos::Experimental::half_t& x, const Kokkos::Experimental::half_t& y) const;
+  };
+#endif
+  // END INT, HALF SPECIALIZATION DECLARATION //
+ 
+
   // BEGIN INT, FLOAT SPECIALIZATION DECLARATION //
 
   template<>

@@ -374,10 +374,12 @@ class SerializationTraits<Ordinal,unsigned long int>
   : public DirectSerializationTraits<Ordinal,long unsigned int>
 {};
 
+#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template<typename Ordinal>
 class SerializationTraits<Ordinal,Kokkos::Experimental::half_t>
   : public DirectSerializationTraits<Ordinal,Kokkos::Experimental::half_t>
 {};
+#endif
 
 template<typename Ordinal>
 class SerializationTraits<Ordinal,float>

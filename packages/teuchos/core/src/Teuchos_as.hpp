@@ -1644,6 +1644,7 @@ public:
   }
 };
 
+#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 //! Convert from \c Kokkos::Experimental::half_t to \c short.
 template<>
 class ValueTypeConversionTraits<short, Kokkos::Experimental::half_t> {
@@ -1913,6 +1914,34 @@ public:
   }
 };
 
+
+//! Convert from \c Kokkos::Experimental::half_t to <tt>double</tt>.
+template<>
+class ValueTypeConversionTraits<double, Kokkos::Experimental::half_t> {
+public:
+  static double convert (const Kokkos::Experimental::half_t t) {
+    return static_cast<double> (t);
+  }
+
+  static double safeConvert (const Kokkos::Experimental::half_t t) {
+    return static_cast<double> (t);
+  }
+};
+
+
+//! Convert from \c Kokkos::Experimental::half_t to <tt>float</tt>.
+template<>
+class ValueTypeConversionTraits<float, Kokkos::Experimental::half_t> {
+public:
+  static float convert (const Kokkos::Experimental::half_t t) {
+    return static_cast<float> (t);
+  }
+
+  static float safeConvert (const Kokkos::Experimental::half_t t) {
+    return static_cast<float> (t);
+  }
+};
+#endif
 
 //
 // * Specializations for conversions between a unsigned built-in
