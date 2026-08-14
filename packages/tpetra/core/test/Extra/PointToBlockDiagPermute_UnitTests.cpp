@@ -50,7 +50,7 @@ buildBlockDiagonalMatrix(const RCP<const Teuchos::Comm<int> >& comm,
 
     GO gidm1 = gid - 1;
     GO gidp1 = gid + 1;
-    ST diag  = static_cast<ST>(10.0 + static_cast<double>(gid));
+    ST diag  = static_cast<ST>(10.0 + static_cast<ST>(gid));
     ST left  = static_cast<ST>(-1.0);
     ST right = static_cast<ST>(-2.0);
 
@@ -105,7 +105,7 @@ buildExpectedReversedBlockDiagonal(const RCP<const Teuchos::Comm<int> >& comm,
       }
 
       cols.push_back(gids[r]);
-      vals.push_back(static_cast<ST>(10.0 + static_cast<double>(rowGid)));
+      vals.push_back(static_cast<ST>(10.0 + static_cast<ST>(rowGid)));
 
       if (r < blockSize - 1) {
         cols.push_back(gids[r + 1]);
@@ -122,8 +122,9 @@ buildExpectedReversedBlockDiagonal(const RCP<const Teuchos::Comm<int> >& comm,
 }
 
 template <class ST, class LO, class GO, class NT>
-double diffNorm(const Tpetra::CrsMatrix<ST, LO, GO, NT>& A,
-                const Tpetra::CrsMatrix<ST, LO, GO, NT>& B) {
+typename Teuchos::ScalarTraits<ST>::magnitudeType
+diffNorm(const Tpetra::CrsMatrix<ST, LO, GO, NT>& A,
+         const Tpetra::CrsMatrix<ST, LO, GO, NT>& B) {
   using crs_t = Tpetra::CrsMatrix<ST, LO, GO, NT>;
 
   auto map  = A.getRowMap();
@@ -157,7 +158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, contiguous_
   auto P = perm.createCrsMatrix();
   TEST_ASSERT(!P.is_null());
 
-  const double norm = diffNorm<ST, LO, GO, NT>(*A, *P);
+  const typename Teuchos::ScalarTraits<ST>::magnitudeType norm = diffNorm<ST, LO, GO, NT>(*A, *P);
   TEST_COMPARE(norm, <, 1.0e-14);
 }
 
@@ -198,7 +199,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, explicit_re
 
   auto E = buildExpectedReversedBlockDiagonal<ST, LO, GO, NT>(comm, blockSize, numLocalBlocks);
 
-  const double norm = diffNorm<ST, LO, GO, NT>(*E, *P);
+  const typename Teuchos::ScalarTraits<ST>::magnitudeType norm = diffNorm<ST, LO, GO, NT>(*E, *P);
   TEST_COMPARE(norm, <, 1.0e-14);
 }
 
@@ -237,7 +238,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraExt_PointToBlockDiagPermute, explicit_id
   auto P = perm.createCrsMatrix();
   TEST_ASSERT(!P.is_null());
 
-  const double norm = diffNorm<ST, LO, GO, NT>(*A, *P);
+  const typename Teuchos::ScalarTraits<ST>::magnitudeType norm = diffNorm<ST, LO, GO, NT>(*A, *P);
   TEST_COMPARE(norm, <, 1.0e-14);
 }
 

@@ -55,9 +55,10 @@ void generate_crs_entries(std::vector<index_type>& rowptr,
                              std::logic_error, "num_cols must be an odd integer!");
 
   // Fill the CRS arrays, use random values
+  const scalar_type one (1);
   std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<typename KokkosKernels::ArithTraits<scalar_type>::mag_type> dist(1.0, 2.0);
+  //std::mt19937 gen(rd());
+  //std::uniform_real_distribution<typename KokkosKernels::ArithTraits<scalar_type>::mag_type> dist(1.0, 2.0);
   int row = 0;
   while (true) {
     int m                 = (max_num_entries_per_row - 1) / 2;
@@ -73,7 +74,8 @@ void generate_crs_entries(std::vector<index_type>& rowptr,
       colind.push_back(col);
       colind2.push_back(col);
 
-      scalar_type rands = static_cast<scalar_type>(dist(gen));
+      //scalar_type rands = static_cast<scalar_type>(dist(gen));
+      scalar_type rands = one + scalar_type(std::rand()) / static_cast<scalar_type>(RAND_MAX);
       vals.push_back(rands);
       vals2.push_back(rands);
 

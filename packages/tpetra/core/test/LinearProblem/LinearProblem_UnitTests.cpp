@@ -135,6 +135,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearProblem, basic, LO, GO, Scalar, Node) {
   using map_type = Tpetra::Map<LO, GO, Node>;
   using ST       = typename Teuchos::ScalarTraits<Scalar>;
   using mag_type = typename ST::magnitudeType;
+  using MT       = typename Teuchos::ScalarTraits<mag_type>;
 
   using MAT = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
   using VT  = Tpetra::Vector<Scalar, LO, GO, Node>;
@@ -217,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearProblem, basic, LO, GO, Scalar, Node) {
   GST N        = globalNumElements;
   mag_type eps = ST::magnitude(Teuchos::as<double>(100) * Teuchos::ScalarTraits<double>::eps());
   // Original LinearProblem
-  mag_type normF        = ST::magnitude(std::sqrt(6 * N - 2));
+  mag_type normF        = ST::magnitude(MT::squareroot(mag_type(6 * N - 2)));
   mag_type matrix_normF = ST::magnitude(linearProblem->getMatrix()->getFrobeniusNorm());
   TEST_FLOATING_EQUALITY(matrix_normF, normF, eps);
 
@@ -232,7 +233,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearProblem, basic, LO, GO, Scalar, Node) {
   linearProblem->leftScale(S);
 
   mag_type vector_sum_squared = ST::magnitude(N * (N + 1) * (2 * N + 1) / 6);
-  normF                       = ST::magnitude(std::sqrt(6 * vector_sum_squared - N * N - 1));
+  normF                       = ST::magnitude(MT::squareroot(6 * vector_sum_squared - N * N - 1));
   matrix_normF                = ST::magnitude(linearProblem->getMatrix()->getFrobeniusNorm());
   TEST_FLOATING_EQUALITY(matrix_normF, normF, eps);
   linearProblem->getLHS()->norm1(norms());
@@ -255,7 +256,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LinearProblem, basic, LO, GO, Scalar, Node) {
   mag_type off_diags = ST::magnitude(2.0 * ((N * (N + 1) * (2 * N + 1) * (3 * N * N + 3 * N - 1)) / 30.0 + (N * N * (N + 1) * (N + 1)) / 2.0 + (N * (N + 1) * (2 * N + 1)) / 6.0));
   N                  = N + 1;
   mag_type diag      = ST::magnitude((2.0 * N * (N + 1) * (2 * N + 1) * (3 * N * N + 3 * N - 1)) / 15.0);
-  normF              = ST::magnitude(std::sqrt(diag + off_diags));
+  normF              = ST::magnitude(MT::squareroot(diag + off_diags));
   matrix_normF       = ST::magnitude(linearProblem->getMatrix()->getFrobeniusNorm());
   TEST_FLOATING_EQUALITY(matrix_normF, normF, eps);
   linearProblem->getLHS()->norm1(norms());

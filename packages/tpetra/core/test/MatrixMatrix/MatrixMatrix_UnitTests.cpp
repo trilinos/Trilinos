@@ -142,21 +142,27 @@ copyMatrix(const RCP<Matrix_t>& A) {
   return rcp(new Matrix_t(*A, Teuchos::Copy));
 }
 
-typedef struct add_test_results_struct {
-  double correctNorm;
-  double computedNorm;
-  double epsilon;
-} add_test_results;
+template <class SC>
+struct add_test_results_struct {
+  SC correctNorm;
+  SC computedNorm;
+  SC epsilon;
+};
+template <class SC>
+using add_test_results = add_test_results_struct<SC>;
 
-typedef struct mult_test_results_struct {
-  double epsilon;
-  double cNorm;
-  double compNorm;
+template <class SC>
+struct mult_test_results_struct {
+  SC epsilon;
+  SC cNorm;
+  SC compNorm;
   bool isImportValid;
-} mult_test_results;
+};
+template <class SC>
+using mult_test_results = mult_test_results_struct<SC>;
 
 template <class Matrix_t>
-add_test_results regular_add_test(
+add_test_results<typename Matrix_t::scalar_type> regular_add_test(
     const std::string& name,
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
@@ -169,8 +175,9 @@ add_test_results regular_add_test(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO, GO, NT> Map_t;
+  typedef Teuchos::ScalarTraits<SC> ST;
 
-  add_test_results toReturn;
+  add_test_results<SC> toReturn;
   toReturn.correctNorm = C->getFrobeniusNorm();
 
   RCP<const Map_t> rowmap = AT ? A->getDomainMap() : A->getRowMap();
@@ -178,11 +185,11 @@ add_test_results regular_add_test(
   // estSize is upper bound for A, B; estimate only for AT, BT.
   RCP<Matrix_t> computedC = rcp(new Matrix_t(rowmap, estSize));
 
-  SC one = Teuchos::ScalarTraits<SC>::one();
+  SC one = ST::one();
   Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
   computedC->fillComplete(A->getDomainMap(), A->getRangeMap());
   toReturn.computedNorm = computedC->getFrobeniusNorm();
-  toReturn.epsilon      = fabs(toReturn.correctNorm - toReturn.computedNorm);
+  toReturn.epsilon      = ST::magnitude(toReturn.correctNorm - toReturn.computedNorm);
 
 #if 0
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
@@ -199,7 +206,7 @@ add_test_results regular_add_test(
 ///
 /// \tparam Matrix_t A specialization of Tpetra::CrsMatrix.
 template <class Matrix_t>
-add_test_results
+add_test_results<typename Matrix_t::scalar_type>
 null_add_test_1(const Matrix_t& A,
                 const Matrix_t& B,
                 const bool AT,
@@ -220,7 +227,7 @@ null_add_test_1(const Matrix_t& A,
   const int myRank          = comm->getRank();
 
   out << "  Computing Frobenius norm of the expected result C" << endl;
-  add_test_results toReturn;
+  add_test_results<scalar_type> toReturn;
   toReturn.correctNorm = C.getFrobeniusNorm();
 
   out << "  Calling 3-arg add" << endl;
@@ -284,7 +291,7 @@ null_add_test_1(const Matrix_t& A,
 ///
 /// \tparam Matrix_t A specialization of Tpetra::CrsMatrix.
 template <class Matrix_t>
-add_test_results
+add_test_results<typename Matrix_t::scalar_type>
 null_add_test_2(const Matrix_t& A,
                 const Matrix_t& B,
                 const bool AT,
@@ -305,7 +312,7 @@ null_add_test_2(const Matrix_t& A,
   const int myRank          = comm->getRank();
 
   out << "  Computing Frobenius norm of the expected result C" << endl;
-  add_test_results toReturn;
+  add_test_results<scalar_type> toReturn;
   toReturn.correctNorm = C.getFrobeniusNorm();
 
   out << "  Calling 3-arg add" << endl;
@@ -367,7 +374,7 @@ null_add_test_2(const Matrix_t& A,
 }
 
 template <class Matrix_t>
-add_test_results add_into_test(
+add_test_results<typename Matrix_t::scalar_type> add_into_test(
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
     bool AT,
@@ -378,24 +385,25 @@ add_test_results add_into_test(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO, GO, NT> Map_t;
+  typedef Teuchos::ScalarTraits<SC> ST;
 
-  add_test_results toReturn;
+  add_test_results<SC> toReturn;
   toReturn.correctNorm = C->getFrobeniusNorm();
 
   RCP<const Map_t> rowmap =
       AT ? A->getDomainMap() : A->getRowMap();
   RCP<Matrix_t> computedC = rcp(new Matrix_t(rowmap, 1));
-  SC one                  = Teuchos::ScalarTraits<SC>::one();
+  SC one                  = ST::one();
   Tpetra::MatrixMatrix::Add(*A, AT, one, *B, one);
   B->fillComplete();
   toReturn.computedNorm = B->getFrobeniusNorm();
-  toReturn.epsilon      = fabs(toReturn.correctNorm - toReturn.computedNorm);
+  toReturn.epsilon      = ST::magnitude(toReturn.correctNorm - toReturn.computedNorm);
 
   return toReturn;
 }
 
 template <class Matrix_t>
-add_test_results reuse_add_test(
+add_test_results<typename Matrix_t::scalar_type> reuse_add_test(
     const std::string& name,
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
@@ -408,8 +416,9 @@ add_test_results reuse_add_test(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO, GO, NT> Map_t;
+  typedef Teuchos::ScalarTraits<SC> ST;
 
-  add_test_results toReturn;
+  add_test_results<SC> toReturn;
   toReturn.correctNorm = C->getFrobeniusNorm();
 
   RCP<const Map_t> rowmap = AT ? A->getDomainMap() : A->getRowMap();
@@ -417,7 +426,7 @@ add_test_results reuse_add_test(
   // estSize is upper bound for A, B; estimate only for AT, BT.
   RCP<Matrix_t> computedC = rcp(new Matrix_t(rowmap, estSize));
 
-  SC one = Teuchos::ScalarTraits<SC>::one();
+  SC one = ST::one();
   Tpetra::MatrixMatrix::Add(*A, AT, one, *B, BT, one, computedC);
   computedC->fillComplete(A->getDomainMap(), A->getRangeMap());
 
@@ -428,7 +437,7 @@ add_test_results reuse_add_test(
   TEUCHOS_ASSERT(A->getRangeMap()->isSameAs(*computedC->getRangeMap()));
 
   toReturn.computedNorm = computedC->getFrobeniusNorm();
-  toReturn.epsilon      = fabs(toReturn.correctNorm - toReturn.computedNorm);
+  toReturn.epsilon      = ST::magnitude(toReturn.correctNorm - toReturn.computedNorm);
 
 #if 0
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
@@ -441,7 +450,7 @@ add_test_results reuse_add_test(
 }
 
 template <class Matrix_t>
-mult_test_results multiply_test_manualfc(
+mult_test_results<typename Matrix_t::scalar_type> multiply_test_manualfc(
     const std::string& name,
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
@@ -477,7 +486,7 @@ mult_test_results multiply_test_manualfc(
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
-  mult_test_results results;
+  mult_test_results<SC> results;
   results.cNorm    = C->getFrobeniusNorm();
   results.compNorm = diffMatrix->getFrobeniusNorm();
   results.epsilon  = results.compNorm / results.cNorm;
@@ -493,7 +502,7 @@ mult_test_results multiply_test_manualfc(
 }
 
 template <class Matrix_t>
-mult_test_results multiply_test_autofc(
+mult_test_results<typename Matrix_t::scalar_type> multiply_test_autofc(
     const std::string& name,
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
@@ -556,7 +565,7 @@ mult_test_results multiply_test_autofc(
   Tpetra::MatrixMatrix::Add(*C, false, -one, *computedC, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
-  mult_test_results results;
+  mult_test_results<SC> results;
   results.cNorm    = C->getFrobeniusNorm();
   results.compNorm = diffMatrix->getFrobeniusNorm();
   results.epsilon  = results.compNorm / results.cNorm;
@@ -582,7 +591,7 @@ mult_test_results multiply_test_autofc(
 }
 
 template <class Matrix_t>
-mult_test_results multiply_RAP_test_autofc(
+mult_test_results<typename Matrix_t::scalar_type> multiply_RAP_test_autofc(
     const std::string& name,
     RCP<Matrix_t> R,
     RCP<Matrix_t> A,
@@ -648,7 +657,7 @@ mult_test_results multiply_RAP_test_autofc(
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedAc, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
-  mult_test_results results;
+  mult_test_results<SC> results;
   results.cNorm    = Ac->getFrobeniusNorm();
   results.compNorm = diffMatrix->getFrobeniusNorm();
   results.epsilon  = results.compNorm / results.cNorm;
@@ -668,7 +677,7 @@ mult_test_results multiply_RAP_test_autofc(
 }
 
 template <class Matrix_t>
-mult_test_results multiply_RAP_reuse_test(
+mult_test_results<typename Matrix_t::scalar_type> multiply_RAP_reuse_test(
     const std::string& name,
     RCP<Matrix_t> R,
     RCP<Matrix_t> A,
@@ -708,7 +717,7 @@ mult_test_results multiply_RAP_reuse_test(
   Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
 
-  mult_test_results results;
+  mult_test_results<SC> results;
   results.cNorm    = Ac->getFrobeniusNorm();
   results.compNorm = diffMatrix->getFrobeniusNorm();
   results.epsilon  = results.compNorm / results.cNorm;
@@ -721,7 +730,7 @@ mult_test_results multiply_RAP_reuse_test(
 }
 
 template <class Matrix_t>
-mult_test_results multiply_reuse_test(
+mult_test_results<typename Matrix_t::scalar_type> multiply_reuse_test(
     const std::string& name,
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
@@ -795,7 +804,7 @@ mult_test_results multiply_reuse_test(
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(C->getDomainMap(), C->getRangeMap());
 
-  mult_test_results results;
+  mult_test_results<SC> results;
   results.cNorm    = C->getFrobeniusNorm();
   results.compNorm = diffMatrix->getFrobeniusNorm();
   results.epsilon  = results.compNorm / results.cNorm;
@@ -811,7 +820,7 @@ mult_test_results multiply_reuse_test(
 }
 
 template <class Matrix_t>
-mult_test_results jacobi_test(
+mult_test_results<typename Matrix_t::scalar_type> jacobi_test(
     const std::string& name,
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
@@ -875,9 +884,9 @@ mult_test_results jacobi_test(
   C_check->fillComplete(B->getDomainMap(), B->getRangeMap());
 
   // Error Check
-  double compNorm = C_check->getFrobeniusNorm();
-  double cNorm    = C->getFrobeniusNorm();
-  mult_test_results results;
+  SC compNorm = C_check->getFrobeniusNorm();
+  SC cNorm    = C->getFrobeniusNorm();
+  mult_test_results<SC> results;
   results.epsilon  = compNorm / cNorm;
   results.cNorm    = cNorm;
   results.compNorm = compNorm;
@@ -885,7 +894,7 @@ mult_test_results jacobi_test(
 }
 
 template <class Matrix_t>
-mult_test_results jacobi_reuse_test(
+mult_test_results<typename Matrix_t::scalar_type> jacobi_reuse_test(
     const std::string& name,
     RCP<Matrix_t> A,
     RCP<Matrix_t> B,
@@ -932,7 +941,7 @@ mult_test_results jacobi_reuse_test(
   Tpetra::MatrixMatrix::Add(*computedC1, false, -one, *computedC2, false, one, diffMatrix);
   diffMatrix->fillComplete(computedC1->getDomainMap(), computedC1->getRangeMap());
 
-  mult_test_results results;
+  mult_test_results<SC> results;
   results.cNorm    = computedC1->getFrobeniusNorm();
   results.compNorm = diffMatrix->getFrobeniusNorm();
   results.epsilon  = results.compNorm / results.cNorm;
@@ -1083,7 +1092,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test, SC, LO, GO, NT
       if (verbose)
         newOut << "Running multiply test (manual FC) for " << currentSystem.name() << endl;
 
-      mult_test_results results = multiply_test_manualfc(name, A, B, AT, BT, C, comm, newOut);
+      mult_test_results<SC> results = multiply_test_manualfc(name, A, B, AT, BT, C, comm, newOut);
 
       if (verbose) {
         newOut << "Results:" << endl;
@@ -1171,7 +1180,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test, SC, LO, GO, NT
         newOut << "Running 3-argument add test (nonnull C on input) for "
                << currentSystem.name() << endl;
 
-      add_test_results results = regular_add_test(name + "_add", A, B, AT, BT, C, comm);
+      add_test_results<SC> results = regular_add_test(name + "_add", A, B, AT, BT, C, comm);
 
       TEST_COMPARE(results.epsilon, <, epsilon);
       newOut << "Regular Add Test Results: " << endl;
@@ -1255,7 +1264,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test, SC, LO, GO, NT
       if (verbose)
         newOut << "Running multiply RAP test for " << currentSystem.name() << endl;
 
-      mult_test_results results = multiply_RAP_test_autofc(name, A, B, C, AT, BT, CT, D, comm, newOut);
+      mult_test_results<SC> results = multiply_RAP_test_autofc(name, A, B, C, AT, BT, CT, D, comm, newOut);
 
       if (verbose) {
         newOut << "Results:" << endl;
@@ -1380,7 +1389,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   bMatrix->fillComplete(bDomainMap, bRangeMap);
 
   newOut << "Regular I*P" << endl;
-  mult_test_results results = multiply_test_manualfc(
+  mult_test_results<SC> results = multiply_test_manualfc(
       "Different Range and Row Maps",
       identityMatrix,
       bMatrix,
@@ -1396,7 +1405,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     newOut << "\tcNorm: " << results.cNorm << endl;
     newOut << "\tcompNorm: " << results.compNorm << endl;
   }
-  const double defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
+  const SC defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
   TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
   newOut << "Create identity2" << endl;
@@ -1462,9 +1471,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
   newOut << "Call fillComplete on bTransDiff" << endl;
   bTransDiff->fillComplete(bTransDomainMap, bDomainMap);
 
-  double diffNorm    = bTransDiff->getFrobeniusNorm();
-  double realNorm    = bTransTest->getFrobeniusNorm();
-  double calcEpsilon = diffNorm / realNorm;
+  SC diffNorm    = bTransDiff->getFrobeniusNorm();
+  SC realNorm    = bTransTest->getFrobeniusNorm();
+  SC calcEpsilon = diffNorm / realNorm;
 
   newOut << "B" << endl;
 
@@ -2029,7 +2038,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
   // FIXME (mfh 03 May 2016) I'm not sure what this message means, so
   // I'll leave it.
   newOut << "Regular I*P" << endl;
-  mult_test_results results = multiply_test_manualfc(
+  mult_test_results<SC> results = multiply_test_manualfc(
       "Different Range and Row Maps",
       aMat,
       identityMatrix,
@@ -2044,7 +2053,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
     newOut << "\tcNorm: " << results.cNorm << endl;
     newOut << "\tcompNorm: " << results.compNorm << endl;
   }
-  const double defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
+  const SC defaultEpsilon = 100. * Teuchos::ScalarTraits<SC>::eps();
   TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
   const int lclSuccess = success ? 1 : 0;
@@ -2094,7 +2103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
         std::vector<ISC> rowVals(nnzPerRow);
         std::vector<LO> rowInds(nnzPerRow);
         for (size_t entry = 0; entry < nnzPerRow; entry++) {
-          rowVals[entry] = ((double)rand()) / RAND_MAX;
+          rowVals[entry] = ((SC)rand()) / ((SC)RAND_MAX);
           // don't allow repeats in col inds
           LO ind;
           do {
@@ -2237,7 +2246,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
         std::vector<ISC> rowVals(nnzPerRow);
         std::vector<LO> rowInds(nnzPerRow);
         for (size_t entry = 0; entry < nnzPerRow; entry++) {
-          rowVals[entry] = ((double)rand()) / RAND_MAX;
+          rowVals[entry] = ((SC)rand()) / ((SC)RAND_MAX);
           // don't allow repeats in col inds
           LO ind;
           do {
@@ -2603,7 +2612,7 @@ bool verifySum(const CrsMat& A, const CrsMat& B, const CrsMat& C) {
       if (Bit < Bentries && Binds[Bit] == col)
         goldVal += Bvals[Bit++];
       // Any scalar magnitude should implicitly convert to double
-      double err = KAT::abs(val - goldVal);
+      SC err = KAT::abs(val - goldVal);
       if (err > 1e-13) {
         std::cerr << "On rank " << rowMap->getComm()->getRank() << ": global row " << gid << ", global col " << col << " has wrong value!" << std::endl;
         return false;
@@ -2663,7 +2672,7 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(
     Teuchos::Array<SC> vals(n);
     Teuchos::Array<LO> inds(n);
     for (int j = 0; j < n; j++) {
-      vals[j] = 10.0 * rand() / RAND_MAX;
+      vals[j] = 10.0 * rand() / ((SC)RAND_MAX);
       inds[j] = rand() % colMap->getLocalNumElements();
     }
     mat->insertLocalValues(i, inds(), vals());
@@ -2715,7 +2724,7 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getUnsortedTestMatrix(
       // Select a random column from the columns not used yet
       size_t index            = rand() % unused.size();
       colinds[rowptrs[i] + j] = unused[index];
-      values[rowptrs[i] + j]  = 10.0 * rand() / RAND_MAX;
+      values[rowptrs[i] + j]  = 10.0 * rand() / ((SC)RAND_MAX);
       // efficiently remove index element from unused, don't care about order
       unused[index] = unused.back();
       unused.pop_back();

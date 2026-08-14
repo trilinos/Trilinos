@@ -126,12 +126,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, localValues, LO, GO, Scalar, Node) 
   }
 
   // modify the views on device; check them on host
-  {
-      {auto view = mat->getLocalValuesDevice(Tpetra::Access::ReadWrite);
+{
+{
+  auto view = mat->getLocalValuesDevice(Tpetra::Access::ReadWrite);
   Kokkos::parallel_for(
-      "modifyValuesOnDevice",
-      dev_range_policy(0, mat->getLocalNumEntries()),
-      KOKKOS_LAMBDA(const LO i) { view[i] *= 2; });
+    "modifyValuesOnDevice",
+    dev_range_policy(0, mat->getLocalNumEntries()),
+    KOKKOS_LAMBDA(const LO i) { view[i] = impl_scalar_t(2) * view[i]; });
 }
 
 {
@@ -156,11 +157,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, localValues, LO, GO, Scalar, Node) 
 
 // modify the views on host; check them on device
 {
-    {auto view = mat->getLocalValuesHost(Tpetra::Access::ReadWrite);
-Kokkos::parallel_for(
+{
+  auto view = mat->getLocalValuesHost(Tpetra::Access::ReadWrite);
+  Kokkos::parallel_for(
     "modifyValuesOnHost",
     host_range_policy(0, mat->getLocalNumEntries()),
-    [&](const LO i) { view[i] *= 2; });
+    [&](const LO i) { view[i] = impl_scalar_t(2) * view[i]; });
 }
 {
   int checkHostModifiedValuesOnDeviceErrors = 0;
