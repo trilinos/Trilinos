@@ -126,7 +126,7 @@ private:
 
   typedef Teuchos::ScalarTraits<MagnitudeType> MTS;
   typedef Belos::GmresPolyOp<ScalarType,MV,OP,DM> gmres_poly_t;
-  typedef Belos::GmresPolyMv<ScalarType,MV, DM>    gmres_poly_mv_t;
+  typedef Belos::GmresPolyMv<ScalarType,MV, DM>   gmres_poly_mv_t;
 
 public:
 

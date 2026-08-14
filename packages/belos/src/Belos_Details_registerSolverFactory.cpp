@@ -31,26 +31,54 @@
 #include "BelosRCGSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
 
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+#include "Kokkos_Core.hpp"
+#endif
+
 namespace Belos {
 namespace Details {
 
-#ifdef HAVE_TEUCHOS_COMPLEX
-#define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)                           \
-  Impl::registerSolverSubclassForTypes<manager<fST,fMVt,fOPt,fSDM>, fST, fMVt, fOPt, fSDM> (name);        \
-  Impl::registerSolverSubclassForTypes<manager<dST,dMVt,dOPt,dSDM>, dST, dMVt, dOPt, dSDM> (name);        \
-  Impl::registerSolverSubclassForTypes<manager<cST,cMVt,cOPt,cSDM>, cST, cMVt, cOPt, cSDM> (name);  \
-  Impl::registerSolverSubclassForTypes<manager<cfST,cfMVt,cfOPt,cfSDM>, cfST, cfMVt, cfOPt, cfSDM> (name); \
-  Impl::registerSolverSubclassForTypes<manager<fST,fMVk,fOPk,fKDV>, fST, fMVk, fOPk, fKDV> (name);        \
-  Impl::registerSolverSubclassForTypes<manager<dST,dMVk,dOPk,dKDV>, dST, dMVk, dOPk, dKDV> (name);        \
-  Impl::registerSolverSubclassForTypes<manager<cST,cMVk,cOPk,cKDV>, cST, cMVk, cOPk, cKDV> (name);  \
-  Impl::registerSolverSubclassForTypes<manager<cfST,cfMVk,cfOPk,cfKDV>, cfST, cfMVk, cfOPk, cfKDV> (name);
-#else // HAVE_TEUCHOS_COMPLEX
-#define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)            \
-  Impl::registerSolverSubclassForTypes<manager<fST,fMVt,fOPt,fSDM>, fST, fMVt, fOPt, fSDM> (name);  \
-  Impl::registerSolverSubclassForTypes<manager<dST,dMVt,dOPt,dSDM>, dST, dMVt, dOPt, dSDM> (name);  \
-  Impl::registerSolverSubclassForTypes<manager<fST,fMVk,fOPk,fKDV>, fST, fMVk, fOPk, fKDV> (name);  \
-  Impl::registerSolverSubclassForTypes<manager<dST,dMVk,dOPk,dKDV>, dST, dMVk, dOPk, dKDV> (name);
-#endif // HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  #ifdef HAVE_TEUCHOS_COMPLEX
+  #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)                           \
+    Impl::registerSolverSubclassForTypes<manager<hST,hMVt,hOPt,hSDM>, hST, hMVt, hOPt, hSDM> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVt,fOPt,fSDM>, fST, fMVt, fOPt, fSDM> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVt,dOPt,dSDM>, dST, dMVt, dOPt, dSDM> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cST,cMVt,cOPt,cSDM>, cST, cMVt, cOPt, cSDM> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cfST,cfMVt,cfOPt,cfSDM>, cfST, cfMVt, cfOPt, cfSDM> (name); \
+    Impl::registerSolverSubclassForTypes<manager<hST,hMVk,hOPk,hKDV>, hST, hMVk, hOPk, hKDV> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVk,fOPk,fKDV>, fST, fMVk, fOPk, fKDV> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVk,dOPk,dKDV>, dST, dMVk, dOPk, dKDV> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cST,cMVk,cOPk,cKDV>, cST, cMVk, cOPk, cKDV> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cfST,cfMVk,cfOPk,cfKDV>, cfST, cfMVk, cfOPk, cfKDV> (name);
+  #else // HAVE_TEUCHOS_COMPLEX
+  #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)            \
+    Impl::registerSolverSubclassForTypes<manager<hST,hMVt,hOPt,hSDM>, hST, hMVt, hOPt, hSDM> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVt,fOPt,fSDM>, fST, fMVt, fOPt, fSDM> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVt,dOPt,dSDM>, dST, dMVt, dOPt, dSDM> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<hST,hMVk,hOPk,hKDV>, hST, hMVk, hOPk, hKDV> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVk,fOPk,fKDV>, fST, fMVk, fOPk, fKDV> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVk,dOPk,dKDV>, dST, dMVk, dOPk, dKDV> (name);
+  #endif // HAVE_TEUCHOS_COMPLEX
+#else // KOKKOS_HALF_T_IS_FLOAT)
+  #ifdef HAVE_TEUCHOS_COMPLEX
+  #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)                           \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVt,fOPt,fSDM>, fST, fMVt, fOPt, fSDM> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVt,dOPt,dSDM>, dST, dMVt, dOPt, dSDM> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cST,cMVt,cOPt,cSDM>, cST, cMVt, cOPt, cSDM> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cfST,cfMVt,cfOPt,cfSDM>, cfST, cfMVt, cfOPt, cfSDM> (name); \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVk,fOPk,fKDV>, fST, fMVk, fOPk, fKDV> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVk,dOPk,dKDV>, dST, dMVk, dOPk, dKDV> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cST,cMVk,cOPk,cKDV>, cST, cMVk, cOPk, cKDV> (name);         \
+    Impl::registerSolverSubclassForTypes<manager<cfST,cfMVk,cfOPk,cfKDV>, cfST, cfMVk, cfOPk, cfKDV> (name);
+  #else // HAVE_TEUCHOS_COMPLEX
+  #define BELOS_DEFINE_REGISTER_SOLVER_MANAGER(manager,name)            \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVt,fOPt,fSDM>, fST, fMVt, fOPt, fSDM> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVt,dOPt,dSDM>, dST, dMVt, dOPt, dSDM> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<fST,fMVk,fOPk,fKDV>, fST, fMVk, fOPk, fKDV> (name);  \
+    Impl::registerSolverSubclassForTypes<manager<dST,dMVk,dOPk,dKDV>, dST, dMVk, dOPk, dKDV> (name);
+  #endif // HAVE_TEUCHOS_COMPLEX
+#endif
 
 void registerSolverFactory () {
   typedef double dST;
@@ -68,6 +96,16 @@ void registerSolverFactory () {
   typedef Operator<fST, fSDM> fOPt;
   typedef MultiVec<fST, fKDV> fMVk;
   typedef Operator<fST, fKDV> fOPk;
+
+#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  typedef Kokkos::Experimental::half_t hST;
+  typedef Teuchos::SerialDenseMatrix<int, hST> hSDM;
+  typedef Kokkos::DualView<typename KokkosKernels::ArithTraits<hST>::val_type **, Kokkos::LayoutLeft> hKDV;
+  typedef MultiVec<hST, hSDM> hMVt;
+  typedef Operator<hST, hSDM> hOPt;
+  typedef MultiVec<hST, hKDV> hMVk;
+  typedef Operator<hST, hKDV> hOPk;
+#endif
 
 #ifdef HAVE_TEUCHOS_COMPLEX
   typedef std::complex<double> cST;
@@ -92,7 +130,10 @@ void registerSolverFactory () {
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(BlockGmresSolMgr, "BLOCK GMRES")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(FixedPointSolMgr, "FIXED POINT")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(GCRODRSolMgr, "GCRODR")
+#if !defined(HAVE_TEUCHOSCORE_KOKKOS) || (defined(KOKKOS_HALF_T_IS_FLOAT) && KOKKOS_HALF_T_IS_FLOAT)
+  // will need complex<half_t>
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(GmresPolySolMgr, "HYBRID BLOCK GMRES")
+#endif
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(LSQRSolMgr, "LSQR")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(MinresSolMgr, "MINRES")
   BELOS_DEFINE_REGISTER_SOLVER_MANAGER(PCPGSolMgr, "PCPG")

@@ -63,7 +63,7 @@ protected:
       M.apply (B, MR);
       beta_old = ATS::real (B.dot (MR));
     }
-    magnitude_type r_norm = std::sqrt (beta_old);
+    magnitude_type r_norm = ATM::sqrt (beta_old);
     magnitude_type r_norm_orig = r_norm;
 
     // quick return
@@ -113,7 +113,7 @@ protected:
       beta_old = ATS::real (RR_RAR_host(0));
       PAP = ATS::real (RR_RAR_host(1));
 
-      r_norm = std::sqrt (beta_old);
+      r_norm = ATM::sqrt (beta_old);
     }
     magnitude_type alpha      = beta_old / PAP;
     magnitude_type beta       = ATM::zero ();
@@ -165,7 +165,7 @@ protected:
       RAR = ATS::real (RR_RAR_host(1));
 
       // convergence check
-      r_norm = std::sqrt( beta_new );
+      r_norm = ATM::sqrt( beta_new );
       metric = this->getConvergenceMetric (r_norm, r_norm_orig, input);
       if (outPtr != nullptr) {
         *outPtr << ", r_norm: " << r_norm << ", RAR: " << RAR << ", metric: " << metric;

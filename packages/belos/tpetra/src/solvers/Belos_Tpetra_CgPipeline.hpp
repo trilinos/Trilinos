@@ -134,7 +134,7 @@ protected:
       RAR = RR_RAR_host(1);
       beta_new = ATS::real (RR_RAR_host(0));
 
-      r_norm = std::sqrt( beta_new );
+      r_norm = ATM::sqrt( beta_new );
       if (iter == 0) {
         r_norm_orig = r_norm;
       }
