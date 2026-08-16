@@ -25,7 +25,7 @@ Driver<VT, DT>::Driver()
     : _method_setup(1), _method(1), _order_connected_graph_separately(true), _graph_algo_type(-1), _m(0), _nnz(0),
       _ap(), _h_ap(), _aj(), _h_aj(), _perm(), _h_perm(), _peri(), _h_peri(),
       _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
-      _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024),
+      _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _debug(0), _small_problem_thres(1024),
 #ifdef TACHO_DEPRECATED_PARAMETERS
       _serial_thres_size(-1), _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0),
 #endif
@@ -35,7 +35,7 @@ Driver<VT, DT>::Driver()
       #else
       _variant(-1), // sequential by default
       #endif
-      _nstreams(16), _team_on_user_stream(false), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(0), _pivot_tol(0.0),
+      _nstreams(16), _team_on_user_stream(false), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(-1), _pivot_tol(-1.0),
 #if defined(KOKKOS_ENABLE_HIP)
       _store_transpose(true)
 #else
@@ -66,7 +66,10 @@ template <typename VT, typename DT> Driver<VT, DT> Driver<VT, DT>::duplicate() {
 ///
 /// common options
 ///
-template <typename VT, typename DT> void Driver<VT, DT>::setVerbose(const ordinal_type verbose) { _verbose = verbose; }
+template <typename VT, typename DT> void Driver<VT, DT>::setVerbose(const ordinal_type verbose, const ordinal_type debug) {
+  _verbose = verbose;
+  _debug = debug;
+}
 
 template <typename VT, typename DT>
 void Driver<VT, DT>::setSmallProblemThresholdsize(const ordinal_type small_problem_thres) {
@@ -215,16 +218,29 @@ template <typename VT, typename DT> void Driver<VT, DT>::shiftDiagonal(const int
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
-  _pivot_tol = 0.0;
+  _replace_tiny_pivot = -1;
+  _pivot_tol = -1.0;
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance(const int option) {
+  using arith_traits = ArithTraits<value_type>;
   _replace_tiny_pivot = option;
-  if (option == 1) {
-    using arith_traits = ArithTraits<value_type>;
+
+  // NOTE: in non-pivot LDL, we replace tiny pivots (diagonals that are smaller than or equal to tol) with one
+  //       while in Chol and LU, we replace tiny pivots (that are smaller than tol) with tol (so only tol>0.0 has any effects)
+  if (option == 0) {
+    // tol = 0.0 (perturbe only zero pivot)
+    _pivot_tol = 0.0;
+  } else if (option == 1) {
+    // tol = eps
+    _pivot_tol = arith_traits::epsilon();
+  } else if (option == 2) {
+    // tol = sqrt(eps)
     _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
   } else {
-    _pivot_tol = 0.0;
+    // if option < 0, then tol = -1.0 (no pivot check)
+    // if option > 2, then tol = sqrt(tol)||A|| (computed in factorize)
+    _pivot_tol = -1.0;
   }
 }
 
@@ -447,9 +463,18 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     setFactorizationMethod(method);
   }
 
+  if (_debug) {
+    // save ax for debuging
+    if (_ax.extent(0) < ax.extent(0)) {
+      Kokkos::resize(_ax, ax.extent(0));
+    }
+    Kokkos::deep_copy(_ax, ax);
+  }
+
   const mag_type zero(0);
+  mag_type alpha(zero); // ||A||
   mag_type shift(0.0);
-  if (_shift_diag != 0 || _replace_tiny_pivot > 1) {
+  if (_shift_diag != 0 || _replace_tiny_pivot > 2) {
     const ordinal_type m = _m;
     Kokkos::RangePolicy<exec_space> range_policy(0, m);
 
@@ -457,7 +482,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     Kokkos::resize(_dv, _m);
 
     // Compute alpha = ||A||_2
-    value_type alpha(zero);
     //for (size_t i=0; i<ax.extent(0); i++) alpha += arith_traits::conj(ax(i)) * ax(i);
     const auto ap = _ap;
     const auto aj = _aj;
@@ -467,16 +491,17 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
       range_policy, KOKKOS_LAMBDA(const ordinal_type &i) {
         dv(i) = zero;
         for (size_type k=ap(i); k<ap(i+1); k++) {
-          dv(i) += arith_traits::conj(ax(k)) * ax(k);
+          // conj(ax(k)) * ax(k) should be always magnitude type, but take abs for compiler
+          dv(i) += arith_traits::abs(arith_traits::conj(ax(k)) * ax(k));
         }
       });
     // * atomic_sum row-sums
     Kokkos::parallel_reduce(
-      range_policy, KOKKOS_LAMBDA (int i, value_type &tmp) {
+      range_policy, KOKKOS_LAMBDA (int i, mag_type &tmp) {
         tmp += dv(i);
       }, alpha);
     // Compute shift = sqrt(eps) * ||A||_2
-    shift = Kokkos::sqrt(arith_traits::abs(alpha * arith_traits::epsilon()));
+    shift = Kokkos::sqrt(alpha * arith_traits::epsilon());
   }
   // internally keep track of the current shift
   if (_shift_diag != 0) {
@@ -485,10 +510,8 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     _shift = zero;
   }
   // internally save the pivot tol
-  if (_replace_tiny_pivot > 1) {
+  if (_replace_tiny_pivot > 2) {
     _pivot_tol = shift;
-  } else if (_replace_tiny_pivot != 1) {
-    _pivot_tol = zero;
   }
 
   if (_verbose) {
@@ -496,32 +519,27 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
     case LDL_nopiv: {
       printf("TachoSolver: Factorize LDL (no pivot)\n");
       printf("=====================================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case Cholesky: {
       printf("TachoSolver: Factorize Cholesky\n");
       printf("===============================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case LDL: {
       printf("TachoSolver: Factorize LDL\n");
       printf("==========================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     case SymLU: {
       printf("TachoSolver: Factorize SymLU\n");
       printf("============================\n");
-      if (_shift_diag != 0) printf(" > shifting diagonal by %.2e\n",_shift);
-      if (_replace_tiny_pivot != 0) printf( " > using pivot tol = %.2e\n",_pivot_tol);
       break;
     }
     }
+    alpha = Kokkos::sqrt(alpha);
+    if (_shift_diag != 0) printf(" > shifting diagonal by %.2e (||A|| = %.2e)\n",_shift,alpha);
+    if (_replace_tiny_pivot >= 0) printf( " > using pivot tol = %.2e (%d, ||A|| = %.2e)\n",_pivot_tol,_replace_tiny_pivot,alpha);
     if (_m <= _small_problem_thres) {
       printf( " Small matrix\n" );
     }
@@ -540,14 +558,22 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     Kokkos::Timer timer;
 
     timer.reset();
-    _A = value_type_matrix_host("A", _m, _m);
+    if (ordinal_type(_A.extent(0)) != _m || ordinal_type(_A.extent(1)) != _m) {
+      Kokkos::resize(_A, _m, _m);
+    }
+
+    // expand A into dense format on host
+    const value_type zero(0);
     auto h_ax = Kokkos::create_mirror_view_and_copy(host_memory_space(), ax);
     for (ordinal_type i = 0; i < _m; ++i) {
+      // zero out i-th row
+      for (ordinal_type j = 0; j < _m; ++j) _A(i, j) = zero;
+      // insert non-zero values to i-th row
       const size_type jbeg = _h_ap(i), jend = _h_ap(i + 1);
       for (size_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = _h_aj(j);
-        const bool flag = ((_method == LDL_nopiv && i <= col) || /// upper
-                           (_method == Cholesky  && i <= col) || /// upper
+        const bool flag = ((_method == Cholesky  && i <= col) || /// upper
+                           (_method == LDL_nopiv && i >= col) || /// lower (calls ldl)
                            (_method == LDL && i >= col) ||       /// lower
                            (_method == SymLU));                  /// full matrix
         if (flag)
@@ -557,25 +583,31 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     }
     t_copy = timer.seconds();
 
+    // factor A by Lapack on host
+    int rval (0);
     timer.reset();
     switch (_method) {
-    case LDL_nopiv:
     case Cholesky : {
-      Tacho::Chol<Uplo::Upper, Algo::External>::invoke(_A);
+      rval = Tacho::Chol<Uplo::Upper, Algo::External>::invoke(_A);
       break;
     }
+    case LDL_nopiv:
     case LDL: {
       _P = ordinal_type_array_host("P", 4 * _m);
       _D = value_type_matrix_host("D", _m, 2);
       auto W = value_type_array_host("W", 32 * _m);
-      Tacho::LDL<Uplo::Lower, Algo::External>::invoke(_A, _P, W);
-      Tacho::LDL<Uplo::Lower, Algo::External>::modify(_A, _P, _D);
+      rval = Tacho::LDL<Uplo::Lower, Algo::External>::invoke(_A, _P, W);
+      if (rval == 0) {
+        Tacho::LDL<Uplo::Lower, Algo::External>::modify(_A, _P, _D);
+      }
       break;
     }
     case SymLU: {
       _P = ordinal_type_array_host("P", 4 * _m);
-      Tacho::LU<Algo::External>::invoke(_A, _P);
-      Tacho::LU<Algo::External>::modify(_m, _P);
+      rval = Tacho::LU<Algo::External>::invoke(_A, _P);
+      if (rval == 0) {
+        Tacho::LU<Algo::External>::modify(_m, _P);
+      }
       break;
     }
     default: {
@@ -585,6 +617,10 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     }
     }
     t_factor = timer.seconds();
+    if (rval != 0) {
+      std::cout << "Error: factorize_small_host returns non-zero error code (" << rval << ")" << std::endl;
+      TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "factorize_small_host returns non-zero error code.");
+    }
   }
 
   if (_verbose) {
@@ -648,8 +684,15 @@ int Driver<VT, DT>::solve(const value_type_matrix &x, const value_type_matrix &b
     TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) || t.extent(1) < x.extent(1), std::logic_error,
                              "Temporary rhs vector t is smaller than x");
     auto tt = Kokkos::subview(t, Kokkos::pair<ordinal_type, ordinal_type>(0, x.extent(0)),
-                              Kokkos::pair<ordinal_type, ordinal_type>(0, x.extent(1)));
+                                 Kokkos::pair<ordinal_type, ordinal_type>(0, x.extent(1)));
     _N->solve(x, b, tt, _verbose);
+  }
+  if (_debug) {
+    // print current parameters
+    printParameters();
+    // compute current residuanl norm
+    Kokkos::deep_copy(t, b);
+    computeRelativeResidual(x, t, true);
   }
   return 0;
 }
@@ -666,7 +709,6 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
 
     timer.reset();
     switch (_method) {
-    case LDL_nopiv:
     case Cholesky : {
       auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x);
       Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
@@ -674,6 +716,7 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
       Kokkos::deep_copy(x, h_x);
       break;
     }
+    case LDL_nopiv:
     case LDL: {
       auto perm = ordinal_type_array_host(_P.data() + 2 * _m, _m);
       auto peri = ordinal_type_array_host(_P.data() + 3 * _m, _m);
@@ -716,12 +759,22 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
 }
 
 template <typename VT, typename DT>
+double Driver<VT, DT>::computeRelativeResidual(const value_type_matrix &x, const value_type_matrix &b,
+                                               const bool verbose) {
+  if (_debug) {
+    return computeRelativeResidual(_ax, x, b, 0.0, verbose);
+  } else {
+    return -1.0;
+  }
+}
+template <typename VT, typename DT>
 double Driver<VT, DT>::computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x,
-                                               const value_type_matrix &b, const mag_type shift) {
+                                               const value_type_matrix &b, const mag_type shift,
+                                               const bool verbose) {
   CrsMatrixBase<value_type, device_type> A;
   A.setExternalMatrix(_m, _m, _nnz, _ap, _aj, ax);
 
-  return Tacho::computeRelativeResidual(A, x, b, shift, _verbose);
+  return Tacho::computeRelativeResidual(A, x, b, shift, verbose);
 }
 
 template <typename VT, typename DT>
@@ -832,7 +885,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
     _A = value_type_matrix_host();
     _D = value_type_matrix_host();
     _P = ordinal_type_array_host();
-    _dv = value_type_array();
+    _dv = mag_type_array();
 
     _verbose = 0;
     _small_problem_thres = 1024;
@@ -864,6 +917,7 @@ template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
   }
   // ** options
   printf( " verbose             = %d\n", _verbose );             // print
+  printf( " debug               = %d\n", _debug );               // debug
   printf( " store_transpose     = %s\t (store transpose explicitly)\n", (_store_transpose ? "true" : "false"));
   printf( " small_problem_thres = %d\t (smaller than this, use lapack)\n\n", _small_problem_thres);
 
@@ -885,9 +939,16 @@ template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
   printf( " device_solve_thres  = %d\t (bigger than this threshold, device function is used)\n", _device_solve_thres);
   printf( " nstreams            = %d\t (on device, multi streams are used)\n\n", _nstreams);
 
-  printf( " pivot_tol           = %e\t (tolerance for tiny pivot perturbation)\n", _pivot_tol);
-
-
+  // ** pivot/diagonal options
+  printf( " replace_tiny_pivot  = %d\t (option to replace tiny pivots)\n", _replace_tiny_pivot);
+  if (_replace_tiny_pivot >= 0) {
+    printf( " pivot_tol           = %e\t (tolerance for tiny pivot perturbation)\n", _pivot_tol);
+  }
+  printf( " shift_diagonal      = %d\t (option to globally shift diagonal)\n", _shift_diag);
+  if (_shift_diag != 0) {
+    printf( " shift               = %e\t (value to shift diagonals)\n",_shift);
+  }
+  printf("\n");
 }
 
 } // namespace Tacho

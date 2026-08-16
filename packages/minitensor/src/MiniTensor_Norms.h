@@ -305,33 +305,40 @@ det(Tensor<T, N> const & A)
   T
   s = 0.0;
 
-  switch (dimension) {
+  // The dimension is a run-time quantity, so every branch of the
+  // dispatch below is compiled even for a statically sized tensor that
+  // can never reach it. The branches for the larger dimensions index
+  // past the storage of the smaller ones, which the compiler reports as
+  // an out-of-bounds access, so they are discarded here instead.
 
-    default:
-    {
-      int sign = 1;
-      for (Index i = 0; i < dimension; ++i) {
-        const T d = det(subtensor(A, i, 1));
-        s += sign * d * A(i, 1);
-        sign *= -1;
-      }
+  if (dimension == 1) {
+    s = A(0,0);
+    return s;
+  }
+
+  if constexpr (dimension_reachable<N, 2>) {
+    if (dimension == 2) {
+      s = A(0,0) * A(1,1) - A(1,0) * A(0,1);
+      return s;
     }
-    break;
+  }
 
-    case 3:
+  if constexpr (dimension_reachable<N, 3>) {
+    if (dimension == 3) {
       s = -A(0,2)*A(1,1)*A(2,0) + A(0,1)*A(1,2)*A(2,0) +
            A(0,2)*A(1,0)*A(2,1) - A(0,0)*A(1,2)*A(2,1) -
            A(0,1)*A(1,0)*A(2,2) + A(0,0)*A(1,1)*A(2,2);
-      break;
+      return s;
+    }
+  }
 
-    case 2:
-      s = A(0,0) * A(1,1) - A(1,0) * A(0,1);
-      break;
-
-    case 1:
-      s = A(0,0);
-      break;
-
+  if constexpr (dimension_reachable<N, 4>) {
+    int sign = 1;
+    for (Index i = 0; i < dimension; ++i) {
+      const T d = det(subtensor(A, i, 1));
+      s += sign * d * A(i, 1);
+      sign *= -1;
+    }
   }
 
   return s;

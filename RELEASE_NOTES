@@ -1,5 +1,51 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 17.1.2 Release Notes                       August 13, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release with no new features.
+
+
+Krino:
+
+  - Remove an unneeded package dependency.
+    https://github.com/trilinos/Trilinos/pull/15360
+    
+
+Tpetra:
+
+  - Revert a change in setUnion that could result in incorrect results for
+    matrix-matrix multiplication.
+    https://github.com/trilinos/Trilinos/pull/15313
+
+  - Bug fix to ETI for FixedHashTable
+    https://github.com/trilinos/Trilinos/pull/15407
+    
+
+Teuchos:
+
+  - Fix a compilation issue with C++23
+    https://github.com/trilinos/Trilinos/pull/15304
+
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.2.2 Release Notes                       August 13, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release with no new features.
+
+
+Teuchos:
+
+  - Fix a compilation issue with C++23
+    https://github.com/trilinos/Trilinos/pull/15304
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 17.1 Release Notes                            May 12, 2026 #
 #                                                                             #
 ###############################################################################

@@ -123,34 +123,6 @@ template <typename T> struct LapackSerial {
         member.team_barrier();
       }
     }
-
-    template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void sytrf_lower_nopiv(const MemberType &member, const int m, T *KOKKOS_RESTRICT A,
-                                                         const int as0, const int as1, int *info) {
-      *info = 0;
-      if (m <= 0)
-        return;
-
-      // typedef ArithTraits<T> arith_traits;
-      for (int p = 0; p < m; ++p) {
-        const int iend = m - p - 1;
-
-        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1, *KOKKOS_RESTRICT a21 = A + (p + 1) * as0 + (p)*as1,
-                        *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
-
-        const auto alpha = *alpha11; // arith_traits::real(*alpha11);
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, iend), [&](const int &i) { a21[i * as0] /= alpha; });
-        member.team_barrier();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, iend), [&](const int &i) {
-          const T aa = a21[i * as0];
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, i + 1), [&](const int &j) {
-            const T bb = a21[j * as0];
-            A22[i * as0 + j * as1] -= alpha * aa * bb;
-          });
-        });
-        member.team_barrier();
-      }
-    }
   };
 
   template <typename MemberType>
@@ -231,34 +203,40 @@ template <typename T> struct LapackSerial {
   }
 
   // uplo = upper
-  inline static int sytrf_nopiv(const char uplo, const bool conjugate, const int m, T *A, const int lda, int *info) {
+  inline static int sytrf_nopiv(const char uplo, const bool conjugate, const int m, const double tol, T *A, const int lda, int *info) {
       
     *info = 0; 
     if (m <= 0) 
       return 0;
           
     typedef ArithTraits<T> arith_traits;
-      
+    const T zero(0);
+
     for (int i = 0; i < m; ++i) {
-      // skip check pivot
-      T alpha = A[i + i*lda];
-      alpha = arith_traits::real(alpha);
-      A[i + i*lda] = alpha;
+      // check pivot
+      if (arith_traits::abs(A[i + i*lda]) <= tol) { // including zero pivots with tol=0.0
+        A[i + i*lda] = zero; // mark it with zero
+        // zero out off-diagonal (assuming we hit null-space)
+        for (int j = i+1; j < m; j++) { A[i + j*lda] = zero; }
+        (*info) ++;
+      } else {
+        T alpha = A[i + i*lda];
   
-      // scale
-      for (int j = i+1; j < m; j++) { A[i + j*lda] /= alpha; }
+        // scale
+        for (int j = i+1; j < m; j++) { A[i + j*lda] /= alpha; }
     
-      // update
-      for (int j = i+1; j < m; j++) {
-        const T aa = alpha * A[i + j*lda];
-        for (int l = i+1; l <= j; l++) {
-          const T bb = (conjugate ? arith_traits::conj(A[i + l*lda]) : A[i + l*lda]);
-          A[l + j*lda] -= aa * bb;
+        // update
+        for (int j = i+1; j < m; j++) {
+          const T aa = alpha * A[i + j*lda];
+          for (int l = i+1; l <= j; l++) {
+            const T bb = (conjugate ? arith_traits::conj(A[i + l*lda]) : A[i + l*lda]);
+            A[l + j*lda] -= aa * bb;
+          }
         }
       }
     }   
-    return 0;
-  }   
+    return *info;
+  }
 
   inline static int getrf(const int m, const int n, T *  A,
                           const int lda, int * ipiv, int *info) {
@@ -266,7 +244,6 @@ template <typename T> struct LapackSerial {
     *info = 0;
     if (m <= 0 || n <= 0)
       return *info;
-
 
     using arith_traits = ArithTraits<T>;
     using mag_type = typename arith_traits::mag_type;

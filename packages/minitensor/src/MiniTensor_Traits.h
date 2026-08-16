@@ -81,6 +81,18 @@ template <typename T, Index M, Index N> class Matrix;
 constexpr Index
 DYNAMIC{0};
 
+///
+/// Whether a container whose static dimension is N can ever have the
+/// run-time dimension D. Dynamically sized containers can have any
+/// dimension, statically sized ones are bounded by N. Use it with
+/// if constexpr to discard the branches of a dimension dispatch that a
+/// statically sized argument can never take, and that would otherwise
+/// look to the compiler like accesses past the end of its storage.
+///
+template<Index N, Index D>
+inline constexpr bool
+dimension_reachable{N == DYNAMIC || N >= D};
+
 /// For use with type promotion
 using Sacado::Promote;
 using Sacado::mpl::lazy_disable_if;

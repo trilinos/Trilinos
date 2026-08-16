@@ -170,6 +170,94 @@ TEST(MiniTensor, TensorManipulation)
   ASSERT_LE(error, machine_epsilon<Real>());
 }
 
+TEST(MiniTensor, Determinant)
+{
+  // The determinant dispatches on the run-time dimension, and the
+  // branches that a statically sized tensor can never take are discarded
+  // at compile time. Exercise every branch that remains, both statically
+  // and dynamically sized, against determinants known in closed form.
+
+  Tensor<Real, 1>
+  A1(Filler::ZEROS);
+
+  A1(0, 0) = 3.0;
+
+  ASSERT_LE(std::abs(det(A1) - 3.0), machine_epsilon<Real>());
+
+  Tensor<Real, 2> const
+  A2(1.0, 2.0, 3.0, 4.0);
+
+  ASSERT_LE(std::abs(det(A2) + 2.0), 8 * machine_epsilon<Real>());
+
+  Tensor<Real, 3> const
+  A3(2.0, -1.0, 0.0, -1.0, 2.0, -1.0, 0.0, -1.0, 2.0);
+
+  ASSERT_LE(std::abs(det(A3) - 4.0), 8 * machine_epsilon<Real>());
+
+  // Dimensions above three go through the Laplace expansion, which
+  // recurses on subtensors that have the same static dimension but a
+  // smaller run-time dimension. L and U are triangular, so the
+  // determinant of their product is the product of all their diagonal
+  // entries, here 24 * 1/24 = 1.
+  Index const
+  N = 4;
+
+  Tensor<Real, N>
+  L(Filler::ZEROS);
+
+  Tensor<Real, N>
+  U(Filler::ZEROS);
+
+  for (Index i = 0; i < N; ++i) {
+
+    L(i, i) = static_cast<Real>(i + 1);
+
+    U(i, i) = 1.0 / static_cast<Real>(i + 1);
+
+    for (Index j = 0; j < i; ++j) {
+      L(i, j) = 0.5 * static_cast<Real>(i + j);
+      U(j, i) = 0.25 * static_cast<Real>(i - j);
+    }
+
+  }
+
+  Tensor<Real, N> const
+  A4 = L * U;
+
+  ASSERT_LE(std::abs(det(A4) - 1.0), 64 * machine_epsilon<Real>());
+
+  // Dynamically sized tensors keep every branch, and must agree with
+  // their statically sized counterparts.
+  for (Index dimension = 1; dimension <= N; ++dimension) {
+
+    Tensor<Real>
+    A(dimension);
+
+    Tensor<Real, N> const
+    B = A4;
+
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = 0; j < dimension; ++j) {
+        A(i, j) = B(i, j);
+      }
+    }
+
+    Tensor<Real, N>
+    C(Filler::ZEROS);
+
+    C.set_dimension(dimension);
+
+    for (Index i = 0; i < dimension; ++i) {
+      for (Index j = 0; j < dimension; ++j) {
+        C(i, j) = B(i, j);
+      }
+    }
+
+    ASSERT_LE(std::abs(det(A) - det(C)), 64 * machine_epsilon<Real>());
+
+  }
+}
+
 TEST(MiniTensor, Inverse2x2)
 {
   Index const

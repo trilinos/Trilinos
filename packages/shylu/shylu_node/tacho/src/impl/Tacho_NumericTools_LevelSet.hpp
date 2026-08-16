@@ -123,6 +123,7 @@ private:
   using base_type::track_alloc;
   using base_type::track_free;
 
+  using rval_view = Kokkos::View<int *, device_type>;
   using rowptr_view = Kokkos::View<int *, device_type>;
   using colind_view = Kokkos::View<int *, device_type>;
   using nzvals_view = Kokkos::View<value_type *, device_type>;
@@ -136,11 +137,12 @@ private:
 
   // 0: device level function, 1: team policy, 2: team policy recursive
   ordinal_type _device_factorize_thres, _device_solve_thres;
-  ordinal_type _device_level_cut, _team_serial_level_cut;
 
+  ordinal_type _num_fact_calls;
   ordinal_type_array_host _h_factorize_mode, _h_solve_mode;
   ordinal_type_array _factorize_mode, _solve_mode;
   ordinal_type_array_host _h_num_device_calls_factor, _h_num_device_calls_solve;
+  ordinal_type_array_host _h_num_team_calls_factor, _h_num_team_calls_solve;
 
   // level details on host
   ordinal_type _nlevel;
@@ -587,7 +589,6 @@ public:
     ///
     timer.reset();
 
-    _device_level_cut = min(device_level_cut, _nlevel);
     _device_factorize_thres = device_factorize_thres;
     _device_solve_thres = (variant == 3 ? 0 : device_solve_thres);
 
@@ -598,60 +599,39 @@ public:
     Kokkos::deep_copy(_h_solve_mode, -1);
 
     _h_num_device_calls_factor = ordinal_type_array_host(do_not_initialize_tag("h_num_device_calls_factor"), _nlevel);
+    _h_num_team_calls_factor = ordinal_type_array_host(do_not_initialize_tag("h_num_team_calls_factor"), _nlevel);
+
     _h_num_device_calls_solve = ordinal_type_array_host(do_not_initialize_tag("h_num_device_calls_solve"), _nlevel);
+    _h_num_team_calls_solve = ordinal_type_array_host(do_not_initialize_tag("h_num_team_calls_solve"), _nlevel);
 
-    if (_device_level_cut > 0) {
-      for (ordinal_type lvl = 0; lvl < _device_level_cut; ++lvl) {
-        _h_num_device_calls_solve(lvl) = 0;
-        _h_num_device_calls_factor(lvl) = 0;
+    for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
+      _h_num_device_calls_solve(lvl) = 0;
+      _h_num_team_calls_solve(lvl) = 0;
+      _h_num_device_calls_factor(lvl) = 0;
+      _h_num_team_calls_factor(lvl) = 0;
 
-        const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
-        for (ordinal_type p = pbeg; p < pend; ++p) {
-          const ordinal_type sid = _h_level_sids(p);
+      const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
+      for (ordinal_type p = pbeg; p < pend; ++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        const auto s = _h_supernodes(sid);
+        const ordinal_type m = s.m;    //, n_m = s.n-s.m;
+        if (m > _device_solve_thres) { // || n > _device_solve_thres)
           _h_solve_mode(sid) = 0;
-          _h_factorize_mode(sid) = 0;
+          _h_num_device_calls_solve(lvl) ++;
           ++stat_level.n_device_solve;
-          ++stat_level.n_device_factorize;
-
-          const auto s = _h_supernodes(sid);
-          const ordinal_type m = s.m;
-          if (m > _device_solve_thres) {
-            _h_num_device_calls_solve(lvl) ++;
-          }
-          if (m > _device_factorize_thres) {
-            _h_num_device_calls_factor(lvl) ++;
-          }
+        } else {
+          _h_solve_mode(sid) = 1;
+          _h_num_team_calls_solve(lvl) ++;
+          ++stat_level.n_team_solve;
         }
-      }
-    }
-
-    _team_serial_level_cut = _nlevel;
-    {
-      for (ordinal_type lvl = _device_level_cut; lvl < _team_serial_level_cut; ++lvl) {
-        _h_num_device_calls_solve(lvl) = 0;
-        _h_num_device_calls_factor(lvl) = 0;
-
-        const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
-        for (ordinal_type p = pbeg; p < pend; ++p) {
-          const ordinal_type sid = _h_level_sids(p);
-          const auto s = _h_supernodes(sid);
-          const ordinal_type m = s.m;    //, n_m = s.n-s.m;
-          if (m > _device_solve_thres) { // || n > _device_solve_thres)
-            _h_solve_mode(sid) = 0;
-            _h_num_device_calls_solve(lvl) ++;
-            ++stat_level.n_device_solve;
-          } else {
-            _h_solve_mode(sid) = 1;
-            ++stat_level.n_team_solve;
-          }
-          if (m > _device_factorize_thres) { // || n_m > _device_factorize_thres)
-            _h_factorize_mode(sid) = 0;
-            _h_num_device_calls_factor(lvl) ++;
-            ++stat_level.n_device_factorize;
-          } else {
-            _h_factorize_mode(sid) = 1;
-            ++stat_level.n_team_factorize;
-          }
+        if (m > _device_factorize_thres) { // || n_m > _device_factorize_thres)
+          _h_factorize_mode(sid) = 0;
+          _h_num_device_calls_factor(lvl) ++;
+          ++stat_level.n_device_factorize;
+        } else {
+          _h_factorize_mode(sid) = 1;
+          _h_num_team_calls_factor(lvl) ++;
+          ++stat_level.n_team_factorize;
         }
       }
     }
@@ -728,6 +708,7 @@ public:
   }
 
   NumericToolsLevelSet() : base_type() {
+    _num_fact_calls = 0;
     _nlevel = 0;
     _bufsize_factorize = 0;
     _bufsize_solve = 0;
@@ -905,9 +886,11 @@ public:
   ///
   /// Non-pivot LDL
   ///
-  inline int factorizeNoPivotLDLOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+  inline int factorizeNoPivotLDLOnDeviceVar0(const mag_type pivot_tol,
+                                             const ordinal_type pbeg, const ordinal_type pend,
                                              const size_type_array_host &h_buf_factor_ptr,
-                                             const value_type_array &work) {
+                                             const value_type_array &work,
+                                             const rval_view &r_val) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
@@ -940,16 +923,22 @@ public:
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
-            checkDeviceLapackStatus("chol");
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
 
               // Apply L^{-1} on off-diagonal
-              _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
-                  handle_blas, Diag::Unit(), one, ATL, ATR);
+              if (ndefs > 0) {
+                _status = Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    exec_instance, Diag::Unit(), one, ATL, ATR);
+                LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+              } else {
+                _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    handle_blas, Diag::Unit(), one, ATL, ATR);
+              }
               checkDeviceBlasStatus("trsm");
 
               // Save ATR in workspace
@@ -963,6 +952,8 @@ public:
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   handle_blas, minus_one, ATR, T, zero, ABR);
               checkDeviceBlasStatus("gemm");
+            } else if (ndefs > 0) {
+              LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
             }
             num_device_calls ++;
           }
@@ -972,9 +963,11 @@ public:
     return num_device_calls;
   }
 
-  inline int factorizeNoPivotLDLOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+  inline int factorizeNoPivotLDLOnDeviceVar1(const mag_type pivot_tol,
+                                             const ordinal_type pbeg, const ordinal_type pend,
                                              const size_type_array_host &h_buf_factor_ptr,
-                                             const value_type_array &work) {
+                                             const value_type_array &work,
+                                             const rval_view &r_val) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
@@ -1009,8 +1002,25 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
-            checkDeviceLapackStatus("chol");
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
+
+            // Apply TRSM to off-diagonal blocks
+            if (n_m > 0) {
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+
+              if (ndefs > 0) {
+                _status = Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    exec_instance, Diag::Unit(), one, ATL, ATR);
+                LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+              } else {
+                _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                    handle_blas, Diag::Unit(), one, ATL, ATR);
+              }
+              checkDeviceBlasStatus("trsm");
+            } else if (ndefs > 0) {
+              LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+            }
 
             // Compute inverse of diagonal block (in T)
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -1020,6 +1030,7 @@ public:
 
             _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                 handle_blas, Diag::Unit(), one, ATL, T);
+            checkDeviceBlasStatus("trsm");
 
             // Copy original diagonal into T
             using policy_type = Kokkos::RangePolicy<exec_space>;
@@ -1027,19 +1038,16 @@ public:
             Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
               T(i,i) = ATL(i,i);
             });
-            checkDeviceBlasStatus("trsm");
+
+            // Copy T back to ATL (inverse)
+            _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
+            checkDeviceBlasStatus("Copy");
+
+            // Update trailing submatrix
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m); // shared with T
               UnmanagedViewType<value_type_matrix> K(bptr+(n_m * n_m), m, n_m);
-
-              _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
-                  handle_blas, Diag::Unit(), one, ATL, ATR);
-              checkDeviceBlasStatus("trsm");
-
-              // Copy T back to ATL (inverse)
-              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
-              checkDeviceBlasStatus("Copy");
 
               // Save ATR in workspace
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, K, ATR);
@@ -1051,9 +1059,6 @@ public:
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   handle_blas, minus_one, ATR, K, zero, ABR);
               checkDeviceBlasStatus("gemm");
-            } else {
-              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
-              checkDeviceBlasStatus("Copy");
             }
             num_device_calls ++;
           }
@@ -1063,9 +1068,11 @@ public:
     return num_device_calls;
   }
 
-  inline int factorizeNoPivotLDLOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+  inline int factorizeNoPivotLDLOnDeviceVar2(const mag_type pivot_tol,
+                                             const ordinal_type pbeg, const ordinal_type pend,
                                              const size_type_array_host &h_buf_factor_ptr,
-                                             const value_type_array &work) {
+                                             const value_type_array &work,
+                                             const rval_view &r_val) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
@@ -1099,8 +1106,8 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
-            checkDeviceLapackStatus("chol");
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             if (n_m > 0) {
@@ -1108,8 +1115,15 @@ public:
               bptr += ABR.span();
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               {
-                _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
-                    handle_blas, Diag::Unit(), one, ATL, ATR);
+                // Apply TRSM to off-diagonal blocks
+                if (ndefs > 0) {
+                  _status = Trsm_defs<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                      exec_instance, Diag::Unit(), one, ATL, ATR);
+                  LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+                } else {
+                  _status = Trsm<Side::Left, Uplo::Upper, Trans::Transpose, Algo::OnDevice>::invoke(
+                      handle_blas, Diag::Unit(), one, ATL, ATR);
+                }
                 checkDeviceBlasStatus("trsm");
 
                 // Save ATR in workspace
@@ -1146,6 +1160,10 @@ public:
                 });
               }
             } else {
+              if (ndefs > 0) {
+                LDL_nopiv<Uplo::Upper, Algo::OnDevice>::reset_zero_diags(handle_blas, exec_instance, ATL);
+              }
+
               /// additional things
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
@@ -1173,14 +1191,14 @@ public:
     return num_device_calls;
   }
 
-  inline int factorizeNoPivotLDLOnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                          const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline int factorizeNoPivotLDLOnDevice(const mag_type pivot_tol, const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_factor_ptr, const value_type_array &work, const rval_view &r_val) {
     if (variant == 0)
-      return factorizeNoPivotLDLOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar0(pivot_tol, pbeg, pend, h_buf_factor_ptr, work, r_val);
     else if (variant == 1)
-      return factorizeNoPivotLDLOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar1(pivot_tol, pbeg, pend, h_buf_factor_ptr, work, r_val);
     else if (variant == 2 || variant == 3)
-      return factorizeNoPivotLDLOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar2(pivot_tol, pbeg, pend, h_buf_factor_ptr, work, r_val);
     else {
       std::string msg = "Error: LevelSetTools::factorizeNoPivotLDLOnDevice, algorithm variant ("
                         + std::to_string(variant) + ") is not supported.\n";
@@ -2083,7 +2101,7 @@ public:
   ///
   inline void setupCRS(bool store_transpose, bool verbose) {
     const int method = this->getSolutionMethod();
-    _spmv->Setup(store_transpose, verbose, method, _m, _team_serial_level_cut,
+    _spmv->Setup(store_transpose, verbose, method, _m, _nlevel,
                 _h_level_ptr, _level_sids, _h_level_sids, _h_solve_mode, _info, _h_supernodes, _solve_mode, _piv,
                 _streams[0],
                 _w_vec);
@@ -2197,7 +2215,7 @@ public:
               checkDeviceBlasStatus("gemv");
             }
 
-            // Apply D^{-1} on off-diagonal
+            // Apply D^{-1} on off-diagonal (note: this checks for zero-diag, and skip if zero)
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, tT);
             checkDeviceBlasStatus("scale");
 
@@ -2264,7 +2282,7 @@ public:
               checkDeviceBlasStatus("gemv");
             }
 
-            // Apply D^{-1} on off-diagonal
+            // Apply D^{-1} on off-diagonal (note: this checks for zero-diag, and skip if zero)
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, bT);
             checkDeviceBlasStatus("scale");
 
@@ -2322,6 +2340,7 @@ public:
             checkDeviceBlasStatus("trmv");
 
             // Apply D^{-1} on diagonal (already updated using this block, also n >= m so diagonal block is stored first in aptr)
+            // (note: this checks for zero-diag, and skip if zero)
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             _status = Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, ATL, dx);
             checkDeviceBlasStatus("scale");
@@ -2359,7 +2378,7 @@ public:
         const auto policy = policy_type(_exec_instances[0], 0, _m);
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &i) {
-              for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i); 
+              for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i);
             });
       }
     } else {
@@ -3298,6 +3317,7 @@ public:
 
         const auto &s = _h_supernodes(sid);
         {
+          // full-diagonal scaling (ones on diagonal for non-active supernodal blocks at this level)
           if (s.m > 0) {
             const ordinal_type m = s.m;
             const ordinal_type offm = s.row_begin;
@@ -3744,14 +3764,13 @@ public:
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
       const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
       // returned value from team Chol
-      colind_view d_rval("rval",1);
-      auto h_rval = Kokkos::create_mirror_view(host_memory_space(), d_rval);
+      rval_view t_rval("t_rval",1); // rval from team call
+      rval_view d_rval("d_rval",1); // rval from device call
+      auto h_rval = Kokkos::create_mirror_view(host_memory_space(), t_rval);
       {
         typedef TeamFunctor_FactorizeChol<supernode_info_type> functor_type;
-        functor_type functor(_info, _factorize_mode, _level_sids, _buf, d_rval.data());
-        if (pivot_tol > 0.0) {
-          functor.setDiagPertubationTol(pivot_tol);
-        }
+        functor_type functor(_info, _factorize_mode, _level_sids, _buf, t_rval.data());
+        functor.setDiagPertubationTol(pivot_tol); // always re-set pivot-tol (for chol, only checked if tol > 0.0)
         if (this->getSolutionMethod() == 0) {
           functor.setIndefiniteFactorization(true);
         }
@@ -3774,7 +3793,7 @@ public:
         // get max vector size
         const ordinal_type vmax = policy_factor.vector_length_max();
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -3793,33 +3812,28 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());;
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());;
 
               // create policies
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("factor lower", policy_factor, functor);
-            } else {
-              if (verbose) {
-                Kokkos::fence(); tick.reset();
-              }
-              Kokkos::parallel_for("factor", policy_factor, functor);
-              if (verbose) {
-                Kokkos::fence(); time_parallel += tick.seconds();
-              }
-              ++stat_level.n_kernel_launching;
+            if (verbose) {
+              Kokkos::fence(); tick.reset();
             }
+            Kokkos::parallel_for("factor", policy_factor, functor);
+            if (verbose) {
+              Kokkos::fence(); time_parallel += tick.seconds();
+            }
+            ++stat_level.n_kernel_launching;
 
             if (verbose) {
               Kokkos::fence(); tick.reset();
             }
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             if (this->getSolutionMethod() == 0) {
-              factorizeNoPivotLDLOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
+              factorizeNoPivotLDLOnDevice(pivot_tol, pbeg, pend, h_buf_factor_ptr, _work, d_rval);
             } else {
               factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             }
@@ -3827,7 +3841,7 @@ public:
               Kokkos::fence(); time_device += tick.seconds();
               tick.reset();
             }
-            Kokkos::deep_copy(h_rval, d_rval);
+            Kokkos::deep_copy(h_rval, t_rval);
             int rval = h_rval(0);
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
@@ -3932,7 +3946,7 @@ public:
 
         //  1. U^{H} w = t
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -3958,19 +3972,14 @@ public:
             const auto policy_update_with_work_property = policy_update;
 #endif
             if (variant != 3) {
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve lower", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              solveNoPivotLDLLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveNoPivotLDLLowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              solveCholeskyLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveCholeskyLowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             }
             if (variant != 3) {
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
@@ -4009,7 +4018,7 @@ public:
 
         //  2. U t = w;
         {
-          for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+          for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4039,19 +4048,14 @@ public:
                 team_exec_instance.fence(); // sync default, before next device solve-upper calls
               ++stat_level.n_kernel_launching;
 
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve upper", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching; // no need to synch because synched after next update if needed
-              }
+              Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching; // no need to synch because synched after next update if needed
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              solveNoPivotLDLUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveNoPivotLDLUpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              solveCholeskyUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              solveCholeskyUpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             }
             if (need_fence && _h_num_device_calls_solve(lvl) > 0)
               Kokkos::fence(); // synch device calls before next update
@@ -4135,7 +4139,7 @@ public:
 #endif
       const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
       // returned value from team LDL
-      colind_view d_rval("rval",1);
+      rval_view d_rval("rval",1);
       auto h_rval = Kokkos::create_mirror_view(host_memory_space(), d_rval);
       {
         typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
@@ -4159,7 +4163,7 @@ public:
         team_policy_update policy_update(1, 1, 1);
         const ordinal_type vmax = policy_factor.vector_length_max();
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4178,25 +4182,20 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());
 
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("factor lower", policy_factor, functor);
-            } else {
-              if (verbose) {
-                Kokkos::fence(); tick.reset();
-              }
-              Kokkos::parallel_for("factor", policy_factor, functor);
-              if (verbose) {
-                Kokkos::fence(); time_parallel += tick.seconds();
-              }
-              ++stat_level.n_kernel_launching;
+            if (verbose) {
+              Kokkos::fence(); tick.reset();
             }
+            Kokkos::parallel_for("factor", policy_factor, functor);
+            if (verbose) {
+              Kokkos::fence(); time_parallel += tick.seconds();
+            }
+            ++stat_level.n_kernel_launching;
 
             const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
 
@@ -4314,7 +4313,7 @@ public:
 
         //  1. L^{-1}t = t
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4340,16 +4339,11 @@ public:
             const auto policy_update_with_work_property = policy_update;
 #endif
             if (variant != 3) {
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve lower", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLDL_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLDL_LowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (need_fence && _h_num_device_calls_solve(lvl) > 0)
               Kokkos::fence(); // fence solve on device before updating on default
 
@@ -4385,7 +4379,7 @@ public:
 
         //  2. U^{-1} t = t;
         {
-          for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+          for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4415,17 +4409,12 @@ public:
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 team_exec_instance.fence(); // synch update befor solve on device
 
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve upper", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
 
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLDL_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLDL_UpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (need_fence && _h_num_device_calls_solve(lvl) > 0)
               Kokkos::fence(); // synch solve on device before next update
           }
@@ -4509,7 +4498,7 @@ public:
       const ordinal_type team_size_update[2] = {16, 8},  vector_size_update[2] = {32, 32};
 
       // returned value from team LU
-      colind_view d_rval("rval",1);
+      rval_view d_rval("rval",1);
       auto h_rval = Kokkos::create_mirror_view(host_memory_space(), d_rval);
       {
         typedef TeamFunctor_FactorizeLU<supernode_info_type> functor_type;
@@ -4534,7 +4523,7 @@ public:
         // get max vector length
         const ordinal_type vmax = policy_factor.vector_length_max();
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4552,26 +4541,21 @@ public:
               // pick teamm sizes
               policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
               policy_update = team_policy_update(pcnt, 1, vsize_update);
-              const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
-              const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
+              const ordinal_type factor_tmax = policy_factor.team_size_recommended(functor, Kokkos::ParallelForTag());
+              const ordinal_type update_tmax = policy_update.team_size_recommended(functor, Kokkos::ParallelForTag());
 
               // create policies
               policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
               policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("factor lower", policy_factor, functor);
-            } else {
-              if (verbose) {
-                Kokkos::fence(); tick.reset();
-              }
-              Kokkos::parallel_for("factor", policy_factor, functor);
-              if (verbose) {
-                Kokkos::fence(); time_parallel += tick.seconds();
-              }
-              ++stat_level.n_kernel_launching;
+            if (verbose) {
+              Kokkos::fence(); tick.reset();
             }
+            Kokkos::parallel_for("factor", policy_factor, functor);
+            if (verbose) {
+              Kokkos::fence(); time_parallel += tick.seconds();
+            }
+            ++stat_level.n_kernel_launching;
 
             if (verbose) {
               Kokkos::fence(); tick.reset();
@@ -4691,7 +4675,7 @@ public:
 
         //  1. L w = t
         {
-          for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
+          for (ordinal_type lvl = (_nlevel - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
 
@@ -4716,16 +4700,11 @@ public:
             const auto policy_update_with_work_property = policy_update;
 #endif
             if (variant != 3) {
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve lower", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLU_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLU_LowerOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (variant != 3) {
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 Kokkos::fence(); // synch solve device before update
@@ -4761,7 +4740,7 @@ public:
 
         //  2. U t = w;
         {
-          for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
+          for (ordinal_type lvl = 0; lvl < _nlevel; ++lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
@@ -4791,20 +4770,15 @@ public:
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 team_exec_instance.fence(); // synch update on default before solve on device
 
-              if (lvl < _device_level_cut) {
-                // do nothing
-                // Kokkos::parallel_for("solve upper", policy_solve, functor);
-              } else {
-                Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
-                ++stat_level.n_kernel_launching;
-              }
+              Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLU_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+            solveLU_UpperOnDevice(lvl, _nlevel, pbeg, pend, h_buf_solve_ptr, t);
             if (variant != 3) {
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
                 Kokkos::fence(); // synch solve on device before the next update on default
-              //else if (lvl == _team_serial_level_cut-1 || _h_num_device_calls_solve(lvl+1) > 0)
+              //else if (lvl == _nlevel-1 || _h_num_device_calls_solve(lvl+1) > 0)
               //  exec_space().fence(); // synch bached solve-upper calls
             }
           }
@@ -4878,6 +4852,7 @@ public:
       break;
     }
     }
+    _num_fact_calls ++;
   }
 
   inline void solve(const value_type_matrix &x, // solution

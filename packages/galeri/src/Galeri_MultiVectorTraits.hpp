@@ -17,6 +17,7 @@
 #include "Galeri_ConfigDefs.h"
 
 #include <Tpetra_Map.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 #ifdef HAVE_GALERI_XPETRA
 #include <Xpetra_MapFactory.hpp>

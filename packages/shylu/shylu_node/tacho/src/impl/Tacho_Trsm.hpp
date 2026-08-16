@@ -25,6 +25,10 @@ namespace Tacho {
 /// various implementation for different uplo and algo parameters
 template <typename ArgSide, typename ArgUplo, typename ArgTrans, typename ArgAlgo> struct Trsm;
 
+// Trsm (with deficient diagonals) used for LDL no-pivot
+template <typename ArgSide, typename ArgUplo, typename ArgTrans, typename ArgAlgo>
+struct Trsm_defs;
+
 struct TrsmAlgorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
