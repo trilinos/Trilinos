@@ -155,7 +155,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
   LO blkSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
-  std::tuple<GlobalOrdinal, boundary_nodes_type> results;
+  std::tuple<GlobalOrdinal, GlobalOrdinal, boundary_nodes_type> results;
   if (blkSize == 1)
     results = BuildScalar(currentLevel);
   else
@@ -163,7 +163,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if (GetVerbLevel() & Statistics1) {
     GlobalOrdinal numDropped = std::get<0>(results);
-    auto boundaryNodes       = std::get<1>(results);
+    GlobalOrdinal numKept    = std::get<1>(results);
+    auto boundaryNodes       = std::get<2>(results);
 
     GO numLocalBoundaryNodes = 0;
 
@@ -178,13 +179,14 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (IsPrint(Statistics1)) {
       auto comm = A->getRowMap()->getComm();
 
-      std::vector<GlobalOrdinal> localStats = {numLocalBoundaryNodes, numDropped};
-      std::vector<GlobalOrdinal> globalStats(2);
-      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 2, localStats.data(), globalStats.data());
+      std::vector<GlobalOrdinal> localStats = {numLocalBoundaryNodes, numDropped, numKept};
+      std::vector<GlobalOrdinal> globalStats(3);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 3, localStats.data(), globalStats.data());
 
-      GO numGlobalTotal         = A->getGlobalNumEntries();
       GO numGlobalBoundaryNodes = globalStats[0];
       GO numGlobalDropped       = globalStats[1];
+      GO numGlobalKept          = globalStats[2];
+      GO numGlobalTotal         = numGlobalKept + numGlobalDropped;
 
       GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
       if (numGlobalTotal != 0) {
@@ -282,7 +284,7 @@ void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildScalar(Level& currentLevel) const {
   FactoryMonitor m(*this, "BuildScalar", currentLevel);
 
@@ -653,11 +655,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   if (needToBuildFilteredA)
     Set(currentLevel, "A", filteredA);
 
-  return std::make_tuple(numDropped, boundaryNodes);
+  return std::make_tuple(numDropped, (GlobalOrdinal)nnz_filtered, boundaryNodes);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildVector(Level& currentLevel) const {
   FactoryMonitor m(*this, "BuildVector", currentLevel);
 
@@ -969,8 +971,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   }
   LocalOrdinal nnz_filtered = nnz.first;
   LocalOrdinal nnz_graph    = nnz.second;
-  GO numTotal               = lclA.nnz();
-  GO numDropped             = numTotal - nnz_filtered;
+  GO numTotal               = mergedA->getLocalNumEntries();
+  GO numDropped             = numTotal - nnz_graph;
   GO numGlobalDropped;
   Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_SUM, 1, &numDropped, &numGlobalDropped);
   // We now know the number of entries of filtered A and have the final rowptr.
@@ -1081,7 +1083,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   if (needToBuildFilteredA)
     Set(currentLevel, "A", filteredA);
 
-  return std::make_tuple(numDropped, boundaryNodes);
+  return std::make_tuple(numDropped, (GlobalOrdinal)nnz_graph, boundaryNodes);
 }
 
 }  // namespace MueLu
