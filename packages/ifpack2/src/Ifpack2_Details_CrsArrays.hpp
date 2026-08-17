@@ -69,8 +69,10 @@ struct CrsArrayReader {
     size_t nnz         = A->getLocalNumEntries();
     size_t maxNnz      = A->getLocalMaxNumRowEntries();
 
-    vals          = ScalarArray("Values", nnz);
-    auto valsHost = Kokkos::create_mirror(vals);
+    if (vals.extent(0) != nnz) {
+      vals = ScalarArray(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values"), nnz);
+    }
+    auto valsHost = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, vals);
     local_inds_host_view_type lclColInds("lclColinds", maxNnz);
 
     nnz = 0;
@@ -141,7 +143,9 @@ struct CrsArrayReader {
     auto localA = A->getLocalMatrixDevice();
     auto values = localA.values;
     auto nnz    = values.extent(0);
-    values_     = ScalarArray("Values", nnz);
+    if (values_.extent(0) != nnz) {
+      values_ = ScalarArray(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values"), nnz);
+    }
     Kokkos::deep_copy(values_, values);
   }
 
@@ -168,7 +172,9 @@ struct CrsArrayReader {
     auto localA = A->getLocalMatrixDevice();
     auto values = localA.values;
     auto nnz    = values.extent(0);
-    values_     = ScalarArray("Values", nnz);
+    if (values_.extent(0) != nnz) {
+      values_ = ScalarArray(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Values"), nnz);
+    }
     Kokkos::deep_copy(values_, values);
   }
 
