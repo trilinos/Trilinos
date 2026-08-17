@@ -609,6 +609,7 @@ class DropFunctor {
     }
 #endif
 
+    bool nonFiniteValueEncountered = false;
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid = row.colidx(k);
 
@@ -623,11 +624,14 @@ class DropFunctor {
         auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
         auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
 
+        nonFiniteValueEncountered |= !is_finite_type_safe(aiiajj) || !is_finite_type_safe(aij2);
+
         results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
                                           results(offset + k));
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-        auto neg_aij        = -ATS::real(val);
-        auto max_neg_aik    = eps * ATS::real(diag(rlid));
+        auto neg_aij     = -ATS::real(val);
+        auto max_neg_aik = eps * ATS::real(diag(rlid));
+        nonFiniteValueEncountered |= !is_finite_type_safe(neg_aij) || !is_finite_type_safe(max_neg_aik);
         results(offset + k) = Kokkos::max((neg_aij < max_neg_aik) ? DROP : KEEP,
                                           results(offset + k));
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
@@ -637,9 +641,18 @@ class DropFunctor {
         // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
         if (!is_nonpositive)
           aij2 = -aij2;
+        nonFiniteValueEncountered |= !is_finite_type_safe(aiiajj) || !is_finite_type_safe(aij2);
         results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
                                           results(offset + k));
       }
+    }
+
+    if (nonFiniteValueEncountered) {
+      const char* message =
+          "Error encountered in MueLu::DistanceLaplacian::DropFunctor::operator():\n"
+          "Non-finite values encountered in strength-of-connection measure.\n"
+          "A potential fix is to enable rebalancing and/or perform an initial rebalance.\n";
+      Kokkos::abort(message);
     }
   }
 };
@@ -736,6 +749,7 @@ class VectorDropFunctor {
     }
 #endif
 
+    bool nonFiniteValueEncountered = false;
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid  = row.colidx(k);
       auto bclid = ghosted_point_to_block(clid);
@@ -751,11 +765,14 @@ class VectorDropFunctor {
         auto aiiajj = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
         auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                  // |a_ij|^2
 
+        nonFiniteValueEncountered |= !is_finite_type_safe(aiiajj) || !is_finite_type_safe(aij2);
+
         results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
                                           results(offset + k));
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-        auto neg_aij        = -ATS::real(val);
-        auto max_neg_aik    = eps * ATS::real(diag(brlid));
+        auto neg_aij     = -ATS::real(val);
+        auto max_neg_aik = eps * ATS::real(diag(brlid));
+        nonFiniteValueEncountered |= !is_finite_type_safe(neg_aij) || !is_finite_type_safe(max_neg_aik);
         results(offset + k) = Kokkos::max((neg_aij < max_neg_aik) ? DROP : KEEP,
                                           results(offset + k));
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
@@ -765,9 +782,18 @@ class VectorDropFunctor {
         // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
         if (!is_nonpositive)
           aij2 = -aij2;
+        nonFiniteValueEncountered |= !is_finite_type_safe(aiiajj) || !is_finite_type_safe(aij2);
         results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
                                           results(offset + k));
       }
+    }
+
+    if (nonFiniteValueEncountered) {
+      const char* message =
+          "Error encountered in MueLu::DistanceLaplacian::VectorDropFunctor::operator():\n"
+          "Non-finite values encountered in strength-of-connection measure.\n"
+          "A potential fix is to enable rebalancing and/or perform an initial rebalance.\n";
+      Kokkos::abort(message);
     }
   }
 };
