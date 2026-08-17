@@ -13,9 +13,14 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Xpetra_Matrix.hpp>
 
+#include "KokkosKernels_ArithTraits.hpp"
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SmootherBase.hpp"
 #include "MueLu_SmootherPrototype.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Tpetra_Access.hpp"
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
 
@@ -289,6 +294,69 @@ void testDirectSolverBlocked(MueLu::SmootherPrototype<Scalar, LocalOrdinal, Glob
       << residualNorms[0] << std::endl;
 
   TEST_EQUALITY(residualNorms[0] < 100 * MT::eps(), true);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void testDirectSolverSingular(MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node>& smoother,
+                              Teuchos::FancyOStream& out, bool& success) {
+#include "MueLu_UseShortNames.hpp"
+
+  using ST             = Teuchos::ScalarTraits<SC>;
+  using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  using MT             = Teuchos::ScalarTraits<magnitude_type>;
+
+  Teuchos::RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(126);
+
+  {
+    A->resumeFill();
+
+    // Make the matrix singular by switching BCs to Neumann
+    Teuchos::Array<GlobalOrdinal> colidx(1);
+    Teuchos::Array<Scalar> vals(1);
+    GlobalOrdinal rgid;
+
+    rgid      = 0;
+    colidx[0] = rgid;
+    vals[0]   = ST::one();
+    A->replaceGlobalValues(rgid, colidx(), vals());
+
+    rgid      = 125;
+    colidx[0] = rgid;
+    vals[0]   = ST::one();
+    A->replaceGlobalValues(rgid, colidx(), vals());
+
+    A->fillComplete();
+  }
+
+  auto Nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
+  Nullspace->putScalar(ST::one());
+
+  smoother.SetParameter("fix nullspace", Teuchos::ParameterEntry(true));
+  Level level;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(level);
+  level.Set("A", A);
+  level.Set("Nullspace", Nullspace);
+  smoother.Setup(level);
+
+  RCP<MultiVector> X   = MultiVectorFactory::Build(A->getDomainMap(), 1);
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRangeMap(), 1);
+  X->putScalar((SC)0.0);
+
+  {  // Generate a RHS that has no constant component to make sure we can check the residual
+    auto one    = KokkosKernels::ArithTraits<typename Matrix::impl_scalar_type>::one();
+    auto lclRHS = RHS->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    auto lclMap = RHS->getMap()->getLocalMap();
+    for (size_t k = 0; k < lclRHS.extent(0); ++k) {
+      if (lclMap.getGlobalElement(k) % 2 == 0)
+        lclRHS(k, 0) = one;
+      else
+        lclRHS(k, 0) = -one;
+    }
+  }
+
+  magnitude_type residualNorms = testApply(*A, smoother, *X, *RHS, out, success);
+
+  TEST_EQUALITY(residualNorms < 10000 * MT::eps(), true);
 }
 
 }  // namespace Smoothers
