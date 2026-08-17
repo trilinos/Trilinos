@@ -98,8 +98,18 @@ Ifpack2:
 
 Intrepid2:
 
-  - 
-    https://github.com/trilinos/Trilinos/pull/15269
+  - Redesigned PointInclusion tools to expose parametric distance and
+    extended CellTools to support beam and shell elements, including mappings
+    from (D+1)-dimensional physical space to D-dimensional reference space.
+    PR: https://github.com/trilinos/Trilinos/pull/15269
+
+  - Refactored Intrepid2 operators to improve performance by introducing an
+    orientation operator that stores subcell orientation matrices in
+    compressed-row storage format.
+    PR: https://github.com/trilinos/Trilinos/pull/14450
+
+  - Improved the parallel implementation of Basis::getValues.
+    PR: https://github.com/trilinos/Trilinos/pull/15234
 
 
 Krino:
