@@ -7,6 +7,7 @@ Requirements:
     - `origin` pointing to upstream repo
     - `fork` pointing to your own Trilinos fork
 - Valid SSH key that is registered with your GitHub account.
+  - Required for pushing to GitHub
 - `GITHUB_TOKEN` environment variable set to a token for the target repository.
   - GitHub fine-grain token with:
     - Admin (read/write), needed for modifying branch protection rules.
