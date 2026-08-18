@@ -104,6 +104,12 @@ def pre_release(args):
     dev = parse_semver(args.dev_version)
     dev_update_branch = f"update-dev-version-{dev['major']}-{dev['minor']}"
 
+    rel_tuple = (int(rel['major']), int(rel['minor']), int(rel['patch']))
+    dev_tuple = (int(dev['major']), int(dev['minor']), int(dev['patch']))
+    if rel_tuple >= dev_tuple:
+        raise ValueError(
+            f"Rel version {args.rel_version} must be less than dev version {args.dev_version}!")
+
     main_branch = "master"
     dev_branch = "develop"
 
