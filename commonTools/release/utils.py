@@ -140,6 +140,25 @@ def get_remote_owner(remote: str, repo_path: str) -> str:
     return owner
 
 
+def is_git_workspace_clean(repo_path: str) -> bool:
+    """
+    Check if the git workspace is clean.
+    """
+    try:
+        git_root = get_git_root(repo_path)
+        git_repo = git.Repo(git_root)
+
+        has_changes = git_repo.is_dirty()
+        has_untracked = len(git_repo.untracked_files) > 0
+
+        if has_changes or has_untracked:
+            logger.debug(f"Workspace is dirty: changes={has_changes}, untracked={has_untracked}")
+            return False
+        return True
+    except Exception as e:
+        raise RuntimeError(f"Failed to check workspace status: {e}") from e
+
+
 def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:
     """Checkout a git branch.
 

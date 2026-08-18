@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
+import os
 import shutil
 from pathlib import Path
 from utils import *
@@ -73,17 +74,21 @@ def parse_args():
 
 
 def pre_checks(args):
-    # GITHB_TOKEN check should probably go here
-    # maybe check if release branch exists in here?
     git_root = get_git_root(args.dir if args.dir else script_path)
     logger.debug(f"git = {git_cmd}")
 
     if git_cmd is None:
         raise FileNotFoundError(f"Cannot find git executable")
-        exit(1)
+
     if (not does_remote_exists("fork", git_root) or not does_remote_exists("origin", git_root)):
         raise RuntimeError(f"Missing remotes 'fork' or 'origin'")
-        exit(1)
+
+    if not is_git_workspace_clean(git_root):
+        raise RuntimeError(f"Git workspace not clean: {git_root}")
+
+    token = os.getenv('GITHUB_TOKEN')
+    if not token:
+        raise RuntimeError(f"GITHUB_TOKEN environment variable not set.")
 
 
 def pre_release(args):
@@ -177,7 +182,6 @@ def release(args):
 
     #####################################
     # Ensure the release branch exists on origin and sync to the remote tip.
-
     verify_remote_branch_exists(rel_branch, git_root)
     fetch_branch(rel_branch, git_root)
     checkout_branch(rel_branch, git_root, remote=True)
