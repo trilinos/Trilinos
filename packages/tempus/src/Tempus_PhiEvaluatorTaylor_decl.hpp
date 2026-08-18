@@ -35,21 +35,7 @@ class PhiEvaluatorTaylor
    /** \brief Constructs an evaluator with the supplied descriptive name.
     * @param name std::string stored as the evaluator name.
     */
-  PhiEvaluatorTaylor(std::string name)
-    : PhiEvaluator<Scalar>(name),
-      expansionOrder_(0)
-  {
-#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
-    std::stringstream ss;
-    ss << "Tempus::" << name ;
-
-    std::string phiLabel = ss.str() + ": PhiEval";
-    timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
-
-    std::string linOpLabel = ss.str() + ": LinOp";
-    timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
-#endif
-  }
+  PhiEvaluatorTaylor(std::string name);
   PhiEvaluatorTaylor() : PhiEvaluatorTaylor("PhiEvaluatorTaylor")
   { }
 
