@@ -92,8 +92,10 @@ void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& l
   int numParts = Get<int>(level, "number of partitions");
   if (numParts == 1 || numParts == -1) {
     // Single processor, decomposition is trivial: all zeros
-    RCP<const Map> rowMap                              = A->getRowMap();
-    RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
+    RCP<const Map> rowMap = A->getRowMap();
+    RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition;
+    if (numParts == 1)
+      decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
     Set(level, "Partition", decomposition);
     return;
   } /* else if (numParts == -1) {
