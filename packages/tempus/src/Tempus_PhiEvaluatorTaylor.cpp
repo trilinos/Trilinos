@@ -19,7 +19,7 @@ TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhiEvaluatorTaylor)
 
 // Nonmember constructor from a ParameterList
 template Teuchos::RCP<PhiEvaluatorTaylor<double> > createPhiEvaluatorTaylor(
-	    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+  Teuchos::RCP<Teuchos::ParameterList> pList);
 
 }  // namespace Tempus
 
