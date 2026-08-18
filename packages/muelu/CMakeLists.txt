@@ -153,9 +153,19 @@ IF(DEFINED ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Belos)
-  ASSERT_DEFINED(HAVE_BELOS_XPETRA)
-  IF(NOT HAVE_BELOS_XPETRA)
-    MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Belos=ON requires Belos_ENABLE_Xpetra=ON.")
+  # When Belos is treated as an external TPL, HAVE_BELOS_XPETRA may not be defined.
+  # In that case, if Xpetra is also external, assume Belos was built with Xpetra support.
+  IF(DEFINED HAVE_BELOS_XPETRA)
+    IF(NOT HAVE_BELOS_XPETRA)
+      MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Belos=ON requires Belos_ENABLE_Xpetra=ON.")
+    ENDIF()
+  ELSEIF(TPL_ENABLE_Belos AND TPL_ENABLE_Xpetra)
+    # Both Belos and Xpetra are external TPLs - assume Belos has Xpetra support
+    MESSAGE(STATUS "MueLu: Assuming external Belos was built with Xpetra support")
+  ELSEIF(TPL_ENABLE_Belos)
+    MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Belos=ON with external Belos requires TPL_ENABLE_Xpetra=ON")
+  ELSE()
+    MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Belos=ON requires Belos_ENABLE_Xpetra=ON, but HAVE_BELOS_XPETRA is not defined.")
   ENDIF()
 ENDIF()
 
