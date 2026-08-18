@@ -7,23 +7,6 @@
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_default_types.hpp"
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-
-#define KOKKOS_IMPL_DO_NOT_WARN_INCLUDE_STATIC_CRS_GRAPH
-#include <Kokkos_StaticCrsGraph.hpp>
-#undef KOKKOS_IMPL_DO_NOT_WARN_INCLUDE_STATIC_CRS_GRAPH
-
-namespace KokkosSparse {
-using Kokkos::create_mirror;
-using Kokkos::create_mirror_view;
-using Kokkos::create_staticcrsgraph;
-using Kokkos::GraphRowViewConst;
-using Kokkos::maximum_entry;
-using Kokkos::StaticCrsGraph;
-}  // namespace KokkosSparse
-
-#else
-
 namespace KokkosSparse {
 
 namespace Impl {
@@ -525,7 +508,5 @@ DataType maximum_entry(const StaticCrsGraph<DataType, Arg1Type, Arg2Type, Arg3Ty
 }
 
 }  // namespace KokkosSparse
-
-#endif
 
 #endif
