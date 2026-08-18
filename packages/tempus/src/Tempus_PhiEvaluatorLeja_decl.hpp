@@ -94,28 +94,7 @@ class PhiEvaluatorLeja
    /** \brief Constructs an evaluator with the supplied descriptive name.
     * @param name std::string stored as the evaluator name.
     */
-  PhiEvaluatorLeja(std::string name)
-    : PhiEvaluator<Scalar>(name),
-      ddMethod_(0),
-      leja_sf_(1.0),
-      leja_tol_(1.0e-6),
-      leja_a_(-1.0),
-      leja_b_(0.0),
-      leja_c_(1.0)
-  {
-#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
-    std::stringstream ss;
-    ss << "Tempus::" << name;
-
-    // set up timers for overall Phi-evaluation, divided differences, and Linop-vector applications
-    std::string phiLabel = ss.str() + ": PhiEval";
-    timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
-    std::string linOpLabel = ss.str() + ": LinOp";
-    timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
-    std::string ddLabel = ss.str() + ": dd_phi";
-    timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
-#endif
-  }
+  PhiEvaluatorLeja(std::string name);
   PhiEvaluatorLeja() : PhiEvaluatorLeja("PhiEvaluatorLeja")
   { }
 

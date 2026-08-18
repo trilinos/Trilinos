@@ -28,6 +28,40 @@
 namespace Tempus {
 
 template <class Scalar>
+PhiEvaluatorLeja<Scalar>::PhiEvaluatorLeja(std::string name)
+  : PhiEvaluator<Scalar>(name),
+    expansionOrder_(300),
+    ddMethod_(2),
+    leja_sf_(1.0),
+    leja_tol_(1.0e-18),
+    leja_a_(-1.0),
+    leja_b_(0.0),
+    leja_c_(0.5),
+    lejaPointsBase_(Teuchos::null)
+{
+  // TODO: has to be set to true, only matrix exponential is implemented
+  this->useAtildeForSingleRHS_ = true;
+
+  // Intialize base Leja points with default expansionOrder
+  // if expansionOrder is changed by the user or pList, it will be reinitialized, but it is cheap enough
+  initLejaPointsBase();
+
+  // setup timers, if available
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
+  std::stringstream ss;
+  ss << "Tempus::" << name;
+
+  // set up timers for overall Phi-evaluation, divided differences, and Linop-vector applications
+  std::string phiLabel = ss.str() + ": PhiEval";
+  timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+  std::string linOpLabel = ss.str() + ": LinOp";
+  timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+  std::string ddLabel = ss.str() + ": dd_phi";
+  timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
+#endif
+}
+
+template <class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 PhiEvaluatorLeja<Scalar>::getValidParameters() const
 {
@@ -38,37 +72,56 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set<int>(
-      "Expansion Order", 300,
+      "Expansion Order", expansionOrder_,
       "Polynomial degree used for the Leja interpolation.\n"
       "\n"
       "The default is 300.");
 
   pl->set<int>(
-      "Leja DD Method", 1,
+      "Leja DD Method", ddMethod_,
       "Divided-difference method: 0 recurrence, 1 complex Taylor, 2 dd_phi, "
       "or 3 real Taylor.");
 
   pl->set<double>(
-      "leja_tol", 1.0e-18,
+      "leja_tol", leja_tol_,
       "Leja polynomial convergence tolerance. Default is 1e-18");
 
   pl->set<double>(
-      "leja_a", -1.0,
+      "leja_a", leja_a_,
       "Real-axis minimum parameter a for the Leja interpolation ellipse. The default is -1.0.");
 
   pl->set<double>(
-      "leja_b", 0.0,
+      "leja_b", leja_b_,
       "Real-axis maximum parameter b for the Leja interpolation ellipse. The default is 0.0.");
 
   pl->set<double>(
-      "leja_c", 0.5,
+      "leja_c", leja_c_,
       "Imaginary semi-axis parameter c for the Leja interpolation ellipse. The default is 0.5.");
 
   pl->set<double>(
-      "Leja Ellipse Safety Factor", 1.0,
+      "Leja Ellipse Safety Factor", leja_sf_,
       "Safety factor applied to adapted a and c bounds; b is unchanged. The default is 1.0.");
 
   return pl;
+}
+
+template <class Scalar>
+void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
+
+  leja_sf_ = pl->get<double>("Leja Ellipse Safety Factor", leja_sf_);
+  leja_tol_ = pl->get<double>("leja_tol", leja_tol_);
+  setDividedDifferenceMethod(pl->get<int>("Leja DD Method", ddMethod_));
+
+  setLejaEllipse(
+    pl->get<double>("leja_a", leja_a_),
+    pl->get<double>("leja_b", leja_b_),
+    pl->get<double>("leja_c", leja_c_)
+  );
+
+  setExpansionOrder(pl->get<int>("Expansion Order", getExpansionOrder()));
 }
 
 template <class Scalar>
@@ -361,6 +414,7 @@ void PhiEvaluatorLeja<Scalar>::setExpansionOrder(const int expansionOrder)
 
   expansionOrder_ = expansionOrder;
 
+  // reinit base LejaPoints with new expansionOrder
   initLejaPointsBase();
 }
 
@@ -420,29 +474,6 @@ LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(const int lp_idx)
   // return scaled and transformed Leja point
   LejaPoint lp_sc = LejaPoint{scale * lp.lp, lp.lpt};
   return lp_sc;
-}
-
-template <class Scalar>
-void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
-    Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
-
-  //pl->validateParametersAndSetDefaults(*getValidParameters());
-
-  leja_sf_ = pl->get<double>("Leja Ellipse Safety Factor", 1.0);
-  leja_tol_ = pl->get<double>("leja_tol", 1.0e-18);
-  setDividedDifferenceMethod(pl->get<int>("Leja DD Method", 2));
-  setExpansionOrder(pl->get<int>("Expansion Order", 300));
-
-  setLejaEllipse(
-    pl->get<double>("leja_a", -1.0),
-    pl->get<double>("leja_b", 0.0),
-    pl->get<double>("leja_c", 0.5)
-  );
-
-  // TODO: has to be set to true, only matrix exponential is implemented
-  this->useAtildeForSingleRHS_ = true;
 }
 
 template <class Scalar>

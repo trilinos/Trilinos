@@ -22,6 +22,29 @@
 
 namespace Tempus {
 
+
+template <class Scalar>
+PhiEvaluatorTaylor<Scalar>::PhiEvaluatorTaylor(std::string name)
+  : PhiEvaluator<Scalar>(name),
+    expansionOrder_(10)
+{
+  // PhiEvaluatorTaylor implements the single RHS PhiFunction for all orders,
+  // the extension formula with Atilde is only used for multiple RHS
+  this->useAtildeForSingleRHS_ = false;
+
+  // setup timers, if available
+#ifdef TEMPUS_TEUCHOS_TIME_MONITOR
+  std::stringstream ss;
+  ss << "Tempus::" << name ;
+
+  std::string phiLabel = ss.str() + ": PhiEval";
+  timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+
+  std::string linOpLabel = ss.str() + ": LinOp";
+  timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+#endif
+}
+
 template <class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 PhiEvaluatorTaylor<Scalar>::getValidParameters() const
@@ -33,12 +56,21 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set<int>(
-      "Expansion Order", 10,
+      "Expansion Order", getExpansionOrder(),
       "Taylor degree N in sum_{j=0}^N L^j v/(j+p)!.\n"
       "\n"
       "The default is 10.");
 
   return pl;
+}
+
+template <class Scalar>
+void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
+
+  setExpansionOrder(pl->get<int>("Expansion Order", getExpansionOrder()));
 }
 
 template <class Scalar>
@@ -171,20 +203,6 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   // std::cout << sStatus.message << std::endl;
 
   return sStatus;
-}
-
-template <class Scalar>
-void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
-    Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
-
-  //pl->validateParametersAndSetDefaults(*getValidParameters());
-
-  setExpansionOrder(pl->get<int>("Expansion Order", 10));
-
-  // TODO: make this configurable?
-  this->useAtildeForSingleRHS_ = false;
 }
 
 
