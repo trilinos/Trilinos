@@ -356,6 +356,11 @@ bool IDs<id_t>::ZoltanDDTest()
 
   if ((nIds * comm->getSize()) <= TOOMANY) zz.Print();
 
+  // Clean up the allocated memory
+  if (zgids != NULL) {
+    Zoltan2::TPL_Traits<ZOLTAN_ID_PTR, id_t>::DELETE_ARRAY(&zgids);
+  }
+
   return (cntShared == nShared);
 }
 
