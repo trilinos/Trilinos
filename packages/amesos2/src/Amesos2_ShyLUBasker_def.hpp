@@ -95,7 +95,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 
 template <class Matrix, class Vector>
 ShyLUBasker<Matrix,Vector>::~ShyLUBasker( )
-{  
+{
   /* ShyLUBasker will cleanup its own internal memory*/
 #if defined(HAVE_AMESOS2_KOKKOS)
   ShyLUbasker->Finalize();
@@ -154,7 +154,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
     ShyLUbasker->SetThreads(nthreads);
 
 
-    // NDE: Special case 
+    // NDE: Special case
     // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
     // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
     //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
@@ -202,7 +202,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
     }
-    else 
+    else
     { //follow original code path if conditions not met
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
       shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
@@ -249,7 +249,7 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
 
-      // NDE: Special case 
+      // NDE: Special case
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
@@ -281,7 +281,7 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             sp_colind.data(),
             sp_values);
       }
-      else 
+      else
       {
         // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
@@ -306,8 +306,8 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
 
       //ShyLUbasker->DEBUG_PRINT();
 
-      local_ordinal_type blnnz = local_ordinal_type(0); 
-      local_ordinal_type bunnz = local_ordinal_type(0); 
+      local_ordinal_type blnnz = local_ordinal_type(0);
+      local_ordinal_type bunnz = local_ordinal_type(0);
       ShyLUbasker->GetLnnz(blnnz); // Add exception handling?
       ShyLUbasker->GetUnnz(bunnz);
 
@@ -617,11 +617,11 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
   if( is_null(valid_params) )
     {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-      pl->set("IsContiguous", true, 
+      pl->set("IsContiguous", true,
               "Are GIDs contiguous");
-      pl->set("UseCustomGather", true, 
+      pl->set("UseCustomGather", true,
               "Use Matrix-gather routine");
-      pl->set("num_threads", 1, 
+      pl->set("num_threads", 1,
               "Number of threads");
       pl->set("pivot", false,
               "Should not pivot");
@@ -631,27 +631,27 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Tolerance before pivot, currently not used");
       pl->set("symmetric", false,
               "Should Symbolic assume symmetric nonzero pattern");
-      pl->set("realloc" , false, 
+      pl->set("realloc" , false,
               "Should realloc space if not enough");
       pl->set("verbose", false,
               "Information about factoring");
       pl->set("verbose_matrix", false,
               "Give Permuted Matrices");
-      pl->set("btf", true, 
+      pl->set("btf", true,
               "Use BTF ordering");
       pl->set("prune", false,
               "Use prune on BTF blocks (Not Supported)");
-      pl->set("btf_matching",  2, 
+      pl->set("btf_matching",  2,
               "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
-      pl->set("blk_matching", 0, 
+      pl->set("blk_matching", 0,
               "Matching optioon for block: 0 = none, 1 or anything else = Basker (default), (2 = MC64 if enabled)");
-      pl->set("matrix_scaling", 0, 
+      pl->set("matrix_scaling", 0,
               "Use matrix scaling to biig A BTF block: 0 = no-scaling, 1 = symmetric diagonal scaling, 2 = row-max, and then col-max scaling");
-      pl->set("min_block_size",  0, 
+      pl->set("min_block_size",  0,
               "Size of the minimum diagonal blocks");
-      pl->set("replace_zero_pivot",  true, 
+      pl->set("replace_zero_pivot",  true,
               "Replace zero pivots during the numerical factorization");
-      pl->set("replace_tiny_pivot",  false, 
+      pl->set("replace_tiny_pivot",  false,
               "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,
               "Use METIS for ND");
@@ -710,7 +710,7 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
   // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
   // In this case, colptr_, rowind_, nzvals_ are invalid
   }
-  else 
+  else
   {
     // Only the root image needs storage allocated
     if( this->root_ && current_phase == SYMBFACT )
@@ -741,7 +741,7 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
         // in case of the failure, it falls back to the original "do_get"
         if (nnz_ret < 0) use_gather = false;
-      } 
+      }
       if (!use_gather) {
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
@@ -759,7 +759,7 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
           "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals("
           +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
     }
-  } //end alternative path 
+  } //end alternative path
   return true;
 }
 

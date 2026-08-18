@@ -36,7 +36,7 @@
 //#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
 //  #define BASKER_SUPERLUDIS_MC64
 //#endif
-//#define BASKER_TIMER 
+//#define BASKER_TIMER
 
 
 namespace BaskerNS
@@ -74,7 +74,7 @@ namespace BaskerNS
     btf_top_tabs_offset = 0;
     btf_top_nblks = 0;
   }//end Basker()
-  
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -90,26 +90,26 @@ namespace BaskerNS
     // Actuall Finalize is called by desctructor
     FREE_MATRIX_2DARRAY(AVM, tree.nblks);
     FREE_MATRIX_2DARRAY(ALM, tree.nblks);
-    
+
     FREE_MATRIX_2DARRAY(LL, tree.nblks);
     FREE_MATRIX_2DARRAY(LU, tree.nblks);
-   
+
     FREE_INT_1DARRAY(LL_size);
     FREE_INT_1DARRAY(LU_size);
-    
+
     //BTF structure
     FREE_INT_1DARRAY(btf_tabs);
     FREE_INT_1DARRAY(btf_blk_work);
     FREE_INT_1DARRAY(btf_blk_nnz);
     FREE_MATRIX_1DARRAY(LBTF);
     FREE_MATRIX_1DARRAY(UBTF);
-       
+
     //Thread Array
     FREE_THREAD_1DARRAY(thread_array);
-       
+
     //S (Check on this)
     FREE_INT_2DARRAY(S, tree.nblks);
-    
+
     //Permuations
     FREE_INT_1DARRAY(gperm);
     FREE_INT_1DARRAY(gpermi);
@@ -123,7 +123,7 @@ namespace BaskerNS
     //NDE: sfactor_copy2 replacement
       FREE_INT_1DARRAY(vals_order_btf_array);
       FREE_INT_1DARRAY(vals_order_blk_amd_array);
-      FREE_INT_1DARRAY_PAIRS(vals_block_map_perm_pair); //this will map perm(val) indices to BTF_A, BTF_B, and BTF_C 
+      FREE_INT_1DARRAY_PAIRS(vals_block_map_perm_pair); //this will map perm(val) indices to BTF_A, BTF_B, and BTF_C
 
       FREE_INT_1DARRAY(vals_order_ndbtfd_array);
       FREE_INT_1DARRAY(vals_order_ndbtfe_array);
@@ -178,7 +178,7 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::InitMatrix(std::string filename)
-  { 
+  {
     //Note: jdb comeback to add trans option
     readMTX(filename, A);
     A.srow = 0;
@@ -191,11 +191,11 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry, Exe_Space>::InitMatrix
   (
-   Int nrow, 
-   Int ncol, 
-   Int nnz, 
+   Int nrow,
+   Int ncol,
+   Int nnz,
    Int *col_ptr,
-   Int *row_idx, 
+   Int *row_idx,
    Entry *val
   )
   {
@@ -216,14 +216,14 @@ namespace BaskerNS
   (
    Int nrow,
    Int ncol,
-   Int nnz, 
-   Int *col_ptr, 
-   Int *row_idx, 
+   Int nnz,
+   Int *col_ptr,
+   Int *row_idx,
    Entry *val,
    bool crs_transpose_needed_
   )
   {
-    #ifdef BASKER_TIMER 
+    #ifdef BASKER_TIMER
     std::ios::fmtflags old_settings = cout.flags();
     int old_precision = std::cout.precision();
     std::cout.setf(ios::fixed, ios::floatfield);
@@ -467,9 +467,9 @@ namespace BaskerNS
   (
    Int nrow,
    Int ncol,
-   Int nnz, 
-   Int *col_ptr, 
-   Int *row_idx, 
+   Int nnz,
+   Int *col_ptr,
+   Int *row_idx,
    Entry *val,
    Int *schur_part_in,
    Entry *schur_out_in,
@@ -505,14 +505,16 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::Factor
   (
-   Int nrow, 
+   Int nrow,
    Int ncol,
-   Int nnz, 
-   Int *col_ptr, 
-   Int *row_idx, 
+   Int nnz,
+   Int *col_ptr,
+   Int *row_idx,
    Entry *val
-  ) 
+  )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
+
     //Reset error codes
     int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
 
@@ -554,21 +556,21 @@ namespace BaskerNS
 
 
     // Summary:
-    // When Symbolic is called, the compressed matrix pointer data is copied into Basker. 
-    // If this is done through Amesos2 with a single process, the CRS format is not converted to CCS; 
+    // When Symbolic is called, the compressed matrix pointer data is copied into Basker.
+    // If this is done through Amesos2 with a single process, the CRS format is not converted to CCS;
     // that occurs by taking the transpose of the input CRS structure matrix, then performing symbolic factorization.
-    // The results of the Symbolic step are stored as permutation vectors. 
+    // The results of the Symbolic step are stored as permutation vectors.
     // When Factor is called, the input pointers will match those that were passed to Symbolic (i.e. if done through
-    // Amesos2 on a single process, they will be in CRS format). The transpose operation, if applied to the pointers, 
-    // is encoded within the perm_composition arrays. 
+    // Amesos2 on a single process, they will be in CRS format). The transpose operation, if applied to the pointers,
+    // is encoded within the perm_composition arrays.
     // Factor starts by copying the input pointer data into the local pointers. This is done by applying the permutations
-    // stored during Symbolic phase to the input pointers and storing the results in the local pointers. 
-    // This permute+copy operation stores the values in the A.val array as well as the blocks BTF_*.val; colptr and rowidx 
+    // stored during Symbolic phase to the input pointers and storing the results in the local pointers.
+    // This permute+copy operation stores the values in the A.val array as well as the blocks BTF_*.val; colptr and rowidx
     // are assumed to be unchtetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_D3);anged from the time Symbolic was called, and so do not need to be copied or recomputed.
     // After this, sfactor_copy2 is called with copies the results from BTF_A to the 2d ND blocks
     //
     // This assumes the ColPtr and RowIdx values SHOULD be identical if reusing the Symbolic structure, but if there
-    // is a change, for example reusing the Symbolic structure but a change in the values of the matrix entries and if 
+    // is a change, for example reusing the Symbolic structure but a change in the values of the matrix entries and if
     // some diagonal entry ends up becoming a zero, then Symbolic should be rerun
     //
 /*
@@ -642,7 +644,7 @@ namespace BaskerNS
         Int nfirst = btf_tabs(btf_tabs_offset);
         // to revert BLK_AMD ordering
         for (Int k = 0; k < (Int)ncol; k++) order_blk_amd_inv(k) = k;
-        permute_inv(order_blk_amd_inv, order_blk_amd_array, ncol); 
+        permute_inv(order_blk_amd_inv, order_blk_amd_array, ncol);
 
         // to revert BLK_MWM ordering
         for (Int k = 0; k < (Int)ncol; k++) order_blk_mwm_inv(k) = k;
@@ -698,7 +700,7 @@ namespace BaskerNS
             // > revert nd
             if (part_tree.permtab.extent(0) > 0) {
               for (Int k = 0; k < (Int)BTF_A.ncol; k++) order_nd_inv(k) = k;
-              permute_inv(order_nd_inv, part_tree.permtab, BTF_A.ncol); 
+              permute_inv(order_nd_inv, part_tree.permtab, BTF_A.ncol);
               //for (Int k = 0; k < (Int)BTF_A.ncol; k++) printf( " > nd(%d)=%d\n",k,part_tree.permtab(k) );
 
               // Revert ND ordering to A
@@ -755,7 +757,7 @@ namespace BaskerNS
 
           if (Options.static_delayed_pivot != 0 || Options.blk_matching != 0) {
             // revert MWM perm to rows of A
-            auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv, 
+            auto order_nd_mwm = Kokkos::subview(order_blk_mwm_inv,
                                                 range_type(a_nfirst, a_nlast));
             for (Int i = 0; i < (Int)BTF_A.ncol; i++) {
               order_nd_mwm(i) -= a_nfirst;
@@ -795,7 +797,7 @@ namespace BaskerNS
 
           if (Options.blk_matching != 0) {
             // revert BLK_MWM ordering
-            auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_inv, 
+            auto order_blk_mwm_c = Kokkos::subview(order_blk_mwm_inv,
                                                    range_type (nfirst, ncol));
             for (Int i = 0; i < (Int)BTF_C.ncol; i++) {
               order_blk_mwm_c(i) -= nfirst;
@@ -827,7 +829,7 @@ namespace BaskerNS
 
           if (Options.blk_matching != 0) {
             // revert BLK_MWM ordering
-            auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_inv, 
+            auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_inv,
                                                    range_type (0, ncol_d));
             permute_row(BTF_D, order_blk_mwm_d);
             if (BTF_E.ncol > 0) {
@@ -924,11 +926,11 @@ namespace BaskerNS
       using STS = Teuchos::ScalarTraits<Entry>;
       using Mag = typename STS::magnitudeType;
       const Entry zero (0.0);
-      A.anorm = abs(zero);
+      A.anorm = STS::magnitude(zero);
       for (Int j = 0; j < (Int)A.ncol; j++) {
-        Mag anorm_j = abs(zero);
+        Mag anorm_j = STS::magnitude(zero);
         for (Int k = A.col_ptr(j); k < A.col_ptr(j+1); k++) {
-          anorm_j += abs(A.val(k));
+          anorm_j += STS::magnitude(A.val(k));
         }
         if (anorm_j > A.anorm) {
           A.anorm = anorm_j;
@@ -937,9 +939,9 @@ namespace BaskerNS
       A.gnorm = A.anorm;
 
       for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
-        Mag anorm_j = abs(zero);
+        Mag anorm_j = STS::magnitude(zero);
         for (Int k = BTF_A.col_ptr(j); k < BTF_A.col_ptr(j+1); k++) {
-          anorm_j += abs(BTF_A.val(k));
+          anorm_j += STS::magnitude(BTF_A.val(k));
         }
         if (anorm_j > BTF_A.anorm) {
           BTF_A.anorm = anorm_j;
@@ -947,7 +949,7 @@ namespace BaskerNS
       }
       BTF_A.gnorm = A.anorm;
       if(Options.verbose == BASKER_TRUE) {
-        std::cout<< " Basker Factor: Time to compute" 
+        std::cout<< " Basker Factor: Time to compute"
                  << " norm(A) = "     << BTF_A.gnorm << " with n = " << A.ncol << ", and "
                  << " norm(BTF_A) = " << BTF_A.anorm << " with n = " << BTF_A.ncol
                  << " : " << normA_timer.seconds() << std::endl;
@@ -966,8 +968,8 @@ namespace BaskerNS
       for (Int i = 0; i < (Int)A.nrow; i++) {
         order_blk_mwm_array(i) = i;
         order_blk_amd_array(i) = i;
-        scale_row_array(i) = abs(one);
-        scale_col_array(i) = abs(one);
+        scale_row_array(i) = STS::magnitude(one);
+        scale_col_array(i) = STS::magnitude(one);
 
         numeric_row_iperm_array(i) = i;
         numeric_col_iperm_array(i) = i;
@@ -1028,7 +1030,7 @@ namespace BaskerNS
         // ----------------------------------------------------------------------------------------------
         // compute MWM on a big block A
         if(Options.verbose == BASKER_TRUE) {
-          std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz 
+          std::cout << " calling MWM on A(n=" << BTF_A.ncol << ", nnz=" << BTF_A.nnz
                     << ", btf_tabs_offset=" << btf_tabs_offset << ", " << btf_tabs(0) << " : " << btf_tabs(btf_tabs_offset)-1
                     << " )" << std::endl;
         }
@@ -1207,7 +1209,7 @@ namespace BaskerNS
             // moving from dom1 (lower in ND tree) to dom2 (higher in ND tree)
             Int dom1 = nd_map(j);
             Int dom2 = nd_map(k);
-            if (dom2 > dom1) 
+            if (dom2 > dom1)
             {
               nd_sizes(dom1+1) --;
               nd_sizes(dom2+1) ++;
@@ -1302,7 +1304,7 @@ namespace BaskerNS
           //for (int i=0; i<BTF_A.ncol; i++) printf( " - mxm_a(%d)=%d\n",i,order_nd_mwm(i));
 
           // ----------------------------------------------------------------------------------------------
-          // apply nd-fix 
+          // apply nd-fix
           INT_1DARRAY order_nd_amd2;
           MALLOC_INT_1DARRAY (order_nd_amd2, BTF_A.nrow);
           for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
@@ -1627,7 +1629,7 @@ namespace BaskerNS
       permute_inv_with_workspace(numeric_row_iperm_array, order_blk_mwm_array, ncol);
       permute_inv_with_workspace(numeric_row_iperm_array, order_blk_amd_array, ncol);
       if (BTF_A.ncol > 0 && Options.static_delayed_pivot == 0) {
-        Int scol_top = btf_tabs[btf_top_tabs_offset]; 
+        Int scol_top = btf_tabs[btf_top_tabs_offset];
 
         //printf( " A.scol = %d, scol_top = %d (btf_tabs = %d, btf_top_tabs = %d)\n",BTF_A.scol, scol_top, btf_tabs_offset, btf_top_tabs_offset );
         //for (Int i = 0; i < btf_top_tabs_offset; i++) printf( " x %d: %d\n",i,btf_tabs[i+1]-btf_tabs[i] );
@@ -1640,7 +1642,7 @@ namespace BaskerNS
       // (int i=0; i<gn; i++) printf( " < numeric_row_iperm[%d] = %d\n",i,numeric_row_iperm_array(i) );
       // compose col permute
       if (BTF_A.ncol > 0 && Options.static_delayed_pivot == 0) {
-        Int scol_top = btf_tabs[btf_top_tabs_offset]; 
+        Int scol_top = btf_tabs[btf_top_tabs_offset];
         permute_with_workspace(numeric_col_iperm_array,  order_csym_array, BTF_A.ncol, scol_top);
         permute_with_workspace(numeric_col_iperm_array, part_tree.permtab, BTF_A.ncol, scol_top);
       }
@@ -1664,19 +1666,19 @@ namespace BaskerNS
         ////////////////////
         // row and column scale A
         if (Options.matrix_scaling == 1) {
-          // find diagonal scaling factors 
+          // find diagonal scaling factors
           for(Int j = 0; j < BTF_A.ncol; j++) {
             Int col = scol_top+j;
             scale_row_array[col] = one;
             scale_col_array[col] = one;
             for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
               if (BTF_A.row_idx[k] == j) {
-                Entry ajj = abs(BTF_A.val[k]);
-                if (abs(ajj) <= eps*normA) {
+                Entry ajj = STS::magnitude(BTF_A.val[k]);
+                if (STS::magnitude(ajj) <= eps*normA) {
                   ajj = eps*normA;
                 }
-                scale_row_array[col] = one / sqrt(ajj);
-                scale_col_array[col] = one / sqrt(ajj);
+                scale_row_array[col] = one / STS::squareroot(ajj);
+                scale_col_array[col] = one / STS::squareroot(ajj);
               }
             }
           }
@@ -1695,14 +1697,14 @@ namespace BaskerNS
           for(Int j = 0; j < BTF_A.ncol; j++) {
             for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
               Int row = scol_top+BTF_A.row_idx[k];
-              if (abs(scale_row_array[row]) < abs(BTF_A.val[k])) {
-                scale_row_array[row] = abs(BTF_A.val[k]);
+              if (STS::magnitude(scale_row_array[row]) < STS::magnitude(BTF_A.val[k])) {
+                scale_row_array[row] = STS::magnitude(BTF_A.val[k]);
               }
             }
           }
           for(Int i = 0; i < BTF_A.ncol; i++) {
             Int row = scol_top+i;
-            if (abs(scale_row_array[row]) <= eps*normA) {
+            if (STS::magnitude(scale_row_array[row]) <= eps*normA) {
               scale_row_array[row] = eps*normA;
             }
             scale_row_array[row] = one / scale_row_array[row];
@@ -1721,11 +1723,11 @@ namespace BaskerNS
             // find max entry
             Int col = scol_top+j;
             for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-              if (abs(scale_col_array[col]) < abs(BTF_A.val[k])) {
-                scale_col_array[col] = abs(BTF_A.val[k]);
+              if (STS::magnitude(scale_col_array[col]) < STS::magnitude(BTF_A.val[k])) {
+                scale_col_array[col] = STS::magnitude(BTF_A.val[k]);
               }
             }
-            if (abs(scale_col_array[col]) <= eps*normA) {
+            if (STS::magnitude(scale_col_array[col]) <= eps*normA) {
               scale_col_array[col] = eps*normA;
             }
             // scale
@@ -1868,14 +1870,14 @@ namespace BaskerNS
     if(err == BASKER_ERROR)
     {
       printf("ShyLUBasker factor_notoken error returned (err=%d)\n",err);
-      return BASKER_ERROR; 
+      return BASKER_ERROR;
     }
 
     if ( symbolic_gn != gn || symbolic_gm != gm ) {
       printf( "ShyLUBasker Factor error: Matrix dims at Symbolic and Factor stages do not agree (symbolic_gm=%d, gn=%d, gm=%d)",(int)symbolic_gn,(int)gn,(int)gm);
       printf( " - Symbolic reordered structure will not apply.\n");
       //exit(EXIT_FAILURE);
-      return BASKER_ERROR; 
+      return BASKER_ERROR;
     }
 
     if(Options.verbose == BASKER_TRUE)
@@ -1977,7 +1979,7 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x, Int option, bool transpose)
-  {    
+  {
     int err = 0;
     printf("Basker: This solve call not implemented\n");
     if(solve_flag == false) //never solved before
@@ -2066,27 +2068,27 @@ namespace BaskerNS
   template<class Int, class Entry, class Exe_Space>
   int Basker<Int,Entry,Exe_Space>::GetL
   (
-   Int &n, 
-   Int &nnz, 
-   Int **col_ptr, 
-   Int **row_idx, 
+   Int &n,
+   Int &nnz,
+   Int **col_ptr,
+   Int **row_idx,
    Entry **val
   )
   {
     get_L(n,nnz,col_ptr, row_idx, val);
-    
+
     return BASKER_SUCCESS;
   }//end GetL()
-  
+
 
   //returns assembles U
   template<class Int, class Entry, class Exe_Space>
   int Basker<Int,Entry,Exe_Space>::GetU
   (
-   Int &n, 
-   Int &nnz, 
-   Int **col_ptr, 
-   Int **row_idx, 
+   Int &n,
+   Int &nnz,
+   Int **col_ptr,
+   Int **row_idx,
    Entry **val
   )
   {
@@ -2131,7 +2133,7 @@ namespace BaskerNS
     /*
     print_local_time_stats();
 
-    std::cout << std::endl 
+    std::cout << std::endl
               << "---------------TIME-------------------"<< std::endl
               << "Tree:    " << stats.tree_time    << std::endl
               << "SFactor: " << stats.sfactor_time << std::endl
@@ -2179,7 +2181,7 @@ namespace BaskerNS
     }
     if(btf_tabs_offset != 0)
     {
-      printVec("ND.csc", part_tree.permtab, 
+      printVec("ND.csc", part_tree.permtab,
           part_tree.permtab.extent(0));
     }
     if(amd_flag == BASKER_TRUE)
@@ -2207,7 +2209,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Info()
   {
-    std::cout << "---------BASKER <2D>---------" 
+    std::cout << "---------BASKER <2D>---------"
               << "---------V.  0.0.3 ------------- "
               << "Written by Joshua Dennis Booth"
               << "jdbooth@sandia.gov"

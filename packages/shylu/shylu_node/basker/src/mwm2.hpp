@@ -11,7 +11,7 @@
 #define MWM2_HPP
 
 //Maximum Weighted Matching
-//This is based off Duff's mc64 
+//This is based off Duff's mc64
 //-----------------------------------//
 
 //Function list
@@ -22,7 +22,7 @@
 // int mwm_carpaneto_col ... Carpaneto and Toth (1980) col init
 // int mwm_diag_prod     ... Duff and Koster (1999) - mc64 Product of diag
 
-//Struct 
+//Struct
 // MWM_Q
 // MWM_Q(size)
 // MWM_Q.insert
@@ -36,7 +36,7 @@ namespace mwm_order
 
   //-------------------------Data Structures-------------------//
 
-  //Note:  In the future we should have a basker_q and use that 
+  //Note:  In the future we should have a basker_q and use that
   // with basker types
   // Still need to add Derigs and Metz adaptions
   //heap needs both an item and a key
@@ -45,6 +45,8 @@ namespace mwm_order
   {
     Entry *pq;
     Int   N,n;
+
+    using STS = Teuchos::ScalarTraits<Entry>;
 
     /*
     MWM_Q(Int size)
@@ -56,7 +58,7 @@ namespace mwm_order
     */
 
     //might need to add clear to the heap
-    
+
     bool empty() const
     {
       return (N==0);
@@ -67,14 +69,14 @@ namespace mwm_order
       pq[++N] = a;
       fix_up(pq, N);
     }//end insert
-    
+
     Entry get_max()
     {
       exch(pq[1],pq[N]);
       fix_down(pq, 1, N-1);
       return pq[N--];
     }//end get_max
-    
+
     void fix_up(Entry* a, Int k)
     {
       while(k > 1 &&  a[k/2] < a[k])
@@ -98,7 +100,7 @@ namespace mwm_order
           break;
         }
         exch(a[k], a[j]);
-        k = j;	  
+        k = j;
       }
     }//end fix_down
 
@@ -110,12 +112,12 @@ namespace mwm_order
     }//end exch
 
   };// end MWM_Q
-  
+
 
   template<class Int, class Entry>
   void mwm_heap_down2
   (
-   Int i, 
+   Int i,
    Int n,
    Int *Q,
    Entry *d,
@@ -124,9 +126,9 @@ namespace mwm_order
   {
     Int idum, pos, posk, qk;
     Entry di;
-    
+
     const Int k = 2;
-    
+
     pos = L[i];
 
     if(pos > 0)
@@ -154,7 +156,7 @@ namespace mwm_order
 
       }//for -idum
     }//if - pos > 0
-    
+
     Q[pos] = i;
     L[i]   = pos;
   }//end mwm_hep_down_2
@@ -164,7 +166,7 @@ namespace mwm_order
   void mwm_heap_down
   (
    Int i,
-   Int n, 
+   Int n,
    Int *Q,
    Entry *D,
    Int *L
@@ -172,7 +174,7 @@ namespace mwm_order
   {
     //Note: We could really clean up the logic here
 
-    Int k = 2;    
+    Int k = 2;
     Int pos = L[i];
     if(pos != 0)
     {
@@ -201,14 +203,14 @@ namespace mwm_order
         }
       }//for-idum
     }//if-pos!=0
-    
+
     #ifdef MATCH_DEBUG
     printf("heap down pos2: %d \n", pos);
     #endif
 
     Q[pos] = i;
     L[i]   = pos;
-    
+
     //Done!
   }//end mwm_heap_down
 
@@ -265,12 +267,12 @@ namespace mwm_order
       L[Q[pos]] = pos;
       pos = posk;
     }
-    
+
     Q[pos] = i;
     L[i] = pos;
   }//end mwm_head_del_root2
 
-  
+
   template <class Int, class Entry>
   void mwm_heap_del_root
   (
@@ -285,10 +287,10 @@ namespace mwm_order
 
     Int i = Q[qlen];
     Entry di = D[i];
-    
+
     qlen--;
     Int pos = 0;
-    
+
     for(Int idum = 0; idum < n; idum++)
     {
       Int posk = k*pos;
@@ -312,9 +314,9 @@ namespace mwm_order
       }
       Q[pos]    = Q[posk];
       L[Q[pos]] = pos;
-      pos       = posk; 	
+      pos       = posk;
     }//for--idum(1:N)
-    
+
     Q[pos] = i;
     L[i] = pos;
 
@@ -335,9 +337,9 @@ namespace mwm_order
   {
     Int i, idum,pos, posk, qk;
     Mag dk, dr, di;
-    
+
     const Int k = 2;
-    
+
     if(qlen-1 == pos0)
     {
       qlen--;
@@ -348,7 +350,7 @@ namespace mwm_order
     di = d[i];
     qlen = qlen-1;
     pos  = pos0;
-    
+
     if(pos > 0)
     {
       for(idum = 0; idum < n; idum++)
@@ -429,13 +431,13 @@ namespace mwm_order
   )
   {
     Int k = 0; // NDE: why is this zero and not 2, like above?
-    
+
     if(qlen == pos0)
     {
       qlen--;
       return;
     }
-    
+
     //? qlen-1?
     Int i  = Q[qlen];
     Mag di = D[i];
@@ -488,7 +490,7 @@ namespace mwm_order
         if(posk < qlen)
         {
           Mag dr = D[Q[posk+1]];
-          if(dk > dr) 
+          if(dk > dr)
           {
             posk++;
             dk = dr;
@@ -501,7 +503,7 @@ namespace mwm_order
         }
 
         Int qk     = Q[posk];
-        Q[pos] = qk; 
+        Q[pos] = qk;
         L[qk]  = pos;
         pos    = posk;
       }//for-idum
@@ -524,7 +526,7 @@ namespace mwm_order
   // int mwm_carpaneto_col ... Carpaneto and Toth (1980) col init
   // int mwm_diag_prod     ... Duff and Koster (1999) - mc64 Product of diag
 
-   
+
   template<class Int, class Entry, class Mag>
   int mwm_bn_init
   (
@@ -542,6 +544,7 @@ namespace mwm_order
    Mag &bv
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
     using MTS = Teuchos::ScalarTraits<Mag>;
     const Mag ZERO = MTS::zero();
     const Mag ONE  = MTS::one();
@@ -561,16 +564,16 @@ namespace mwm_order
       pr[k]    = col_ptr[k];
       d[k]     = ZERO;
     }
-    
+
     //Scan over column nodes
     for(j=0; j<n; j++)
     {
       a0 = -ONE;
-      //For each column node, 
+      //For each column node,
       for(k=col_ptr[j]; k<col_ptr[j+1]; k++)
       {
         i  = row_idx[k];
-        ai = abs(val[k]);
+        ai = STS::magnitude(val[k]);
         if(ai > d[i])
         {
           d[i] = ai;
@@ -626,7 +629,7 @@ namespace mwm_order
       return 0;
     }
 
-    //if not shift 
+    //if not shift
     for(j =0; j < n; j++)
     {
       if(jperm[j]!=-1)
@@ -636,7 +639,7 @@ namespace mwm_order
       for(k=col_ptr[j]; k<col_ptr[j+1]; k++)
       {
         i  = row_idx[k];
-        ai = abs(val[k]);
+        ai = STS::magnitude(val[k]);
         bool d_break = false;
 
         if(ai < bv)
@@ -670,7 +673,7 @@ namespace mwm_order
           {
             continue;
           }
-          if(abs(val[kk])>=bv)
+          if(STS::magnitude(val[kk])>=bv)
           {
             jperm[jj] = ii;
             iperm[ii] = jj;
@@ -682,7 +685,7 @@ namespace mwm_order
 
             d_break = true;
             break;
-          }//if- 
+          }//if-
         }//for-kk
 
         if(d_break == true)
@@ -716,6 +719,7 @@ namespace mwm_order
    Mag &bv
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
     using MTS = Teuchos::ScalarTraits<Mag>;
     const Mag ONE = MTS::one();
 
@@ -730,13 +734,13 @@ namespace mwm_order
     Mag dnew, di;
     Mag csp;
     Int isp, jsp;
-    
+
     Int lpos;
 
     Mag MINONE = -ONE;
 
     Int *Q = new Int[n+1];
-   
+
     //Debug
     #ifdef MWM_DEBUG
     printf("iperm:\n");
@@ -752,7 +756,7 @@ namespace mwm_order
     }
     printf("\n");
     #endif
-    
+
     jsp = -1;
     isp = -1;
     //prep
@@ -781,7 +785,7 @@ namespace mwm_order
       for(k=col_ptr[j]; k < col_ptr[j+1]; k++)
       {
         i    = row_idx[k];
-        dnew = abs(val[k]);
+        dnew = STS::magnitude(val[k]);
 
         if(csp >= dnew)
         {
@@ -874,8 +878,8 @@ namespace mwm_order
             continue;
           }
 
-          dnew = std::min(dq0, abs(val[k]));
-          
+          dnew = std::min(dq0, STS::magnitude(val[k]));
+
           if(csp >= dnew)
           {
             continue;
@@ -926,7 +930,7 @@ namespace mwm_order
 
             jj = iperm[i];
             pr[jj] = j;
-          }//elws			 
+          }//elws
         }//for-k
         if(d_break == true)
         {
@@ -952,12 +956,12 @@ L160:
           //     i, iperm[i]);
           j = pr[j];
           if(j == -1)
-          { 
+          {
             break;
           }
           i = i0;
         }
-      }//if-csp != minone 
+      }//if-csp != minone
 
       for(kk=up; kk < n; kk++)
       {
@@ -1022,16 +1026,16 @@ L160:
   template <class Int, class Entry>
   int mwm_init()
   { return -1;}
-  
+
 
   template <class Int, class Entry>
   int mwm
   (
-   Int n, 
+   Int n,
    Int nnz,
-   Int *col_ptr, 
+   Int *col_ptr,
    Int *row_idx,
-   Entry *val, 
+   Entry *val,
    Int *perm,
    Int &num
   )
@@ -1047,10 +1051,10 @@ L160:
 
     Mag bv = 0;
 
-    mwm_bn_init(n,nnz, 
+    mwm_bn_init(n,nnz,
 		col_ptr, row_idx, val,
 		pr, L, d,
-		iperm, jperm, 
+		iperm, jperm,
 		num, bv);
 
     #ifdef MATCH_DEBUG
@@ -1089,10 +1093,10 @@ L160:
 
     mwm_bn(n,nnz,
 	   col_ptr, row_idx, val,
-	   pr, L, d, 
+	   pr, L, d,
 	   iperm, jperm,
 	   num, bv);
-    
+
     #ifdef MATCH_DEBUG
     printf("\n");
     printf("Bottleneck done. num: %d \n", num);
@@ -1127,12 +1131,12 @@ L160:
   template <class Int, class Entry>
   int mwm_prod
   (
-   Int n, 
+   Int n,
    Int nnz,
-   Int *col_ptr, 
+   Int *col_ptr,
    Int *row_idx,
-   Entry *val, 
-   Int *perm, 
+   Entry *val,
+   Int *perm,
    Int &num
   )
   {
@@ -1171,7 +1175,7 @@ L160:
     mwm_carpaneto_row(n,nnz,col_ptr,row_idx,min_val,
 		      pr,L,U,d,
 		      iperm,jperm,num);
-    
+
     #ifdef MATCH_DEBUG
     printf("\n");
     printf("------------Done row: %d -----------\n", num);
@@ -1196,10 +1200,10 @@ L160:
       delete [] min_val;
       return 0;
     }
-    
+
     //Columns
     mwm_carpaneto_col(n,nnz,col_ptr,row_idx,min_val,
-		      pr, L, U, d, 
+		      pr, L, U, d,
 		      iperm, jperm,num);
 
     #ifdef MATCH_DEBUG
@@ -1213,7 +1217,7 @@ L160:
     }
     printf("\n");
     #endif
- 
+
     if(num == n)
     {
       delete [] U;
@@ -1238,7 +1242,7 @@ L160:
     //----------------Do Matching ------//
     //printf("calling diag prod\n");
     mwm_diag_prod(n, nnz, col_ptr, row_idx, min_val,
-		  pr, L, U, d, 
+		  pr, L, U, d,
 		  iperm, jperm, num);
 
     //Until done with debug, copy perm
@@ -1255,7 +1259,7 @@ L160:
     }
     printf("\n");
     #endif
-		  
+
     delete [] U;
     delete [] d;
     delete [] jperm;
@@ -1271,11 +1275,11 @@ L160:
   template <class Int, class Entry>
   int mwm_tras
   (
-   Int n, 
+   Int n,
    Int nnz,
-   Int *col_ptr, 
+   Int *col_ptr,
    Int *row_idx,
-   Entry *val,  
+   Entry *val,
    Entry *min_val
   )
   {
@@ -1285,18 +1289,18 @@ L160:
       //Find max value in abs in each column
       for(Int j = col_ptr[k]; j < col_ptr[k+1]; j++)
       {
-        if(abs(val[j]) > fact)
+        if(STS::magnitude(val[j]) > fact)
         {
-          fact = abs(val[j]);
+          fact = STS::magnitude(val[j]);
         }
       }//end nnz in column
 
       for(Int j = col_ptr[k]; j < col_ptr[k+1]; j++)
       {
         //come back to the left shift op
-        min_val[j]= fact - abs(val[j]);
+        min_val[j]= fact - STS::magnitude(val[j]);
       }
-    }//end over all columns    
+    }//end over all columns
 
     return 0;
   }//end mwm_trans()
@@ -1307,17 +1311,17 @@ L160:
   template <class Int, class Entry>
   int mwm_carpaneto_row
   (
-   Int n, 
+   Int n,
    Int nnz,
-   Int *col_ptr, 
+   Int *col_ptr,
    Int *row_idx,
    Entry  *val,
-   Int *pr, 
+   Int *pr,
    Int *L,
-   Entry *U, 
-   Entry *d, 
-   Int *iperm, 
-   Int *jperm, 
+   Entry *U,
+   Entry *d,
+   Int *iperm,
+   Int *jperm,
    Int &num
   )
   {
@@ -1352,7 +1356,7 @@ L160:
         }
       }//end over all nnz in column
     }//end over all columns
-   
+
     //Now use the preloads to find a permuation
     for(Int i = 0; i < n; i++)
     {
@@ -1376,31 +1380,31 @@ L160:
         }//column not match
       }//row populated and not matched
     }//end over all rows
-    
+
     return 0;
   }//end mwm_carpaneto_row()
 
 
   //This finds an inital matching based off the dual value for row
-  // $$v_{j} = min_{i \in COL(j)} (c_{ij} - u_{i}) \forall j \in V_{c} 
+  // $$v_{j} = min_{i \in COL(j)} (c_{ij} - u_{i}) \forall j \in V_{c}
   template <class Int, class Entry>
   int mwm_carpaneto_col
   (
-   Int n, 
+   Int n,
    Int nnz,
-   Int *col_ptr, 
+   Int *col_ptr,
    Int *row_idx,
    Entry  *val,
-   Int *pr, 
+   Int *pr,
    Int *L,
-   Entry   *U, 
-   Entry *d, 
-   Int *iperm, 
-   Int *jperm, 
+   Entry   *U,
+   Entry *d,
+   Int *iperm,
+   Int *jperm,
    Int &num
   )
   {
-    //printf("-------MWM col: %d -----------\n", num); 
+    //printf("-------MWM col: %d -----------\n", num);
     using STS = Teuchos::ScalarTraits<Entry>;
     const Entry INF = STS::rmax();
 
@@ -1435,7 +1439,7 @@ L160:
           i    = row_idx[k];
           di   = val[k] - U[i];
 
-          //Might be a better way for 
+          //Might be a better way for
           //this flow
           if(di > vj)
           {
@@ -1452,7 +1456,7 @@ L160:
               if((iperm[i]  != -1) ||
                   (iperm[i0]  == -1))
               {
-                //continue over all 
+                //continue over all
                 //possible
                 continue;
               }
@@ -1546,9 +1550,9 @@ L160:
       if(found_replace == true)
       {
         #ifdef MATCH_DEBUG
-        printf("MWM COL, add: i: %d j: %d \n", 
+        printf("MWM COL, add: i: %d j: %d \n",
             i, j);
-        #endif 
+        #endif
 
         //might have to make k for all
         //might have to make i for all
@@ -1560,24 +1564,24 @@ L160:
         found_replace = false;
       }
     }//for --over all columns
-    
+
     return 0;
   }//end mwm_carpaneto_col()
 
   template <class Int, class Entry>
   int mwm_diag_prod
   (
-   Int n, 
+   Int n,
    Int nnz,
-   Int *col_ptr, 
+   Int *col_ptr,
    Int *row_idx,
    Entry  *val,
-   Int *pr, 
+   Int *pr,
    Int *L,
-   Entry *U, 
-   Entry *d, 
-   Int *iperm, 
-   Int *jperm, 
+   Entry *U,
+   Entry *d,
+   Int *iperm,
+   Int *jperm,
    Int &num
   )
   {
@@ -1713,7 +1717,7 @@ L160:
         #endif
 
         for(Int jdum = 0; jdum < num; jdum++)
-        { 
+        {
           //If top Q is empty, need to fill
           if(low == up)
           {
@@ -1806,7 +1810,7 @@ L160:
                 continue;
               }
               d[i] = dnew_k;
-              //if new value is less than min, 
+              //if new value is less than min,
               //needs to be moved to upper heap
               if(dnew_k <= dmin)
               {
@@ -1855,7 +1859,7 @@ L160:
           Int jj = pr[j];
           //if at root
           if(jj == -1)
-          { 
+          {
             break;
           }
 

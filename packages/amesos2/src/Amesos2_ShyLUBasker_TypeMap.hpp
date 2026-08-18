@@ -31,6 +31,8 @@
 #include <Teuchos_SerializationTraits.hpp>
 #endif
 
+#include "Kokkos_Core.hpp"
+
 #include "Amesos2_TypeMap.hpp"
 
 namespace Amesos2 {
@@ -57,6 +59,15 @@ struct TypeMap<ShyLUBasker,double>
   typedef double type;
 };
 
+
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+template <>
+struct TypeMap<ShyLUBasker,Kokkos::Experimental::half_t>
+{
+  typedef Kokkos::Experimental::half_t dtype;
+  typedef Kokkos::Experimental::half_t type;
+};
+#endif
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
