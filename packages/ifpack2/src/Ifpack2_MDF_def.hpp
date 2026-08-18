@@ -14,10 +14,13 @@
 #include "Ifpack2_ScalingType.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Ifpack2_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Macros.hpp"
 #include "Kokkos_Sort.hpp"
 #include "KokkosSparse_mdf.hpp"
 #include "KokkosKernels_Sorting.hpp"
@@ -315,6 +318,18 @@ MDF<MatrixType>::getRangeMap() const {
   return L_->getRangeMap();
 }
 
+namespace {
+template <typename MatrixType>
+bool issueWarning([[maybe_unused]] const Teuchos::ParameterList& params) {
+#ifdef KOKKOS_ENABLE_SYCL
+  if (!std::is_same_v<typename node_type::execution_space, Kokkos::SYCL>) return false;
+  if (!params.isParameter("trisolver: type")) return false;
+  return params.get<std::string>("trisolver: type").find("KSPTRSV") != std::string::npos;
+#endif
+  return false;
+}
+}  // namespace
+
 template <class MatrixType>
 void MDF<MatrixType>::
     setParameters(const Teuchos::ParameterList& params) {
@@ -350,6 +365,22 @@ void MDF<MatrixType>::
   {
     const std::string paramName("fact: mdf overalloc");
     getParamTryingTypes<double, double>(overalloc, params, paramName, prefix);
+  }
+
+  if (issueWarning<MatrixType>(params)) {
+    Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
+
+    const bool printOnThisRank =
+        A_.is_null() ||
+        A_->getRowMap()->getComm()->getRank() == 0;
+
+    if (printOnThisRank && !out.is_null()) {
+      *out << "Ifpack2::MDF warning: parameter \"trisolver: type\" was set to \""
+           << params.get<std::string>("trisolver: type")
+           << "\" for a SYCL execution space. This configuration may lead to incorrect results."
+           << std::endl;
+    }
   }
 
   // Forward to trisolvers.
