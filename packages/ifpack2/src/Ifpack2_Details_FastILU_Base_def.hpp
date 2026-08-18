@@ -19,6 +19,7 @@
 #include <KokkosKernels_Utils.hpp>
 #include <Kokkos_Timer.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_Array.hpp>
 #include <stdexcept>
 
 namespace Ifpack2 {
@@ -33,6 +34,9 @@ FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   , nInit_(0)
   , nComputed_(0)
   , nApply_(0)
+  , localCrs_(Teuchos::null)
+  , localCrsNonConst_(Teuchos::null)
+  , localCrsIsOwnedCopy_(false)
   , initTime_(0.0)
   , computeTime_(0.0)
   , applyTime_(0.0)
@@ -146,8 +150,64 @@ void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   Kokkos::Timer copyTimer;
-  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
-  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+
+  // Try to ensure that FastILU reads structure and values from a concrete
+  // Tpetra::CrsMatrix whenever possible.  This lets CrsArrayReader use its
+  // getStructureCrs/getValuesCrs fast paths instead of the generic RowMatrix
+  // host-row loop.  In BlockCrs mode, keep using mat_ directly so the BCRS
+  // specialization in CrsArrayReader remains available.
+  localCrs_            = Teuchos::null;
+  localCrsNonConst_    = Teuchos::null;
+  localCrsIsOwnedCopy_ = false;
+
+  const TRowMatrix* crsArraySource = mat_.get();
+  if (!isBlockCrs()) {
+    localCrs_ = Ifpack2::Details::getCrsMatrix(mat_);
+
+    if (localCrs_.is_null()) {
+      const LocalOrdinal numRows = static_cast<LocalOrdinal>(mat_->getLocalNumRows());
+      Teuchos::Array<size_t> entriesPerRow(numRows);
+      for (LocalOrdinal i = 0; i < numRows; ++i) {
+        entriesPerRow[i] = mat_->getNumEntriesInLocalRow(i);
+      }
+
+      localCrsNonConst_ = Teuchos::rcp(new TCrsMatrix(mat_->getRowMap(), mat_->getColMap(), entriesPerRow()));
+
+      using local_inds_host_view_type = typename TRowMatrix::nonconst_local_inds_host_view_type;
+      using values_host_view_type     = typename TRowMatrix::nonconst_values_host_view_type;
+
+      const size_t maxNnz = mat_->getLocalMaxNumRowEntries();
+      local_inds_host_view_type indices("FastILU local CRS indices", maxNnz);
+      values_host_view_type values("FastILU local CRS values", maxNnz);
+
+      for (LocalOrdinal i = 0; i < numRows; ++i) {
+        size_t numEntries = 0;
+        mat_->getLocalRowCopy(i, indices, values, numEntries);
+        localCrsNonConst_->insertLocalValues(
+            i,
+            numEntries,
+            reinterpret_cast<Scalar*>(values.data()),
+            indices.data());
+      }
+
+      localCrsNonConst_->fillComplete(mat_->getDomainMap(), mat_->getRangeMap());
+      localCrs_            = localCrsNonConst_;
+      localCrsIsOwnedCopy_ = true;
+    }
+
+    crsArraySource = localCrs_.get();
+  }
+
+  {
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(
+        crsArraySource, localRowPtrsHost_, localRowPtrs_, localColInds_);
+  }
+
+  {
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(
+        crsArraySource, localValues_, localRowPtrsHost_);
+  }
+
   crsCopyTime_ = copyTimer.seconds();
 
   if (params_.use_metis) {
@@ -249,7 +309,42 @@ void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // get copy of values array from matrix
   Kokkos::Timer copyTimer;
-  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+  const TRowMatrix* crsArraySource = mat_.get();
+
+  if (!isBlockCrs() && !localCrs_.is_null()) {
+    if (localCrsIsOwnedCopy_) {
+      localCrsNonConst_->resumeFill();
+
+      using local_inds_host_view_type = typename TRowMatrix::nonconst_local_inds_host_view_type;
+      using values_host_view_type     = typename TRowMatrix::nonconst_values_host_view_type;
+
+      const LocalOrdinal numRows = static_cast<LocalOrdinal>(mat_->getLocalNumRows());
+      const size_t maxNnz        = mat_->getLocalMaxNumRowEntries();
+      local_inds_host_view_type indices("FastILU refresh CRS indices", maxNnz);
+      values_host_view_type values("FastILU refresh CRS values", maxNnz);
+
+      for (LocalOrdinal i = 0; i < numRows; ++i) {
+        size_t numEntries = 0;
+        mat_->getLocalRowCopy(i, indices, values, numEntries);
+        localCrsNonConst_->replaceLocalValues(
+            i,
+            numEntries,
+            reinterpret_cast<Scalar*>(values.data()),
+            indices.data());
+      }
+
+      localCrsNonConst_->fillComplete(mat_->getDomainMap(), mat_->getRangeMap());
+      localCrs_ = localCrsNonConst_;
+    }
+
+    crsArraySource = localCrs_.get();
+  }
+
+  {
+    CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(
+        crsArraySource, localValues_, localRowPtrsHost_);
+  }
+
   crsCopyTime_ += copyTimer.seconds();  // add to the time spent getting rowptrs/colinds
   computeLocalPrec();                   // this updates computeTime_
   computedFlag_ = true;
@@ -354,9 +449,12 @@ void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
   // bmk note: this modeled after RILUK::setMatrix
   if (mat_.get() != A.get()) {
-    mat_          = A;
-    initFlag_     = false;
-    computedFlag_ = false;
+    mat_                 = A;
+    localCrs_            = Teuchos::null;
+    localCrsNonConst_    = Teuchos::null;
+    localCrsIsOwnedCopy_ = false;
+    initFlag_            = false;
+    computedFlag_        = false;
   }
 }
 
