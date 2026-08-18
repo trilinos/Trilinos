@@ -372,7 +372,7 @@ template <typename ValueType, typename DeviceType>
 inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType> &A,
                                       const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &x,
                                       const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &b,
-                                      const double shift = 0.0, const bool verbose = false) {
+                                      const typename ArithTraits<ValueType>::mag_type shift = 0.0, const bool verbose = false) {
   const bool test = (size_t(A.NumRows()) != size_t(A.NumCols()) || size_t(A.NumRows()) != size_t(b.extent(0)) ||
                      size_t(x.extent(0)) != size_t(b.extent(0)) || size_t(x.extent(1)) != size_t(b.extent(1)));
   if (test) {

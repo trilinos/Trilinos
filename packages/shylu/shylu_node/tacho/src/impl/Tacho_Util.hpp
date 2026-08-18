@@ -434,6 +434,9 @@ struct Conjugate {
   KOKKOS_FORCEINLINE_FUNCTION Conjugate() {}
   KOKKOS_FORCEINLINE_FUNCTION Conjugate(const Conjugate &b) {}
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  KOKKOS_FORCEINLINE_FUNCTION Kokkos::Experimental::half_t operator()(const Kokkos::Experimental::half_t &v) const { return v; }
+#endif
   KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
   KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
   inline std::complex<float> operator()(const std::complex<float> &v) const { return std::conj(v); }
@@ -452,6 +455,9 @@ struct NoConjugate {
   KOKKOS_FORCEINLINE_FUNCTION NoConjugate() {}
   KOKKOS_FORCEINLINE_FUNCTION NoConjugate(const NoConjugate &b) {}
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+  KOKKOS_FORCEINLINE_FUNCTION Kokkos::Experimental::half_t operator()(const Kokkos::Experimental::half_t &v) const { return v; }
+#endif
   KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
   KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
   inline std::complex<float> operator()(const std::complex<float> &v) const { return v; }
