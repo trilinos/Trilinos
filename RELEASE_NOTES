@@ -59,8 +59,11 @@ https://my.cdash.org/index.php?project=Trilinos
 
 Amesos2:
 
-  - Pardiso, MUMPS changes?
-  
+  - new "partial-factorization" option (to improve performance of computing
+    local Schur complement) with PardisoMKL & MUMPS 
+    https://github.com/trilinos/Trilinos/pull/15404
+    https://github.com/trilinos/Trilinos/pull/15484  
+
 
 Belos:
 
@@ -101,15 +104,15 @@ Intrepid2:
   - Redesigned PointInclusion tools to expose parametric distance and
     extended CellTools to support beam and shell elements, including mappings
     from (D+1)-dimensional physical space to D-dimensional reference space.
-    PR: https://github.com/trilinos/Trilinos/pull/15269
+    https://github.com/trilinos/Trilinos/pull/15269
 
   - Refactored Intrepid2 operators to improve performance by introducing an
     orientation operator that stores subcell orientation matrices in
     compressed-row storage format.
-    PR: https://github.com/trilinos/Trilinos/pull/14450
+    https://github.com/trilinos/Trilinos/pull/14450
 
   - Improved the parallel implementation of Basis::getValues.
-    PR: https://github.com/trilinos/Trilinos/pull/15234
+    https://github.com/trilinos/Trilinos/pull/15234
 
 
 Krino:
