@@ -143,14 +143,14 @@ class PhiEvaluatorLeja
     * @return std::tuple<double, double, double> containing scale, normalized
     * real shift, and normalized real-axis anisotropy.
     */
-  constexpr std::tuple<double, double, double> getScaleFromBase();
+  const std::tuple<double, double, double> getScaleFromBase();
 
    /** \brief Shifts and anisotropically transforms a base point without scale.
     * @param lp_base LejaPoint in the base-point set.
     * @param scale_params Transform tuple returned by getScaleFromBase().
     * @return Transformed LejaPoint with its LpType preserved.
     */
-  constexpr LejaPoint transformLejaPoint(const LejaPoint& lp_base, const std::tuple<const double, const double, const double>& scale_params);
+  const LejaPoint transformLejaPoint(const LejaPoint& lp_base, const std::tuple<const double, const double, const double>& scale_params);
 
    /** \brief Sets a positive int polynomial degree and rebuilds base points.
     * @param expansionOrder Positive number of interpolation updates.

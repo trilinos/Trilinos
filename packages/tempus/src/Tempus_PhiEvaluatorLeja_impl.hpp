@@ -13,22 +13,17 @@
 #include <cmath>
 #include <complex>
 #include "Tempus_PhiEvaluatorLeja.hpp"
-//#include "Teuchos_StandardParameterEntryValidators.hpp"
-
-#include "Tempus_PhiEvaluatorLeja_decl.hpp"
-#include "Tempus_PhiEvaluator_decl.hpp"
+#include "Tempus_PhiEvaluator.hpp"
 #include "Teuchos_ArrayRCPDecl.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCPNode.hpp"
-#include "Thyra_LinearOpBase_decl.hpp"
+#include "Thyra_LinearOpBase.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "TpetraCore_config.h"
-#include "Tpetra_CombineMode.hpp"
 
 namespace Tempus {
 
@@ -321,7 +316,7 @@ void PhiEvaluatorLeja<Scalar>::initLejaPointsBase(const int lejaOrder)
 }
 
 template <class Scalar>
-constexpr std::tuple<double, double, double> PhiEvaluatorLeja<Scalar>::getScaleFromBase()
+const std::tuple<double, double, double> PhiEvaluatorLeja<Scalar>::getScaleFromBase()
 {
   // real half axis
   const double scale_re = (leja_b_ - leja_a_) / 2.0;
@@ -339,8 +334,10 @@ constexpr std::tuple<double, double, double> PhiEvaluatorLeja<Scalar>::getScaleF
 }
 
 template <class Scalar>
-constexpr LejaPoint PhiEvaluatorLeja<Scalar>::transformLejaPoint(const LejaPoint& lp_base,
-                                                                 const std::tuple<const double, const double, const double>& scale_params)
+const LejaPoint PhiEvaluatorLeja<Scalar>::transformLejaPoint(
+    const LejaPoint& lp_base,
+    const std::tuple<const double, const double, const double>& scale_params
+  )
 {
   // copy base Leja point
   LejaPoint scaled_lp = lp_base;
@@ -387,7 +384,7 @@ template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
 {
   this->phiLinSolv_->computeJacobianSpectrumBounds(leja_a_, leja_b_, leja_c_);
-  // scale ellipse by saftey factor
+  // scale ellipse by safety factor
   leja_a_ *= leja_sf_;
   leja_c_ *= leja_sf_;
 
