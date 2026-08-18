@@ -155,7 +155,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() % A->GetStorageBlockSize() != 0, Exceptions::RuntimeError, "A->GetFixedBlockSize() needs to be a multiple of A->GetStorageBlockSize()");
   LO blkSize = A->GetFixedBlockSize() / A->GetStorageBlockSize();
 
-  std::tuple<GlobalOrdinal, boundary_nodes_type> results;
+  std::tuple<GlobalOrdinal, GlobalOrdinal, boundary_nodes_type> results;
   if (blkSize == 1)
     results = BuildScalar(currentLevel);
   else
@@ -163,7 +163,8 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if (GetVerbLevel() & Statistics1) {
     GlobalOrdinal numDropped = std::get<0>(results);
-    auto boundaryNodes       = std::get<1>(results);
+    GlobalOrdinal numKept    = std::get<1>(results);
+    auto boundaryNodes       = std::get<2>(results);
 
     GO numLocalBoundaryNodes = 0;
 
@@ -178,13 +179,14 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (IsPrint(Statistics1)) {
       auto comm = A->getRowMap()->getComm();
 
-      std::vector<GlobalOrdinal> localStats = {numLocalBoundaryNodes, numDropped};
-      std::vector<GlobalOrdinal> globalStats(2);
-      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 2, localStats.data(), globalStats.data());
+      std::vector<GlobalOrdinal> localStats = {numLocalBoundaryNodes, numDropped, numKept};
+      std::vector<GlobalOrdinal> globalStats(3);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 3, localStats.data(), globalStats.data());
 
-      GO numGlobalTotal         = A->getGlobalNumEntries();
       GO numGlobalBoundaryNodes = globalStats[0];
       GO numGlobalDropped       = globalStats[1];
+      GO numGlobalKept          = globalStats[2];
+      GO numGlobalTotal         = numGlobalKept + numGlobalDropped;
 
       GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
       if (numGlobalTotal != 0) {
@@ -282,7 +284,7 @@ void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildScalar(Level& currentLevel) const {
   FactoryMonitor m(*this, "BuildScalar", currentLevel);
 
@@ -303,6 +305,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   const magnitudeType zero = Teuchos::ScalarTraits<magnitudeType>::zero();
 
   auto A = Get<RCP<Matrix>>(currentLevel, "A");
+
+  const bool needToBuildFilteredA = currentLevel.IsRequested("A", this);
 
   //////////////////////////////////////////////////////////////////////
   // Process parameterlist
@@ -329,17 +333,19 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
 
   // Fill
-  const bool reuseGraph      = pL.get<bool>("filtered matrix: reuse graph");
+  const bool reuseGraph      = pL.get<bool>("filtered matrix: reuse graph") && needToBuildFilteredA;
   const bool reuseEigenvalue = pL.get<bool>("filtered matrix: reuse eigenvalue");
 
   const bool useRootStencil                            = pL.get<bool>("filtered matrix: use root stencil");
   const bool useSpreadLumping                          = pL.get<bool>("filtered matrix: use spread lumping");
   const std::string lumpingChoiceString                = pL.get<std::string>("filtered matrix: lumping choice");
   MueLu::MatrixConstruction::lumpingType lumpingChoice = MueLu::MatrixConstruction::no_lumping;
-  if (lumpingChoiceString == "diag lumping")
-    lumpingChoice = MueLu::MatrixConstruction::diag_lumping;
-  else if (lumpingChoiceString == "distributed lumping")
-    lumpingChoice = MueLu::MatrixConstruction::distributed_lumping;
+  if (needToBuildFilteredA) {
+    if (lumpingChoiceString == "diag lumping")
+      lumpingChoice = MueLu::MatrixConstruction::diag_lumping;
+    else if (lumpingChoiceString == "distributed lumping")
+      lumpingChoice = MueLu::MatrixConstruction::distributed_lumping;
+  }
 
   const magnitudeType filteringDirichletThreshold = as<magnitudeType>(pL.get<double>("filtered matrix: Dirichlet threshold"));
 
@@ -544,26 +550,22 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //
   // Dropped entries are optionally lumped to the diagonal.
 
-  RCP<Matrix> filteredA;
   RCP<LWGraph_kokkos> graph;
+  RCP<Matrix> filteredA;
   if (numGlobalDropped > 0) {
     SubFactoryMonitor mFill(*this, "Filtered matrix fill", currentLevel);
 
-    local_matrix_type lclFilteredA;
     local_graph_type lclGraph;
+    local_matrix_type lclFilteredA;
+    auto colidx = entries_type("entries", nnz_filtered);
+    lclGraph    = local_graph_type(colidx, filtered_rowptr);
     if (reuseGraph) {
+      // needToBuildFilteredA is true
       filteredA    = MatrixFactory::BuildCopy(A);
       lclFilteredA = filteredA->getLocalMatrixDevice();
-
-      auto colidx = entries_type("entries", nnz_filtered);
-      lclGraph    = local_graph_type(colidx, filtered_rowptr);
-    } else {
-      auto colidx  = entries_type("entries", nnz_filtered);
+    } else if (needToBuildFilteredA) {
       auto values  = values_type("values", nnz_filtered);
-      lclFilteredA = local_matrix_type("filteredA",
-                                       lclA.numRows(), lclA.numCols(),
-                                       nnz_filtered,
-                                       values, filtered_rowptr, colidx);
+      lclFilteredA = local_matrix_type("filteredA", lclGraph, lclA.numCols());
     }
 
     if (lumpingChoice != MueLu::MatrixConstruction::no_lumping) {
@@ -572,10 +574,10 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_reuse", range, fillFunctor);
       } else {
         if (lumpingChoice == MueLu::MatrixConstruction::diag_lumping) {
-          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::diag_lumping>(lclA, results, lclFilteredA, filteringDirichletThreshold);
+          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::diag_lumping>(lclA, results, lclGraph, lclFilteredA, filteringDirichletThreshold);
           Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_noreuse", range, fillFunctor);
         } else if (lumpingChoice == MueLu::MatrixConstruction::distributed_lumping) {
-          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::distributed_lumping>(lclA, results, lclFilteredA, filteringDirichletThreshold);
+          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::distributed_lumping>(lclA, results, lclGraph, lclFilteredA, filteringDirichletThreshold);
           Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_noreuse", range, fillFunctor);
         }
       }
@@ -584,34 +586,38 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         auto fillFunctor = MatrixConstruction::PointwiseFillReuseFunctor<local_matrix_type, local_graph_type, false>(lclA, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
         Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_reuse", range, fillFunctor);
       } else {
-        auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::no_lumping>(lclA, results, lclFilteredA, filteringDirichletThreshold);
-        Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_noreuse", range, fillFunctor);
+        if (needToBuildFilteredA) {
+          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::no_lumping>(lclA, results, lclGraph, lclFilteredA, filteringDirichletThreshold);
+          Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_noreuse", range, fillFunctor);
+        } else {
+          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::no_lumping, /*constructFilteredA=*/false>(lclA, results, lclGraph, lclFilteredA, filteringDirichletThreshold);
+          Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_noreuse", range, fillFunctor);
+        }
       }
     }
 
-    if (!reuseGraph)
-      filteredA = MatrixFactory::Build(lclFilteredA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap());
-    filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
+    if (needToBuildFilteredA) {
+      if (!reuseGraph)
+        filteredA = MatrixFactory::Build(lclFilteredA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap());
+      filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
 
-    if (reuseEigenvalue) {
-      // Reuse max eigenvalue from A
-      // It is unclear what eigenvalue is the best for the smoothing, but we already may have
-      // the D^{-1}A estimate in A, may as well use it.
-      // NOTE: ML does that too
-      filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
-    } else {
-      filteredA->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+      if (reuseEigenvalue) {
+        // Reuse max eigenvalue from A
+        // It is unclear what eigenvalue is the best for the smoothing, but we already may have
+        // the D^{-1}A estimate in A, may as well use it.
+        // NOTE: ML does that too
+        filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+      } else {
+        filteredA->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+      }
     }
 
-    if (!reuseGraph) {
-      // Use graph of filteredA as graph.
-      lclGraph = filteredA->getCrsGraph()->getLocalGraphDevice();
-    }
-    graph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "amalgamated graph of A"));
+    graph = rcp(new LWGraph_kokkos(lclGraph, A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   } else {
-    filteredA = A;
-    graph     = rcp(new LWGraph_kokkos(filteredA->getCrsGraph()->getLocalGraphDevice(), filteredA->getRowMap(), filteredA->getColMap(), "amalgamated graph of A"));
+    if (needToBuildFilteredA)
+      filteredA = A;
+    graph = rcp(new LWGraph_kokkos(A->getCrsGraph()->getLocalGraphDevice(), A->getRowMap(), A->getColMap(), "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   }
 
@@ -633,11 +639,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     auto graphConstruction = MatrixConstruction::GraphConstruction<local_matrix_type, local_graph_type>(lclA, results, lclGraph);
     Kokkos::parallel_for("MueLu::CoalesceDrop::Construct_coloring_graph", range, graphConstruction);
 
-    auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "coloring graph"));
+    auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, A->getRowMap(), A->getColMap(), "coloring graph"));
     Set(currentLevel, "Coloring Graph", colorGraph);
   }
 
-  if (pL.get<bool>("filtered matrix: count negative diagonals")) {
+  if (needToBuildFilteredA && pL.get<bool>("filtered matrix: count negative diagonals")) {
     // Count the negative diagonals (and display that information)
     GlobalOrdinal neg_count = MueLu::Utilities<SC, LO, GO, NO>::CountNegativeDiagonalEntries(*filteredA);
     GetOStream(Runtime0) << "CoalesceDrop: Negative diagonals: " << neg_count << std::endl;
@@ -646,13 +652,14 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   LO dofsPerNode = 1;
   Set(currentLevel, "DofsPerNode", dofsPerNode);
   Set(currentLevel, "Graph", graph);
-  Set(currentLevel, "A", filteredA);
+  if (needToBuildFilteredA)
+    Set(currentLevel, "A", filteredA);
 
-  return std::make_tuple(numDropped, boundaryNodes);
+  return std::make_tuple(numDropped, (GlobalOrdinal)nnz_filtered, boundaryNodes);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildVector(Level& currentLevel) const {
   FactoryMonitor m(*this, "BuildVector", currentLevel);
 
@@ -673,6 +680,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   const magnitudeType zero = Teuchos::ScalarTraits<magnitudeType>::zero();
 
   auto A = Get<RCP<Matrix>>(currentLevel, "A");
+
+  const bool needToBuildFilteredA = currentLevel.IsRequested("A", this);
 
   /* NOTE: storageblocksize (from GetStorageBlockSize()) is the size of a block in the chosen storage scheme.
      blkSize is the number of storage blocks that must kept together during the amalgamation process.
@@ -765,17 +774,19 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
 
   // Fill
-  const bool reuseGraph      = pL.get<bool>("filtered matrix: reuse graph");
+  const bool reuseGraph      = pL.get<bool>("filtered matrix: reuse graph") && needToBuildFilteredA;
   const bool reuseEigenvalue = pL.get<bool>("filtered matrix: reuse eigenvalue");
 
   const bool useRootStencil                            = pL.get<bool>("filtered matrix: use root stencil");
   const bool useSpreadLumping                          = pL.get<bool>("filtered matrix: use spread lumping");
   const std::string lumpingChoiceString                = pL.get<std::string>("filtered matrix: lumping choice");
   MueLu::MatrixConstruction::lumpingType lumpingChoice = MueLu::MatrixConstruction::no_lumping;
-  if (lumpingChoiceString == "diag lumping")
-    lumpingChoice = MueLu::MatrixConstruction::diag_lumping;
-  else if (lumpingChoiceString == "distributed lumping")
-    lumpingChoice = MueLu::MatrixConstruction::distributed_lumping;
+  if (needToBuildFilteredA) {
+    if (lumpingChoiceString == "diag lumping")
+      lumpingChoice = MueLu::MatrixConstruction::diag_lumping;
+    else if (lumpingChoiceString == "distributed lumping")
+      lumpingChoice = MueLu::MatrixConstruction::distributed_lumping;
+  }
 
   const magnitudeType filteringDirichletThreshold = as<magnitudeType>(pL.get<double>("filtered matrix: Dirichlet threshold"));
 
@@ -960,8 +971,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   }
   LocalOrdinal nnz_filtered = nnz.first;
   LocalOrdinal nnz_graph    = nnz.second;
-  GO numTotal               = lclA.nnz();
-  GO numDropped             = numTotal - nnz_filtered;
+  GO numTotal               = mergedA->getLocalNumEntries();
+  GO numDropped             = numTotal - nnz_graph;
   GO numGlobalDropped;
   Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_SUM, 1, &numDropped, &numGlobalDropped);
   // We now know the number of entries of filtered A and have the final rowptr.
@@ -971,27 +982,28 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //
   // Dropped entries are optionally lumped to the diagonal.
 
-  RCP<Matrix> filteredA;
   RCP<LWGraph_kokkos> graph;
+  RCP<Matrix> filteredA;
   if (numGlobalDropped > 0) {
     SubFactoryMonitor mFill(*this, "Filtered matrix fill", currentLevel);
 
+    local_graph_type lclGraph;
+    {
+      auto colidx = entries_type("entries", nnz_graph);
+      lclGraph    = local_graph_type(colidx, graph_rowptr);
+    }
+
     local_matrix_type lclFilteredA;
     if (reuseGraph) {
+      // needToBuildFilteredA is true
       lclFilteredA = local_matrix_type("filteredA", lclA.graph, lclA.numCols());
-    } else {
+    } else if (needToBuildFilteredA) {
       auto colidx  = entries_type("entries", nnz_filtered);
       auto values  = values_type("values", nnz_filtered);
       lclFilteredA = local_matrix_type("filteredA",
                                        lclA.numRows(), lclA.numCols(),
                                        nnz_filtered,
                                        values, filtered_rowptr, colidx);
-    }
-
-    local_graph_type lclGraph;
-    {
-      auto colidx = entries_type("entries", nnz_graph);
-      lclGraph    = local_graph_type(colidx, graph_rowptr);
     }
 
     if (lumpingChoice != MueLu::MatrixConstruction::no_lumping) {
@@ -1007,29 +1019,37 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         auto fillFunctor = MatrixConstruction::VectorFillFunctor<local_matrix_type, false, true>(lclA, blkSize, colTranslation, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
         Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_reuse", range, fillFunctor);
       } else {
-        auto fillFunctor = MatrixConstruction::VectorFillFunctor<local_matrix_type, false, false>(lclA, blkSize, colTranslation, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
-        Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_noreuse", range, fillFunctor);
+        if (needToBuildFilteredA) {
+          auto fillFunctor = MatrixConstruction::VectorFillFunctor<local_matrix_type, false, false>(lclA, blkSize, colTranslation, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
+          Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_noreuse", range, fillFunctor);
+        } else {
+          auto fillFunctor = MatrixConstruction::VectorFillFunctor<local_matrix_type, false, false, /*constructFilteredA=*/false>(lclA, blkSize, colTranslation, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
+          Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_noreuse", range, fillFunctor);
+        }
       }
     }
 
-    filteredA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclFilteredA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap());
-    filteredA->SetFixedBlockSize(blkSize);
+    if (needToBuildFilteredA) {
+      filteredA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclFilteredA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap());
+      filteredA->SetFixedBlockSize(blkSize);
 
-    if (reuseEigenvalue) {
-      // Reuse max eigenvalue from A
-      // It is unclear what eigenvalue is the best for the smoothing, but we already may have
-      // the D^{-1}A estimate in A, may as well use it.
-      // NOTE: ML does that too
-      filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
-    } else {
-      filteredA->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+      if (reuseEigenvalue) {
+        // Reuse max eigenvalue from A
+        // It is unclear what eigenvalue is the best for the smoothing, but we already may have
+        // the D^{-1}A estimate in A, may as well use it.
+        // NOTE: ML does that too
+        filteredA->SetMaxEigenvalueEstimate(A->GetMaxEigenvalueEstimate());
+      } else {
+        filteredA->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+      }
     }
 
     graph = rcp(new LWGraph_kokkos(lclGraph, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   } else {
-    filteredA = A;
-    graph     = rcp(new LWGraph_kokkos(mergedA->getCrsGraph()->getLocalGraphDevice(), uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+    if (needToBuildFilteredA)
+      filteredA = A;
+    graph = rcp(new LWGraph_kokkos(mergedA->getCrsGraph()->getLocalGraphDevice(), uniqueMap, nonUniqueMap, "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   }
 
@@ -1052,7 +1072,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     auto graphConstruction = MatrixConstruction::GraphConstruction<local_matrix_type, local_graph_type>(lclA, results, lclGraph);
     Kokkos::parallel_for("MueLu::CoalesceDrop::Construct_coloring_graph", range, graphConstruction);
 
-    auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "coloring graph"));
+    auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, A->getRowMap(), A->getColMap(), "coloring graph"));
     Set(currentLevel, "Coloring Graph", colorGraph);
   }
 
@@ -1060,9 +1080,10 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   Set(currentLevel, "DofsPerNode", dofsPerNode);
   Set(currentLevel, "Graph", graph);
-  Set(currentLevel, "A", filteredA);
+  if (needToBuildFilteredA)
+    Set(currentLevel, "A", filteredA);
 
-  return std::make_tuple(numDropped, boundaryNodes);
+  return std::make_tuple(numDropped, (GlobalOrdinal)nnz_graph, boundaryNodes);
 }
 
 }  // namespace MueLu

@@ -12,6 +12,9 @@
 
 #include <algorithm>
 
+#include "KokkosLapack_potrf.hpp"
+#include "KokkosLapack_trtri.hpp"
+#include "Kokkos_Core_fwd.hpp"
 #include "MueLu_ConfigDefs.hpp"
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_IO.hpp>
@@ -23,6 +26,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+#include "Tpetra_Access.hpp"
 
 namespace MueLu {
 
@@ -40,20 +44,15 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   const Scalar ZERO                                                                    = Teuchos::ScalarTraits<Scalar>::zero();
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace, *Nullspace, ZERO);
 
-  Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::HostSpace> Q("Q", Nullspace->getNumVectors(), Nullspace->getNumVectors());
-  int LDQ;
+  Kokkos::View<typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> Q("Q", Nullspace->getNumVectors(), Nullspace->getNumVectors());
   {
     auto dots = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
     Kokkos::deep_copy(Q, dots);
-    LDQ = Q.stride(1);
   }
 
-  Teuchos::LAPACK<LocalOrdinal, Scalar> lapack;
-  int info = 0;
-  lapack.POTRF('L', Nullspace->getNumVectors(), Q.data(), LDQ, &info);
-  TEUCHOS_ASSERT(info == 0);
-  lapack.TRTRI('L', 'N', Nullspace->getNumVectors(), Q.data(), LDQ, &info);
-  TEUCHOS_ASSERT(info == 0);
+  KokkosLapack::potrf("L", Q);
+  int ret = KokkosLapack::trtri("L", "N", Q);
+  TEUCHOS_ASSERT(ret == 0);
 
   Nullspace_ = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Nullspace->getMap(), Nullspace->getNumVectors());
 
