@@ -1303,11 +1303,17 @@ class FastILUPrec
 
         KokkosSparse::Experimental::SPTRSVAlgorithm standardSpTRSVAlgorithm() const
         {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-            return KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
-#else
+ #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
+            if constexpr (std::is_same<Kokkos::Cuda, ExecSpace>::value &&
+                          std::is_same<int, Ordinal>::value &&
+                          (std::is_same<Scalar, float>::value ||
+                           std::is_same<Scalar, double>::value ||
+                           std::is_same<Scalar, Kokkos::complex<float>>::value ||
+                           std::is_same<Scalar, Kokkos::complex<double>>::value)) {
+                return KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
+            }
+ #endif
             return KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
-#endif
         }
 
         void initializeStandardSpTRSVHandles()
