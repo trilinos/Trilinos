@@ -493,7 +493,7 @@ struct ComputeResidualFunctor {
     }
   }
 
-  // * B: block size for compile-time specialization, or 0 for general case (up to max_blocksize)
+  // * B: block size for compile-time specialization, or 0 for general case
   // * async: true if using async importer. overlap is not used in this case.
   //          Whether a column is owned or nonowned is decided at runtime.
   // * overlap: true if processing the columns that are not locally owned,
@@ -529,7 +529,7 @@ struct ComputeResidualFunctor {
     const local_ordinal_type num_local_rows = lclrow.extent(0);
 
     // temporary buffer for y flat
-    impl_scalar_type yy[B == 0 ? impl_type::max_blocksize : B] = {};
+    impl_scalar_type yy[blocksize];
 
     const local_ordinal_type lr = lclrow(rowidx);
 

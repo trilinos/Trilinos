@@ -43,9 +43,6 @@ struct ComputeResidualAndSolve_SinglePass_Impl {
   /// team policy member type (used in cuda)
   using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
 
-  // enum for max blocksize and vector length
-  enum : int { max_blocksize = 32 };
-
  private:
   ConstUnmanaged<impl_scalar_type_2d_view_tpetra> b;
   ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x;  // x_owned
@@ -246,9 +243,6 @@ struct ComputeResidualAndSolve_2Pass_Impl {
 
   /// team policy member type (used in cuda)
   using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
-
-  // enum for max blocksize and vector length
-  enum : int { max_blocksize = 32 };
 
   // Tag for computing residual with owned columns only (pass 1)
   struct OwnedTag {};
