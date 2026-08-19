@@ -106,7 +106,7 @@ namespace Anasazi {
       // Make Tpetra::MultiVector use the new view semantics.  This is
       // a no-op for the Kokkos refactor version of Tpetra; it only
       // does something for the "classic" version of Tpetra.  This
-      // shouldn't matter because Belos only handles MV through RCP
+      // shouldn't matter because Anasazi only handles MV through RCP
       // and through this interface anyway, but it doesn't hurt to set
       // it and make sure that it works.
       X_copy->setCopyOrView (Teuchos::View);
@@ -231,7 +231,7 @@ namespace Anasazi {
         index.lbound() >= 0 && index.ubound() < numCols;
       if (! validRange) {
         std::ostringstream os;
-        os << "Belos::MultiVecTraits::CloneViewNonConst(mv,index=["
+        os << "Anasazi::MultiVecTraits::CloneViewNonConst(mv,index=["
            << index.lbound() << ", " << index.ubound() << "]): ";
         TEUCHOS_TEST_FOR_EXCEPTION(
           index.size() == 0, std::invalid_argument,
@@ -257,7 +257,7 @@ namespace Anasazi {
     CloneView (const MV& mv, const std::vector<int>& index)
     {
 #ifdef HAVE_TPETRA_DEBUG
-      const char fnName[] = "Belos::MultiVecTraits<Scalar, "
+      const char fnName[] = "Anasazi::MultiVecTraits<Scalar, "
         "Tpetra::MultiVector<...> >::CloneView(mv,index)";
       const size_t numVecs = mv.getNumVectors ();
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -345,7 +345,7 @@ namespace Anasazi {
         timer.is_null (), std::logic_error,
         "Anasazi::MultiVecTraits::MvTimesMatAddMv: "
         "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
+        "Please report this bug to the Anasazi developers.");
 
       // This starts the timer.  It will be stopped on scope exit.
       Teuchos::TimeMonitor timeMon (*timer);
@@ -416,7 +416,7 @@ namespace Anasazi {
       TEUCHOS_TEST_FOR_EXCEPTION(
         timer.is_null (), std::logic_error, "Anasazi::MvTransMv: "
         "Failed to look up timer \"" << timerName << "\".  "
-        "Please report this bug to the Belos developers.");
+        "Please report this bug to the Anasazi developers.");
 
       // This starts the timer.  It will be stopped on scope exit.
       TimeMonitor timeMon (*timer);
@@ -471,21 +471,21 @@ namespace Anasazi {
       C_mv.get1dCopy (C_view, strideC);
     }
 
-    //! For all columns j of A, set <tt>dots[j] := A[j]^T * B[j]</tt>.
+    //! For all columns j of A, set <tt>dots[j] := A[j]^H * B[j]</tt>.
     static void
-    MvDot (const MV& A, const MV& B, std::vector<Scalar> &dots)
+    MvDot (const MV& B, const MV& A, std::vector<Scalar> &dots)
     {
       const size_t numVecs = A.getNumVectors ();
       TEUCHOS_TEST_FOR_EXCEPTION(
         numVecs != B.getNumVectors (), std::invalid_argument,
-        "Anasazi::MultiVecTraits::MvDot(A,B,dots): "
+        "Anasazi::MultiVecTraits::MvDot(B,A,dots): "
         "A and B must have the same number of columns.  "
         "A has " << numVecs << " column(s), "
         "but B has " << B.getNumVectors () << " column(s).");
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
         dots.size() < numVecs, std::invalid_argument,
-        "Anasazi::MultiVecTraits::MvDot(A,B,dots): "
+        "Anasazi::MultiVecTraits::MvDot(B,A,dots): "
         "The output array 'dots' must have room for all dot products.  "
         "A and B each have " << numVecs << " column(s), "
         "but 'dots' only has " << dots.size() << " entry(/ies).");
