@@ -457,14 +457,14 @@ class PhiEvaluator
  protected:
   /// Descriptive `std::string` used by parameter lists and diagnostics.
   std::string name_;
+  /// `bool` if PhiEvaluator is initialized.
+  bool isInitialized_;
   /// `bool` selecting row-sum mass lumping for the managed linear solver.
   bool lumpMassMatrix_;
   /// Caller-declared `bool` permitting reuse of a cached mass operator.
   bool constantMassMatrix_;
   /// `bool` selecting the block extension for positive-order single-RHS calls.
   bool useAtildeForSingleRHS_;
-
-  bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
   /// Const `Teuchos::RCP` to the model used to define the cached operators.
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
@@ -529,8 +529,6 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
         lop->domain(), true);
 
   auto comm = rangeSpmd->getComm();
-  const int rank = comm.is_null() ? 0 : comm->getRank();
-  const int numProcs = comm.is_null() ? 1 : comm->getSize();
 
   const int rowOffset   = static_cast<int>(rangeSpmd->localOffset());
   const int rowLocalDim = static_cast<int>(rangeSpmd->localSubDim());

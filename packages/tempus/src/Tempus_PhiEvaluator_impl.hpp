@@ -810,7 +810,6 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
 {
   this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
-  typedef Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   // build an abstract MpJ linOp

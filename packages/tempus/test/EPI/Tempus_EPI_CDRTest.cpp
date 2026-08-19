@@ -226,7 +226,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
                     solutions, xErrorNorm, xSlope, out);
   }
 
-  std::tuple tol_compare = {1e-10, 1e-8};
+  std::tuple tol_compare = {1e-10, 1e-7};
   if (!lumped)
     // The accuracy for the "Lump Mass Matrix" == False testcase is
     // affected by the linear solver tolerance

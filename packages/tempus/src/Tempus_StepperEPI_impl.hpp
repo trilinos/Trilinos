@@ -303,9 +303,9 @@ void StepperEPI<Scalar>::takeStep(
 
       // in the (untested) case that the mass matrix depends on time, we should recompute it here
       // if the matrix is constant in time and cached properly, this should be a NOOP
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_nexttime
         = this->createInArgsExponentialODE(x, xDot, time, p);
-      this->getPhiEvaluator()->setLinearizationPoint(inArgs, PhiInitialization::ONLY_MASS);
+      this->getPhiEvaluator()->setLinearizationPoint(inArgs_nexttime, PhiInitialization::ONLY_MASS);
 
       // solve the mass matrix and scale to obtain final xDot
       this->getPhiEvaluator()->solveMass(xDot.ptr(), Mf);

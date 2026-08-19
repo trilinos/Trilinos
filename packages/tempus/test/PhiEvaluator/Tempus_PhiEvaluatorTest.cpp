@@ -303,7 +303,6 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_Adapt_Reaction)
   inArgs.set_x(v);
   inArgs.set_x_dot(xdot_init);
   inArgs.set_t(0.0);
-  const double dt = 1.0;
   phiEvaluator->setLinearizationPoint(inArgs);
   // update the ellipse parameters from krylov-schur solve
   phiEvaluator->adaptEvaluator();

@@ -95,7 +95,6 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     dt /= 2.;
 
     // Setup the Integrator and reset initial time step
-    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
@@ -210,8 +209,6 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
   if (commSize == 1) {
-    RCP<ParameterList> pList =
-        getParametersFromXmlFile(pListFile);
     RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
     const int num_elements      = model_pl->get<int>("num elements");
     const double left_end       = model_pl->get<double>("left end");
