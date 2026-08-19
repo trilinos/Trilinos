@@ -104,8 +104,6 @@ void PhiEvaluatorPFD<Scalar>::setPhiEvaluatorValues(
     *l_out << "Option: 'Lump Mass Matrix' is not supported for PFD Solvers, continuing with full matrix.\n";
     this->setLumpMassMatrix(false);
   }
-
-  std::cout << "\nParameter List: " << *pl << std::endl;
 }
 
 

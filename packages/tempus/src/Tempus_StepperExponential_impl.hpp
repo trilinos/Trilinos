@@ -28,6 +28,7 @@ StepperExponential<Scalar>::StepperExponential():
   this->setUseFSAL(false);
   this->setICConsistency("Consistent");
   this->setICConsistencyCheck(false);
+  this->setVerbLevel(Teuchos::VERB_LOW);
 }
 
 template <class Scalar>

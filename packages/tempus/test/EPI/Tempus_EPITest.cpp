@@ -113,6 +113,8 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
 
       integrator->initializeSolutionHistory(0.0, x0);
       integrator->initialize();
+      auto stepper = integrator->getStepper();
+      stepper->setVerbLevel(Teuchos::VERB_LOW);
 
       // Integrate to timeMax
       bool integratorStatus = integrator->advanceTime();

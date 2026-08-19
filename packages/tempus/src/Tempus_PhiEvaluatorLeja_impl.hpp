@@ -442,15 +442,17 @@ void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
   leja_a_ *= leja_sf_;
   leja_c_ *= leja_sf_;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out =
-          Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out, 1, "adaptEvaluator()");
-  *out << "\n Adapted Leja ellipse parameters. a="
-       << leja_a_ << " b="
-       << leja_b_ << " c="
-       << leja_c_
-       << std::endl;
+  if (verbLevel >= Teuchos::implicit_cast<int>(Teuchos::VERB_LOW)) {
+    *out << "\n Adapted Leja ellipse parameters. a="
+         << leja_a_ << " b="
+         << leja_b_ << " c="
+         << leja_c_
+         << std::endl;
+  }
 }
 
 template <class Scalar>
@@ -720,8 +722,7 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsPhi(
 
   return dd_phi;
 #else
-  Teuchos::RCP<Teuchos::FancyOStream> out =
-          Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setOutputToRootOnly(0);
   *out << "Warning -- getDividedDiffsPhi requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
   *out << "Warning -- falling back to getDividedDiffsTSR." << std::endl;
@@ -840,8 +841,7 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int 
   }
   return dd_phi;
 #else
-  Teuchos::RCP<Teuchos::FancyOStream> out =
-          Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setOutputToRootOnly(0);
   *out << "Warning -- getDividedDiffsTS requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
   *out << "Warning -- falling back to getDividedDiffsTSR." << std::endl;
