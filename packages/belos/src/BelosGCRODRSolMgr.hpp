@@ -21,6 +21,7 @@
 #include "BelosTypes.hpp"
 
 #include "BelosGCRODRIter.hpp"
+#include "BelosFGCRODRIter.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -406,7 +407,13 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     void initializeStateStorage();
 
     // Compute updated recycle space given existing recycle space and newly generated Krylov space
-    void buildRecycleSpace2(Teuchos::RCP<GCRODRIter<ScalarType,MV,OP,DM> > gcrodr_iter);
+    void buildRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_iter);
+
+    void buildFlexibleRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_iter);
+
+    void computeGCRODRResidual();
+
+    void updateSolutionWithUpdate(const Teuchos::RCP<MV>& update);
 
     //  Computes harmonic eigenpairs of projected matrix created during the priming solve.
     //  HH is the projected problem from the initial cycle of Gmres, it is (at least) of dimension m+1 x m.
@@ -420,6 +427,9 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     //  PP contains the harmonic eigenvectors corresponding to the recycledBlocks eigenvalues of smallest magnitude.
     //  The return value is the number of vectors needed to be stored, recycledBlocks or recycledBlocks+1.
     int getHarmonicVecs2(int keff, int m, const DM& HH,
+                         const Teuchos::RCP<const MV>& VV, DM& PP);
+
+    int getFlexibleHarmonicVecs2(int keff, int m, const DM& HH,
                          const Teuchos::RCP<const MV>& VV, DM& PP);
 
     // Sort list of n floating-point numbers and return permutation vector
@@ -457,6 +467,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     static constexpr int numBlocks_default_ = 50;
     static constexpr int blockSize_default_ = 1;
     static constexpr int recycledBlocks_default_ = 5;
+    static constexpr bool flexibleGCRODR_default_ = false;
     static constexpr int verbosity_default_ = Belos::Errors;
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
@@ -469,6 +480,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     MagnitudeType convTol_, orthoKappa_, achievedTol_;
     int maxRestarts_, maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_;
+    bool isFlexible_;
     std::string orthoType_;
     std::string impResScale_, expResScale_;
 
@@ -486,9 +498,13 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     //
     // Search space
     Teuchos::RCP<MV> V_;
+    // Flexible correction basis for current cycle.
+    Teuchos::RCP<MV> Z_;
     //
     // Recycled subspace and its image
     Teuchos::RCP<MV> U_, C_;
+    // Auxiliary W recycle basis used by the FGCRODR harmonic projection.
+    Teuchos::RCP<MV> W_, W1_;
     //
     // Updated recycle space and its image
     Teuchos::RCP<MV> U1_, C1_;
@@ -568,6 +584,7 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::init () {
   verbosity_ = verbosity_default_;
   outputStyle_ = outputStyle_default_;
   outputFreq_ = outputFreq_default_;
+  isFlexible_ = flexibleGCRODR_default_;
   orthoType_ = orthoType_default_;
   impResScale_ = impResScale_default_;
   expResScale_ = expResScale_default_;
@@ -577,8 +594,11 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::init () {
   keff = 0;
   r_ = Teuchos::null;
   V_ = Teuchos::null;
+  Z_ = Teuchos::null;
   U_ = Teuchos::null;
   C_ = Teuchos::null;
+  W_ = Teuchos::null;
+  W1_ = Teuchos::null;
   U1_ = Teuchos::null;
   C1_ = Teuchos::null;
   PP_ = Teuchos::null;
@@ -723,6 +743,19 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
                        << numBlocks_ << ".");
     // Update parameter in our list.
     params_->set("Num Recycled Blocks", recycledBlocks_);
+  }
+
+  if (params->isParameter("Flexible GCRODR")) {
+    const bool newFlexible =
+      params->get("Flexible GCRODR", flexibleGCRODR_default_);
+    if (newFlexible != isFlexible_) {
+      impConvTest_ = null;
+      expConvTest_ = null;
+      convTest_ = null;
+      outputTest_ = null;
+    }
+    isFlexible_ = newFlexible;
+    params_->set("Flexible GCRODR", isFlexible_);
   }
 
   // Check to see if the timer label changed.  If it did, update it in
@@ -1046,27 +1079,46 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   if (maxIterTest_.is_null())
     maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP,DM> (maxIters_));
 
-  // Implicit residual test, using the native residual to determine if
-  // convergence was achieved.
-  if (impConvTest_.is_null()) {
-    impConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
-    impConvTest_->defineScaleForm (convertStringToScaleType (impResScale_),
-                                   Belos::TwoNorm);
-  }
+  if (isFlexible_) {
+    // Flexible GCRODR stores the correction basis Z and computes updates
+    // directly in solution space.  The generic explicit residual status
+    // test machinery is not safe here unless it is made flexible-aware.
+    // This follows BlockGmresSolMgr's flexible GMRES behavior: use the
+    // native / implicit residual for convergence, then the solver manager
+    // applies the final flexible update directly.
+    if (impConvTest_.is_null()) {
+      impConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
+      impConvTest_->defineScaleForm (convertStringToScaleType (impResScale_),
+                                     Belos::TwoNorm);
+    }
 
-  // Explicit residual test once the native residual is below the tolerance
-  if (expConvTest_.is_null()) {
-    expConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
-    expConvTest_->defineResForm (StatusTestResNorm_t::Explicit, Belos::TwoNorm);
-    expConvTest_->defineScaleForm (convertStringToScaleType (expResScale_),
-                                   Belos::TwoNorm);
+    expConvTest_ = impConvTest_;
+    convTest_ = impConvTest_;
   }
-  // Convergence test first tests the implicit residual, then the
-  // explicit residual if the implicit residual test passes.
-  if (convTest_.is_null()) {
-    convTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::SEQ,
-                                            impConvTest_,
-                                            expConvTest_));
+  else {
+    // Implicit residual test, using the native residual to determine if
+    // convergence was achieved.
+    if (impConvTest_.is_null()) {
+      impConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
+      impConvTest_->defineScaleForm (convertStringToScaleType (impResScale_),
+                                     Belos::TwoNorm);
+    }
+
+    // Explicit residual test once the native residual is below the tolerance.
+    if (expConvTest_.is_null()) {
+      expConvTest_ = rcp (new StatusTestResNorm_t (convTol_));
+      expConvTest_->defineResForm (StatusTestResNorm_t::Explicit, Belos::TwoNorm);
+      expConvTest_->defineScaleForm (convertStringToScaleType (expResScale_),
+                                     Belos::TwoNorm);
+    }
+
+    // Convergence test first tests the implicit residual, then the
+    // explicit residual if the implicit residual test passes.
+    if (convTest_.is_null()) {
+      convTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::SEQ,
+                                              impConvTest_,
+                                              expConvTest_));
+    }
   }
   // Construct the complete iteration stopping criterion:
   //
@@ -1083,6 +1135,8 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   // Set the solver string for the output test
   std::string solverDesc = " GCRODR ";
+  if (isFlexible_)
+    solverDesc = "Flexible" + solverDesc;
   outputTest_->setSolverDesc( solverDesc );
 
   // Create the timer if we need to.
@@ -1130,6 +1184,8 @@ GCRODRSolMgr<ScalarType,MV,OP,DM,true>::getValidParameters() const
       "for each set of RHS solved.");
     pl->set("Num Recycled Blocks", static_cast<int>(recycledBlocks_default_),
       "The maximum number of vectors in the recycled subspace." );
+    pl->set("Flexible GCRODR", static_cast<bool>(flexibleGCRODR_default_),
+      "Whether to use the flexible variant of GCRODR.  The flexible variant stores the right-preconditioned correction basis Z.");
     pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
@@ -1245,6 +1301,39 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
         }
       }
 
+
+      if (isFlexible_) {
+        if (Z_ == Teuchos::null) {
+          Z_ = MVT::Clone(*rhsMV, numBlocks_+1);
+        }
+        else {
+          if (MVT::GetNumberVecs(*Z_) < numBlocks_+1) {
+            Teuchos::RCP<const MV> tmp = Z_;
+            Z_ = MVT::Clone(*tmp, numBlocks_+1);
+          }
+        }
+
+        if (W_ == Teuchos::null) {
+          W_ = MVT::Clone(*rhsMV, recycledBlocks_+1);
+        }
+        else {
+          if (MVT::GetNumberVecs(*W_) < recycledBlocks_+1) {
+            Teuchos::RCP<const MV> tmp = W_;
+            W_ = MVT::Clone(*tmp, recycledBlocks_+1);
+          }
+        }
+
+        if (W1_ == Teuchos::null) {
+          W1_ = MVT::Clone(*rhsMV, recycledBlocks_+1);
+        }
+        else {
+          if (MVT::GetNumberVecs(*W1_) < recycledBlocks_+1) {
+            Teuchos::RCP<const MV> tmp = W1_;
+            W1_ = MVT::Clone(*tmp, recycledBlocks_+1);
+          }
+        }
+      }
+
       // Generate r_ only if it doesn't exist
       if (r_ == Teuchos::null)
         r_ = MVT::Clone( *rhsMV, 1 );
@@ -1296,6 +1385,40 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
 }
 
 
+
+template<class ScalarType, class MV, class OP, class DM>
+void
+GCRODRSolMgr<ScalarType,MV,OP,DM,true>::computeGCRODRResidual()
+{
+  if (isFlexible_) {
+    problem_->computeCurrResVec(&*r_);
+  }
+  else {
+    problem_->computeCurrPrecResVec(&*r_);
+  }
+}
+
+template<class ScalarType, class MV, class OP, class DM>
+void
+GCRODRSolMgr<ScalarType,MV,OP,DM,true>::
+updateSolutionWithUpdate(const Teuchos::RCP<MV>& update)
+{
+  if (update == Teuchos::null) {
+    return;
+  }
+
+  const ScalarType one = SCT::one();
+
+  if (isFlexible_) {
+    Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();
+    MVT::MvAddMv(one, *curX, one, *update, *curX);
+  }
+  else {
+    problem_->updateSolution(update, true);
+  }
+}
+
+
 // solve()
 template<class ScalarType, class MV, class OP, class DM>
 ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
@@ -1316,6 +1439,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure, "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GCRODRSolMgrLinearProblemFailure,"Belos::GCRODRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+
+  if (isFlexible_) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !Teuchos::is_null(problem_->getLeftPrec()),
+      GCRODRSolMgrLinearProblemFailure,
+      "Belos::GCRODRSolMgr::solve(): Flexible GCRODR does not support left preconditioning; use no preconditioner or a right preconditioner.");
+  }
 
   // Create indices for the linear systems to be solved.
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
@@ -1351,8 +1481,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // GCRODR solver
 
-  RCP<GCRODRIter<ScalarType,MV,OP,DM> > gcrodr_iter;
-  gcrodr_iter = rcp( new GCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist) );
+  RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_iter;
+  if (isFlexible_) {
+    gcrodr_iter = rcp(new FGCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist));
+  }
+  else {
+    gcrodr_iter = rcp(new GCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist));
+  }
   // Number of iterations required to generate initial recycle space (if needed)
   int prime_iterations = 0;
 
@@ -1384,7 +1519,12 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
         for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
         RCP<const MV> Utmp  = MVT::CloneView( *U_, index );
         RCP<MV> Ctmp  = MVT::CloneViewNonConst( *C_, index );
-        problem_->apply( *Utmp, *Ctmp );
+        if (isFlexible_) {
+          problem_->applyOp(*Utmp, *Ctmp);
+        }
+        else {
+          problem_->apply(*Utmp, *Ctmp);
+        }
 
         RCP<MV> U1tmp = MVT::CloneViewNonConst( *U1_, index );
 
@@ -1415,6 +1555,12 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
         // U_ = U1_; (via a swap)
         MVT::MvTimesMatAddMv( one, *Utmp, *Rtmp, zero, *U1tmp );
+        if (isFlexible_) {
+          Teuchos::RCP<const MV> Wtmp = MVT::CloneView(*W_, index);
+          Teuchos::RCP<MV> W1tmp = MVT::CloneViewNonConst(*W1_, index);
+          MVT::MvTimesMatAddMv(one, *Wtmp, *Rtmp, zero, *W1tmp);
+          std::swap(W_, W1_);
+        }
         std::swap(U_, U1_);
 
         // Must reinitialize after swap
@@ -1425,14 +1571,14 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
         // Compute C_'*r_
         Teuchos::RCP<DM> Ctr = DMT::Create(keff, 1);
-        problem_->computeCurrPrecResVec( &*r_ );
+        computeGCRODRResidual();
         MVT::MvTransMv( one, *Ctmp, *r_, *Ctr );
 
         // Update solution ( x += U_*C_'*r_ )
         RCP<MV> update = MVT::Clone( *problem_->getCurrLHSVec(), 1 );
         MVT::MvInit( *update, 0.0 );
         MVT::MvTimesMatAddMv( one, *Utmp, *Ctr, one, *update );
-        problem_->updateSolution( update, true );
+        updateSolutionWithUpdate(update);
 
         // Update residual norm ( r -= C_*C_'*r_ )
         MVT::MvTimesMatAddMv( -one, *Ctmp, *Ctr, one, *r_ );
@@ -1451,11 +1597,16 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
         primeList.set("Recycled Blocks",recycledBlocks_);
 
         //  Create GCRODR iterator object to perform one cycle of GMRES.
-        RCP<GCRODRIter<ScalarType,MV,OP,DM> > gcrodr_prime_iter;
-        gcrodr_prime_iter = rcp( new GCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,primeList) );
+        RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_prime_iter;
+        if (isFlexible_) {
+          gcrodr_prime_iter = rcp(new FGCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,primeList));
+        }
+        else {
+          gcrodr_prime_iter = rcp(new GCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,primeList));
+        }
 
         // Create the first block in the current Krylov basis (residual).
-	problem_->computeCurrPrecResVec( &*r_ );
+	computeGCRODRResidual();
         index.resize( 1 ); index[0] = 0;
         RCP<MV> v0 =  MVT::CloneViewNonConst( *V_,  index );
         MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
@@ -1465,6 +1616,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
         index.resize( numBlocks_+1 );
         for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
         newstate.V = MVT::CloneViewNonConst( *V_,  index );
+        if (isFlexible_) newstate.Z = MVT::CloneViewNonConst( *Z_, index );
         newstate.U = Teuchos::null;
         newstate.C = Teuchos::null;
         newstate.H2 = H2_;
@@ -1513,7 +1665,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
         // Update the linear problem.
         RCP<MV> update = gcrodr_prime_iter->getCurrentUpdate();
-        problem_->updateSolution( update, true );
+        updateSolutionWithUpdate(update);
 
         // Get the state.
         newstate = gcrodr_prime_iter->getState();
@@ -1550,9 +1702,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           for (int ii=0; ii < p; ++ii) { index[ii] = ii; }
           RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
 
-          // Form U (the subspace to recycle)
-          // U = newstate.V(:,1:p) * PP;
-          MVT::MvTimesMatAddMv( one, *Vtmp, *PPtmp, zero, *U1tmp );
+          // Form U (the subspace to recycle).
+          // Standard GCRODR: U = V_m * P.
+          // Flexible GCRODR: U = Z_m * P and W = V_m * P.
+          if (isFlexible_) {
+            RCP<const MV> Ztmp = MVT::CloneView(*Z_, index);
+            MVT::MvTimesMatAddMv(one, *Ztmp, *PPtmp, zero, *U1tmp);
+            std::vector<int> wind(keff);
+            for (int wi = 0; wi < keff; ++wi) wind[wi] = wi;
+            RCP<MV> W1tmp = MVT::CloneViewNonConst(*W1_, wind);
+            MVT::MvTimesMatAddMv(one, *Vtmp, *PPtmp, zero, *W1tmp);
+          }
+          else {
+            MVT::MvTimesMatAddMv( one, *Vtmp, *PPtmp, zero, *U1tmp );
+          }
 
           // Form orthonormalized C and adjust U so that C = A*U
 
@@ -1660,6 +1823,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
           // Step #3: Let U = U * R^{-1}
           MVT::MvTimesMatAddMv( one, *U1tmp, *Rtmp, zero, *Utmp );
+          if (isFlexible_) {
+            std::vector<int> wind(keff);
+            for (int wi = 0; wi < keff; ++wi) wind[wi] = wi;
+            RCP<const MV> W1tmp = MVT::CloneView(*W1_, wind);
+            RCP<MV> Wtmp = MVT::CloneViewNonConst(*W_, wind);
+            MVT::MvTimesMatAddMv(one, *W1tmp, *Rtmp, zero, *Wtmp);
+          }
 
           printer_->stream(Debug)
             << " Generated recycled subspace using RHS index " << currIdx[0]
@@ -1698,7 +1868,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       outputTest_->resetNumCalls();
 
       // Compute the residual after the priming solve, it will be the first block in the current Krylov basis.
-      problem_->computeCurrPrecResVec( &*r_ );
+      computeGCRODRResidual();
       index.resize( 1 ); index[0] = 0;
       RCP<MV> v0 =  MVT::CloneViewNonConst( *V_,  index );
       MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
@@ -1709,6 +1879,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       index.resize( numBlocks_+1 );
       for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
       newstate.V  = MVT::CloneViewNonConst( *V_,  index );
+      if (isFlexible_) newstate.Z = MVT::CloneViewNonConst( *Z_, index );
       index.resize( keff );
       for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
       newstate.C  = MVT::CloneViewNonConst( *C_,  index );
@@ -1756,7 +1927,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
             // Update the linear problem.
             RCP<MV> update = gcrodr_iter->getCurrentUpdate();
-            problem_->updateSolution( update, true );
+            updateSolutionWithUpdate(update);
 
             buildRecycleSpace2(gcrodr_iter);
 
@@ -1778,7 +1949,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
               << maxRestarts_ << std::endl << std::endl;
 
             // Create the restart vector (first block in the current Krylov basis)
-            problem_->computeCurrPrecResVec( &*r_ );
+            computeGCRODRResidual();
             index.resize( 1 ); index[0] = 0;
             RCP<MV> v00 =  MVT::CloneViewNonConst( *V_,  index );
             MVT::SetBlock(*r_,index,*v00); // V(:,0) = r
@@ -1789,6 +1960,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
             index.resize( numBlocks_+1 );
             for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
             restartState.V  = MVT::CloneViewNonConst( *V_,  index );
+            if (isFlexible_) restartState.Z = MVT::CloneViewNonConst( *Z_, index );
             index.resize( keff );
             for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
             restartState.U = MVT::CloneViewNonConst( *U_,  index );
@@ -1838,7 +2010,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
       // Compute the current solution.
       // Update the linear problem.
       RCP<MV> update = gcrodr_iter->getCurrentUpdate();
-      problem_->updateSolution( update, true );
+      updateSolutionWithUpdate(update);
 
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
@@ -1889,7 +2061,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   // with this case by using the values returned by
   // impConvTest_->getTestValue().
   {
-    const std::vector<MagnitudeType>* pTestValues = expConvTest_->getTestValue();
+    const std::vector<MagnitudeType>* pTestValues = NULL;
+    if (! expConvTest_.is_null()) {
+      pTestValues = expConvTest_->getTestValue();
+    }
     if (pTestValues == NULL || pTestValues->size() < 1) {
       pTestValues = impConvTest_->getTestValue();
     }
@@ -1915,7 +2090,12 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
 //  Given existing recycle space and Krylov space, build new recycle space
 template<class ScalarType, class MV, class OP, class DM>
-void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<ScalarType,MV,OP,DM> > gcrodr_iter) {
+void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_iter) {
+
+  if (isFlexible_) {
+    buildFlexibleRecycleSpace2(gcrodr_iter);
+    return;
+  }
 
   MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -2106,6 +2286,293 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
     DMT::PutScalar( *b1, zero );
   }
 
+}
+
+// Given existing recycle space and flexible Krylov space, build new recycle space.
+// Flexible version:
+//   correction basis: [U, Z]
+//   image basis:      [C, V]
+//   auxiliary basis:  [W, V_m]
+template<class ScalarType, class MV, class OP, class DM>
+void
+GCRODRSolMgr<ScalarType,MV,OP,DM,true>::
+buildFlexibleRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_iter)
+{
+  MagnitudeType magOne = Teuchos::ScalarTraits<MagnitudeType>::one();
+  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+
+  std::vector<MagnitudeType> d(keff);
+  std::vector<ScalarType> dscalar(keff);
+  std::vector<int> index(numBlocks_+1);
+
+  GCRODRIterState<ScalarType,MV,DM> oldState = gcrodr_iter->getState();
+  int p = oldState.curDim;
+
+  if (p < 1) return;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    oldState.Z == Teuchos::null,
+    GCRODRSolMgrRecyclingFailure,
+    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): oldState.Z is null.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    W_ == Teuchos::null,
+    GCRODRSolMgrRecyclingFailure,
+    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): W_ is null.");
+
+  // Scale U and W consistently.
+  {
+    index.resize(keff);
+    for (int ii=0; ii<keff; ++ii) index[ii] = ii;
+
+    Teuchos::RCP<MV> Utmp = MVT::CloneViewNonConst(*U_, index);
+    Teuchos::RCP<MV> Wtmp = MVT::CloneViewNonConst(*W_, index);
+
+    d.resize(keff);
+    dscalar.resize(keff);
+
+    MVT::MvNorm(*Utmp, d);
+    for (int i=0; i<keff; ++i) {
+      d[i] = magOne / d[i];
+      dscalar[i] = static_cast<ScalarType>(d[i]);
+    }
+
+    MVT::MvScale(*Utmp, dscalar);
+    MVT::MvScale(*Wtmp, dscalar);
+  }
+
+  // Get view into current full projected matrix.
+  DMT::SyncDeviceToHost(*H2_);
+  Teuchos::RCP<DM> H2tmp = DMT::Subview(*H2_, p+keff+1, p+keff);
+
+  // Insert D into the leading keff x keff block of H2.
+  for (int i=0; i<keff; ++i) {
+    DMT::Value(*H2tmp, i, i) = d[i];
+  }
+
+  DMT::SyncHostToDevice(*H2_);
+
+  // Compute flexible harmonic Ritz vectors.
+  int keff_new;
+  {
+    DMT::SyncDeviceToHost(*PP_);
+    Teuchos::RCP<DM> PPtmp = DMT::Subview(*PP_, p+keff, recycledBlocks_+1);
+    keff_new = getFlexibleHarmonicVecs2(keff, p, *H2tmp, oldState.V, *PPtmp);
+    DMT::SyncHostToDevice(*PP_);
+  }
+
+  // U1 = [U, Z] * P.
+  Teuchos::RCP<MV> U1tmp;
+  {
+    index.resize(keff);
+    for (int ii=0; ii<keff; ++ii) index[ii] = ii;
+
+    Teuchos::RCP<const MV> Utmp = MVT::CloneView(*U_, index);
+
+    index.resize(keff_new);
+    for (int ii=0; ii<keff_new; ++ii) index[ii] = ii;
+
+    U1tmp = MVT::CloneViewNonConst(*U1_, index);
+
+    Teuchos::RCP<const DM> PPtop = DMT::SubviewConst(*PP_, keff, keff_new);
+    MVT::MvTimesMatAddMv(one, *Utmp, *PPtop, zero, *U1tmp);
+  }
+
+  {
+    index.resize(p);
+    for (int ii=0; ii<p; ++ii) index[ii] = ii;
+
+    Teuchos::RCP<const MV> Ztmp = MVT::CloneView(*oldState.Z, index);
+    Teuchos::RCP<const DM> PPbottom = DMT::SubviewConst(*PP_, p, keff_new, keff);
+
+    MVT::MvTimesMatAddMv(one, *Ztmp, *PPbottom, one, *U1tmp);
+  }
+
+  // W1 = [W, V_m] * P.
+  Teuchos::RCP<MV> W1tmp;
+  {
+    index.resize(keff);
+    for (int ii=0; ii<keff; ++ii) index[ii] = ii;
+
+    Teuchos::RCP<const MV> Wtmp = MVT::CloneView(*W_, index);
+
+    index.resize(keff_new);
+    for (int ii=0; ii<keff_new; ++ii) index[ii] = ii;
+
+    W1tmp = MVT::CloneViewNonConst(*W1_, index);
+
+    Teuchos::RCP<const DM> PPtop = DMT::SubviewConst(*PP_, keff, keff_new);
+    MVT::MvTimesMatAddMv(one, *Wtmp, *PPtop, zero, *W1tmp);
+  }
+
+  {
+    index.resize(p);
+    for (int ii=0; ii<p; ++ii) index[ii] = ii;
+
+    Teuchos::RCP<const MV> Vtmp = MVT::CloneView(*oldState.V, index);
+    Teuchos::RCP<const DM> PPbottom = DMT::SubviewConst(*PP_, p, keff_new, keff);
+
+    MVT::MvTimesMatAddMv(one, *Vtmp, *PPbottom, one, *W1tmp);
+  }
+
+  // HP = H * P.
+  DMT::SyncDeviceToHost(*HP_);
+  Teuchos::RCP<DM> HPtmp = DMT::Subview(*HP_, p+keff+1, keff_new);
+
+  {
+    DMT::SyncDeviceToHost(*PP_);
+    DMT::SyncDeviceToHost(*H2_);
+    Teuchos::RCP<DM> PPtmp = DMT::Subview(*PP_, p+keff, keff_new);
+
+    Teuchos::BLAS<int,ScalarType> blas;
+    blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+              p+keff+1, keff_new, p+keff,
+              one,
+              DMT::GetConstRawHostPtr(*H2tmp), DMT::GetStride(*H2tmp),
+              DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
+              zero,
+              DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
+  }
+
+  // QR factorization of HP.
+  int info = 0;
+  int lwork = -1;
+
+  tau_.resize(keff_new);
+  if (work_.size() < 1) work_.resize(1);
+
+  lapack.GEQRF(DMT::GetNumRows(*HPtmp),
+               DMT::GetNumCols(*HPtmp),
+               DMT::GetRawHostPtr(*HPtmp),
+               DMT::GetStride(*HPtmp),
+               &tau_[0], &work_[0], lwork, &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0,
+    GCRODRSolMgrLAPACKFailure,
+    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GEQRF workspace query failed.");
+
+  lwork = std::abs(static_cast<int>(Teuchos::ScalarTraits<ScalarType>::real(work_[0])));
+  work_.resize(lwork);
+
+  lapack.GEQRF(DMT::GetNumRows(*HPtmp),
+               DMT::GetNumCols(*HPtmp),
+               DMT::GetRawHostPtr(*HPtmp),
+               DMT::GetStride(*HPtmp),
+               &tau_[0], &work_[0], lwork, &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0,
+    GCRODRSolMgrLAPACKFailure,
+    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GEQRF failed.");
+
+  // Copy R from upper triangular part of HP.
+  DMT::SyncDeviceToHost(*R_);
+  Teuchos::RCP<DM> Rtmp = DMT::Subview(*R_, keff_new, keff_new);
+
+  for (int i=0; i<keff_new; ++i) {
+    for (int j=i; j<keff_new; ++j) {
+      DMT::Value(*Rtmp, i, j) = DMT::ValueConst(*HPtmp, i, j);
+    }
+  }
+
+  // Form Q explicitly in HPtmp.
+  lapack.UNGQR(DMT::GetNumRows(*HPtmp),
+               DMT::GetNumCols(*HPtmp),
+               DMT::GetNumCols(*HPtmp),
+               DMT::GetRawHostPtr(*HPtmp),
+               DMT::GetStride(*HPtmp),
+               &tau_[0], &work_[0], lwork, &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0,
+    GCRODRSolMgrLAPACKFailure,
+    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK UNGQR failed.");
+
+  DMT::SyncHostToDevice(*HP_);
+
+  // C1 = [C, V_{p+1}] * Q.
+  {
+    Teuchos::RCP<MV> C1tmp;
+
+    {
+      index.resize(keff);
+      for (int i=0; i<keff; ++i) index[i] = i;
+
+      Teuchos::RCP<const MV> Ctmp = MVT::CloneView(*C_, index);
+
+      index.resize(keff_new);
+      for (int i=0; i<keff_new; ++i) index[i] = i;
+
+      C1tmp = MVT::CloneViewNonConst(*C1_, index);
+
+      Teuchos::RCP<const DM> Qtop = DMT::SubviewConst(*HP_, keff, keff_new);
+      MVT::MvTimesMatAddMv(one, *Ctmp, *Qtop, zero, *C1tmp);
+    }
+
+    {
+      index.resize(p+1);
+      for (int i=0; i<p+1; ++i) index[i] = i;
+
+      Teuchos::RCP<const MV> Vtmp = MVT::CloneView(*oldState.V, index);
+      Teuchos::RCP<const DM> Qbottom = DMT::SubviewConst(*HP_, p+1, keff_new, keff, 0);
+
+      MVT::MvTimesMatAddMv(one, *Vtmp, *Qbottom, one, *C1tmp);
+    }
+  }
+
+  std::swap(C_, C1_);
+
+  // Compute R^{-1}.
+  ipiv_.resize(DMT::GetNumRows(*Rtmp));
+
+  lapack.GETRF(DMT::GetNumRows(*Rtmp),
+               DMT::GetNumCols(*Rtmp),
+               DMT::GetRawHostPtr(*Rtmp),
+               DMT::GetStride(*Rtmp),
+               &ipiv_[0], &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0,
+    GCRODRSolMgrLAPACKFailure,
+    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GETRF failed.");
+
+  lwork = DMT::GetNumRows(*Rtmp);
+  work_.resize(lwork);
+
+  lapack.GETRI(DMT::GetNumRows(*Rtmp),
+               DMT::GetRawHostPtr(*Rtmp),
+               DMT::GetStride(*Rtmp),
+               &ipiv_[0], &work_[0], lwork, &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0,
+    GCRODRSolMgrLAPACKFailure,
+    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GETRI failed.");
+
+  DMT::SyncHostToDevice(*R_);
+
+  {
+    index.resize(keff_new);
+    for (int i=0; i<keff_new; ++i) index[i] = i;
+
+    Teuchos::RCP<MV> Utmp = MVT::CloneViewNonConst(*U_, index);
+    Teuchos::RCP<const MV> U1tmpConst = MVT::CloneView(*U1_, index);
+    MVT::MvTimesMatAddMv(one, *U1tmpConst, *Rtmp, zero, *Utmp);
+
+    Teuchos::RCP<MV> Wtmp = MVT::CloneViewNonConst(*W_, index);
+    Teuchos::RCP<const MV> W1tmpConst = MVT::CloneView(*W1_, index);
+    MVT::MvTimesMatAddMv(one, *W1tmpConst, *Rtmp, zero, *Wtmp);
+  }
+
+  if (keff != keff_new) {
+    keff = keff_new;
+    gcrodr_iter->setSize(keff, numBlocks_);
+
+    Teuchos::RCP<DM> b1 = DMT::Subview(*H2_, recycledBlocks_+2, 1, 0, recycledBlocks_);
+    DMT::PutScalar(*b1, zero);
+  }
 }
 
 
@@ -2391,6 +2858,194 @@ int GCRODRSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs2(int keffloc, int m,
 }
 
 
+
+// Compute harmonic Ritz vectors for flexible GCRODR.
+//
+// This uses the paper-compatible auxiliary space W:
+//   T     = [C, V_{m+1}]
+//   Wfull = [W, V_m]
+// and forms the small projected pencil
+//   H^H H p = theta H^H (T^H Wfull) p.
+template<class ScalarType, class MV, class OP, class DM>
+int
+GCRODRSolMgr<ScalarType,MV,OP,DM,true>::
+getFlexibleHarmonicVecs2(int keffloc, int m,
+                         const DM& HH,
+                         const Teuchos::RCP<const MV>& VV,
+                         DM& PP)
+{
+  int i, j;
+  int m2 = DMT::GetNumCols(HH);
+  bool xtraVec = false;
+
+  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+
+  std::vector<int> index;
+
+  std::vector<MagnitudeType> wr(m2), wi(m2);
+  std::vector<MagnitudeType> w(m2);
+
+  Teuchos::RCP<DM> vr = DMT::Create(m2, m2, false);
+
+  std::vector<int> iperm(m2);
+
+  builtRecycleSpace_ = true;
+
+  // B = H^H H.
+  Teuchos::RCP<DM> B = DMT::Create(m2, m2, false);
+
+  Teuchos::BLAS<int,ScalarType> blas;
+  blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+            m2, m2, DMT::GetNumRows(HH),
+            one,
+            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
+            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
+            zero,
+            DMT::GetRawHostPtr(*B), DMT::GetStride(*B));
+
+  // A_tmp = T^H Wfull.
+  Teuchos::RCP<DM> A_tmp = DMT::Create(keffloc + m + 1, keffloc + m);
+  DMT::PutScalar(*A_tmp, zero);
+
+  // A11 = C^H W.
+  index.resize(keffloc);
+  for (i=0; i<keffloc; ++i) index[i] = i;
+
+  Teuchos::RCP<const MV> Ctmp = MVT::CloneView(*C_, index);
+  Teuchos::RCP<const MV> Wtmp = MVT::CloneView(*W_, index);
+  Teuchos::RCP<DM> A11 = DMT::Subview(*A_tmp, keffloc, keffloc);
+
+  MVT::MvTransMv(one, *Ctmp, *Wtmp, *A11);
+
+  // A21 = V_{m+1}^H W.
+  Teuchos::RCP<DM> A21 = DMT::Subview(*A_tmp, m+1, keffloc, keffloc);
+
+  index.resize(m+1);
+  for (i=0; i<m+1; ++i) index[i] = i;
+
+  Teuchos::RCP<const MV> Vp = MVT::CloneView(*VV, index);
+
+  index.resize(keffloc);
+  for (i=0; i<keffloc; ++i) index[i] = i;
+
+  Wtmp = MVT::CloneView(*W_, index);
+
+  MVT::MvTransMv(one, *Vp, *Wtmp, *A21);
+
+  A11 = Teuchos::null;
+  A21 = Teuchos::null;
+
+  DMT::SyncDeviceToHost(*A_tmp);
+
+  // A22 = V_{m+1}^H V_m = [I; 0].
+  for (i=0; i<m; ++i) {
+    DMT::Value(*A_tmp, keffloc+i, keffloc+i) = one;
+  }
+
+  // A = H^H A_tmp.
+  Teuchos::RCP<DM> A = DMT::Create(m2, DMT::GetNumCols(*A_tmp));
+
+  blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS,
+            m2, DMT::GetNumCols(*A_tmp), DMT::GetNumRows(*A_tmp),
+            one,
+            DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
+            DMT::GetConstRawHostPtr(*A_tmp), DMT::GetStride(*A_tmp),
+            zero,
+            DMT::GetRawHostPtr(*A), DMT::GetStride(*A));
+
+  char balanc = 'P', jobvl = 'N', jobvr = 'V', sense = 'N';
+
+  int ld = DMT::GetNumRows(*A);
+  int lwork = 6 * ld;
+  int ldvl = ld, ldvr = ld;
+  int info = 0, ilo = 0, ihi = 0;
+
+  MagnitudeType abnrm = 0.0, bbnrm = 0.0;
+  ScalarType* vl = 0;
+
+  std::vector<ScalarType> beta(ld);
+  std::vector<ScalarType> work(lwork);
+  std::vector<MagnitudeType> rwork(lwork);
+  std::vector<MagnitudeType> lscale(ld), rscale(ld);
+  std::vector<MagnitudeType> rconde(ld), rcondv(ld);
+  std::vector<int> iwork(ld+6);
+  int* bwork = 0;
+
+  lapack.GGEVX(balanc, jobvl, jobvr, sense, ld,
+               DMT::GetRawHostPtr(*A), ld,
+               DMT::GetRawHostPtr(*B), ld,
+               &wr[0], &wi[0], &beta[0],
+               vl, ldvl,
+               DMT::GetRawHostPtr(*vr), ldvr,
+               &ilo, &ihi,
+               &lscale[0], &rscale[0],
+               &abnrm, &bbnrm,
+               &rconde[0], &rcondv[0],
+               &work[0], lwork, &rwork[0],
+               &iwork[0], bwork, &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0,
+    GCRODRSolMgrLAPACKFailure,
+    "Belos::GCRODRSolMgr::getFlexibleHarmonicVecs2(): LAPACK GGEVX failed to compute eigensolutions.");
+
+  for (i=0; i<ld; ++i) {
+    w[i] =
+      Teuchos::ScalarTraits<MagnitudeType>::squareroot(wr[i]*wr[i] + wi[i]*wi[i]) /
+      Teuchos::ScalarTraits<ScalarType>::magnitude(beta[i]);
+  }
+
+  this->sort(w, ld, iperm);
+
+  const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
+
+  for (i=0; i<recycledBlocks_; ++i) {
+    for (j=0; j<ld; ++j) {
+      DMT::Value(PP, j, i) =
+        DMT::ValueConst(*vr, j, iperm[ld-recycledBlocks_+i]);
+    }
+  }
+
+  if (!scalarTypeIsComplex) {
+    if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
+      int countImag = 0;
+      for (i=ld-recycledBlocks_; i<ld; ++i) {
+        if (wi[iperm[i]] != 0.0) {
+          countImag++;
+        }
+      }
+
+      if (countImag % 2) {
+        xtraVec = true;
+      }
+    }
+
+    if (xtraVec) {
+      if (wi[iperm[ld-recycledBlocks_]] > 0.0) {
+        for (j=0; j<ld; ++j) {
+          DMT::Value(PP, j, recycledBlocks_) =
+            DMT::ValueConst(*vr, j, iperm[ld-recycledBlocks_]+1);
+        }
+      }
+      else {
+        for (j=0; j<ld; ++j) {
+          DMT::Value(PP, j, recycledBlocks_) =
+            DMT::ValueConst(*vr, j, iperm[ld-recycledBlocks_]-1);
+        }
+      }
+    }
+  }
+
+  if (xtraVec) {
+    return recycledBlocks_ + 1;
+  }
+  else {
+    return recycledBlocks_;
+  }
+}
+
+
 // This method sorts list of n floating-point numbers and return permutation vector
 template<class ScalarType, class MV, class OP, class DM>
 void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
@@ -2463,6 +3118,7 @@ std::string GCRODRSolMgr<ScalarType,MV,OP,DM,true>::description () const {
   out << "Belos::GCRODRSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   out << "{";
   out << "Ortho Type: \"" << orthoType_ << "\"";
+  out << ", Flexible: " << (isFlexible_ ? "true" : "false");
   out << ", Num Blocks: " <<numBlocks_;
   out << ", Num Recycle Blocks: " << recycledBlocks_;
   out << ", Max Restarts: " << maxRestarts_;

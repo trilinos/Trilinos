@@ -45,6 +45,8 @@ APPEND_SET(HEADERS
   BelosFixedPointIteration.hpp
   BelosFixedPointSolMgr.hpp
   BelosGCRODRIter.hpp
+  BelosGCRODRIteration.hpp
+  BelosFGCRODRIter.hpp
   BelosGCRODRSolMgr.hpp
   BelosGmresIteration.hpp
   BelosGmresPolyOp.hpp
