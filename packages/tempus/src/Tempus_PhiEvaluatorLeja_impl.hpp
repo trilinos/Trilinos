@@ -795,8 +795,9 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int 
 
   Teuchos::SerialDenseMatrix<int, cplx> Ts(lejaOrder, lejaOrder);
   Ts = 0.;
-  for (int i=0; i < m; ++i) {
-    Ts(i, i) = std::complex(1.0, 0.0);
+
+  for (int i=0; i < lejaOrder; ++i) {
+    Ts(i, i) = std::complex<double>(1.0, 0.0);
   }
 
   //auto factorial = [](auto self, double n) -> double {
@@ -815,8 +816,8 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int 
     // A = Hm^k/(k)!
 
     // Compute next A = Hm^(k+1)/(k+1)!
-    double scale = 1. / (k+1);
-    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, scale, Hm, A, 0.0);
+    const double scale_k = 1. / (k+1);
+    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, scale_k, Hm, A, 0.0);
     A = Mtmp;
   }
   Ts += A;
