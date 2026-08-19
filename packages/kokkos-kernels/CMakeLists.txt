@@ -11,7 +11,7 @@ set(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(KokkosKernels_VERSION_MAJOR 5)
 set(KokkosKernels_VERSION_MINOR 2)
-set(KokkosKernels_VERSION_PATCH 0)
+set(KokkosKernels_VERSION_PATCH 1)
 set(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
@@ -119,13 +119,13 @@ else()
         set(CMAKE_HIP_ARCHITECTURES ${Kokkos_HIP_ARCHITECTURES})
       endif()
     endif()
-    if(${Kokkos_VERSION} VERSION_GREATER_EQUAL "4.7.02")
+    if(${Kokkos_VERSION} VERSION_GREATER_EQUAL "5.1.1")
       message(STATUS "Found Kokkos version ${Kokkos_VERSION} at ${Kokkos_DIR}")
       if((${Kokkos_VERSION} VERSION_GREATER "5.2.99"))
         message(WARNING "Configuring with Kokkos ${Kokkos_VERSION} which is newer than the expected develop branch - version check may need update")
       endif()
     else()
-      message(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 4.7.02 or greater (found ${Kokkos_VERSION})")
+      message(FATAL_ERROR "Kokkos Kernels ${KokkosKernels_VERSION} requires Kokkos 5.1.1 or greater (found ${Kokkos_VERSION})")
     endif()
 
     if(KokkosKernels_ENABLE_COMPILER_WARNINGS)
@@ -182,7 +182,7 @@ else()
 
   kokkoskernels_add_option("ENABLED_COMPONENTS" "ALL" STRING
     "A list of components to enable in testing and building"
-    VALID_ENTRIES BATCHED BLAS LAPACK GRAPH SPARSE ALL)
+    VALID_ENTRIES BATCHED BLAS LAPACK GRAPH SPARSE ODE ALL)
 
   # ==================================================================
   # Enable Device Types for ETI (exec- + mem-space)
@@ -379,7 +379,7 @@ else()
       SOURCES ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc)
     # Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
     target_compile_definitions(kokkoskernels_gtest PUBLIC "-DGTEST_HAS_PTHREAD=0")
-    target_include_directories(kokkoskernels_gtest PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
+    target_include_directories(kokkoskernels_gtest SYSTEM PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
 
     #Gtest minimally requires C++11
     target_compile_features(kokkoskernels_gtest PUBLIC cxx_std_11)
