@@ -15,13 +15,16 @@
 /// \author Mark Hoemmen
 
 #include "BelosTpetraAdapter.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Tpetra_Util_iohb.h"
+#include <type_traits>
 
 namespace Belos {
   namespace Tpetra {
@@ -117,7 +120,7 @@ namespace Belos {
           std::vector<int> rnnz(dim,0);
           for (int *ri=rowind; ri<rowind+nnz; ++ri) {
             ++rnnz[*ri-1];
-          }  
+          }
           rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
         }
         else {
@@ -147,8 +150,8 @@ namespace Belos {
           const int *rptr = rowind;
           for (int c=0; c<dim; ++c) {
             for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-              A->insertGlobalValues (static_cast<global_ordinal_type> (*rptr++ - 1), 
-                                     Teuchos::tuple<global_ordinal_type> (c), 
+              A->insertGlobalValues (static_cast<global_ordinal_type> (*rptr++ - 1),
+                                     Teuchos::tuple<global_ordinal_type> (c),
                                      Teuchos::tuple (sptr[0]));
               sptr++;
             }

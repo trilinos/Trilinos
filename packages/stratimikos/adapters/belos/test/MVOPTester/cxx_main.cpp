@@ -118,13 +118,14 @@ int main(int argc, char *argv[])
       if (MyPID==0)
         std::cout << "End Result: TEST FAILED" << std::endl;
       returnCode = -1;
+    } else {
+      //
+      // Default return value
+      //
+      if (MyPID==0)
+        std::cout << "End Result: TEST PASSED" << std::endl;
+      returnCode = 0;
     }
-    //
-    // Default return value
-    //
-    if (MyPID==0)
-      std::cout << "End Result: TEST PASSED" << std::endl;
-    returnCode = 0;
 
   }
   Tpetra::finalize();

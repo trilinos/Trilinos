@@ -24,12 +24,8 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_SerialSymDenseMatrix.hpp"
-#include "Teuchos_SerialSpdDenseSolver.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -43,8 +39,8 @@ namespace Belos {
    *
    * This struct is utilized by BlockCGIteration::initialize() and BlockCGIteration::getState().
    */
-  template <class ScalarType, class MV>
-  class BlockCGIterationState : public CGIterationStateBase<ScalarType, MV> {
+  template <class ScalarType, class MV, class DM>
+  class BlockCGIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:
     BlockCGIterationState() = default;
@@ -56,17 +52,17 @@ namespace Belos {
     virtual ~BlockCGIterationState() = default;
 
     void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
-      using MVT = MultiVecTraits<ScalarType, MV>;
+      using MVT = MultiVecTraits<ScalarType, MV, DM>;
       this->R = MVT::Clone( *tmp, _numVectors );
       this->Z = MVT::Clone( *tmp, _numVectors );
       this->P = MVT::Clone( *tmp, _numVectors );
       this->AP = MVT::Clone(*tmp, _numVectors );
 
-      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
+      CGIterationStateBase<ScalarType, MV, DM>::initialize(tmp, _numVectors);
     }
 
     bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
-      return CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors);
+      return CGIterationStateBase<ScalarType, MV, DM>::matches(tmp, _numVectors);
     }
 
 };
@@ -79,20 +75,20 @@ namespace Belos {
 
 /// \brief Stub implementation of BlockCGIter, for ScalarType types
 ///   for which Teuchos::LAPACK does NOT have a valid implementation.
-template<class ScalarType, class MV, class OP,
+template<class ScalarType, class MV, class OP, class DM,
          const bool lapackSupportsScalarType =
          Belos::Details::LapackSupportsScalar<ScalarType>::value>
-class BlockCGIter : virtual public CGIteration<ScalarType, MV, OP> {
+class BlockCGIter : virtual public CGIteration<ScalarType, MV, OP, DM> {
 public:
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV, DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
 
-  BlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > & /* problem */,
+  BlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > & /* problem */,
                const Teuchos::RCP<OutputManager<ScalarType> > & /* printer */,
-               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > & /* tester */,
-               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > & /* ortho */,
+               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > & /* tester */,
+               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > & /* ortho */,
                Teuchos::ParameterList & /* params */ )
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
@@ -104,7 +100,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
-  void initializeCG (Teuchos::RCP<BlockCGIterationState<ScalarType,MV> > /* newstate */, Teuchos::RCP<MV> /* R_0 */) {
+  void initializeCG (Teuchos::RCP<BlockCGIterationState<ScalarType,MV, DM> > /* newstate */, Teuchos::RCP<MV> /* R_0 */) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
@@ -112,11 +108,11 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
-  Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState () const {
+  Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
-  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
+  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
@@ -137,7 +133,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Stub");
   }
 
@@ -163,15 +159,15 @@ public:
 ///   Teuchos::LAPACK has a valid implementation.
 ///
 /// This is the (non-stub) actual implementation of BlockCGIter.
-template<class ScalarType, class MV, class OP>
-class BlockCGIter<ScalarType, MV, OP, true> :
-    virtual public CGIteration<ScalarType,MV,OP>
+template<class ScalarType, class MV, class OP, class DM>
+class BlockCGIter<ScalarType, MV, OP, DM, true> :
+    virtual public CGIteration<ScalarType,MV,OP,DM>
 {
 public:
   //
   // Convenience typedefs
   //
-  using MVT = MultiVecTraits<ScalarType, MV>;
+  using MVT = MultiVecTraits<ScalarType, MV, DM>;
   using OPT = OperatorTraits<ScalarType, MV, OP>;
   using SCT = Teuchos::ScalarTraits<ScalarType>;
   using MagnitudeType = typename SCT::magnitudeType;
@@ -184,10 +180,10 @@ public:
    * This constructor takes pointers required by the linear solver iteration, in addition
    * to a parameter list of options for the linear solver.
    */
-  BlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  BlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
+               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > &ortho,
                Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -226,7 +222,7 @@ public:
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0);
+  void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
@@ -242,8 +238,8 @@ public:
    *
    * \returns A BlockCGIterationState object containing const pointers to the current solver state.
    */
-  Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const {
-    auto state = Teuchos::rcp(new BlockCGIterationState<ScalarType,MV>());
+  Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState() const {
+    auto state = Teuchos::rcp(new BlockCGIterationState<ScalarType,MV, DM>());
     state->R = R_;
     state->P = P_;
     state->AP = AP_;
@@ -251,8 +247,8 @@ public:
     return state;
   }
 
-  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
-    auto s = Teuchos::rcp_dynamic_cast<BlockCGIterationState<ScalarType,MV> >(state, true);
+  void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) {
+    auto s = Teuchos::rcp_dynamic_cast<BlockCGIterationState<ScalarType,MV, DM> >(state, true);
     R_ = s->R;
     Z_ = s->Z;
     P_ = s->P;
@@ -286,7 +282,7 @@ public:
   //@{
 
   //! Get a constant reference to the linear problem.
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+  const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
 
   //! Get the block size to be used by the iterative solver in solving this linear problem.
   int getBlockSize() const { return blockSize_; }
@@ -321,10 +317,10 @@ public:
   //
   // Classes inputed through constructor that define the linear problem to be solved.
   //
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
   const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
+  const Teuchos::RCP<OrthoManager<ScalarType,MV,DM> >        ortho_;
 
   //
   // Algorithmic parameters
@@ -339,11 +335,6 @@ public:
   // is capable of running; _initialize is controlled  by the initialize() member method
   // For the implications of the state of initialized_, please see documentation for initialize()
   bool initialized_;
-
-  // stateStorageInitialized_ specified that the state storage has be initialized.
-  // This initialization may be postponed if the linear problem was generated without
-  // the right-hand side or solution vectors.
-  bool stateStorageInitialized_;
 
   // Current subspace dimension, and number of iterations performed.
   int iter_;
@@ -365,12 +356,12 @@ public:
 
 };
 
-  template<class ScalarType, class MV, class OP>
-  BlockCGIter<ScalarType,MV,OP,true>::
-  BlockCGIter (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  BlockCGIter<ScalarType,MV,OP,DM,true>::
+  BlockCGIter (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >& problem,
                const Teuchos::RCP<OutputManager<ScalarType> >& printer,
-               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& tester,
-               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >& ortho,
+               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >& tester,
+               const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> >& ortho,
                Teuchos::ParameterList& params) :
     lp_(problem),
     om_(printer),
@@ -378,7 +369,6 @@ public:
     ortho_(ortho),
     blockSize_(0),
     initialized_(false),
-    stateStorageInitialized_(false),
     iter_(0)
   {
     // Set the block size and allocate data
@@ -386,8 +376,8 @@ public:
     setBlockSize( bs );
   }
 
-  template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP,true>::setBlockSize (int blockSize)
+  template<class ScalarType, class MV, class OP, class DM>
+  void BlockCGIter<ScalarType,MV,OP,DM,true>::setBlockSize (int blockSize)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
@@ -397,16 +387,13 @@ public:
     if (blockSize == blockSize_) {
       return; // do nothing
     }
-    if (blockSize!=blockSize_) {
-      stateStorageInitialized_ = false;
-    }
     blockSize_ = blockSize;
     initialized_ = false;
   }
 
-  template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP,true>::
-  initializeCG (Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0)
+  template <class ScalarType, class MV, class OP, class DM>
+  void BlockCGIter<ScalarType,MV,OP,DM,true>::
+  initializeCG (Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0)
   {
     const char prefix[] = "Belos::BlockCGIter::initialize: ";
 
@@ -415,7 +402,7 @@ public:
     Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
     Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
     TEUCHOS_ASSERT(!newstate.is_null());
-    if (!Teuchos::rcp_dynamic_cast<BlockCGIterationState<ScalarType,MV> >(newstate, true)->matches(tmp, blockSize_))
+    if (!Teuchos::rcp_dynamic_cast<BlockCGIterationState<ScalarType,MV, DM> >(newstate, true)->matches(tmp, blockSize_))
       newstate->initialize(tmp, blockSize_);
     setState(newstate);
 
@@ -461,10 +448,11 @@ public:
     initialized_ = true;
   }
 
-  template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP,true>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void BlockCGIter<ScalarType,MV,OP,DM,true>::iterate()
   {
     const char prefix[] = "Belos::BlockCGIter::iterate: ";
+    typedef DenseMatTraits<ScalarType,DM>    DMT;
 
     //
     // Allocate/initialize data structures
@@ -472,22 +460,15 @@ public:
     if (initialized_ == false) {
       initialize();
     }
-    // Allocate data needed for LAPACK work.
-    int info = 0;
-    //char UPLO = 'U';
-    //(void) UPLO; // silence "unused variable" compiler warnings
-    bool uplo = true;
-    Teuchos::LAPACK<int,ScalarType> lapack;
 
     // Allocate memory for scalars.
-    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( blockSize_, blockSize_ );
-    Teuchos::SerialDenseMatrix<int,ScalarType> beta( blockSize_, blockSize_ );
-    Teuchos::SerialDenseMatrix<int,ScalarType> rHz( blockSize_, blockSize_ ),
-      rHz_old( blockSize_, blockSize_ ), pAp( blockSize_, blockSize_ );
-    Teuchos::SerialSymDenseMatrix<int,ScalarType> pApHerm(Teuchos::View, uplo, pAp.values(), blockSize_, blockSize_);
+    Teuchos::RCP<DM> alpha = DMT::Create( blockSize_, blockSize_ );
+    Teuchos::RCP<DM> beta = DMT::Create( blockSize_, blockSize_ );
+    Teuchos::RCP<DM> pAp = DMT::Create( blockSize_, blockSize_ );
 
     // Create dense spd solver.
-    Teuchos::SerialSpdDenseSolver<int,ScalarType> lltSolver;
+    Teuchos::RCP<DenseSolver<ScalarType,DM>> lltSolver = DMT::createDenseSolver();
+    lltSolver->setSPD( true );
 
     // Create convenience variable for one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -519,31 +500,31 @@ public:
       // 2) Compute the Cholesky Factorization of pAp
       // 3) Back and forward solves to compute alpha
       //
-      MVT::MvTransMv( one, *P_, *R_, alpha );
-      MVT::MvTransMv( one, *P_, *AP_, pAp );
+      MVT::MvTransMv( one, *P_, *R_, *alpha );
+      MVT::MvTransMv( one, *P_, *AP_, *pAp );
 
       // Compute Cholesky factorization of pAp
-      lltSolver.setMatrix( Teuchos::rcp(&pApHerm, false) );
-      lltSolver.factorWithEquilibration( true );
-      info = lltSolver.factor();
+      lltSolver->setMatrix( pAp );
+      lltSolver->factorWithEquilibration( true );
+      int info = lltSolver->factor();
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, CGIterationLAPACKFailure,
          prefix << "Failed to compute Cholesky factorization using LAPACK routine POTRF.");
 
       // Compute alpha by performing a back and forward solve with the
       // Cholesky factorization in pAp.
-      lltSolver.setVectors (Teuchos::rcpFromRef (alpha), Teuchos::rcpFromRef (alpha));
-      info = lltSolver.solve();
+      lltSolver->setVectors (alpha, alpha);
+      info = lltSolver->solve();
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, CGIterationLAPACKFailure,
          prefix << "Failed to compute alpha using Cholesky factorization (POTRS).");
 
       // Update the solution std::vector X := X + alpha * P_
-      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
+      MVT::MvTimesMatAddMv( one, *P_, *alpha, one, *cur_soln_vec );
       lp_->updateSolution();
 
       // Compute the new residual R_ := R_ - alpha * AP_
-      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ );
+      MVT::MvTimesMatAddMv( -one, *AP_, *alpha, one, *R_ );
 
       // Compute the new preconditioned residual, Z_.
       if ( lp_->getLeftPrec() != Teuchos::null ) {
@@ -567,17 +548,17 @@ public:
       // 3) Back and forward solves to compute beta
 
       // Compute <AP_,Z>
-      MVT::MvTransMv( -one, *AP_, *Z_, beta );
+      MVT::MvTransMv( -one, *AP_, *Z_, *beta );
 
-      lltSolver.setVectors( Teuchos::rcp( &beta, false ), Teuchos::rcp( &beta, false ) );
-      info = lltSolver.solve();
+      lltSolver->setVectors( beta, beta );
+      info = lltSolver->solve();
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, CGIterationLAPACKFailure,
          prefix << "Failed to compute beta using Cholesky factorization (POTRS).");
 
       // Compute the new direction vectors P_ = Z_ + P_ * beta
       Teuchos::RCP<MV> Pnew = MVT::CloneCopy( *Z_ );
-      MVT::MvTimesMatAddMv(one, *P_, beta, one, *Pnew);
+      MVT::MvTimesMatAddMv(one, *P_, *beta, one, *Pnew);
       P_ = Pnew;
 
       // Compute orthonormal block of new direction vectors.

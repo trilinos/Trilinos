@@ -88,7 +88,7 @@ RCP<LinearProblem<Scalar,Tpetra::MultiVector<Scalar>,Tpetra::Operator<Scalar> > 
   MVT::MvRandom( *X );
   B = rcp( new MV(vmap,numrhs) );
   OPT::Apply( *A, *X, *B );
-  MVT::MvInit( *X, 0.0 );
+  MVT::MvInit( *X, SCT::zero() );
   // Construct a linear problem instance with zero initial MV
   RCP<LinearProblem<Scalar,MV,OP> > problem = rcp( new LinearProblem<Scalar,MV,OP>(A,X,B) );
   problem->setLabel(Teuchos::typeName(SCT::one()));
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   //
   // Get test parameters from command-line processor
   //
-  bool verbose = false, debug = false;
+  bool verbose = true, debug = true;
   int frequency = -1;  // how often residuals are printed by solver
   int maxiters = -1;   // maximum number of iterations for solver to use
   numrhs = 1;      // total number of right-hand sides to solve for

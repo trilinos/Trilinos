@@ -24,10 +24,8 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -52,8 +50,8 @@ namespace Belos {
    *
    * This struct is utilized by PseudoBlockCGIteration::initialize() and PseudoBlockCGIteration::getState().
    */
-  template <class ScalarType, class MV>
-  class PseudoBlockCGIterationState : public CGIterationStateBase<ScalarType, MV> {
+  template <class ScalarType, class MV, class DM>
+  class PseudoBlockCGIterationState : public CGIterationStateBase<ScalarType, MV, DM> {
 
   public:
     PseudoBlockCGIterationState() = default;
@@ -65,30 +63,31 @@ namespace Belos {
     virtual ~PseudoBlockCGIterationState() = default;
 
     void initialize(Teuchos::RCP<const MV> tmp, int _numVectors) {
-      using MVT = MultiVecTraits<ScalarType, MV>;
+      using MVT = MultiVecTraits<ScalarType, MV, DM>;
       this->R = MVT::Clone( *tmp, _numVectors );
       this->Z = MVT::Clone( *tmp, _numVectors );
       this->P = MVT::Clone( *tmp, _numVectors );
       this->AP = MVT::Clone(*tmp, _numVectors );
 
-      CGIterationStateBase<ScalarType, MV>::initialize(tmp, _numVectors);
+      CGIterationStateBase<ScalarType, MV, DM>::initialize(tmp, _numVectors);
     }
 
     bool matches(Teuchos::RCP<const MV> tmp, int _numVectors=1) const {
-      return CGIterationStateBase<ScalarType, MV>::matches(tmp, _numVectors);
+      return CGIterationStateBase<ScalarType, MV, DM>::matches(tmp, _numVectors);
     }
-};
+  };
 
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class PseudoBlockCGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
 
   public:
 
     //
     // Convenience typedefs
     //
-    using MVT = MultiVecTraits<ScalarType, MV>;
+    using MVT = MultiVecTraits<ScalarType, MV, DM>;
     using OPT = OperatorTraits<ScalarType, MV, OP>;
+    using DMT = DenseMatTraits<ScalarType,DM>;
     using SCT = Teuchos::ScalarTraits<ScalarType>;
     using MagnitudeType = typename SCT::magnitudeType;
 
@@ -100,9 +99,9 @@ namespace Belos {
      * This constructor takes pointers required by the linear solver, in addition
      * to a parameter list of options for the linear solver.
      */
-    PseudoBlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+    PseudoBlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                           const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                           Teuchos::ParameterList &params );
 
     //! Destructor.
@@ -148,7 +147,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
-    void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > newstate, Teuchos::RCP<MV> R_0);
+    void initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > newstate, Teuchos::RCP<MV> R_0);
 
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
@@ -165,8 +164,8 @@ namespace Belos {
      * \returns A CGIterationState object containing const pointers to the current
      * solver state.
      */
-    Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > getState() const {
-      auto state = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType,MV>());
+    Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > getState() const {
+      auto state = Teuchos::rcp(new PseudoBlockCGIterationState<ScalarType,MV, DM>());
       state->R = R_;
       state->P = P_;
       state->AP = AP_;
@@ -174,8 +173,8 @@ namespace Belos {
       return state;
     }
 
-    void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV> > state) {
-      auto s = Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(state, true);
+    void setState(Teuchos::RCP<CGIterationStateBase<ScalarType,MV, DM> > state) {
+      auto s = Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV, DM> >(state, true);
       R_ = s->R;
       Z_ = s->Z;
       P_ = s->P;
@@ -209,7 +208,7 @@ namespace Belos {
     //@{
 
     //! Get a constant reference to the linear problem.
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+    const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const { return *lp_; }
 
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
@@ -263,9 +262,9 @@ namespace Belos {
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
-    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
 
     //
     // Algorithmic parameters
@@ -312,10 +311,10 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  PseudoBlockCGIter<ScalarType,MV,OP>::PseudoBlockCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  PseudoBlockCGIter<ScalarType,MV,OP,DM>::PseudoBlockCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem,
                                                                const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
                                                                Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -332,9 +331,9 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockCGIter<ScalarType, MV, OP>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType, MV> > newstate, Teuchos::RCP<MV> R_0) {
-
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockCGIter<ScalarType, MV, OP, DM>::initializeCG(Teuchos::RCP<CGIterationStateBase<ScalarType, MV, DM> > newstate, Teuchos::RCP<MV> R_0)
+  {
     // Check if there is any mltivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
     Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
@@ -350,7 +349,7 @@ namespace Belos {
 
     // Initialize the state storage if it isn't already.
     TEUCHOS_ASSERT(!newstate.is_null());
-    if (!Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV> >(newstate, true)->matches(tmp, numRHS_))
+    if (!Teuchos::rcp_dynamic_cast<PseudoBlockCGIterationState<ScalarType,MV, DM> >(newstate, true)->matches(tmp, numRHS_))
       newstate->initialize(tmp, numRHS_);
     setState(newstate);
 
@@ -361,7 +360,6 @@ namespace Belos {
     }
 
     std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
-
     {
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*R_0) != MVT::GetGlobalLength(*R_),
@@ -402,8 +400,8 @@ namespace Belos {
 
  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockCGIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void PseudoBlockCGIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -419,7 +417,7 @@ namespace Belos {
     std::vector<ScalarType> rHz_old( numRHS_ );
     std::vector<ScalarType> pAp( numRHS_ );
     std::vector<ScalarType> beta( numRHS_ );
-    Teuchos::SerialDenseMatrix<int, ScalarType> alpha( numRHS_,numRHS_ );
+    Teuchos::RCP<DM> alpha = DMT::Create( numRHS_,numRHS_ );
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -458,13 +456,14 @@ namespace Belos {
                                 CGPositiveDefiniteFailure,
                                 "Belos::PseudoBlockCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
-        alpha(i,i) = rHz[i] / pAp[i];
+        DMT::Value(*alpha,i,i) = rHz[i] / pAp[i];
       }
+      DMT::SyncHostToDevice( *alpha );
 
       //
       // Update the solution std::vector x := x + alpha * P_
       //
-      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
+      MVT::MvTimesMatAddMv( one, *P_, *alpha, one, *cur_soln_vec );
       lp_->updateSolution();// what does this do?
       //
       // Save the denominator of beta before residual is updated [ old <R_, Z_> ]
@@ -475,7 +474,7 @@ namespace Belos {
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
-      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ );
+      MVT::MvTimesMatAddMv( -one, *AP_, *alpha, one, *R_ );
       //
       // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ],
       // and the new direction std::vector p.
