@@ -64,6 +64,7 @@ PhiEvaluator<Scalar>::PhiEvaluator(std::string name)
     useAtildeForSingleRHS_(true) // TODO: make this configurable
 {
   setName(name);
+  eigensolverPL_ = Teuchos::rcp(new Teuchos::ParameterList());
 }
 
 template <class Scalar>
