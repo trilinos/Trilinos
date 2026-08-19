@@ -189,20 +189,21 @@ void StepperExponentialEuler<Scalar>::takeStep(
     // call the PhiEvaluator to compute vphi = - \phi( dt * J ) f = - \phi( dt * M^{-1} MJ ) M^{-1} Mf
     sStatus = this->getPhiEvaluator()->computePhi(vphi.ptr(), 1, dt, Mf);
 
-    // TODO: make this configurable
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    // Teuchos::OSTab ostab(out, 1, "StepperEPI::takeStep");
-    int current_iters = -1;
-    if(!sStatus.extraParameters.is_null()) {
-      current_iters = sStatus.extraParameters->get("Iteration Count", 0);
-    }
-    Scalar achieved_tol = sStatus.achievedTol;
+    const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+    if (verbLevel >= Teuchos::as<int>(Teuchos::VERB_LOW)) {
+      int current_iters = -1;
+      if(!sStatus.extraParameters.is_null()) {
+        current_iters = sStatus.extraParameters->get("Iteration Count", 0);
+      }
+      Scalar achieved_tol = sStatus.achievedTol;
 
-    if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >=0) {
-      *out << "Phi converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
-    }
-    else {
-      *out << sStatus.message << std::endl;
+      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >=0) {
+        *out << "Phi converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
+      }
+      else {
+        *out << sStatus.message << std::endl;
+      }
     }
 
     // compute the final update of x (which has the correct BC) with vphi
