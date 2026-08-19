@@ -48,14 +48,12 @@ struct LayoutContiguous : public Layout {
   Layout base_layout() const { return *this; }
 };
 
-#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 namespace Impl {
 template <class Layout, unsigned Stride>
 struct LayoutFromArrayLayout<LayoutContiguous<Layout, Stride>> {
   using type = typename LayoutFromArrayLayout<Layout>::type;
 };
 }
-#endif
 
 // Is Layout == LayoutContiguous<L> for some L
 template <class Layout>
@@ -96,11 +94,7 @@ namespace Impl {
   //       std::conditional_t<view_type::traits::impl_is_customized, bool, void>>;
   // #endif
   template <>
-#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-  struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
-#else
   struct DynRankDimTraits<bool> {
-#endif
     using drdtraits = DynRankDimTraits<void>;
     enum : size_t { unspecified = drdtraits::unspecified };
 
@@ -157,14 +151,11 @@ namespace Impl {
         typename Traits::array_layout>
     createLayout(const Kokkos::Impl::ViewCtorProp<P...>& prop,
                 typename Traits::array_layout layout) {
-      //return drdtraits::template createLayout<Traits,P...>(prop, layout);
-#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
       if constexpr (Traits::impl_is_customized &&
                     !Kokkos::Impl::ViewCtorProp<P...>::has_accessor_arg) {
         auto rank              = computeRank(prop, layout) - 1;
         layout.dimension[rank] = unspecified;
       }
-#endif
       return createLayout(layout);
     }
 
@@ -175,14 +166,11 @@ namespace Impl {
         typename Traits::array_layout>
     createLayout(const Kokkos::Impl::ViewCtorProp<P...>& prop,
                 typename Traits::array_layout layout) {
-      //return Layout(drdtraits::template createLayout<Traits,P...>(prop, layout.base_layout()));
-#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
       if constexpr (Traits::impl_is_customized &&
                     !Kokkos::Impl::ViewCtorProp<P...>::has_accessor_arg) {
         auto rank              = computeRank(prop, layout) - 1;
         layout.dimension[rank] = unspecified;
       }
-#endif
       return createLayout(layout);
     }
 
@@ -210,36 +198,8 @@ namespace Impl {
 
 } // namespace Kokkos
 
-#include "View/Kokkos_ViewMapping.hpp"
-
 namespace Kokkos {
 namespace Impl {
-
-// Implement ViewOffset for LayoutContiguous
-template < class Dimension , class Layout , unsigned Stride >
-struct ViewOffset<Dimension, LayoutContiguous<Layout,Stride>, void>
-  : public ViewOffset<Dimension,Layout> {
-public:
-
-  // Would like to use inherited constructors, but gcc 4.7 doesn't support it
-  //using ViewOffset<Dimension,Layout>::ViewOffset;
-
-  typedef ViewOffset<Dimension,Layout> Base;
-
-  ViewOffset() = default ;
-  ViewOffset( const ViewOffset & ) = default ;
-  ViewOffset & operator = ( const ViewOffset & ) = default ;
-
-  // All constructors take one or two arguments
-
-  template <typename Arg1>
-  KOKKOS_INLINE_FUNCTION
-  constexpr ViewOffset(const Arg1& arg1) : Base(arg1) {}
-
-  template <typename Arg1, typename Arg2>
-  KOKKOS_INLINE_FUNCTION
-  constexpr ViewOffset(const Arg1& arg1, const Arg2& arg2) : Base(arg1,arg2) {}
-};
 
 template <typename Layout>
 struct LayoutScalarStride {
