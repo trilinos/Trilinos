@@ -532,31 +532,28 @@ void StepperExponential<Scalar>::computeRemf(
   // remf = J_xd = -M*J * (xr - x0)
   Thyra::assign(remf.ptr(), ST::zero());
   phiEvaluator_->applyJacobian(remf.ptr(), xd);
-  // TODO: could save one temp vector by extending the interface of apply Jacobian
 
   // Evaluate the rhs -M*F at (xr, tr)
   //   Mfr = -M*F(xr, tr) = F_impl(xDot = 0, xr, tr)
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mfr_const;
-  if (Mfr != Teuchos::null) {
-    // use the provided Mfr vector
-    Mfr_const = Mfr;
-  }
-  else {
+  // first, create a nonconst RCP for the provided Mfr vector
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mfr_nonconst = Mfr;
+  if (Mfr_nonconst == Teuchos::null) {
     auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
-    Teuchos::RCP<Thyra::VectorBase<Scalar>> Mfr = Thyra::createMember(x0->space());
+    // create nonconst memory for a new RHS
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> Mfr_temp = Thyra::createMember(x0->space());
     Teuchos::RCP<Thyra::VectorBase<Scalar>> xr_temp = xd; // reuse xd memory
     Thyra::copy(*xr, xr_temp.ptr());
-    // this will reset xDot to zero and re-set the BC in xr (that is why we need a non_const temporary)
+    // this will reset xDot to zero and re-set the BC in xr (that is why we need a nonconst temporary)
     // if we save Mfr in the previous iteration correctly, we can reuse it.
     Teuchos::RCP<Thyra::VectorBase<Scalar>> xDot = this->getStepperXDot();
-    this->evaluateExponentialODE(Mfr, xr_temp, xDot, tr, p);
-    Mfr_const = Mfr;
+    this->evaluateExponentialODE(Mfr_temp, xr_temp, xDot, tr, p);
+    Mfr_nonconst = Mfr_temp;
   }
 
   // update remf = (Mf - Mfr) + J_xd
   // Mf is rhs at the current time: -M*F(x0, t0)
   Thyra::linear_combination<Scalar>(Teuchos::tuple(Scalar(1.0), Scalar(-1.0)),
-                                    Teuchos::tuple(Mf.getConst().ptr(), Mfr.getConst().ptr()),
+                                    Teuchos::tuple(Mf.getConst().ptr(), Mfr_nonconst.getConst().ptr()),
                                     Scalar(1.0), remf.ptr());
 
   // add time derivative remainder term; only nonzero in nonautonomous case
