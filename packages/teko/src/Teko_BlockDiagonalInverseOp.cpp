@@ -38,6 +38,14 @@ void BlockDiagonalInverseOp::implicitApply(const BlockedMultiVector& src, Blocke
   implicitApply(Thyra::NOTRANS, src, dst, alpha, beta);
 }
 
+namespace {
+bool compatibleMultiVectors(const BlockedMultiVector& a, const BlockedMultiVector& b) {
+  if (!a || !b) return false;
+
+  return a->domain()->dim() == b->domain()->dim();
+}
+}  // namespace
+
 void BlockDiagonalInverseOp::implicitApply(const Thyra::EOpTransp M_trans,
                                            const BlockedMultiVector& src, BlockedMultiVector& dst,
                                            const double alpha, const double beta) const {
@@ -45,7 +53,10 @@ void BlockDiagonalInverseOp::implicitApply(const Thyra::EOpTransp M_trans,
 
   TEUCHOS_ASSERT(blocks == (int)invDiag_.size());
 
-  if (!allocated) {
+  bool needsAlloc = !allocated;
+  needsAlloc |= !compatibleMultiVectors(srcScrap_, src);
+  needsAlloc |= !compatibleMultiVectors(dstScrap_, dst);
+  if (needsAlloc) {
     srcScrap_ = deepcopy(src);
     dstScrap_ = deepcopy(dst);
     allocated = true;
