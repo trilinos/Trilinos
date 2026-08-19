@@ -221,7 +221,6 @@ void NonAutoSrcModel<Scalar>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   using Thyra::MultiVectorBase;

@@ -67,7 +67,6 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
     const int nTimeStepSizes = 4;
     double dt                = 2.0;
     double time              = 0.0;
-    int expected_order;
     for (int n = 0; n < nTimeStepSizes; n++) {
       // Read params from .xml file
       RCP<ParameterList> pList =
@@ -179,7 +178,7 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
 
     // compute difference between expected and computed
     auto gold = solutions[solutions.size()-1];
-    for (int i=0; i<solutions.size()-1; ++i) {
+    for (size_t i=0; i<solutions.size()-1; ++i) {
       auto calc = solutions[i];
       Thyra::Vp_StV(calc.ptr(), -1.0, *gold);
       TEST_COMPARE(calc->norm_2(), <=, 1e-8);
@@ -207,7 +206,6 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
     const int nTimeStepSizes = 7;
     double dt                = 0.2;
     double time              = 0.0;
-    // int expected_order;
     for (int n = 0; n < nTimeStepSizes; n++) {
       // Read params from .xml file
       RCP<ParameterList> pList = getParametersFromXmlFile("Tempus_EPI_Reaction.xml");

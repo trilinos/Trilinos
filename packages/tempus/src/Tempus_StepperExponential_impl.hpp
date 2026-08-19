@@ -422,7 +422,6 @@ StepperExponential<Scalar>::createInArgsExponentialODE(
     const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p)
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
   MEB::InArgs<Scalar> inArgs = appModel->createInArgs();
