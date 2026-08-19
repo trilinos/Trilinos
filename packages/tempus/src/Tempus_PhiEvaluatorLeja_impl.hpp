@@ -137,12 +137,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   auto lp_dd = getDividedDiffs(phi_order, cdt, lejaOrder);
   TEUCHOS_ASSERT(lp_dd.size() == lejaOrder);
 
-  //std::cout << "DD: " << std::endl;
-  //for (const auto& dd : lp_dd) {
-  //  std::cout << dd << ' ';
-  //}
-  //std::cout << std::endl;
-
   // Iteration vector vm_0
   Teuchos::RCP<Thyra::VectorBase<Scalar>> vm_k = Thyra::createMember(rangeSpace);
   // Iteration vector qm_0
@@ -152,7 +146,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
   // 0th term of the leja polynomial
   Scalar coeff = lp_dd[0];
-  //std::cout << "c[0]: " << coeff << std::endl;
 
   Thyra::V_V(vm_k.ptr(), *v);
   Thyra::V_StV(v, coeff, *vm_k);
@@ -170,10 +163,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // leja polynomial term index lp_k starts at 0
   for (int lp_k = 0; k < lejaOrder && lp_k < lejaPointsBase_.size(); k++, lp_k++)
   {
-    // print the update vector vm_k
-    //v->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
-    //std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
-
     // compute transformed unscaled Leja point
     const LejaPoint lp = transformLejaPoint(lejaPointsBase_[lp_k], transform_params);
 
@@ -184,8 +173,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
     if (lp.lpt == LpType::LPREAL) {
       // extract divided diff
       coeff = lp_dd[k];
-      // std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " real " << shift << " " << scale << std::endl;
-
       {
 #ifdef TEMPUS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor linoptimer(*timerLinOp_);
@@ -206,7 +193,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
     else if (lp.lpt == LpType::LPCONJ) {
       // extract divided diff
       coeff = lp_dd[k];
-      //std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " " << shift << " " << scale << std::endl;
 
       // copy vm_k to qm_k vector to save it
       Thyra::V_V(qm_k.ptr(), *vm_k);
@@ -227,16 +213,12 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
       // increment polynomial degree, but keep Leja point and handle conjugate pair
       k++;
-      // std::cout << "qm" << std::endl;
       // vm_k->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
 
       if (k < lp_dd.size())
       {
         // conjugate update
         coeff = lp_dd[k];
-
-        //std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
-        //std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
 
         {
 #ifdef TEMPUS_TEUCHOS_TIME_MONITOR
@@ -286,8 +268,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
      << " iteration vector=" << norm_vm_k
      << " achieved in it. " << k << ".";
   sStatus.message = ss.str();
-
-  // std::cout << sStatus.message << std::endl;
 
   return sStatus;
 }
@@ -410,8 +390,16 @@ void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
   // scale ellipse by saftey factor
   leja_a_ *= leja_sf_;
   leja_c_ *= leja_sf_;
-  std::cout << "Adapted Leja ellipse parameters. a=" <<
-    leja_a_ << " b=" << leja_b_ << " c=" << leja_c_ << std::endl;
+
+  Teuchos::RCP<Teuchos::FancyOStream> out =
+          Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  out->setOutputToRootOnly(0);
+  Teuchos::OSTab ostab(out, 1, "adaptEvaluator()");
+  *out << "\n Adapted Leja ellipse parameters. a="
+       << leja_a_ << " b="
+       << leja_b_ << " c="
+       << leja_c_
+       << std::endl;
 }
 
 template <class Scalar>
@@ -458,10 +446,6 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 
   // TODO: has to be set to true, only matrix exponential is implemented
   this->useAtildeForSingleRHS_ = true;
-
-  //std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
-  //std::cout << "Parameter List: " << *pl << std::endl;
-  //std::cout << "Expansion Order is " << getExpansionOrder() << std::endl;
 }
 
 template <class Scalar>
@@ -644,14 +628,11 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsPhi(
   dd[0] = cplx(1.0, 0.0);
   // avoid overflow but tolerate underflow
   double running_fraction = 1.0;
-  // std::cout << "initial dd:  ";
   for (int kk = 1; kk <= cap_n; ++kk)
   {
     running_fraction *= scale / (kk * s_dbl);
     dd[kk] = cplx(running_fraction, 0.0);
-    // std::cout << dd[kk] << ", ";
   }
-  // std::cout << std::endl;
 
   // H-factorization sweep:
   //  In contrast to Zivcovich, the z points are scaled.
@@ -703,19 +684,19 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsPhi(
   // use only the real part and convert to Scalar
   Teuchos::ArrayRCP<Scalar> dd_phi = Teuchos::arcp<Scalar>(n_leja);
   const cplx exp_mu = std::exp(mu);
-  // std::cout << "final dd:  ";
   for (int i = 0; i < n_leja; ++i)
   {
     const cplx dd_i = exp_mu * dd_row(0, phi_order + i);
     dd_phi[i] = Scalar(dd_i.real());
-    // std::cout << dd_i << ", ";
   }
-  // std::cout << std::endl;
 
   return dd_phi;
 #else
-  std::cout << "WARNING: getDividedDiffsPhi requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
-  std::cout << "WARNING: falling back to getDividedDiffsTSR." << std::endl;
+  Teuchos::RCP<Teuchos::FancyOStream> out =
+          Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  out->setOutputToRootOnly(0);
+  *out << "Warning -- getDividedDiffsPhi requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
+  *out << "Warning -- falling back to getDividedDiffsTSR." << std::endl;
   return getDividedDiffsTSR(phi_order, cdt, lejaOrder);
 #endif
 }
@@ -760,15 +741,6 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int 
     }
     lp_idx += 1;
   }
-
-  //std::cout << "LP: " << std::endl;
-  //for (const auto& lp : lp_) {
-  //  std::cout << lp.lp << ' ';
-  //}
-  //std::cout << std::endl;
-
-  //std::cout << "Hm: " << std::endl;
-  //Hm.print(std::cout);
 
   // compute diagonal mean
   cplx diag_sum = cplx(0.0, 0.0);
@@ -839,8 +811,11 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int 
   }
   return dd_phi;
 #else
-  std::cout << "WARNING: getDividedDiffsTS requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
-  std::cout << "WARNING: falling back to getDividedDiffsTSR." << std::endl;
+  Teuchos::RCP<Teuchos::FancyOStream> out =
+          Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  out->setOutputToRootOnly(0);
+  *out << "Warning -- getDividedDiffsTS requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
+  *out << "Warning -- falling back to getDividedDiffsTSR." << std::endl;
   return getDividedDiffsTSR(phi_order, cdt, lejaOrder);
 #endif
 }
@@ -913,12 +888,6 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int
 
   // Ts = I/(p!) + Hm^1/(1+p)! + Hm^2/(2+p)! ...
   int ts_order = 17;
-
-  //std::cout << "ts_order: " << ts_order << std::endl;
-  //std::cout << "s_scale: " << s_scale << std::endl;
-  //std::cout << "mu: " << mu << std::endl;
-  //std::cout << "n_sq: " << n_sq << std::endl;
-  //std::cout << "h_scale: " << h_scale << std::endl;
 
   Teuchos::SerialDenseMatrix<int, Scalar> Mtmp(lejaOrder, lejaOrder);
   Mtmp = 0.;
