@@ -351,10 +351,6 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   // Build initial vector and compute matrix exponential in place
   auto v = this->phiLinSolv_->buildv(ATilde->domain(), rhs_B[0]);
 
-  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //Atilde->describe(*out, Teuchos::VERB_EXTREME);
-  //v->describe(*out, Teuchos::VERB_EXTREME);
-
   Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, ATilde, v.ptr(), cdt);
 
   // Get the first block of the multi-vector calculated from 2x2 multi-matrix
@@ -496,9 +492,6 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
     // if the mass matrix is lumped, keep the memory allocated for fullMassMatrix around for the Jacobian
     jacobianMatrix_ = fullMassMatrix;
   }
-  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //massMatrix_->describe(*out, Teuchos::VERB_EXTREME);
-  //inverseMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
 }
 
 template <class Scalar>
@@ -827,9 +820,6 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
   const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bJ = Thyra::scale<Scalar>(beta, jacobianMatrix_);
   const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> MpJ = Thyra::add(aM, bJ);
 
-  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  // MpJ->describe(*out, Teuchos::VERB_EXTREME);
-
   // TODO: const-cast why?
   const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel_->get_W_factory();
   const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
@@ -841,7 +831,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
   assign(x.ptr(), ST::zero());
   // Create solve criteria
   Thyra::SolveCriteria<Scalar> solveCriteria;
-  solveCriteria.requestedTol = 1e-6; //TODO: p.get("Tolerance", 1.0e-6);
+  solveCriteria.requestedTol = 1e-6;
 
   solveCriteria.solveMeasureType =
     Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
@@ -885,7 +875,6 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
 
   // Fallback to dense eigen solve for small systems.
   if (dim <= denseFallbackDim) {
-    // std::cout << "=== Fallback to Dense Eigen Solve ===" << std::endl;
     // Convert LinearOpBase to SerialDenseMatrix and compute eigenvalues directly.
     auto denseMinvJ = operatorToDense(MinvJ);
     Teuchos::Array<Scalar> eigs_re(dim);
@@ -894,7 +883,6 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
     for (int i=0; i < eigs_re.size(); ++i) {
       auto evr = eigs_re[i];
       auto evi = eigs_im[i];
-      // std::cout << "ev re: " << evr << " im: " << evi << std::endl;
       a_val = std::min(a_val, evr);
       b_val = std::max(b_val, evr);
       c_val = std::max(c_val, std::abs(evi));
@@ -921,7 +909,6 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
       evecsMinvJ_->range()->isCompatible(*jacobianMatrix_->domain());
 
   if (canWarmstart) {
-    // std::cout << "=== Warmstarting Krylov-Schur ===" << std::endl;
     initVec = evecsMinvJ_;
   } else {
     initVec = Thyra::createMembers(jacobianMatrix_->domain(), blockSize);
@@ -963,9 +950,7 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   evals = solverMgr.getRitzValues();
 
   // Compute spectrum bounds
-  // std::cout << "=== Krylov-Schur Ritz ===" << std::endl;
   for (const auto& ev : evals) {
-    // std::cout << "ev re: " << ev.realpart << " im: " << ev.imagpart << std::endl;
     a_val = std::min(a_val, ev.realpart);
     b_val = std::max(b_val, ev.realpart);
     c_val = std::max(c_val, std::abs(ev.imagpart));
@@ -986,7 +971,7 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       "ANASAZI is unavailable and Block-Krylov-Schur Leja Ellipse update was requested. " <<
-      "Reconfigure with Tempus_ENALBE_Anasazi=ON.\n");
+      "Reconfigure with Tempus_ENABLE_Anasazi=ON.\n");
 #endif
 }
 
