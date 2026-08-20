@@ -26,7 +26,6 @@
 
 #ifdef HAVE_INTREPID2_SACADO
 #include "Kokkos_View_Fad_Fwd.hpp"
-#include "Kokkos_LayoutNatural.hpp"
 #include "Kokkos_ViewFactory.hpp"
 #endif
 
@@ -893,20 +892,10 @@ namespace Intrepid2 {
   /**
    \brief Define layout that will allow us to wrap Sacado Scalar objects in Views without copying
    */
-#if defined(HAVE_INTREPID2_SACADO) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
-  template <typename ValueType>
-  struct NaturalLayoutForType {
-    using layout  =
-    typename std::conditional<(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value),
-      Kokkos::LayoutLeft, // for POD types, use LayoutLeft
-      Kokkos::LayoutNatural<Kokkos::LayoutLeft> >::type; // For FAD types, use LayoutNatural
-  };
-#else
   template <typename ValueType>
   struct NaturalLayoutForType {
     using layout  = Kokkos::LayoutLeft;
   };
-#endif
   
   // define vector sizes for hierarchical parallelism
   const int VECTOR_SIZE = 1;
