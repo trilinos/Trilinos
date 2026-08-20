@@ -82,7 +82,8 @@ typedef int (*gees_nullfptr_t)(double*,double*);
 namespace Teuchos
 {
   // BEGIN INT, HALF SPECIALIZATION DECLARATION //
-#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+#if defined(HAVE_TEUCHOS_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
   void LAPACK<int, Kokkos::Experimental::half_t>::PTTRF(const int& n, Kokkos::Experimental::half_t* d, Kokkos::Experimental::half_t* e, int* info) const
   { TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "No HALF implementation of LAPACK"); }
 

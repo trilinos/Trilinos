@@ -1298,7 +1298,8 @@ namespace Teuchos
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
   // BEGIN INT, HALF SPECIALIZATION DECLARATION //
-#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+#if defined(HAVE_TEUCHOS_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
   template<>
   class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, Kokkos::Experimental::half_t>
   {

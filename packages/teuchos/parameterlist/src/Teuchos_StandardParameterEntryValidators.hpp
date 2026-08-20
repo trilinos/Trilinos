@@ -1347,7 +1347,7 @@ public:
   static inline unsigned short defaultPrecision() { return 100; }
 };
 
-#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+#if defined(HAVE_TEUCHOS_HALF) && defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template<>
 class EnhancedNumberTraits<Kokkos::Experimental::half_t>{
 public:

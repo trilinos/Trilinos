@@ -1053,8 +1053,8 @@ GLOBAL_SET(HAVE_TPETRA_LONG_DOUBLE ${Tpetra_INST_LONG_DOUBLE})
 
 GLOBAL_SET(Tpetra_INST_HALF_DEFAULT OFF)
 
-# Set up the Tpetra_INST_LONG_DOUBLE option: whether to instantiate / test
-# Scalar = float.
+# Set up the Tpetra_INST_HALF option: whether to instantiate / test
+# Scalar = half_t.
 # Do we need half-is-float check?
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_HALF
@@ -1066,12 +1066,28 @@ ASSERT_DEFINED(Tpetra_INST_HALF)
 GLOBAL_SET(HAVE_TPETRA_INST_KOKKOS_EXPERIMENTAL_HALF_T ${Tpetra_INST_HALF})
 GLOBAL_SET(HAVE_TPETRA_KOKKOS_EXPERIMENTAL_HALF_T ${Tpetra_INST_HALF})
 
-# Make sure that it's OK to instantiate/test over Scalar = float.
-# Tpetra requires BLAS support for this case.  It presumes that a BLAS
-# could exist without float (S) support.  Furthermore, it presumes
-# that Teuchos supports float (this is mainly necessary for correct
+# Make sure that it's OK to instantiate/test over Scalar = half_t.
+# Tpetra requires BLAS support for this case?  It presumes that a BLAS
+# could exist without half_t support?  Furthermore, it presumes
+# that Teuchos supports half_t (this is mainly necessary for correct
 # linking when ETI is ON, with downstream packages like Thyra, which
 # get used in surprising places, e.g., in Ifpack2).
+IF(Tpetra_INST_HALF)
+
+  IF(NOT DEFINED Teuchos_ENABLE_HALF)
+    MESSAGE(
+      FATAL_ERROR
+        "Tpetra: Tpetra_INST_HALF is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = half), but Teuchos_ENABLE_HALF is not defined.  Tpetra needs Teuchos to support half.  Please set Teuchos_ENABLE_HALF:BOOL=ON, reconfigure, and rebuild."
+    )
+  ELSEIF(NOT Teuchos_ENABLE_HALF)
+    MESSAGE(
+      FATAL_ERROR
+        "Tpetra: Tpetra_INST_HALF is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = half), but Teuchos_ENABLE_HALF is OFF.  Tpetra needs Teuchos to support half.  Please set Teuchos_ENABLE_HALF:BOOL=ON, reconfigure, and rebuild."
+    )
+  ENDIF()
+
+ENDIF()
+
 IF(Tpetra_INST_FLOAT)
 
   IF(NOT DEFINED Teuchos_ENABLE_FLOAT)

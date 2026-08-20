@@ -19,6 +19,15 @@
 
 #include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
+#if defined(HAVE_TEUCHOS_INST_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+#  define TEUCHOS_MACRO_EXPAND_HALF(INSTANT_MACRO)\
+    INSTANT_MACRO(Kokkos::Experimental::half_t)
+#else
+#  define TEUCHOS_MACRO_EXPAND_HALF(INSTANT_MACRO)
+#endif
+
+
 #ifdef HAVE_TEUCHOS_INST_FLOAT
 #  define TEUCHOS_MACRO_EXPAND_FLOAT(INSTANT_MACRO)\
     INSTANT_MACRO(float)

@@ -49,11 +49,13 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
     COMM serial mpi
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    BlockTriDiagonalSolver_strat
-    SOURCES BlockTriDi_strat.cpp
-    COMM serial mpi
-    )
+  IF (Teuchos_INST_HALF AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
+    TRIBITS_ADD_EXECUTABLE(
+      BlockTriDiagonalSolver_strat
+      SOURCES BlockTriDi_strat.cpp
+      COMM serial mpi
+      )
+  ENDIF()
 
   TRIBITS_ADD_TEST(
     test_tpetra_belos

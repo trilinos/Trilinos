@@ -231,6 +231,45 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_INST_COMPLEX_DOUBLE_DEFAULT}
   )
 
+IF (Trilinos_ENABLE_HALF)
+  SET(${PACKAGE_NAME}_ENABLE_HALF_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_HALF_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_HALF
+  HAVE_TEUCHOS_HALF
+  "Enable Teuchos features for half data type."
+  ${${PACKAGE_NAME}_ENABLE_HALF_DEFAULT}
+  )
+IF (${PACKAGE_NAME}_ENABLE_HALF)
+  SET(${PACKAGE_NAME}_INST_HALF_DEFAULT  TRUE)
+ELSE()
+  SET(${PACKAGE_NAME}_INST_HALF_DEFAULT  FALSE)
+ENDIF()
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_HALF
+  HAVE_TEUCHOS_INST_HALF
+  "Do explicit instantaitions for half scalar type."
+  ${${PACKAGE_NAME}_INST_HALF_DEFAULT}
+  )
+
+IF(${PACKAGE_NAME}_INST_HALF)
+
+  IF(NOT DEFINED ${PROJECT_NAME}_ENABLE_Kokkos)
+    MESSAGE(
+      FATAL_ERROR
+        "Teuchos: Teuchos_INST_HALF is ON (meaning that you want to instantiate and/or test Teuchos with Scalar = half), but Teuchos_ENABLE_Kokkos is not defined.  Teuchos needs Kokkos to support half.  Please enable Kokkos."
+    )
+  ELSEIF(NOT ${PROJECT_NAME}_ENABLE_Kokkos)
+    MESSAGE(
+      FATAL_ERROR
+        "Teuchos: Teuchos_INST_HALF is ON (meaning that you want to instantiate and/or test Teuchos with Scalar = half), but Teuchos_ENABLE_Kokkos is OFF.  Teuchos needs Kokkos to support half.  Please enable Kokkos."
+    )
+  ENDIF()
+
+ENDIF()
+
 # Check whether the C++ compiler can compile __attribute__((constructor)).
 INCLUDE(CheckCXXAttributeConstructorCompiles)
 CHECK_CXX_ATTRIBUTE_CONSTRUCTOR_COMPILES(HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR)

@@ -35,7 +35,8 @@
 // only used once in the entire mostly empty file.
 //
 
-#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+#if defined(HAVE_TEUCHOS_INST_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 #  define TEUCHOS_MACRO_TEMPLATE_INSTANT_HALF(INSTANT_MACRO)\
     INSTANT_MACRO(Kokkos::Experimental::half_t)
 #  define TEUCHOS_CLASS_TEMPLATE_INSTANT_HALF(CLASSNAME)\

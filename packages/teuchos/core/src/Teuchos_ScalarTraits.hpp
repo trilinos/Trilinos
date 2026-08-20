@@ -546,7 +546,8 @@ extern TEUCHOSCORE_LIB_DLL_EXPORT const float flt_nan;
 #endif
 
 
-#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+#if defined(HAVE_TEUCHOS_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 template<>
 struct ScalarTraits<Kokkos::Experimental::half_t>
 {

@@ -1644,7 +1644,8 @@ public:
   }
 };
 
-#if defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+#if defined(HAVE_TEUCHOS_HALF) && \
+    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
 //! Convert from \c Kokkos::Experimental::half_t to \c short.
 template<>
 class ValueTypeConversionTraits<short, Kokkos::Experimental::half_t> {
