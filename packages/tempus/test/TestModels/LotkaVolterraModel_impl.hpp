@@ -34,19 +34,19 @@ LotkaVolterraModel<Scalar>::LotkaVolterraModel(
 {
   isInitialized_ = false;
   dim_           = 2;
-  Np_            = 0;   // No parameter vectors (no sensitivity support)
-  Ng_            = 0;   // No observation functions
+  Np_            = 0;  // No parameter vectors (no sensitivity support)
+  Ng_            = 0;  // No observation functions
   haveIC_        = true;
 
   // Default Lotka-Volterra parameters
-  alpha_  = Scalar(1.5);
-  beta_   = Scalar(1.0);
-  delta_  = Scalar(1.0);
-  gamma_  = Scalar(3.0);
-  k_      = Scalar(0.0);   // no forcing by default
-  x0_ic_  = Scalar(10.0);
-  y0_ic_  = Scalar(5.0);
-  t0_ic_  = Scalar(0.0);
+  alpha_ = Scalar(1.5);
+  beta_  = Scalar(1.0);
+  delta_ = Scalar(1.0);
+  gamma_ = Scalar(3.0);
+  k_     = Scalar(0.0);  // no forcing by default
+  x0_ic_ = Scalar(10.0);
+  y0_ic_ = Scalar(5.0);
+  t0_ic_ = Scalar(0.0);
 
   // Create x_space and f_space
   x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
@@ -80,7 +80,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar>
 LotkaVolterraModel<Scalar>::getNominalValues() const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized_, std::logic_error,
-    "Error, setupInOutArgs_ must be called first!\n");
+                             "Error, setupInOutArgs_ must be called first!\n");
   return nominalValues_;
 }
 
@@ -185,25 +185,25 @@ LotkaVolterraModel<Scalar>::createOutArgsImpl() const
 // ============================================================
 template <class Scalar>
 void LotkaVolterraModel<Scalar>::evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
   using Teuchos::RCP;
   using Thyra::VectorBase;
 
   TEUCHOS_TEST_FOR_EXCEPTION(!isInitialized_, std::logic_error,
-    "Error, setupInOutArgs_ must be called first!\n");
+                             "Error, setupInOutArgs_ must be called first!\n");
 
   // Extract state and time
   const RCP<const VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
-  Thyra::ConstDetachedVectorView<Scalar> x(* x_in);
+  Thyra::ConstDetachedVectorView<Scalar> x(*x_in);
 
   const Scalar x0 = x[0];
   const Scalar x1 = x[1];
   const Scalar t  = inArgs.get_t();
 
-  const RCP<VectorBase<Scalar> >          f_out  = outArgs.get_f();
-  const RCP<Thyra::LinearOpBase<Scalar> > W_out  = outArgs.get_W_op();
+  const RCP<VectorBase<Scalar> > f_out          = outArgs.get_f();
+  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
 
   if (inArgs.get_x_dot().is_null()) {
     // -------------------------------------------------------
@@ -212,8 +212,8 @@ void LotkaVolterraModel<Scalar>::evalModelImpl(
     if (!is_null(f_out)) {
       using std::sin;
       Thyra::DetachedVectorView<Scalar> f(*f_out);
-      f[0] = alpha_ * x0 - beta_  * x0 * x1 - k_ * sin(t);  // prey
-      f[1] = delta_ * x0 * x1 - gamma_ * x1;                 // predator
+      f[0] = alpha_ * x0 - beta_ * x0 * x1 - k_ * sin(t);  // prey
+      f[1] = delta_ * x0 * x1 - gamma_ * x1;               // predator
     }
 
     if (!is_null(W_out)) {
@@ -222,10 +222,10 @@ void LotkaVolterraModel<Scalar>::evalModelImpl(
       RCP<Thyra::MultiVectorBase<Scalar> > matrix =
           Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out, true);
       Thyra::DetachedMultiVectorView<Scalar> J(*matrix);
-      J(0, 0) =  beta_c * (alpha_  - beta_  * x1);   // dF0/dx0
-      J(0, 1) =  beta_c * (-beta_  * x0);             // dF0/dx1
-      J(1, 0) =  beta_c * ( delta_ * x1);             // dF1/dx0
-      J(1, 1) =  beta_c * ( delta_ * x0 - gamma_);   // dF1/dx1
+      J(0, 0) = beta_c * (alpha_ - beta_ * x1);   // dF0/dx0
+      J(0, 1) = beta_c * (-beta_ * x0);           // dF0/dx1
+      J(1, 0) = beta_c * (delta_ * x1);           // dF1/dx0
+      J(1, 1) = beta_c * (delta_ * x0 - gamma_);  // dF1/dx1
     }
   }
   else {
@@ -244,7 +244,7 @@ void LotkaVolterraModel<Scalar>::evalModelImpl(
     if (!is_null(f_out)) {
       using std::sin;
       Thyra::DetachedVectorView<Scalar> F(*f_out);
-      F[0] = xdot[0] - alpha_ * x0 + beta_  * x0 * x1 + k_ * sin(t);
+      F[0] = xdot[0] - alpha_ * x0 + beta_ * x0 * x1 + k_ * sin(t);
       F[1] = xdot[1] - delta_ * x0 * x1 + gamma_ * x1;
     }
 
@@ -261,10 +261,10 @@ void LotkaVolterraModel<Scalar>::evalModelImpl(
       RCP<Thyra::MultiVectorBase<Scalar> > matrix =
           Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out, true);
       Thyra::DetachedMultiVectorView<Scalar> J(*matrix);
-      J(0, 0) = alpha_c + beta_c * (-alpha_  + beta_  * x1);
-      J(0, 1) =           beta_c * ( beta_   * x0);
-      J(1, 0) =           beta_c * (-delta_  * x1);
-      J(1, 1) = alpha_c + beta_c * (-delta_  * x0 + gamma_);
+      J(0, 0) = alpha_c + beta_c * (-alpha_ + beta_ * x1);
+      J(0, 1) = beta_c * (beta_ * x0);
+      J(1, 0) = beta_c * (-delta_ * x1);
+      J(1, 1) = alpha_c + beta_c * (-delta_ * x0 + gamma_);
     }
   }
 }
@@ -343,7 +343,7 @@ void LotkaVolterraModel<Scalar>::setupInOutArgs_() const
     const RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     {
       Thyra::DetachedVectorView<Scalar> xd(*x_dot_ic);
-      xd[0] = alpha_ * x0_ic_ - beta_  * x0_ic_ * y0_ic_;
+      xd[0] = alpha_ * x0_ic_ - beta_ * x0_ic_ * y0_ic_;
       xd[1] = delta_ * x0_ic_ * y0_ic_ - gamma_ * y0_ic_;
     }
     nominalValues_.set_x_dot(x_dot_ic);
@@ -373,14 +373,14 @@ void LotkaVolterraModel<Scalar>::setParameterList(
   if (haveIC != haveIC_) isInitialized_ = false;
   haveIC_ = haveIC;
 
-  alpha_  = get<Scalar>(*pl, "Coeff alpha");
-  beta_   = get<Scalar>(*pl, "Coeff beta");
-  delta_  = get<Scalar>(*pl, "Coeff delta");
-  gamma_  = get<Scalar>(*pl, "Coeff gamma");
-  k_      = get<Scalar>(*pl, "Coeff k");
-  x0_ic_  = get<Scalar>(*pl, "IC x0");
-  y0_ic_  = get<Scalar>(*pl, "IC y0");
-  t0_ic_  = get<Scalar>(*pl, "IC t0");
+  alpha_ = get<Scalar>(*pl, "Coeff alpha");
+  beta_  = get<Scalar>(*pl, "Coeff beta");
+  delta_ = get<Scalar>(*pl, "Coeff delta");
+  gamma_ = get<Scalar>(*pl, "Coeff gamma");
+  k_     = get<Scalar>(*pl, "Coeff k");
+  x0_ic_ = get<Scalar>(*pl, "IC x0");
+  y0_ic_ = get<Scalar>(*pl, "IC y0");
+  t0_ic_ = get<Scalar>(*pl, "IC t0");
 
   setupInOutArgs_();
 }
@@ -396,14 +396,14 @@ LotkaVolterraModel<Scalar>::getValidParameters() const
   if (is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     pl->set("Provide nominal values", true);
-    Teuchos::setDoubleParameter("Coeff alpha", 1.5, "Prey growth rate",              &*pl);
-    Teuchos::setDoubleParameter("Coeff beta",  1.0, "Predation rate",                &*pl);
-    Teuchos::setDoubleParameter("Coeff delta", 1.0, "Predator growth rate",          &*pl);
-    Teuchos::setDoubleParameter("Coeff gamma", 3.0, "Predator death rate",           &*pl);
-    Teuchos::setDoubleParameter("Coeff k",     0.0, "Prey forcing amplitude k*sin(t)",&*pl);
-    Teuchos::setDoubleParameter("IC x0",      10.0, "Initial prey population",       &*pl);
-    Teuchos::setDoubleParameter("IC y0",       5.0, "Initial pred population",       &*pl);
-    Teuchos::setDoubleParameter("IC t0",       0.0, "Initial time t0",               &*pl);
+    Teuchos::setDoubleParameter("Coeff alpha", 1.5, "Prey growth rate", &*pl);
+    Teuchos::setDoubleParameter("Coeff beta", 1.0, "Predation rate", &*pl);
+    Teuchos::setDoubleParameter("Coeff delta", 1.0, "Predator growth rate", &*pl);
+    Teuchos::setDoubleParameter("Coeff gamma", 3.0, "Predator death rate", &*pl);
+    Teuchos::setDoubleParameter("Coeff k", 0.0, "Prey forcing amplitude k*sin(t)", &*pl);
+    Teuchos::setDoubleParameter("IC x0", 10.0, "Initial prey population", &*pl);
+    Teuchos::setDoubleParameter("IC y0", 5.0, "Initial pred population", &*pl);
+    Teuchos::setDoubleParameter("IC t0", 0.0, "Initial time t0", &*pl);
     validPL = pl;
   }
   return validPL;

@@ -38,9 +38,9 @@ ReactionModel<Scalar>::ReactionModel(Teuchos::RCP<Teuchos::ParameterList> pList_
   acceptModelParams_ = false;
   useDfDpAsTangent_  = false;
   haveIC_            = true;
-  lambda0_         = 1.0;
-  lambda1_         = 0.5;
-  lambda2_         = 0.25;
+  lambda0_           = 1.0;
+  lambda1_           = 0.5;
+  lambda2_           = 0.25;
   x0_ic_             = 1.0;
   x1_ic_             = 0.0;
   x2_ic_             = 0.0;
@@ -66,30 +66,25 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> ReactionModel<Scalar>::getExactSolutio
   Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_x = createMember(x_space_);
   {  // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
-    Scalar sum_k = Scalar(0.0);
-    Scalar prod_l = Scalar(1.0);
+    Scalar sum_k     = Scalar(0.0);
+    Scalar prod_l    = Scalar(1.0);
     Scalar lmbd_prod = Scalar(1.0);
 
-    for (int num = 1; num < dim_ + 1; ++num)
-    {
-        lmbd_prod = 1.0;
-        for (int i = 0; i < num - 1; i++)
-        {
-            lmbd_prod *= -Lmat_[i][i];
+    for (int num = 1; num < dim_ + 1; ++num) {
+      lmbd_prod = 1.0;
+      for (int i = 0; i < num - 1; i++) {
+        lmbd_prod *= -Lmat_[i][i];
+      }
+      sum_k = 0;
+      for (int i = 0; i < num; i++) {
+        prod_l = 1.0;
+        for (int j = 0; j < num; j++) {
+          if (j != i)
+            prod_l *= (-Lmat_[j][j] + Lmat_[i][i]);
         }
-        sum_k = 0;
-        for (int i = 0; i < num; i++)
-        {
-            prod_l = 1.0;
-            for (int j = 0; j < num; j++)
-            {
-                if (j != i)
-                    prod_l *= (-Lmat_[j][j]
-                                + Lmat_[i][i]);
-            }
-            sum_k += exp(+Lmat_[i][i] * t) / prod_l;
-        }
-            exact_x_view[num - 1] = x0_ic_ * lmbd_prod * sum_k;
+        sum_k += exp(+Lmat_[i][i] * t) / prod_l;
+      }
+      exact_x_view[num - 1] = x0_ic_ * lmbd_prod * sum_k;
     }
   }
   inArgs.set_x(exact_x);
@@ -97,11 +92,9 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> ReactionModel<Scalar>::getExactSolutio
   {  // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
     Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
-    for (int i = 0; i < dim_; ++i) 
-    {
+    for (int i = 0; i < dim_; ++i) {
       Scalar sum = Scalar(0.0);
-      for (int j = 0; j < dim_; ++j) 
-      {
+      for (int j = 0; j < dim_; ++j) {
         sum += Lmat_[i][j] * exact_x_view[j];
       }
       exact_x_dot_view[i] = sum;
@@ -255,15 +248,15 @@ void ReactionModel<Scalar>::evalModelImpl(
       }
     }
     if (!is_null(W_out)) {
-  RCP<Thyra::MultiVectorBase<Scalar> > matrix =
-      Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out, true);
-  Thyra::DetachedMultiVectorView<Scalar> matrix_view(*matrix);
-for (int i = 0; i < 3; ++i) {
+      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+          Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out, true);
+      Thyra::DetachedMultiVectorView<Scalar> matrix_view(*matrix);
+      for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j)
-          matrix_view(i,j) = -beta * Lmat_[i][j];
-        matrix_view(i,i) += alpha;
+          matrix_view(i, j) = -beta * Lmat_[i][j];
+        matrix_view(i, i) += alpha;
       }
-}
+    }
   }
 }
 
@@ -363,9 +356,9 @@ void ReactionModel<Scalar>::setParameterList(
   acceptModelParams_ = acceptModelParams;
   haveIC_            = haveIC;
   useDfDpAsTangent_  = useDfDpAsTangent;
-  lambda0_                 = get<Scalar>(*pl, "Coeff L1");
-  lambda1_                 = get<Scalar>(*pl, "Coeff L2");
-  lambda2_                 = get<Scalar>(*pl, "Coeff L3");
+  lambda0_           = get<Scalar>(*pl, "Coeff L1");
+  lambda1_           = get<Scalar>(*pl, "Coeff L2");
+  lambda2_           = get<Scalar>(*pl, "Coeff L3");
   x0_ic_             = get<Scalar>(*pl, "IC x0");
   x1_ic_             = get<Scalar>(*pl, "IC x1");
   x2_ic_             = get<Scalar>(*pl, "IC x2");
@@ -403,9 +396,15 @@ ReactionModel<Scalar>::getValidParameters() const
 template <class Scalar>
 void ReactionModel<Scalar>::buildDecayMatrix_()
 {
-  Lmat_[0][0] = -lambda0_;  Lmat_[0][1] = 0.0;      Lmat_[0][2] = 0.0;
-  Lmat_[1][0] =  lambda0_;  Lmat_[1][1] = -lambda1_; Lmat_[1][2] = 0.0;
-  Lmat_[2][0] = 0.0;       Lmat_[2][1] =  lambda1_; Lmat_[2][2] = -lambda2_;
+  Lmat_[0][0] = -lambda0_;
+  Lmat_[0][1] = 0.0;
+  Lmat_[0][2] = 0.0;
+  Lmat_[1][0] = lambda0_;
+  Lmat_[1][1] = -lambda1_;
+  Lmat_[1][2] = 0.0;
+  Lmat_[2][0] = 0.0;
+  Lmat_[2][1] = lambda1_;
+  Lmat_[2][2] = -lambda2_;
 }
 
 }  // namespace Tempus_Test

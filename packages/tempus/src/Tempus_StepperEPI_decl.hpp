@@ -17,8 +17,6 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 
-
-
 namespace Tempus {
 /**
  * @brief Base for exponential propagation iterative (EPI) multistep steppers.
@@ -80,12 +78,9 @@ namespace Tempus {
  * @tparam Scalar Scalar type used by the Thyra model, solution history, and
  *   phi-function evaluator.
  */
-template<class Scalar>
-class StepperEPI :
-    virtual public Tempus::StepperExponential<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperEPI : virtual public Tempus::StepperExponential<Scalar> {
+ public:
   /**
    * @brief Construct an EPI stepper with order two, a default PhiEvaluator, and
    * a default no-op application action.
@@ -107,99 +102,99 @@ public:
    *   action.
    */
   StepperEPI(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperEPIAppAction<Scalar> >& stepperEPIAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+      const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
+      bool useFSAL,
+      std::string ICConsistency,
+      bool ICConsistencyCheck,
+      const Teuchos::RCP<StepperEPIAppAction<Scalar>>& stepperEPIAppAction);
 
   /// \name Basic stepper methods
   //@{
-    /**
-     * @brief Set callbacks executed at EPI step locations.
-     *
-     * A null `Teuchos::RCP<StepperEPIAppAction<Scalar>>` installs the default
-     * no-op action and invalidates stepper setup.
-     *
-     * @param appAction Callback RCP, or null for the default action.
-     */
-    virtual void setAppAction(
-      Teuchos::RCP<StepperEPIAppAction<Scalar> > appAction);
+  /**
+   * @brief Set callbacks executed at EPI step locations.
+   *
+   * A null `Teuchos::RCP<StepperEPIAppAction<Scalar>>` installs the default
+   * no-op action and invalidates stepper setup.
+   *
+   * @param appAction Callback RCP, or null for the default action.
+   */
+  virtual void setAppAction(
+      Teuchos::RCP<StepperEPIAppAction<Scalar>> appAction);
 
-    /** @brief Return the configured EPI application-action RCP. */
-    virtual Teuchos::RCP<StepperEPIAppAction<Scalar> > getAppAction() const
-    { return stepperEPIAppAction_; }
+  /** @brief Return the configured EPI application-action RCP. */
+  virtual Teuchos::RCP<StepperEPIAppAction<Scalar>> getAppAction() const
+  {
+    return stepperEPIAppAction_;
+  }
 
-    /**
-     * @brief Set the `Scalar` temporal order used to select EPI2 or EPI3 logic.
-     *
-     * Values greater than two select the EPI3 path when sufficient history is
-     * available; the value is stored internally as `double`.
-     *
-     * @param order Requested temporal order.
-     */
-    void setOrder(Scalar order) {this->order_ = order;}
+  /**
+   * @brief Set the `Scalar` temporal order used to select EPI2 or EPI3 logic.
+   *
+   * Values greater than two select the EPI3 path when sufficient history is
+   * available; the value is stored internally as `double`.
+   *
+   * @param order Requested temporal order.
+   */
+  void setOrder(Scalar order) { this->order_ = order; }
 
-    /**
-     * @brief Check base exponential-stepper setup and require an application action.
-     *
-     * @param out `Teuchos::FancyOStream` receiving setup diagnostics.
-     * @return True when the inherited setup and EPI callback are valid.
-     */
-    bool isValidSetup(Teuchos::FancyOStream & out) const;
+  /**
+   * @brief Check base exponential-stepper setup and require an application action.
+   *
+   * @param out `Teuchos::FancyOStream` receiving setup diagnostics.
+   * @return True when the inherited setup and EPI callback are valid.
+   */
+  bool isValidSetup(Teuchos::FancyOStream& out) const;
 
-    /**
-     * @brief Advance the working state by its configured time step.
-     *
-     * The PhiEvaluator is linearized at the current state.  EPI2 requires at
-     * least two SolutionStates (current=NM1 and working=N).
-     * EPI3 requires history storage for at least
-     * three states (NM2, current=NM1 and working=N) and uses EPI2 on its first step,
-     * before the prior state NM2 is available.
-     * The working-state solution status is set from the
-     * PhiEvaluator result.  FSAL caching is used only when enabled and xDot is
-     * present and synchronized.
-     *
-     * @param solutionHistory RCP containing current and working states, plus
-     *   one more history entry when required.
-     */
-    virtual void takeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
+  /**
+   * @brief Advance the working state by its configured time step.
+   *
+   * The PhiEvaluator is linearized at the current state.  EPI2 requires at
+   * least two SolutionStates (current=NM1 and working=N).
+   * EPI3 requires history storage for at least
+   * three states (NM2, current=NM1 and working=N) and uses EPI2 on its first step,
+   * before the prior state NM2 is available.
+   * The working-state solution status is set from the
+   * PhiEvaluator result.  FSAL caching is used only when enabled and xDot is
+   * present and synchronized.
+   *
+   * @param solutionHistory RCP containing current and working states, plus
+   *   one more history entry when required.
+   */
+  virtual void takeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory) override;
 
-    /** @brief Return the configured `Scalar` temporal order. */
-    virtual Scalar getOrder() const override {return Scalar(order_);}
-    /** @brief Return the minimum supported `Scalar` order, two. */
-    virtual Scalar getOrderMin() const override {return Scalar(2.0);}
-    /** @brief Return the maximum supported `Scalar` order, three. */
-    virtual Scalar getOrderMax() const override {return Scalar(3.0);}
+  /** @brief Return the configured `Scalar` temporal order. */
+  virtual Scalar getOrder() const override { return Scalar(order_); }
+  /** @brief Return the minimum supported `Scalar` order, two. */
+  virtual Scalar getOrderMin() const override { return Scalar(2.0); }
+  /** @brief Return the maximum supported `Scalar` order, three. */
+  virtual Scalar getOrderMax() const override { return Scalar(3.0); }
 
-    /** @brief Return false because EPI methods use solution-history data. */
-    virtual bool isOneStepMethod() const override {return false;}
-    /** @brief Return true because EPI methods are classified as multistep. */
-    virtual bool isMultiStepMethod() const override {return !isOneStepMethod();}
+  /** @brief Return false because EPI methods use solution-history data. */
+  virtual bool isOneStepMethod() const override { return false; }
+  /** @brief Return true because EPI methods are classified as multistep. */
+  virtual bool isMultiStepMethod() const override { return !isOneStepMethod(); }
   //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    /**
-     * @brief Write inherited and EPI callback configuration to a stream.
-     *
-     * @param out `Teuchos::FancyOStream` receiving the description.
-     * @param verbLevel Requested Teuchos verbosity level.
-     */
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const override;
+  /**
+   * @brief Write inherited and EPI callback configuration to a stream.
+   *
+   * @param out `Teuchos::FancyOStream` receiving the description.
+   * @param verbLevel Requested Teuchos verbosity level.
+   */
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
  private:
-
-  Teuchos::RCP<StepperEPIAppAction<Scalar> > stepperEPIAppAction_;
+  Teuchos::RCP<StepperEPIAppAction<Scalar>> stepperEPIAppAction_;
 
   /// temporal Integration order
   double order_;
 };
-
 
 /**
  * @brief Second-order EPI method.
@@ -239,11 +234,11 @@ class StepperExponential_EPI2 : virtual public StepperEPI<Scalar> {
    * @param stepperEPIAppAction RCP callback; null selects the default action.
    */
   StepperExponential_EPI2(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperEPIAppAction<Scalar> >& stepperEPIAppAction)
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+      bool useFSAL,
+      std::string ICConsistency,
+      bool ICConsistencyCheck,
+      const Teuchos::RCP<StepperEPIAppAction<Scalar>>& stepperEPIAppAction)
   {
     this->setStepperName("EPI2");
     this->setStepperType("EPI2");
@@ -275,9 +270,9 @@ class StepperExponential_EPI2 : virtual public StepperEPI<Scalar> {
  * @return RCP owning the configured `StepperExponential_EPI2<Scalar>`.
  */
 template <class Scalar>
-Teuchos::RCP<StepperExponential_EPI2<Scalar> >
+Teuchos::RCP<StepperExponential_EPI2<Scalar>>
 createStepperExponential_EPI2(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& model,
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto stepper = Teuchos::rcp(new StepperExponential_EPI2<Scalar>());
@@ -290,7 +285,6 @@ createStepperExponential_EPI2(
 
   return stepper;
 }
-
 
 /**
  * @brief Third-order EPI multistep method.
@@ -332,11 +326,11 @@ class StepperExponential_EPI3 : virtual public StepperEPI<Scalar> {
    * @param stepperEPIAppAction RCP callback; null selects the default action.
    */
   StepperExponential_EPI3(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperEPIAppAction<Scalar> >& stepperEPIAppAction)
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+      bool useFSAL,
+      std::string ICConsistency,
+      bool ICConsistencyCheck,
+      const Teuchos::RCP<StepperEPIAppAction<Scalar>>& stepperEPIAppAction)
   {
     this->setStepperName("EPI3");
     this->setStepperType("EPI3");
@@ -369,9 +363,9 @@ class StepperExponential_EPI3 : virtual public StepperEPI<Scalar> {
  * @return RCP owning the configured `StepperExponential_EPI3<Scalar>`.
  */
 template <class Scalar>
-Teuchos::RCP<StepperExponential_EPI3<Scalar> >
+Teuchos::RCP<StepperExponential_EPI3<Scalar>>
 createStepperExponential_EPI3(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& model,
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto stepper = Teuchos::rcp(new StepperExponential_EPI3<Scalar>());
@@ -385,6 +379,6 @@ createStepperExponential_EPI3(
   return stepper;
 }
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperEPI_decl_hpp
+#endif  // Tempus_StepperEPI_decl_hpp

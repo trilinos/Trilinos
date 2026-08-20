@@ -19,36 +19,36 @@
 namespace Tempus_Test {
 
 /** \brief Scalar nonautosrc-source model problem.
-  *
-  * This model solves a single-species implicit ODE:
-  *
-  * \f[
-  *   \dot{x}(t) = S(t)
-  * \f]
-  *
-  * where
-  *
-  * \f[
-  *   S(t) =
-  *   \frac{\phi_\mathrm{amp}}{2}
-  *   \left[
-  *     \tanh(a t - b)
-  *     -
-  *     \tanh(\kappa t - \beta)
-  *   \right]
-  *   \frac{\gamma \sigma}{N_A}.
-  * \f]
-  *
-  * The implicit residual is:
-  *
-  * \f[
-  *   f = \dot{x} - S(t).
-  * \f]
-  */
+ *
+ * This model solves a single-species implicit ODE:
+ *
+ * \f[
+ *   \dot{x}(t) = S(t)
+ * \f]
+ *
+ * where
+ *
+ * \f[
+ *   S(t) =
+ *   \frac{\phi_\mathrm{amp}}{2}
+ *   \left[
+ *     \tanh(a t - b)
+ *     -
+ *     \tanh(\kappa t - \beta)
+ *   \right]
+ *   \frac{\gamma \sigma}{N_A}.
+ * \f]
+ *
+ * The implicit residual is:
+ *
+ * \f[
+ *   f = \dot{x} - S(t).
+ * \f]
+ */
 
 template <class Scalar>
 class NonAutoSrcModel : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
-                    public Teuchos::ParameterListAcceptorDefaultBase {
+                        public Teuchos::ParameterListAcceptorDefaultBase {
  public:
   // Constructor
   NonAutoSrcModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
@@ -89,11 +89,10 @@ class NonAutoSrcModel : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar) const;
   //@}
 
-
  protected:
-  int dim_;  ///< Number of state unknowns, currently 1
-  int Np_;   ///< Number of parameter vectors, currently 0
-  int np_;   ///< Number of parameters, currently 0
+  int dim_;                 ///< Number of state unknowns, currently 1
+  int Np_;                  ///< Number of parameter vectors, currently 0
+  int np_;                  ///< Number of parameters, currently 0
   int Ng_;                  ///< Number of observation functions (1)
   int ng_;                  ///< Number of elements in this observation function (1)
   bool haveIC_;             ///< false => no nominal values are provided (default=true)

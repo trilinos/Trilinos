@@ -40,15 +40,15 @@ NonAutoSrcModel<Scalar>::NonAutoSrcModel(Teuchos::RCP<Teuchos::ParameterList> pL
   useDfDpAsTangent_  = false;
   haveIC_            = true;
 
-  gamma_       = 1.0;
-  xs_          = 1.0;
-  avogadro_    = 6.02214076e23;
+  gamma_    = 1.0;
+  xs_       = 1.0;
+  avogadro_ = 6.02214076e23;
 
-  flux_amp_    = 1.0;
-  a_           = 1.0;
-  b_           = 1.0;
-  kappa_       = 1.0;
-  flux_beta_   = 1.0;
+  flux_amp_  = 1.0;
+  a_         = 1.0;
+  b_         = 1.0;
+  kappa_     = 1.0;
+  flux_beta_ = 1.0;
 
   initial_amp_ = 0.0;
   t0_ic_       = 0.0;
@@ -63,9 +63,7 @@ NonAutoSrcModel<Scalar>::NonAutoSrcModel(Teuchos::RCP<Teuchos::ParameterList> pL
 template <class Scalar>
 Scalar NonAutoSrcModel<Scalar>::sourceFlux_(const Scalar time) const
 {
-  return flux_amp_ / Scalar(2.0)
-         * ((std::tanh(a_ * time - b_) + Scalar(1.0))
-            - (std::tanh(kappa_ * time - flux_beta_) + Scalar(1.0)));
+  return flux_amp_ / Scalar(2.0) * ((std::tanh(a_ * time - b_) + Scalar(1.0)) - (std::tanh(kappa_ * time - flux_beta_) + Scalar(1.0)));
 }
 
 template <class Scalar>
@@ -95,15 +93,10 @@ NonAutoSrcModel<Scalar>::getExactSolution(double t) const
     const Scalar const_s = flux_amp_ * gamma_ * xs_ / avogadro_;
 
     const Scalar const_c =
-        -const_s * std::log(std::cosh(b_)) / (Scalar(2.0) * a_)
-        + const_s * std::log(std::cosh(-flux_beta_)) / (Scalar(2.0) * kappa_)
-        + initial_amp_;
+        -const_s * std::log(std::cosh(b_)) / (Scalar(2.0) * a_) + const_s * std::log(std::cosh(-flux_beta_)) / (Scalar(2.0) * kappa_) + initial_amp_;
 
     exact_x_view[0] =
-        const_s * std::log(std::cosh(b_ - a_ * time)) / (Scalar(2.0) * a_)
-        - const_s * std::log(std::cosh(kappa_ * time - flux_beta_))
-              / (Scalar(2.0) * kappa_)
-        + const_c;
+        const_s * std::log(std::cosh(b_ - a_ * time)) / (Scalar(2.0) * a_) - const_s * std::log(std::cosh(kappa_ * time - flux_beta_)) / (Scalar(2.0) * kappa_) + const_c;
   }
 
   inArgs.set_x(exact_x);
@@ -231,7 +224,7 @@ void NonAutoSrcModel<Scalar>::evalModelImpl(
   const RCP<VectorBase<Scalar> > f_out          = outArgs.get_f();
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
 
-  const Scalar time = inArgs.get_t();
+  const Scalar time   = inArgs.get_t();
   const Scalar source = nonautoSource_(time);
 
   if (!inArgs.get_x_dot().is_null()) {
@@ -336,15 +329,15 @@ void NonAutoSrcModel<Scalar>::setParameterList(
   acceptModelParams_ = acceptModelParams;
   haveIC_            = haveIC;
   useDfDpAsTangent_  = useDfDpAsTangent;
-  gamma_       = get<Scalar>(*pl, "Gamma");
-  xs_          = get<Scalar>(*pl, "Cross Section");
-  avogadro_    = get<Scalar>(*pl, "Avogadro Number");
+  gamma_             = get<Scalar>(*pl, "Gamma");
+  xs_                = get<Scalar>(*pl, "Cross Section");
+  avogadro_          = get<Scalar>(*pl, "Avogadro Number");
 
-  flux_amp_    = get<Scalar>(*pl, "Flux Amplitude");
-  a_           = get<Scalar>(*pl, "Flux a");
-  b_           = get<Scalar>(*pl, "Flux b");
-  kappa_       = get<Scalar>(*pl, "Flux kappa");
-  flux_beta_   = get<Scalar>(*pl, "Flux beta");
+  flux_amp_  = get<Scalar>(*pl, "Flux Amplitude");
+  a_         = get<Scalar>(*pl, "Flux a");
+  b_         = get<Scalar>(*pl, "Flux b");
+  kappa_     = get<Scalar>(*pl, "Flux kappa");
+  flux_beta_ = get<Scalar>(*pl, "Flux beta");
 
   initial_amp_ = get<Scalar>(*pl, "Initial Species");
   t0_ic_       = get<Scalar>(*pl, "IC t0");
@@ -363,34 +356,34 @@ NonAutoSrcModel<Scalar>::getValidParameters() const
     pl->set("Use DfDp as Tangent", false);
     pl->set<std::string>("Output File Name", "Tempus_EPI_NonAutoSrc");
     Teuchos::setDoubleParameter("Gamma", 1.0,
-                            "Gamma coefficient", &*pl);
+                                "Gamma coefficient", &*pl);
 
-Teuchos::setDoubleParameter("Cross Section", 1.0,
-                            "Area cross section", &*pl);
+    Teuchos::setDoubleParameter("Cross Section", 1.0,
+                                "Area cross section", &*pl);
 
-Teuchos::setDoubleParameter("Avogadro Number", 6.02214076e23,
-                            "Avogadro number", &*pl);
+    Teuchos::setDoubleParameter("Avogadro Number", 6.02214076e23,
+                                "Avogadro number", &*pl);
 
-Teuchos::setDoubleParameter("Flux Amplitude", 1.0,
-                            "Source flux amplitude", &*pl);
+    Teuchos::setDoubleParameter("Flux Amplitude", 1.0,
+                                "Source flux amplitude", &*pl);
 
-Teuchos::setDoubleParameter("Flux a", 1.0,
-                            "First tanh ramp coefficient a", &*pl);
+    Teuchos::setDoubleParameter("Flux a", 1.0,
+                                "First tanh ramp coefficient a", &*pl);
 
-Teuchos::setDoubleParameter("Flux b", 1.0,
-                            "First tanh shift b", &*pl);
+    Teuchos::setDoubleParameter("Flux b", 1.0,
+                                "First tanh shift b", &*pl);
 
-Teuchos::setDoubleParameter("Flux kappa", 1.0,
-                            "Second tanh ramp coefficient kappa", &*pl);
+    Teuchos::setDoubleParameter("Flux kappa", 1.0,
+                                "Second tanh ramp coefficient kappa", &*pl);
 
-Teuchos::setDoubleParameter("Flux beta", 1.0,
-                            "Second tanh shift beta", &*pl);
+    Teuchos::setDoubleParameter("Flux beta", 1.0,
+                                "Second tanh shift beta", &*pl);
 
-Teuchos::setDoubleParameter("Initial Species", 0.0,
-                            "Initial value of the species", &*pl);
+    Teuchos::setDoubleParameter("Initial Species", 0.0,
+                                "Initial value of the species", &*pl);
 
-Teuchos::setDoubleParameter("IC t0", 0.0,
-                            "Initial time t0", &*pl);
+    Teuchos::setDoubleParameter("IC t0", 0.0,
+                                "Initial time t0", &*pl);
     Teuchos::setIntParameter("Number of Time Step Sizes", 1,
                              "Number time step sizes for convergence study",
                              &*pl);

@@ -25,8 +25,7 @@
 
 namespace Tempus {
 
-
-template<class Scalar>
+template <class Scalar>
 StepperExponentialEuler<Scalar>::StepperExponentialEuler()
 {
   this->setStepperName("Exponential Euler");
@@ -39,15 +38,14 @@ StepperExponentialEuler<Scalar>::StepperExponentialEuler()
   this->setAppAction(Teuchos::null);
 }
 
-
 template <class Scalar>
 StepperExponentialEuler<Scalar>::StepperExponentialEuler(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-  const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> >& stepperEEAppAction)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar>>& stepperEEAppAction)
 {
   this->setStepperName("Exponential Euler");
   this->setStepperType("Exponential Euler");
@@ -63,24 +61,24 @@ StepperExponentialEuler<Scalar>::StepperExponentialEuler(
   this->initialize();
 }
 
-template<class Scalar>
+template <class Scalar>
 void StepperExponentialEuler<Scalar>::setAppAction(
-  Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > appAction)
+    Teuchos::RCP<StepperExponentialEulerAppAction<Scalar>> appAction)
 {
   if (appAction == Teuchos::null) {
     // Create default appAction
     stepperEEAppAction_ =
-      Teuchos::rcp(new StepperExponentialEulerModifierDefault<Scalar>());
-  } else {
+        Teuchos::rcp(new StepperExponentialEulerModifierDefault<Scalar>());
+  }
+  else {
     stepperEEAppAction_ = appAction;
   }
   this->isInitialized_ = false;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void StepperExponentialEuler<Scalar>::takeStep(
-  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+    const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory)
 {
   this->checkInitialized();
 
@@ -90,16 +88,17 @@ void StepperExponentialEuler<Scalar>::takeStep(
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExponentialEuler::takeStep()");
   {
     TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
-      std::logic_error,
-      "Error - StepperExponentialEuler<Scalar>::takeStep(...)\n"
-      "Need at least two SolutionStates for Exponential Euler.\n"
-      "  Number of States = " << solutionHistory->getNumStates() << "\n"
-      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
-      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
+                               std::logic_error,
+                               "Error - StepperExponentialEuler<Scalar>::takeStep(...)\n"
+                               "Need at least two SolutionStates for Exponential Euler.\n"
+                               "  Number of States = "
+                                   << solutionHistory->getNumStates() << "\n"
+                                                                         "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+                                                                         "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-    RCP<StepperExponentialEuler<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    RCP<StepperExponentialEuler<Scalar>> thisStepper = Teuchos::rcpFromRef(*this);
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
-      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+                                 StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     Thyra::SolveStatus<Scalar> sStatus;
 
@@ -107,7 +106,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
     RCP<SolutionState<Scalar>> currentState = solutionHistory->getCurrentState();
 
     RCP<const Thyra::VectorBase<Scalar>> xOld = currentState->getX();
-    RCP<Thyra::VectorBase<Scalar>> x = workingState->getX();
+    RCP<Thyra::VectorBase<Scalar>> x          = workingState->getX();
 
     // we always use the memory of workingState to compute the new solution
     // and initialize it to xOld at the beginning of takeStep
@@ -129,16 +128,15 @@ void StepperExponentialEuler<Scalar>::takeStep(
 
     const Scalar time = workingState->getTime();
     const Scalar t0   = currentState->getTime();
-    const Scalar dt = workingState->getTimeStep();
-    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
+    const Scalar dt   = workingState->getTimeStep();
+    auto p            = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
 
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
-      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
+                                 StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
     // if requested, update any hyperpameters of the phiEvaluator
     Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = this->createInArgsExponentialODE(x, xDot, t0, p);
-    if (this->needsOperatorLinearization(currentState, workingState))
-    {
+    if (this->needsOperatorLinearization(currentState, workingState)) {
       // setup system Jacobian (and mass) at the current time t0
       this->getPhiEvaluator()->setLinearizationPoint(inArgs, PhiInitialization::JACOBIAN_AND_MASS);
     }
@@ -147,9 +145,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
     // if requested, update any hyperpameters of the phiEvaluator
     // TODO: move into previus loop? if no Jacobian was built, adaptation is not needed.
     const int adaptInterval = this->getAdaptPhiEvaluator();
-    if ((adaptInterval > 0)
-        && (workingState->getIndex() < 2 || workingState->getIndex() % adaptInterval == 0))
-    {
+    if ((adaptInterval > 0) && (workingState->getIndex() < 2 || workingState->getIndex() % adaptInterval == 0)) {
       this->getPhiEvaluator()->adaptEvaluator();
     }
 
@@ -189,7 +185,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
     // call the PhiEvaluator to compute vphi = - \phi( dt * J ) f = - \phi( dt * M^{-1} MJ ) M^{-1} Mf
     sStatus = this->getPhiEvaluator()->computePhi(vphi.ptr(), 1, dt, Mf);
 
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::RCP<Teuchos::FancyOStream> out  = this->getOStream();
     const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
     if (verbLevel >= Teuchos::as<int>(Teuchos::VERB_LOW)) {
       int current_iters = -1;
@@ -198,7 +194,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
       }
       Scalar achieved_tol = sStatus.achievedTol;
 
-      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >=0) {
+      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >= 0) {
         *out << "Phi converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
       }
       else {
@@ -210,10 +206,10 @@ void StepperExponentialEuler<Scalar>::takeStep(
     // this can only happen at the end of the function,
     // after any calls to the ModelEvaluator that rely on x being equal to xOld in the non-BC degrees of freedom
     // TODO: should this only happen if PhiEvaluator converged?
-    Thyra::Vp_StV(x.ptr(), Scalar(-1.0)*dt, *vphi);
+    Thyra::Vp_StV(x.ptr(), Scalar(-1.0) * dt, *vphi);
 
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
-      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
+                                 StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
 
     // If FSAL is on, and there is memory for xDot, compute new xDot and sync
     if (this->getUseFSAL() && workingState->getXDot() != Teuchos::null) {
@@ -223,8 +219,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
 
       // in the (untested) case that the mass matrix depends on time, we should recompute it here
       // if the matrix is constant in time and cached properly, this should be a NOOP
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_nexttime
-        = this->createInArgsExponentialODE(x, xDot, time, p);
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_nexttime = this->createInArgsExponentialODE(x, xDot, time, p);
       this->getPhiEvaluator()->setLinearizationPoint(inArgs_nexttime, PhiInitialization::ONLY_MASS);
 
       // solve the mass matrix and scale to obtain final xDot
@@ -244,16 +239,15 @@ void StepperExponentialEuler<Scalar>::takeStep(
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
-      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+                                 StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void StepperExponentialEuler<Scalar>::describe(
-  Teuchos::FancyOStream               &out,
-  const Teuchos::EVerbosityLevel      verbLevel) const
+    Teuchos::FancyOStream& out,
+    const Teuchos::EVerbosityLevel verbLevel) const
 {
   out.setOutputToRootOnly(0);
   out << std::endl;
@@ -264,15 +258,14 @@ void StepperExponentialEuler<Scalar>::describe(
   out << "----------------------------" << std::endl;
 }
 
-
-template<class Scalar>
-bool StepperExponentialEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+template <class Scalar>
+bool StepperExponentialEuler<Scalar>::isValidSetup(Teuchos::FancyOStream& out) const
 {
   out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
-  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
-  if ( !StepperExponential<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if (!Stepper<Scalar>::isValidSetup(out)) isValidSetup = false;
+  if (!StepperExponential<Scalar>::isValidSetup(out)) isValidSetup = false;
 
   if (stepperEEAppAction_ == Teuchos::null) {
     isValidSetup = false;
@@ -282,8 +275,7 @@ bool StepperExponentialEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) 
   return isValidSetup;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperExponentialEuler<Scalar>::getValidParameters() const
 {
@@ -291,14 +283,13 @@ StepperExponentialEuler<Scalar>::getValidParameters() const
   return pl;
 }
 
-
 // Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
-template<class Scalar>
-Teuchos::RCP<StepperExponentialEuler<Scalar> >
+template <class Scalar>
+Teuchos::RCP<StepperExponentialEuler<Scalar>>
 createStepperExponentialEuler(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto stepper = Teuchos::rcp(new StepperExponentialEuler<Scalar>());
 
@@ -312,6 +303,5 @@ createStepperExponentialEuler(
   return stepper;
 }
 
-
-} // namespace Tempus
-#endif // Tempus_StepperExponentialEuler_impl_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperExponentialEuler_impl_hpp

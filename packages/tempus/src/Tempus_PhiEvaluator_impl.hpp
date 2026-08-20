@@ -47,7 +47,6 @@
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #endif
 
-
 namespace Tempus {
 
 template <class Scalar>
@@ -61,7 +60,7 @@ PhiEvaluator<Scalar>::PhiEvaluator(std::string name)
   : isInitialized_(false),
     lumpMassMatrix_(false),
     constantMassMatrix_(false),
-    useAtildeForSingleRHS_(true) // TODO: make this configurable
+    useAtildeForSingleRHS_(true)  // TODO: make this configurable
 {
   setName(name);
   eigensolverPL_ = Teuchos::rcp(new Teuchos::ParameterList());
@@ -92,8 +91,8 @@ void PhiEvaluator<Scalar>::describe(
     *l_out << "  useAtildeForSingleRHS_ = " << useAtildeForSingleRHS_ << std::endl;
   }
 
-  //if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
-  //}
+  // if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+  // }
   *l_out << std::string(this->description().length() + 8, '-') << std::endl;
 }
 
@@ -132,16 +131,15 @@ PhiEvaluator<Scalar>::getValidParametersBasic() const
   // TODO: document this, explain what it is used for
   pl->sublist("Eigensolver");
   pl->sublist("Eigensolver").set("Which", "LM");
-  pl->sublist("Eigensolver").set("Block Size",                     2);
-  pl->sublist("Eigensolver").set("Num Blocks",                     16);
-  pl->sublist("Eigensolver").set("Maximum Restarts",               50);
-  pl->sublist("Eigensolver").set("Convergence Tolerance",          0.08);
+  pl->sublist("Eigensolver").set("Block Size", 2);
+  pl->sublist("Eigensolver").set("Num Blocks", 16);
+  pl->sublist("Eigensolver").set("Maximum Restarts", 50);
+  pl->sublist("Eigensolver").set("Convergence Tolerance", 0.08);
   pl->sublist("Eigensolver").set("Relative Convergence Tolerance", true);
-  pl->sublist("Eigensolver").set("Num Eigenvalues",                8,
-      "Number of eigenvalues used to estimate the Jacobian spectrum bounds.");
-  pl->sublist("Eigensolver").set("Dense Fallback Dimension",       64,
-      "Systems with dimension <= this value use a dense LAPACK eigensolver "
-      "instead of the iterative Block Krylov-Schur solver.");
+  pl->sublist("Eigensolver").set("Num Eigenvalues", 8, "Number of eigenvalues used to estimate the Jacobian spectrum bounds.");
+  pl->sublist("Eigensolver").set("Dense Fallback Dimension", 64,
+                                 "Systems with dimension <= this value use a dense LAPACK eigensolver "
+                                 "instead of the iterative Block Krylov-Schur solver.");
 
   return pl;
 }
@@ -205,12 +203,12 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
   // Forward eigensolver parameters if they were set before setModel was called
   if (eigensolverPL_ != Teuchos::null)
     phiLinSolv_->setEigensolverParams(eigensolverPL_);
-  
+
   // create InArgs
   inArgs_lin_ = appModel_->createInArgs();
 }
 
-template<class Scalar>
+template <class Scalar>
 void PhiEvaluator<Scalar>::setLumpMassMatrix(bool lumpMassMatrix)
 {
   lumpMassMatrix_ = lumpMassMatrix;
@@ -219,7 +217,7 @@ void PhiEvaluator<Scalar>::setLumpMassMatrix(bool lumpMassMatrix)
   }
 }
 
-template<class Scalar>
+template <class Scalar>
 void PhiEvaluator<Scalar>::setConstantMassMatrix(bool constantMassMatrix)
 {
   if (!constantMassMatrix && constantMassMatrix_ && this->phiLinSolv_ != Teuchos::null) {
@@ -269,25 +267,23 @@ void PhiEvaluator<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase
   }
 }
 
-template<class Scalar>
+template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
                                  const int phi_order, const Scalar cdt,
-                                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b)
+                                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mrhs_b)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    phi_order < 0, std::logic_error,
-    "Error - PhiEvaluator::computePhi() phi_order must be non-negative!\n");
+      phi_order < 0, std::logic_error,
+      "Error - PhiEvaluator::computePhi() phi_order must be non-negative!\n");
 
-  if (useAtildeForSingleRHS_ && phi_order > 0)
-  {
+  if (useAtildeForSingleRHS_ && phi_order > 0) {
     // Use linear combination extension formula and matrix exponential
-    Teuchos::ArrayRCP<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(phi_order+1);
+    Teuchos::ArrayRCP<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(phi_order + 1);
     Mrhs_B[phi_order] = Mrhs_b;
     return this->computePhis(x, cdt, Mrhs_B());
   }
-  else
-  {
+  else {
     // Call LinOpPhi directly
 
     // check that everything has been initialized properly
@@ -310,7 +306,7 @@ template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
                                   const Scalar cdt,
-                                  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B)
+                                  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>>& Mrhs_B)
 {
   const Thyra::Ordinal max_phi_order = Mrhs_B.size() - 1;
 
@@ -320,24 +316,21 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
       "Error - PhiEvaluator::computePhis() list of rhs must have at least one entry.");
 
   // support max_phi_order == 0 by calling the non-extended solver
-  if (max_phi_order == 0)
-  {
+  if (max_phi_order == 0) {
     return computePhi(x, 0, cdt, Mrhs_B[0]);
   }
 
   // check that everything has been initialized properly
   checkInitialized();
 
-  Teuchos::ArrayRCP<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order+1);
+  Teuchos::ArrayRCP<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order + 1);
 
   // Invert the mass matrix out of the right hand sides
   // TODO: This might be more efficient to do on the combined MultiVector that will be assembled in buildb
   //       However, if Mrhs_B is sparse, it may not.
-  for (Thyra::Ordinal ii = 0; ii < max_phi_order+1; ii++)
-  {
-    if (Mrhs_B[ii] != Teuchos::null)
-    {
-      auto Mrhs_b = Mrhs_B[ii];
+  for (Thyra::Ordinal ii = 0; ii < max_phi_order + 1; ii++) {
+    if (Mrhs_B[ii] != Teuchos::null) {
+      auto Mrhs_b                                   = Mrhs_B[ii];
       Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
       Thyra::assign(rhs_b.ptr(), 0.0);
       this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
@@ -346,8 +339,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   }
 
   // Build extended matrix
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> ATilde
-    = this->phiLinSolv_->buildATilde(cdt, rhs_B());
+  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> ATilde = this->phiLinSolv_->buildATilde(cdt, rhs_B());
 
   // Build initial vector and compute matrix exponential in place
   auto v = this->phiLinSolv_->buildv(ATilde->domain(), rhs_B[0]);
@@ -385,7 +377,6 @@ void PhiEvaluator<Scalar>::applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Sc
   phiLinSolv_->applyJacobian(MJf, f);
 }
 
-
 /*
  * PhiLinearSolver methods
  */
@@ -394,7 +385,7 @@ void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
 {
   if (lumpMass_ != lump) {
     // if lumping status has changed, clear the matrix, so that it will be rebuilt
-    massMatrix_ = Teuchos::null;
+    massMatrix_        = Teuchos::null;
     inverseMassMatrix_ = Teuchos::null;
   }
   lumpMass_ = lump;
@@ -425,9 +416,9 @@ template <class Scalar>
 void PhiLinearSolver<Scalar>::clearMemory()
 {
   // this method can be used to clear all RCPs associated to big matrix allocations
-  massMatrix_ = Teuchos::null;
+  massMatrix_        = Teuchos::null;
   inverseMassMatrix_ = Teuchos::null;
-  jacobianMatrix_ = Teuchos::null;
+  jacobianMatrix_    = Teuchos::null;
 }
 
 template <class Scalar>
@@ -448,7 +439,7 @@ void PhiLinearSolver<Scalar>::checkInitialized(const PhiInitialization& mode) co
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
+void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -459,7 +450,7 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   // request only the mass matrix from the physics
   // Model evaluator builds: alpha*M*u_dot - beta*M*F(u) = 0,
   // where F(u) is the explicit tendency
-  MEB::InArgs<Scalar> inArgs_new  = appModel_->createInArgs();
+  MEB::InArgs<Scalar> inArgs_new = appModel_->createInArgs();
   inArgs_new.setArgs(inArgs);
   inArgs_new.set_alpha(1.0);
   inArgs_new.set_beta(0.0);
@@ -471,8 +462,8 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   // this will fill the mass matrix operator
   appModel_->evalModel(inArgs_new, outArgs);
 
-  if(!lumpMass_) {
-    massMatrix_ = fullMassMatrix;
+  if (!lumpMass_) {
+    massMatrix_        = fullMassMatrix;
     inverseMassMatrix_ = Thyra::inverse<Scalar>(*appModel_->get_W_factory(), fullMassMatrix);
   }
   else {
@@ -483,11 +474,11 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
     Teuchos::RCP<Thyra::VectorBase<Scalar>> lumpedMassDiagonal = Thyra::createMember(*fullMassMatrix->range());
     Thyra::apply(*fullMassMatrix, Thyra::NOTRANS, *ones, lumpedMassDiagonal.ptr());
 
-    //Teuchos::RCP<Thyra::VectorBase<Scalar> > invLumpedMassDiagonal = Thyra::createMember(*fullMassMatrix->range());
+    // Teuchos::RCP<Thyra::VectorBase<Scalar> > invLumpedMassDiagonal = Thyra::createMember(*fullMassMatrix->range());
     Teuchos::RCP<Thyra::VectorBase<Scalar>> invLumpedMassDiagonal = ones;  // reuse memory from ones
     Thyra::reciprocal(*lumpedMassDiagonal, invLumpedMassDiagonal.ptr());
 
-    massMatrix_ = Thyra::diagonal(lumpedMassDiagonal);
+    massMatrix_        = Thyra::diagonal(lumpedMassDiagonal);
     inverseMassMatrix_ = Thyra::diagonal(invLumpedMassDiagonal);
 
     // if the mass matrix is lumped, keep the memory allocated for fullMassMatrix around for the Jacobian
@@ -501,8 +492,7 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildL(
   this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L
-    = Thyra::scale(-dt, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L = Thyra::scale(-dt, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
 
   return L;
 }
@@ -510,21 +500,20 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildL(
 template <class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(
     const Scalar dt,
-    const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const
+    const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>>& rhs_B) const
 {
   this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
   const Thyra::Ordinal max_phi_order = rhs_B.size() - 1;
-  auto KMatrix = this->buildK(max_phi_order);
-  auto BMatrix = this->buildB(rhs_B);
+  auto KMatrix                       = this->buildK(max_phi_order);
+  auto BMatrix                       = this->buildB(rhs_B);
 
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A
-    = Thyra::scale(-dt, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::scale(-dt, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
 
   // Spaces
-  auto V = A->domain();         // dim N, and also A->range()
-  auto W = KMatrix->domain();   // dim max_phi_order, and also K->range()
+  auto V = A->domain();        // dim N, and also A->range()
+  auto W = KMatrix->domain();  // dim max_phi_order, and also K->range()
 
   // Zero operator: V -> W  (for the (2,1) block)
   auto Z_VW = Thyra::zero<Scalar>(W, V);
@@ -533,10 +522,10 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildAT
   // [ A  B ]
   // [ 0  K ]
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = Thyra::block2x2<Scalar>(
-      A,            // (1,1): V->V
-      BMatrix,      // (1,2): W->V
-      Z_VW,         // (2,1): V->W
-      KMatrix       // (2,2): W->W
+      A,        // (1,1): V->V
+      BMatrix,  // (1,2): W->V
+      Z_VW,     // (2,1): V->W
+      KMatrix   // (2,2): W->W
   );
 
   return Atilde;
@@ -562,11 +551,10 @@ PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal max_phi_order) const
   Thyra::assign(K_mv.ptr(), Scalar(0.0));
 
   // Fill superdiagonal: K(i, i+1) = 1
-  for (Thyra::Ordinal j = 1; j < max_phi_order; ++j)
-  {
-      // Column j, row j-1
-      auto col_j = K_mv->col(j);
-      Thyra::set_ele(j - 1, Scalar(1.0), col_j.ptr());
+  for (Thyra::Ordinal j = 1; j < max_phi_order; ++j) {
+    // Column j, row j-1
+    auto col_j = K_mv->col(j);
+    Thyra::set_ele(j - 1, Scalar(1.0), col_j.ptr());
   }
 
   // Wrap as LinearOp and return
@@ -576,7 +564,7 @@ PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal max_phi_order) const
 template <class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar>>
 PhiLinearSolver<Scalar>::buildB(
-  const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const
+    const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>>& rhs_B) const
 {
   this->checkInitialized(PhiInitialization::ONLY_MASS);
 
@@ -597,10 +585,8 @@ PhiLinearSolver<Scalar>::buildB(
   Thyra::assign(B_mv.ptr(), Scalar(0.0));
 
   // Fill the columns with rhs_B vectors in reverse order, excluding the first entry
-  for (Thyra::Ordinal k = 0; k < max_phi_order; k++)
-  {
-    if (rhs_B[max_phi_order - k] != Teuchos::null)
-    {
+  for (Thyra::Ordinal k = 0; k < max_phi_order; k++) {
+    if (rhs_B[max_phi_order - k] != Teuchos::null) {
       auto col = B_mv->col(k);
       Thyra::assign(col.ptr(), *rhs_B[max_phi_order - k]);
     }
@@ -616,17 +602,15 @@ Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(
 {
   // Create v and initialize to zero
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> v =
-    Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar>>(Thyra::createMember(space));
+      Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar>>(Thyra::createMember(space));
 
   // TODO: should the argument be a Thyra::ProductVectorSpace<Scalar>> instead of dynamic cast?
 
   Teuchos::RCP<Thyra::VectorBase<Scalar>> v0 = v->getNonconstVectorBlock(0);  // V block
-  if (x0 != Teuchos::null)
-  {
+  if (x0 != Teuchos::null) {
     Thyra::copy(*x0, v0.ptr());
   }
-  else
-  {
+  else {
     Thyra::assign(v0.ptr(), Scalar(0.));
   }
 
@@ -635,20 +619,18 @@ Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(
 
   // Get the last index
   const Thyra::Ordinal max_phi_order = v1->space()->dim();
-  const Thyra::Ordinal g_last = max_phi_order - 1;
+  const Thyra::Ordinal g_last        = max_phi_order - 1;
 
   // TODO: can this small dim x dim vector be distributed? It should live on every rank.
   // If this is a distributed space, set only on the owning rank
-  if (auto spmdSpace = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(space))
-  {
+  if (auto spmdSpace = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(space)) {
     const Thyra::Ordinal localOffset = spmdSpace->localOffset();
     const Thyra::Ordinal localSubDim = spmdSpace->localSubDim();
 
     if (g_last >= localOffset && g_last < localOffset + localSubDim)
       Thyra::set_ele(g_last, Scalar(1), v1.ptr());
   }
-  else
-  {
+  else {
     // Fallback for non-SPMD spaces
     Thyra::set_ele(g_last, Scalar(1), v1.ptr());
   }
@@ -679,7 +661,7 @@ void PhiLinearSolver<Scalar>::solveMass(const Teuchos::Ptr<Thyra::VectorBase<Sca
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
+void PhiLinearSolver<Scalar>::computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs)
 {
   this->checkInitialized(PhiInitialization::ONLY_MASS);
 
@@ -721,7 +703,7 @@ void PhiLinearSolver<Scalar>::applyJacobian(const Teuchos::Ptr<Thyra::VectorBase
 
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
     Scalar alpha, Scalar beta) const
@@ -734,12 +716,12 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(
   MEB::OutArgs<Scalar> outArgs = appModel_->createOutArgs();
 
   // first allocate space for the jacobian
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar>> MpJ = appModel_->create_W_op();
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar>> MpJ         = appModel_->create_W_op();
   Teuchos::RCP<Thyra::PreconditionerBase<Scalar>> MpJ_p = Teuchos::null;
   if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
     MpJ_p = appModel_->create_W_prec();
   }
-  //TODO: support all types of preconditioner (compare NOX_Thyra_Group.C)
+  // TODO: support all types of preconditioner (compare NOX_Thyra_Group.C)
 
   MEB::InArgs<Scalar> inArgs_new = appModel_->createInArgs();
   inArgs_new.setArgs(inArgs);
@@ -752,7 +734,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(
 
   // set only the mass plus jacobian (MpJ) matrix
   outArgs.set_W_op(MpJ);
-  if (MpJ_p != Teuchos::null){
+  if (MpJ_p != Teuchos::null) {
     outArgs.set_W_prec(MpJ_p);
   }
 
@@ -762,13 +744,13 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(
   // TODO: const-cast why?
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel_->get_W_factory();
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
-    Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
+      Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
 
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Teuchos::null;
-  if (MpJ_p == Teuchos::null){
+  if (MpJ_p == Teuchos::null) {
     // without preconditioner
     Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> const_MpJ = Teuchos::rcpFromRef(*MpJ);
-    LOWSB = Thyra::linearOpWithSolve(*lowsFactory, const_MpJ);
+    LOWSB                                                     = Thyra::linearOpWithSolve(*lowsFactory, const_MpJ);
   }
   else {
     // with preconditioner
@@ -779,24 +761,24 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::assembleAndsolveMpJ(
   assign(x.ptr(), ST::zero());
   // Create solve criteria
   Thyra::SolveCriteria<Scalar> solveCriteria;
-  solveCriteria.requestedTol = 1e-6; // p.get("Tolerance", 1.0e-6);
+  solveCriteria.requestedTol = 1e-6;  // p.get("Tolerance", 1.0e-6);
 
-  //std::string numer_measure = p.get("Solve Measure Numerator", "Norm Residual");
-  //std::string denom_measure = p.get("Solve Measure Denominator", "Norm Initial Residual");
+  // std::string numer_measure = p.get("Solve Measure Numerator", "Norm Residual");
+  // std::string denom_measure = p.get("Solve Measure Denominator", "Norm Initial Residual");
 
-  //if (name == "None")
-  //  return ::Thyra::SOLVE_MEASURE_ONE;
-  //else if (name == "Norm Residual")
-  //  return ::Thyra::SOLVE_MEASURE_NORM_RESIDUAL;
-  //else if (name == "Norm Solution")
-  //  return ::Thyra::SOLVE_MEASURE_NORM_SOLUTION;
-  //else if (name == "Norm Initial Residual")
-  //  return ::Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL;
-  //else if (name == "Norm RHS")
-  //  return ::Thyra::SOLVE_MEASURE_NORM_RHS;
+  // if (name == "None")
+  //   return ::Thyra::SOLVE_MEASURE_ONE;
+  // else if (name == "Norm Residual")
+  //   return ::Thyra::SOLVE_MEASURE_NORM_RESIDUAL;
+  // else if (name == "Norm Solution")
+  //   return ::Thyra::SOLVE_MEASURE_NORM_SOLUTION;
+  // else if (name == "Norm Initial Residual")
+  //   return ::Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL;
+  // else if (name == "Norm RHS")
+  //   return ::Thyra::SOLVE_MEASURE_NORM_RHS;
 
   solveCriteria.solveMeasureType =
-    Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
+      Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
 
   // compute the solution to (MpJ)\Mf and write it to x
   Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, x.ptr(), Teuchos::constPtr(solveCriteria));
@@ -816,14 +798,14 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
   // build an abstract MpJ linOp
   // TODO: figure out if it makes sense to add the physical matrices together, if both are the same Tpetra format.
   //       For lumpMass = true, this is probably fine as is.
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> aM = Thyra::scale<Scalar>(alpha, massMatrix_);
-  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bJ = Thyra::scale<Scalar>(beta, jacobianMatrix_);
+  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> aM  = Thyra::scale<Scalar>(alpha, massMatrix_);
+  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bJ  = Thyra::scale<Scalar>(beta, jacobianMatrix_);
   const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> MpJ = Thyra::add(aM, bJ);
 
   // TODO: const-cast why?
   const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel_->get_W_factory();
   const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
-    Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
+      Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
 
   // TODO: figure out how to add preconditioning
   const Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Thyra::linearOpWithSolve(*lowsFactory, MpJ);
@@ -834,7 +816,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Teuchos::Ptr<
   solveCriteria.requestedTol = 1e-6;
 
   solveCriteria.solveMeasureType =
-    Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
+      Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
 
   // compute the solution to (MpJ)\Mf and write it to x
   Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, x.ptr(), Teuchos::constPtr(solveCriteria));
@@ -849,24 +831,24 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
 
   using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   typedef Thyra::MultiVectorBase<Scalar> MV;
-  typedef Thyra::LinearOpBase<Scalar>    OP;
+  typedef Thyra::LinearOpBase<Scalar> OP;
 
-  MT a_val =  Teuchos::ScalarTraits<MT>::rmax();
+  MT a_val = Teuchos::ScalarTraits<MT>::rmax();
   MT b_val = -Teuchos::ScalarTraits<MT>::rmax();
-  MT c_val =  Teuchos::ScalarTraits<MT>::zero();
+  MT c_val = Teuchos::ScalarTraits<MT>::zero();
 
   // Read eigensolver parameters from the stored ParameterList
-  const int inev = eigensolverPL_->get<int>("Num Eigenvalues", 8);
+  const int inev             = eigensolverPL_->get<int>("Num Eigenvalues", 8);
   const int denseFallbackDim = eigensolverPL_->get<int>("Dense Fallback Dimension", 64);
-  const int blockSize = eigensolverPL_->get<int>("Block Size", 2);
-  const double eigTol = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
-  const int maxRestarts = eigensolverPL_->get<int>("Maximum Restarts", 50);
-  const bool relConvTol = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
-  const std::string which = eigensolverPL_->get<std::string>("Which", "LM");
+  const int blockSize        = eigensolverPL_->get<int>("Block Size", 2);
+  const double eigTol        = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
+  const int maxRestarts      = eigensolverPL_->get<int>("Maximum Restarts", 50);
+  const bool relConvTol      = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
+  const std::string which    = eigensolverPL_->get<std::string>("Which", "LM");
 
   // Estimate up to the first nev eigenvalues
-  const int dim = static_cast<int>(jacobianMatrix_->domain()->dim());
-  const int nev      = std::min(inev, dim - 1);
+  const int dim       = static_cast<int>(jacobianMatrix_->domain()->dim());
+  const int nev       = std::min(inev, dim - 1);
   const int numBlocks = std::min(2 * nev, dim);
 
   // MinvJ = M^{-1}*J LinOp
@@ -880,7 +862,7 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
     Teuchos::Array<Scalar> eigs_re(dim);
     Teuchos::Array<Scalar> eigs_im(dim);
     denseEigenvalues(denseMinvJ, eigs_re, eigs_im);
-    for (int i=0; i < eigs_re.size(); ++i) {
+    for (int i = 0; i < eigs_re.size(); ++i) {
       auto evr = eigs_re[i];
       auto evi = eigs_im[i];
       a_val = std::min(a_val, evr);
@@ -897,9 +879,7 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       (blockSize * numBlocks) <= nev, std::logic_error,
-      "computeJacobianSpectrumBounds: requested number of eigenvalues (" << nev <<
-      "). System dim (" << dim << "). The blockSize=" << blockSize << " or numBlocks=" << numBlocks <<
-      " is too small. numBlocks*blockSize > nev is required.");
+      "computeJacobianSpectrumBounds: requested number of eigenvalues (" << nev << "). System dim (" << dim << "). The blockSize=" << blockSize << " or numBlocks=" << numBlocks << " is too small. numBlocks*blockSize > nev is required.");
 
   // Init eigenvec multivector: warmstart from previous eigenvectors if available
   Teuchos::RCP<MV> initVec;
@@ -910,7 +890,8 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
 
   if (canWarmstart) {
     initVec = evecsMinvJ_;
-  } else {
+  }
+  else {
     initVec = Thyra::createMembers(jacobianMatrix_->domain(), blockSize);
     Thyra::randomize(Scalar(-1), Scalar(1), initVec.ptr());
   }
@@ -933,13 +914,13 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   // "Num Blocks" is derived from nev and dim, so it is always computed here.
   // "Verbosity" is kept at Anasazi::Errors (not exposed in the user PL).
   Teuchos::ParameterList anasaziPL;
-  anasaziPL.set("Which",                          which);
-  anasaziPL.set("Block Size",                     blockSize);
-  anasaziPL.set("Num Blocks",                     numBlocks);
-  anasaziPL.set("Maximum Restarts",               maxRestarts);
-  anasaziPL.set("Convergence Tolerance",          eigTol);
+  anasaziPL.set("Which", which);
+  anasaziPL.set("Block Size", blockSize);
+  anasaziPL.set("Num Blocks", numBlocks);
+  anasaziPL.set("Maximum Restarts", maxRestarts);
+  anasaziPL.set("Convergence Tolerance", eigTol);
   anasaziPL.set("Relative Convergence Tolerance", relConvTol);
-  anasaziPL.set("Verbosity",                      Anasazi::Errors);
+  anasaziPL.set("Verbosity", Anasazi::Errors);
 
   Anasazi::BlockKrylovSchurSolMgr<Scalar, MV, OP> solverMgr(problem, anasaziPL);
   solverMgr.solve();
@@ -959,7 +940,7 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   // Store converged eigenvectors for warmstart on the next call
   if (sol.numVecs > 0 && sol.Evecs != Teuchos::null) {
     const int cols = std::min(blockSize, sol.numVecs);
-    evecsMinvJ_ = Thyra::createMembers(jacobianMatrix_->domain(), cols);
+    evecsMinvJ_    = Thyra::createMembers(jacobianMatrix_->domain(), cols);
     Thyra::assign(evecsMinvJ_.ptr(),
                   *sol.Evecs->subView(Teuchos::Range1D(0, cols - 1)));
   }
@@ -970,8 +951,8 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
-      "ANASAZI is unavailable and Block-Krylov-Schur Leja Ellipse update was requested. " <<
-      "Reconfigure with Tempus_ENABLE_Anasazi=ON.\n");
+      "ANASAZI is unavailable and Block-Krylov-Schur Leja Ellipse update was requested. "
+          << "Reconfigure with Tempus_ENABLE_Anasazi=ON.\n");
 #endif
 }
 

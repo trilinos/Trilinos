@@ -383,9 +383,9 @@ struct DfDp2EvaluatorFunctor {
         if (localRow != invalid) {
           auto value =
               basis.wt * basis.dz *
-              (basis.uu_dot * basis.phi[i]                  // transient
+              (basis.uu_dot * basis.phi[i]                   // transient
                + (a_ / basis.dz) * basis.duu * basis.phi[i]  // convection
-                  + (1.0 / (basis.dz * basis.dz)) *
+               + (1.0 / (basis.dz * basis.dz)) *
                      basis.duu * basis.dphide[i]            // diffusion
                + k_ * basis.uu * basis.uu * basis.phi[i]);  // source
           Kokkos::atomic_add(&fView_(localRow, 0), value);

@@ -98,7 +98,6 @@ void PhiEvaluatorTaylor<Scalar>::describe(
   *l_out << std::string(this->description().length() + 8, '-') << std::endl;
 }
 
-
 template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
@@ -122,22 +121,19 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   // build 1. / (phi_order!)
   int k;
   Scalar inv_factorial = Scalar(1.);
-  for (k = 1; k <= phi_order; ++k)
-  {
+  for (k = 1; k <= phi_order; ++k) {
     inv_factorial /= Scalar(k);
   }
 
   // Iteration vector d_0 = v / (phi_order!)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> d_k = Thyra::createMember(rangeSpace);
 
-  if (phi_order > 0)
-  {
+  if (phi_order > 0) {
     Thyra::V_StV(d_k.ptr(), inv_factorial, *v);
     // v := d_0
     Thyra::assign(v, *d_k);
   }
-  else
-  {
+  else {
     Thyra::assign(d_k.ptr(), *v);
   }
 
@@ -152,8 +148,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
 
   // Iteratively compute d_k = (L^(k-phi_order) d_{k-1}) / (k!) and add to result
-  for (k = phi_order + 1; k <= expansionOrder + phi_order; ++k)
-  {
+  for (k = phi_order + 1; k <= expansionOrder + phi_order; ++k) {
     {
 #ifdef TEMPUS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor linoptimer(*timerLinOp_);
@@ -177,16 +172,14 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
 
     // TODO: refine this and make dependent on Scalar type
     const Scalar cutoff = 1e22;
-    if (overflow > cutoff)
-    {
+    if (overflow > cutoff) {
       sStatus.achievedTol = norm_d_k;
       sStatus.solveStatus = Thyra::SOLVE_STATUS_UNCONVERGED;
       break;
     }
 
     // terminate if the update drops below likely significance
-    if (norm_d_k < overflow / cutoff)
-    {
+    if (norm_d_k < overflow / cutoff) {
       sStatus.achievedTol = norm_d_k;
       sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
       break;
@@ -202,7 +195,6 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
 
   return sStatus;
 }
-
 
 // Nonmember constructors.
 // ------------------------------------------------------------------------
