@@ -20,18 +20,18 @@
 namespace Tempus {
 
 template <class Scalar>
-Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
+Teuchos::RCP<PhiEvaluator<Scalar>> PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
     std::string phiEvaluatorType,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& model)
 {
   if (phiEvaluatorType == "") phiEvaluatorType = "Leja";
   return this->createPhiEvaluator(phiEvaluatorType, Teuchos::null, model);
 }
 
 template <class Scalar>
-Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
+Teuchos::RCP<PhiEvaluator<Scalar>> PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
     Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& model)
 {
   std::string phiEvaluatorType;
   if (phiEvaluatorPL == Teuchos::null)
@@ -42,10 +42,10 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
 }
 
 template <class Scalar>
-Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
+Teuchos::RCP<PhiEvaluator<Scalar>> PhiEvaluatorFactory<Scalar>::createPhiEvaluator(
     std::string phiEvaluatorType,
     Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& model)
 {
   Teuchos::RCP<PhiEvaluator<Scalar>> phi;
   if (phiEvaluatorType == "PFD") {
@@ -67,8 +67,7 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "Unknown 'PhiEvaluator Type' = " << phiEvaluatorType);
   }
-  if (model != Teuchos::null)
-  {
+  if (model != Teuchos::null) {
     phi->setModel(model);
     phi->initialize();
   }

@@ -53,12 +53,11 @@ namespace Tempus {
  *
  * <b>Additional State</b>
  *   - lastLinearizationPoint_: the index of the state in the SolutionHistory, where the linearization point was set last.
- *     A negative number (default -1) means that the linearization point was never set, or the linear operator / Jacobian 
+ *     A negative number (default -1) means that the linearization point was never set, or the linear operator / Jacobian
  *     needs to be computed in every step (Rosenbrock method).
  */
 template <class Scalar>
-class StepperStateExponential : public Tempus::StepperState<Scalar>
-{
+class StepperStateExponential : public Tempus::StepperState<Scalar> {
  public:
   /// Constructor (inherit all)
   using StepperState<Scalar>::StepperState;
@@ -67,7 +66,7 @@ class StepperStateExponential : public Tempus::StepperState<Scalar>
   virtual Teuchos::RCP<Tempus::StepperState<Scalar>> clone() const;
 
   /// This is a deep copy
-  virtual void copy(const Teuchos::RCP<const StepperState<Scalar> >& ss);
+  virtual void copy(const Teuchos::RCP<const StepperState<Scalar>>& ss);
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -122,11 +121,11 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
    * @param phiEvaluator Evaluator to associate with this stepper.
    */
   virtual void setPhiEvaluator(
-    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar> >& phiEvaluator);
+      const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator);
   /** @brief Construct, set, and invalidate setup for the factory-default PhiEvaluator. */
   virtual void setDefaultPhiEvaluator();
   /** @brief Return the configured `Teuchos::RCP<PhiEvaluator<Scalar>>`, or null if unset. */
-  virtual Teuchos::RCP<Tempus::PhiEvaluator<Scalar> > getPhiEvaluator() const;
+  virtual Teuchos::RCP<Tempus::PhiEvaluator<Scalar>> getPhiEvaluator() const;
 
   /**
    * @brief Set the implicit application model used for residual evaluations.
@@ -138,10 +137,10 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
    * @param appModel Application ModelEvaluator defining the implicit residual.
    */
   virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel)
       override;
   /** @brief Return the configured implicit application ModelEvaluator. */
-  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
+  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> getModel()
       const override;
 
   /**
@@ -157,7 +156,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
    * @param solutionHistory History containing at least one initial SolutionState.
    */
   virtual void setInitialConditions(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
+      const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory) override;
 
   /**
    * @brief Build model input arguments for an exponential residual evaluation.
@@ -173,11 +172,10 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
    * @param p Metadata containing the step size and stage number.
    * @return Thyra InArgs configured for the application ModelEvaluator.
    */
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>
-  virtual createInArgsExponentialODE(
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
-      const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p);
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> virtual createInArgsExponentialODE(
+      const Teuchos::RCP<Thyra::VectorBase<Scalar>>& x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xDot, const Scalar time,
+      const Teuchos::RCP<ExponentialODEParameters<Scalar>>& p);
 
   /**
    * @brief Evaluate the implicit residual used to obtain the exponential RHS.
@@ -194,10 +192,10 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
    * @param p Metadata containing the step size and stage number.
    */
   virtual void evaluateExponentialODE(
-      Teuchos::RCP<Thyra::VectorBase<Scalar> >& f,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xDot, const Scalar time,
-      const Teuchos::RCP<ExponentialODEParameters<Scalar> >& p);
+      Teuchos::RCP<Thyra::VectorBase<Scalar>>& f,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar>>& x,
+      const Teuchos::RCP<Thyra::VectorBase<Scalar>>& xDot, const Scalar time,
+      const Teuchos::RCP<ExponentialODEParameters<Scalar>>& p);
 
   /**
    * @brief Accept an implicit-solver initial guess without using it.
@@ -207,7 +205,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
    * @param initialGuess Unused `Teuchos::RCP<const Thyra::VectorBase<Scalar>>`.
    */
   virtual void setInitialGuess(
-      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initialGuess) override
+      Teuchos::RCP<const Thyra::VectorBase<Scalar>> initialGuess) override
   {
   }
 
@@ -215,7 +213,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
    * @brief Return a large `Scalar` initial-step estimate.
    */
   virtual Scalar getInitTimeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */)
+      const Teuchos::RCP<SolutionHistory<Scalar>>& /* solutionHistory */)
       const override
   {
     // return a large value that should still fit into any supported scalar type
@@ -223,7 +221,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   }
 
   /** @brief Create a `StepperState<Scalar>` initialized with this stepper type. */
-  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() override;
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar>> getDefaultStepperState() override;
   /**
    * @brief Set First-Same-As-Last use and invalidate setup.
    *
@@ -240,14 +238,16 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   }
 
   /** @brief Return false because the stepper is backed by an implicit model. */
-  virtual bool isExplicit() const override {return false;}
+  virtual bool isExplicit() const override { return false; }
   /** @brief Return true because residual and linearization data come from an implicit model. */
-  virtual bool isImplicit() const override {return true;}
+  virtual bool isImplicit() const override { return true; }
   /** @brief Return false because this is not an explicit-implicit stepper. */
   virtual bool isExplicitImplicit() const override
-    {return isExplicit() && isImplicit();}
+  {
+    return isExplicit() && isImplicit();
+  }
   /** @brief Return FIRST_ORDER_ODE for the supported model equation order. */
-  virtual OrderODE getOrderODE() const override {return FIRST_ORDER_ODE;}
+  virtual OrderODE getOrderODE() const override { return FIRST_ORDER_ODE; }
 
   /**
    * @brief Check base setup and require both a model and PhiEvaluator.
@@ -309,15 +309,14 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
 
  protected:
   /// @brief Compute the temporal finite difference dt_Mf_deriv
-  /// 
+  ///
   /// dt_Mf_deriv = -dt * M * [d/dt F(x,t)]
   void computeTemporalFD(
-    Teuchos::RCP<Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x,
-    const Scalar t0,
-    const Scalar dt,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf
-  );
+      Teuchos::RCP<Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x,
+      const Scalar t0,
+      const Scalar dt,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf);
 
   /// Check if temporal derivative correction is desired for Rosenbrock integrators
   bool getTemporalDerivative()
@@ -326,7 +325,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   }
 
   /// @brief Compute the nonlinear remainder R
-  /// 
+  ///
   ///   R = -M * (F(xr,tr) - F(x0,t0) - J_{x0} * (xr-x0) - F'(t0) * (tr-t0))
   /// including multiple of negative mass matrix (-M).
   ///
@@ -336,16 +335,15 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   /// @param dt_Mf_deriv contains already evaluated dt*M*F'(t0)
   /// @param Mfr can optionally contain -M*F(xr,tr), if already pre-evaluated
   void computeRemf(
-    Teuchos::RCP<Thyra::VectorBase<Scalar>>& remf,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
-    const Scalar tr,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
-    const Scalar t0,
-    const Scalar dt,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mfr = Teuchos::null
-  );
+      Teuchos::RCP<Thyra::VectorBase<Scalar>>& remf,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xr,
+      const Scalar tr,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& x0,
+      const Scalar t0,
+      const Scalar dt,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mf,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& dt_Mf_deriv,
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mfr = Teuchos::null);
 
   /// Return positive interval number for setLinearization point (default is 0)
   int getOperatorLinearizationInterval()
@@ -369,7 +367,7 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
 
   /// RCP to the PhiEvaluator
-  Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
+  Teuchos::RCP<PhiEvaluator<Scalar>> phiEvaluator_;
 
   /// Finite difference step size used for RHS time derivative estimation
   /// needed for nonautonomous correction.
@@ -380,7 +378,6 @@ class StepperExponential : virtual public Tempus::Stepper<Scalar> {
 
   /// Number of time steps to wait between adapt PhiEvaluator calls
   int adaptPhiEvaluatorInterval_;
-
 };
 
 }  // namespace Tempus

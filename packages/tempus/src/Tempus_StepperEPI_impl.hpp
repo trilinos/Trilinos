@@ -40,15 +40,14 @@ StepperEPI<Scalar>::StepperEPI()
   this->setAppAction(Teuchos::null);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 StepperEPI<Scalar>::StepperEPI(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck,
-  const Teuchos::RCP<StepperEPIAppAction<Scalar> >& stepperEPIAppAction)
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperEPIAppAction<Scalar>>& stepperEPIAppAction)
 {
   this->setStepperName("EPI");
   this->setStepperType("EPI");
@@ -64,23 +63,24 @@ StepperEPI<Scalar>::StepperEPI(
   this->initialize();
 }
 
-template<class Scalar>
+template <class Scalar>
 void StepperEPI<Scalar>::setAppAction(
-  Teuchos::RCP<StepperEPIAppAction<Scalar> > appAction)
+    Teuchos::RCP<StepperEPIAppAction<Scalar>> appAction)
 {
   if (appAction == Teuchos::null) {
     // Create default appAction
     stepperEPIAppAction_ =
-      Teuchos::rcp(new StepperEPIModifierDefault<Scalar>());
-  } else {
+        Teuchos::rcp(new StepperEPIModifierDefault<Scalar>());
+  }
+  else {
     stepperEPIAppAction_ = appAction;
   }
   this->isInitialized_ = false;
 }
 
-template<class Scalar>
+template <class Scalar>
 void StepperEPI<Scalar>::takeStep(
-  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+    const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory)
 {
   this->checkInitialized();
 
@@ -91,22 +91,24 @@ void StepperEPI<Scalar>::takeStep(
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperEPI::takeStep()");
   {
     TEUCHOS_TEST_FOR_EXCEPTION((solutionHistory->getNumStates() < 2 && order_ <= 2.0),
-      std::logic_error,
-      "Error - StepperEPI<Scalar>::takeStep(...)\n"
-      "Need at least two SolutionStates for EPI2.\n"
-      "  Number of States = " << solutionHistory->getNumStates() << "\n"
-      "Try setting in \"Solution History\"\n"
-      "  \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\" for EPI2.\n"
-      "  or \"Storage Type\" = \"Unlimited\"\n");
+                               std::logic_error,
+                               "Error - StepperEPI<Scalar>::takeStep(...)\n"
+                               "Need at least two SolutionStates for EPI2.\n"
+                               "  Number of States = "
+                                   << solutionHistory->getNumStates() << "\n"
+                                                                         "Try setting in \"Solution History\"\n"
+                                                                         "  \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\" for EPI2.\n"
+                                                                         "  or \"Storage Type\" = \"Unlimited\"\n");
 
     TEUCHOS_TEST_FOR_EXCEPTION((solutionHistory->getStorageLimit() < 3 && order_ > 2.0),
-      std::logic_error,
-      "Error - StepperEPI<Scalar>::takeStep(...)\n"
-      "Need at least three SolutionStates for EPI3.\n"
-      "  Number of States = " << solutionHistory->getNumStates() << "\n"
-      "Try setting in \"Solution History\"\n"
-      "  \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n"
-      "  or \"Storage Type\" = \"Unlimited\"\n");
+                               std::logic_error,
+                               "Error - StepperEPI<Scalar>::takeStep(...)\n"
+                               "Need at least three SolutionStates for EPI3.\n"
+                               "  Number of States = "
+                                   << solutionHistory->getNumStates() << "\n"
+                                                                         "Try setting in \"Solution History\"\n"
+                                                                         "  \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"3\" for EPI3.\n"
+                                                                         "  or \"Storage Type\" = \"Unlimited\"\n");
 
     // use EPI3 if order is 3 and we have enough history, fall back to EPI2 in first step
     bool useEPI3 = (solutionHistory->getNumStates() >= 3 && order_ > 2.0);
@@ -115,7 +117,7 @@ void StepperEPI<Scalar>::takeStep(
 
     RCP<StepperEPI<Scalar>> thisStepper = Teuchos::rcpFromRef(*this);
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
-      StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+                                  StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar>> workingState = solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar>> currentState = solutionHistory->getCurrentState();
@@ -137,7 +139,7 @@ void StepperEPI<Scalar>::takeStep(
     }
 
     RCP<const Thyra::VectorBase<Scalar>> xOld = currentState->getX();
-    RCP<Thyra::VectorBase<Scalar>> x = workingState->getX();
+    RCP<Thyra::VectorBase<Scalar>> x          = workingState->getX();
 
     // we always use the memory of workingState to compute the new solution
     // and initialize it to xOld at the beginning of takeStep
@@ -162,8 +164,8 @@ void StepperEPI<Scalar>::takeStep(
 
     const Scalar time = workingState->getTime();
     const Scalar t0   = currentState->getTime();
-    const Scalar dt = workingState->getTimeStep();
-    auto p = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
+    const Scalar dt   = workingState->getTimeStep();
+    auto p            = Teuchos::rcp(new ExponentialODEParameters<Scalar>(dt));
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
                                   StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
@@ -174,9 +176,7 @@ void StepperEPI<Scalar>::takeStep(
 
     // if requested, update any hyperpameters of the phiEvaluator
     const int adaptInterval = this->getAdaptPhiEvaluator();
-    if ((adaptInterval > 0)
-        && (workingState->getIndex() < 2 || workingState->getIndex() % adaptInterval == 0))
-    {
+    if ((adaptInterval > 0) && (workingState->getIndex() < 2 || workingState->getIndex() % adaptInterval == 0)) {
       this->getPhiEvaluator()->adaptEvaluator();
     }
 
@@ -230,9 +230,9 @@ void StepperEPI<Scalar>::takeStep(
       // Retrieve x_{n-1} when available (used by EPI3 formula, added in next step).
       // Note this last solution is obtained with getStateTimeIndexNM2()
       // On the first step only two states exist, so the method runs as pure EPI2.
-      RCP<SolutionState<Scalar>> NM2State = solutionHistory->getStateTimeIndexNM2();
-      Scalar tOldOld = NM2State->getTime();
-      RCP<const Thyra::VectorBase<Scalar>> xOldOld = NM2State->getX();
+      RCP<SolutionState<Scalar>> NM2State             = solutionHistory->getStateTimeIndexNM2();
+      Scalar tOldOld                                  = NM2State->getTime();
+      RCP<const Thyra::VectorBase<Scalar>> xOldOld    = NM2State->getX();
       RCP<const Thyra::VectorBase<Scalar>> xDotOldOld = NM2State->getXDot();
 
       // either retrieve from xDotOldOld, or compute remainder with new RHS eval
@@ -270,7 +270,7 @@ void StepperEPI<Scalar>::takeStep(
       sStatus = this->getPhiEvaluator()->computePhi(vphi.ptr(), 1, dt, Mf);
     }
 
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::RCP<Teuchos::FancyOStream> out  = this->getOStream();
     const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
     if (verbLevel >= Teuchos::as<int>(Teuchos::VERB_LOW)) {
       int current_iters = -1;
@@ -279,7 +279,7 @@ void StepperEPI<Scalar>::takeStep(
       }
       Scalar achieved_tol = sStatus.achievedTol;
 
-      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >=0) {
+      if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED && current_iters >= 0) {
         *out << "Phi converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
       }
       else {
@@ -291,10 +291,10 @@ void StepperEPI<Scalar>::takeStep(
     // this can only happen at the end of the function,
     // after any calls to the ModelEvaluator that rely on x being equal to xOld in the non-BC degrees of freedom
     // TODO: should this only happen if PhiEvaluator converged?
-    Thyra::Vp_StV(x.ptr(), Scalar(-1.0)*dt, *vphi);
+    Thyra::Vp_StV(x.ptr(), Scalar(-1.0) * dt, *vphi);
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
-      StepperEPIAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
+                                  StepperEPIAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
 
     // If FSAL is on, and there is memory for xDot, compute new xDot and sync
     if (this->getUseFSAL() && workingState->getXDot() != Teuchos::null) {
@@ -304,8 +304,7 @@ void StepperEPI<Scalar>::takeStep(
 
       // in the (untested) case that the mass matrix depends on time, we should recompute it here
       // if the matrix is constant in time and cached properly, this should be a NOOP
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_nexttime
-        = this->createInArgsExponentialODE(x, xDot, time, p);
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_nexttime = this->createInArgsExponentialODE(x, xDot, time, p);
       this->getPhiEvaluator()->setLinearizationPoint(inArgs_nexttime, PhiInitialization::ONLY_MASS);
 
       // solve the mass matrix and scale to obtain final xDot
@@ -325,15 +324,15 @@ void StepperEPI<Scalar>::takeStep(
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
-      StepperEPIAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+                                  StepperEPIAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
 
-template<class Scalar>
+template <class Scalar>
 void StepperEPI<Scalar>::describe(
-  Teuchos::FancyOStream               &out,
-  const Teuchos::EVerbosityLevel      verbLevel) const
+    Teuchos::FancyOStream& out,
+    const Teuchos::EVerbosityLevel verbLevel) const
 {
   out.setOutputToRootOnly(0);
   out << std::endl;
@@ -345,15 +344,14 @@ void StepperEPI<Scalar>::describe(
   out << "----------------------------" << std::endl;
 }
 
-
-template<class Scalar>
-bool StepperEPI<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+template <class Scalar>
+bool StepperEPI<Scalar>::isValidSetup(Teuchos::FancyOStream& out) const
 {
   out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
-  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
-  if ( !StepperExponential<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if (!Stepper<Scalar>::isValidSetup(out)) isValidSetup = false;
+  if (!StepperExponential<Scalar>::isValidSetup(out)) isValidSetup = false;
 
   if (stepperEPIAppAction_ == Teuchos::null) {
     isValidSetup = false;
@@ -363,5 +361,5 @@ bool StepperEPI<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
   return isValidSetup;
 }
 
-} // namespace Tempus
-#endif // Tempus_StepperEPI_impl_hpp
+}  // namespace Tempus
+#endif  // Tempus_StepperEPI_impl_hpp

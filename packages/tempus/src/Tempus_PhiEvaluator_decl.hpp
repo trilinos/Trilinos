@@ -42,8 +42,8 @@ namespace Tempus {
  * only the former.
  */
 enum class PhiInitialization {
-    ONLY_MASS,          ///< Assemble or require only \f$M\f$ and \f$M^{-1}\f$.
-    JACOBIAN_AND_MASS,  ///< Also assemble \f$J_{\mathrm{impl}}\f$.
+  ONLY_MASS,          ///< Assemble or require only \f$M\f$ and \f$M^{-1}\f$.
+  JACOBIAN_AND_MASS,  ///< Also assemble \f$J_{\mathrm{impl}}\f$.
 };
 
 /**
@@ -69,8 +69,9 @@ class PhiLinearSolver {
    * @param lumpMass When `true`, request the row-sum diagonal mass
    *   approximation on the next mass assembly.
    */
-  PhiLinearSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel, bool lumpMass=false)
-    : appModel_(appModel), lumpMass_(lumpMass) {
+  PhiLinearSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel, bool lumpMass = false)
+    : appModel_(appModel), lumpMass_(lumpMass)
+  {
   }
 
   ~PhiLinearSolver() {}
@@ -111,31 +112,31 @@ class PhiLinearSolver {
   void checkInitialized(const PhiInitialization& mode) const;
 
   /** @brief Assembles \f$M\f$ at `inArgs` and caches its `Thyra::LinearOpBase<Scalar>` representation and inverse action. */
-  void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+  void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs);
 
   /** @brief Computes \f$Mf\f$ using the cached full or lumped mass operator.
    * @param Mf Writable `Thyra::VectorBase<Scalar>` in the mass range.
    * @param f Const `Thyra::VectorBase<Scalar>` in the mass domain.
    */
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf,
-                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
   /** @brief Computes the cached inverse-mass action \f$f=M^{-1}Mf\f$.
    * @param f Writable `Thyra::VectorBase<Scalar>` in the mass domain.
    * @param Mf Const mass-weighted `Thyra::VectorBase<Scalar>` in the mass range.
    */
   void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f,
-                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
+                 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
 
   /** @brief Assembles and caches \f$J_{\mathrm{impl}}\f$ at `inArgs`; a mass operator must already be available. */
-  void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+  void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs);
 
   /** @brief Computes \f$J_{\mathrm{impl}}f\f$ using the cached implicit residual Jacobian.
    * @param Jf Writable `Thyra::VectorBase<Scalar>` in the Jacobian range.
    * @param f Const `Thyra::VectorBase<Scalar>` in the Jacobian domain.
    */
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf,
-                      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+                     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
   /**
    * @brief Builds the linear operator \f$L=-dt M^{-1}J_{\mathrm{impl}}\f$.
@@ -162,7 +163,7 @@ class PhiLinearSolver {
    */
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(
       const Scalar dt,
-      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const;
+      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>>& rhs_B) const;
 
   /**
    * @brief Builds the extended initial vector \f$[x_0;e_p]\f$ for `buildATilde`.
@@ -207,7 +208,7 @@ class PhiLinearSolver {
    * @return Thyra status reported by the linear solve.
    * @note This code path does not support mass lumping and is currently unused.
    */
-  Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  Thyra::SolveStatus<Scalar> assembleAndsolveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
                                                  const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
                                                  const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
                                                  Scalar alpha = 1., Scalar beta = 0.) const;
@@ -223,11 +224,11 @@ class PhiLinearSolver {
    */
   Thyra::SolveStatus<Scalar> solveMpJ(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
                                       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
-                                      Scalar alpha=1., Scalar beta=0.) const;
+                                      Scalar alpha = 1., Scalar beta = 0.) const;
 
  private:
   /// Const `Teuchos::RCP` to the application model that assembles operators.
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
   /// `bool` selecting row-sum lumping for future mass assemblies.
   bool lumpMass_;
 
@@ -248,9 +249,8 @@ class PhiLinearSolver {
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildK(const Thyra::Ordinal max_phi_order) const;
   /** @brief Builds the `N` by `p` extension block from mass-solved phi right-hand sides. */
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildB(
-      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &rhs_B) const;
+      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>>& rhs_B) const;
 };
-
 
 /**
  * @brief Abstract mass-aware interface for actions of phi functions in exponential integrators.
@@ -266,7 +266,7 @@ class PhiLinearSolver {
 template <class Scalar>
 class PhiEvaluator
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<PhiEvaluator<Scalar> > {
+    virtual public Teuchos::VerboseObject<PhiEvaluator<Scalar>> {
  public:
   /** @brief Constructs an unconfigured evaluator named "Phi Evaluator". */
   PhiEvaluator();
@@ -357,7 +357,7 @@ class PhiEvaluator
    *   from which \f$M\f$ and \f$J_{\mathrm{impl}}\f$ are assembled.
    * @note Call `initialize()` after setting the model.
    */
-  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
+  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel);
 
   /**
    * @brief Updates cached operators for a model linearization point.
@@ -373,7 +373,7 @@ class PhiEvaluator
    * @param mode Requested `PhiInitialization` level; the default assembles
    *   both mass and Jacobian.
    */
-  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
                              const PhiInitialization& mode = PhiInitialization::JACOBIAN_AND_MASS);
 
   /// Check the availability of linearization point matrices.
@@ -406,7 +406,7 @@ class PhiEvaluator
   virtual Thyra::SolveStatus<Scalar> computePhi(
       const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
       const int phi_order, const Scalar cdt,
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &Mrhs_b);
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& Mrhs_b);
 
   /**
    * @brief Computes a linear combination of mass-aware phi-function actions.
@@ -427,7 +427,7 @@ class PhiEvaluator
   virtual Thyra::SolveStatus<Scalar> computePhis(
       const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
       const Scalar cdt,
-      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>> &Mrhs_B);
+      const Teuchos::ArrayView<const Teuchos::RCP<const Thyra::VectorBase<Scalar>>>& Mrhs_B);
 
   /** @brief Applies the cached full or lumped mass operator.
    * @param Mf Writable `Thyra::VectorBase<Scalar>` receiving \f$Mf\f$.
@@ -496,8 +496,7 @@ class PhiEvaluator
       const int phi_order,
       const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
       const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
-      const Scalar cdt=1.0
-    ) = 0;
+      const Scalar cdt = 1.0) = 0;
 };
 
 /**
@@ -521,12 +520,12 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
   const int numRows = static_cast<int>(lop->range()->dim());
 
   auto rangeSpmd =
-    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
-        lop->range(), true);
+      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
+          lop->range(), true);
 
   auto domainSpmd =
-    Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
-        lop->domain(), true);
+      Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(
+          lop->domain(), true);
 
   auto comm = rangeSpmd->getComm();
 
@@ -569,7 +568,7 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
       Thyra::ConstDetachedVectorView<Scalar> localView(*colY, localRange);
 
       for (int iLocal = 0; iLocal < rowLocalDim; ++iLocal) {
-        const int iGlobal = rowOffset + iLocal;
+        const int iGlobal                 = rowOffset + iLocal;
         localDense[iGlobal + j * numRows] = localView[iGlobal];
       }
     }
@@ -611,24 +610,25 @@ operatorToDense(Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lop)
  *   per matrix row.
  * @return LAPACK `info` status from GEEV.
  */
-template<typename OrdinalType, typename Scalar>
+template <typename OrdinalType, typename Scalar>
 int denseEigenvalues(const Teuchos::SerialDenseMatrix<OrdinalType, Scalar>& A,
-                           Teuchos::Array<Scalar>& eigs_re,
-                           Teuchos::Array<Scalar>& eigs_im) {
-    OrdinalType n = A.numRows();
-    Teuchos::SerialDenseMatrix<OrdinalType, Scalar> A_copy(Teuchos::Copy, A);
-    Teuchos::LAPACK<OrdinalType, Scalar> lapack;
-    // Quick workspace query
-    Scalar lworkQuery = 0.0;
-    OrdinalType info = 0;
-    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
-                nullptr, 1, nullptr, 1, &lworkQuery, -1, &info);
-    // Solve
-    OrdinalType lwork = static_cast<OrdinalType>(lworkQuery);
-    Teuchos::Array<Scalar> work(lwork);
-    lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
-                nullptr, 1, nullptr, 1, work.getRawPtr(), lwork, &info);
-    return info;
+                     Teuchos::Array<Scalar>& eigs_re,
+                     Teuchos::Array<Scalar>& eigs_im)
+{
+  OrdinalType n = A.numRows();
+  Teuchos::SerialDenseMatrix<OrdinalType, Scalar> A_copy(Teuchos::Copy, A);
+  Teuchos::LAPACK<OrdinalType, Scalar> lapack;
+  // Quick workspace query
+  Scalar lworkQuery = 0.0;
+  OrdinalType info  = 0;
+  lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
+              nullptr, 1, nullptr, 1, &lworkQuery, -1, &info);
+  // Solve
+  OrdinalType lwork = static_cast<OrdinalType>(lworkQuery);
+  Teuchos::Array<Scalar> work(lwork);
+  lapack.GEEV('N', 'N', n, A_copy.values(), A_copy.stride(), eigs_re.getRawPtr(), eigs_im.getRawPtr(),
+              nullptr, 1, nullptr, 1, work.getRawPtr(), lwork, &info);
+  return info;
 }
 
 }  // namespace Tempus

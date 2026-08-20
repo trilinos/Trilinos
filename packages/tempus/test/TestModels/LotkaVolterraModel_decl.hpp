@@ -117,31 +117,31 @@ class LotkaVolterraModel
   //@{
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   void evalModelImpl(
-      const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   //@}
 
  protected:
-  int  dim_;                ///< Number of state unknowns (2)
-  int  Np_;                 ///< Number of parameter vectors (0)
-  int  Ng_;                 ///< Number of observation functions (0)
-  bool haveIC_;             ///< false => no nominal values provided (default=true)
+  int dim_;      ///< Number of state unknowns (2)
+  int Np_;       ///< Number of parameter vectors (0)
+  int Ng_;       ///< Number of observation functions (0)
+  bool haveIC_;  ///< false => no nominal values provided (default=true)
   mutable bool isInitialized_;
-  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
-  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
 
   // Lotka-Volterra model parameters
-  Scalar alpha_;   ///< Prey   growth rate
-  Scalar beta_;    ///< Predation rate
-  Scalar delta_;   ///< Predator growth rate per prey killed
-  Scalar gamma_;   ///< Predator death rate
-  Scalar k_;       ///< Forcing amplitude on prey
-  Scalar x0_ic_;   ///< Initial condition for prey  x0
-  Scalar y0_ic_;   ///< Initial condition for predator x1
-  Scalar t0_ic_;   ///< Initial time t0
+  Scalar alpha_;  ///< Prey   growth rate
+  Scalar beta_;   ///< Predation rate
+  Scalar delta_;  ///< Predator growth rate per prey killed
+  Scalar gamma_;  ///< Predator death rate
+  Scalar k_;      ///< Forcing amplitude on prey
+  Scalar x0_ic_;  ///< Initial condition for prey  x0
+  Scalar y0_ic_;  ///< Initial condition for predator x1
+  Scalar t0_ic_;  ///< Initial time t0
 };
 
 }  // namespace Tempus_Test

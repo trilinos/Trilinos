@@ -24,7 +24,7 @@ template <class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 PhiEvaluatorPFD<Scalar>::getValidParameters() const
 {
-  //TODO
+  // TODO
   Teuchos::RCP<Teuchos::ParameterList> pl = this->getValidParametersBasic();
 
   pl->set(
@@ -59,7 +59,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
 
   // TODO: we call solveMpJ without inArgs, it will use the existing Mass and Jacobian.
   //       check if there is aperformance penalty
-  //Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->assembleAndsolveMpJ(this->inArgs_lin_, phiv, Mrhs_b, alpha, beta);
+  // Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->assembleAndsolveMpJ(this->inArgs_lin_, phiv, Mrhs_b, alpha, beta);
   Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(phiv, Mrhs_b, alpha, beta);
 
   return sStatus;
@@ -86,26 +86,23 @@ void PhiEvaluatorPFD<Scalar>::setPhiEvaluatorValues(
 {
   PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
 
-  //pl->validateParametersAndSetDefaults(*getValidParameters());
+  // pl->validateParametersAndSetDefaults(*getValidParameters());
 
   std::string pfdMethod = pl->get<std::string>("PFD Method", "CN");
-  if (pfdMethod != "CN")
-  {
+  if (pfdMethod != "CN") {
     Teuchos::RCP<Teuchos::FancyOStream> l_out = this->getOStream();
     l_out->setOutputToRootOnly(0);
     *l_out << "PFD Method '" << pfdMethod << "'\n"
            << "is not yet implemented, continuing with CN!\n";
   }
 
-  if (this->lumpMassMatrix_ == true)
-  {
+  if (this->lumpMassMatrix_ == true) {
     Teuchos::RCP<Teuchos::FancyOStream> l_out = this->getOStream();
     l_out->setOutputToRootOnly(0);
     *l_out << "Option: 'Lump Mass Matrix' is not supported for PFD Solvers, continuing with full matrix.\n";
     this->setLumpMassMatrix(false);
   }
 }
-
 
 // Nonmember constructors.
 // ------------------------------------------------------------------------

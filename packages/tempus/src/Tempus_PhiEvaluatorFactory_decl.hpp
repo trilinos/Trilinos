@@ -77,7 +77,6 @@ class PhiEvaluatorFactory {
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model);
 };
 
-
 }  // namespace Tempus
 
 #endif  // Tempus_PhiEvaluatorFactory_decl_hpp

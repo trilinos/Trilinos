@@ -107,7 +107,7 @@ namespace Tempus_Test {
 
 template <class Scalar>
 class ReactionModel : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
-                    public Teuchos::ParameterListAcceptorDefaultBase {
+                      public Teuchos::ParameterListAcceptorDefaultBase {
  public:
   // Constructor
   ReactionModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
@@ -170,7 +170,7 @@ class ReactionModel : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
   // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
   //                            x_1(t) = b*f*cos(f*t+phi)
   Scalar lambda0_, lambda1_, lambda2_;
-Scalar Lmat_[3][3];
+  Scalar Lmat_[3][3];
   Scalar t0_ic_;  ///< Time value where the initial condition is specified
   Scalar x0_ic_;  ///< Initial condition for x0
   Scalar x1_ic_;  ///< Initial condition for x1

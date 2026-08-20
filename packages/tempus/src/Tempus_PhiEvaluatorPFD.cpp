@@ -19,7 +19,7 @@ TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhiEvaluatorPFD)
 
 // Nonmember constructor from a ParameterList
 template Teuchos::RCP<PhiEvaluatorPFD<double> > createPhiEvaluatorPFD(
-  Teuchos::RCP<Teuchos::ParameterList> pList);
+    Teuchos::RCP<Teuchos::ParameterList> pList);
 
 }  // namespace Tempus
 

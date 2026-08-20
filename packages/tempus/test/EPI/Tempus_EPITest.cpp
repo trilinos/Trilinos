@@ -53,11 +53,10 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
 {
   // Run EPI integrator logic with different PhiEvaluator configurations
   std::vector<std::string> xml_cases = {
-    "Taylor",
-    "Leja"
-  };
+      "Taylor",
+      "Leja"};
 
-  for (const auto& xml_case : xml_cases ){
+  for (const auto& xml_case : xml_cases) {
     RCP<Tempus::IntegratorBasic<double>> integrator;
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
     std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
@@ -89,10 +88,10 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
       auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
       if (xml_case == "Leja") {
         phiList.set("PhiEvaluator Type", "Leja")
-               .set("Expansion Order", 30)
-               .set("Leja DD Method", 2)
-               .set("leja_a", -1.0)
-               .set("leja_c", 0.001);
+            .set("Expansion Order", 30)
+            .set("Leja DD Method", 2)
+            .set("leja_a", -1.0)
+            .set("leja_c", 0.001);
       }
       else if (xml_case == "Taylor") {
         phiList.remove("Leja DD Method", false);
@@ -100,7 +99,7 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
         phiList.remove("leja_c", false);
 
         phiList.set("PhiEvaluator Type", "Taylor")
-               .set("Expansion Order", 20);
+            .set("Expansion Order", 20);
       }
 
       integrator = Tempus::createIntegratorBasic<double>(pl, model);
@@ -128,8 +127,8 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
       // Test if at 'Final Time'
       time             = integrator->getTime();
       double timeFinal = pl->sublist("Demo Integrator")
-                            .sublist("Time Step Control")
-                            .get<double>("Final Time");
+                             .sublist("Time Step Control")
+                             .get<double>("Final Time");
       TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
       // Time-integrated solution and the exact solution
@@ -147,9 +146,9 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
         for (int i = 0; i < solutionHistory->getNumStates(); i++) {
           double time_i = (*solutionHistory)[i]->getTime();
           auto state    = Tempus::createSolutionStateX(
-                rcp_const_cast<Thyra::VectorBase<double>>(
+                 rcp_const_cast<Thyra::VectorBase<double>>(
                   model->getExactSolution(time_i).get_x()),
-                rcp_const_cast<Thyra::VectorBase<double>>(
+                 rcp_const_cast<Thyra::VectorBase<double>>(
                   model->getExactSolution(time_i).get_x_dot()));
           state->setTime((*solutionHistory)[i]->getTime());
           solnHistExact->addState(state);
@@ -179,8 +178,8 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
     }
 
     // compute difference between expected and computed
-    auto gold = solutions[solutions.size()-1];
-    for (size_t i=0; i<solutions.size()-1; ++i) {
+    auto gold = solutions[solutions.size() - 1];
+    for (size_t i = 0; i < solutions.size() - 1; ++i) {
       auto calc = solutions[i];
       Thyra::Vp_StV(calc.ptr(), -1.0, *gold);
       TEST_COMPARE(calc->norm_2(), <=, 1e-8);
@@ -194,11 +193,10 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
 {
   // Run EPI integrator logic with different PhiEvaluator configurations
   std::vector<std::string> xml_cases = {
-    "Taylor",
-    "Leja"
-  };
+      "Taylor",
+      "Leja"};
 
-  for (const auto& xml_case : xml_cases ){
+  for (const auto& xml_case : xml_cases) {
     RCP<Tempus::IntegratorBasic<double>> integrator;
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
     std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
@@ -224,20 +222,13 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
       pl->sublist("Demo Integrator")
           .sublist("Time Step Control")
           .set("Initial Time Step", dt);
-      
+
       // Update the PhiEvaluator parameters based on the PhiEvaluator type
       if (xml_case == "Leja") {
-        pl->sublist("Demo Stepper").sublist("PhiEvaluator")
-            .set("PhiEvaluator Type", "Leja")
-            .set("Expansion Order", 50)
-            .set("leja_tol", 1e-12)
-            .set("leja_a", -1.0)
-            .set("leja_c", 0.001);
+        pl->sublist("Demo Stepper").sublist("PhiEvaluator").set("PhiEvaluator Type", "Leja").set("Expansion Order", 50).set("leja_tol", 1e-12).set("leja_a", -1.0).set("leja_c", 0.001);
       }
       else if (xml_case == "Taylor") {
-        pl->sublist("Demo Stepper").sublist("PhiEvaluator")
-            .set("PhiEvaluator Type", "Taylor")
-            .set("Expansion Order", 16);
+        pl->sublist("Demo Stepper").sublist("PhiEvaluator").set("PhiEvaluator Type", "Taylor").set("Expansion Order", 16);
       }
 
       integrator = Tempus::createIntegratorBasic<double>(pl, model);
@@ -263,8 +254,8 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
       // Test if at 'Final Time'
       time             = integrator->getTime();
       double timeFinal = pl->sublist("Demo Integrator")
-                            .sublist("Time Step Control")
-                            .get<double>("Final Time");
+                             .sublist("Time Step Control")
+                             .get<double>("Final Time");
       TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
       // Time-integrated solution and the exact solution
@@ -277,15 +268,15 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
         RCP<const SolutionHistory<double>> solutionHistory =
             integrator->getSolutionHistory();
         writeSolution("Tempus_EPI_Reaction_" + xml_case + ".dat", solutionHistory);
-      // solutionHistory->printHistory("high");
+        // solutionHistory->printHistory("high");
 
         auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
         for (int i = 0; i < solutionHistory->getNumStates(); i++) {
           double time_i = (*solutionHistory)[i]->getTime();
           auto state    = Tempus::createSolutionStateX(
-                rcp_const_cast<Thyra::VectorBase<double>>(
+                 rcp_const_cast<Thyra::VectorBase<double>>(
                   model->getExactSolution(time_i).get_x()),
-                rcp_const_cast<Thyra::VectorBase<double>>(
+                 rcp_const_cast<Thyra::VectorBase<double>>(
                   model->getExactSolution(time_i).get_x_dot()));
           state->setTime((*solutionHistory)[i]->getTime());
           solnHistExact->addState(state);
@@ -322,7 +313,7 @@ TEUCHOS_UNIT_TEST(EPI, Reaction)
                     solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
                     xDotSlope, out);
 
-    for (int i=0; i < nTimeStepSizes - 1; ++i) {
+    for (int i = 0; i < nTimeStepSizes - 1; ++i) {
       // Linear problem, expect near exact solution from exp. integrator
       // for all time step sizes.
       TEST_COMPARE(xErrorNorm[i], <=, 1.0e-10);
@@ -338,9 +329,8 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
 {
   // Run EPI integrator logic with different PhiEvaluator configurations
   std::vector<std::string> xml_cases = {
-    "Taylor",
-    "Leja"
-  };
+      "Taylor",
+      "Leja"};
 
   for (const auto& xml_case : xml_cases) {
     RCP<Tempus::IntegratorBasic<double>> integrator;
@@ -374,11 +364,11 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
       auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
       if (xml_case == "Leja") {
         phiList.set("PhiEvaluator Type", "Leja")
-               .set("Expansion Order", 30)
-               .set("Leja DD Method", 2)
-               .set("leja_tol", 1e-8)
-               .set("leja_a", -1.0)
-               .set("leja_c", 0.5);
+            .set("Expansion Order", 30)
+            .set("Leja DD Method", 2)
+            .set("leja_tol", 1e-8)
+            .set("leja_a", -1.0)
+            .set("leja_c", 0.5);
       }
       else if (xml_case == "Taylor") {
         phiList.remove("Leja DD Method", false);
@@ -387,7 +377,7 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
         phiList.remove("leja_c", false);
 
         phiList.set("PhiEvaluator Type", "Taylor")
-               .set("Expansion Order", 30);
+            .set("Expansion Order", 30);
       }
 
       integrator = Tempus::createIntegratorBasic<double>(pl, model);
@@ -399,8 +389,8 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
       // Test if at 'Final Time'
       double time      = integrator->getTime();
       double timeFinal = pl->sublist("Demo Integrator")
-                            .sublist("Time Step Control")
-                            .get<double>("Final Time");
+                             .sublist("Time Step Control")
+                             .get<double>("Final Time");
       double tol = 100.0 * std::numeric_limits<double>::epsilon();
       TEST_FLOATING_EQUALITY(time, timeFinal, tol);
 
@@ -466,7 +456,7 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
 
       // Setup the NonAutoSrcModel
       RCP<ParameterList> scm_pl = sublist(pList, "NonAutoSrcModel", true);
-      auto model = rcp(new NonAutoSrcModel<double>(scm_pl));
+      auto model                = rcp(new NonAutoSrcModel<double>(scm_pl));
 
       dt /= 2;
 
@@ -477,7 +467,7 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
           .set("Initial Time Step", dt);
       if (ii == 0)
         pl->sublist("Demo Stepper")
-          .set("Epsilon for RHS finite difference", -1.0);
+            .set("Epsilon for RHS finite difference", -1.0);
       else
         pl->sublist("Demo Stepper")
             .set("Epsilon for RHS finite difference", 1e-4);
@@ -505,8 +495,8 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
       // Test if at 'Final Time'
       time             = integrator->getTime();
       double timeFinal = pl->sublist("Demo Integrator")
-                            .sublist("Time Step Control")
-                            .get<double>("Final Time");
+                             .sublist("Time Step Control")
+                             .get<double>("Final Time");
       TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
       // Time-integrated solution and the exact solution
@@ -519,15 +509,15 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
         RCP<const SolutionHistory<double>> solutionHistory =
             integrator->getSolutionHistory();
         writeSolution(xml_case + ".dat", solutionHistory);
-      // solutionHistory->printHistory("high");
+        // solutionHistory->printHistory("high");
 
         auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
         for (int i = 0; i < solutionHistory->getNumStates(); i++) {
           double time_i = (*solutionHistory)[i]->getTime();
           auto state    = Tempus::createSolutionStateX(
-                rcp_const_cast<Thyra::VectorBase<double>>(
+                 rcp_const_cast<Thyra::VectorBase<double>>(
                   model->getExactSolution(time_i).get_x()),
-                rcp_const_cast<Thyra::VectorBase<double>>(
+                 rcp_const_cast<Thyra::VectorBase<double>>(
                   model->getExactSolution(time_i).get_x_dot()));
           state->setTime((*solutionHistory)[i]->getTime());
           solnHistExact->addState(state);
@@ -563,17 +553,15 @@ TEUCHOS_UNIT_TEST(EPI, NonAutoSrc)
     writeOrderError(xml_case + "-Error.dat", stepper, StepSize,
                     solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
                     xDotSlope, out);
-    if (ii == 0)
-    {
+    if (ii == 0) {
       // Without nonautonomous correction, expect order ~1.0
       TEST_FLOATING_EQUALITY(xSlope, 1.0, 0.2);
     }
-    else
-    {
+    else {
       // With nonautonomous correction, expect full order
       TEST_FLOATING_EQUALITY(xSlope, stepper->getOrder(), 0.2);
     }
-    for (int i=0; i < nTimeStepSizes - 1; ++i) {
+    for (int i = 0; i < nTimeStepSizes - 1; ++i) {
       TEST_COMPARE(xErrorNorm[i], <=, 1.0e-10);
     }
 
@@ -607,8 +595,7 @@ TEUCHOS_UNIT_TEST(EPI, LotkaVolterra)
         .sublist("Time Step Control")
         .set("Maximum Time Step", dt_ref);
 
-    pl->sublist("Demo Stepper").set("Stepper Type", "RK Explicit 4 Stage")
-        .set("Use Embedded", false);
+    pl->sublist("Demo Stepper").set("Stepper Type", "RK Explicit 4 Stage").set("Use Embedded", false);
 
     pl->sublist("Demo Stepper").remove("EPI Order", false);
     pl->sublist("Demo Stepper").remove("Predictor Stepper Type", false);
@@ -711,7 +698,5 @@ TEUCHOS_UNIT_TEST(EPI, LotkaVolterra)
 
   Teuchos::TimeMonitor::summarize();
 }
-
-
 
 }  // namespace Tempus_Test

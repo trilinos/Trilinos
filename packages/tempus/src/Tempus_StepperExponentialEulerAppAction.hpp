@@ -13,11 +13,11 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration
-template<class Scalar> class StepperExponentialEuler;
+template <class Scalar>
+class StepperExponentialEuler;
 
 /** \brief Application Action for StepperExponentialEuler.
  *
@@ -31,17 +31,15 @@ template<class Scalar> class StepperExponentialEuler;
  *  (StepperExponentialEulerAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperExponentialEuler.
  */
-template<class Scalar>
-class StepperExponentialEulerAppAction
-{
-public:
-
+template <class Scalar>
+class StepperExponentialEulerAppAction {
+ public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.
-    BEFORE_EXP,     ///< Before the exponential solve.
-    AFTER_EXP,      ///< After the exponential solve.
-    END_STEP        ///< At the end of the step.
+    BEGIN_STEP,  ///< At the beginning of the step.
+    BEFORE_EXP,  ///< Before the exponential solve.
+    AFTER_EXP,   ///< After the exponential solve.
+    END_STEP     ///< At the end of the step.
   };
 
   /// Constructor
@@ -52,11 +50,11 @@ public:
 
   /// Execute application action for ExponentialEuler Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperExponentialEuler<Scalar> > stepper,
-    const typename StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperExponentialEuler<Scalar> > stepper,
+      const typename StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperExponentialEulerAppAction_hpp
+#endif  // Tempus_StepperExponentialEulerAppAction_hpp

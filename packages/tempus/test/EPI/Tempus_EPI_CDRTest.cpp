@@ -45,7 +45,6 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
-
 // ************************************************************
 // ************************************************************
 template <typename SC, typename Model, typename Comm>
@@ -87,11 +86,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     auto p = rcp(new ParameterList);
     p->set("Linear Solver Type", "Belos");
     p->set("Preconditioner Type", "None");
-    p->sublist("Linear Solver Types").sublist("Belos")
-        .set("Solver Type", "Pseudo Block GMRES");
-    p->sublist("Linear Solver Types").sublist("Belos")
-        .sublist("Solver Types").sublist("Pseudo Block GMRES")
-        .set("Convergence Tolerance", 1e-13);
+    p->sublist("Linear Solver Types").sublist("Belos").set("Solver Type", "Pseudo Block GMRES");
+    p->sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block GMRES").set("Convergence Tolerance", 1e-13);
     builder.setParameterList(p);
 
     auto lowsFactory = builder.createLinearSolveStrategy("");
@@ -116,12 +112,12 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     auto& phiList = pl->sublist("Demo Stepper").sublist("PhiEvaluator");
     if (caseName == "Leja") {
       phiList.set("PhiEvaluator Type", "Leja")
-             .set("Expansion Order", 100)
-             .set("Leja DD Method", 2)
-             .set("Leja Ellipse Safety Factor", 1.05)
-             .set("leja_tol", 1.e-14)
-             .set("leja_a", -50000.0)
-             .set("leja_c", 1000.0);
+          .set("Expansion Order", 100)
+          .set("Leja DD Method", 2)
+          .set("Leja Ellipse Safety Factor", 1.05)
+          .set("leja_tol", 1.e-12)
+          .set("leja_a", -50000.0)
+          .set("leja_c", 1000.0);
     }
     else if (caseName == "Taylor") {
       // Invalid plist options for the Taylor PhiEvaluator
@@ -132,7 +128,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
       phiList.remove("leja_c", false);
 
       phiList.set("PhiEvaluator Type", "Taylor")
-             .set("Expansion Order", 100);
+          .set("Expansion Order", 100);
     }
 
     phiList.set("Lump Mass Matrix", lumped);
@@ -147,10 +143,10 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     if (!test_xdot) {
       // delete x_dot from the history
-      auto sh = integrator->getNonConstSolutionHistory();
+      auto sh     = integrator->getNonConstSolutionHistory();
       auto state0 = sh->getCurrentState();
 
-      Teuchos::RCP<const Thyra::VectorBase<double> > xdot_null;
+      Teuchos::RCP<const Thyra::VectorBase<double>> xdot_null;
       state0->setXDot(xdot_null);
       integrator->getStepper()->setInitialConditions(sh);
     }
@@ -238,9 +234,9 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     TEST_COMPARE(std::abs(xDotErrorNorm[nTimeStepSizes - 2]), <=, std::get<1>(tol_compare));
   }
   // Slopes are flat for EPI, due to exact solution.
-  //double order = stepper->getOrder();
-  //TEST_FLOATING_EQUALITY(xSlope, order, 0.01 );
-  //TEST_FLOATING_EQUALITY(xDotSlope, order, 0.01 );
+  // double order = stepper->getOrder();
+  // TEST_FLOATING_EQUALITY(xSlope, order, 0.01 );
+  // TEST_FLOATING_EQUALITY(xDotSlope, order, 0.01 );
 
   // ---------------------------------------------------------------
   // Run SDIRK 3 Stage 4th order at the finest EPI step as a baseline
@@ -254,11 +250,11 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
         getParametersFromXmlFile("Tempus_EPI_CDR.xml");
 
     RCP<ParameterList> model_plS = sublist(pListS, "CDR Model", true);
-    const auto num_elemS  = model_plS->get<int>("num elements");
-    const auto left_endS  = model_plS->get<SC>("left end");
-    const auto right_endS = model_plS->get<SC>("right end");
-    const auto a_convS    = model_plS->get<SC>("a (convection)");
-    const auto k_srcS     = model_plS->get<SC>("k (source)");
+    const auto num_elemS         = model_plS->get<int>("num elements");
+    const auto left_endS         = model_plS->get<SC>("left end");
+    const auto right_endS        = model_plS->get<SC>("right end");
+    const auto a_convS           = model_plS->get<SC>("a (convection)");
+    const auto k_srcS            = model_plS->get<SC>("k (source)");
 
     auto modelSDIRK = rcp(new Model(comm, num_elemS, left_endS, right_endS,
                                     a_convS, k_srcS));
@@ -281,9 +277,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     plS->sublist("Demo Stepper").set("Stepper Type", "SDIRK 3 Stage 4th order");
 
     // TODO I moved this tolerance from the xml file here, no idea if that is useful
-    plS->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX")
-        .sublist("Direction").sublist("Newton").sublist("Linear Solver")
-        .set<double>("Tolerance", 1.0e-12);
+    plS->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver").set<double>("Tolerance", 1.0e-12);
 
     plS->sublist("Demo Stepper").remove("PhiEvaluator", false);
 
@@ -313,8 +307,8 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     Thyra::V_StVpStV(xDiff.ptr(), 1.0, *xSDIRK,
                      -1.0, *(solutions[nTimeStepSizes - 1]));
     double sdirkDiffNorm = Thyra::norm_2(*xDiff);
-    double epiNorm = Thyra::norm_2(*(solutions[nTimeStepSizes - 1]));
-    double sdirkNorm = Thyra::norm_2(*xSDIRK);
+    double epiNorm       = Thyra::norm_2(*(solutions[nTimeStepSizes - 1]));
+    double sdirkNorm     = Thyra::norm_2(*xSDIRK);
     out << "  ||EPI_fine||_2 = " << epiNorm << std::endl;
     out << "  ||SDIRK_fine||_2 = " << sdirkNorm << std::endl;
     out << "  ||EPI_fine - SDIRK_fine||_2 = " << sdirkDiffNorm << std::endl;
@@ -323,7 +317,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     // since SDIRK does not perform Mass lumping
     double tol_sdirk = 1e-2;
     if (!lumped)
-       tol_sdirk = 1e-5;
+      tol_sdirk = 1e-5;
 
     TEST_COMPARE(sdirkDiffNorm, <=, tol_sdirk);
   }
@@ -367,7 +361,7 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja_lumped)
   auto comm = Tpetra::getDefaultComm();
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-     comm, comm->getSize(), out, success, "Leja", true);
+      comm, comm->getSize(), out, success, "Leja", true);
 }
 
 // ************************************************************
@@ -383,7 +377,7 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja)
   auto comm = Tpetra::getDefaultComm();
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-     comm, comm->getSize(), out, success, "Leja", false);
+      comm, comm->getSize(), out, success, "Leja", false);
 }
 
 // ************************************************************
@@ -399,7 +393,7 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor_lumped)
   auto comm = Tpetra::getDefaultComm();
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-     comm, comm->getSize(), out, success, "Taylor", true);
+      comm, comm->getSize(), out, success, "Taylor", true);
 }
 
 // ************************************************************
@@ -415,10 +409,8 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor)
   auto comm = Tpetra::getDefaultComm();
 
   CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-     comm, comm->getSize(), out, success, "Taylor", false);
+      comm, comm->getSize(), out, success, "Taylor", false);
 }
 #endif
-
-
 
 }  // namespace Tempus_Test

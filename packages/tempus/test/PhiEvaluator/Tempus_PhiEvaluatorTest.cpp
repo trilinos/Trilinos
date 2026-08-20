@@ -52,13 +52,13 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
 
   // Setup the SinCosModel as mock model
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  auto model = rcp(new SinCosModel<double>(scm_pl));
+  auto model                = rcp(new SinCosModel<double>(scm_pl));
   // auto model_tay = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup the PhiEvaluator
   const int expansion_order = 20;
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
-  const int dd_method = 2;
+  const int dd_method       = 2;
   phi_pl->set("Leja DD Method", dd_method);
   phi_pl->set("Expansion Order", expansion_order);
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
 
   // Setup Taylor PhiEvaluator for comparison
   RCP<ParameterList> phi_pl_tay = sublist(pListTay, "PhiEvaluator");
-  auto phiEvaluatorTay = Tempus::createPhiEvaluatorTaylor<double>(phi_pl_tay);
+  auto phiEvaluatorTay          = Tempus::createPhiEvaluatorTaylor<double>(phi_pl_tay);
   phiEvaluatorTay->setModel(model);
   phiEvaluatorTay->initialize();
 
@@ -103,14 +103,12 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp_dd[2], 0.075829495185, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3], 0.01263699560, 1e-8);
 
-
   // test large ellipse and runtime
   const int expansion_order_high = 300;
   leja_a                         = -600.0;
   leja_c                         = 300.0;
 
-  for (int n_test = 0; n_test < 10; n_test++)
-  {
+  for (int n_test = 0; n_test < 10; n_test++) {
     // test dt scaling: scale Leja ellipse in one case, use dt as argument in another
     const double dt = std::pow(.75, n_test);
 
@@ -128,12 +126,11 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
     }
 
     // print the entire dd array
-    //std::cout << "LP_DD: " << lp_dd() << std::endl;
+    // std::cout << "LP_DD: " << lp_dd() << std::endl;
     std::cout << "First 10 dd for dt=" << dt << ": " << lp_dd(lp_dd.lowerOffset(), 10);
-    std::cout << ". Last 10 dd: " << lp_dd(lp_dd.upperOffset()-10, 10) << std::endl;
+    std::cout << ". Last 10 dd: " << lp_dd(lp_dd.upperOffset() - 10, 10) << std::endl;
 
-    for (int dd_m = 0; dd_m <= 3; dd_m++)
-    {
+    for (int dd_m = 0; dd_m <= 3; dd_m++) {
       // check divided difference calculation against other versions
 
       phiEvaluator->setLejaEllipse(dt * leja_a, dt * leja_b, dt * leja_c);
@@ -149,15 +146,13 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
         lp_dd_alt = phiEvaluator->getDividedDiffs(0, 1.0, expansion_order_high);
       }
 
-      if (dd_m == 0)
-      {
+      if (dd_m == 0) {
         // compare only first entries due to instability of recurrence relation
         const int n_entries_accurate = 40;
         TEST_COMPARE_FLOATING_ARRAYS(lp_dd.view(lp_dd.lowerOffset(), n_entries_accurate),
                                      lp_dd_alt.view(lp_dd.lowerOffset(), n_entries_accurate), 1e-8);
       }
-      else
-      {
+      else {
         TEST_COMPARE_FLOATING_ARRAYS(lp_dd, lp_dd_alt, 1e-8);
       }
     }
@@ -171,11 +166,11 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // compute exp(dt*A)*v using PhiEvaluatorLeja
   // make a digonal linop from SinCosModel
   // with A = [[0, -1], [0, 1]]
-  auto x_space = model->get_x_space();
+  auto x_space                                      = model->get_x_space();
   Teuchos::RCP<Thyra::VectorBase<double>> xdot_init = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> v = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> vend = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> v         = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend      = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay  = createMember(x_space);
 
   // set initial condition v0 = (-1.0, 0)
   Thyra::assign(v.ptr(), 0.0);
@@ -217,23 +212,23 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_Adapt_SinCos)
 
   // Setup the SinCosModel as mock model
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  auto model = rcp(new SinCosModel<double>(scm_pl));
+  auto model                = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup the PhiEvaluator
   const int expansion_order = 20;
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
-  const int dd_method = 2;
+  const int dd_method       = 2;
   phi_pl->set("Leja DD Method", dd_method);
   phi_pl->set("Expansion Order", expansion_order);
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
   phiEvaluator->setModel(model);
   phiEvaluator->initialize();
 
-  auto x_space = model->get_x_space();
+  auto x_space                                      = model->get_x_space();
   Teuchos::RCP<Thyra::VectorBase<double>> xdot_init = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> v = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> vend = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> v         = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend      = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay  = createMember(x_space);
 
   // set initial condition v0 = (-1.0, 0)
   Thyra::assign(v.ptr(), 0.0);
@@ -276,23 +271,23 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_Adapt_Reaction)
 
   // Setup the SinCosModel as mock model
   RCP<ParameterList> scm_pl = sublist(pList, "ReactionModel", true);
-  auto model = rcp(new ReactionModel<double>(scm_pl));
+  auto model                = rcp(new ReactionModel<double>(scm_pl));
 
   // Setup the PhiEvaluator
   const int expansion_order = 20;
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
-  const int dd_method = 2;
+  const int dd_method       = 2;
   phi_pl->set("Leja DD Method", dd_method);
   phi_pl->set("Expansion Order", expansion_order);
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
   phiEvaluator->setModel(model);
   phiEvaluator->initialize();
 
-  auto x_space = model->get_x_space();
+  auto x_space                                      = model->get_x_space();
   Teuchos::RCP<Thyra::VectorBase<double>> xdot_init = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> v = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> vend = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> v         = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend      = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay  = createMember(x_space);
 
   // set initial condition v0 = (-1.0, 0)
   Thyra::assign(v.ptr(), 0.0);

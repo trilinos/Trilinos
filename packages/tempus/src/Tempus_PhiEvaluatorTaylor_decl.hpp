@@ -14,7 +14,6 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-
 namespace Tempus {
 
 /** \brief Evaluates phi functions with a truncated Taylor series.
@@ -32,56 +31,56 @@ template <class Scalar>
 class PhiEvaluatorTaylor
   : virtual public PhiEvaluator<Scalar> {
  public:
-   /** \brief Constructs an evaluator with the supplied descriptive name.
-    * @param name std::string stored as the evaluator name.
-    */
+  /** \brief Constructs an evaluator with the supplied descriptive name.
+   * @param name std::string stored as the evaluator name.
+   */
   PhiEvaluatorTaylor(std::string name);
   PhiEvaluatorTaylor() : PhiEvaluatorTaylor("PhiEvaluatorTaylor")
-  { }
+  {
+  }
 
-   /// \name Basic PhiEvaluatorTaylor Methods
+  /// \name Basic PhiEvaluatorTaylor Methods
 
   std::string description() const;
   void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const;
 
-   /** \brief Returns valid parameters including defaults. */
+  /** \brief Returns valid parameters including defaults. */
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
-   /** \brief Applies base parameters and "Expansion Order".
-    *
-    * @param pl Teuchos::RCP to the mutable evaluator ParameterList.
-    */
+  /** \brief Applies base parameters and "Expansion Order".
+   *
+   * @param pl Teuchos::RCP to the mutable evaluator ParameterList.
+   */
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
-   /** \brief Sets the int Taylor degree \f$N > 0\f$ used for new evaluations.
-    * @param expansionOrder Number of operator-power updates after the initial
-    * \f$j=0\f$ term.
-    */
+  /** \brief Sets the int Taylor degree \f$N > 0\f$ used for new evaluations.
+   * @param expansionOrder Number of operator-power updates after the initial
+   * \f$j=0\f$ term.
+   */
   void setExpansionOrder(const int expansionOrder) { expansionOrder_ = expansionOrder; }
 
-   /** \brief Returns the int Taylor degree \f$N>0\f$. */
+  /** \brief Returns the int Taylor degree \f$N>0\f$. */
   int getExpansionOrder() const { return expansionOrder_; }
 
-  protected:
-   /** \brief Applies the truncated Taylor series in place.
-    *
-    * @param phi_order Nonnegative int phi-function index \f$p\f$.
-    * @param L Const Teuchos::RCP to the already time-scaled
-    * Thyra::LinearOpBase<Scalar>.
-    * @param v Nonnull Teuchos::Ptr to the input vector, overwritten by the
-    * series result.
-    * @param cdt Scalar retained by the virtual interface; this implementation
-    * uses the scaling already contained in @p L.
-    * @return Thyra::SolveStatus<Scalar> whose achieved tolerance is the final
-    * update infinity norm.
-    */
+ protected:
+  /** \brief Applies the truncated Taylor series in place.
+   *
+   * @param phi_order Nonnegative int phi-function index \f$p\f$.
+   * @param L Const Teuchos::RCP to the already time-scaled
+   * Thyra::LinearOpBase<Scalar>.
+   * @param v Nonnull Teuchos::Ptr to the input vector, overwritten by the
+   * series result.
+   * @param cdt Scalar retained by the virtual interface; this implementation
+   * uses the scaling already contained in @p L.
+   * @return Thyra::SolveStatus<Scalar> whose achieved tolerance is the final
+   * update infinity norm.
+   */
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
-               const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-               const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
-               const Scalar cdt=1.0
-               ) override;
+                                             const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+                                             const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
+                                             const Scalar cdt = 1.0) override;
 
-  private:
+ private:
   /** \brief int Taylor degree \f$N>0\f$ configured by "Expansion Order". */
   int expansionOrder_;
 

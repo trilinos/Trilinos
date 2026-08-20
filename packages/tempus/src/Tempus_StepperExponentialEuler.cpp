@@ -15,14 +15,14 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperExponentialEuler)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperExponentialEuler)
 
-  // Nonmember constructor
-  template Teuchos::RCP<StepperExponentialEuler<double> >
-  createStepperExponentialEuler(
+// Nonmember constructor
+template Teuchos::RCP<StepperExponentialEuler<double> >
+createStepperExponentialEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl);
 
-}
+}  // namespace Tempus
 
 #endif

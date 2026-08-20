@@ -17,7 +17,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperExponentialEuler.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperExponentialEuler.
@@ -28,41 +27,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperExponentialEulerModifierDefault
-  : virtual public Tempus::StepperExponentialEulerModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperExponentialEulerModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperExponentialEulerModifierDefault(){}
+  StepperExponentialEulerModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperExponentialEulerModifierDefault(){}
+  virtual ~StepperExponentialEulerModifierDefault() {}
 
   /// Modify ExponentialEuler Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperExponentialEuler<Scalar> > /* stepper */,
-    const typename StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperExponentialEuler<Scalar> > /* stepper */,
+      const typename StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperExponentialEulerAppAction<Scalar>::BEGIN_STEP:
       case StepperExponentialEulerAppAction<Scalar>::BEFORE_EXP:
       case StepperExponentialEulerAppAction<Scalar>::AFTER_EXP:
-      case StepperExponentialEulerAppAction<Scalar>::END_STEP:
-      {
+      case StepperExponentialEulerAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperExponentialEulerModifierDefault_hpp
+#endif  // Tempus_StepperExponentialEulerModifierDefault_hpp

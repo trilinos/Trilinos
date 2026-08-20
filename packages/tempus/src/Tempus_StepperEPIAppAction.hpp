@@ -13,11 +13,11 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
-
 namespace Tempus {
 
 // Forward Declaration
-template<class Scalar> class StepperEPI;
+template <class Scalar>
+class StepperEPI;
 
 /** \brief Application Action for StepperEPI.
  *
@@ -31,17 +31,15 @@ template<class Scalar> class StepperEPI;
  *  (StepperEPIAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperEPI.
  */
-template<class Scalar>
-class StepperEPIAppAction
-{
-public:
-
+template <class Scalar>
+class StepperEPIAppAction {
+ public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.
-    BEFORE_EXP,     ///< Before the exponential solve.
-    AFTER_EXP,      ///< After the exponential solve.
-    END_STEP        ///< At the end of the step.
+    BEGIN_STEP,  ///< At the beginning of the step.
+    BEFORE_EXP,  ///< Before the exponential solve.
+    AFTER_EXP,   ///< After the exponential solve.
+    END_STEP     ///< At the end of the step.
   };
 
   /// Constructor
@@ -52,11 +50,11 @@ public:
 
   /// Execute application action for EPI Stepper.
   virtual void execute(
-    Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    Teuchos::RCP<StepperEPI<Scalar> > stepper,
-    const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+      Teuchos::RCP<SolutionHistory<Scalar> > sh,
+      Teuchos::RCP<StepperEPI<Scalar> > stepper,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperEPIAppAction_hpp
+#endif  // Tempus_StepperEPIAppAction_hpp

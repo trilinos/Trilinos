@@ -17,7 +17,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperEPI.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperEPI.
@@ -28,41 +27,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperEPIModifierDefault
-  : virtual public Tempus::StepperEPIModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperEPIModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperEPIModifierDefault(){}
+  StepperEPIModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperEPIModifierDefault(){}
+  virtual ~StepperEPIModifierDefault() {}
 
   /// Modify EPI Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperEPI<Scalar> > /* stepper */,
-    const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperEPI<Scalar> > /* stepper */,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperEPIAppAction<Scalar>::BEGIN_STEP:
       case StepperEPIAppAction<Scalar>::BEFORE_EXP:
       case StepperEPIAppAction<Scalar>::AFTER_EXP:
-      case StepperEPIAppAction<Scalar>::END_STEP:
-      {
+      case StepperEPIAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperEPIModifierDefault_hpp
+#endif  // Tempus_StepperEPIModifierDefault_hpp

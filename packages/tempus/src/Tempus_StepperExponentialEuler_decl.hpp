@@ -51,12 +51,9 @@ namespace Tempus {
  *
  * @tparam Scalar Scalar type used by the model, state vectors, and time.
  */
-template<class Scalar>
-class StepperExponentialEuler :
-    virtual public Tempus::StepperExponential<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperExponentialEuler : virtual public Tempus::StepperExponential<Scalar> {
+ public:
   /**
    * \brief Construct an uninitialized stepper with the default PhiEvaluator.
    *
@@ -88,82 +85,84 @@ public:
    *   default no-op action.
    */
   StepperExponentialEuler(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> >& stepperEEAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
+      const Teuchos::RCP<Tempus::PhiEvaluator<Scalar>>& phiEvaluator,
+      bool useFSAL,
+      std::string ICConsistency,
+      bool ICConsistencyCheck,
+      const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar>>& stepperEEAppAction);
 
   /// \name Basic stepper methods
   //@{
-    /**
-     * \brief Set callbacks executed at the four exponential Euler action locations.
-     *
-     * A null `Teuchos::RCP` installs the default no-op action.  Changing the
-     * action invalidates the stepper setup.
-     *
-     * @param appAction `Teuchos::RCP` to the action callback, or null for the
-     *   default action.
-     */
-    virtual void setAppAction(
-      Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > appAction);
+  /**
+   * \brief Set callbacks executed at the four exponential Euler action locations.
+   *
+   * A null `Teuchos::RCP` installs the default no-op action.  Changing the
+   * action invalidates the stepper setup.
+   *
+   * @param appAction `Teuchos::RCP` to the action callback, or null for the
+   *   default action.
+   */
+  virtual void setAppAction(
+      Teuchos::RCP<StepperExponentialEulerAppAction<Scalar>> appAction);
 
-    /**
-     * \brief Return the action callback used during a step.
-     */
-    virtual Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > getAppAction() const
-    { return stepperEEAppAction_; }
+  /**
+   * \brief Return the action callback used during a step.
+   */
+  virtual Teuchos::RCP<StepperExponentialEulerAppAction<Scalar>> getAppAction() const
+  {
+    return stepperEEAppAction_;
+  }
 
-    /**
-     * \brief Advance the current SolutionState into the working SolutionState.
-     *
-     * The SolutionHistory must contain at least two states.  The working state
-     * provides \f$\Delta t\f$ and is updated with the phi_1 exponential Euler
-     * formula.  BEGIN_STEP runs first; BEFORE_EXP runs before residual/Jacobian
-     * assembly and the phi evaluation; AFTER_EXP runs after the update; and
-     * END_STEP runs after the working-state status, order, and norms are set.
-     * The working SolutionStatus is the SolveStatus returned by computePhi,
-     * including a nonconverged status when reported by the PhiEvaluator.
-     *
-     * When `Use FSAL` is enabled and xDot storage is present, the method
-     * reevaluates the completed state, converts the mass-weighted residual to
-     * xDot, and marks that state synchronized.  Otherwise the working state is
-     * marked unsynchronized.
-     *
-     * @pre The stepper is initialized and `solutionHistory` has current and
-     *   working SolutionStates.
-     * @param solutionHistory `Teuchos::RCP` holding the current state and the
-     *   working state to update.
-     */
-    virtual void takeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
+  /**
+   * \brief Advance the current SolutionState into the working SolutionState.
+   *
+   * The SolutionHistory must contain at least two states.  The working state
+   * provides \f$\Delta t\f$ and is updated with the phi_1 exponential Euler
+   * formula.  BEGIN_STEP runs first; BEFORE_EXP runs before residual/Jacobian
+   * assembly and the phi evaluation; AFTER_EXP runs after the update; and
+   * END_STEP runs after the working-state status, order, and norms are set.
+   * The working SolutionStatus is the SolveStatus returned by computePhi,
+   * including a nonconverged status when reported by the PhiEvaluator.
+   *
+   * When `Use FSAL` is enabled and xDot storage is present, the method
+   * reevaluates the completed state, converts the mass-weighted residual to
+   * xDot, and marks that state synchronized.  Otherwise the working state is
+   * marked unsynchronized.
+   *
+   * @pre The stepper is initialized and `solutionHistory` has current and
+   *   working SolutionStates.
+   * @param solutionHistory `Teuchos::RCP` holding the current state and the
+   *   working state to update.
+   */
+  virtual void takeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar>>& solutionHistory) override;
 
-    /**
-     * \brief Return the currently reported temporal order.
-     *
-     * @return `Scalar` value 1.0.
-     */
-    virtual Scalar getOrder() const override { return 1.0; }
-    /**
-     * \brief Return the minimum reported temporal order.
-     *
-     * @return `Scalar` value 1.0.
-     */
-    virtual Scalar getOrderMin() const override { return 1.0; }
-    /**
-     * \brief Return the maximum reported temporal order.
-     *
-     * Autonomous problems with an exact Jacobian can attain order two.
-     *
-     * @return `Scalar` value 2.0.
-     */
-    virtual Scalar getOrderMax() const override { return 2.0;}
+  /**
+   * \brief Return the currently reported temporal order.
+   *
+   * @return `Scalar` value 1.0.
+   */
+  virtual Scalar getOrder() const override { return 1.0; }
+  /**
+   * \brief Return the minimum reported temporal order.
+   *
+   * @return `Scalar` value 1.0.
+   */
+  virtual Scalar getOrderMin() const override { return 1.0; }
+  /**
+   * \brief Return the maximum reported temporal order.
+   *
+   * Autonomous problems with an exact Jacobian can attain order two.
+   *
+   * @return `Scalar` value 2.0.
+   */
+  virtual Scalar getOrderMax() const override { return 2.0; }
 
-    /** @brief Return true because this method advances from one current state. */
-    virtual bool isOneStepMethod() const override {return true;}
-    /** @brief Return false because this method does not consume older solution states. */
-    virtual bool isMultiStepMethod() const override {return !isOneStepMethod();}
+  /** @brief Return true because this method advances from one current state. */
+  virtual bool isOneStepMethod() const override { return true; }
+  /** @brief Return false because this method does not consume older solution states. */
+  virtual bool isMultiStepMethod() const override { return !isOneStepMethod(); }
   //@}
 
   /**
@@ -182,14 +181,14 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    /**
-     * \brief Write the base-stepper and exponential Euler configuration.
-     *
-     * @param out `Teuchos::FancyOStream` receiving the description.
-     * @param verbLevel Requested Teuchos verbosity level.
-     */
-    virtual void describe(Teuchos::FancyOStream& out,
-                          const Teuchos::EVerbosityLevel verbLevel) const override;
+  /**
+   * \brief Write the base-stepper and exponential Euler configuration.
+   *
+   * @param out `Teuchos::FancyOStream` receiving the description.
+   * @param verbLevel Requested Teuchos verbosity level.
+   */
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
   /**
@@ -202,14 +201,11 @@ public:
    * @param out `Teuchos::FancyOStream` receiving setup diagnostics.
    * @return `bool` true only when all required setup is valid.
    */
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const override;
 
-private:
-
-  Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > stepperEEAppAction_;
-
+ private:
+  Teuchos::RCP<StepperExponentialEulerAppAction<Scalar>> stepperEEAppAction_;
 };
-
 
 /**
  * \brief Create an exponential Euler stepper from a model and parameter list.
@@ -227,13 +223,12 @@ private:
  *   retains constructor defaults.
  * @return `Teuchos::RCP` to the created StepperExponentialEuler.
  */
-template<class Scalar>
-Teuchos::RCP<StepperExponentialEuler<Scalar> >
+template <class Scalar>
+Teuchos::RCP<StepperExponentialEuler<Scalar>>
 createStepperExponentialEuler(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl);
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
+}  // namespace Tempus
 
-} // namespace Tempus
-
-#endif // Tempus_StepperExponentialEuler_decl_hpp
+#endif  // Tempus_StepperExponentialEuler_decl_hpp
