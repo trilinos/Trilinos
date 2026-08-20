@@ -89,81 +89,67 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
     NUM_MPI_PROCS 4
   )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Structured
     NAME "StructuredRAPFactory_Constant_Laplace1D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace1D --nx=20 --op=setup"
-    COMM serial
-  )
-
-  TRIBITS_ADD_TEST(
-    Structured
-    NAME "StructuredRAPFactory_Constant_Laplace1D_XSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace1D --nx=20 --op=setup"
-    COMM mpi
-    NUM_MPI_PROCS 2
-  )
-
-  TRIBITS_ADD_TEST(
-    Structured
-    NAME "StructuredRAPFactory_Linear_Laplace2D_XYSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_lin.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup"
-    COMM mpi
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_laplace_const.xml --matrixType=Laplace1D --nx=20 --op=setup"
+    COMM serial mpi
     NUM_MPI_PROCS 4
   )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Structured
     NAME "StructuredRAPFactory_Constant_Laplace2D_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup"
-    COMM serial
-  )
-
-  TRIBITS_ADD_TEST(
-    Structured
-    NAME "StructuredRAPFactory_Constant_Laplace2D_XYSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup"
-    COMM mpi
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_laplace_const.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup"
+    COMM serial mpi
     NUM_MPI_PROCS 4
   )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Structured
-    NAME "StructuredRAPFactory_Constant_Laplace3D_ZSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_const.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --op=setup"
-    COMM mpi
-    NUM_MPI_PROCS 2
-  )
-
-  TRIBITS_ADD_TEST(
-    Structured
-    NAME "StructuredRAPFactory_Linear_Laplace3D_ZSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_laplace_lin.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --op=setup"
-    COMM mpi
-    NUM_MPI_PROCS 2
-  )
-
-  TRIBITS_ADD_TEST(
-    Structured
-    NAME "StructuredRAPFactory_Constant_Elasticity2D_XYSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_elasticity2d_const.xml --matrixType=Elasticity2D --nx=20 --ny=20 --op=setup"
-    COMM mpi
+    NAME "StructuredRAPFactory_Linear_Laplace2D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_laplace_lin.xml --matrixType=Laplace2D --nx=10 --ny=10 --op=setup"
+    COMM serial mpi
     NUM_MPI_PROCS 4
   )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Structured
-    NAME "StructuredRAPFactory_Constant_Elasticity3D_XYSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_elasticity3d_const.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=10 --op=setup"
-    COMM mpi
+    NAME "StructuredRAPFactory_Constant_Laplace3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_laplace_const.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --op=setup"
+    COMM serial mpi
     NUM_MPI_PROCS 4
   )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Structured
-    NAME "StructuredRAPFactory_Linear_Elasticity3D_XYSplit_Tpetra"
-    ARGS "--linAlgebra=Tpetra --xml=structuredrapfactory_elasticity3d_lin.xml --matrixType=Elasticity3D --nx=16 --ny=16 --nz=16 --op=setup"
-    COMM mpi
+    NAME "StructuredRAPFactory_Linear_Laplace3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_laplace_lin.xml --matrixType=Laplace3D --nx=10 --ny=10 --nz=20 --op=setup"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+  )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Elasticity2D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_elasticity2d_const.xml --matrixType=Elasticity2D --nx=20 --ny=20 --op=setup"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+  )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Constant_Elasticity3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_elasticity3d_const.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=10 --op=setup"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+  )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    Structured
+    NAME "StructuredRAPFactory_Linear_Elasticity3D_Tpetra"
+    ARGS "--linAlgebra=Tpetra --xml=structured_rapfactory_elasticity3d_lin.xml --matrixType=Elasticity3D --nx=16 --ny=16 --nz=16 --op=setup"
+    COMM serial mpi
     NUM_MPI_PROCS 4
   )
 
@@ -180,11 +166,11 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       structured_scp_1dof.xml
       structured_sparc_1dof.xml
       structured_tentative_kokkos.xml
-      structuredrapfactory_elasticity2d_const.xml
-      structuredrapfactory_elasticity3d_const.xml
-      structuredrapfactory_elasticity3d_lin.xml
-      structuredrapfactory_laplace_const.xml
-      structuredrapfactory_laplace_lin.xml
+      structured_rapfactory_elasticity2d_const.xml
+      structured_rapfactory_elasticity3d_const.xml
+      structured_rapfactory_elasticity3d_lin.xml
+      structured_rapfactory_laplace_const.xml
+      structured_rapfactory_laplace_lin.xml
   )
 
 ENDIF()

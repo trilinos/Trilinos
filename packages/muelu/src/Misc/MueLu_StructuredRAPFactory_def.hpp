@@ -64,7 +64,7 @@ RCP<const ParameterList> StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdina
   validParamList->set<RCP<const FactoryBase>>("lCoarseNodesPerDim", null, "Number of nodes per spatial dimension on the coarse grid.");
   validParamList->set<RCP<const FactoryBase>>("structuredInterpolationOrder", null, "Interpolation order used to construct the structured prolongator.");
   validParamList->set<RCP<const FactoryBase>>(
-      "matrixType", null, "Galeri matrix type used to infer the structured RAP graph.");
+      "matrixType", null, "Matrix type used to infer the structured RAP graph.");
 
   validParamList->set<bool>("CheckMainDiagonal", false, "Check main diagonal for zeros");
   validParamList->set<bool>("RepairMainDiagonal", false, "Repair zeros on main diagonal");
@@ -204,7 +204,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
                                                                          << "): dofsPerNode must be positive.");
   TEUCHOS_TEST_FOR_EXCEPTION(graphSpec.stencilOffsets.empty(), Exceptions::RuntimeError,
                              "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
-                                                                         << "): stencil must contain at least one offset.");
+                                                                         << "): coarse-grid stencil is empty; it must define at least one relative node position (dx, dy, dz).");
 
   Teuchos::Array<GO> localNodes(3, Teuchos::as<GO>(1));
   for (int dim = 0; dim < graphSpec.numDimensions; ++dim) {
@@ -275,14 +275,13 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
     }
   }
 
-  Teuchos::Array<GO> localRankData(5);
+  Teuchos::Array<GO> localRankData(4);
   localRankData[0] = firstLocalNode;
   localRankData[1] = localNodes[0];
   localRankData[2] = localNodes[1];
   localRankData[3] = localNodes[2];
-  localRankData[4] = localNumNodes;
-  Teuchos::Array<GO> rankData(5 * numRanks);
-  Teuchos::gatherAll(*comm, 5, localRankData.getRawPtr(), 5 * numRanks, rankData.getRawPtr());
+  Teuchos::Array<GO> rankData(4 * numRanks);
+  Teuchos::gatherAll(*comm, 4, localRankData.getRawPtr(), 4 * numRanks, rankData.getRawPtr());
 
   Teuchos::Array<int> procGrid(3, 1);
   if (graphSpec.numDimensions == 1) {
@@ -347,11 +346,11 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
 
   Teuchos::Array<GO> globalNodes(3, Teuchos::as<GO>(0));
   for (int px = 0; px < procGrid[0]; ++px)
-    globalNodes[0] += rankData[5 * px + 1];
+    globalNodes[0] += rankData[4 * px + 1];
   for (int py = 0; py < procGrid[1]; ++py)
-    globalNodes[1] += rankData[5 * (py * procGrid[0]) + 2];
+    globalNodes[1] += rankData[4 * (py * procGrid[0]) + 2];
   for (int pz = 0; pz < procGrid[2]; ++pz)
-    globalNodes[2] += rankData[5 * (pz * procXY) + 3];
+    globalNodes[2] += rankData[4 * (pz * procXY) + 3];
   TEUCHOS_TEST_FOR_EXCEPTION(globalNodes[0] * globalNodes[1] * globalNodes[2] != numGlobalNodes,
                              Exceptions::RuntimeError,
                              "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
@@ -361,7 +360,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
     return globalMinGid + nodeOrdinal * dofsPerNodeGO + Teuchos::as<GO>(dof);
   };
 
-  const auto getLocalNodeCoordinates = [&](const GO localNode, GO& x, GO& y, GO& z) {
+  const auto getLocalNodeIndices = [&](const GO localNode, GO& x, GO& y, GO& z) {
     x = localNode % localNodes[0];
     y = (localNode / localNodes[0]) % localNodes[1];
     z = localNode / (localNodes[0] * localNodes[1]);
@@ -395,9 +394,9 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
       return false;
 
     neighborRank             = neighborProcZ * procXY + neighborProcY * procGrid[0] + neighborProcX;
-    const GO neighborLocalNx = rankData[5 * neighborRank + 1];
-    const GO neighborLocalNy = rankData[5 * neighborRank + 2];
-    const GO neighborLocalNz = rankData[5 * neighborRank + 3];
+    const GO neighborLocalNx = rankData[4 * neighborRank + 1];
+    const GO neighborLocalNy = rankData[4 * neighborRank + 2];
+    const GO neighborLocalNz = rankData[4 * neighborRank + 3];
     if (neighborX < 0)
       neighborX = neighborLocalNx - 1;
     else if (neighborX >= localNodes[0])
@@ -411,7 +410,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
     else if (neighborZ >= localNodes[2])
       neighborZ = 0;
 
-    neighborNode = rankData[5 * neighborRank] +
+    neighborNode = rankData[4 * neighborRank] +
                    neighborZ * neighborLocalNx * neighborLocalNy +
                    neighborY * neighborLocalNx + neighborX;
     return true;
@@ -461,7 +460,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
     // Every DOF row at a node has the same columns, so resolve the stencil once per node.
     for (GO localNode = 0; localNode < localNumNodes; ++localNode) {
       GO x = 0, y = 0, z = 0;
-      getLocalNodeCoordinates(localNode, x, y, z);
+      getLocalNodeIndices(localNode, x, y, z);
       const bool interior       = isInteriorNode(x, y, z);
       const size_t numNeighbors = interior ? maxStencilSize : getNeighbors(x, y, z);
       const size_t rowNnz       = numNeighbors * rowsPerNode;
@@ -491,7 +490,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
                                  "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
                                                                              << "): row GID does not belong to the rank-local structured block.");
       GO x = 0, y = 0, z = 0;
-      getLocalNodeCoordinates(localNode, x, y, z);
+      getLocalNodeIndices(localNode, x, y, z);
       const size_t numNeighbors = getNeighbors(x, y, z);
       localNnz += numNeighbors * rowsPerNode;
       rowptr[rowLid + 1] = localNnz;
@@ -499,7 +498,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
 
     for (GO localNode = 0; localNode < localNumNodes; ++localNode) {
       GO x = 0, y = 0, z = 0;
-      getLocalNodeCoordinates(localNode, x, y, z);
+      getLocalNodeIndices(localNode, x, y, z);
       const size_t numNeighbors = getNeighbors(x, y, z);
       for (size_t neighbor = 0; neighbor < numNeighbors; ++neighbor) {
         if (neighborRanks[neighbor] == myRank)
@@ -530,7 +529,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   if (groupedContiguousRows) {
     for (GO localNode = 0; localNode < localNumNodes; ++localNode) {
       GO x = 0, y = 0, z = 0;
-      getLocalNodeCoordinates(localNode, x, y, z);
+      getLocalNodeIndices(localNode, x, y, z);
       const bool interior = isInteriorNode(x, y, z);
       size_t rowNnz       = 0;
 
@@ -576,7 +575,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
       const GO nodeOrdinal = (rowGid - globalMinGid) / dofsPerNodeGO;
       const GO localNode   = nodeOrdinal - firstLocalNode;
       GO x = 0, y = 0, z = 0;
-      getLocalNodeCoordinates(localNode, x, y, z);
+      getLocalNodeIndices(localNode, x, y, z);
       const size_t numNeighbors = getNeighbors(x, y, z);
 
       size_t rowNnz = 0;
