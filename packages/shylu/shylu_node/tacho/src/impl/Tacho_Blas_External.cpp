@@ -176,6 +176,264 @@ void F77_BLAS_MANGLE(ztrmm, ZTRMM)(const char *, const char *, const char *, con
 
 namespace Tacho {
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+///
+/// half_t (TODO: add half_t support)
+///
+
+// gemm
+template <>
+int Blas<Kokkos::Experimental::half_t>::gemm(const char transa, const char transb, int m, int n, int k,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: gemm<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::gemm(cublasHandle_t handle,
+                                             const cublasOperation_t transa, const cublasOperation_t transb,
+                                             int m, int n, int k,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: gemm<external>(half) not implemented in CUBLAS");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::gemm(rocblas_handle handle,
+                                             const rocblas_operation transa, const rocblas_operation transb,
+                                             int m, int n, int k,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: gemm<external>(half) not implemented in ROCBLAS");
+  return -1;
+}
+#endif
+
+// gemv
+template <>
+int Blas<Kokkos::Experimental::half_t>::gemv(const char trans, int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: gemv<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::gemv(cublasHandle_t handle,
+                                             const cublasOperation_t trans, int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: gemv<external>(half) not implemented in CUBLAS");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::gemv(rocblas_handle handle,
+                                             const rocblas_operation trans, int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: gemv<external>(half) not implemented in ROCBLAS");
+  return -1;
+}
+#endif
+
+// herk
+template <>
+int Blas<Kokkos::Experimental::half_t>::herk(const char uplo, const char trans, int n, int k,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t beta, 
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: herk<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::herk(cublasHandle_t handle,
+                                             const cublasFillMode_t uplo, const cublasOperation_t trans,
+                                             int n, int k,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: herk<external>(half) not implemented in CUBLAS");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::herk(rocblas_handle handle,
+                                             const rocblas_fill uplo, const rocblas_operation trans,
+                                             int n, int k,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t beta,
+                                             /* */ Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: herk<external>(half) not implemented in ROCBLAS");
+  return -1;
+}
+#endif
+
+// trmm
+template <>
+int Blas<Kokkos::Experimental::half_t>::trmm(const char side, const char uplo,
+                                             const char transa, const char diag, int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                                   Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trmm<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trmm(cublasHandle_t handle,
+                                             const cublasSideMode_t side, const cublasFillMode_t uplo,
+                                             const cublasOperation_t transa, const cublasDiagType_t diag,
+                                             int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                                   Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: trmm<external>(half) not implemented in CUBLAS");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trmm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                                             const rocblas_operation transa, const rocblas_diagonal diag,
+                                             int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             const Kokkos::Experimental::half_t *b, int ldb,
+                                                   Kokkos::Experimental::half_t *c, int ldc) {
+  throw std::logic_error("Error: trmm<external>(half) not implemented in ROCBLAS");
+  return -1;
+}
+#endif
+
+// trmv
+template <>
+int Blas<Kokkos::Experimental::half_t>::trmv(const char uplo, const char transa, const char diag, int m,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trmv<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trmv(cublasHandle_t handle,
+                                             const cublasFillMode_t uplo, const cublasOperation_t transa,
+                                             const cublasDiagType_t diag, int m,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trmv<external>(half) not implemented in CUBLAS");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trmv(rocblas_handle handle,
+                                             const rocblas_fill uplo, const rocblas_operation transa,
+                                             const rocblas_diagonal diag, int m,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trmv<external>(half) not implemented in ROCBLAS");
+  return -1;
+}
+#endif
+
+// trsv
+template <>
+int Blas<Kokkos::Experimental::half_t>::trsv(const char uplo, const char transa, const char diag, int m,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trsv<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trsv(cublasHandle_t handle,
+                                             const cublasFillMode_t uplo, const cublasOperation_t transa,
+                                             const cublasDiagType_t diag, int m,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trsv<external>(half) not implemented in CUBLAS");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trsv(rocblas_handle handle,
+                                             const rocblas_fill uplo, const rocblas_operation transa,
+                                             const rocblas_diagonal diag, int m,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trsv<external>(half) not implemented in ROCBLAS");
+  return -1;
+}
+#endif
+
+// trsm
+template <>
+int Blas<Kokkos::Experimental::half_t>::trsm(const char side, const char uplo,
+                                             const char transa, const char diag, int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trsm<external>(half) not implemented");
+  return -1;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trsm(cublasHandle_t handle,
+                                             const cublasSideMode_t side, const cublasFillMode_t uplo,
+                                             const cublasOperation_t transa, const cublasDiagType_t diag,
+                                             int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trsm<external>(half) not implemented in CUBLAS");
+  return -1;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::Experimental::half_t>::trsm(rocblas_handle handle,
+                                             const rocblas_side side, const rocblas_fill uplo,
+                                             const rocblas_operation transa, const rocblas_diagonal diag,
+                                             int m, int n,
+                                             const Kokkos::Experimental::half_t alpha,
+                                             const Kokkos::Experimental::half_t *a, int lda,
+                                             /* */ Kokkos::Experimental::half_t *b, int ldb) {
+  throw std::logic_error("Error: trsm<external>(half) not implemented in ROCBLAS");
+  return -1;
+}
+#endif
+#endif
+
 ///
 /// float
 ///

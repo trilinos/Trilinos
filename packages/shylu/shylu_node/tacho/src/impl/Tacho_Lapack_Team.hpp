@@ -41,7 +41,7 @@ template <typename T> struct LapackTeam {
           if (*info == 0 && arith_traits::real(*alpha11) <= zero) {
             *info = 1+p;
           }
-          *alpha11 = sqrt(arith_traits::real(*alpha11));
+          *alpha11 = Kokkos::sqrt(arith_traits::real(*alpha11));
         });
         member.team_barrier();
         const auto alpha = arith_traits::real(*alpha11);
@@ -59,8 +59,8 @@ template <typename T> struct LapackTeam {
     }
 
     template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void potrf_upper(const MemberType &member, const double tol, const int m, 
-                                                   T *KOKKOS_RESTRICT A,
+    static KOKKOS_INLINE_FUNCTION void potrf_upper(const MemberType &member, const ArithTraits<T>::mag_type tol,
+                                                   const int m, T *KOKKOS_RESTRICT A,
                                                    const int as0, const int as1, int *info) {
       *info = 0;
       if (m <= 0)
@@ -82,7 +82,7 @@ template <typename T> struct LapackTeam {
           if (*info == 0 && arith_traits::real(*alpha11) <= zero) {
             *info = 1+p;
           }
-          *alpha11 = sqrt(arith_traits::real(*alpha11));
+          *alpha11 = Kokkos::sqrt(arith_traits::real(*alpha11));
         });
         member.team_barrier();
         const auto alpha = arith_traits::real(*alpha11);
@@ -222,7 +222,8 @@ template <typename T> struct LapackTeam {
   }
 
   template <typename MemberType>
-  static KOKKOS_INLINE_FUNCTION void potrf(const MemberType &member, const double tol, const char uplo, const int m,
+  static KOKKOS_INLINE_FUNCTION void potrf(const MemberType &member, const ArithTraits<T>::mag_type tol,
+                                           const char uplo, const int m,
                                            /* */ T *KOKKOS_RESTRICT A, const int lda, int *info) {
     switch (uplo) {
     case 'U':
@@ -328,7 +329,8 @@ template <typename T> struct LapackTeam {
   }
 
   template <typename MemberType>
-  static KOKKOS_INLINE_FUNCTION void getrf(const MemberType &member, const double tol, const int m, const int n, T *KOKKOS_RESTRICT A,
+  static KOKKOS_INLINE_FUNCTION void getrf(const MemberType &member, const ArithTraits<T>::mag_type tol,
+                                           const int m, const int n, T *KOKKOS_RESTRICT A,
                                            const int as1, int *KOKKOS_RESTRICT ipiv, int *info) {
     *info = 0;
     if (m <= 0 || n <= 0)
@@ -393,7 +395,7 @@ template <typename T> struct LapackTeam {
 
   template <typename MemberType>
   static KOKKOS_INLINE_FUNCTION void sytrf_nopiv(const MemberType &member, const char uplo, const bool conjugate,
-                                                 const double tol, const int m,
+                                                 const ArithTraits<T>::mag_type tol, const int m,
                                                  T *KOKKOS_RESTRICT A, const int lda, int *info) {
     (*info) = 0;
     if (m <= 0)

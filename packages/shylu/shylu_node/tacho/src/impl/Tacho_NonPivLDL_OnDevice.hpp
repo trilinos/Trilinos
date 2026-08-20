@@ -28,7 +28,9 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
 
   // LDL of a diagonal block (Right-look column-wise)
   template <typename MemberType, typename ViewTypeA, typename ViewTypeR>
-  inline static int invoke_col(MemberType &member, const double tol, const ViewTypeA &A, const ViewTypeR &rval_d) {
+  inline static int invoke_col(MemberType &member,
+                               const ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type tol,
+                               const ViewTypeA &A, const ViewTypeR &rval_d) {
 
     using exec_space = MemberType;
     using policy_type = Kokkos::RangePolicy<exec_space>;
@@ -102,7 +104,9 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
 
   // main factorization code
   template <typename HandleType, typename MemberType, typename ViewTypeA, typename ViewTypeW, typename ViewTypeR>
-  inline static int invoke(HandleType &handle, MemberType &member, const double tol, const ViewTypeA &A, const ViewTypeW &W, const ViewTypeR &r_val_view) {
+  inline static int invoke(HandleType &handle, MemberType &member,
+                           const ArithTraits<typename ViewTypeA::non_const_value_type>::mag_type tol,
+                           const ViewTypeA &A, const ViewTypeW &W, const ViewTypeR &r_val_view) {
 
     using value_type = typename ViewTypeA::non_const_value_type;
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
