@@ -25,9 +25,12 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
 
-#include "MueLu_CreateXpetraPreconditioner.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
+#include "MueLu_GeometricInterpolationPFactory.hpp"
+#include "MueLu_NoFactory.hpp"
+#include "MueLu_StructuredAggregationFactory.hpp"
 #include "MueLu_StructuredRAPFactory.hpp"
 
 namespace MueLuTests {
@@ -38,11 +41,8 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 struct StructuredProblemData {
   using Matrix                = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using RealValuedMultiVector = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>;
-  using Vector                = Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
   Teuchos::RCP<Matrix> A;
   Teuchos::RCP<RealValuedMultiVector> coordinates;
-  Teuchos::RCP<Vector> Mdiag;
   Teuchos::Array<LocalOrdinal> lNodesPerDim;
   std::string matrixType;
   int numDimensions;
@@ -67,7 +67,6 @@ buildStructuredProblem(const std::string& matrixType,
   using CrsMatrixWrap         = Xpetra::CrsMatrixWrap<SC, LO, GO, NO>;
   using MultiVector           = Xpetra::MultiVector<SC, LO, GO, NO>;
   using RealValuedMultiVector = typename StructuredProblemData<SC, LO, GO, NO>::RealValuedMultiVector;
-  using Vector                = typename StructuredProblemData<SC, LO, GO, NO>::Vector;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
@@ -126,130 +125,118 @@ buildStructuredProblem(const std::string& matrixType,
   if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D")
     problem.A->SetFixedBlockSize(problem.dofsPerNode);
 
-  problem.Mdiag = Xpetra::VectorFactory<SC, LO, GO, NO>::Build(problem.A->getRowMap(), false);
-  problem.A->getLocalDiagCopy(*problem.Mdiag);
-
   return problem;
 }
 
-inline Teuchos::ParameterList buildStructuredRAPParameterList(const int dofsPerNode,
-                                                             const int interpolationOrder,
-                                                             const std::string& coarseningRate,
-                                                             const bool prebuildCoarseGraph) {
-  Teuchos::ParameterList paramList;
-  paramList.sublist("Matrix").set("PDE equations", dofsPerNode);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+struct StructuredTransferData {
+  using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  Teuchos::RCP<Matrix> P;
+  Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim;
+  int interpolationOrder;
+};
 
-  Teuchos::ParameterList& factories = paramList.sublist("Factories");
-  factories.sublist("myAmalgamationFact")
-      .set("factory", "AmalgamationFactory");
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+StructuredTransferData<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+buildStructuredTransferData(const StructuredProblemData<Scalar, LocalOrdinal, GlobalOrdinal, Node>& problem,
+                            const int interpolationOrder,
+                            const std::string& coarseningRate) {
+  using SC                  = Scalar;
+  using LO                  = LocalOrdinal;
+  using GO                  = GlobalOrdinal;
+  using NO                  = Node;
+  using Matrix              = Xpetra::Matrix<SC, LO, GO, NO>;
+  using MultiVector         = Xpetra::MultiVector<SC, LO, GO, NO>;
+  using AmalgamationFactory = MueLu::AmalgamationFactory<SC, LO, GO, NO>;
+  using CoalesceDropFactory = MueLu::CoalesceDropFactory<SC, LO, GO, NO>;
+  using AggregationFactory  = MueLu::StructuredAggregationFactory<SC, LO, GO, NO>;
+  using ProlongatorFactory  = MueLu::GeometricInterpolationPFactory<SC, LO, GO, NO>;
 
-  Teuchos::ParameterList& coalesceDrop = factories.sublist("myCoalesceDropFact");
-  coalesceDrop.set("factory", "CoalesceDropFactory");
-  coalesceDrop.set("lightweight wrap", true);
-  coalesceDrop.set("aggregation: drop tol", 0.0);
-  coalesceDrop.set("UnAmalgamationInfo", "myAmalgamationFact");
+  MueLu::Level fineLevel, coarseLevel;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-  Teuchos::ParameterList& aggregation = factories.sublist("myAggregationFact");
-  aggregation.set("factory", "StructuredAggregationFactory");
-  aggregation.set("aggregation: coupling", "uncoupled");
-  aggregation.set("aggregation: output type", "CrsGraph");
-  aggregation.set("aggregation: coarsening order", interpolationOrder);
-  aggregation.set("aggregation: coarsening rate", coarseningRate);
-  aggregation.set("Graph", "myCoalesceDropFact");
+  fineLevel.Set("A", problem.A);
+  fineLevel.Set("Coordinates", problem.coordinates);
+  fineLevel.Set("numDimensions", problem.numDimensions);
+  fineLevel.Set("lNodesPerDim", problem.lNodesPerDim);
 
-  Teuchos::ParameterList& coarseMap = factories.sublist("myCoarseMapFact");
-  coarseMap.set("factory", "CoarseMapFactory");
-  coarseMap.set("Aggregates", "myAggregationFact");
+  Teuchos::RCP<MultiVector> nullspace =
+      Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(problem.A->getRowMap(), 1);
+  nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+  fineLevel.Set("Nullspace", nullspace);
 
-  Teuchos::ParameterList& prolongator = factories.sublist("myProlongatorFact");
-  prolongator.set("factory", "GeometricInterpolationPFactory");
-  prolongator.set("interp: build coarse coordinates", true);
-  prolongator.set("structuredInterpolationOrder", "myAggregationFact");
-  prolongator.set("prolongatorGraph", "myAggregationFact");
-  prolongator.set("indexManager", "myAggregationFact");
-  prolongator.set("coarseCoordinatesFineMap", "myAggregationFact");
-  prolongator.set("coarseCoordinatesMap", "myAggregationFact");
+  Teuchos::RCP<AmalgamationFactory> amalgamation = Teuchos::rcp(new AmalgamationFactory());
+  Teuchos::RCP<CoalesceDropFactory> coalesceDrop = Teuchos::rcp(new CoalesceDropFactory());
+  coalesceDrop->SetParameter("lightweight wrap", Teuchos::ParameterEntry(true));
+  coalesceDrop->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.0));
+  coalesceDrop->SetFactory("UnAmalgamationInfo", amalgamation);
 
-  Teuchos::ParameterList& coordinatesTransfer = factories.sublist("myCoordTransferFact");
-  coordinatesTransfer.set("factory", "CoordinatesTransferFactory");
-  coordinatesTransfer.set("structured aggregation", true);
-  coordinatesTransfer.set("numDimensions", "myAggregationFact");
-  coordinatesTransfer.set("lCoarseNodesPerDim", "myAggregationFact");
+  Teuchos::RCP<AggregationFactory> aggregation = Teuchos::rcp(new AggregationFactory());
+  aggregation->SetParameter("aggregation: mode", Teuchos::ParameterEntry(std::string("uncoupled")));
+  aggregation->SetParameter("aggregation: output type", Teuchos::ParameterEntry(std::string("CrsGraph")));
+  aggregation->SetParameter("aggregation: coarsening order", Teuchos::ParameterEntry(interpolationOrder));
+  aggregation->SetParameter("aggregation: coarsening rate", Teuchos::ParameterEntry(coarseningRate));
+  aggregation->SetFactory("Graph", coalesceDrop);
+  aggregation->SetFactory("DofsPerNode", coalesceDrop);
 
-  Teuchos::ParameterList& nullspace = factories.sublist("myNullspaceFact");
-  nullspace.set("factory", "NullspaceFactory");
-  nullspace.set("Nullspace", "myProlongatorFact");
-  nullspace.set("CoarseMap", "myCoarseMapFact");
+  Teuchos::RCP<ProlongatorFactory> prolongator = Teuchos::rcp(new ProlongatorFactory());
+  prolongator->SetFactory("A", MueLu::NoFactory::getRCP());
+  prolongator->SetFactory("Coordinates", MueLu::NoFactory::getRCP());
+  prolongator->SetFactory("Nullspace", MueLu::NoFactory::getRCP());
+  prolongator->SetFactory("prolongatorGraph", aggregation);
+  prolongator->SetFactory("coarseCoordinatesFineMap", aggregation);
+  prolongator->SetFactory("coarseCoordinatesMap", aggregation);
+  prolongator->SetFactory("numDimensions", aggregation);
+  prolongator->SetFactory("lCoarseNodesPerDim", aggregation);
+  prolongator->SetFactory("structuredInterpolationOrder", aggregation);
 
-  Teuchos::ParameterList& rap = factories.sublist("myRAPFact");
-  rap.set("factory", "StructuredRAPFactory");
-  rap.set("P", "myProlongatorFact");
-  rap.set("lCoarseNodesPerDim", "myAggregationFact");
-  rap.set("structuredInterpolationOrder", "myAggregationFact");
-  rap.set("rap: triple product", true);
-  rap.set("rap: prebuild coarse graph", prebuildCoarseGraph);
-  rap.set("transpose: use implicit", true);
-  rap.sublist("TransferFactories").set("CoordinateTransfer", "myCoordTransferFact");
+  coarseLevel.Request("P", prolongator.get());
+  coarseLevel.Request(*prolongator);
+  prolongator->Build(fineLevel, coarseLevel);
 
-  Teuchos::ParameterList& smoother = factories.sublist("myMTSGS");
-  smoother.set("factory", "TrilinosSmoother");
-  smoother.set("type", "RELAXATION");
-  Teuchos::ParameterList& smootherParams = smoother.sublist("ParameterList");
-  smootherParams.set("relaxation: type", "MT Symmetric Gauss-Seidel");
-  smootherParams.set("relaxation: symmetric matrix structure", true);
-  smootherParams.set("relaxation: sweeps", 2);
-  smootherParams.set("relaxation: use l1", true);
-
-  Teuchos::ParameterList& hierarchy = paramList.sublist("Hierarchy");
-  hierarchy.set("max levels", 2);
-  hierarchy.set("cycle type", "V");
-  hierarchy.set("coarse: max size", 3);
-  hierarchy.set("verbosity", "None");
-
-  Teuchos::ParameterList& all = hierarchy.sublist("All");
-  all.set("PreSmoother", "myMTSGS");
-  all.set("PostSmoother", "myMTSGS");
-  all.set("Graph", "myCoalesceDropFact");
-  all.set("Nullspace", "myNullspaceFact");
-  all.set("Aggregates", "myAggregationFact");
-  all.set("lCoarseNodesPerDim", "myAggregationFact");
-  all.set("P", "myProlongatorFact");
-  all.set("A", "myRAPFact");
-  all.set("CoarseSolver", "myMTSGS");
-  all.set("Coordinates", "myProlongatorFact");
-  all.set("lNodesPerDim", "myCoordTransferFact");
-  all.set("numDimensions", "myCoordTransferFact");
-
-  return paramList;
+  StructuredTransferData<SC, LO, GO, NO> transferData;
+  transferData.P = coarseLevel.Get<Teuchos::RCP<Matrix> >("P", prolongator.get());
+  transferData.lCoarseNodesPerDim =
+      fineLevel.Get<Teuchos::Array<LO> >("lCoarseNodesPerDim", aggregation.get());
+  transferData.interpolationOrder =
+      fineLevel.Get<int>("structuredInterpolationOrder", aggregation.get());
+  return transferData;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-buildFinalCoarseMatrix(const StructuredProblemData<Scalar, LocalOrdinal, GlobalOrdinal, Node>& problem,
-                       Teuchos::ParameterList paramList) {
-  using SC                    = Scalar;
-  using LO                    = LocalOrdinal;
-  using GO                    = GlobalOrdinal;
-  using NO                    = Node;
-  using Matrix                = Xpetra::Matrix<SC, LO, GO, NO>;
-  using RealValuedMultiVector = typename StructuredProblemData<SC, LO, GO, NO>::RealValuedMultiVector;
+buildCoarseMatrix(const StructuredProblemData<Scalar, LocalOrdinal, GlobalOrdinal, Node>& problem,
+                  const StructuredTransferData<Scalar, LocalOrdinal, GlobalOrdinal, Node>& transferData,
+                  const bool prebuildCoarseGraph) {
+  using SC     = Scalar;
+  using LO     = LocalOrdinal;
+  using GO     = GlobalOrdinal;
+  using NO     = Node;
+  using Matrix = Xpetra::Matrix<SC, LO, GO, NO>;
 
-  Teuchos::ParameterList& userParamList = paramList.sublist("user data");
-  userParamList.set<int>("int numDimensions", problem.numDimensions);
-  userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", problem.lNodesPerDim);
-  userParamList.set<Teuchos::RCP<RealValuedMultiVector> >("Coordinates", problem.coordinates);
-  userParamList.set<double>("double cfl", 1.0);
-  userParamList.set<double>("double deltaT", 1.0);
-  userParamList.set("Mdiag", problem.Mdiag);
-  userParamList.set<std::string>("string matrixType", problem.matrixType);
+  MueLu::Level fineLevel, coarseLevel;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  fineLevel.Set("A", problem.A);
+  fineLevel.Set("lCoarseNodesPerDim", transferData.lCoarseNodesPerDim);
+  fineLevel.Set("structuredInterpolationOrder", transferData.interpolationOrder);
+  coarseLevel.Set("P", transferData.P);
 
-  problem.A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-  Teuchos::RCP<MueLu::Hierarchy<SC, LO, GO, NO> > hierarchy =
-      MueLu::CreateXpetraPreconditioner<SC, LO, GO, NO>(problem.A, paramList);
+  MueLu::StructuredRAPFactory<SC, LO, GO, NO> rap;
+  Teuchos::ParameterList rapParams = *rap.GetValidParameterList();
+  rapParams.set("rap: triple product", true);
+  rapParams.set("rap: prebuild coarse graph", prebuildCoarseGraph);
+  rapParams.set("transpose: use implicit", true);
+  rapParams.set("rap: matrix type", problem.matrixType);
+  rap.SetParameterList(rapParams);
+  rap.SetFactory("A", MueLu::NoFactory::getRCP());
+  rap.SetFactory("P", MueLu::NoFactory::getRCP());
+  rap.SetFactory("lCoarseNodesPerDim", MueLu::NoFactory::getRCP());
+  rap.SetFactory("structuredInterpolationOrder", MueLu::NoFactory::getRCP());
 
-  Teuchos::RCP<Matrix> Ac;
-  hierarchy->GetLevel(hierarchy->GetNumLevels() - 1)->Get("A", Ac);
-  return Ac;
+  coarseLevel.Request("A", &rap);
+  coarseLevel.Request(rap);
+  rap.Build(fineLevel, coarseLevel);
+  return coarseLevel.Get<Teuchos::RCP<Matrix> >("A", &rap);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -422,15 +409,13 @@ void runStructuredRAPComparison(const std::string& matrixType,
   StructuredProblemData<SC, LO, GO, NO> problem =
       buildStructuredProblem<SC, LO, GO, NO>(matrixType, nx, ny, nz, mx, my, mz);
 
-  Teuchos::ParameterList structuredParamList =
-      buildStructuredRAPParameterList(problem.dofsPerNode, interpolationOrder, coarseningRate, true);
-  Teuchos::ParameterList referenceParamList = structuredParamList;
-  referenceParamList.sublist("Factories").sublist("myRAPFact").set("rap: prebuild coarse graph", false);
+  StructuredTransferData<SC, LO, GO, NO> transferData =
+      buildStructuredTransferData<SC, LO, GO, NO>(problem, interpolationOrder, coarseningRate);
 
   Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > structuredAc =
-      buildFinalCoarseMatrix<SC, LO, GO, NO>(problem, structuredParamList);
+      buildCoarseMatrix<SC, LO, GO, NO>(problem, transferData, true);
   Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > referenceAc =
-      buildFinalCoarseMatrix<SC, LO, GO, NO>(problem, referenceParamList);
+      buildCoarseMatrix<SC, LO, GO, NO>(problem, transferData, false);
 
   compareRAPMatrices<SC, LO, GO, NO>(structuredAc, referenceAc, out);
 }
