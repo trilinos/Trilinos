@@ -20,6 +20,8 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "BelosDenseSolver.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
+#include <vector>
 
 namespace Belos {
 
@@ -51,7 +53,9 @@ namespace Belos {
   class DenseMatTraits 
   {
   public:
-    
+
+    using MagnitudeType = KokkosKernels::ArithTraits<ScalarType>::mag_type;
+
     //@{ \name Creation methods
 
     /*! \brief Creates a new empty \c DM with no dimension.
@@ -189,6 +193,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     static void Scale( DM& dm, ScalarType value)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
+    //!  \brief Multiply two dense matrices. C = beta*C + alpha*op(A)*op(B)
+    static void Multiply( bool transposeA, bool transposeB, ScalarType alpha, const DM& A, const DM &B, ScalarType beta, DM& C)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
     //!  \brief Fill the DM with random entries.
     //!   Entries are assumed to be the same on each MPI rank (each matrix copy). 
     static void Randomize( DM& dm)
@@ -213,7 +221,13 @@ View(const pointer_type &ptr, const IntType&... indices)
     static Teuchos::RCP<DenseSolver<ScalarType, DM>> createDenseSolver()
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }
     //@}
- 
+
+    static void trsm(const char side[], const char uplo[], const char trans[], const char diag[],
+                   const ScalarType& alpha, const DM& A, DM& B)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    static void nrm2(std::vector<MagnitudeType>&R, const DM &X)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
   };
 
 } // namespace Belos

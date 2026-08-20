@@ -1722,17 +1722,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // First, compute [Q, R] = qr(H*P);
 
           // Step #1: Form HP = H*P
-	  DMT::SyncDeviceToHost( *HP_ );
 
           RCP<DM> Htmp = DMT::Subview( *H2_, p+1, p, recycledBlocks_+1,recycledBlocks_+1 );
           RCP<DM> HPtmp = DMT::Subview( *HP_, p+1, keff );
 
-          Teuchos::BLAS<int,ScalarType> blas;
-	  blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, p+1, keff, p, one,
-                   DMT::GetConstRawHostPtr(*Htmp), DMT::GetStride(*Htmp),
-                   DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
-                   zero, DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
+          DMT::Multiply(false, false, one, *Htmp, *PPtmp, zero, *HPtmp);
 
+          DMT::SyncDeviceToHost( *HP_ );
 	  // Step #1.5: Perform workspace size query for QR
           // factorization of HP.  On input, lwork must be -1.
           // _GEQRF will put the workspace size in work_[0].
@@ -2173,18 +2169,13 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
   }
 
   // Form HP = H*P
-  DMT::SyncDeviceToHost( *HP_ );
   Teuchos::RCP<DM> HPtmp = DMT::Subview( *HP_, p+keff+1, keff_new );
   {
-    DMT::SyncDeviceToHost( *PP_ );
     Teuchos::RCP<DM> PPtmp = DMT::Subview( *PP_, p+keff, keff_new );
 
-    Teuchos::BLAS<int,ScalarType> blas;
-    blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, p+keff+1, keff_new, p+keff, one,
-                   DMT::GetConstRawHostPtr(*H2tmp), DMT::GetStride(*H2tmp),
-                   DMT::GetConstRawHostPtr(*PPtmp), DMT::GetStride(*PPtmp),
-                   zero, DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp));
+    DMT::Multiply(false, false, one, *H2tmp, *PPtmp, zero, *HPtmp);
   }
+  DMT::SyncDeviceToHost( *HP_ );
 
   // Workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
   int info = 0, lwork = -1;
@@ -2729,11 +2720,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs2(int keffloc, int m,
   // B = H2' * H2; Don't zero out matrix when constructing
   Teuchos::RCP<DM> B = DMT::Create(m2,m2,false);
 
-  Teuchos::BLAS<int,ScalarType> blas;
-  blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, m2, m2, DMT::GetNumRows(HH), one,
-             DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-             DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-             zero, DMT::GetRawHostPtr(*B), DMT::GetStride(*B));
+  DMT::Multiply(true, false, one, HH, HH, zero, *B);
 
   // A_tmp = | C'*U        0 |
   //         | V_{m+1}'*U  I |
@@ -2763,12 +2750,12 @@ int GCRODRSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs2(int keffloc, int m,
     DMT::Value(*A_tmp,i,i) = one;
   }
 
+  DMT::SyncHostToDevice(*A_tmp);
+
   // A = H2' * A_tmp;
   Teuchos::RCP<DM> A = DMT::Create( m2, DMT::GetNumCols(*A_tmp) );
-  blas.GEMM( Teuchos::TRANS, Teuchos::NO_TRANS, m2, DMT::GetNumCols(*A_tmp), DMT::GetNumRows(*A_tmp),
-             one, DMT::GetConstRawHostPtr(HH), DMT::GetStride(HH),
-	     DMT::GetConstRawHostPtr(*A_tmp), DMT::GetStride(*A_tmp),
-	     zero, DMT::GetRawHostPtr(*A), DMT::GetStride(*A) );
+
+  DMT::Multiply(true, false, one, HH, *A_tmp, zero, *A);
 
   // Compute k smallest harmonic Ritz pairs
   // SUBROUTINE DGGEVX( BALANC, JOBVL, JOBVR, SENSE, N, A, LDA, B, LDB,

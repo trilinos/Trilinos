@@ -26,6 +26,7 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
 
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -494,7 +495,6 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     } else {
       const ScalarType one  = SCT::one();
       const ScalarType zero = SCT::zero();
-      Teuchos::BLAS<int,ScalarType> blas;
       currentUpdate = MVT::Clone( *V_, blockSize_ );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
@@ -503,11 +503,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       //
       //  Solve the least squares problem.
       //
-      blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-                 Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,
-                 DMT::GetRawHostPtr(*R_), DMT::GetStride(*R_), DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
-      DMT::SyncHostToDevice(*y);
-      //
+      DMT::trsm("L", "U", "N", "N", one, *DMT::SubviewConst(*R_, curDim_, curDim_), *y);
+
       //  Compute the current update.
       //
       std::vector<int> index(curDim_);
@@ -533,14 +530,9 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     if ( norms && (int)norms->size() < blockSize_ )
       norms->resize( blockSize_ );
 
-    if (norms) {
-      Teuchos::BLAS<int,ScalarType> blas;
-      DMT::SyncDeviceToHost(*z_);
-      for (int j=0; j<blockSize_; j++) {
-        Teuchos::RCP<DM> z_j = DMT::Subview(*z_, blockSize_, 1, curDim_, j);
-        (*norms)[j] = blas.NRM2( blockSize_, DMT::GetRawHostPtr(*z_j), 1);
-      }
-    }
+    if (norms)
+      DMT::nrm2(*norms, *DMT::Subview(*z_, blockSize_, blockSize_, curDim_, 0));
+
     return Teuchos::null;
   }
 
