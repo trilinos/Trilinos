@@ -58,21 +58,22 @@ def parse_semver(version: str) -> dict:
     return mgroups
 
 
-def fetch_branch(branch: str, repo_path: str, merge: bool=False) -> None:
+def fetch_branch(branch: str, repo_path: str, remote: str, merge: bool=False) -> None:
     """
     Fetch a git branch from remote.
 
     Args:
         branch: Name of the branch to fetch
         repo_path: Path to the git repository (default: current directory)
+        remote: Name of the remote to fetch from
         merge: If True, merge the fetched branch with local branch after fetching
     """
     try:
         git_root = get_git_root(repo_path)
         git_repo = git.Repo(git_root)
 
-        origin = git_repo.remotes.origin
-        origin.fetch(branch)
+        rem = git_repo.remote(remote)
+        rem.fetch(branch)
         if merge:
             if branch in [b.name for b in git_repo.branches]:
                 current_branch = git_repo.active_branch.name
@@ -80,28 +81,28 @@ def fetch_branch(branch: str, repo_path: str, merge: bool=False) -> None:
                 if current_branch != branch:
                     git_repo.git.checkout(branch)
 
-                git_repo.git.merge(f"origin/{branch}")
+                git_repo.git.merge(f"{remote}/{branch}")
             else:
-                git_repo.git.checkout("-b", branch, f"origin/{branch}")
+                git_repo.git.checkout("-b", branch, f"{remote}/{branch}")
     except git.InvalidGitRepositoryError as e:
         raise ValueError(f"Invalid git repository at {repo_path}: {e}") from e
     except Exception as e:
         raise RuntimeError(f"Failed to fetch branch {branch}: {e}") from e
 
 
-def verify_remote_branch_exists(branch: str, repo_path: str) -> None:
+def verify_remote_branch_exists(branch: str, repo_path: str, remote: str) -> None:
     """
-    Verify that a branch exists on the origin remote.
+    Verify that a branch exists on the specified remote.
     """
     try:
         git_root = get_git_root(repo_path)
         git_repo = git.Repo(git_root)
 
-        refs = git_repo.git.ls_remote("--heads", "origin", branch)
+        refs = git_repo.git.ls_remote("--heads", remote, branch)
         logger.debug(f"ls-remote for {branch}:\n{refs}")
         if not refs.strip():
             raise RuntimeError(
-                f"Branch '{branch}' does not exist on the origin remote."
+                f"Branch '{branch}' does not exist on the '{remote}' remote."
             )
     except git.InvalidGitRepositoryError as e:
         raise ValueError(f"Invalid git repository at {repo_path}: {e}") from e
@@ -159,13 +160,13 @@ def is_git_workspace_clean(repo_path: str) -> bool:
         raise RuntimeError(f"Failed to check workspace status: {e}") from e
 
 
-def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:
+def checkout_branch(branch: str, repo_path: str, remote: str = None) -> None:
     """Checkout a git branch.
 
     Args:
         branch: Name of the branch to checkout
-        repo_path: Path to the git repository (default: current directory)
-        remote: If True, pull latest changes from remote after checkout
+        repo_path: Path to the git repository
+        remote: If specified, pull/track from this remote after checkout
     """
     try:
         git_root = get_git_root(repo_path)
@@ -174,10 +175,10 @@ def checkout_branch(branch: str, repo_path: str, remote: bool=False) -> None:
         if branch in [b.name for b in git_repo.branches]:
             git_repo.git.checkout(branch)
             if remote:
-                git_repo.git.pull("origin", branch, "--rebase")
+                git_repo.git.pull(remote, branch, "--rebase")
         else:
             if remote:
-                git_repo.git.checkout('--track', f"origin/{branch}")
+                git_repo.git.checkout('--track', f"{remote}/{branch}")
             else:
                 git_repo.git.checkout(b=branch)
 
@@ -315,7 +316,7 @@ def commit_tracked(msg: str, repo_path: str):
         raise RuntimeError(f"Failed to commit: {e}") from e
 
 
-def push(branch: str, repo_path: str, remote: str="origin", force: bool=False):
+def push(branch: str, repo_path: str, remote: str, force: bool=False):
     try:
         git_root = get_git_root(repo_path)
         git_repo = git.Repo(git_root)
@@ -429,7 +430,7 @@ def create_tag(tag_name: str, tag_message: str, branch: str, repo_path: str):
         raise RuntimeError(f"Failed to create tag {tag_name}: {e}") from e
 
 
-def push_tag(tag_name: str, repo_path: str, remote: str="origin"):
+def push_tag(tag_name: str, repo_path: str, remote: str):
     """Push a git tag to remote repository."""
     try:
         git_root = get_git_root(repo_path)
@@ -443,14 +444,14 @@ def push_tag(tag_name: str, repo_path: str, remote: str="origin"):
 
 def create_release_label(label_name: str, color: str="658045"):
     """
-    Create a GitHub issue label in the origin upstream repository.
+    Create a GitHub issue label in the ORG_REPO repository.
 
     Used to track issues and PRs destined for a given release's release notes.
     If a label with the same name already exists, this is a no-op.
 
     Args:
-        label_name: Name of the label (e.g. "17-1 release note")
-        color: 6-character hex color code (without leading '#')
+        label_name: Name of the label
+        color: 6-character hex color code
     """
     token = os.getenv('GITHUB_TOKEN')
     if not token:

@@ -23,6 +23,16 @@ def add_common_args(parser):
         action='store_true',
         help="Debug outputs."
     )
+    parser.add_argument(
+        "--origin",
+        default="origin",
+        help="Name of the upstream git remote (default: origin)"
+    )
+    parser.add_argument(
+        "--fork",
+        default="fork",
+        help="Name of the fork git remote (default: fork)"
+    )
 
 
 def parse_args():
@@ -80,8 +90,8 @@ def pre_checks(args):
     if git_cmd is None:
         raise FileNotFoundError(f"Cannot find git executable")
 
-    if (not does_remote_exists("fork", git_root) or not does_remote_exists("origin", git_root)):
-        raise RuntimeError(f"Missing remotes 'fork' or 'origin'")
+    if (not does_remote_exists(args.fork, git_root) or not does_remote_exists(args.origin, git_root)):
+        raise RuntimeError(f"Missing remotes '{args.fork}' or '{args.origin}'")
 
     if not is_git_workspace_clean(git_root):
         raise RuntimeError(f"Git workspace not clean: {git_root}")
@@ -113,19 +123,19 @@ def pre_release(args):
     main_branch = "master"
     dev_branch = "develop"
 
-    fork_owner = get_remote_owner("fork", git_root)
+    fork_owner = get_remote_owner(args.fork, git_root)
 
     #####################################
     # Fetch latest master and develop
 
-    fetch_branch(dev_branch, git_root, merge=True)
-    fetch_branch(main_branch, git_root, merge=True)
+    fetch_branch(dev_branch, git_root, args.origin, merge=True)
+    fetch_branch(main_branch, git_root, args.origin, merge=True)
 
     #####################################
     # Checkout and push new release branch
 
     checkout_branch(rel_branch, git_root)
-    push(rel_branch, git_root)
+    push(rel_branch, git_root, args.origin)
     set_release_branch_protection(rel_branch)
     print(f"> Pushed created {rel_branch} to origin repository")
 
@@ -139,7 +149,7 @@ def pre_release(args):
     update_version_cmake(args.rel_version, rel_branch, dev_mode, git_root)
     release_commit_msg = "Update release Version.cmake"
     commit_tracked(release_commit_msg, git_root)
-    push(rel_update_branch, git_root, remote="fork")
+    push(rel_update_branch, git_root, args.fork)
 
     #####################################
     # Create Pull Request for release branch version update
@@ -152,13 +162,13 @@ def pre_release(args):
     # Checkout and push new branch from
     # develop to update develop's Version.cmake
 
-    checkout_branch(dev_branch, git_root, remote=True)
+    checkout_branch(dev_branch, git_root, remote=args.origin)
     checkout_branch(dev_update_branch, git_root)
     dev_mode = True
     update_version_cmake(args.dev_version, dev_update_branch, dev_mode, git_root)
     dev_commit_msg = "Update develop Version.cmake"
     commit_tracked(dev_commit_msg, git_root)
-    push(dev_update_branch, git_root, remote="fork")
+    push(dev_update_branch, git_root, args.fork)
 
     #####################################
     # Create PR to update Version.cmake in develop branch
@@ -188,9 +198,9 @@ def release(args):
 
     #####################################
     # Ensure the release branch exists on origin and sync to the remote tip.
-    verify_remote_branch_exists(rel_branch, git_root)
-    fetch_branch(rel_branch, git_root)
-    checkout_branch(rel_branch, git_root, remote=True)
+    verify_remote_branch_exists(rel_branch, git_root, remote=args.origin)
+    fetch_branch(rel_branch, git_root, args.origin)
+    checkout_branch(rel_branch, git_root, remote=args.origin)
 
     #####################################
     # Validate that the branch is in release mode before tagging. If the
@@ -208,7 +218,7 @@ def release(args):
     tag_name = f"trilinos-release-{rel['major']}-{rel['minor']}-{rel['patch']}"
     tag_message = f"Trilinos release {version}"
     create_tag(tag_name, tag_message, rel_branch, git_root)
-    push_tag(tag_name, git_root)
+    push_tag(tag_name, git_root, remote=args.origin)
     print(f"> Created and pushed tag: {tag_name}")
 
     return 0
@@ -222,14 +232,14 @@ def patch(args):
     git_root = get_git_root(args.dir if args.dir else script_path)
     rel_branch = args.rel_branch
 
-    fork_owner = get_remote_owner("fork", git_root)
+    fork_owner = get_remote_owner(args.fork, git_root)
 
     #####################################
     # Ensure the release branch exists on origin and sync to the remote tip.
 
-    verify_remote_branch_exists(rel_branch, git_root)
-    fetch_branch(rel_branch, git_root)
-    checkout_branch(rel_branch, git_root, remote=True)
+    verify_remote_branch_exists(rel_branch, git_root, remote=args.origin)
+    fetch_branch(rel_branch, git_root, args.origin)
+    checkout_branch(rel_branch, git_root, remote=args.origin)
 
     #####################################
     # Determine the new patch version by bumping the current patch number.
@@ -251,7 +261,7 @@ def patch(args):
     update_version_cmake(new_version, rel_branch, dev_mode, git_root)
     patch_commit_msg = "Update patch release Version.cmake"
     commit_tracked(patch_commit_msg, git_root)
-    push(patch_update_branch, git_root, remote="fork")
+    push(patch_update_branch, git_root, args.fork)
 
     #####################################
     # Create Pull Request for the patch version update
