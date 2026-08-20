@@ -217,6 +217,7 @@ class BlockInverseFunctor {
 
     shared_matrix lclA(thread.team_shmem(), blockSize, blockSize);
     shared_matrix lclInvA(thread.team_shmem(), blockSize, blockSize);
+    shared_vector inactive(thread.team_shmem(), blockSize);
 
     const bool PseudoInverse = (!(singular.extent(0) == 0)) && singular(blockId);
 
@@ -240,10 +241,103 @@ class BlockInverseFunctor {
       }
     }
 
+    // ---------------------------------------------------------------------
+    // Mask structurally/numerically zero rows of the local XXt block.
+    //
+    // This handles cases where a constraint row has no corresponding
+    // prolongator unknowns, e.g., Dirichlet rows with empty Ppattern rows.
+    //
+    // For a zero row/column in XXt, the Moore-Penrose pseudoinverse should
+    // have a zero row/column. To avoid no-pivot LU failure, temporarily
+    // replace that row/column by an identity row/column, invert, and then
+    // zero the corresponding inverse row/column before writing to invA.
+    // ---------------------------------------------------------------------
+
+    KokkosBlas::TeamSet<member_type>::invoke(thread, zero, inactive);
+    thread.team_barrier();
+
+    magnitude_type maxAbsA = mag_zero;
+
+    for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+      for (LocalOrdinal kk = 0; kk < blockSize; ++kk) {
+        const magnitude_type absVal = ATS::magnitude(lclA(ii, kk));
+        if (absVal > maxAbsA)
+          maxAbsA = absVal;
+      }
+    }
+
+    const magnitude_type scale =
+        maxAbsA > static_cast<magnitude_type>(1) ? maxAbsA : static_cast<magnitude_type>(1);
+
+    const magnitude_type tol =
+        ATS::epsilon() * static_cast<magnitude_type>(100) * scale;
+
+    LocalOrdinal numInactive = 0;
+
+    for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+      magnitude_type rowMax = mag_zero;
+
+      for (LocalOrdinal kk = 0; kk < blockSize; ++kk) {
+        const magnitude_type absVal = ATS::magnitude(lclA(ii, kk));
+        if (absVal > rowMax)
+          rowMax = absVal;
+      }
+
+      if (!(rowMax > tol)) {
+        inactive(ii) = one;
+        ++numInactive;
+      }
+    }
+
+    // Temporarily replace inactive rows/columns with identity rows/columns.
+    if (numInactive > 0) {
+      for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+        if (ATS::magnitude(inactive(ii)) != mag_zero) {
+          for (LocalOrdinal kk = 0; kk < blockSize; ++kk) {
+            lclA(ii, kk) = zero;
+            lclA(kk, ii) = zero;
+          }
+
+          lclA(ii, ii) = one;
+        }
+      }
+    }
+
+    thread.team_barrier();
+
     // LU
     {
       // LU factorization: lclA = L * U
       KokkosBatched::TeamLU<member_type, KokkosBlas::Algo::QR::Unblocked>::invoke(thread, lclA);
+      thread.team_barrier();
+
+      // If there are still tiny/zero pivots after masking inactive rows,
+      // this block is rank deficient in a more general way. Avoid producing
+      // NaNs from triangular solves. This is not a true pseudoinverse for a
+      // general rank-deficient block, but it is safer than continuing.
+      bool badPivot = false;
+
+      for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+        const magnitude_type pivotAbs = ATS::magnitude(lclA(ii, ii));
+
+        if (!(pivotAbs > tol))
+          badPivot = true;
+      }
+
+      if (badPivot) {
+        KokkosBlas::TeamSet<member_type>::invoke(thread, zero, lclInvA);
+        thread.team_barrier();
+
+        for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+          auto i   = blockRow.colidx(ii);
+          auto row = invA.row(i);
+
+          for (LocalOrdinal jj = 0; jj < row.length; ++jj)
+            row.value(jj) = zero;
+        }
+
+        return;
+      }
 
       // set lclInvA to identity matrix
       KokkosBatched::TeamSetIdentity<member_type>::invoke(thread, lclInvA);
@@ -308,6 +402,22 @@ class BlockInverseFunctor {
       thread.team_barrier();
     }
 
+    // Zero rows/columns corresponding to inactive constraint rows.
+    // These entries were temporarily set to identity only to make the
+    // local block invertible for LU.
+    if (numInactive > 0) {
+      for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+        if (ATS::magnitude(inactive(ii)) != mag_zero) {
+          for (LocalOrdinal kk = 0; kk < blockSize; ++kk) {
+            lclInvA(ii, kk) = zero;
+            lclInvA(kk, ii) = zero;
+          }
+        }
+      }
+    }
+
+    thread.team_barrier();
+
     // write inverse of block to invA
     for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
       auto i   = blockRow.colidx(ii);
@@ -325,7 +435,7 @@ class BlockInverseFunctor {
 
   // amount of shared memory
   size_t team_shmem_size(int /* team_size */) const {
-    return 3 * shared_matrix::shmem_size(maxBlocksize, maxBlocksize) + 2 * shared_vector::shmem_size(maxBlocksize);
+    return 3 * shared_matrix::shmem_size(maxBlocksize, maxBlocksize) + 3 * shared_vector::shmem_size(maxBlocksize);
   }
 };
 
