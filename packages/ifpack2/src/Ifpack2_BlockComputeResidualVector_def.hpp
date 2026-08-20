@@ -14,6 +14,23 @@
 
 namespace Ifpack2::BlockHelperDetails {
 
+template <typename impl_scalar_type, int B>
+struct ArrayHelper {
+  ArrayHelper(int /* blocksize_requested */) {}
+  impl_scalar_type data[B];
+  impl_scalar_type *get() { return data; }
+};
+
+template <typename impl_scalar_type>
+struct ArrayHelper<impl_scalar_type, 0> {
+  ArrayHelper(int blocksize_requested) {
+    data = (impl_scalar_type *)malloc(sizeof(impl_scalar_type) * blocksize_requested);
+  }
+  ~ArrayHelper() { free(data); }
+  impl_scalar_type *data;
+  impl_scalar_type *get() { return data; }
+};
+
 // Precompute offsets of each A and x entry to speed up residual.
 // (Applies for hasBlockCrsMatrix == true and OverlapTag/AsyncTag)
 // Reading A, x take up to 4, 6 levels of indirection respectively,
@@ -493,7 +510,7 @@ struct ComputeResidualFunctor {
     }
   }
 
-  // * B: block size for compile-time specialization, or 0 for general case (up to max_blocksize)
+  // * B: block size for compile-time specialization, or 0 for general case
   // * async: true if using async importer. overlap is not used in this case.
   //          Whether a column is owned or nonowned is decided at runtime.
   // * overlap: true if processing the columns that are not locally owned,
@@ -518,6 +535,8 @@ struct ComputeResidualFunctor {
   template <int B, bool async, bool overlap, bool haveBlockMatrix>
   void
   operator()(const GeneralTag<B, async, overlap, haveBlockMatrix> &, const local_ordinal_type &rowidx) const {
+    // B == 0 means blocksize is a runtime value, provided via blocksize_requested.
+    // B != 0 is a compile-time block size.
     const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
 
     // constants
@@ -529,7 +548,8 @@ struct ComputeResidualFunctor {
     const local_ordinal_type num_local_rows = lclrow.extent(0);
 
     // temporary buffer for y flat
-    impl_scalar_type yy[B == 0 ? impl_type::max_blocksize : B] = {};
+    ArrayHelper<impl_scalar_type, B> yy_alloc(blocksize_requested);
+    impl_scalar_type *yy = yy_alloc.get();
 
     const local_ordinal_type lr = lclrow(rowidx);
 
