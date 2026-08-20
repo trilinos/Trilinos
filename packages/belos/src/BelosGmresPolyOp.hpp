@@ -35,7 +35,6 @@
 
 #include "BelosOutputManager.hpp"
 
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_RCP.hpp"
@@ -609,13 +608,7 @@ namespace Belos {
       //
       // Solve the least squares problem.
       //
-      Teuchos::BLAS<OT,ScalarType> blas;
-      blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-          Teuchos::NON_UNIT_DIAG, dim_, 1, SCT::one(),
-                DMT::GetConstRawHostPtr(*gmresState.R), DMT::GetStride(*gmresState.R),
-                DMT::GetRawHostPtr(y_), DMT::GetStride(y_) );
-      // DMT::SyncHostToDevice(*gmresState.R);  // Why sync this when the result is in y? Shouldn't y be sync'ed before update is computed?
-      DMT::SyncHostToDevice(y_);
+      DMT::trsm("L", "U", "N", "N", SCT::one(), *DMT::SubviewConst(*gmresState.R, dim_, dim_), y_);
     }
     else{ //Generate Roots Poly
     //Find Harmonic Ritz Values to use as polynomial roots:

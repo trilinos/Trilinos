@@ -443,15 +443,10 @@ namespace Belos {
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //
       Teuchos::RCP<DM> y = DMT::SubviewCopy(*z_, curDim_, 1);
-      DMT::SyncDeviceToHost( *y );
-      DMT::SyncDeviceToHost( *R_ );
       //
       //  Solve the least squares problem.
       //
-      blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		 Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
-		 DMT::GetConstRawHostPtr(*R_), DMT::GetStride(*R_), 
-		 DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
+      DMT::trsm("L", "U", "N", "N", one, *DMT::SubviewConst(*R_, curDim_, curDim_), *y);
       //
       //  Compute the current update from the Krylov basis; V(:,1:curDim_)*y.
       //
@@ -464,13 +459,10 @@ namespace Belos {
       //
       if (U_ != Teuchos::null) {
 	Teuchos::RCP<DM> z = DMT::Create( recycledBlocks_, 1 );
-	DMT::SyncDeviceToHost( *H2_ );
-        blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, recycledBlocks_, 1, curDim_, one, 
-		   DMT::GetConstRawHostPtr(*B_), DMT::GetStride(*B_),
-		   DMT::GetConstRawHostPtr(*y), DMT::GetStride(*y),
-		   zero, DMT::GetRawHostPtr(*z), DMT::GetStride(*z));
-        DMT::SyncHostToDevice( *z );
-        MVT::MvTimesMatAddMv( -one, *U_, *z, one, *currentUpdate );
+
+        DMT::Multiply(false, false, one, *DMT::SubviewConst(*B_, recycledBlocks_, curDim_), *y, zero, *z);
+
+	MVT::MvTimesMatAddMv( -one, *U_, *z, one, *currentUpdate );
       }
     }
     std::vector<MagnitudeType> normUpdate( 1 );

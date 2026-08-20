@@ -367,8 +367,7 @@ namespace Belos {
       }
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-      Teuchos::BLAS<int,ScalarType> blas;
-      
+
       for (int i=0; i<numRHS_; ++i) {
         index[0] = i;
         Teuchos::RCP<MV> cur_block_copy_vec = MVT::CloneViewNonConst( *currentUpdate, index );
@@ -376,19 +375,12 @@ namespace Belos {
         //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
         //
         Teuchos::RCP<DM> y = DMT::SubviewCopy(*Z_[i], curDim_, 1);
-        DMT::SyncDeviceToHost( *y );
-        DMT::SyncDeviceToHost( *H_[i] );
         //
         //  Solve the least squares problem and compute current solutions.
         //
-        blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-	           Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
-		   DMT::GetConstRawHostPtr(*H_[i]), DMT::GetStride(*H_[i]), 
-                   DMT::GetRawHostPtr(*y), DMT::GetStride(*y) );
+        DMT::trsm("L", "U", "N", "N", one, *DMT::SubviewConst(*H_[i], curDim_, curDim_), *y);
 
-        DMT::SyncHostToDevice( *y ); 	
-        DMT::SyncHostToDevice( *H_[i] ); 	
-	Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
+        Teuchos::RCP<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
 	MVT::MvTimesMatAddMv( one, *Vjp1, *y, zero, *cur_block_copy_vec );
       }
     }

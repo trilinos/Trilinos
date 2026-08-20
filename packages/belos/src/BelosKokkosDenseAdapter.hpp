@@ -19,7 +19,6 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "BelosDenseMatTraits.hpp"
 
@@ -28,6 +27,9 @@
 #include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosBlas1_axpby.hpp"
+#include "KokkosBlas1_nrm2.hpp"
+#include "KokkosBlas3_gemm.hpp"
+#include "KokkosBlas3_trsm.hpp"
 
 #include <vector>
 
@@ -267,6 +269,7 @@ namespace Belos {
   public:
     typedef typename KokkosKernels::ArithTraits<Scalar>::val_type IST;
     using DM = Kokkos::DualView<IST**,Properties...>;
+    using MagnitudeType = KokkosKernels::ArithTraits<IST>::mag_type;
 
     //@{ \name Creation methods
 
@@ -516,6 +519,16 @@ namespace Belos {
       dm.modify_device();
     }
 
+    //!  \brief Multiply two dense matrices. C = beta*C + alpha*op(A)*op(B)
+    static void Multiply( bool transposeA, bool transposeB, Scalar alpha, const DM &A, const DM &B, Scalar beta, DM& C)
+    {
+      TEUCHOS_ASSERT(!A.need_sync_device());
+      TEUCHOS_ASSERT(!B.need_sync_device());
+      TEUCHOS_ASSERT(!C.need_sync_device());
+      KokkosBlas::gemm(transposeA ? "T" : "N", transposeB ? "T" : "N", alpha, A.view_device(), B.view_device(), beta, C.view_device());
+      C.modify_device();
+    }
+
     //!  \brief Fill the Kokkos::DualView with random entries.
     //!   Entries are assumed to be the same on each MPI rank (each matrix copy).
     static void Randomize( DM& dm) {
@@ -578,7 +591,21 @@ namespace Belos {
     }
     //@}
 
-  };
+  static void trsm(const char side[], const char uplo[], const char trans[], const char diag[],
+                   const Scalar& alpha, const DM& A, DM& B) {
+    TEUCHOS_ASSERT(!A.need_sync_device());
+    TEUCHOS_ASSERT(!B.need_sync_device());
+    KokkosBlas::trsm(side, uplo, trans, diag, alpha, A.view_device(), B.view_device());
+  }
+
+  static void nrm2(std::vector<MagnitudeType>&R, const DM &X) {
+    TEUCHOS_ASSERT(!X.need_sync_device());
+    Kokkos::View<MagnitudeType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged >> R_view(R.data(), R.size());
+    KokkosBlas::nrm2(R_view, X.view_device());
+  }
+
+};
+
 
 } // namespace Belos
 
