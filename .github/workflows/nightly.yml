@@ -69,3 +69,16 @@ jobs:
       max-cores-allowed: 29
       num-concurrent-tests: 16
       extra-pr-driver-args: --extra-configure-args=-D;CMAKE_CXX_STANDARD=23
+
+  deprecated_off:
+    if: ${{ github.repository == 'trilinos/Trilinos' }}
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'clang-19.1.7-openmpi-4.1.6', '20260507']"
+      image: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.7-openmpi-4.1.6:20260507
+      genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-off_all"
+      target-branch: "develop"
+      cdash-track: "Nightly"
+      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_deprecated_off
+      max-cores-allowed: 29
+      num-concurrent-tests: 16
