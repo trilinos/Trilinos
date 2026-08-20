@@ -16,6 +16,7 @@
 namespace Kokkos {
 
 // Type name for a local, unmanaged view with possibly a different static size
+// TODO: Not sure these are really useful anymore, only used in a performance example
 template <typename ViewType,
           unsigned LocalSize,
           bool isStatic = Sacado::IsStaticallySized<typename ViewType::value_type>::value>
@@ -24,11 +25,6 @@ struct LocalMPVectorView {};
 template <typename ViewType, unsigned LocalSize>
 struct LocalMPVectorView<ViewType, LocalSize, false> {
   typedef ViewType type;
-};
-
-template <typename D, typename ... P, unsigned LocalSize>
-struct LocalMPVectorView< View<D,P...>, LocalSize, true > {
-  typedef typename Kokkos::Impl::ViewMapping< void, typename Kokkos::ViewTraits<D,P...>, Sacado::MP::VectorPartition<LocalSize> >::type type;
 };
 
 namespace Impl {
