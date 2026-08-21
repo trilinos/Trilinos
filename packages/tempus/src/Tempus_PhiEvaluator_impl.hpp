@@ -865,9 +865,9 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
     for (int i = 0; i < eigs_re.size(); ++i) {
       auto evr = eigs_re[i];
       auto evi = eigs_im[i];
-      a_val = std::min(a_val, evr);
-      b_val = std::max(b_val, evr);
-      c_val = std::max(c_val, std::abs(evi));
+      a_val    = std::min(a_val, evr);
+      b_val    = std::max(b_val, evr);
+      c_val    = std::max(c_val, std::abs(evi));
     }
     a = std::min(0.0, a_val);
     b = std::max(0.0, b_val);

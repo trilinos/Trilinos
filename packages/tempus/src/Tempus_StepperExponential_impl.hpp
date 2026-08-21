@@ -532,7 +532,7 @@ void StepperExponential<Scalar>::computeRemf(
 
     // create nonconst memory for a new RHS
     Teuchos::RCP<Thyra::VectorBase<Scalar>> Mfr_temp = Thyra::createMember(x0->space());
-    Teuchos::RCP<Thyra::VectorBase<Scalar>> xr_temp  = xd; // reuse xd memory
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> xr_temp  = xd;  // reuse xd memory
     Thyra::copy(*xr, xr_temp.ptr());
     // this will reset xDot to zero and re-set the BC in xr (that is why we need a nonconst temporary)
     // if we save Mfr in the previous iteration correctly, we can reuse it.

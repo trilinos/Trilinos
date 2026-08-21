@@ -189,7 +189,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
     const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
     if (verbLevel >= Teuchos::as<int>(Teuchos::VERB_LOW)) {
       int current_iters = -1;
-      if(!sStatus.extraParameters.is_null()) {
+      if (!sStatus.extraParameters.is_null()) {
         current_iters = sStatus.extraParameters->get("Iteration Count", 0);
       }
       Scalar achieved_tol = sStatus.achievedTol;

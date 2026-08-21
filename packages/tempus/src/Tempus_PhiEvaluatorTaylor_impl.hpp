@@ -22,7 +22,6 @@
 
 namespace Tempus {
 
-
 template <class Scalar>
 PhiEvaluatorTaylor<Scalar>::PhiEvaluatorTaylor(std::string name)
   : PhiEvaluator<Scalar>(name),
@@ -35,13 +34,13 @@ PhiEvaluatorTaylor<Scalar>::PhiEvaluatorTaylor(std::string name)
   // setup timers, if available
 #ifdef TEMPUS_TEUCHOS_TIME_MONITOR
   std::stringstream ss;
-  ss << "Tempus::" << name ;
+  ss << "Tempus::" << name;
 
   std::string phiLabel = ss.str() + ": PhiEval";
-  timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+  timerPhi_            = Teuchos::TimeMonitor::getNewCounter(phiLabel);
 
   std::string linOpLabel = ss.str() + ": LinOp";
-  timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+  timerLinOp_            = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
 #endif
 }
 
