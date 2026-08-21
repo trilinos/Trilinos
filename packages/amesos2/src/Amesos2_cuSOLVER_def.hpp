@@ -371,28 +371,41 @@ cuSOLVER<Matrix,Vector>::solve_impl(
     return err;
   }
 
+  const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
+  bool bAssignedX;
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+#endif
+
+    // The adapter assigns compatible device storage directly.  Otherwise it
+    // stages B and X in the CUDA views below, so cuBLAS never receives host
+    // pointers from a serial Kokkos node.
+    const bool initialize_data = true;
+    const bool do_not_initialize_data = false;
+    Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+      device_solve_array_t>::do_get(initialize_data, B, this->bValues_,
+      Teuchos::as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+    bAssignedX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+      device_solve_array_t>::do_get(do_not_initialize_data, X, this->xValues_,
+      Teuchos::as<size_t>(ld_rhs), ROOTED, this->rowIndexBase_);
+  }
+
   if(this->root_) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
     const int nrhs = static_cast<int>(X->getGlobalNumVectors());
+    const int ldb = std::max(n, static_cast<int>(this->bValues_.stride(1)));
+    const int ldx = std::max(n, static_cast<int>(this->xValues_.stride(1)));
 
-    // Zero-copy: read B and write X directly through their device views.
-    // Both B and X are device-resident (do_optimization() guarantees single-process).
-    auto b_view = B->getLocalDeviceView2d_ReadOnly();
-    auto x_view = X->getLocalDeviceView2d_OverwriteAll();
-
-    // stride(1) = distance between consecutive columns (includes any MV padding).
-    const int ldb = std::max(n, static_cast<int>(b_view.stride(1)));
-    const int ldx = std::max(n, static_cast<int>(x_view.stride(1)));
     const cublasOperation_t trans =
       this->control_.useTranspose_ ? CUBLAS_OP_C : CUBLAS_OP_N;
 
     auto blas_status = function_map::solve(
       data_.blas_handle, trans, n, nrhs,
       device_inverse_.data(), n,
-      reinterpret_cast<const cusolver_type*>(b_view.data()), ldb,
-      reinterpret_cast<cusolver_type*>(x_view.data()), ldx);
+      this->bValues_.data(), ldb, this->xValues_.data(), ldx);
 
     err = (blas_status != CUBLAS_STATUS_SUCCESS) ? 1 : 0;
   }
@@ -400,6 +413,17 @@ cuSOLVER<Matrix,Vector>::solve_impl(
   Teuchos::broadcast(*(this->getComm()), 0, &err);
   TEUCHOS_TEST_FOR_EXCEPTION(err != 0,
     std::runtime_error, "Amesos2 cuSolver solve failed.");
+
+  if(!bAssignedX) {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+#endif
+
+    Util::template put_1d_data_helper_kokkos_view<
+      MultiVecAdapter<Vector>, device_solve_array_t>::do_put(
+        X, this->xValues_, Teuchos::as<size_t>(ld_rhs), ROOTED,
+        this->rowIndexBase_);
+  }
 
   return err;
 }
