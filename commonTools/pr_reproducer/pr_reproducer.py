@@ -38,8 +38,11 @@ parser.add_argument("--source", type=convert_to_valid_source_dir, help="Trilinos
 parser.add_argument("--build", help="PR build that should be reproduced. Allows to skip the interactive prompt.")
 parser.add_argument("--debug", action="store_true", help="debug mode")
 parser.add_argument("--remote", default="origin", help="Name of the remote that points to the main Trilinos repository")
+parser.add_argument("--container-engine", choices=["docker", "podman"], default="podman",
+                    help="Container engine to use (default: podman).")
 args = parser.parse_args()
 remote = args.remote
+container_engine = args.container_engine
 
 if args.debug:
     logger.parent.setLevel(logging.DEBUG)
@@ -66,11 +69,11 @@ logo = """
 questionary.print(logo)
 
 ##################################################
-# Check that podman is available
-podman_cmd = which("podman")
-logger.debug(f"podman_cmd = {podman_cmd}")
-if podman_cmd is None:
-    logger.warning("No command \"podman\" in path. Aborting.")
+# Check that the requested container engine is available
+container_engine_cmd = which(container_engine)
+logger.debug(f"container_engine_cmd = {container_engine_cmd}")
+if container_engine_cmd is None:
+    logger.warning(f"No command \"{container_engine}\" in path. Aborting.")
     exit(1)
 
 ##################################################
@@ -210,18 +213,20 @@ questionary.print(f"Head ref:           {pr_head_ref}")
 questionary.print(f"Base ref:           {pr_base_ref}")
 questionary.print(f"Build:              {pr_build}")
 questionary.print(f"Container image:    {image}:{tag}")
+questionary.print(f"Container engine:   {container_engine}")
 questionary.print(f"Genconfig build ID: {genconfig_build_id}")
 questionary.print(f"CMake extra args:   {cmake_extra_args}")
 
 ##################################################
 # Pull image
 
-image_avail = image_available(image, tag)
+image_avail = image_available(container_engine, image, tag)
 logger.debug(f"image_avail = {image_avail}")
 if not image_avail:
-    pull_image(image, tag)
+    pull_image(container_engine, image, tag)
 
 ##################################################
 # Launch container
 
-launch_container(trilinos_source, packageEnablesFile, image, tag, genconfig_build_id, cmake_extra_args)
+launch_container(container_engine, trilinos_source, packageEnablesFile, image, tag,
+                 genconfig_build_id, cmake_extra_args)

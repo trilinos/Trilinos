@@ -18,7 +18,8 @@ else
 fi
 
 if [[ -f ${SCRIPT_DIR}/.pr_reproducer_venv/succesful_install ]] ; then
-    python3 ${SCRIPT_DIR}/pr_reproducer.py $*
+    # For example: ./reproducer.sh --container-engine podman
+    python3 ${SCRIPT_DIR}/pr_reproducer.py "$@"
 
     deactivate
 else
