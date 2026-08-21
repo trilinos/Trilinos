@@ -247,7 +247,8 @@ namespace Intrepid2 {
       return (a > b ? a : b);
     }
 
-    template <typename... Args, typename = std::enable_if_t<(std::is_same_v<T, Args> && ...)>>
+    template <typename... Args>
+    requires (std::is_same_v<T, Args> && ...)
     KOKKOS_FORCEINLINE_FUNCTION
     static T max(const T a, const T b, Args... args) {
         // Recursively find the max of everything after the first argument
