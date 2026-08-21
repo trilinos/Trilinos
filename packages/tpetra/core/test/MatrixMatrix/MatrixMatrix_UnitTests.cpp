@@ -1025,7 +1025,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test, SC, LO, GO, NT
     // Don't run tests where the core count does not match the maps
     if (numProcs > 0 && comm->getSize() != numProcs) continue;
 
-    MT epsilon = currentSystem.get<MT>("epsilon",
+    MT epsilon     = currentSystem.get<MT>("epsilon",
                                        100. * Teuchos::ScalarTraits<SC>::eps());
     std::string op = currentSystem.get<std::string>("op");
 

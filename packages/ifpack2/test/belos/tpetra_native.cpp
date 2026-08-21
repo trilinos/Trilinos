@@ -997,7 +997,7 @@ int main(int argc, char* argv[]) {
   // using mag_type = MV::mag_type;
   using reader_type = Tpetra::MatrixMarket::Reader<crs_matrix_type>;
 
-#ifndef HAVE_TPETRA_INST_HALF // To be consistent with CMakeList
+#ifndef HAVE_TPETRA_INST_HALF  // To be consistent with CMakeList
   constexpr bool verbose = false;
   BelosTpetra::Impl::register_Gmres(verbose);
   BelosTpetra::Impl::register_GmresPipeline(verbose);

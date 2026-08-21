@@ -197,8 +197,8 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> 
   using BCRS           = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   RCP<BCRS> bcrsmatrix = rcp(new BCRS(*TTGraph, blocksize));
 
-  const Scalar zero  (0); //= Teuchos::ScalarTraits<Scalar>::zero();
-  const Scalar one   (1); //= Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar zero(0);  //= Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one(1);   //= Teuchos::ScalarTraits<Scalar>::one();
   const Scalar two   = one + one;
   const Scalar three = two + one;
 
@@ -316,8 +316,8 @@ void solverWarmup(Teuchos::RCP<const Teuchos::Comm<int>>& comm,
   if (nvecs > 1)
     nvecs = 2;
 
-  const SC zero(0); //= Teuchos::ScalarTraits<SC>::zero ();
-  const SC one (1); //= Teuchos::ScalarTraits<SC>::one ();
+  const SC zero(0);  //= Teuchos::ScalarTraits<SC>::zero ();
+  const SC one(1);   //= Teuchos::ScalarTraits<SC>::one ();
   auto X = rcp(new MV(Ablock->getRangeMap(), nvecs));
   auto B = rcp(new MV(Ablock->getRangeMap(), nvecs));
   X->putScalar(zero);
@@ -351,27 +351,27 @@ int main(int argc, char* argv[]) {
   using LO = typename MV_d::local_ordinal_type;
   using GO = typename MV_d::global_ordinal_type;
   using NO = typename MV_d::node_type;
-  //using SC = typename MV_d::scalar_type;
+  // using SC = typename MV_d::scalar_type;
 
-  //using SC = double;
-  //using SC = float;
+  // using SC = double;
+  // using SC = float;
   using SC = Kokkos::Experimental::half_t;
   using MT = Teuchos::ScalarTraits<SC>::magnitudeType;
 #ifdef KOKKOS_IMPL_HALF_TYPE_DEFINED
-  printf( " KOKKOS_IMPL_HALF_TYPE_DEFINED\n" );
+  printf(" KOKKOS_IMPL_HALF_TYPE_DEFINED\n");
 #endif
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && KOKKOS_HALF_T_IS_FLOAT
-  printf( " KOKKOS_HALF_T_IS_FLOAT = true\n" );
+  printf(" KOKKOS_HALF_T_IS_FLOAT = true\n");
 #endif
 #if defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
-  printf( " KOKKOS_HALF_T_IS_FLOAT = false\n" );
+  printf(" KOKKOS_HALF_T_IS_FLOAT = false\n");
 #endif
   if (std::is_same<SC, float>::value) {
-    printf( " using SC = float;\n" );
+    printf(" using SC = float;\n");
   } else if (std::is_same<SC, double>::value) {
-    printf( " using SC = double;\n" );
+    printf(" using SC = double;\n");
   }
-  printf( " sizeof(SC) = %d\n\n",sizeof(SC) );
+  printf(" sizeof(SC) = %d\n\n", sizeof(SC));
 
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::MultiVector<SC, LO, GO, NO> MV;
@@ -387,7 +387,7 @@ int main(int argc, char* argv[]) {
 
   RCP<const Comm<int>> comm = Tpetra::getDefaultComm();
   bool rank0                = comm->getRank() == 0;
-  LO   nranks               = comm->getSize();
+  LO nranks                 = comm->getSize();
 
   // Get command-line arguments.
   CmdLineArgs args;
@@ -445,8 +445,8 @@ int main(int argc, char* argv[]) {
   }
 
   // Read sparse matrix A from Matrix Market file.
-  const SC zero (0); //= Teuchos::ScalarTraits<SC>::zero ();
-  const SC one  (1); //= Teuchos::ScalarTraits<SC>::one ();
+  const SC zero(0);  //= Teuchos::ScalarTraits<SC>::zero ();
+  const SC one(1);   //= Teuchos::ScalarTraits<SC>::one ();
   RCP<crs_matrix_type> A;
   RCP<row_matrix_type> Ablock;
   RCP<MV> B, X;
@@ -743,15 +743,15 @@ int main(int argc, char* argv[]) {
       std::cout << "  Norm0 = " << norm0 << " NormF = " << normF << std::endl;
     }
     const size_t numVectors = B->getNumVectors();
-    RCP<MV> R = rcp(new MV(Ablock->getRangeMap(), numVectors));
+    RCP<MV> R               = rcp(new MV(Ablock->getRangeMap(), numVectors));
     Ablock->apply(*X, *R);
     R->update(one, *B, -one);
     {
       std::cout << B->description() << std::endl;
       for (size_t j = 0; j < numVectors; ++j) {
-        auto Xj = X->getVector(j);
-        auto Rj = R->getVector(j);
-        auto Bj = B->getVector(j);
+        auto Xj     = X->getVector(j);
+        auto Rj     = R->getVector(j);
+        auto Bj     = B->getVector(j);
         auto r_norm = Rj->norm2();
         auto b_norm = Bj->norm2();
         auto x_norm = Xj->norm2();
@@ -781,20 +781,21 @@ int main(int argc, char* argv[]) {
       std::cout << std::endl;
     }
     {
-      SC x_norm (0.0);
+      SC x_norm(0.0);
       auto Xj = X->getVector(0);
-      x_norm = Xj->norm2();
+      x_norm  = Xj->norm2();
       {
-        Teuchos::RCP< Teuchos::Time > Ifpack2_BlockTriDi = Teuchos::TimeMonitor::getNewCounter ("Time to Tpetra::norm2");
+        Teuchos::RCP<Teuchos::Time> Ifpack2_BlockTriDi = Teuchos::TimeMonitor::getNewCounter("Time to Tpetra::norm2");
         Teuchos::TimeMonitor equilTimer(*Ifpack2_BlockTriDi);
         for (int iter = 0; iter < args.numIters; iter++) {
           x_norm = Xj->norm2();
         }
       }
-      if (rank0) std::cout << std::endl << " * x_norm = " << x_norm << std::endl;
+      if (rank0) std::cout << std::endl
+                           << " * x_norm = " << x_norm << std::endl;
     }
 #if 1
-    if(nranks == 1) {
+    if (nranks == 1) {
       typedef KokkosKernels::ArithTraits<double> STS;
       auto Rl = R->getLocalViewDevice(Tpetra::Access::ReadOnly);
       auto Bl = B->getLocalViewDevice(Tpetra::Access::ReadOnly);
@@ -805,36 +806,36 @@ int main(int argc, char* argv[]) {
       Kokkos::deep_copy(Rh, Rl);
       Kokkos::deep_copy(Bh, Bl);
       Kokkos::deep_copy(Xh, Xl);
-      #if 1
+#if 1
       for (int j = 0; j < Xh.extent(1); j++) {
-        double r_norm (0.0);
-        double b_norm (0.0);
-        double x_norm (0.0);
+        double r_norm(0.0);
+        double b_norm(0.0);
+        double x_norm(0.0);
         for (int i = 0; i < Xh.extent(0); i++) {
-          r_norm += double(Rh(i,j))*double(Rh(i,j));
-          b_norm += double(Bh(i,j))*double(Bh(i,j));
-          x_norm += double(Xh(i,j))*double(Xh(i,j));
-	}
-	r_norm = STS::sqrt(r_norm);
-	b_norm = STS::sqrt(b_norm);
-	x_norm = STS::sqrt(x_norm);
-	std::cout << "x_norm = " << x_norm << std::endl;
-	std::cout << "b_norm = " << b_norm << std::endl;
-	std::cout << "r_norm = " << r_norm << " / " << b_norm << " = " << r_norm/b_norm << std::endl;
+          r_norm += double(Rh(i, j)) * double(Rh(i, j));
+          b_norm += double(Bh(i, j)) * double(Bh(i, j));
+          x_norm += double(Xh(i, j)) * double(Xh(i, j));
+        }
+        r_norm = STS::sqrt(r_norm);
+        b_norm = STS::sqrt(b_norm);
+        x_norm = STS::sqrt(x_norm);
+        std::cout << "x_norm = " << x_norm << std::endl;
+        std::cout << "b_norm = " << b_norm << std::endl;
+        std::cout << "r_norm = " << r_norm << " / " << b_norm << " = " << r_norm / b_norm << std::endl;
       }
-      #else
-      double x_norm (0.0);
+#else
+      double x_norm(0.0);
       auto Xj = Kokkos::subview(X->getLocalViewDevice(Tpetra::Access::ReadOnly),
                                 Kokkos::ALL(), 0);
       {
-        Teuchos::RCP< Teuchos::Time > Ifpack2_BlockTriDi = Teuchos::TimeMonitor::getNewCounter ("Time to Kokkos::dot");
+        Teuchos::RCP<Teuchos::Time> Ifpack2_BlockTriDi = Teuchos::TimeMonitor::getNewCounter("Time to Kokkos::dot");
         Teuchos::TimeMonitor equilTimer(*Ifpack2_BlockTriDi);
         for (int iter = 0; iter < args.numIters; iter++) {
           x_norm = KokkosBlas::dot(Xj, Xj);
         }
       }
       if (rank0) std::cout << " * x_norm = " << std::sqrt(STS::abs(x_norm)) << std::endl;
-      #endif
+#endif
     }
 #endif
   }

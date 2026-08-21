@@ -188,7 +188,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, ParILUT, Scalar, LocalOrdinal, Gl
 
   const int numVectors = 2;
   using STS            = Teuchos::ScalarTraits<Scalar>;
-  using Magnitude  = typename STS::magnitudeType;
+  using Magnitude      = typename STS::magnitudeType;
   using STM            = Teuchos::ScalarTraits<Magnitude>;
   Kokkos::View<Magnitude*, Kokkos::HostSpace> bnorms("Initial norms", numVectors);
   Kokkos::View<Magnitude*, Kokkos::HostSpace> xnorms_final("Initial norms", numVectors);
@@ -212,7 +212,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2ILUT, ParILUT, Scalar, LocalOrdinal, Gl
   r.update(1., b, -1.);
   x.norm2(xnorms_final);
   out << "|e|        = [" << STM::magnitude(xnorms_true(0) - xnorms_final(0)) << ", "
-                          << STM::magnitude(xnorms_true(1) - xnorms_final(1)) << "]" << std::endl;
+      << STM::magnitude(xnorms_true(1) - xnorms_final(1)) << "]" << std::endl;
   r.norm2(norms);
   out << "|b|        = [" << bnorms(0) << ", " << bnorms(1) << "]" << std::endl;
   out << "|b-Ax|     = [" << norms(0) << ", " << norms(1) << "]" << std::endl;
