@@ -92,7 +92,6 @@ set(explicitly_disabled_warnings
 )
 set(upcoming_warnings
     aggressive-loop-optimizations
-    array-bounds=2  # -Wall
     class-memaccess  # -Wall
     dangling-pointer=2  # -Wall
     # deprecated-copy  # -Wextra, lots of warnings
@@ -108,6 +107,7 @@ set(promoted_warnings
     address
     aligned-new
     alloc-size  # -Wextra
+    array-bounds=2  # -Wall
     array-compare
     bool-compare
     bool-operation
