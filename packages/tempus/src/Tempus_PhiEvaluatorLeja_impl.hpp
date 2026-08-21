@@ -52,12 +52,12 @@ PhiEvaluatorLeja<Scalar>::PhiEvaluatorLeja(std::string name)
   ss << "Tempus::" << name;
 
   // set up timers for overall Phi-evaluation, divided differences, and Linop-vector applications
-  std::string phiLabel = ss.str() + ": PhiEval";
-  timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+  std::string phiLabel   = ss.str() + ": PhiEval";
+  timerPhi_              = Teuchos::TimeMonitor::getNewCounter(phiLabel);
   std::string linOpLabel = ss.str() + ": LinOp";
-  timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
-  std::string ddLabel = ss.str() + ": dd_phi";
-  timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
+  timerLinOp_            = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+  std::string ddLabel    = ss.str() + ": dd_phi";
+  timerDD_               = Teuchos::TimeMonitor::getNewCounter(ddLabel);
 #endif
 }
 
@@ -111,15 +111,14 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 {
   PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
 
-  leja_sf_ = pl->get<double>("Leja Ellipse Safety Factor", leja_sf_);
+  leja_sf_  = pl->get<double>("Leja Ellipse Safety Factor", leja_sf_);
   leja_tol_ = pl->get<double>("leja_tol", leja_tol_);
   setDividedDifferenceMethod(pl->get<int>("Leja DD Method", ddMethod_));
 
   setLejaEllipse(
-    pl->get<double>("leja_a", leja_a_),
-    pl->get<double>("leja_b", leja_b_),
-    pl->get<double>("leja_c", leja_c_)
-  );
+      pl->get<double>("leja_a", leja_a_),
+      pl->get<double>("leja_b", leja_b_),
+      pl->get<double>("leja_c", leja_c_));
 
   setExpansionOrder(pl->get<int>("Expansion Order", getExpansionOrder()));
 }
@@ -381,8 +380,7 @@ const std::tuple<double, double, double> PhiEvaluatorLeja<Scalar>::getScaleFromB
 template <class Scalar>
 const LejaPoint PhiEvaluatorLeja<Scalar>::transformLejaPoint(
     const LejaPoint& lp_base,
-    const std::tuple<const double, const double, const double>& scale_params
-  )
+    const std::tuple<const double, const double, const double>& scale_params)
 {
   // copy base Leja point
   LejaPoint scaled_lp = lp_base;
@@ -434,7 +432,7 @@ void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
   leja_a_ *= leja_sf_;
   leja_c_ *= leja_sf_;
 
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out  = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out, 1, "adaptEvaluator()");
@@ -779,18 +777,13 @@ Teuchos::ArrayRCP<Scalar> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int 
     Ts(i, i) = std::complex<double>(1.0, 0.0);
   }
 
-  //auto factorial = [](auto self, double n) -> double {
-  //    return n <= 1 ? 1 : n * self(self, n - 1);
-  //};
-  //double coeff = 1.0 / double(factorial(factorial, phi_order));
-
   // Ts = I/(p!) + Hm^1/(1+p)! + Hm^2/(2+p)! ...
   int ts_order = 17;
 
   Teuchos::SerialDenseMatrix<int, cplx> Mtmp(lejaOrder, lejaOrder);
   Mtmp = 0.;
 
-  for (int k=1; k<ts_order; ++k) {
+  for (int k = 1; k < ts_order; ++k) {
     Ts += A;
     // A = Hm^k/(k)!
 

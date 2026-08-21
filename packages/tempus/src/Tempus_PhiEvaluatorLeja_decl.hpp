@@ -54,8 +54,8 @@ struct LejaPoint {
   std::vector<std::complex<double>> get()
   {
     std::vector<std::complex<double>> out;
-    switch (this->lt) {
-      case LejaType::LPREAL:
+    switch (this->lpt) {
+      case LPREAL:
         out.push_back(std::complex(std::real(this->lp), 0.));
         break;
       case LPCONJ:
@@ -248,7 +248,6 @@ class PhiEvaluatorLeja
 
   /** \brief Teuchos::ArrayRCP of stored base points for the polynomial. */
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
-
 };
 
 /** \brief Creates a Leja evaluator and applies an optional parameter list.
