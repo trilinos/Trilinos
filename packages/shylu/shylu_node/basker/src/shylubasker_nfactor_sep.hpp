@@ -472,6 +472,7 @@ namespace BaskerNS
   {
     using STS = Teuchos::ScalarTraits<Entry>;
     using Mag = typename STS::magnitudeType;
+    using MTS = Teuchos::ScalarTraits<Mag>;
     const Entry zero (0.0);
     const Entry one  (1.0);
     const Mag eps = STS::eps ();
@@ -731,7 +732,7 @@ namespace BaskerNS
         thread_array(kid).error_info   = k;
         return BASKER_ERROR;
       }
-    } else if (Options.replace_tiny_pivot && normA_blk > STS::magnitude(zero) && STS::magnitude(pivot) < normA_blk * STS::squareroot(eps)) {
+    } else if (Options.replace_tiny_pivot && normA_blk > STS::magnitude(zero) && STS::magnitude(pivot) < normA_blk * MTS::squareroot(eps)) {
       if (Options.verbose == BASKER_TRUE)
       {
         std::cout << std::endl << std::endl;

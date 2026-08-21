@@ -660,7 +660,7 @@ template<>
 struct ScalarTraits<float>
 {
   typedef float magnitudeType;
-#if defined(HAVE_TEUCHOSCORE_KOKKOS)
+#if defined(HAVE_TEUCHOS_HALF) && defined(HAVE_TEUCHOSCORE_KOKKOS)
   typedef Kokkos::Experimental::half_t halfPrecision; 
 #else
   typedef float halfPrecision; // should become IEEE754-2008 binary16 or fp16 later, perhaps specified at configure according to architectural support
@@ -1377,7 +1377,7 @@ struct ScalarTraits<
     // might be slightly less than zero (i.e. -1e-16) and that would cause
     // a possbile NaN return.  THe above if test is the right thing to do
     // I think and is very cheap.
-  static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
+  static inline ComplexT pow(ComplexT x, ComplexT y) { return std::pow(x,y); }
   static inline ComplexT pi() { return ScalarTraits<T>::pi(); }
 };
 #endif //  HAVE_TEUCHOS_COMPLEX
@@ -1390,7 +1390,13 @@ struct ScalarTraits<
 >
 {
   typedef Kokkos::complex<T>  ComplexT;
+#if defined(HAVE_TEUCHOS_HALF) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+  // catch to avoid complex<half_t>
+  typedef Kokkos::complex<std::conditional_t<std::is_same<T, float>::value,
+                          float, typename ScalarTraits<T>::halfPrecision>> halfPrecision;
+#else
   typedef Kokkos::complex<typename ScalarTraits<T>::halfPrecision> halfPrecision;
+#endif
   typedef Kokkos::complex<typename ScalarTraits<T>::doublePrecision> doublePrecision;
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
   typedef typename ScalarTraits<T>::coordinateType coordinateType;

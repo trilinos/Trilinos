@@ -102,7 +102,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
   using DMT = DenseMatTraits<ScalarType,DM>;
   using SCT = Teuchos::ScalarTraits<ScalarType>;
   using MagnitudeType = typename SCT::magnitudeType;
-  using SMT = Teuchos::ScalarTraits<ScalarType>;
+  using SMT = Teuchos::ScalarTraits<MagnitudeType>;
 
   //! @name Constructors/Destructor
   //@{

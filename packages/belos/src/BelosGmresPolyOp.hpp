@@ -694,7 +694,7 @@ namespace Belos {
     for(int i=0; i<dim_; ++i){ 
       index[i] = i; 
       // Check if real + imag parts of roots < tol. 
-      TEUCHOS_TEST_FOR_EXCEPTION(SCT::squareroot(theta_(i,0)*theta_(i,0) + theta_(i,1)*theta_(i,1)) < tol, std::runtime_error, "BelosGmresPolyOp Error: One of the computed polynomial roots is approximately zero.  This will cause a divide by zero error!  Your matrix may be close to singular.  Please select a lower polynomial degree or give a shifted matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(MCT::squareroot(theta_(i,0)*theta_(i,0) + theta_(i,1)*theta_(i,1)) < tol, std::runtime_error, "BelosGmresPolyOp Error: One of the computed polynomial roots is approximately zero.  This will cause a divide by zero error!  Your matrix may be close to singular.  Please select a lower polynomial degree or give a shifted matrix.");
     }
     SortModLeja(theta_,index);
 
@@ -798,7 +798,7 @@ namespace Belos {
 
     //Compute all absolute values and find maximum:
     for(int i = 0; i < dimN; i++){
-      absVal(i) = SCT::squareroot(thetaN(i,0)*thetaN(i,0) + thetaN(i,1)*thetaN(i,1));
+      absVal(i) = MCT::squareroot(thetaN(i,0)*thetaN(i,0) + thetaN(i,1)*thetaN(i,1));
     }
     MagnitudeType * maxPointer = std::max_element(absVal.values(), (absVal.values()+dimN));
     int maxIndex = int (maxPointer- absVal.values());
@@ -835,7 +835,7 @@ namespace Belos {
           a = thetaN(i,0) - sorted(k,0);
           b = thetaN(i,1) - sorted(k,1);
           if (a*a + b*b > MCT::zero())
-            prod(i) = prod(i) + MCT::log10(SCT::squareroot(a*a + b*b));
+            prod(i) = prod(i) + MCT::log10(MCT::squareroot(a*a + b*b));
           else {
             prod(i) = -std::numeric_limits<MagnitudeType>::infinity();
             break;

@@ -113,6 +113,7 @@ namespace BaskerNS
   {
     using STS = Teuchos::ScalarTraits<Entry>;
     using Mag = typename STS::magnitudeType;
+    using STM = Teuchos::ScalarTraits<Mag>;
     const Entry zero (0.0);
     const Entry one (1.0);
     const Mag eps = STS::eps ();
@@ -608,7 +609,7 @@ namespace BaskerNS
               return BASKER_ERROR;
             }
           }
-        } else if (Options.replace_tiny_pivot && normA_blk > STS::magnitude(zero) && STS::magnitude(pivot) < normA_blk * STS::squareroot(eps)) {
+        } else if (Options.replace_tiny_pivot && normA_blk > STS::magnitude(zero) && STS::magnitude(pivot) < normA_blk * STM::squareroot(eps)) {
           if (Options.verbose == BASKER_TRUE)
           {
             std::cout << std::endl << std::endl;
@@ -618,14 +619,14 @@ namespace BaskerNS
                       << " ( " << M.nrow << " x " << M.ncol << " )"
                       << " with nnz = " << M.nnz
                       << " : replace tiny pivot( " << pivot << " -> "
-                      << (STS::real(pivot) >= STS::magnitude(zero) ? normA_blk * STS::squareroot(eps) : -normA_blk * STS::squareroot(eps))
+                      << (STS::real(pivot) >= STS::magnitude(zero) ? normA_blk * STS::squareroot(eps) : -normA_blk * STM::squareroot(eps))
                       << std::endl;
             std::cout << "---------------------------" << std::endl;
           }
           if (STS::real(pivot) >= STS::magnitude(zero)) {
-            pivot = normA_blk * STS::squareroot(eps);
+            pivot = normA_blk * Entry(STM::squareroot(eps));
           } else {
-            pivot = -normA_blk * STS::squareroot(eps);
+            pivot = -normA_blk * Entry(STM::squareroot(eps));
           }
           X(maxindex) = pivot;
           npivots ++;

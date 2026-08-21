@@ -514,6 +514,8 @@ namespace BaskerNS
   )
   {
     using STS = Teuchos::ScalarTraits<Entry>;
+    using Real = typename STS::magnitudeType;
+    using Mag  = typename STS::magnitudeType;
 
     //Reset error codes
     int err = 0; //init for return value from sfactor_copy2, factor_notoken etc.
@@ -923,8 +925,6 @@ namespace BaskerNS
     if ((Options.replace_zero_pivot || Options.replace_tiny_pivot) && BTF_A.nnz > 0) {
       // to compute one-norm of global A and BTF_A
       Kokkos::Timer normA_timer;
-      using STS = Teuchos::ScalarTraits<Entry>;
-      using Mag = typename STS::magnitudeType;
       const Entry zero (0.0);
       A.anorm = STS::magnitude(zero);
       for (Int j = 0; j < (Int)A.ncol; j++) {
@@ -1655,8 +1655,6 @@ namespace BaskerNS
       }
       if (Options.matrix_scaling != 0)
       {
-        using STS = Teuchos::ScalarTraits<Entry>;
-        using Real = typename STS::magnitudeType;
         const Real one (1.0);
         const Real eps = Teuchos::ScalarTraits<Entry>::eps ();
         const Real normA = BTF_A.anorm;

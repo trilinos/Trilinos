@@ -103,23 +103,6 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  void Basker<Int,Entry,Exe_Space>::amd_order
-  (
-   BASKER_MATRIX &M,
-   INT_1DARRAY   p
-  )
-  {
-
-    double amd_info[TRILINOS_AMD_INFO];
-    trilinos_amd(M.ncol, &(M.col_ptr(0)), 
-	       &(M.row_idx(0)), &(p(0)),
-	       NULL, amd_info);
-
-  }//end amd_order()
-
-
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
   void Basker<Int, Entry,Exe_Space>::csymamd_order
   (
    BASKER_MATRIX &M,

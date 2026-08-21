@@ -50,7 +50,7 @@ buildBlockDiagonalMatrix(const RCP<const Teuchos::Comm<int> >& comm,
 
     GO gidm1 = gid - 1;
     GO gidp1 = gid + 1;
-    ST diag  = static_cast<ST>(10.0 + static_cast<ST>(gid));
+    ST diag  = static_cast<ST>(10.0) + static_cast<ST>(gid);
     ST left  = static_cast<ST>(-1.0);
     ST right = static_cast<ST>(-2.0);
 
@@ -105,7 +105,7 @@ buildExpectedReversedBlockDiagonal(const RCP<const Teuchos::Comm<int> >& comm,
       }
 
       cols.push_back(gids[r]);
-      vals.push_back(static_cast<ST>(10.0 + static_cast<ST>(rowGid)));
+      vals.push_back(static_cast<ST>(10.0) + static_cast<ST>(rowGid));
 
       if (r < blockSize - 1) {
         cols.push_back(gids[r + 1]);

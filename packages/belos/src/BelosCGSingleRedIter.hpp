@@ -135,6 +135,7 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
   using DMT = DenseMatTraits<ScalarType, DM>;
   using SCT = Teuchos::ScalarTraits<ScalarType>;
   using MagnitudeType = typename SCT::magnitudeType;
+  using SMT = Teuchos::ScalarTraits<MagnitudeType>;
 
   //! @name Constructors/Destructor
   //@{
@@ -432,10 +433,10 @@ class CGSingleRedIter : virtual public CGIteration<ScalarType,MV,OP,DM> {
   Teuchos::RCP<const MV>
   CGSingleRedIter<ScalarType,MV,OP,DM>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const {
     if (convTest_->getResNormType() == Belos::PreconditionerNorm) {
-      (*norms)[0] = SCT::squareroot(SCT::magnitude(rHz_));
+      (*norms)[0] = SMT::squareroot(SCT::magnitude(rHz_));
       return Teuchos::null;
     } else if (foldConvergenceDetectionIntoAllreduce_ && convTest_->getResNormType() == Belos::TwoNorm) {
-      (*norms)[0] = SCT::squareroot(SCT::magnitude(rHr_));
+      (*norms)[0] = SMT::squareroot(SCT::magnitude(rHr_));
       return Teuchos::null;
     } else
       return R_;

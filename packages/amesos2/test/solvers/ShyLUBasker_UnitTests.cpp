@@ -486,7 +486,6 @@ namespace {
       typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
       typedef MultiVector<SCALAR,LO,GO,Node> MV;
       const size_t numRanks = comm->getSize();
-      const size_t numVecs = 1;
 
       // Construct matrix
       // NOTE: with serial-comm, every process construct its own 10-by-10 matrix, independently

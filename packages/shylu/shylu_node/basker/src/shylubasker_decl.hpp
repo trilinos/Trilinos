@@ -1218,8 +1218,6 @@ namespace BaskerNS
                         INT_1DARRAY btf_nnz, INT_1DARRAY btf_work);
 
     //basker_order_amd
-    void amd_order(BASKER_MATRIX &M,INT_1DARRAY p);
-    
     void csymamd_order(BASKER_MATRIX &M, INT_1DARRAY p, INT_1DARRAY cmember);
 
     // partial factorization
