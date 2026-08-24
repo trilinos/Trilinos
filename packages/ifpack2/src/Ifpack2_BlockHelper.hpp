@@ -81,10 +81,14 @@ struct TpetraLittleBlock<Kokkos::LayoutRight> {
 /// block tridiag scalar type
 ///
 template <typename T>
-struct BlockTridiagScalarType { typedef T type; };
+struct BlockTridiagScalarType {
+  typedef T type;
+};
 #if defined(IFPACK2_BLOCKHELPER_USE_SMALL_SCALAR_FOR_BLOCKTRIDIAG)
 template <>
-struct BlockTridiagScalarType<double> { typedef float type; };
+struct BlockTridiagScalarType<double> {
+  typedef float type;
+};
 // template<> struct SmallScalarType<Kokkos::complex<double> > { typedef Kokkos::complex<float> type; };
 #endif
 
@@ -369,9 +373,6 @@ struct ImplType {
   typedef Kokkos::View<btdm_scalar_type ***, Kokkos::LayoutRight, device_type> btdm_scalar_type_3d_view;
   typedef Kokkos::View<btdm_scalar_type ****, Kokkos::LayoutRight, device_type> btdm_scalar_type_4d_view;
   typedef Kokkos::View<btdm_scalar_type *****, Kokkos::LayoutRight, device_type> btdm_scalar_type_5d_view;
-
-  // maximum supported block size for BTD/BJacobi solvers (some codepaths may allow larger)
-  enum : int { max_blocksize = 32 };
 };
 
 ///

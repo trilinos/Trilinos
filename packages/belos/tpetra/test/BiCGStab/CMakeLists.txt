@@ -5,7 +5,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
   Tpetra_BiCGStab_hb
   SOURCES test_bicgstab_hb.cpp
   COMM serial mpi
@@ -18,7 +18,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
 IF (Tpetra_INST_COMPLEX_DOUBLE)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
     Tpetra_BiCGStab_complex_hb_test
     SOURCES test_bicgstab_complex_hb.cpp
     ARGS "--verbose"
@@ -39,3 +39,20 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestBiCGSTABFiles
   SOURCE_FILES cage4.hb
   EXEDEPS Tpetra_BiCGStab_hb
   )
+
+IF (Tpetra_INST_COMPLEX_DOUBLE)
+
+    BELOS_ADD_EXECUTABLE_AND_TEUCHOS_AND_KOKKOS_TESTS(
+      Tpetra_BiCGStab_complex_hb
+      SOURCES test_bicgstab_complex_hb.cpp
+      ARGS
+        "--verbose --filename=mhd1280b.cua"
+      )
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraBiCGStabComplexFiles
+      SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
+      SOURCE_FILES mhd1280b.cua
+      EXEDEPS Tpetra_BiCGStab_complex_hb
+    )
+
+ENDIF()

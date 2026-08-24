@@ -61,7 +61,7 @@ void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node, BlockCrsEnabled>::
     initLocalPrec() {
   auto nRows  = this->mat_->getLocalNumRows();
   auto& p     = this->params_;
-  auto matCrs = Ifpack2::Details::getCrsMatrix(this->mat_);
+  auto matCrs = this->localCrs_;
 
   if (p.blockCrsSize > 1 && !BlockCrsEnabled) {
     throw std::runtime_error("Must use prec type FAST_ILU_B if you want blockCrs support");

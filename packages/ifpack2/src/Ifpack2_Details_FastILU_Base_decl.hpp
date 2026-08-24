@@ -163,6 +163,13 @@ class FastILU_Base : public Ifpack2::Preconditioner<Scalar, LocalOrdinal, Global
   int nInit_;
   int nComputed_;
   mutable int nApply_;
+  // Cached local CRS matrix used for efficient value extraction.
+  // If mat_ is already a Tpetra::CrsMatrix, localCrs_ aliases it.
+  // If mat_ is a generic RowMatrix wrapper, localCrsNonConst_ owns a materialized CRS copy.
+  Teuchos::RCP<const TCrsMatrix> localCrs_;
+  Teuchos::RCP<TCrsMatrix> localCrsNonConst_;
+  bool localCrsIsOwnedCopy_;
+
   // store the local CRS components
   ImplScalarArray localValues_;        // set at beginning of compute()
   OrdinalArray localRowPtrs_;          // set in initialize()

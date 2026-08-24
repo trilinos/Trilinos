@@ -29,6 +29,8 @@ APPEND_SET(HEADERS
   BelosSolverFactory_Tpetra.hpp
   BelosTpetraAdapter.hpp
   BelosTpetraOperator.hpp
+  BelosTpetraTestFramework.hpp
+  BelosTpetraTestMain.hpp
   Belos_Details_Tpetra_registerLinearSolverFactory.hpp
   Belos_Details_Tpetra_registerSolverFactory.hpp
   )
@@ -77,6 +79,21 @@ APPEND_SET(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_PseudoBlockTFQMR.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_TFQMR.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_RCG.cpp
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_BiCGStab_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_BlockCG_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_BlockGmres_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_FixedPoint_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GCRODR_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_GmresPoly_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_LSQR_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_Minres_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_PCPG_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_PseudoBlockCG_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_PseudoBlockGmres_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_PseudoBlockTFQMR_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_TFQMR_KDV.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/solvers/Belos_Tpetra_RCG_KDV.cpp
   )
 
 #

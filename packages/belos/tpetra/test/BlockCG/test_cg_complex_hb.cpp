@@ -17,6 +17,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -26,21 +27,16 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-// I/O for Harwell-Boeing files
-#include <Tpetra_Util_iohb.h>
+template <class ScalarType, class DM>
+int run (Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
+  using ST = ScalarType;
 
-template <typename ScalarType>
-int run(int argc, char *argv[])
-{
-  using BSC = typename Tpetra::MultiVector<ScalarType>::scalar_type;
-  using ST  = typename std::complex<BSC>;
-  
   using OP = typename Tpetra::Operator<ST>;
   using MV = typename Tpetra::MultiVector<ST>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST>;
-  
+
   using OPT = typename Belos::OperatorTraits<ST,MV,OP>;
-  using MVT = typename Belos::MultiVecTraits<ST,MV>;
+  using MVT = typename Belos::MultiVecTraits<ST,MV,DM>;
 
   using SCT = typename Teuchos::ScalarTraits<ST>;
   using MT  = typename SCT::magnitudeType;
@@ -63,6 +59,7 @@ int run(int argc, char *argv[])
 
   // Get test parameters from command-line processor
   bool verbose = false, proc_verbose = false, debug = false;
+  bool pseudo = false; // block or pseudo block
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;      // total number of right-hand sides to solve for
   int blocksize = 1;   // blocksize used by solver
@@ -70,9 +67,9 @@ int run(int argc, char *argv[])
   std::string filename("mhd1280b.cua");
   MT tol = 1.0e-5;     // relative residual tolerance
 
-  CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
+  cmdp.setOption("pseudo","not-pseudo",&pseudo,"Use pseudo-block CG solver.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
@@ -131,7 +128,7 @@ int run(int argc, char *argv[])
   }
   
   // Construct an unpreconditioned linear problem instance.
-  Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
+  Belos::LinearProblem<ST,MV,OP,DM> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
@@ -139,8 +136,11 @@ int run(int argc, char *argv[])
     return -1;
   }
 
-  // Start the block CG iteration
-  Belos::BlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+  RCP<Belos::SolverManager<ST,MV,OP,DM> > solver;
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockCGSolMgr<ST,MV,OP,DM>( rcpFromRef(problem), rcpFromRef(belosList) ) );
+  else
+    solver = Teuchos::rcp( new Belos::BlockCGSolMgr<ST,MV,OP,DM>( rcpFromRef(problem), rcpFromRef(belosList) ) );
 
   // Print out information about problem
   if (proc_verbose) {
@@ -154,7 +154,7 @@ int run(int argc, char *argv[])
   }
   
   // Perform solve
-  Belos::ReturnType ret = solver.solve();
+  Belos::ReturnType ret = solver->solve();
 
   // Compute actual residuals.
   bool badRes = false;
@@ -192,10 +192,10 @@ int run(int argc, char *argv[])
   return 0;
 } // end test_bl_cg_complex_hb.cpp
 
-int main(int argc, char *argv[]) {
-  return run<double>(argc,argv);
 
-  // wrapped with a check: CMake option Trilinos_ENABLE_FLOAT=ON
-  // return run<float>(argc,argv);
+#define BELOS_DEFAULT_SCALAR typename Tpetra::MultiVector<std::complex<double>>::scalar_type
+#include "BelosTpetraTestMain.hpp"
+
+int main(int argc, char* argv[]) {
+  return common_main(argc, argv);
 }
-

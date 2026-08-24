@@ -296,7 +296,8 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   /// pointer but take a reference (or to take a pointer, but have
   /// the left-hand side of the + expression be a reference).
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>
-  setUnion(const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
+  setUnion(const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs,
+           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
   /// \brief Return the union of this Import this->getSourceMap()
   ///
@@ -315,7 +316,7 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   /// creating the result matrix's column Map from scratch.
   ///
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>
-  setUnion() const;
+  setUnion(const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
   /// \brief Returns an importer that contains only the remote entries of this
   ///

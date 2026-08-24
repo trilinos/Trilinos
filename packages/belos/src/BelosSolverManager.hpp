@@ -31,11 +31,11 @@
 namespace Belos {
 
 
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM>
 class StatusTest;
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class SolverManager : virtual public Teuchos::Describable {
 
   public:
@@ -52,14 +52,14 @@ class SolverManager : virtual public Teuchos::Describable {
   /// \brief clone the solver manager.
   ///
   /// Implements the DII inversion and injection pattern
-  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const = 0;
+  virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const = 0;
   //@}
 
   //! @name Accessor methods
   //@{
 
   //! Return a reference to the linear problem being solved by this solver manager.
-  virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const = 0;
+  virtual const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const = 0;
 
   //! Return the valid parameters for this solver manager.
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
@@ -96,7 +96,7 @@ class SolverManager : virtual public Teuchos::Describable {
   //@{
 
   //! Set the linear problem that needs to be solved.
-  virtual void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) = 0;
+  virtual void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem ) = 0;
 
   /// \brief Set the parameters to use when solving the linear problem.
   ///
@@ -112,9 +112,9 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set user-defined convergence status test.
   virtual void setUserConvStatusTest(
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &/* userConvStatusTest */,
-    const typename StatusTestCombo<ScalarType,MV,OP>::ComboType &/* comboType */ =
-        StatusTestCombo<ScalarType,MV,OP>::SEQ
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &/* userConvStatusTest */,
+    const typename StatusTestCombo<ScalarType,MV,OP,DM>::ComboType &/* comboType */ =
+        StatusTestCombo<ScalarType,MV,OP,DM>::SEQ
     )
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setUserConvStatusTest() has not been"
@@ -123,7 +123,7 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set user-defined debug status test.
   virtual void setDebugStatusTest(
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &/* debugStatusTest */
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &/* debugStatusTest */
     )
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error, the function setDebugStatusTest() has not been"
@@ -186,13 +186,14 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
+           class DM = DefaultDenseMatrix<int, ScalarType>,
            const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
   class RealSolverManager;
 
   // Specialization for isComplex = true adds nothing to SolverManager.
-  template<class ScalarType, class MV, class OP>
-  class RealSolverManager<ScalarType, MV, OP, false> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM> 
+  class RealSolverManager<ScalarType, MV, OP, DM, false> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     RealSolverManager () {}
     virtual ~RealSolverManager () {}
@@ -205,9 +206,9 @@ namespace Details {
   // The complex version (isComplex = true) needs to implement all the
   // pure virtual methods in SolverManager, even though they can never
   // actually be called, since the constructor throws.
-  template<class ScalarType, class MV, class OP>
-  class RealSolverManager<ScalarType, MV, OP, true> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class RealSolverManager<ScalarType, MV, OP, DM, true> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     RealSolverManager () {
       // Do not throw on constructor. The DII system registers all class types
@@ -215,7 +216,7 @@ namespace Details {
     }
     virtual ~RealSolverManager () {}
 
-    virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    virtual const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
         "This solver is not implemented for complex ScalarType." );
     }
@@ -235,7 +236,7 @@ namespace Details {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
         "This solver is not implemented for complex ScalarType." );
     }
-    virtual void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem) {
+    virtual void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem) {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
         "This solver is not implemented for complex ScalarType." );
     }
@@ -305,6 +306,7 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
+           class DM = DefaultDenseMatrix<int, ScalarType>,
            const bool lapackSupportsScalarType =
            Belos::Details::LapackSupportsScalar<ScalarType>::value>
   class SolverManagerRequiresLapack;
@@ -313,9 +315,9 @@ namespace Details {
   ///   Teuchos::LAPACK has a valid implementation.
   ///
   /// This specialization adds nothing to SolverManager.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresLapack<ScalarType, MV, OP, true> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresLapack<ScalarType, MV, OP, DM, true> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresLapack () {}
     virtual ~SolverManagerRequiresLapack () {}
@@ -327,9 +329,9 @@ namespace Details {
   /// This is a stub specialization whose constructor always throws
   /// std::logic_error.  Subclasses must always call the base class
   /// constructor.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresLapack<ScalarType, MV, OP, false> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresLapack<ScalarType, MV, OP, DM, false> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresLapack () {
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -339,7 +341,7 @@ namespace Details {
     }
     virtual ~SolverManagerRequiresLapack () {}
 
-    virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    virtual const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const {
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "This solver is not implemented for ScalarType"
          " types for which Teuchos::LAPACK does not have a valid implementation.  "
@@ -369,7 +371,7 @@ namespace Details {
          " types for which Teuchos::LAPACK does not have a valid implementation.  "
          "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
     }
-    virtual void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem) {
+    virtual void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> > &problem) {
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "This solver is not implemented for ScalarType"
          " types for which Teuchos::LAPACK does not have a valid implementation.  "
@@ -402,6 +404,7 @@ namespace Details {
   template<class ScalarType,
            class MV,
            class OP,
+           class DM = DefaultDenseMatrix<int, ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value &&
              ! Teuchos::ScalarTraits<ScalarType>::isComplex>
@@ -414,9 +417,9 @@ namespace Details {
   /// SolverManager subclass that has the actual specific solver
   /// implementation gets to implement any virtual methods of
   /// SolverManager.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, true> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM, true> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresRealLapack () {}
     virtual ~SolverManagerRequiresRealLapack () {}
@@ -429,9 +432,9 @@ namespace Details {
   /// This is a stub specialization whose constructor always throws
   /// std::logic_error.  Subclasses must always call the base class
   /// constructor.
-  template<class ScalarType, class MV, class OP>
-  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, false> :
-    public SolverManager<ScalarType, MV, OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM, false> :
+    public SolverManager<ScalarType, MV, OP, DM> {
   public:
     SolverManagerRequiresRealLapack () {
       // Do not throw on constructor. The DII system registers all class types
@@ -439,7 +442,7 @@ namespace Details {
     }
     virtual ~SolverManagerRequiresRealLapack () {}
 
-    virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    virtual const LinearProblem<ScalarType,MV,OP,DM>& getProblem() const {
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "This solver is not implemented for complex "
          "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
@@ -475,7 +478,7 @@ namespace Details {
          "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
     }
     virtual void
-    setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& /* problem */) {
+    setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP,DM> >& /* problem */) {
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "This solver is not implemented for complex "
          "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "

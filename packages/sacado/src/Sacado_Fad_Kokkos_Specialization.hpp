@@ -24,44 +24,6 @@ namespace Impl {
 
 // Rules for subview arguments and layouts matching
 
-template <class LayoutDest, unsigned StrideDst, class LayoutSrc, int RankDest,
-          int RankSrc, int CurrentArg, class... SubViewArgs>
-struct SubviewLegalArgsCompileTime<
-    Kokkos::LayoutContiguous<LayoutDest, StrideDst>, LayoutSrc, RankDest,
-    RankSrc, CurrentArg, SubViewArgs...> {
-  enum {
-    value =
-        SubviewLegalArgsCompileTime<LayoutDest, LayoutSrc, RankDest, RankSrc,
-                                    CurrentArg, SubViewArgs...>::value
-  };
-};
-
-template <class LayoutDest, class LayoutSrc, unsigned StrideSrc, int RankDest,
-          int RankSrc, int CurrentArg, class... SubViewArgs>
-struct SubviewLegalArgsCompileTime<
-    LayoutDest, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, RankDest,
-    RankSrc, CurrentArg, SubViewArgs...> {
-  enum {
-    value =
-        SubviewLegalArgsCompileTime<LayoutDest, LayoutSrc, RankDest, RankSrc,
-                                    CurrentArg, SubViewArgs...>::value
-  };
-};
-
-template <class LayoutDest, unsigned StrideDest, class LayoutSrc,
-          unsigned StrideSrc, int RankDest, int RankSrc, int CurrentArg,
-          class... SubViewArgs>
-struct SubviewLegalArgsCompileTime<
-    Kokkos::LayoutContiguous<LayoutDest, StrideDest>,
-    Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, RankDest, RankSrc,
-    CurrentArg, SubViewArgs...> {
-  enum {
-    value =
-        SubviewLegalArgsCompileTime<LayoutDest, LayoutSrc, RankDest, RankSrc,
-                                    CurrentArg, SubViewArgs...>::value
-  };
-};
-
 template <class DstT, class DstL, unsigned DstS, class... DstArgs, class SrcT,
           class SrcL, unsigned SrcS, class... SrcArgs, class... Args>
 struct CommonSubview<
@@ -115,37 +77,6 @@ KOKKOS_INLINE_FUNCTION auto subview(
               typename view_t::device_type, typename view_t::memory_traits>(
       src.accessor().offset(src.data_handle(), submapping_result.offset),
       submapping_result.mapping, src.accessor());
-}
-
-// This is needed to deal with the return Layout Deduction for LayoutContiguous
-// ...
-template <class D, class LayoutSrc, unsigned StrideSrc, class... P,
-          class... Args>
-KOKKOS_INLINE_FUNCTION auto
-subview(const DynRankView<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>,
-                          P...> &src,
-        Args... args) {
-  static_assert(View<D, P...>::rank == sizeof...(Args),
-                "subview requires one argument for each source View rank");
-
-  using sub_mdspan_t = decltype(submdspan(
-      src.to_mdspan(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...));
-  if constexpr (std::is_same_v<typename sub_mdspan_t::layout_type,
-                               layout_stride>) {
-    return typename Kokkos::Impl::ViewMapping<
-        void /* deduce subview type from source view traits */
-        ,
-        typename Impl::RemoveAlignedMemoryTrait<
-            D, Kokkos::LayoutContiguous<LayoutStride, StrideSrc>, P...>::type,
-        Args...>::type(src, args...);
-  } else {
-    return typename Kokkos::Impl::ViewMapping<
-        void /* deduce subview type from source view traits */
-        ,
-        typename Impl::RemoveAlignedMemoryTrait<
-            D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>::type,
-        Args...>::type(src, args...);
-  }
 }
 
 // Helper function to create a mapping for subdynrankview that avoids calling SubT::layout()
