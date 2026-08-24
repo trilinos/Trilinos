@@ -15,7 +15,7 @@
 
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
-#include "Kokkos_View_Fad_Fwd.hpp"
+#include "Sacado_Fad_Kokkos_Fwd.hpp"
 
 #include "Sacado_Traits.hpp"
 #include <Kokkos_DynRankView.hpp>

@@ -13,7 +13,7 @@
 #include <type_traits>
 
 #include "Sacado_Traits.hpp"
-#include "KokkosExp_View_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
 
 namespace Kokkos {

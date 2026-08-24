@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef KOKKOS_VIEW_FAD_FWD_HPP
-#define KOKKOS_VIEW_FAD_FWD_HPP
+#ifndef SACADO_FAD_KOKKOS_FWD_HPP
+#define SACADO_FAD_KOKKOS_FWD_HPP
 
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOS)
@@ -46,4 +46,4 @@ using Sacado::is_view_fad;
 
 #endif // defined(HAVE_SACADO_KOKKOS)
 
-#endif /* #ifndef KOKKOS_VIEW_FAD_FWD_HPP */
+#endif /* #ifndef SACADO_FAD_KOKKOS_FWD_HPP */

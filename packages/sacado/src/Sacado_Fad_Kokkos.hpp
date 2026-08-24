@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
-#define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
+#ifndef SACADO_FAD_KOKKOS_HPP
+#define SACADO_FAD_KOKKOS_HPP
 
 #include "Sacado_ConfigDefs.h"
 
@@ -29,4 +29,4 @@
 
 #endif // defined(HAVE_SACADO_KOKKOS)
 
-#endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */
+#endif /* #ifndef SACADO_FAD_KOKKOS_HPP */

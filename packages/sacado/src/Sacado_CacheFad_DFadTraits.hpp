@@ -189,7 +189,7 @@ namespace Teuchos {
 
 // KokkosComm
 #if defined(HAVE_SACADO_KOKKOS) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-#include "KokkosExp_View_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 #endif
 
 #endif // SACADO_FAD_DFADTRAITS_HPP
