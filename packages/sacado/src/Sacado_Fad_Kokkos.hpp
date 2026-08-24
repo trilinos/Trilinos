@@ -25,7 +25,7 @@
 
 // Some default traits definitions that need to be defined even if the view
 // specialization is disabled
-namespace Kokkos {
+namespace Sacado {
 
 template <typename ViewType, typename Enabled = void>
 struct ThreadLocalScalarType {
@@ -39,6 +39,14 @@ struct ViewScalarStride {
   static const bool is_unit_stride =
     Sacado::Impl::LayoutScalarStride< typename ViewType::array_layout>::is_unit_stride;
 };
+
+} // namespace Sacado
+
+// Inject some things into Kokkos for backwards compatibility
+namespace Kokkos {
+
+using Sacado::ThreadLocalScalarType;
+using Sacado::ViewScalarStride;
 
 } // namespace Kokkos
 
