@@ -14,6 +14,7 @@ APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
 
 # Add headers and sources to the lists of this subpackage's headers
 # resp. sources.
+APPEND_GLOB(HEADERS ${DIR}/Tsqr*.h)
 APPEND_GLOB(HEADERS ${DIR}/Tsqr*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/KokkosTSQR*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/Tsqr*.cpp)
