@@ -1052,6 +1052,8 @@ ASSERT_DEFINED(Tpetra_INST_LONG_DOUBLE)
 GLOBAL_SET(HAVE_TPETRA_LONG_DOUBLE ${Tpetra_INST_LONG_DOUBLE})
 
 GLOBAL_SET(Tpetra_INST_HALF_DEFAULT OFF)
+# NOTE: Turn HALF ON for testing (TODO: remove this line)
+GLOBAL_SET(Tpetra_INST_HALF_DEFAULT ON)
 
 # Set up the Tpetra_INST_HALF option: whether to instantiate / test
 # Scalar = half_t.
