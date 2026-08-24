@@ -13,16 +13,16 @@
 
 #include "Sacado.hpp"
 
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 {
   using FadType = Sacado::Fad::DFad<double>;
   using Kokkos::View;
   using Kokkos::DynRankView;
-  using Kokkos::createDynRankView;
-  using Kokkos::createDynRankViewWithType;
-  using Kokkos::createViewWithType;
+  using Sacado::createDynRankView;
+  using Sacado::createDynRankViewWithType;
+  using Sacado::createViewWithType;
   using Sacado::dimension_scalar;
   using Kokkos::view_alloc;
   using Kokkos::WithoutInitializing;

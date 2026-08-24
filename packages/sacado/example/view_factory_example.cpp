@@ -10,20 +10,20 @@
 #include "Sacado.hpp"
 
 #if !defined(__CUDACC__)
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 #include "Teuchos_Assert.hpp"
 
-// Example to demonstrate the use of Kokkos::ViewFactory for constructing
+// Example to demonstrate the use of Sacado::ViewFactory for constructing
 // view's of Fad's without explicitly referencing the sacado dimension
 
 // An example function that takes two views of various ranks and scalar types
 // and produces a third allocated using the ViewFactory
 template <class View1, class View2>
-Kokkos::View< typename Kokkos::ViewFactory<View1,View2>::value_type*,
+Kokkos::View< typename Sacado::ViewFactory<View1,View2>::value_type*,
               typename View1::device_type >
 my_func(const View1& v1, const View2& v2)
 {
-  typedef Kokkos::ViewFactory<View1,View2> ViewFac;
+  typedef Sacado::ViewFactory<View1,View2> ViewFac;
   typedef typename ViewFac::value_type value_type;
   typedef typename View1::device_type device_type;
   typedef typename View1::size_type size_type;
@@ -50,11 +50,11 @@ my_func(const View1& v1, const View2& v2)
 // An example function that takes two dynamic-rank views of various ranks and
 // scalar types and produces a third allocated using the ViewFactory
 template <class View1, class View2>
-Kokkos::DynRankView< typename Kokkos::ViewFactory<View1,View2>::value_type,
+Kokkos::DynRankView< typename Sacado::ViewFactory<View1,View2>::value_type,
                      typename View1::device_type >
 my_func_dynamic(const View1& v1, const View2& v2)
 {
-  typedef Kokkos::ViewFactory<View1,View2> ViewFac;
+  typedef Sacado::ViewFactory<View1,View2> ViewFac;
   typedef typename ViewFac::value_type value_type;
   typedef typename View1::device_type device_type;
   typedef typename View1::size_type size_type;
