@@ -59,8 +59,8 @@ struct KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat:
                                                    const std::string& label                           = std::string(),
                                                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
     Tpetra::MMdetails::host_mult_A_B_reuse(
-        Aview, Bview, targetMapToOrigRow_dev, targetMapToImportRow_dev,
-        Bcol2Ccol_dev, Icol2Ccol_dev, C, Cimport, label, params);
+        Aview, Bview, Acol2Brow, Acol2Irow,
+        Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
   }
 };
 
@@ -128,7 +128,8 @@ struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalVi
                                                      Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
                                                      const std::string& label                           = std::string(),
                                                      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
-    host_jacobi_A_B_reuse(omega, Dinv, Aview, Bview, targetMapToOrigRow_dev, targetMapToImportRow_dev, Bcol2Ccol_dev, Icol2Ccol_dev, C, Cimport, label, params);
+    host_jacobi_A_B_reuse(omega, Dinv, Aview, Bview, Acol2Brow, Acol2Irow,
+                          Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
   }
 
 }  // namespace MMdetails
