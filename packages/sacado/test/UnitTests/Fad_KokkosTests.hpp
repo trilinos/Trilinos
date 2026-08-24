@@ -10,7 +10,6 @@
 #include "Teuchos_TestingHelpers.hpp"
 
 #include "Sacado.hpp"
-#include "Kokkos_DynRankView_Fad.hpp"
 
 template <typename T>
 struct is_sfad {

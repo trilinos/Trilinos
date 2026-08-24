@@ -14,7 +14,6 @@
 
 #include "Sacado_Traits.hpp"
 #include "Sacado_Fad_Kokkos.hpp"
-#include "Kokkos_DynRankView_Fad.hpp"
 
 namespace Kokkos {
 

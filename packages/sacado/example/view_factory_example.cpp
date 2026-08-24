@@ -10,7 +10,6 @@
 #include "Sacado.hpp"
 
 #if !defined(__CUDACC__)
-#include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_ViewFactory.hpp"
 #include "Teuchos_Assert.hpp"
 

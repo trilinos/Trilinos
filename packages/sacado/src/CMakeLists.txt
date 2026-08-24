@@ -302,11 +302,8 @@ SET(HEADERS ${HEADERS}
   Sacado_No_Kokkos.hpp
   Sacado_Fad_Kokkos_Fwd.hpp
   Sacado_Fad_Kokkos.hpp
-  Kokkos_DynRankView_Fad.hpp
-  Kokkos_DynRankView_Fad_Contiguous.hpp
   Kokkos_LayoutContiguous.hpp
   Kokkos_LayoutNatural.hpp
-  KokkosExp_View_Fad_Contiguous.hpp
   Kokkos_ViewFactory.hpp
   Sacado_Fad_Kokkos_View_Support.hpp
   Sacado_Fad_Kokkos_ThreadLocalScalar.hpp

@@ -21,9 +21,135 @@
 
 #else
 
-// Bring in some definitions when the Fad specialization is not defined
-// (these need to be moved out of this file)
-#include "KokkosExp_View_Fad_Contiguous.hpp"
+#include "Kokkos_LayoutContiguous.hpp"
+
+// Some default traits definitions that need to be defined even if the view
+// specialization is disabled
+namespace Kokkos {
+
+template <typename ViewType, typename Enabled = void>
+struct ThreadLocalScalarType {
+  typedef typename ViewType::non_const_value_type type;
+};
+
+template <typename ViewType>
+struct ViewScalarStride {
+  static const unsigned stride =
+    Impl::LayoutScalarStride< typename ViewType::array_layout>::stride;
+  static const bool is_unit_stride =
+    Impl::LayoutScalarStride< typename ViewType::array_layout>::is_unit_stride;
+};
+
+} // namespace Kokkos
+
+namespace Sacado {
+
+  namespace Fad {
+
+    /* Define a partition of a View of Sacado Fad type */
+    template <unsigned Size = 0>
+    struct Partition {
+      static const unsigned PartitionSize = Size;
+      unsigned offset ;
+      unsigned stride ;
+
+      template< typename iType0 , typename iType1 >
+      KOKKOS_INLINE_FUNCTION
+      Partition( const iType0 & i0 , const iType1 & i1 ) :
+        offset(i0), stride(i1) {
+      }
+    };
+
+    template <typename T>
+    struct is_fad_partition {
+      static const bool value = false;
+    };
+
+    template <unsigned Stride>
+    struct is_fad_partition< Partition<Stride> > {
+      static const bool value = true;
+    };
+
+  }
+
+  // Type of local scalar type when partitioning a view
+  template <typename T, unsigned Stride = 0>
+  struct LocalScalarType {
+    typedef T type;
+  };
+  template <typename T, unsigned Stride>
+  struct LocalScalarType<const T, Stride> {
+    typedef typename LocalScalarType<T,Stride>::type lst;
+    typedef const lst type;
+  };
+
+  // For DFad, the size is not part of the type, so the default implementation
+  // is sufficient
+
+  // Type of local scalar type when partitioning a view
+  //
+  // For SLFad, divde the array size by the given stride
+  namespace Fad {
+  namespace Exp {
+    template <typename T, int N> class StaticStorage;
+    template <typename S> class GeneralFad;
+  }
+  }
+  template <typename T, int N, unsigned Stride>
+  struct LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,N> >,
+                          Stride > {
+    static const int Ns = (N+Stride-1) / Stride;
+    typedef Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> > type;
+  };
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  namespace Fad {
+    template <typename T, int N> class SLFad;
+  }
+  template <typename T, int N, unsigned Stride>
+  struct LocalScalarType< Fad::SLFad<T,N>, Stride > {
+    static const int Ns = (N+Stride-1) / Stride;
+    typedef Fad::SLFad<T,Ns> type;
+  };
+#endif
+
+  // Type of local scalar type when partitioning a view
+  //
+  // For SFad, divde the array size by the given stride.  If it divides evenly,
+  // use SFad, otherwise use SLFad
+  namespace Fad {
+  namespace Exp {
+    template <typename T, int N> class StaticFixedStorage;
+    template <typename T, int N> class StaticStorage;
+    template <typename S> class GeneralFad;
+  }
+  }
+  template <typename T, int N, unsigned Stride>
+  struct LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,N> >,
+                          Stride > {
+    static const int Ns = (N+Stride-1) / Stride;
+    typedef typename std::conditional<
+      Ns == N/Stride ,
+      Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,Ns> > ,
+      Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> >
+    >::type type;
+  };
+
+#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+  namespace Fad {
+    template <typename T, int N> class SFad;
+  }
+  template <typename T, int N, unsigned Stride>
+  struct LocalScalarType< Fad::SFad<T,N>, Stride > {
+    static const int Ns = (N+Stride-1) / Stride;
+    typedef typename std::conditional< Ns == N/Stride , Fad::SFad<T,Ns> , Fad::SLFad<T,Ns> >::type type;
+  };
+#endif
+
+  template <unsigned Stride, typename T>
+  KOKKOS_INLINE_FUNCTION
+  const T& partition_scalar(const T& x) { return x; }
+
+} // namespace Sacados
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
