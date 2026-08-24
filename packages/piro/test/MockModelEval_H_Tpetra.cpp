@@ -303,6 +303,18 @@ MockModelEval_H_Tpetra::get_solution_diff_at_samples(int k) const {
     return diff_out;
 }
 
+Teuchos::RCP<Thyra::VectorBase<double>>
+MockModelEval_H_Tpetra::get_solution_diff_at_param(const Teuchos::RCP<const Thyra::VectorBase<double>> thyra_param_k) const {
+    auto thyra_pv_param_k = Teuchos::rcp_dynamic_cast<const Thyra::DefaultProductVector<double>>(thyra_param_k);
+    Teuchos::RCP<const Tpetra_Vector> param_k = ConverterT::getConstTpetraVector(thyra_pv_param_k->getVectorBlock(0));
+    Teuchos::RCP<Tpetra_Vector> diff = rcp(new Tpetra_Vector(x_map));
+    const int nodeNumElements = x_map->getLocalNumElements();
+    for (int i=0; i<nodeNumElements; i++)
+      diff->getDataNonConst()[i] = 0.2*std::pow(param_k->getData()[i],2);
+    auto diff_out = Thyra::createVector(diff, p_space);
+    return diff_out;
+}
+
 
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
 MockModelEval_H_Tpetra::get_p_space(int l) const
@@ -386,7 +398,6 @@ MockModelEval_H_Tpetra::create_hess_g_pp( int j, int l1, int l2 ) const
     H = Teuchos::rcp(new Tpetra_CrsMatrix(hess_crs_graph_p));
   else
     H = Teuchos::rcp(new Tpetra_CrsMatrix(hess_crs_graph_x));
-  std::cout << __FILE__ << " " << __LINE__ << " " << j << " "<< l1 << " " << l2 << std::endl;
 
   return Teuchos::rcp(new MatrixBased_LOWS(Thyra::createLinearOp(H)));
 }

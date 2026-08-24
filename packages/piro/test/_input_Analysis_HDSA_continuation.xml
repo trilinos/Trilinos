@@ -214,15 +214,15 @@
           <Parameter name="Perform Reduced Derivative Checks" type="bool" value="false" />
           <Parameter name="Perform Expensive Derivative Checks" type="bool" value="false" />
         </ParameterList>
-        <ParameterList name="Prior Elliptic Operator">
+          <ParameterList name="Prior Elliptic Operator">
           <Parameter name="Operator Type" type="string" value="Hessian Of Response" />
           <Parameter name="Response Index" type="int" value="1" />
         </ParameterList>
-        <ParameterList name="Prior Mass Operator">
+          <ParameterList name="Prior Mass Operator">
           <Parameter name="Operator Type" type="string" value="Hessian Of Response" />
           <Parameter name="Response Index" type="int" value="2" />
         </ParameterList>
-        <ParameterList name="Prior Mass Cholesky Operator">
+          <ParameterList name="Prior Mass Cholesky Operator">
           <Parameter name="Operator Type" type="string" value="Hessian Of Response" />
           <Parameter name="Response Index" type="int" value="3" />
         </ParameterList>
@@ -252,6 +252,10 @@
           <Parameter name="Rank"  type="int" value="20" />
           <Parameter name="Oversampling Factor" type="int" value="10" />    
         </ParameterList>
+        <ParameterList name="MD Continuation Update">
+          <Parameter name="Number Of Continuation Steps" type="int" value="3" />    
+        </ParameterList>
+
       </ParameterList>
     
       <ParameterList name="ROL">
