@@ -92,7 +92,6 @@ struct ViewFactory {
       layout = Impl::reconstructLayout(layout, r);
     }
 
-#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
     if constexpr (is_view_fad<ResultView>::value) {
       size_t fad_size = dimension_scalar(views...);
       if (fad_size == 0) fad_size = 1;
@@ -110,9 +109,6 @@ struct ViewFactory {
     } else {
       return ResultView(prop, layout);
     }
-#else
-    return ResultView(prop, layout);
-#endif
   }
 
 };
