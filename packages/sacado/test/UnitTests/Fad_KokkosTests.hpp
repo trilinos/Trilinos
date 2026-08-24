@@ -2228,7 +2228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged, FadType, Layout, Device )
 {
-  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // For LayoutContiguous, strip out the layout they are templated on
   typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
@@ -2299,7 +2299,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged2, FadType, Layout, Device )
 {
-  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // For LayoutContiguous, strip out the layout they are templated on
   typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
@@ -2370,7 +2370,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device )
 {
-  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // For LayoutContiguous, strip out the layout they are templated on
   typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
@@ -2445,7 +2445,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device )
 {
-  // For LayoutContiguous or LayoutNatural, strip out the layout they are templated on
+  // For LayoutContiguous, strip out the layout they are templated on
   typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;

@@ -303,7 +303,6 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_Kokkos_Fwd.hpp
   Sacado_Fad_Kokkos.hpp
   Kokkos_LayoutContiguous.hpp
-  Kokkos_LayoutNatural.hpp
   Kokkos_ViewFactory.hpp
   Sacado_Fad_Kokkos_View_Support.hpp
   Sacado_Fad_Kokkos_ThreadLocalScalar.hpp
