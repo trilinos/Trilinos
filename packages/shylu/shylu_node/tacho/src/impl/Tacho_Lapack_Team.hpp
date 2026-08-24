@@ -416,6 +416,9 @@ template <typename T> struct LapackTeam {
         // zero out off-diagonal
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * lda] = zero; });
         (*info) ++;
+      } else if (*alpha11 == zero) {
+        // record first zero pivot location
+        if (*info == 0) (*info) = -(p+1);
       } else {
         const auto alpha = *alpha11;
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * lda] /= alpha; });
