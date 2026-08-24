@@ -14,6 +14,13 @@ IF(Teuchos_ENABLE_COMPLEX)
       "--verbose --filename=mhd1280b.cua"
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      solution_projection_complex_hb
+      SOURCES test_solution_projection_complex_hb.cpp
+      ARGS
+        "--verbose --filename=mhd1280b.cua --epsilon=1e-4 --projection-reduction-tol=1e-3 --require-projection-beats-recycled --min-iteration-improvement=200"
+    )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestGCRODRComplexFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES mhd1280b.cua
