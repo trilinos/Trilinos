@@ -107,9 +107,9 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   const size_t pa = p;
 #endif
 
-  typedef Kokkos::LayoutContiguous<typename ViewTypeA::array_layout,FadStride> ConLayoutA;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeB::array_layout,FadStride> ConLayoutB;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeC::array_layout,FadStride> ConLayoutC;
+  typedef Sacado::LayoutContiguous<typename ViewTypeA::array_layout,FadStride> ConLayoutA;
+  typedef Sacado::LayoutContiguous<typename ViewTypeB::array_layout,FadStride> ConLayoutB;
+  typedef Sacado::LayoutContiguous<typename ViewTypeC::array_layout,FadStride> ConLayoutC;
 
   typedef Kokkos::View<AlignedFadType**, ConLayoutA, execution_space> ConViewTypeA;
   typedef Kokkos::View<AlignedFadType*,  ConLayoutB, execution_space> ConViewTypeB;

@@ -107,7 +107,7 @@ double time_fad_hierarchical_flat(int ncells, int num_basis, int num_points,
 #endif
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-  typedef Kokkos::LayoutContiguous<DefaultLayout,FadStride> ContLayout;
+  typedef Sacado::LayoutContiguous<DefaultLayout,FadStride> ContLayout;
   typedef Kokkos::View<AlignedFadType****,ContLayout,ExecSpace> t_4DView;
   typedef Kokkos::View<AlignedFadType***,ContLayout,ExecSpace> t_3DView;
   typedef Kokkos::View<AlignedFadType**,ContLayout,ExecSpace> t_2DView;
@@ -150,7 +150,7 @@ double time_fad_hierarchical_team(int ncells, int num_basis, int num_points,
 #endif
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-  typedef Kokkos::LayoutContiguous<DefaultLayout,FadStride> ContLayout;
+  typedef Sacado::LayoutContiguous<DefaultLayout,FadStride> ContLayout;
   typedef Kokkos::View<AlignedFadType****,ContLayout,ExecSpace> t_4DView;
   typedef Kokkos::View<AlignedFadType***,ContLayout,ExecSpace> t_3DView;
   typedef Kokkos::View<AlignedFadType**,ContLayout,ExecSpace> t_2DView;

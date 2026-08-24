@@ -132,9 +132,9 @@ do_time_fad_hierarchical_dfad(const size_t m, const size_t n, const size_t p,
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeB;
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeA::array_layout> ConLayoutA;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeB::array_layout> ConLayoutB;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeC::array_layout> ConLayoutC;
+  typedef Sacado::LayoutContiguous<typename ViewTypeA::array_layout> ConLayoutA;
+  typedef Sacado::LayoutContiguous<typename ViewTypeB::array_layout> ConLayoutB;
+  typedef Sacado::LayoutContiguous<typename ViewTypeC::array_layout> ConLayoutC;
   typedef Kokkos::View<FadType**, ConLayoutA, execution_space> ConViewTypeA;
   typedef Kokkos::View<FadType*,  ConLayoutB, execution_space> ConViewTypeB;
   typedef Kokkos::View<FadType*,  ConLayoutC, execution_space> ConViewTypeC;
@@ -208,9 +208,9 @@ do_time_fad_hierarchical_dfad_scratch(
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeB;
   typedef Kokkos::View<FadType*,  ViewArgs...> ViewTypeC;
   typedef typename ViewTypeA::execution_space execution_space;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeA::array_layout> ConLayoutA;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeB::array_layout> ConLayoutB;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeC::array_layout> ConLayoutC;
+  typedef Sacado::LayoutContiguous<typename ViewTypeA::array_layout> ConLayoutA;
+  typedef Sacado::LayoutContiguous<typename ViewTypeB::array_layout> ConLayoutB;
+  typedef Sacado::LayoutContiguous<typename ViewTypeC::array_layout> ConLayoutC;
   typedef Kokkos::View<FadType**, ConLayoutA, execution_space> ConViewTypeA;
   typedef Kokkos::View<FadType*,  ConLayoutB, execution_space> ConViewTypeB;
   typedef Kokkos::View<FadType*,  ConLayoutC, execution_space> ConViewTypeC;

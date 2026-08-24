@@ -27,7 +27,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaAligned)
   const int Stride = 32;
   const int LocalDim = 2;
   typedef Sacado::Fad::SFad<double,StaticDim> FadType;
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
+  typedef Sacado::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
   typedef Kokkos::Cuda Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
@@ -51,7 +51,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaNotAligned)
   const int Stride = 32;
   const int LocalDim = 0;
   typedef Sacado::Fad::SFad<double,StaticDim> FadType;
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
+  typedef Sacado::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
   typedef Kokkos::Cuda Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 

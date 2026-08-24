@@ -27,13 +27,13 @@ namespace Impl {
 template <class DstT, class DstL, unsigned DstS, class... DstArgs, class SrcT,
           class SrcL, unsigned SrcS, class... SrcArgs, class... Args>
 struct CommonSubview<
-    Kokkos::View<DstT, Kokkos::LayoutContiguous<DstL, DstS>, DstArgs...>,
-    Kokkos::View<SrcT, Kokkos::LayoutContiguous<SrcL, SrcS>, SrcArgs...>,
+    Kokkos::View<DstT, Sacado::LayoutContiguous<DstL, DstS>, DstArgs...>,
+    Kokkos::View<SrcT, Sacado::LayoutContiguous<SrcL, SrcS>, SrcArgs...>,
     Args...> {
   using DstType =
-      Kokkos::View<DstT, Kokkos::LayoutContiguous<DstL, DstS>, DstArgs...>;
+      Kokkos::View<DstT, Sacado::LayoutContiguous<DstL, DstS>, DstArgs...>;
   using SrcType =
-      Kokkos::View<SrcT, Kokkos::LayoutContiguous<SrcL, SrcS>, SrcArgs...>;
+      Kokkos::View<SrcT, Sacado::LayoutContiguous<SrcL, SrcS>, SrcArgs...>;
   using dst_subview_type =
       decltype(subview(std::declval<DstType>(), std::declval<Args>()...));
   using src_subview_type =
@@ -61,9 +61,9 @@ namespace Kokkos {
 template <class D, class LayoutSrc, unsigned StrideSrc, class... P,
           class... Args>
 KOKKOS_INLINE_FUNCTION auto subview(
-    const View<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...> &src,
+    const View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...> &src,
     Args... args) {
-  using view_t = View<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>;
+  using view_t = View<D, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, P...>;
   auto submapping_result = submdspan_mapping(
       src.mapping(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
   using sub_data_type = typename data_type_construct<
@@ -73,7 +73,7 @@ KOKKOS_INLINE_FUNCTION auto subview(
       std::is_same_v<typename decltype(submapping_result.mapping)::layout_type,
                      layout_stride>,
       LayoutStride, LayoutSrc>;
-  return View<sub_data_type, LayoutContiguous<layout_t, StrideSrc>,
+  return View<sub_data_type, Sacado::LayoutContiguous<layout_t, StrideSrc>,
               typename view_t::device_type, typename view_t::memory_traits>(
       src.accessor().offset(src.data_handle(), submapping_result.offset),
       submapping_result.mapping, src.accessor());
@@ -111,7 +111,7 @@ template <class T, class LayoutSrc, unsigned StrideSrc, class... DRVArgs,
           class SubArg3 = int, class SubArg4 = int, class SubArg5 = int,
           class SubArg6 = int>
 KOKKOS_INLINE_FUNCTION auto
-subdynrankview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>,
+subdynrankview(const DynRankView<T, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>,
                                  DRVArgs...> &drv,
                SubArg0 arg0 = SubArg0{}, SubArg1 arg1 = SubArg1{},
                SubArg2 arg2 = SubArg2{}, SubArg3 arg3 = SubArg3{},
@@ -147,7 +147,7 @@ template <class T, class LayoutSrc, unsigned StrideSrc, class... DRVArgs,
           class SubArg3 = int, class SubArg4 = int, class SubArg5 = int,
           class SubArg6 = int>
 KOKKOS_INLINE_FUNCTION auto
-subview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>, DRVArgs...>
+subview(const DynRankView<T, Sacado::LayoutContiguous<LayoutSrc, StrideSrc>, DRVArgs...>
             &drv,
         SubArg0 arg0 = SubArg0{}, SubArg1 arg1 = SubArg1{},
         SubArg2 arg2 = SubArg2{}, SubArg3 arg3 = SubArg3{},

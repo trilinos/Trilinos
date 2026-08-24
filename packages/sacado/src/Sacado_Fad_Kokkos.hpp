@@ -21,7 +21,7 @@
 
 #else
 
-#include "Kokkos_LayoutContiguous.hpp"
+#include "Sacado_Fad_Kokkos_LayoutContiguous.hpp"
 
 // Some default traits definitions that need to be defined even if the view
 // specialization is disabled
@@ -35,9 +35,9 @@ struct ThreadLocalScalarType {
 template <typename ViewType>
 struct ViewScalarStride {
   static const unsigned stride =
-    Impl::LayoutScalarStride< typename ViewType::array_layout>::stride;
+    Sacado::Impl::LayoutScalarStride< typename ViewType::array_layout>::stride;
   static const bool is_unit_stride =
-    Impl::LayoutScalarStride< typename ViewType::array_layout>::is_unit_stride;
+    Sacado::Impl::LayoutScalarStride< typename ViewType::array_layout>::is_unit_stride;
 };
 
 } // namespace Kokkos

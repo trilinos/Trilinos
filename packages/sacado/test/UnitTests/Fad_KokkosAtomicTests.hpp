@@ -391,8 +391,8 @@ using Kokkos::LayoutLeft;
 using Kokkos::LayoutRight;
 
 #ifndef SACADO_DISABLE_FAD_VIEW_SPEC
-typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft> LeftContiguous;
-typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
+typedef Sacado::LayoutContiguous<Kokkos::LayoutLeft> LeftContiguous;
+typedef Sacado::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
 
 #define VIEW_FAD_TESTS_FD( F, D )                                       \
   VIEW_FAD_TESTS_FLD( F, LayoutLeft, D )                                \

@@ -18,11 +18,10 @@
 #include "Sacado_Fad_Kokkos_Fwd.hpp"
 
 #include "Sacado_Traits.hpp"
-#include <Kokkos_DynRankView.hpp>
-#include <Sacado_Fad_Ops_Fwd.hpp>
+#include "Kokkos_DynRankView.hpp"
+#include "Sacado_Fad_Ops_Fwd.hpp"
 
-// Rename this file
-#include <Kokkos_LayoutContiguous.hpp>
+#include "Sacado_Fad_Kokkos_LayoutContiguous.hpp"
 
 // ====================================================================
 // Kokkos customization points for the mdspan based View implementation
@@ -235,7 +234,7 @@ KOKKOS_INLINE_FUNCTION constexpr auto customize_view_arguments(
   constexpr int static_stride =
       std::is_same_v<Kokkos::LayoutRight, LayoutType> ? 1 : 0;
   constexpr size_t partitioned_fad_stride = []() {
-    if constexpr (Kokkos::is_layout_contiguous<LayoutType>::value)
+    if constexpr (Sacado::is_layout_contiguous<LayoutType>::value)
       return LayoutType::scalar_stride;
     else
       return 0;
@@ -253,7 +252,7 @@ KOKKOS_INLINE_FUNCTION constexpr auto customize_view_arguments(
   constexpr int static_stride =
       std::is_same_v<Kokkos::LayoutRight, LayoutType> ? 1 : 0;
   constexpr size_t partitioned_fad_stride = []() {
-    if constexpr (Kokkos::is_layout_contiguous<LayoutType>::value)
+    if constexpr (Sacado::is_layout_contiguous<LayoutType>::value)
       return LayoutType::scalar_stride;
     else
       return 0;
@@ -306,7 +305,7 @@ struct is_view_fad<Kokkos::DynRankView<ViewArgs...>> {
 template <typename view_type> struct is_view_fad_contiguous {
   static const bool value =
       is_view_fad<view_type>::value &&
-      Kokkos::is_layout_contiguous<typename view_type::array_layout>::value;
+      Sacado::is_layout_contiguous<typename view_type::array_layout>::value;
 };
 
 template <typename ViewType> struct is_dynrankview_fad_contiguous {
@@ -318,7 +317,7 @@ struct is_dynrankview_fad_contiguous<Kokkos::DynRankView<Args...>> {
   using view_type = Kokkos::DynRankView<Args...>;
   static const bool value =
       is_view_fad<view_type>::value &&
-      Kokkos::is_layout_contiguous<typename view_type::array_layout>::value;
+      Sacado::is_layout_contiguous<typename view_type::array_layout>::value;
 };
 
 template <typename ViewType> struct ViewScalarStride {
@@ -328,14 +327,14 @@ template <typename ViewType> struct ViewScalarStride {
 
 template <class T, class L, unsigned S, class... Args>
 struct ViewScalarStride<
-    Kokkos::View<T, Kokkos::LayoutContiguous<L, S>, Args...>> {
+    Kokkos::View<T, Sacado::LayoutContiguous<L, S>, Args...>> {
   static constexpr unsigned stride = S;
   static constexpr bool is_unit_stride = (stride == 1u);
 };
 
 template <class T, class L, unsigned S, class... Args>
 struct ViewScalarStride<
-    Kokkos::DynRankView<T, Kokkos::LayoutContiguous<L, S>, Args...>> {
+    Kokkos::DynRankView<T, Sacado::LayoutContiguous<L, S>, Args...>> {
   static constexpr unsigned stride = S;
   static constexpr bool is_unit_stride = (stride == 1u);
 };

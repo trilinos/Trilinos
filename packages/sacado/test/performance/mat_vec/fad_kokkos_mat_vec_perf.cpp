@@ -294,9 +294,9 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
 #endif
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-  typedef Kokkos::LayoutContiguous<typename ViewTypeA::array_layout,FadStride> ConLayoutA;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeB::array_layout,FadStride> ConLayoutB;
-  typedef Kokkos::LayoutContiguous<typename ViewTypeC::array_layout,FadStride> ConLayoutC;
+  typedef Sacado::LayoutContiguous<typename ViewTypeA::array_layout,FadStride> ConLayoutA;
+  typedef Sacado::LayoutContiguous<typename ViewTypeB::array_layout,FadStride> ConLayoutB;
+  typedef Sacado::LayoutContiguous<typename ViewTypeC::array_layout,FadStride> ConLayoutC;
 #else
   typedef typename ViewTypeA::array_layout ConLayoutA;
   typedef typename ViewTypeB::array_layout ConLayoutB;

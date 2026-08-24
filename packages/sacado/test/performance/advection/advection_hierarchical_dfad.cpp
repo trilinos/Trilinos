@@ -107,7 +107,7 @@ double time_dfad_hierarchical_team(int ncells, int num_basis, int num_points,
   typedef Sacado::Fad::DFad<double> FadType;
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-  typedef Kokkos::LayoutContiguous<DefaultLayout> ContLayout;
+  typedef Sacado::LayoutContiguous<DefaultLayout> ContLayout;
   typedef Kokkos::View<FadType****,ContLayout,ExecSpace> t_4DView;
   typedef Kokkos::View<FadType***,ContLayout,ExecSpace> t_3DView;
   typedef Kokkos::View<FadType**,ContLayout,ExecSpace> t_2DView;
@@ -163,7 +163,7 @@ double time_dfad_hierarchical_team_scratch(
   typedef Sacado::Fad::DFad<double> FadType;
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-  typedef Kokkos::LayoutContiguous<DefaultLayout> ContLayout;
+  typedef Sacado::LayoutContiguous<DefaultLayout> ContLayout;
   typedef Kokkos::View<FadType****,ContLayout,ExecSpace> t_4DView;
   typedef Kokkos::View<FadType***,ContLayout,ExecSpace> t_3DView;
   typedef Kokkos::View<FadType**,ContLayout,ExecSpace> t_2DView;

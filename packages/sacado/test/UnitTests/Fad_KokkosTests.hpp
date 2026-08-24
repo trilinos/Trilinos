@@ -1513,7 +1513,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankDimensionScalar, FadType, Layout, Device )
 {
-  typedef typename Kokkos::inner_layout<Layout>::type DoubleLayout; // extract inner layout from LayoutContiguous
+  typedef typename Sacado::inner_layout<Layout>::type DoubleLayout; // extract inner layout from LayoutContiguous
   typedef Kokkos::DynRankView<double,DoubleLayout,Device> DoubleViewType;
   typedef Kokkos::DynRankView<FadType,Layout,Device> FadViewType;
   typedef typename FadViewType::size_type size_type;
@@ -2229,7 +2229,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged, FadType, Layout, Device )
 {
   // For LayoutContiguous, strip out the layout they are templated on
-  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
+  typedef typename Sacado::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
@@ -2300,7 +2300,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Unmanaged2, FadType, Layout, Device )
 {
   // For LayoutContiguous, strip out the layout they are templated on
-  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
+  typedef typename Sacado::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
@@ -2371,7 +2371,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst, FadType, Layout, Device )
 {
   // For LayoutContiguous, strip out the layout they are templated on
-  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
+  typedef typename Sacado::inner_layout<Layout>::type TestLayout;
 
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
@@ -2446,7 +2446,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, UnmanagedConst2, FadType, Layout, Device )
 {
   // For LayoutContiguous, strip out the layout they are templated on
-  typedef typename Kokkos::inner_layout<Layout>::type TestLayout;
+  typedef typename Sacado::inner_layout<Layout>::type TestLayout;
   typedef typename FadType::value_type scalar_type;
   typedef Kokkos::View<scalar_type***,TestLayout,Device> ViewType;
   typedef Kokkos::View<const scalar_type***,TestLayout,Device> ConstViewType;
@@ -2557,7 +2557,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, FadType, Layout, Device )
 {
-  typedef Kokkos::View<FadType**,Kokkos::LayoutContiguous<Layout>,Device> ContViewType;
+  typedef Kokkos::View<FadType**,Sacado::LayoutContiguous<Layout>,Device> ContViewType;
   typedef Kokkos::View<FadType**,Kokkos::LayoutStride,Device> StrideViewType;
   typedef typename ContViewType::size_type size_type;
   typedef typename ContViewType::host_mirror_type cont_host_view_type;
@@ -2610,7 +2610,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, CommonViewAllocMixedSpec, FadType, Layout, Device )
 {
-  typedef Kokkos::View<FadType**,Kokkos::LayoutContiguous<Layout>,Device> ContViewType;
+  typedef Kokkos::View<FadType**,Sacado::LayoutContiguous<Layout>,Device> ContViewType;
   typedef Kokkos::View<FadType**,Layout,Device> ViewType;
   typedef typename ContViewType::size_type size_type;
 
@@ -2750,8 +2750,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   VIEW_FAD_TESTS_SFLD( F, LayoutRight, D )
 
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft> LeftContiguous;
-typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
+typedef Sacado::LayoutContiguous<Kokkos::LayoutLeft> LeftContiguous;
+typedef Sacado::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
 
 #define VIEW_FAD_TESTS_FDC( F, D )                                      \
   VIEW_FAD_TESTS_FLD( F, LeftContiguous, D )                            \
