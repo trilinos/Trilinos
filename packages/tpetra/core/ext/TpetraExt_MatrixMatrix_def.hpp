@@ -1405,6 +1405,198 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class LocalOrdinalViewType>
+void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
+                                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
+                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                         const LocalOrdinalViewType& Acol2Brow,
+                                         const LocalOrdinalViewType& Acol2Irow,
+                                         const LocalOrdinalViewType& Bcol2Ccol,
+                                         const LocalOrdinalViewType& Icol2Ccol,
+                                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                         Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> Cimport,
+                                         const std::string& label,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& params) {
+  using backend_type = KokkosKernelsSPGEMMBackend<Node>;
+  // Check if the diagonal entries exist in debug mode
+  const bool debug = Tpetra::Details::Behavior::debug();
+  if (debug) {
+    auto rowMap = Aview.origMatrix->getRowMap();
+    Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> diags(rowMap);
+    Aview.origMatrix->getLocalDiagCopy(diags);
+    size_t diagLength = rowMap->getLocalNumElements();
+    Teuchos::Array<Scalar> diagonal(diagLength);
+    diags.get1dCopy(diagonal());
+
+    for (size_t i = 0; i < diagLength; ++i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(diagonal[i] == Teuchos::ScalarTraits<Scalar>::zero(),
+                                 std::runtime_error,
+                                 "Matrix A has a zero/missing diagonal: " << diagonal[i] << std::endl
+                                                                          << "KokkosKernels Jacobi-fused SpGEMM requires nonzero diagonal entries in A" << std::endl);
+    }
+  }
+
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix KokkosKernels"));
+
+  // Usings
+  using device_t       = typename Node::device_type;
+  using matrix_t       = typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using graph_t        = typename matrix_t::StaticCrsGraphType;
+  using lno_view_t     = typename graph_t::row_map_type::non_const_type;
+  using int_view_t     = Kokkos::View<int*,
+                                  typename lno_view_t::array_layout,
+                                  typename lno_view_t::memory_space,
+                                  typename lno_view_t::memory_traits>;
+  using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
+  using scalar_view_t  = typename matrix_t::values_type::non_const_type;
+
+  // KokkosKernels handle
+  using handle_t = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename lno_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+
+  using int_handle_t = typename KokkosKernels::Experimental::KokkosKernelsHandle<
+      typename int_view_t::const_value_type, typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
+      typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
+
+  // Merge the B and Bimport matrices
+  const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
+
+  // Get the properties and arrays of input matrices
+  const matrix_t Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const matrix_t Bmat = Bview.origMatrix->getLocalMatrixDevice();
+
+  typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
+  typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();
+  typename handle_t::nnz_lno_t BnumCols = Bmerged.numCols();
+
+  // Arrays of the output matrix
+  lno_view_t row_mapC(Kokkos::ViewAllocateWithoutInitializing("row_mapC"), AnumRows + 1);
+  lno_nnz_view_t entriesC;
+  scalar_view_t valuesC;
+
+  // Options
+  int team_work_size = 16;
+  std::string myalg("SPGEMM_DEFAULT");
+  if (!params.is_null()) {
+    const std::string prefixedAlg  = backend_type::parameter_prefix() + ": algorithm";
+    const std::string prefixedTeam = backend_type::parameter_prefix() + ": team work size";
+    if (params->isParameter(prefixedAlg))
+      myalg = params->get(prefixedAlg, myalg);
+    if (params->isParameter(prefixedTeam))
+      team_work_size = params->get(prefixedTeam, team_work_size);
+  }
+
+  // Get the algorithm mode
+  const std::string genericAlg = backend_type::algorithm_label() + " algorithm";
+  if (!params.is_null() && params->isParameter(genericAlg))
+    myalg = params->get(genericAlg, myalg);
+  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
+
+  // decide whether to use integer-typed row pointers for this spgemm
+  Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
+  const bool useIntRowptrs =
+      irph.shouldUseIntRowptrs() &&
+      CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->shouldUseIntRowptrs();
+
+  const Scalar jacobiOmega = omega * Teuchos::ScalarTraits<Scalar>::one();
+
+  if (useIntRowptrs) {
+    int_handle_t kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    int_view_t int_row_mapC(Kokkos::ViewAllocateWithoutInitializing("int_row_mapC"), AnumRows + 1);
+
+    auto Aint = CrsMatrixApplyHelperAccess::get(*Aview.origMatrix)->getIntRowptrMatrix(Amat);
+    auto Bint = irph.getIntRowptrMatrix(Bmerged);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels symbolic int");
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                    Aint.graph.row_map, Aint.graph.entries, false,
+                                    Bint.graph.row_map, Bint.graph.entries, false,
+                                    int_row_mapC);
+    }
+
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels numeric int");
+
+    if (c_nnz_size) {
+      // even though there is no TPL for this, we have to use the same handle that was used in the symbolic phase,
+      // so need to have a special int-typed call for this as well.
+      KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                                                Aint.graph.row_map, Aint.graph.entries, Amat.values, false,
+                                                Bint.graph.row_map, Bint.graph.entries, Bint.values, false,
+                                                int_row_mapC, entriesC, valuesC,
+                                                jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    }
+    // transfer the integer rowptrs back to the correct rowptr type
+    Kokkos::parallel_for(
+        int_row_mapC.size(), KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
+    kh.destroy_spgemm_handle();
+  } else {
+    handle_t kh;
+    kh.create_spgemm_handle(alg_enum);
+    kh.set_team_work_size(team_work_size);
+
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels symbolic non-int");
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                    Amat.graph.row_map, Amat.graph.entries, false,
+                                    Bmerged.graph.row_map, Bmerged.graph.entries, false,
+                                    row_mapC);
+    }
+
+    size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size) {
+      entriesC = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC  = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels numeric non-int");
+    if (c_nnz_size) {
+      KokkosSparse::Experimental::spgemm_jacobi(&kh, AnumRows, BnumRows, BnumCols,
+                                                Amat.graph.row_map, Amat.graph.entries, Amat.values, false,
+                                                Bmerged.graph.row_map, Bmerged.graph.entries, Bmerged.values, false,
+                                                row_mapC, entriesC, valuesC,
+                                                jacobiOmega, Dinv.getLocalViewDevice(Access::ReadOnly));
+    }
+    kh.destroy_spgemm_handle();
+  }
+
+  const std::string sortLabel = "TpetraExt: Jacobi: Newmatrix " + backend_type::algorithm_label() + "Sort";
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(sortLabel));
+
+  // Sort & set values
+  if (params.is_null() || params->get("sort entries", true))
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+  C.setAllValues(row_mapC, entriesC, valuesC);
+
+  const std::string esfcLabel = "TpetraExt: Jacobi: Newmatrix " + backend_type::algorithm_label() + "ESFC";
+  MM                          = Teuchos::null;
+  MM                          = rcp(new Tpetra::Details::ProfilingRegion(esfcLabel));
+
+  // Final Fillcomplete
+  Teuchos::RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label", label);
+  if (!params.is_null()) labelList->set("compute global constants", params->get("compute global constants", true));
+  Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node>> dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport, dummyExport, labelList);
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
 void host_jacobi_A_B_reuse(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
                            const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
