@@ -31,7 +31,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaAligned)
   typedef Kokkos::Cuda Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
-  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
+  typedef typename Sacado::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
   const int static_dim = Sacado::StaticSize<local_fad_type>::value;
   TEUCHOS_TEST_EQUALITY(issfd, true, out, success);
@@ -55,7 +55,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaNotAligned)
   typedef Kokkos::Cuda Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
-  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
+  typedef typename Sacado::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
   const int static_dim = Sacado::StaticSize<local_fad_type>::value;
   TEUCHOS_TEST_EQUALITY(issfd, false, out, success);

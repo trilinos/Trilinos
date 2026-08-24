@@ -123,8 +123,8 @@ struct AtomicKernel {
   typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::size_type size_type;
   typedef typename Kokkos::TeamPolicy< execution_space>::member_type team_handle;
-  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_scalar_type;
-  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+  typedef typename Sacado::ThreadLocalScalarType<ViewType>::type local_scalar_type;
+  static const size_type stride = Sacado::ViewScalarStride<ViewType>::stride;
 
   const ViewType m_v;
   const ScalarViewType m_s;
@@ -203,22 +203,22 @@ struct AtomicKernel {
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      Kokkos::is_view_fad_contiguous<ViewType>::value &&
+      Sacado::is_view_fad_contiguous<ViewType>::value &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      Kokkos::is_view_fad_contiguous<ViewType>::value &&
+      Sacado::is_view_fad_contiguous<ViewType>::value &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      Kokkos::is_view_fad_contiguous<ViewType>::value &&
+      Sacado::is_view_fad_contiguous<ViewType>::value &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      Kokkos::is_view_fad_contiguous<ViewType>::value &&
+      Sacado::is_view_fad_contiguous<ViewType>::value &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;

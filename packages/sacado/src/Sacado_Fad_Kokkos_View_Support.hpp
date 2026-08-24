@@ -343,7 +343,7 @@ template <class DataType, class... Properties>
 KOKKOS_INLINE_FUNCTION auto
 as_scalar_view(const Kokkos::View<DataType, Properties...> &view) {
   using view_t = Kokkos::View<DataType, Properties...>;
-  if constexpr (Kokkos::is_view_fad<view_t>::value) {
+  if constexpr (Sacado::is_view_fad<view_t>::value) {
     using value_type = typename view_t::value_type::value_type;
     return Kokkos::View<value_type *, Properties...>(
         view.data(),
@@ -363,7 +363,7 @@ KOKKOS_INLINE_FUNCTION size_t dimension_scalar() { return 0; }
 
 template <class View>
 KOKKOS_FUNCTION size_t dimension_scalar(const View &view) {
-  if constexpr (Kokkos::is_view_fad<View>::value) {
+  if constexpr (Sacado::is_view_fad<View>::value) {
     return static_cast<size_t>(view.accessor().fad_size() + 1);
   } else {
     return 0;
@@ -389,8 +389,8 @@ KOKKOS_FUNCTION
 auto common_view_alloc_prop(const Kokkos::View<ViewArgs...> &view,
                             OtherViews... views) {
   constexpr bool any_fad_view =
-      Kokkos::is_view_fad<Kokkos::View<ViewArgs...>>::value ||
-      (Kokkos::is_view_fad<OtherViews>::value || ... || false);
+      Sacado::is_view_fad<Kokkos::View<ViewArgs...>>::value ||
+      (Sacado::is_view_fad<OtherViews>::value || ... || false);
   if constexpr (any_fad_view) {
     if constexpr (sizeof...(OtherViews) == 0) {
       return Kokkos::Impl::AccessorArg_t{
@@ -411,8 +411,8 @@ KOKKOS_FUNCTION
 auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...> &view,
                             OtherViews... views) {
   constexpr bool any_fad_view =
-      Kokkos::is_view_fad<Kokkos::DynRankView<ViewArgs...>>::value ||
-      (Kokkos::is_view_fad<OtherViews>::value || ... || false);
+      Sacado::is_view_fad<Kokkos::DynRankView<ViewArgs...>>::value ||
+      (Sacado::is_view_fad<OtherViews>::value || ... || false);
   if constexpr (any_fad_view) {
     if constexpr ((sizeof ... (OtherViews)) == 0) {
       return Kokkos::Impl::AccessorArg_t{static_cast<size_t>(Sacado::dimension_scalar(view))};

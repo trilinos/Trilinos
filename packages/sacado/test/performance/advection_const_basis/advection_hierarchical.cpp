@@ -23,7 +23,7 @@ void run_fad_hierarchical_flat(const FluxView& flux, const WgbView& wgb,
                                const ResidualView& residual)
 {
   typedef typename ResidualView::execution_space execution_space;
-  typedef typename Kokkos::ThreadLocalScalarType<ResidualView>::type local_scalar_type;
+  typedef typename Sacado::ThreadLocalScalarType<ResidualView>::type local_scalar_type;
   typedef Kokkos::TeamPolicy<execution_space> policy_type;
   typedef typename policy_type::member_type team_member;
 
@@ -62,7 +62,7 @@ void run_fad_hierarchical_team(const FluxView& flux, const WgbView& wgb,
                                const ResidualView& residual)
 {
   typedef typename ResidualView::execution_space execution_space;
-  typedef typename Kokkos::ThreadLocalScalarType<ResidualView>::type local_scalar_type;
+  typedef typename Sacado::ThreadLocalScalarType<ResidualView>::type local_scalar_type;
   typedef Kokkos::TeamPolicy<execution_space> policy_type;
   typedef typename policy_type::member_type team_member;
 

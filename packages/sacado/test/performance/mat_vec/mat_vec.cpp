@@ -45,7 +45,7 @@ run_mat_vec_scratch(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC& c)
 
   const int m = A.extent(0);
   const int n = A.extent(1);
-  const int p = dimension_scalar(A);
+  const int p = Sacado::dimension_scalar(A);
 
 #ifdef KOKKOS_ENABLE_CUDA
   const bool is_cuda = std::is_same<execution_space,Kokkos::Cuda>::value;

@@ -44,7 +44,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
                 using CommonValueType = double;
                 using ScalarArrayType = double;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
-		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
+		auto cvt_for_ctorprop = Sacado::common_view_alloc_prop(v1, v2);
 
 		// Create a view with the common type and the max fad_dim of the views passed to deduce_value_type
 		typedef View< CommonValueType** > ViewCommonType;
@@ -53,7 +53,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
-		TEST_EQUALITY( Kokkos::dimension_scalar(vct1), 0);
+		TEST_EQUALITY( Sacado::dimension_scalar(vct1), 0);
     bool check_eq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
     bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
     TEST_EQUALITY(check_eq_kokkos_type, true);
@@ -74,7 +74,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
                 using CommonValueType = typename Sacado::Promote<decltype(v1)::value_type, decltype(v2)::value_type>::type;
                 using ScalarArrayType = typename Sacado::ValueType<CommonValueType>::type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
-		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
+		auto cvt_for_ctorprop = Sacado::common_view_alloc_prop(v1, v2);
 
 		// Create a view with the common type and the max fad_dim of the views passed to deduce_value_type
 		typedef View< CommonValueType** > ViewCommonType;
@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
                 using CommonValueType = typename Sacado::Promote<decltype(v1)::value_type, decltype(v2)::value_type>::type;
                 using ScalarArrayType = typename Sacado::ValueType<CommonValueType>::type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
-		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
+		auto cvt_for_ctorprop = Sacado::common_view_alloc_prop(v1, v2);
 		// Create a view with the common type and the max fad_dim of the views passed to deduce_value_type
 		typedef View< CommonValueType** > ViewCommonType;
 		ViewCommonType vct1( Kokkos::view_alloc("vct1", cvt_for_ctorprop), 10, 4 ); // fad_dim deduced and comes from the cvt_for_ctorprop
@@ -134,7 +134,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
                 using CommonValueType = typename Sacado::Promote<decltype(v1)::value_type, decltype(v2)::value_type>::type;
                 using ScalarArrayType = typename Sacado::ValueType<CommonValueType>::type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
-		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
+		auto cvt_for_ctorprop = Sacado::common_view_alloc_prop(v1, v2);
 
 		// Create a view with the common type and the max fad_dim of the views passed to deduce_value_type
 		typedef DynRankView< CommonValueType > ViewCommonType;
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
                 using CommonValueType = typename Sacado::Promote<decltype(v1)::value_type, decltype(v2)::value_type>::type;
                 using ScalarArrayType = typename Sacado::ValueType<CommonValueType>::type;
 		// Create an instance of this returned type to pass to ViewCtorProp via view_alloc function
-		auto cvt_for_ctorprop = Kokkos::common_view_alloc_prop(v1, v2);
+		auto cvt_for_ctorprop = Sacado::common_view_alloc_prop(v1, v2);
 
 		// Create a view with the common type and the max fad_dim of the views passed to deduce_value_type
 		typedef DynRankView< CommonValueType > ViewCommonType;

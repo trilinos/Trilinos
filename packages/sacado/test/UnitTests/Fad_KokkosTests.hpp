@@ -125,32 +125,32 @@ struct MultiplyKernel {
     const size_type nrow = v1.extent(0);
 
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
-    const size_type stride = Kokkos::ViewScalarStride<InputViewType1>::stride;
+    const size_type stride = Sacado::ViewScalarStride<InputViewType1>::stride;
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType1>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType1>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const size_type stride = team_policy_type::vector_length_max(); // 32
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType1>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType1>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
       is_dfad<typename InputViewType1::non_const_value_type>::value;
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
-    const size_type stride = Kokkos::ViewScalarStride<InputViewType1>::stride;
+    const size_type stride = Sacado::ViewScalarStride<InputViewType1>::stride;
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType1>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType1>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const size_type stride = team_policy_type::vector_length_max(); // 64
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType1>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType1>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
       is_dfad<typename InputViewType1::non_const_value_type>::value;
 #else
     const size_type stride = 1;
@@ -178,7 +178,7 @@ struct ScalarAssignKernel {
   typedef Kokkos::TeamPolicy< execution_space> team_policy_type;
   typedef Kokkos::RangePolicy< execution_space> range_policy_type;
   typedef typename team_policy_type::member_type team_handle;
-  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+  static const size_type stride = Sacado::ViewScalarStride<ViewType>::stride;
 
   const ViewType   m_v;
   const ScalarType m_s;
@@ -207,26 +207,26 @@ struct ScalarAssignKernel {
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;
@@ -253,8 +253,8 @@ struct ValueAssignKernel {
   typedef Kokkos::TeamPolicy< execution_space> team_policy_type;
   typedef Kokkos::RangePolicy< execution_space> range_policy_type;
   typedef typename team_policy_type::member_type team_handle;
-  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_scalar_type;
-  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+  typedef typename Sacado::ThreadLocalScalarType<ViewType>::type local_scalar_type;
+  static const size_type stride = Sacado::ViewScalarStride<ViewType>::stride;
 
   const ViewType m_v;
   const ScalarViewType m_s;
@@ -284,26 +284,26 @@ struct ValueAssignKernel {
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;
@@ -331,7 +331,7 @@ struct AssignRank2Rank1Kernel {
   typedef Kokkos::TeamPolicy< execution_space> team_policy_type;
   typedef Kokkos::RangePolicy< execution_space> range_policy_type;
   typedef typename team_policy_type::member_type team_handle;
-  static const size_type stride = Kokkos::ViewScalarStride<InputViewType>::stride;
+  static const size_type stride = Sacado::ViewScalarStride<InputViewType>::stride;
 
   const InputViewType m_v1;
   const OutputViewType m_v2;
@@ -370,26 +370,26 @@ struct AssignRank2Rank1Kernel {
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
       is_dfad<typename InputViewType::non_const_value_type>::value;
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<InputViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<InputViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
       is_dfad<typename InputViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;
@@ -415,8 +415,8 @@ struct AtomicAddKernel {
   typedef Kokkos::TeamPolicy< execution_space> team_policy_type;
   typedef Kokkos::RangePolicy< execution_space> range_policy_type;
   typedef typename team_policy_type::member_type team_handle;
-  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_scalar_type;
-  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+  typedef typename Sacado::ThreadLocalScalarType<ViewType>::type local_scalar_type;
+  static const size_type stride = Sacado::ViewScalarStride<ViewType>::stride;
 
   const ViewType m_v;
   const ScalarViewType m_s;
@@ -446,26 +446,26 @@ struct AtomicAddKernel {
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::HIP>::value &&
-      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+        Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;
@@ -907,7 +907,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Excersize local_deep_copy by setting each row of s to a
   typedef Kokkos::TeamPolicy<Device> Policy;
-  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+  static const size_type stride = Sacado::ViewScalarStride<ViewType>::stride;
   Kokkos::parallel_for(Policy(num_rows,Kokkos::AUTO,stride),
                        KOKKOS_LAMBDA(const typename Policy::member_type& team)
   {
@@ -1526,8 +1526,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   FadViewType v2 ("view2", num_rows, fad_size+1);
 
   // Check dimension scalar works
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v1), 0, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v1), 0, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v2), fad_size+1, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1555,7 +1555,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(h_v2, v2);
 
   // Check dimensions are correct
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v2), fad_size+1, out, success);
 
   // Check values
   FadType f =
@@ -1591,7 +1591,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check dimensions are correct
   TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
 
   // Check values
@@ -1631,7 +1631,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Check dimensions are correct
   TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(v2.extent(1), num_cols, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(1), v1.stride(1), out, success);
 
@@ -1727,8 +1727,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check
   success = true;
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(h_s), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(1), 1, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(7), 1, out, success);
@@ -1781,8 +1781,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check
   success = true;
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(h_s), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(0), num_cols, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(1), num_planes, out, success);
   TEUCHOS_TEST_EQUALITY(h_s.extent(2), 1, out, success);
@@ -1836,8 +1836,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check
   success = true;
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(h_s), fad_size+1, out, success);
   FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, row, col);
   success = success && checkFads(f, h_s(), out);
 }
@@ -1907,8 +1907,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Check
   success = true;
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(s), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(s), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(h_s), fad_size+1, out, success);
 #endif
   for (size_type i=0; i<num_rows; ++i) {
     FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, col);
@@ -2125,30 +2125,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   ViewType v2("view2", num_rows, fad_size+1);
 #endif
 
-  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+  static const size_type stride = Sacado::ViewScalarStride<ViewType>::stride;
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
   const bool use_team =
     std::is_same<exec_space, Kokkos::Cuda>::value &&
-    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+    ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+      Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
   const bool use_team =
     std::is_same<exec_space, Kokkos::Cuda>::value &&
-    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+    ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+      Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
     is_dfad<typename ViewType::non_const_value_type>::value;
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
   const bool use_team =
     std::is_same<exec_space, Kokkos::HIP>::value &&
-    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+    ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+      Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
   const bool use_team =
     std::is_same<exec_space, Kokkos::HIP>::value &&
-    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
-      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+    ( Sacado::is_view_fad_contiguous<ViewType>::value ||
+      Sacado::is_dynrankview_fad_contiguous<ViewType>::value ) &&
     is_dfad<typename ViewType::non_const_value_type>::value;
 #else
   const bool use_team = false;
@@ -2245,7 +2245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Create and fill view
   ViewType v;
   host_view_type h_v;
-  if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
+  if (Sacado::is_view_fad_contiguous<FadViewType>::value &&
       std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType ("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
@@ -2316,7 +2316,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Create and fill view
   ViewType v;
   host_view_type h_v;
-  if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
+  if (Sacado::is_view_fad_contiguous<FadViewType>::value &&
       std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType ("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
@@ -2389,7 +2389,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Create and fill view
   ViewType v;
   host_view_type h_v;
-  if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
+  if (Sacado::is_view_fad_contiguous<FadViewType>::value &&
       std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType ("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
@@ -2463,7 +2463,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Create and fill view
   ViewType v;
   host_view_type h_v;
-  if (Kokkos::is_view_fad_contiguous<FadViewType>::value &&
+  if (Sacado::is_view_fad_contiguous<FadViewType>::value &&
       std::is_same<TestLayout, Kokkos::LayoutLeft >::value) {
     v = ViewType ("view", fad_size+1, num_rows, num_cols);
     h_v = Kokkos::create_mirror_view(v);
@@ -2544,8 +2544,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check
   success = true;
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_v), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(h_v), fad_size+1, out, success);
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
       FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
@@ -2598,7 +2598,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   success = true;
   TEUCHOS_TEST_EQUALITY(h_vs.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(h_vs.extent(1), num_cols, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(h_vs), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(h_vs), fad_size+1, out, success);
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
       FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
@@ -2627,14 +2627,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #endif
 
   // Create non-contiguous view using commen_view_alloc_prop
-  auto cprop = Kokkos::common_view_alloc_prop(v1);
+  auto cprop = Sacado::common_view_alloc_prop(v1);
   ViewType v2(Kokkos::view_alloc("v2",cprop), num_rows, num_cols);
 
   // Check dimensions are correct for v2
   success = true;
   TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(v2.extent(1), num_cols, out, success);
-  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v2), fad_size+1, out, success);
 }
 
 #else

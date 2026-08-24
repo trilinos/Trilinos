@@ -19,7 +19,7 @@
 template <typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
 void run_mat_vec_hierarchical(const ViewTypeA& A, const ViewTypeB& b,
                               const ViewTypeC& c) {
-  typedef typename Kokkos::ThreadLocalScalarType<ViewTypeC>::type scalar_type;
+  typedef typename Sacado::ThreadLocalScalarType<ViewTypeC>::type scalar_type;
   typedef typename ViewTypeC::execution_space execution_space;
 
 #if defined (KOKKOS_ENABLE_CUDA)
@@ -65,7 +65,7 @@ check_deriv_hierarchical(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC
   Kokkos::deep_copy(h_c, c);
   const size_t m = A.extent(0);
   const size_t n = A.extent(1);
-  const size_t p = Kokkos::dimension_scalar(A);
+  const size_t p = Sacado::dimension_scalar(A);
   for (size_t i=0; i<m; ++i) {
     for (size_t j=0; j<p; ++j) {
       value_type t = (j == p-1 ? n : 2*n);

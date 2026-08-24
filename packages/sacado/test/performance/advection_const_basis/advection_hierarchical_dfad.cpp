@@ -76,7 +76,7 @@ void run_dfad_hierarchical_team_scratch(
   const bool is_cuda     = is_cuda_space<execution_space>::value;
   const int vector_size  = is_cuda ? 32 : 1;
   const int team_size    = is_cuda ? 256/vector_size : 1;
-  const int fad_size     = Kokkos::dimension_scalar(residual);
+  const int fad_size     = Sacado::dimension_scalar(residual);
   const size_t bytes     = 2*tmp_scratch_type::shmem_size(team_size,fad_size);
   policy_type policy(num_cells,team_size,vector_size);
 

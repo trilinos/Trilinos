@@ -23,8 +23,8 @@ namespace Teuchos {
 
 template <typename Ordinal, class SD, class... SP, class RD, class... RP>
 typename std::enable_if<
-    Kokkos::is_view_fad<Kokkos::View<SD, SP...>>::value &&
-    Kokkos::is_view_fad<Kokkos::View<RD, RP...>>::value>::type
+    Sacado::is_view_fad<Kokkos::View<SD, SP...>>::value &&
+    Sacado::is_view_fad<Kokkos::View<RD, RP...>>::value>::type
 reduceAll(const Comm<Ordinal> &comm, const EReductionType reductType,
           const Ordinal count, const Kokkos::View<SD, SP...> &sendBuffer,
           const Kokkos::View<RD, RP...> &recvBuffer) {
@@ -77,8 +77,8 @@ reduceAll(const Comm<Ordinal> &comm, const EReductionType reductType,
 template <typename Ordinal, typename Serializer, class SD, class... SP,
           class RD, class... RP>
 typename std::enable_if<
-    Kokkos::is_view_fad<Kokkos::View<SD, SP...>>::value &&
-    Kokkos::is_view_fad<Kokkos::View<RD, RP...>>::value>::type
+    Sacado::is_view_fad<Kokkos::View<SD, SP...>>::value &&
+    Sacado::is_view_fad<Kokkos::View<RD, RP...>>::value>::type
 reduceAll(const Comm<Ordinal> &comm, const Serializer &serializer,
           const EReductionType reductType, const Ordinal count,
           const Kokkos::View<SD, SP...> &sendBuffer,
@@ -130,7 +130,7 @@ reduceAll(const Comm<Ordinal> &comm, const Serializer &serializer,
 }
 
 template <typename Ordinal, class D, class... P>
-typename std::enable_if<Kokkos::is_view_fad<Kokkos::View<D, P...>>::value>::type
+typename std::enable_if<Sacado::is_view_fad<Kokkos::View<D, P...>>::value>::type
 broadcast(const Comm<Ordinal> &comm, const int rootRank, const Ordinal count,
           const Kokkos::View<D, P...> &buffer) {
   auto array_buffer = Sacado::as_scalar_view(buffer);
@@ -139,7 +139,7 @@ broadcast(const Comm<Ordinal> &comm, const int rootRank, const Ordinal count,
 }
 
 template <typename Ordinal, typename Serializer, class D, class... P>
-typename std::enable_if<Kokkos::is_view_fad<Kokkos::View<D, P...>>::value>::type
+typename std::enable_if<Sacado::is_view_fad<Kokkos::View<D, P...>>::value>::type
 broadcast(const Comm<Ordinal> &comm, const Serializer &serializer,
           const int rootRank, const Ordinal count,
           const Kokkos::View<D, P...> &buffer) {
