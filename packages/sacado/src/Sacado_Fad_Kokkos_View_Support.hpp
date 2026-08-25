@@ -372,7 +372,7 @@ KOKKOS_FUNCTION size_t dimension_scalar(const View &view) {
 
 template <class... Views>
 KOKKOS_FUNCTION size_t dimension_scalar(const Views &...views) {
-  return Kokkos::max(dimension_scalar(views)...);
+  return Kokkos::max(Sacado::dimension_scalar(views)...);
 }
 
 template<class T>
@@ -444,15 +444,66 @@ auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...> &view,
 #ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 
-using Sacado::common_view_alloc_prop;
-using Sacado::dimension_scalar;
-using Sacado::is_dynrankview_fad_contiguous;
-using Sacado::is_view_fad;
-using Sacado::is_view_fad_contiguous;
-using Sacado::ThreadLocalScalarType;
-using Sacado::ViewScalarStride;
+// Deprecated wrapper functions for dimension_scalar (3 overloads)
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::dimension_scalar() instead of Kokkos::dimension_scalar()")
+KOKKOS_INLINE_FUNCTION
+size_t dimension_scalar() {
+  return Sacado::dimension_scalar();
+}
+
+template<class View>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::dimension_scalar() instead of Kokkos::dimension_scalar()")
+KOKKOS_FUNCTION
+size_t dimension_scalar(const View& view) {
+  return Sacado::dimension_scalar(view);
+}
+
+template<class... Views>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::dimension_scalar() instead of Kokkos::dimension_scalar()")
+KOKKOS_FUNCTION
+size_t dimension_scalar(const Views&... views) {
+  return Sacado::dimension_scalar(views...);
+}
+
+// Deprecated wrapper functions for common_view_alloc_prop (2 overloads)
+template<class... ViewArgs, class... OtherViews>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::common_view_alloc_prop() instead of Kokkos::common_view_alloc_prop()")
+KOKKOS_FUNCTION
+auto common_view_alloc_prop(const Kokkos::View<ViewArgs...>& view, OtherViews... views) {
+  return Sacado::common_view_alloc_prop(view, views...);
+}
+
+template<class... ViewArgs, class... OtherViews>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::common_view_alloc_prop() instead of Kokkos::common_view_alloc_prop()")
+KOKKOS_FUNCTION
+auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...>& view, OtherViews... views) {
+  return Sacado::common_view_alloc_prop(view, views...);
+}
+
+// Template structs - use template aliases with deprecation
+template<typename ViewType>
+using is_dynrankview_fad_contiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_dynrankview_fad_contiguous instead of Kokkos::is_dynrankview_fad_contiguous") = Sacado::is_dynrankview_fad_contiguous<ViewType>;
+template<typename view_type>
+using is_view_fad SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_view_fad instead of Kokkos::is_view_fad") = Sacado::is_view_fad<view_type>;
+template<typename view_type>
+using is_view_fad_contiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_view_fad_contiguous instead of Kokkos::is_view_fad_contiguous") = Sacado::is_view_fad_contiguous<view_type>;
+template<typename ViewType, typename Enabled = void>
+using ThreadLocalScalarType SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::ThreadLocalScalarType instead of Kokkos::ThreadLocalScalarType") = Sacado::ThreadLocalScalarType<ViewType, Enabled>;
+template<typename ViewType>
+using ViewScalarStride SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::ViewScalarStride instead of Kokkos::ViewScalarStride") = Sacado::ViewScalarStride<ViewType>;
+
 namespace Impl {
-using Sacado::Impl::computeFadPartitionSize;
+// Deprecated wrapper function for computeFadPartitionSize
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::Impl::computeFadPartitionSize() instead of Kokkos::Impl::computeFadPartitionSize()")
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned computeFadPartitionSize(unsigned size, unsigned stride) {
+  return Sacado::Impl::computeFadPartitionSize(size, stride);
+}
 }
 } // namespace Kokkos
 #endif

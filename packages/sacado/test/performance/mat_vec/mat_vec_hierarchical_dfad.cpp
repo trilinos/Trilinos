@@ -79,7 +79,7 @@ void run_mat_vec_hierarchical_dfad_scratch(
 
   const int m = A.extent(0);
   const int n = A.extent(1);
-  const int p = dimension_scalar(A);
+  const int p = Sacado::dimension_scalar(A);
   const int N = (m+TeamSize-1)/TeamSize;
 
   Policy policy(N, TeamSize, VectorSize);

@@ -77,7 +77,7 @@ struct ViewFactory {
     typename ResultView::array_layout layout(dims...);
 
     // Set scalar dimension
-    layout.dimension[rank] = dimension_scalar(views...);
+    layout.dimension[rank] = Sacado::dimension_scalar(views...);
 
     // Handle the case where all of the input view's are scalar's, but the
     // result isn't (e.g., a Fad), in which case we have to specify a valid
@@ -92,7 +92,7 @@ struct ViewFactory {
     }
 
     if constexpr (is_view_fad<ResultView>::value) {
-      size_t fad_size = dimension_scalar(views...);
+      size_t fad_size = Sacado::dimension_scalar(views...);
       if (fad_size == 0) fad_size = 1;
       if (!is_scalar) layout.dimension[rank] = is_dyn_rank ? KOKKOS_INVALID_INDEX : KOKKOS_IMPL_CTOR_DEFAULT_ARG;
       // turns out CtorProp can be just a pointer or a label...

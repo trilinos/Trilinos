@@ -132,6 +132,3 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Define whether Sacado enables deprecated code at compile time. */
-#cmakedefine SACADO_ENABLE_DEPRECATED_CODE

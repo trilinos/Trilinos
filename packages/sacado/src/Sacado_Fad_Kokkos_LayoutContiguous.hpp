@@ -220,11 +220,19 @@ reconstructLayout(const Sacado::LayoutContiguous<Layout,Stride>& layout, iType d
 #ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 
-using Sacado::LayoutContiguous;
-using Sacado::is_layout_contiguous;
-using Sacado::inner_layout;
+template<typename Layout, unsigned Stride = 1>
+using LayoutContiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::LayoutContiguous instead of Kokkos::LayoutContiguous") = Sacado::LayoutContiguous<Layout, Stride>;
+template<typename Layout>
+using is_layout_contiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_layout_contiguous instead of Kokkos::is_layout_contiguous") = Sacado::is_layout_contiguous<Layout>;
+template<typename Layout>
+using inner_layout SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::inner_layout instead of Kokkos::inner_layout") = Sacado::inner_layout<Layout>;
 namespace Impl {
-using Sacado::Impl::LayoutScalarStride;
+template<typename Layout>
+using LayoutScalarStride SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::Impl::LayoutScalarStride instead of Kokkos::Impl::LayoutScalarStride") = Sacado::Impl::LayoutScalarStride<Layout>;
 }
 
 }

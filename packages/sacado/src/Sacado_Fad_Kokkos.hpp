@@ -46,8 +46,12 @@ struct ViewScalarStride {
 #ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 
-using Sacado::ThreadLocalScalarType;
-using Sacado::ViewScalarStride;
+template<typename ViewType, typename Enabled = void>
+using ThreadLocalScalarType SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::ThreadLocalScalarType instead of Kokkos::ThreadLocalScalarType") = Sacado::ThreadLocalScalarType<ViewType, Enabled>;
+template<typename ViewType>
+using ViewScalarStride SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::ViewScalarStride instead of Kokkos::ViewScalarStride") = Sacado::ViewScalarStride<ViewType>;
 
 } // namespace Kokkos
 #endif

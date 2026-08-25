@@ -94,6 +94,15 @@
 
 #endif
 
+/* Deprecation warning macros */
+#if defined(SACADO_ENABLE_DEPRECATED_CODE)
+  #define SACADO_DEPRECATED [[deprecated]]
+  #define SACADO_DEPRECATED_WITH_COMMENT(comment) [[deprecated(comment)]]
+#else
+  #define SACADO_DEPRECATED
+  #define SACADO_DEPRECATED_WITH_COMMENT(comment)
+#endif
+
 /* Determine if the new fad design is supported.  Requies C++11,
    and if gcc, version 4.8 or greater.
 */

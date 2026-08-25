@@ -40,7 +40,9 @@ struct is_view_fad;
 
 #ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
-using Sacado::is_view_fad;
+template<typename T>
+using is_view_fad SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_view_fad instead of Kokkos::is_view_fad") = Sacado::is_view_fad<T>;
 }
 #endif
 
