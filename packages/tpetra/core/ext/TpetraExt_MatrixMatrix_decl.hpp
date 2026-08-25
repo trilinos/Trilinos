@@ -482,6 +482,59 @@ void kokkos_kernels_mult_A_B_newmatrix(
     const std::string& label,
     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void host_mult_A_B_reuse(
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+    const LocalOrdinalViewType& targetMapToOrigRow_dev,
+    const LocalOrdinalViewType& targetMapToImportRow_dev,
+    const LocalOrdinalViewType& Bcol2Ccol_dev,
+    const LocalOrdinalViewType& Icol2Ccol_dev,
+    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+    const std::string& label,
+    const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
+                                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
+                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                         const LocalOrdinalViewType& Acol2Brow,
+                                         const LocalOrdinalViewType& Acol2Irow,
+                                         const LocalOrdinalViewType& Bcol2Ccol,
+                                         const LocalOrdinalViewType& Icol2Ccol,
+                                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                         Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+                                         const std::string& label,
+                                         const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void host_jacobi_A_B_reuse(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
+                           const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
+                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                           const LocalOrdinalViewType& targetMapToOrigRow_dev,
+                           const LocalOrdinalViewType& targetMapToImportRow_dev,
+                           const LocalOrdinalViewType& Bcol2Ccol_dev,
+                           const LocalOrdinalViewType& Icol2Ccol_dev,
+                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                           Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+                           const std::string& label,
+                           const Teuchos::RCP<Teuchos::ParameterList>& params);
+
 // MMM Kernel wrappers struct
 // Because C++ doesn't support partial template specialization of functions.
 template <class Scalar,
