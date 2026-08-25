@@ -39,7 +39,8 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
   using OP  = typename Tpetra::Operator<ST,LO,GO,NT>;
   using MV  = typename Tpetra::MultiVector<ST,LO,GO,NT>;
   using SCT = typename Teuchos::ScalarTraits<ST>;
-  using MT  = typename SCT::magnitudeType;
+  using MT = typename SCT::magnitudeType;
+  using MGT = typename Teuchos::ScalarTraits<MT>;
 
   using tmap_t       = Tpetra::Map<LO,GO,NT>;
   using tcrsmatrix_t = Tpetra::CrsMatrix<ST,LO,GO,NT>;
@@ -70,6 +71,7 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
     std::string filename("orsirr1.hb");
     std::string ortho("DGKS");
     MT tol = 1.0e-5;  // relative residual tolerance
+    MT compTol = 10*MGT::prec();
 
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block Gmres to solve the linear systems.");
@@ -210,7 +212,7 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (manager reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i] > SCT::prec() ) {
+        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
           badRes = true;
           std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
@@ -257,7 +259,7 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (manager setProblem()) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i] > SCT::prec() ) {
+        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
           badRes = true;
           std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
@@ -303,7 +305,7 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (label reset) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i] > SCT::prec() ) {
+        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
           badRes = true;
           std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
@@ -371,7 +373,7 @@ int run(Teuchos::CommandLineProcessor& cmdp, int argc, char *argv[]) {
       std::cout<< "---------- Actual Residuals (new solver) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
-        if ( actual_resids2[i] > SCT::prec() ) {
+        if ( actual_resids2[i]/rhs_norm[i] > compTol ) {
           badRes = true;
           std::cout << "Resolve residual vector is too different from first solve residual vector: " << actual_resids2[i] << std::endl;
         }
