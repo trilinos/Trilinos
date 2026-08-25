@@ -78,12 +78,10 @@ cuSOLVER<Matrix,Vector>::cuSOLVER(
   auto blas_status = cublasCreate(&data_.blas_handle);
   TEUCHOS_TEST_FOR_EXCEPTION( blas_status != CUBLAS_STATUS_SUCCESS,
     std::runtime_error, "cublasCreate failed");
-#ifdef KOKKOS_ENABLE_CUDA
   // Run GEMM on the same stream as Kokkos so copies and multiply are
   // serialized without cross-stream synchronization gaps.
   cublasSetStream(data_.blas_handle,
     Kokkos::DefaultExecutionSpace().cuda_stream());
-#endif
 }
 
 template <class Matrix, class Vector>
