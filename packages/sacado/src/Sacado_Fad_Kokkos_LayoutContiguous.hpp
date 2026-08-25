@@ -217,6 +217,7 @@ reconstructLayout(const Sacado::LayoutContiguous<Layout,Stride>& layout, iType d
 } // namespace Kokkos
 
 // Inject some things into Kokkos for backwards compatibility
+#ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 
 using Sacado::LayoutContiguous;
@@ -227,5 +228,6 @@ using Sacado::Impl::LayoutScalarStride;
 }
 
 }
+#endif
 
 #endif // #ifndef SACADO_FAD_KOKKOS_LAYOUT_CONTIGUOUS_HPP

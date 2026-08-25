@@ -43,12 +43,14 @@ struct ViewScalarStride {
 } // namespace Sacado
 
 // Inject some things into Kokkos for backwards compatibility
+#ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 
 using Sacado::ThreadLocalScalarType;
 using Sacado::ViewScalarStride;
 
 } // namespace Kokkos
+#endif
 
 namespace Sacado {
 

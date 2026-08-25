@@ -441,6 +441,7 @@ auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...> &view,
 #endif
 #undef SACADO_FAD_KOKKOS_VIEW_SUPPORT_INCLUDES
 
+#ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 
 using Sacado::common_view_alloc_prop;
@@ -454,6 +455,7 @@ namespace Impl {
 using Sacado::Impl::computeFadPartitionSize;
 }
 } // namespace Kokkos
+#endif
 
 namespace std {
   template<class T, class T2>

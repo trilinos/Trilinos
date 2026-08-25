@@ -38,9 +38,11 @@ struct is_view_fad;
 
 }
 
+#ifdef SACADO_ENABLE_DEPRECATED_CODE
 namespace Kokkos {
 using Sacado::is_view_fad;
 }
+#endif
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
