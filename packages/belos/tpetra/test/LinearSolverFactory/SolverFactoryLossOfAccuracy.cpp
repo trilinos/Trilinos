@@ -291,6 +291,13 @@ testSolver (Teuchos::FancyOStream& out,
     return;
   }
 
+  if ( convertReturnTypeToString(ret) != "LossOfAccuracyDetected" ) {
+    out << "Return type and string conversion of return type do not match!"
+        << endl;
+    success = false;
+    return;
+  }
+
   success = true;
 }
 
