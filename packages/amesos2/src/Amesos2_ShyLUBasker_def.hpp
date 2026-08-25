@@ -675,8 +675,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "User-provided padding for the fill ratio");
 
       // TODO: should these be const or not
-      scalar_type *dummy_scalar_ptr;
-      const local_ordinal_type *dummy_ordinal_ptr;
+      scalar_type *dummy_scalar_ptr = nullptr;
+      const local_ordinal_type *dummy_ordinal_ptr = nullptr;
       pl->set("PartialFacto", 0,
               "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
       pl->set("SchurPart", dummy_ordinal_ptr,

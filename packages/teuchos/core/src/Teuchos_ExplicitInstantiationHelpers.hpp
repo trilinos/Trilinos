@@ -36,9 +36,11 @@
 //
 
 #if defined(HAVE_TEUCHOS_INST_HALF) && \
-    defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT
+   (!defined(HAVE_TEUCHOS_INST_FLOAT) || \
+    (defined(HAVE_TEUCHOSCORE_KOKKOS) && defined(KOKKOS_HALF_T_IS_FLOAT) && !KOKKOS_HALF_T_IS_FLOAT))
 #  define TEUCHOS_MACRO_TEMPLATE_INSTANT_HALF(INSTANT_MACRO)\
-    INSTANT_MACRO(Kokkos::Experimental::half_t)
+    typedef Kokkos::Experimental::half_t teuchos_half_type; \
+    INSTANT_MACRO(teuchos_half_type)
 #  define TEUCHOS_CLASS_TEMPLATE_INSTANT_HALF(CLASSNAME)\
     template class CLASSNAME<Kokkos::Experimental::half_t>;
 #else

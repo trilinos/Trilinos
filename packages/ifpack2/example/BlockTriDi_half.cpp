@@ -371,7 +371,7 @@ int main(int argc, char* argv[]) {
   } else if (std::is_same<SC, double>::value) {
     printf(" using SC = double;\n");
   }
-  printf(" sizeof(SC) = %d\n\n", sizeof(SC));
+  printf(" sizeof(SC) = %d\n\n", int(sizeof(SC)));
 
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::MultiVector<SC, LO, GO, NO> MV;
@@ -807,11 +807,11 @@ int main(int argc, char* argv[]) {
       Kokkos::deep_copy(Bh, Bl);
       Kokkos::deep_copy(Xh, Xl);
 #if 1
-      for (int j = 0; j < Xh.extent(1); j++) {
+      for (int j = 0; j < int(Xh.extent(1)); j++) {
         double r_norm(0.0);
         double b_norm(0.0);
         double x_norm(0.0);
-        for (int i = 0; i < Xh.extent(0); i++) {
+        for (int i = 0; i < int(Xh.extent(0)); i++) {
           r_norm += double(Rh(i, j)) * double(Rh(i, j));
           b_norm += double(Bh(i, j)) * double(Bh(i, j));
           x_norm += double(Xh(i, j)) * double(Xh(i, j));
