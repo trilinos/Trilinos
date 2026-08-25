@@ -96,7 +96,7 @@ StepperExponential<Scalar>::getValidParametersBasicExponential() const
   pl->template set<double>("Epsilon for RHS finite difference", temporalFiniteDifferenceEps_);
   pl->template set<int>("Operator Linearization Interval", operatorLinearizationInterval_);
   pl->template set<int>("Adapt PhiEvaluator Interval", adaptPhiEvaluatorInterval_);
-  pl->template set<Teuchos::string>("Verbosity Level", "Default");
+  pl->template set<Teuchos::string>("Verbosity Level", "default");
 
   // add the PhiEvaluator sublist
   auto phiPL = Teuchos::parameterList("PhiEvaluator");
@@ -107,19 +107,12 @@ StepperExponential<Scalar>::getValidParametersBasicExponential() const
   }
   pl->set("PhiEvaluator", *phiPL);
 
-  // TODO: should we remove this?
   // add some dummy variables for compatibility with StepperImplicit
   // this will validate and default initialize some parameters used by Implicit Steppers
   // to avoid throwing a validation error when those are provided
   pl->template set<std::string>("Solver Name", "Demo Solver");
-  auto noxSolverPL = Tempus::defaultSolverParameters();
-  auto solverPL    = Teuchos::parameterList("Demo Solver");
-  solverPL->set("NOX", *sublist(noxSolverPL, "NOX"));
-  pl->set("Demo Solver", *solverPL);
   pl->template set<std::string>("Predictor Stepper Type", "None");
   pl->template set<bool>("Zero Initial Guess", 0);
-
-  // pl->print(*this->getOStream());
 
   return pl;
 }
@@ -141,14 +134,17 @@ void StepperExponential<Scalar>::setStepperExponentialValues(
       this->setPhiEvaluator(phiEvaluator);
     }
 
-    // validate that the parameters from the user are valid, and set defaults for missing values
+    // add some common sublist for compatibility with StepperImplicit
+    // to avoid throwing a validation error when those are provided
     pl->remove("Default Solver", false);
     pl->remove("Demo Solver", false);
+
+    // validate that the parameters from the user are valid, and set defaults for missing values
     pl->validateParametersAndSetDefaults(*this->getValidParameters());
 
     // get verbosity level
-    std::string verbString = pl->get<std::string>("Verbosity Level");
-    auto verbValidator = Teuchos::verbosityLevelParameterEntryValidator("Verbosity Level");
+    std::string verbString        = pl->get<std::string>("Verbosity Level");
+    auto verbValidator            = Teuchos::verbosityLevelParameterEntryValidator("Verbosity Level");
     Teuchos::EVerbosityLevel verb = verbValidator->getIntegralValue(verbString);
 
     // set the validated values, or their defaults
