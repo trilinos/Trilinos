@@ -68,7 +68,7 @@ struct KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat:
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal, class LocalOrdinalViewType>
-struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewType> {
+struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode, LocalOrdinalViewType> {
   using Node = Tpetra::KokkosCompat::KokkosHIPWrapperNode;
 
   static inline void jacobi_A_B_newmatrix_kernel_wrapper(typename Teuchos::ScalarTraits<Scalar>::magnitudeType omega,
@@ -131,6 +131,7 @@ struct KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalVi
     host_jacobi_A_B_reuse(omega, Dinv, Aview, Bview, Acol2Brow, Acol2Irow,
                           Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
   }
+};
 
 }  // namespace MMdetails
 }  // namespace Tpetra
