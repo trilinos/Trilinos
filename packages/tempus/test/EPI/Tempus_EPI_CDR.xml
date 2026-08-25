@@ -43,6 +43,7 @@
       <Parameter name="Use FSAL"       type="bool" value="true"/>
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
+      <Parameter name="Verbosity Level" type="string" value="low"/>
       <!--
       <Parameter name="Stepper Type"   type="string" value="Trapezoidal Method"/>
       <Parameter name="Use FSAL"       type="bool" value="true"/>

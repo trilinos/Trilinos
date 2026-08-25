@@ -41,7 +41,7 @@
 #include "Teuchos_VerbosityLevel.hpp"
 
 // Anasazi eigensolver (Block Krylov-Schur) for spectrum bound estimation
-#ifdef TEMPUS_ENABLE_ANASAZI
+#ifdef HAVE_TEMPUS_ANASAZI
 #include "AnasaziThyraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
@@ -830,26 +830,14 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   this->checkInitialized(PhiInitialization::JACOBIAN_AND_MASS);
 
   using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-  typedef Thyra::MultiVectorBase<Scalar> MV;
   typedef Thyra::LinearOpBase<Scalar> OP;
 
   MT a_val = Teuchos::ScalarTraits<MT>::rmax();
   MT b_val = -Teuchos::ScalarTraits<MT>::rmax();
   MT c_val = Teuchos::ScalarTraits<MT>::zero();
 
-  // Read eigensolver parameters from the stored ParameterList
-  const int inev             = eigensolverPL_->get<int>("Num Eigenvalues", 8);
   const int denseFallbackDim = eigensolverPL_->get<int>("Dense Fallback Dimension", 64);
-  const int blockSize        = eigensolverPL_->get<int>("Block Size", 2);
-  const double eigTol        = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
-  const int maxRestarts      = eigensolverPL_->get<int>("Maximum Restarts", 50);
-  const bool relConvTol      = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
-  const std::string which    = eigensolverPL_->get<std::string>("Which", "LM");
-
-  // Estimate up to the first nev eigenvalues
   const int dim       = static_cast<int>(jacobianMatrix_->domain()->dim());
-  const int nev       = std::min(inev, dim - 1);
-  const int numBlocks = std::min(2 * nev, dim);
 
   // MinvJ = M^{-1}*J LinOp
   Teuchos::RCP<const OP> MinvJ =
@@ -875,7 +863,20 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
     return;
   }
 
-#ifdef TEMPUS_ENABLE_ANASAZI
+#ifdef HAVE_TEMPUS_ANASAZI
+  typedef Thyra::MultiVectorBase<Scalar> MV;
+
+  // Read eigensolver parameters from the stored ParameterList
+  const int inev             = eigensolverPL_->get<int>("Num Eigenvalues", 8);
+  const int blockSize        = eigensolverPL_->get<int>("Block Size", 2);
+  const double eigTol        = eigensolverPL_->get<double>("Convergence Tolerance", 0.08);
+  const int maxRestarts      = eigensolverPL_->get<int>("Maximum Restarts", 50);
+  const bool relConvTol      = eigensolverPL_->get<bool>("Relative Convergence Tolerance", true);
+  const std::string which    = eigensolverPL_->get<std::string>("Which", "LM");
+
+  // Estimate up to the first nev eigenvalues
+  const int nev       = std::min(inev, dim - 1);
+  const int numBlocks = std::min(2 * nev, dim);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       (blockSize * numBlocks) <= nev, std::logic_error,
@@ -952,7 +953,7 @@ void PhiLinearSolver<Scalar>::computeJacobianSpectrumBounds(double& a, double& b
   TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error,
       "ANASAZI is unavailable and Block-Krylov-Schur Leja Ellipse update was requested. "
-          << "Reconfigure with Tempus_ENABLE_Anasazi=ON.\n");
+          << "Reconfigure with Trilinos_ENABLE_Anasazi=ON.\n");
 #endif
 }
 

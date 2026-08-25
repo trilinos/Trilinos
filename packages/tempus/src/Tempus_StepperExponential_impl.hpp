@@ -10,6 +10,7 @@
 #ifndef Tempus_StepperExponential_impl_hpp
 #define Tempus_StepperExponential_impl_hpp
 
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tempus_StepperExponential.hpp"
 #include "Tempus_PhiEvaluatorFactory.hpp"
 #include "Tempus_PhiEvaluator.hpp"
@@ -27,7 +28,7 @@ StepperExponential<Scalar>::StepperExponential() : appModel_(),
   this->setUseFSAL(false);
   this->setICConsistency("Consistent");
   this->setICConsistencyCheck(false);
-  this->setVerbLevel(Teuchos::VERB_LOW);
+  this->setVerbLevel(Teuchos::VERB_DEFAULT);
 }
 
 template <class Scalar>
@@ -95,6 +96,7 @@ StepperExponential<Scalar>::getValidParametersBasicExponential() const
   pl->template set<double>("Epsilon for RHS finite difference", temporalFiniteDifferenceEps_);
   pl->template set<int>("Operator Linearization Interval", operatorLinearizationInterval_);
   pl->template set<int>("Adapt PhiEvaluator Interval", adaptPhiEvaluatorInterval_);
+  pl->template set<Teuchos::string>("Verbosity Level", "Default");
 
   // add the PhiEvaluator sublist
   auto phiPL = Teuchos::parameterList("PhiEvaluator");
@@ -144,8 +146,14 @@ void StepperExponential<Scalar>::setStepperExponentialValues(
     pl->remove("Demo Solver", false);
     pl->validateParametersAndSetDefaults(*this->getValidParameters());
 
+    // get verbosity level
+    std::string verbString = pl->get<std::string>("Verbosity Level");
+    auto verbValidator = Teuchos::verbosityLevelParameterEntryValidator("Verbosity Level");
+    Teuchos::EVerbosityLevel verb = verbValidator->getIntegralValue(verbString);
+
     // set the validated values, or their defaults
     this->setStepperValues(pl);
+    this->setVerbLevel(verb);
     temporalFiniteDifferenceEps_   = pl->get<double>("Epsilon for RHS finite difference");
     operatorLinearizationInterval_ = pl->get<int>("Operator Linearization Interval");
     adaptPhiEvaluatorInterval_     = pl->get<int>("Adapt PhiEvaluator Interval");

@@ -436,7 +436,7 @@ void PhiEvaluatorLeja<Scalar>::adaptEvaluator()
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out, 1, "adaptEvaluator()");
-  if (verbLevel >= Teuchos::implicit_cast<int>(Teuchos::VERB_LOW)) {
+  if (verbLevel >= Teuchos::as<int>(Teuchos::VERB_LOW)) {
     *out << "\n Adapted Leja ellipse parameters. a="
          << leja_a_ << " b="
          << leja_b_ << " c="
