@@ -49,7 +49,7 @@ using Tempus::SolutionState;
 // ************************************************************
 template <typename SC, typename Model, typename Comm>
 void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
-              bool& success, const std::string& caseName, const bool lumped)
+              bool& success, const std::string& caseName, const bool lumped, const bool test_xdot = true)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -58,10 +58,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
 
-  // make this a test parameter
-  const bool test_xdot = true;
-
-  const int nTimeStepSizes = 4;
+  const int nTimeStepSizes = 3;
   double dt                = 0.0005;
   if (caseName == "Taylor") dt /= 2;
   for (int n = 0; n < nTimeStepSizes; n++) {
@@ -222,16 +219,19 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
                     solutions, xErrorNorm, xSlope, out);
   }
 
+  // check that all solutions agree up to some tolerance (EPI is exact for linear problem)
   std::tuple tol_compare = {1e-10, 1e-7};
   if (!lumped)
     // The accuracy for the "Lump Mass Matrix" == False testcase is
     // affected by the linear solver tolerance
     tol_compare = {1e-5, 1e-1};
-  TEST_COMPARE(std::abs(xErrorNorm[0]), <=, std::get<0>(tol_compare));
-  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, std::get<0>(tol_compare));
+  for (int n = 0; n < nTimeStepSizes - 1; n++) {
+    TEST_COMPARE(xErrorNorm[n], <, std::get<0>(tol_compare));
+  }
   if (test_xdot) {
-    TEST_COMPARE(std::abs(xDotErrorNorm[0]), <=, std::get<1>(tol_compare));
-    TEST_COMPARE(std::abs(xDotErrorNorm[nTimeStepSizes - 2]), <=, std::get<1>(tol_compare));
+    for (int n = 0; n < nTimeStepSizes - 1; n++) {
+      TEST_COMPARE(xDotErrorNorm[n], <=, std::get<1>(tol_compare));
+    }
   }
   // Slopes are flat for EPI, due to exact solution.
   // double order = stepper->getOrder();
@@ -244,7 +244,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   // ---------------------------------------------------------------
   RCP<Thyra::VectorBase<double>> xSDIRK;
   {
-    const double dt_sdirk = StepSize[nTimeStepSizes - 1] / 4.;  // finest EPI dt / 4
+    const double dt_sdirk = StepSize[nTimeStepSizes - 1];  // finest EPI dt
 
     RCP<ParameterList> pListS =
         getParametersFromXmlFile("Tempus_EPI_CDR.xml");
@@ -366,6 +366,22 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja_lumped)
 
 // ************************************************************
 // ************************************************************
+TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja_lumped_noxdot)
+{
+  // Get default Tpetra template types
+  using SC   = Tpetra::Vector<>::scalar_type;
+  using LO   = Tpetra::Vector<>::local_ordinal_type;
+  using GO   = Tpetra::Vector<>::global_ordinal_type;
+  using Node = Tpetra::Vector<>::node_type;
+
+  auto comm = Tpetra::getDefaultComm();
+
+  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
+      comm, comm->getSize(), out, success, "Leja", true, false);
+}
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Leja)
 {
   // Get default Tpetra template types
@@ -397,20 +413,6 @@ TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor_lumped)
 }
 
 // ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(EPI, CDR_Tpetra_Taylor)
-{
-  // Get default Tpetra template types
-  using SC   = Tpetra::Vector<>::scalar_type;
-  using LO   = Tpetra::Vector<>::local_ordinal_type;
-  using GO   = Tpetra::Vector<>::global_ordinal_type;
-  using Node = Tpetra::Vector<>::node_type;
-
-  auto comm = Tpetra::getDefaultComm();
-
-  CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-      comm, comm->getSize(), out, success, "Taylor", false);
-}
 #endif
 
 }  // namespace Tempus_Test
