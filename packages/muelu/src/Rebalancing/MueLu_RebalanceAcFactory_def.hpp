@@ -69,6 +69,7 @@ void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level 
   else
     coarseMatrixName = matrixName + "_coarse";
 
+  if (!(coarseLevel.IsAvailable(matrixName, GetFactory("A").get()))) return;
   FactoryMonitor m(*this, "Computing " + coarseMatrixName, coarseLevel);
 
   RCP<Matrix> originalAc = coarseLevel.Get<RCP<Matrix> >(matrixName, GetFactory("A").get());

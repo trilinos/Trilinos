@@ -278,6 +278,93 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    GetThresholdedLowerTriangularGraph(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A, const Magnitude threshold) {
+  RCP<CrsGraph> sparsityPattern;
+  {
+    using matrix_type      = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using graph_type       = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    using local_graph_type = typename graph_type::local_graph_device_type;
+    using execution_space  = typename Node::execution_space;
+    using rowmap_type      = typename local_graph_type::row_map_type::non_const_type;
+    using entries_type     = typename local_graph_type::entries_type::non_const_type;
+    using range_type       = Kokkos::RangePolicy<execution_space, LocalOrdinal>;
+    using implATS          = KokkosKernels::ArithTraits<typename matrix_type::impl_scalar_type>;
+    using magATS           = KokkosKernels::ArithTraits<typename implATS::magnitudeType>;
+    auto lclA              = A->getLocalMatrixDevice();
+    auto lclRowmap         = A->getRowMap()->getLocalMap();
+    auto lclColmap         = A->getColMap()->getLocalMap();
+
+    rowmap_type rowptr("MueLu::GetLowerTriangularGraph::rowptr", lclA.numRows() + 1);
+
+    LocalOrdinal nnz = 0;
+    Kokkos::parallel_scan(
+        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& my_nnz, const bool is_final) {
+          auto row     = lclA.rowConst(rlid);
+          auto row_gid = lclRowmap.getGlobalElement(rlid);
+
+          typename implATS::magnitudeType d = magATS::one();
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid    = row.colidx(offset);
+            auto col_gid = lclColmap.getGlobalElement(clid);
+            if (row_gid == col_gid) {
+              auto val = implATS::magnitude(row.value(offset));
+              if (val > implATS::epsilon())
+                d = val;
+            }
+          }
+
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid    = row.colidx(offset);
+            auto val     = row.value(offset);
+            auto col_gid = lclColmap.getGlobalElement(clid);
+            if ((row_gid == col_gid) || ((row_gid > col_gid) && implATS::magnitude(val) > d * threshold)) {
+              ++my_nnz;
+              if (is_final && (rlid + 1 < lclA.numRows())) {
+                rowptr(rlid + 2) = my_nnz;
+              }
+            }
+          }
+        },
+        nnz);
+
+    entries_type entries(Kokkos::ViewAllocateWithoutInitializing("MueLu::GetThresholdedLowerTriangularGraph::indices"), nnz);
+    Kokkos::parallel_for(
+        range_type(0, lclA.numRows()), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+          auto row     = lclA.rowConst(rlid);
+          auto row_gid = lclRowmap.getGlobalElement(rlid);
+
+          typename implATS::magnitudeType d = magATS::one();
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid    = row.colidx(offset);
+            auto col_gid = lclColmap.getGlobalElement(clid);
+            if (row_gid == col_gid) {
+              auto val = implATS::magnitude(row.value(offset));
+              if (val > implATS::epsilon())
+                d = val;
+            }
+          }
+
+          for (LocalOrdinal offset = 0; offset < row.length; ++offset) {
+            auto clid    = row.colidx(offset);
+            auto val     = row.value(offset);
+            auto col_gid = lclColmap.getGlobalElement(clid);
+            if ((row_gid == col_gid) || ((row_gid > col_gid) && implATS::magnitude(val) > d * threshold)) {
+              entries(rowptr(rlid + 1)) = clid;
+              ++rowptr(rlid + 1);
+            }
+          }
+        });
+
+    sparsityPattern = CrsGraphFactory::Build(A->getRowMap(), A->getColMap(), rowptr, entries);
+    sparsityPattern->fillComplete(A->getDomainMap(), A->getRangeMap());
+  }
+
+  return sparsityPattern;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayRCP<Scalar>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixDiagonal_arcp(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A) {
@@ -1603,6 +1690,7 @@ UtilitiesBase<SC, LO, GO, NO>::
   using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
   SC zero = ATS::zero();
+  SC one  = ATS::one();
 
   auto localMatrix = A.getLocalMatrixDevice();
   LO numRows       = A.getLocalNumRows();
@@ -1620,8 +1708,10 @@ UtilitiesBase<SC, LO, GO, NO>::
           auto rowView = localMatrix.row(row);
           auto length  = rowView.length;
 
-          for (decltype(length) colID = 0; colID < length; colID++)
-            myColsToZeroView(rowView.colidx(colID), 0) = impl_ATS::one();
+          for (decltype(length) colID = 0; colID < length; colID++) {
+            if (rowView.value(colID) == one)
+              myColsToZeroView(rowView.colidx(colID), 0) = impl_ATS::one();
+          }
         }
       });
 
@@ -1965,7 +2055,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
-                      Scalar replaceWith) {
+                      Scalar replaceWith, const bool DontZeroDiagEntries) {
   using ATS        = KokkosKernels::ArithTraits<Scalar>;
   using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
@@ -1973,16 +2063,29 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   auto localMatrix     = A->getLocalMatrixDevice();
   LocalOrdinal numRows = A->getLocalNumRows();
+  auto lclRowmap       = A->getRowMap()->getLocalMap();
+  auto lclCowmap       = A->getColMap()->getLocalMap();
 
   Kokkos::parallel_for(
       "MueLu:Utils::ZeroDirichletCols", range_type(0, numRows),
       KOKKOS_LAMBDA(const LocalOrdinal row) {
         auto rowView = localMatrix.row(row);
         auto length  = rowView.length;
-        for (decltype(length) colID = 0; colID < length; colID++)
-          if (dirichletCols(rowView.colidx(colID))) {
-            rowView.value(colID) = impl_replaceWith;
+
+        if (DontZeroDiagEntries) {
+          auto rgid = lclRowmap.getGlobalElement(row);
+          for (decltype(length) colID = 0; colID < length; colID++) {
+            if (dirichletCols(rowView.colidx(colID))) {
+              auto cgid = lclCowmap.getGlobalElement(rowView.colidx(colID));
+              if (rgid != cgid) rowView.value(colID) = impl_replaceWith;
+            }
           }
+        } else {
+          for (decltype(length) colID = 0; colID < length; colID++)
+            if (dirichletCols(rowView.colidx(colID))) {
+              rowView.value(colID) = impl_replaceWith;
+            }
+        }
       });
 }
 
@@ -2062,7 +2165,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SPAI(const RCP<Matrix>& M) {
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SPAI(const RCP<Matrix>& M, const std::string& MinvScheme) {
   // Create Minv via sparse apprximate inverse
 
   Level miniLevel;
@@ -2076,7 +2179,11 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SPAI(const RCP<Matrix>
 
   auto invapproxFact = rcp(new InverseApproximationFactory());
   invapproxFact->SetFactory("A", MueLu::NoFactory::getRCP());
-  invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+  if (MinvScheme == "fsai")
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("factoredsparseapproxinverse")));
+  else
+    invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+
   miniLevel.Request("Ainv", invapproxFact.get());
   invapproxFact->Build(miniLevel);
   RCP<Matrix> NewMatrix = miniLevel.Get<RCP<Matrix>>("Ainv", invapproxFact.get());

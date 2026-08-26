@@ -553,6 +553,14 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: Minv scheme</name>
+      <type>string</type>
+      <default>fsai</default>
+      <description>Algorithm used to approximate inverse mass matrix when using MinvA scheme for strength-of-connection matrix. Possible values: "fsai", "spai"</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: classical algo</name>
       <type>string</type>
       <default>"default"</default>

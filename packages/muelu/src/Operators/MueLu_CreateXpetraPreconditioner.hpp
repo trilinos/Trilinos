@@ -111,7 +111,7 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
     const Teuchos::ParameterList& userList = inParamList.sublist("user data");
     if (userList.isParameter("M")) M_Supplied = true;
     if (userList.isParameter("Minv")) Minv_Supplied = true;
-    if (userList.isParameter("MinvA")) Minv_Supplied = true;
+    if (userList.isParameter("MinvA")) MinvA_Supplied = true;
   }
   if (inParamList.isParameter("aggregation: strength-of-connection: matrix") && (inParamList.get<std::string>("aggregation: strength-of-connection: matrix") == "MinvA")) {
     if (inParamList.isSublist("project auxiliary matrices")) {
@@ -122,7 +122,7 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
       TEUCHOS_TEST_FOR_EXCEPTION(projectList.isParameter("MinvA") && (projectList.get("MinvA", "") == "NoFactory") && !MinvA_Supplied, Exceptions::Incompatible,
                                  "MueLu_CreateXpetraPreconditioner: Must supply MinvA as NoFactory is listed as supplier of MinvA in the project auxiliary matrices sublist");
     } else {  // default behavior if sublist("project auxiliary matrices") not user-supplied requires "M" to be user-supplied.
-      TEUCHOS_TEST_FOR_EXCEPTION(!M_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M when 'aggregation: strength-of-connection: matrix'= MinvA and sublist('project auxiliary matrices') not supplied.");
+      TEUCHOS_TEST_FOR_EXCEPTION(!M_Supplied && !Minv_Supplied, Exceptions::Incompatible, "MueLu_CreateXpetraPreconditioner: Must supply M or Minv when 'aggregation: strength-of-connection: matrix'= MinvA and sublist('project auxiliary matrices') not supplied.");
     }
   }
 

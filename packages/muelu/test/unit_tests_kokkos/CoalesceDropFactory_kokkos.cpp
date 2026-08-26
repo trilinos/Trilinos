@@ -1055,6 +1055,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, MassMatrixSOC, Sca
     coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("point-wise")));
     coalesceDropFact.SetParameter("aggregation: strength-of-connection: measure", Teuchos::ParameterEntry(std::string("smoothed aggregation")));
     coalesceDropFact.SetParameter("aggregation: strength-of-connection: matrix", Teuchos::ParameterEntry(std::string("MinvA")));
+    coalesceDropFact.SetParameter("aggregation: Minv scheme", Teuchos::ParameterEntry(std::string("spai")));
     fineLevel.Request("Graph", &coalesceDropFact);
     fineLevel.Request("A", &coalesceDropFact);
     fineLevel.Request("M", &coalesceDropFact);
@@ -1137,6 +1138,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, MinvADropsTwoThird
     coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("point-wise")));
     coalesceDropFact.SetParameter("aggregation: strength-of-connection: measure", Teuchos::ParameterEntry(std::string("smoothed aggregation")));
     coalesceDropFact.SetParameter("aggregation: strength-of-connection: matrix", Teuchos::ParameterEntry(std::string("MinvA")));
+    coalesceDropFact.SetParameter("aggregation: Minv scheme", Teuchos::ParameterEntry(std::string("spai")));
     fineLevel.Request("Graph", &coalesceDropFact);
     fineLevel.Request("A", &coalesceDropFact);
     fineLevel.Request("M", &coalesceDropFact);
@@ -1155,6 +1157,121 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, MinvADropsTwoThird
 
   out << "Global number of nonzeros in original A vs. filteredA is " << A->getGlobalNumEntries() << " vs. " << filteredA->getGlobalNumEntries() << std::endl;
   TEUCHOS_ASSERT_EQUALITY(filteredA->getGlobalNumEntries(), (nx - 2) * (nx - 2) * 3 + (nx - 2) * 2 * 3 + (nx - 2) * 2 * 2 + 4 * 2);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, MinvADirichletTest, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  typedef Teuchos::ScalarTraits<SC> STS;
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
+
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
+
+  RCP<Matrix> A;
+  const int nx = 20;
+  {
+    // Make a 2D Star2D Matrix with up/down as a "weak connection"
+    Teuchos::ParameterList stiff_Pl;
+    stiff_Pl.set("matrixType", "Star2D");
+    stiff_Pl.set("nx", (GO)nx);
+    stiff_Pl.set("ny", (GO)nx);
+    stiff_Pl.set("a", 17.0);
+    stiff_Pl.set("b", 3.5);
+    stiff_Pl.set("c", 3.5);
+    stiff_Pl.set("d", -7.75);
+    stiff_Pl.set("e", -7.75);
+    stiff_Pl.set("z1", -2.125);
+    stiff_Pl.set("z2", -2.125);
+    stiff_Pl.set("z3", -2.125);
+    stiff_Pl.set("z4", -2.125);
+    A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(stiff_Pl, lib);
+  }
+  const auto INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+
+  RCP<Matrix> filteredA;
+  {
+    Level fineLevel;
+    TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
+
+    auto crsA = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A, true)->getCrsMatrix();
+    crsA->resumeFill();
+
+    auto rowmap = A->getRowMap();
+    auto colmap = A->getColMap();
+    auto lclA   = A->getLocalMatrixHost();
+
+    // set first nx rows of A to be Dirichlet
+    for (GO row_gid = 0; row_gid < nx; row_gid++) {
+      auto row_lid = rowmap->getLocalElement(row_gid);
+      auto col_lid = colmap->getLocalElement(row_gid);
+      if ((row_lid != INVALID) && (col_lid != INVALID)) {
+        auto row = lclA.row(row_lid);
+        for (LocalOrdinal k = 0; k < row.length; ++k) {
+          if (row.colidx(k) == col_lid)
+            row.value(k) = Teuchos::ScalarTraits<SC>::one();
+          else
+            row.value(k) = Teuchos::ScalarTraits<SC>::zero();
+        }
+      }
+    }
+    crsA->fillComplete();
+
+    fineLevel.Set("A", A);
+    Teuchos::ParameterList mass_Pl;
+    mass_Pl.set("matrixType", "Star2D");
+
+    mass_Pl.set("nx", (GO)nx);
+    mass_Pl.set("ny", (GO)nx);
+    mass_Pl.set("a", 2.88);
+    mass_Pl.set("b", .72);
+    mass_Pl.set("c", .72);
+    mass_Pl.set("d", .72);
+    mass_Pl.set("e", .72);
+    mass_Pl.set("z1", .18);
+    mass_Pl.set("z2", .18);
+    mass_Pl.set("z3", .18);
+    mass_Pl.set("z4", .18);
+    RCP<Matrix> M = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mass_Pl, lib);
+    fineLevel.Set("M", M);
+
+    CoalesceDropFactory_kokkos coalesceDropFact;
+    coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
+    coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(.26));
+    coalesceDropFact.SetParameter("filtered matrix: reuse graph", Teuchos::ParameterEntry(false));
+    coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("point-wise")));
+    coalesceDropFact.SetParameter("aggregation: strength-of-connection: measure", Teuchos::ParameterEntry(std::string("smoothed aggregation")));
+    coalesceDropFact.SetParameter("aggregation: strength-of-connection: matrix", Teuchos::ParameterEntry(std::string("MinvA")));
+    coalesceDropFact.SetParameter("aggregation: Minv scheme", Teuchos::ParameterEntry(std::string("spai")));
+    fineLevel.Request("Graph", &coalesceDropFact);
+    fineLevel.Request("A", &coalesceDropFact);
+    fineLevel.Request("M", &coalesceDropFact);
+    fineLevel.Request("DofsPerNode", &coalesceDropFact);
+
+    coalesceDropFact.Build(fineLevel);
+
+    filteredA = fineLevel.Get<RCP<Matrix>>("A", &coalesceDropFact);
+  }
+
+  // We picked the drop tolerance such that we drop all entries associated with x coupling
+  // As we have a Dirichlet on lower boundary and because we zero out rows/columns associated
+  // with Dirichlets, we should have 1 nonzero for Dirichlet BC, 2 nonzeros for Neumann bcs
+  // on upper boundary, 3 nonzeros for Neumann bcs on left and right boundary. The interior
+  // dofs not adjacent to Dirichlet all have 3 nonzeros while those adjacent to Dirichlet
+  // have 2. This works out to
+
+  const int interior_with_3nnzs = (nx - 2) * (nx - 3);
+  const int bcs_with_1nnzs      = nx;            //  bottom
+  const int bcs_with_2nnzs      = nx;            //  top;
+  const int bcs_with_3nnzs      = (nx - 3) * 2;  //  left and right;
+  const int DirAdj_with_2nnzs   = nx;
+
+  out << "Global number of nonzeros in original A vs. filteredA is " << A->getGlobalNumEntries() << " vs. " << filteredA->getGlobalNumEntries() << std::endl;
+  TEUCHOS_ASSERT_EQUALITY((int)filteredA->getGlobalNumEntries(), interior_with_3nnzs * 3 + bcs_with_1nnzs + bcs_with_2nnzs * 2 + bcs_with_3nnzs * 3 + DirAdj_with_2nnzs * 2);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicalScaledCut, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -3575,6 +3692,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, CountNegativeDiago
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, SignedClassicalDistanceLaplacian, SC, LO, GO, NO)            \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, SignedClassicalSADistanceLaplacian, SC, LO, GO, NO)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, MinvADropsTwoThirdsNNZ, SC, LO, GO, NO)                      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, MinvADirichletTest, SC, LO, GO, NO)                          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, CountNegativeDiagonals, SC, LO, GO, NO)
 
 // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering,     SC, LO, GO, NO) // not implemented yet

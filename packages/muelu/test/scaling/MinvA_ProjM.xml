@@ -18,6 +18,7 @@
   <Parameter        name="use kokkos refactor"                  type="bool" value="true"/>
   <Parameter        name="tentative: calculate qr"              type="bool" value="false"/>
 
+  <Parameter        name="aggregation: Minv scheme" type="string"  value="fsai"/>
   <Parameter        name="aggregation: strength-of-connection: matrix" type="string"  value="MinvA"  />
   <Parameter        name="aggregation: strength-of-connection: measure" type="string" value="signed ruge-stueben"/>
   <Parameter        name="aggregation: drop scheme" type="string"                     value="point-wise"          />
