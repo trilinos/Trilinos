@@ -9,7 +9,7 @@
 // @HEADER
 
 #include "Sacado.hpp"
-#include "Kokkos_View_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 #include "Kokkos_Core.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"

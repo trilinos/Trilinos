@@ -32,7 +32,7 @@
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -250,7 +250,7 @@ evaluateFields(typename Traits::EvalData d)
 
   auto field_coeffs_host_subview = Kokkos::subview(field_coeffs_host,std::pair<int,int>(cellIndex_,cellIndex_+1),Kokkos::ALL);
 
-  auto field_val = Kokkos::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,HostSpace>>(field_coeffs_host, "field_val_at_point", 1, 1); // <C,P>
+  auto field_val = Sacado::createDynRankViewWithType<Kokkos::DynRankView<ScalarT,HostSpace>>(field_coeffs_host, "field_val_at_point", 1, 1); // <C,P>
 
   auto basis_values_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values_);
 

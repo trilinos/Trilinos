@@ -12,8 +12,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
-#include "KokkosExp_View_Fad.hpp"
-#include "Kokkos_DynRankView_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
 #include "Sacado.hpp"
 

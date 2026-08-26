@@ -552,7 +552,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
       functor.offsets = scratch_offsets_[fieldIndex];
       functor.field = scatterFields_[fieldIndex];
-      functor.num_params = Kokkos::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
+      functor.num_params = Sacado::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
 
       Kokkos::parallel_for(workset.num_cells,functor);
     }
@@ -570,7 +570,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       if (checkApplyBC_) functor.applyBC = applyBC_[fieldIndex];
       functor.checkApplyBC = checkApplyBC_;
       functor.basisIds = scratch_basisIds_[fieldIndex];
-      functor.num_params = Kokkos::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
+      functor.num_params = Sacado::dimension_scalar(scatterFields_[fieldIndex].get_view())-1;
 
       Kokkos::parallel_for(workset.num_cells,functor);
     }

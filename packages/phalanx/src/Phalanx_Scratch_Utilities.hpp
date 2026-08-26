@@ -23,7 +23,7 @@ namespace PHX {
   template<typename ScalarT,typename... Props>
   KOKKOS_INLINE_FUNCTION
   std::size_t getFadSize(const Kokkos::View<ScalarT*,Props...>& view)
-  { return Kokkos::dimension_scalar(view); }
+  { return Sacado::dimension_scalar(view); }
 
   /*
   // Binds the shared memory to a view. 

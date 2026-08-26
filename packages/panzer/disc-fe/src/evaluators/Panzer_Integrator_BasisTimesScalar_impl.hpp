@@ -158,7 +158,7 @@ namespace panzer
 
     // Allocate temporary
     if (Sacado::IsADType<ScalarT>::value) {
-      const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+      const auto fadSize = Sacado::dimension_scalar(field_.get_view());
       tmp_ = PHX::View<ScalarT*>("IntegratorBasisTimesScalar::tmp_",field_.extent(0),fadSize);
       if (fieldMults_.size() > 1)
 	tmp2_ = PHX::View<ScalarT*>("IntegratorBasisTimesScalar::tmp_",field_.extent(0),fadSize);

@@ -30,7 +30,7 @@ using Teuchos::rcp;
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_BC.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 
@@ -502,7 +502,7 @@ namespace panzer {
 		      sideEntities,local_side_ids,elements);
 
       Kokkos::DynRankView<double,PHX::Device> nodes =
-	      Kokkos::createDynRankView(nodes,"nodes",elements.size(),4,dim);
+	      Sacado::createDynRankView(nodes,"nodes",elements.size(),4,dim);
       auto nodes_h = Kokkos::create_mirror_view(nodes);
 
       // loop over elements of this block

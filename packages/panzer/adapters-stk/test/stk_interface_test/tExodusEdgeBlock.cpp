@@ -257,7 +257,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
    mesh->getMyEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, edges);
 
    Kokkos::DynRankView<double,PHX::Device> edgeValues;
-   edgeValues = Kokkos::createDynRankView(edgeValues,"edgeValues",edges.size());
+   edgeValues = Sacado::createDynRankView(edgeValues,"edgeValues",edges.size());
    auto edgeValues_h = Kokkos::create_mirror_view(edgeValues);
 
    std::vector<std::size_t> edgeIds;
