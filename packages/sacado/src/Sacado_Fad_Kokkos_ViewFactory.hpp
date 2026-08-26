@@ -160,7 +160,7 @@ createDynRankView(const InputViewType& a,
                   const Dims... dims)
 {
   using ResultViewType = typename Impl::ResultDynRankView<InputViewType>::type;
-  return createDynRankViewWithType<ResultViewType>(a, prop, dims...);
+  return Sacado::createDynRankViewWithType<ResultViewType>(a, prop, dims...);
 }
 
 //! Wrapper to simplify use of Sacado ViewFactory
@@ -178,5 +178,53 @@ createViewWithType(const InputViewType& a,
 }
 
 }
+
+#ifdef SACADO_ENABLE_DEPRECATED_CODE
+namespace Kokkos {
+
+// Deprecated wrapper function for createDynRankViewWithType
+template <typename ResultViewType, typename InputViewType, typename CtorProp,
+          typename... Dims>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::createDynRankViewWithType() instead of Kokkos::createDynRankViewWithType()")
+typename std::enable_if<
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
+  ResultViewType>::type
+createDynRankViewWithType(const InputViewType& a,
+                          const CtorProp& prop,
+                          const Dims... dims)
+{
+  return Sacado::createDynRankViewWithType<ResultViewType>(a, prop, dims...);
+}
+
+// Deprecated wrapper function for createDynRankView
+template <typename InputViewType, typename CtorProp, typename... Dims>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::createDynRankView() instead of Kokkos::createDynRankView()")
+typename std::enable_if<
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
+  typename Sacado::Impl::ResultDynRankView<InputViewType>::type
+  >::type
+createDynRankView(const InputViewType& a,
+                  const CtorProp& prop,
+                  const Dims... dims)
+{
+  return Sacado::createDynRankView(a, prop, dims...);
+}
+
+// Deprecated wrapper function for createViewWithType
+template <typename ResultViewType, typename InputViewType, typename CtorProp,
+          typename... Dims>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::createViewWithType() instead of Kokkos::createViewWithType()")
+typename std::enable_if<
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
+  ResultViewType>::type
+createViewWithType(const InputViewType& a,
+                   const CtorProp& prop,
+                   const Dims... dims)
+{
+  return Sacado::createViewWithType<ResultViewType>(a, prop, dims...);
+}
+
+} // namespace Kokkos
+#endif
 
 #endif /* #ifndef SACADO_FAD_KOKKOS_VIEW_FACTORY_HPP */
