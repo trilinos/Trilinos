@@ -73,7 +73,7 @@ template <class GO>
 GlobalMesh<GO> makeQuadMesh(int nx, int ny) {
   GlobalMesh<GO> mesh;
   mesh.nodesPerElement = 4;
-  mesh.numGlobalNodes  = (nx + 1) * (ny + 1);
+  mesh.numGlobalNodes  = size_t(nx + 1) * size_t(ny + 1);
   auto nodeGID         = [nx](int i, int j) -> GO {
     return j * (nx + 1) + i;
   };
@@ -93,7 +93,7 @@ template <class GO>
 GlobalMesh<GO> makeTriMesh(int nx, int ny) {
   GlobalMesh<GO> mesh;
   mesh.nodesPerElement = 3;
-  mesh.numGlobalNodes  = (nx + 1) * (ny + 1);
+  mesh.numGlobalNodes  = size_t(nx + 1) * size_t(ny + 1);
   auto nodeGID         = [nx](int i, int j) -> GO {
     return j * (nx + 1) + i;
   };
@@ -118,7 +118,7 @@ template <class GO>
 GlobalMesh<GO> makeTetMesh(int nx, int ny, int nz) {
   GlobalMesh<GO> mesh;
   mesh.nodesPerElement = 4;
-  mesh.numGlobalNodes  = (nx + 1) * (ny + 1) * (nz + 1);
+  mesh.numGlobalNodes  = size_t(nx + 1) * size_t(ny + 1) * size_t(nz + 1);
   auto nodeGID         = [nx, ny](int i, int j, int k) -> GO {
     return k * (nx + 1) * (ny + 1) + j * (nx + 1) + i;
   };
