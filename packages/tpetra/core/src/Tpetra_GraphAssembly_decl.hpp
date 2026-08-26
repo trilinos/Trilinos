@@ -35,20 +35,18 @@ namespace Experimental {
 /// Given the distribution of the mesh nodes (an "owned" row map and an
 /// "owned+shared" map) and the connectivity of the locally-owned elements
 /// (element -> global node IDs), this class builds the sparse graph of the
-/// finite-element operator.  The graph structure is built directly on device
-/// (count / prefix-sum / fill kernels using a per-team hash table), wrapped in
-/// a packed, locally-indexed CrsGraph over the owned+shared map, and then the
-/// owned+shared -> owned communication is performed explicitly with a fused
-/// Export + fillComplete.  No host serial insertGlobalIndices loop is used.
+/// finite-element operator.  The local owned+shared graph is built entirely on device.
+/// The owned+shared -> owned communication is performed explicitly with a fused
+/// Export + fillComplete.
 ///
 /// Typical usage:
 /// \code
-/// using GA = Tpetra::Experimental::GraphAssembly<>;
-/// GA assembler(rowMap, ownedPlusSharedMap, ownedElementToNode);
-/// assembler.build();
-/// auto graph = assembler.getGraph();               // owned CrsGraph
-/// auto asmGraph = assembler.getOwnedPlusSharedGraph(); // for matrix/RHS fill
-/// auto exporter = assembler.getExporter();          // may be null (serial)
+/// using Assembly = Tpetra::Experimental::GraphAssembly<>;
+/// Assembly assembly(rowMap, ownedPlusSharedMap, ownedElementToNode);
+/// assembly.build();
+/// RCP<CrsGraph> graph = assembly.getGraph();                   // owned CrsGraph
+/// RCP<CrsGraph> asmGraph = assembly.getOwnedPlusSharedGraph(); // for matrix fill
+/// RCP<Export> exporter = assembly.getExporter();               // may be null (serial)
 /// \endcode
 ///
 /// The owned+shared assembly graph and the Export object are also exposed so
@@ -109,30 +107,29 @@ class GraphAssembly {
 
   /// \brief Build the graph.
   ///
-  /// After this returns, getGraph() gives the assembled, fill-complete owned
-  /// CrsGraph.  It is safe to call more than once (the graph is rebuilt).
+  /// This performs the local assembly, export and fillComplete to produce the
+  /// owned graph (as well as the owned+shared graph and the exporter).
   void build();
 
   //@}
   //! @name Accessors
   //@{
 
-  /// \brief The assembled, fill-complete graph over the owned (row) map.
-  ///
-  /// Returns null if build() has not been called yet.
+  /// \brief Get the owned graph. Returns null if build() has not been called yet.
   Teuchos::RCP<crs_graph_type> getGraph() const;
 
-  /// \brief The intermediate assembly graph over the owned+shared map.
+  /// \brief Get the owned+shared graph.
   ///
-  /// Packed and locally indexed; row map == column map == owned+shared map,
-  /// domain map == owned map.  Useful for assembling matrix values / RHS on the
-  /// owned+shared map before Exporting to the owned objects.  Returns null if
-  /// build() has not been called yet.
+  /// It will be packed, locally indexed and fillComplete. row map == column map == owned+shared map,
+  /// domain map == owned map. Used for filling matrix values and RHS on the
+  /// owned+shared map (using owned elements) before Exporting to the owned matrix/vector.
+  /// Returns null if build() has not been called yet.
   Teuchos::RCP<crs_graph_type> getOwnedPlusSharedGraph() const;
 
-  /// \brief The Export object (owned+shared -> owned) used to communicate.
+  /// \brief The Export object for (owned+shared -> owned) communication.
   ///
   /// Null in the serial / single-rank case, where no communication is needed.
+  /// Useful for exporting the owned+shared matrix to owned.
   Teuchos::RCP<const export_type> getExporter() const;
 
   //@}
@@ -147,7 +144,7 @@ class GraphAssembly {
 
   //! The assembled owned graph (result of build()).
   Teuchos::RCP<crs_graph_type> graph_;
-  //! The intermediate owned+shared assembly graph.
+  //! The intermediate owned+shared assembly graph (result of build()).
   Teuchos::RCP<crs_graph_type> ownedPlusSharedGraph_;
   //! The Export used for the owned+shared -> owned communication (may be null).
   Teuchos::RCP<const export_type> exporter_;
