@@ -64,6 +64,7 @@ TRIBITS_ADD_TEST(
   ARGS "--group=ProjectedGeometry* --test=CircularGeometryConvergesInP_MultiCell"
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
+  RUN_SERIAL
 )
 
 # other tests are divided such that they can be handled using --group argument alone

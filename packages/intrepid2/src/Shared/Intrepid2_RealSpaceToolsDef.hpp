@@ -1336,8 +1336,8 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
                         rr == 2 ? Kokkos::subview(_matVecs, _i,    Kokkos::ALL()) :
                                   Kokkos::subview(_matVecs, _i, _j, Kokkos::ALL()) );
 
-        const ordinal_type iend = result.extent(0);
-        const ordinal_type jend = vec.extent(0);
+        const ordinal_type iend = transpose ? mat.extent(1) : mat.extent(0);
+        const ordinal_type jend = transpose ? mat.extent(0) : mat.extent(1);
 
         for (ordinal_type i=0;i<iend;++i) {
           result(i) = 0;
