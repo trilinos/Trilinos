@@ -293,7 +293,14 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): "
                                   "physPoints.extent(2) must match worksetCell.extent(2)." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( refPoints.extent(2) != cellTopo.getDimension(), std::invalid_argument,
+    const ordinal_type expectedRefDim = cellTopo.getDimension();
+    const bool admitsShellThicknessDim =
+      (cellTopo.getKey() == shards::ShellLine<>::key) ||
+      (cellTopo.getKey() == shards::ShellTriangle<>::key) ||
+      (cellTopo.getKey() == shards::ShellQuadrilateral<>::key);
+
+    INTREPID2_TEST_FOR_EXCEPTION( (refPoints.extent_int(2) != expectedRefDim) &&
+                                  (!admitsShellThicknessDim || (refPoints.extent_int(2) != expectedRefDim + 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): "
                                   "refPoints.extent(2) must match the expected reference output dimension for cellTopo." );
 
