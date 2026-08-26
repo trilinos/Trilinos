@@ -570,7 +570,7 @@ class LocalFSAIFunctor {
     for (local_ordinal_type i = 0; i < rowAinv.length; ++i) {
       auto thevalue = sub_ek(i) * scale_factor;
 
-      if (thevalue == impl_ATS::zero()) thevalue = Teuchos::as<decltype(thevalue)>(1.e-15);  // make sure value retained in sparsity pattern
+      if (thevalue == impl_ATS::zero()) thevalue = impl_ATS::eps();
       rowAinv.value(i) = thevalue;
     }
   }
