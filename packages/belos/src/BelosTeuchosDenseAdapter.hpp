@@ -15,6 +15,7 @@
   with ordinal type int and arbitrary scalar type.
 */
 
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -381,6 +382,55 @@ namespace Belos {
     Teuchos::BLAS<int, ScalarType> blas;
     for (int k = 0; k<GetNumCols(X); ++k)
       R[k] = blas.NRM2(GetNumRows(X), &ValueConst(X, 0, k), GetStride(X));
+  }
+
+  static void geqrf(DM &A, DM &tau) {
+    Teuchos::LAPACK<int,ScalarType> lapack;
+
+    // Step #1: Perform workspace size query for QR
+    // factorization of HP.  On input, lwork must be -1.
+    // _GEQRF will put the workspace size in work_[0].
+    int lwork = -1;
+    int info = 0;
+    std::vector<ScalarType> work;
+    work.resize(1);
+    lapack.GEQRF (GetNumRows(A), GetNumCols(A), GetRawHostPtr(A),
+                  GetStride(A), GetRawHostPtr(tau), &work[0], lwork, &info);
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, " LAPACK's _GEQRF failed to compute a workspace size.");
+
+    // Step #2: Compute QR factorization of HP
+    //
+    // NOTE (mfh 17 Apr 2014) LAPACK promises that the value of
+    // work_[0] after the workspace query will fit in int.  This
+    // justifies the cast.  We call real() first because
+    // static_cast from std::complex to int doesn't work.
+    lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
+
+    work.resize (lwork); // Allocate workspace for the QR factorization
+    lapack.GEQRF (GetNumRows(A), GetNumCols(A), GetRawHostPtr(A),
+                  GetStride(A), GetRawHostPtr(tau), &work[0], lwork, &info);
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, "LAPACK's _GEQRF failed to compute a QR factorization.");
+  }
+
+  static void ungqr(const int k, DM& A, const DM& tau) {
+    Teuchos::LAPACK<int,ScalarType> lapack;
+
+    int lwork = -1;
+    int info = 0;
+    std::vector<ScalarType> work;
+    work.resize(1);
+    lapack.UNGQR (GetNumRows(A), GetNumCols(A), k,
+                  GetRawHostPtr(A), GetStride(A), GetConstRawHostPtr(tau), &work[0],
+                  lwork, &info);
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, "LAPACK's _UNGQR failed to construct the Q factor.");
+
+    lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work[0])));
+
+    work.resize (lwork);
+    lapack.UNGQR (GetNumRows(A), GetNumCols(A), k,
+                  GetRawHostPtr(A), GetStride(A), GetConstRawHostPtr(tau), &work[0],
+                  lwork, &info);
+    TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, "LAPACK's _UNGQR failed to construct the Q factor.");
   }
 };
 

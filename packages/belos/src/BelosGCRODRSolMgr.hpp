@@ -26,7 +26,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp" // includes Teuchos_ConfigDefs.hpp
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 
@@ -498,7 +497,7 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
     Teuchos::RCP<DM> H_;
     Teuchos::RCP<DM> PP_;
     Teuchos::RCP<DM> HP_;
-    std::vector<ScalarType> tau_;
+    Teuchos::RCP<DM> tau_;
     std::vector<ScalarType> work_;
     Teuchos::RCP<DM> R_;
     std::vector<int> ipiv_;
@@ -1250,7 +1249,7 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::initializeStateStorage() {
         r_ = MVT::Clone( *rhsMV, 1 );
 
       // Size of tau_ will change during computation, so just be sure it starts with appropriate size
-      tau_.resize(recycledBlocks_+1);
+      tau_ = DMT::Create(recycledBlocks_+1, 1);
 
       // Size of work_ will change during computation, so just be sure it starts with appropriate size
       work_.resize(recycledBlocks_+1);
@@ -1565,31 +1564,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
           DMT::Multiply(false, false, one, *Htmp, *PPtmp, zero, *HPtmp);
 
-          DMT::SyncDeviceToHost( *HP_ );
-	  // Step #1.5: Perform workspace size query for QR
-          // factorization of HP.  On input, lwork must be -1.
-          // _GEQRF will put the workspace size in work_[0].
-          int lwork = -1;
-          tau_.resize (keff);
-          lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                        DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve:"
-            " LAPACK's _GEQRF failed to compute a workspace size.");
-
           // Step #2: Compute QR factorization of HP
-          //
-          // NOTE (mfh 17 Apr 2014) LAPACK promises that the value of
-          // work_[0] after the workspace query will fit in int.  This
-          // justifies the cast.  We call real() first because
-          // static_cast from std::complex to int doesn't work.
-          lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work_[0])));
-          work_.resize (lwork); // Allocate workspace for the QR factorization
-          lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                        DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve:"
-            " LAPACK's _GEQRF failed to compute a QR factorization.");
+
+          DMT::Reshape(*tau_, keff, 1);
+          DMT::geqrf(*HPtmp, *tau_);
 
           // Step #3: Explicitly construct Q and R factors
           // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
@@ -1602,20 +1580,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 	    }
           }
           DMT::SyncHostToDevice( *R_ );
-	  // NOTE (mfh 17 Apr 2014): Teuchos::LAPACK's wrapper for
-          // UNGQR dispatches to the correct Scalar-specific routine.
-          // It calls {S,D}ORGQR if Scalar is real, and {C,Z}UNGQR if
-          // Scalar is complex.
-          lapack.UNGQR (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetNumCols(*HPtmp),
-                        DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp), &tau_[0], &work_[0],
-                        lwork, &info);
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-            "LAPACK's _UNGQR failed to construct the Q factor.");
 
-          // Now we have [Q,R] = qr(H*P)
-          // Synchronize HP_ after call to LAPACK
-	  DMT::SyncHostToDevice( *HP_ );
+          DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
+
+	  // Now we have [Q,R] = qr(H*P)
 
           // Now compute C = V(:,1:p+1) * Q
           index.resize (p + 1);
@@ -1644,7 +1612,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // distributed MultiVector).
 
           // Step #2: Form inv(R)
-          lwork = DMT::GetNumRows(*Rtmp);
+          int lwork = DMT::GetNumRows(*Rtmp);
           work_.resize(lwork);
           lapack.GETRI(DMT::GetNumRows(*Rtmp), DMT::GetRawHostPtr(*Rtmp), DMT::GetStride(*Rtmp), 
 		       &ipiv_[0], &work_[0], lwork, &info);
@@ -1995,28 +1963,9 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
 
     DMT::Multiply(false, false, one, *H2tmp, *PPtmp, zero, *HPtmp);
   }
-  DMT::SyncDeviceToHost( *HP_ );
 
-  // Workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
-  int info = 0, lwork = -1;
-  tau_.resize (keff_new);
-  lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-    "LAPACK's _GEQRF failed to compute a workspace size.");
-
-  // NOTE (mfh 18 Apr 2014) LAPACK promises that the value of work_[0]
-  // after the workspace query will fit in int.  This justifies the
-  // cast.  We call real() first because static_cast from std::complex
-  // to int doesn't work.
-  lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work_[0])));
-  work_.resize (lwork); // Allocate workspace for the QR factorization
-  lapack.GEQRF (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetRawHostPtr(*HPtmp),
-                DMT::GetStride(*HPtmp), &tau_[0], &work_[0], lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-    "LAPACK's _GEQRF failed to compute a QR factorization.");
+  DMT::Reshape(*tau_, keff_new, 1);
+  DMT::geqrf(*HPtmp, *tau_);
 
   // Explicitly construct Q and R factors
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
@@ -2024,18 +1973,8 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
   Teuchos::RCP<DM> Rtmp = DMT::Subview( *R_, keff_new, keff_new );
   for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) DMT::Value(*Rtmp,i,j) = DMT::ValueConst(*HPtmp,i,j); }
 
-  // NOTE (mfh 18 Apr 2014): Teuchos::LAPACK's wrapper for UNGQR
-  // dispatches to the correct Scalar-specific routine.  It calls
-  // {S,D}ORGQR if Scalar is real, and {C,Z}UNGQR if Scalar is
-  // complex.
-  lapack.UNGQR (DMT::GetNumRows(*HPtmp), DMT::GetNumCols(*HPtmp), DMT::GetNumCols(*HPtmp),
-                DMT::GetRawHostPtr(*HPtmp), DMT::GetStride(*HPtmp), &tau_[0], &work_[0],
-                lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
-    "LAPACK's _UNGQR failed to construct the Q factor.");
+  DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
 
-  DMT::SyncHostToDevice( *HP_ );
   HPtmp = Teuchos::null;
 
   // Form orthonormalized C and adjust U accordingly so that C = A*U
@@ -2067,6 +2006,8 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
   // C_ = C1_; (via a swap)
   std::swap(C_, C1_);
 
+  int info = 0;
+
   // Finally, compute U_ = U_*R^{-1}
   // First, compute LU factorization of R
   ipiv_.resize(DMT::GetNumRows(*Rtmp));
@@ -2074,7 +2015,7 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::buildRecycleSpace2(): LAPACK _GETRF failed to compute an LU factorization.");
 
   // Now, form inv(R)
-  lwork = DMT::GetNumRows(*Rtmp);
+  int lwork = DMT::GetNumRows(*Rtmp);
   work_.resize(lwork);
   lapack.GETRI(DMT::GetNumRows(*Rtmp),DMT::GetRawHostPtr(*Rtmp),DMT::GetStride(*Rtmp),&ipiv_[0],&work_[0],lwork,&info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::buildRecycleSpace2(): LAPACK _GETRI failed to compute an LU factorization.");
