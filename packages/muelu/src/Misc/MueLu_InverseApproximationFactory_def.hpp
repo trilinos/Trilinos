@@ -421,14 +421,8 @@ class LocalFSAIFunctor {
   using execution_space    = typename local_matrix_type::execution_space;
   using impl_scalar_type   = typename KokkosKernels::ArithTraits<scalar_type>::val_type;
   using impl_ATS           = KokkosKernels::ArithTraits<impl_scalar_type>;
-  using local_map_type     = Tpetra::Details::LocalMap<local_ordinal_type, global_ordinal_type, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>;
-  // rstumin: I hope it is okay to use Tpetra::Details::LocalMap in this function???
-  // rstumin: I suspect that I'm not supposed to have Serial, Kokkos::HostSpace above and am supposed to get the device from somewhere
-  // perhaps something like one of these two
-  // using device            = typename local_matrix_type::device_type;
-  // using device            = typename matrix_type::local_graph_type::device_type;
-  // in conjunction with
-  // using local_map_type     = Tpetra::Details::LocalMap<local_ordinal_type, global_ordinal_type , device_type>;
+  using device_type        = typename local_matrix_type::device_type;
+  using local_map_type     = Tpetra::Details::LocalMap<local_ordinal_type, global_ordinal_type, device_type>;
 
  public:
   using shared_matrix    = Kokkos::View<impl_scalar_type**, typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
