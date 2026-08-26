@@ -32,6 +32,8 @@
 #include "KokkosBlas3_trsm.hpp"
 #include "KokkosLapack_geqrf.hpp"
 #include "KokkosLapack_gegqr.hpp"
+#include "KokkosLapack_potrf.hpp"
+#include "KokkosLapack_potrs.hpp"
 
 #include <vector>
 
@@ -108,66 +110,71 @@ namespace Belos {
       {
         Teuchos::LAPACK<int,Scalar> lapack;
 
-        int M = DMT::GetNumRows(*A_);
-        int N = DMT::GetNumCols(*A_);
-        int Min_MN = TEUCHOS_MIN(M,N);
-        int LDA = DMT::GetStride(*A_);
-
-        IPIV_.resize( Min_MN );
-
-        DMT::SyncDeviceToHost(*A_);
-        Scalar * Aptr = DMT::GetRawHostPtr(*A_);
-
         if (equilibrate_)
         {
-          // Compute equilibration scalings
-          R_.resize(M);
-          if (!spd_)
-            C_.resize(N);
+          int M = DMT::GetNumRows(*A_);
+          int N = DMT::GetNumCols(*A_);
 
-          MagnitudeType ROWCND, COLCND, AMAX;
-          if (spd_)
-            lapack.POEQU (M, Aptr, LDA, &R_[0], &ROWCND, &AMAX, &INFO);
-          else
-            lapack.GEEQU (M, N, Aptr, LDA, &R_[0], &C_[0], &ROWCND, &COLCND, &AMAX, &INFO);
+          {
+            int Min_MN = TEUCHOS_MIN(M,N);
+            int LDA = DMT::GetStride(*A_);
 
-          if (INFO)
-            return INFO;
+            IPIV_.resize( Min_MN );
+
+            DMT::SyncDeviceToHost(*A_);
+            const Scalar * Aptr = DMT::GetConstRawHostPtr(*A_);
+
+            // Compute equilibration scalings
+            R_ = MDMT::Create(M, 1, false);
+            if (!spd_)
+              C_ = MDMT::Create(N, 1, false);
+
+            MagnitudeType ROWCND, COLCND, AMAX;
+            if (spd_)
+              lapack.POEQU (M, Aptr, LDA, R_->view_host().data(), &ROWCND, &AMAX, &INFO);
+            else
+              lapack.GEEQU (M, N, Aptr, LDA, R_->view_host().data(), C_->view_host().data(), &ROWCND, &COLCND, &AMAX, &INFO);
+
+            if (INFO)
+              return INFO;
+
+            MDMT::SyncHostToDevice(*R_);
+            if (!spd_)
+              MDMT::SyncHostToDevice(*C_);
+          }
 
           // Apply equilibration to matrix
+          TEUCHOS_ASSERT(!A_->need_sync_device());
+          auto A_d = A_->view_device();
+          auto R_d = R_->view_device();
           if (spd_) {
-            Scalar * ptr = 0;
-            for (int j=0; j<N; j++) {
-              ptr = Aptr + j*LDA;
-              Scalar s1 = R_[j];
-              for (int i=0; i<=j; i++) {
-                *ptr = *ptr*s1*R_[i];
-                ptr++;
-              }
-            }
-          }
-          else {
-            Scalar * ptr = 0;
-            for (int j=0; j<N; j++) {
-              ptr = Aptr + j*LDA;
-              Scalar s1 = C_[j];
-              for (int i=0; i<M; i++) {
-                *ptr = *ptr*s1*R_[i];
-                ptr++;
-              }
-            }
+            Kokkos::parallel_for(Kokkos::MDRangePolicy<typename DM::t_dev::execution_space, Kokkos::Rank<2>>({0, 0}, {A_d.extent(0), A_d.extent(1)}),
+                                 KOKKOS_LAMBDA(int i, int j) {
+              A_d(i, j) *= R_d(i, 0)*R_d(j, 0);
+            });
+          } else {
+            auto C_d = C_->view_device();
+            Kokkos::parallel_for(Kokkos::MDRangePolicy<typename DM::t_dev::execution_space, Kokkos::Rank<2>>({0, 0}, {A_d.extent(0), A_d.extent(1)}),
+                                 KOKKOS_LAMBDA(int i, int j) {
+              A_d(i, j) *= R_d(i, 0)*C_d(j, 0);
+            });
           }
         }
 
         // Compute LU factor
         if (spd_) {
-          lapack.POTRF('U', M, Aptr, LDA, &INFO);
+          DMT::potrf("U", *A_);
         }
         else {
+          int M = DMT::GetNumRows(*A_);
+          int N = DMT::GetNumCols(*A_);
+          int LDA = DMT::GetStride(*A_);
+          DMT::SyncDeviceToHost(*A_);
+          Scalar * Aptr = DMT::GetRawHostPtr(*A_);
           lapack.GETRF(M, N, Aptr, LDA, &IPIV_[0], &INFO);
+          DMT::SyncHostToDevice(*A_);
         }
 
-        DMT::SyncHostToDevice(*A_);
       }
 
       return INFO;
@@ -181,65 +188,63 @@ namespace Belos {
     {
       bool transpose = (TRANS_ != Teuchos::NO_TRANS) ? true : false;
 
-      DMT::SyncDeviceToHost(*X_);
-
       // LAPACK overwrites RHS vector with solution vector, so copy if necessary
       if (B_ != X_)
         DMT::Assign(*X_, *B_); // Copy B to X if needed
 
-      // Since B_ = X_, perform operations on X_.
-
-      int M = DMT::GetNumRows(*X_);
-      int NRHS = DMT::GetNumCols(*X_);
-      int LDX = DMT::GetStride(*X_);
-      Scalar * X = DMT::GetRawHostPtr(*X_);
-
       if (equilibrate_)
       {
-        // Apply equilibration scalings to RHS vector
-        MagnitudeType * R_tmp = (transpose && !spd_) ? &C_[0] : &R_[0];
+        // Since B_ = X_, perform operations on X_.
 
-        Scalar * ptr = 0;
-        for (int j=0; j<NRHS; j++) {
-          ptr = X + j*LDX;
-          for (int i=0; i<M; i++) {
-            *ptr = *ptr*R_tmp[i];
-            ptr++;
-          }
-        }
+        // Apply equilibration scalings to RHS vector
+        typename MDM::t_dev R_tmp;
+        if (transpose && !spd_)
+          R_tmp = C_->view_device();
+        else
+          R_tmp = R_->view_device();
+        TEUCHOS_ASSERT(!X_->need_sync_device());
+        auto X_d = X_->view_device();
+        Kokkos::parallel_for(Kokkos::MDRangePolicy<typename DM::t_dev::execution_space, Kokkos::Rank<2>>({0, 0}, {X_d.extent(0), X_d.extent(1)}),
+                             KOKKOS_LAMBDA(int i, int j) {
+          X_d(i, j) *= R_tmp(i, 0);
+                             });
       }
 
       int INFO = 0;
-
-      int LDA = DMT::GetStride(*A_);
-      Scalar * Aptr = DMT::GetRawHostPtr(*A_);
-      Teuchos::LAPACK<int,Scalar> lapack;
-
       if (spd_) {
-        lapack.POTRS('U', M, NRHS, Aptr, LDA, X, LDX, &INFO);
+        DMT::potrs("U", *A_, *X_);
       }
       else {
+        DMT::SyncDeviceToHost(*X_);
+
+        Scalar * X = DMT::GetRawHostPtr(*X_);
+        int LDX = DMT::GetStride(*X_);
+        int M = DMT::GetNumRows(*X_);
+        int NRHS = DMT::GetNumCols(*X_);
+
+        int LDA = DMT::GetStride(*A_);
+        Scalar * Aptr = DMT::GetRawHostPtr(*A_);
+        Teuchos::LAPACK<int,Scalar> lapack;
         lapack.GETRS(Teuchos::ETranspChar[TRANS_], M, NRHS,
                      Aptr, LDA, &IPIV_[0], X, LDX, &INFO);
+        DMT::SyncHostToDevice(*X_);
       }
 
       if (equilibrate_)
       {
         // Apply equilibration scalings to X vector
-        MagnitudeType * C_tmp = (spd_ || transpose) ? &R_[0] : &C_[0];
-
-        Scalar * ptr = 0;
-        for (int j=0; j<NRHS; j++) {
-          ptr = X + j*LDX;
-            for (int i=0; i<M; i++) {
-            *ptr = *ptr*C_tmp[i];
-            ptr++;
-          }
-        }
+        typename MDM::t_dev C_tmp;
+        if (spd_ || transpose)
+          C_tmp = R_->view_device();
+        else
+          C_tmp = C_->view_device();
+        TEUCHOS_ASSERT(!X_->need_sync_device());
+        auto X_d = X_->view_device();
+        Kokkos::parallel_for(Kokkos::MDRangePolicy<typename DM::t_dev::execution_space, Kokkos::Rank<2>>({0, 0}, {X_d.extent(0), X_d.extent(1)}),
+                             KOKKOS_LAMBDA(int i, int j) {
+          X_d(i, j) *= C_tmp(i, 0);
+                             });
       }
-
-      // Synchronize solution vector to the device
-      DMT::SyncHostToDevice(*X_);
 
       return INFO;
     }
@@ -247,10 +252,13 @@ namespace Belos {
 
   private:
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagnitudeType;
+    using ST = KokkosKernels::ArithTraits<Scalar>;
+    using MagnitudeType = typename KokkosKernels::ArithTraits<IST>::mag_type;
+    using MDM = Kokkos::DualView<MagnitudeType **, Kokkos::LayoutLeft>;
+    using MDMT = DenseMatTraits<MagnitudeType, MDM>;
 
     std::vector<int> IPIV_;
-    std::vector<MagnitudeType> R_, C_;
+    Teuchos::RCP<MDM> R_, C_;
 
     using DenseSolver<Scalar, DM>::newMatrix_;
     using DenseSolver<Scalar, DM>::equilibrate_;
@@ -271,7 +279,9 @@ namespace Belos {
   public:
     typedef typename KokkosKernels::ArithTraits<Scalar>::val_type IST;
     using DM = Kokkos::DualView<IST**,Properties...>;
-    using MagnitudeType = KokkosKernels::ArithTraits<IST>::mag_type;
+    using MagnitudeType = typename KokkosKernels::ArithTraits<IST>::mag_type;
+    using MDM = Kokkos::DualView<MagnitudeType**, Properties...>;
+    using MDMT = DenseMatTraits<MagnitudeType, MDM>;
 
     //@{ \name Creation methods
 
@@ -610,20 +620,38 @@ namespace Belos {
   static void geqrf(DM &A, DM &tau) {
     TEUCHOS_ASSERT(!A.need_sync_device());
     TEUCHOS_ASSERT(GetNumCols(tau) == 1);
-    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> info(Kokkos::ViewAllocateWithoutInitializing("geqrf_info"), 1);
+    Kokkos::View<int*, Kokkos::LayoutLeft, typename DM::t_dev::memory_space> info(Kokkos::ViewAllocateWithoutInitializing("geqrf_info"), 1);
     auto tau_view = Kokkos::subview(tau.view_device(), Kokkos::ALL(), 0);
     KokkosLapack::geqrf(A.view_device(),
                         tau_view,
                         info);
-    TEUCHOS_ASSERT(info(0) == 0);
+    auto info_h = Kokkos::create_mirror_view_and_copy(info);
+    TEUCHOS_ASSERT(info_h(0) == 0);
+    A.modify_device();
+    tau.modify_device();
   }
 
   static void ungqr(const int k, DM& A, const DM& tau) {
     TEUCHOS_ASSERT(!A.need_sync_device());
     TEUCHOS_ASSERT(GetNumCols(tau) == 1);
-    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> info(Kokkos::ViewAllocateWithoutInitializing("geqrf_info"), 1);
+    Kokkos::View<int*, Kokkos::LayoutLeft, typename DM::t_dev::memory_space> info(Kokkos::ViewAllocateWithoutInitializing("geqrf_info"), 1);
     KokkosLapack::gegqr(k, A.view_device(), Kokkos::subview(tau.view_device(), Kokkos::ALL(), 0), info);
-    TEUCHOS_ASSERT(info(0) == 0);
+    auto info_h = Kokkos::create_mirror_view_and_copy(info);
+    TEUCHOS_ASSERT(info_h(0) == 0);
+    A.modify_device();
+  }
+
+  static void potrf(const char uplo[], DM& A) {
+    TEUCHOS_ASSERT(!A.need_sync_device());
+    KokkosLapack::potrf(uplo, A.view_device());
+    A.modify_device();
+  }
+
+  static void potrs(const char uplo[], const DM& A, DM &X) {
+    TEUCHOS_ASSERT(!A.need_sync_device());
+    TEUCHOS_ASSERT(!X.need_sync_device());
+    KokkosLapack::potrs(uplo, A.view_device(), X.view_device());
+    X.modify_device();
   }
 };
 
