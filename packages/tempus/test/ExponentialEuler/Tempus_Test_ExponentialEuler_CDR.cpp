@@ -55,7 +55,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 5;
+  const int nTimeStepSizes = 4;
 
   // Read params from .xml file
   const std::string pListFile = "Tempus_ExponentialEuler_CDR.xml";
@@ -201,8 +201,20 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   writeOrderError("Tempus_ExponentialEuler_CDR_" + caseName + "-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, out);
 
-  // TODO: refine these tests once methods have settled down
-  TEST_COMPARE(xErrorNorm[nTimeStepSizes - 2], <, 1e-6);
+  if (caseName == "PFD") {
+    // "PFD" PhiEvaluator with the current "CN" algorithm is limited to second order
+    TEST_COMPARE(xSlope, >, 1.9);
+    TEST_COMPARE(xErrorNorm[nTimeStepSizes - 2], <, 1e-5);
+  }
+  else {
+    // check that all solutions agree up to some tolerance
+    // (ExponentialEuler is exact for a linear autonomous problem)
+    const int n_start = (caseName == "Taylor") ? 1 : 0;
+    // Taylor is slightly off for the largest timestep due to roundoff
+    for (int n = n_start; n < nTimeStepSizes - 1; n++) {
+      TEST_COMPARE(xErrorNorm[n], <, 1e-9);
+    }
+  }
 
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
