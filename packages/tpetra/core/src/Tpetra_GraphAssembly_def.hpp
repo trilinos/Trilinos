@@ -91,9 +91,9 @@ struct FECountEntriesFunctor {
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(t, ownedElementToNode.extent(1)),
               [&](int j, size_type& lThreadCount) {
-                GlobalOrdinal nei    = ownedElementToNode(localElement, j);
+                GlobalOrdinal nei = ownedElementToNode(localElement, j);
                 // Work with the LOCAL column ID; the hash table stores LIDs.
-                LocalOrdinal neiLid  = columnMap.getLocalElement(nei);
+                LocalOrdinal neiLid = columnMap.getLocalElement(nei);
                 // Try to insert neiLid into the scratch hash table, if it's not
                 // already there.
                 size_t hash          = neiLid;
@@ -204,7 +204,7 @@ struct FEFillEntriesFunctor {
           Kokkos::parallel_for(
               Kokkos::ThreadVectorRange(t, ownedElementToNode.extent(1)),
               [&](int j) {
-                GlobalOrdinal nei    = ownedElementToNode(localElement, j);
+                GlobalOrdinal nei = ownedElementToNode(localElement, j);
                 // Work with the LOCAL column ID; the hash table stores LIDs,
                 // which are exactly what gets written into the entries array.
                 LocalOrdinal neiLid  = columnMap.getLocalElement(nei);
@@ -220,8 +220,8 @@ struct FEFillEntriesFunctor {
                       break;
                     } else if (cellValue == LO_INVALID) {
                       if (LO_INVALID == Kokkos::atomic_compare_exchange(&hashTable(pos), LO_INVALID, neiLid)) {
-                        foundOrInserted              = true;
-                        LocalOrdinal insertPos       = Kokkos::atomic_fetch_add(&insertCounter(), 1);
+                        foundOrInserted                        = true;
+                        LocalOrdinal insertPos                 = Kokkos::atomic_fetch_add(&insertCounter(), 1);
                         entries(rowptrs(localRow) + insertPos) = neiLid;
                         break;
                       }
@@ -240,7 +240,7 @@ struct FEFillEntriesFunctor {
                     globalFailFlag() = 1;
                   }
                   if (!insertResult.existing()) {
-                    LocalOrdinal insertPos       = Kokkos::atomic_fetch_add(&insertCounter(), 1);
+                    LocalOrdinal insertPos                 = Kokkos::atomic_fetch_add(&insertCounter(), 1);
                     entries(rowptrs(localRow) + insertPos) = neiLid;
                   }
                 }
@@ -276,16 +276,16 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   using Teuchos::rcp;
 
   // Local types used only by the kernels below.
-  using local_graph_type    = typename crs_graph_type::local_graph_device_type;
-  using rowptrs_t           = typename local_graph_type::row_map_type::non_const_type;
-  using entries_t           = typename local_graph_type::entries_type;
-  using size_type           = typename rowptrs_t::value_type;
-  using local_map_type      = typename map_type::local_map_type;
+  using local_graph_type = typename crs_graph_type::local_graph_device_type;
+  using rowptrs_t        = typename local_graph_type::row_map_type::non_const_type;
+  using entries_t        = typename local_graph_type::entries_type;
+  using size_type        = typename rowptrs_t::value_type;
+  using local_map_type   = typename map_type::local_map_type;
 
-  using range_policy    = Kokkos::RangePolicy<execution_space>;
-  using team_policy     = Kokkos::TeamPolicy<execution_space>;
-  using team_member     = typename team_policy::member_type;
-  using scratch_space   = typename execution_space::scratch_memory_space;
+  using range_policy  = Kokkos::RangePolicy<execution_space>;
+  using team_policy   = Kokkos::TeamPolicy<execution_space>;
+  using team_member   = typename team_policy::member_type;
+  using scratch_space = typename execution_space::scratch_memory_space;
   using scratch_hash_table =
       Kokkos::View<local_ordinal_type*, scratch_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using scratch_counter =
@@ -315,16 +315,16 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
       KOKKOS_LAMBDA(size_t i) {
         const local_ordinal_type nodesPerElement = owned_element_to_node_ids.extent(1);
         local_ordinal_type ownedElementIndex     = i / nodesPerElement;
-        local_ordinal_type nodeOfElem             = i % nodesPerElement;
-        global_ordinal_type globalNode            = owned_element_to_node_ids(ownedElementIndex, nodeOfElem);
-        local_ordinal_type localNode              = localOwnedPlusSharedMap.getLocalElement(globalNode);
+        local_ordinal_type nodeOfElem            = i % nodesPerElement;
+        global_ordinal_type globalNode           = owned_element_to_node_ids(ownedElementIndex, nodeOfElem);
+        local_ordinal_type localNode             = localOwnedPlusSharedMap.getLocalElement(globalNode);
         if (localNode != LO_INVALID)
           Kokkos::atomic_inc(&nodeToElementRowptrs(localNode));
       });
   typename rowptrs_t::value_type nodeToElementNNZ;
   Kokkos::parallel_scan(
       range_policy(0, numLocalNodes + 1),
-      KOKKOS_LAMBDA(local_ordinal_type i, size_type& lsum, bool finalPass) {
+      KOKKOS_LAMBDA(local_ordinal_type i, size_type & lsum, bool finalPass) {
         size_type count = nodeToElementRowptrs(i);
         if (finalPass)
           nodeToElementRowptrs(i) = lsum;
@@ -340,9 +340,9 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
         KOKKOS_LAMBDA(size_t i) {
           const local_ordinal_type nodesPerElement = owned_element_to_node_ids.extent(1);
           local_ordinal_type ownedElementIndex     = i / nodesPerElement;
-          local_ordinal_type nodeOfElem             = i % nodesPerElement;
-          global_ordinal_type globalNode            = owned_element_to_node_ids(ownedElementIndex, nodeOfElem);
-          local_ordinal_type localNode              = localOwnedPlusSharedMap.getLocalElement(globalNode);
+          local_ordinal_type nodeOfElem            = i % nodesPerElement;
+          global_ordinal_type globalNode           = owned_element_to_node_ids(ownedElementIndex, nodeOfElem);
+          local_ordinal_type localNode             = localOwnedPlusSharedMap.getLocalElement(globalNode);
           if (localNode != LO_INVALID)
             nodeToElementEntries(Kokkos::atomic_fetch_add(&insertPos(localNode), size_type(1))) = ownedElementIndex;
         });
@@ -369,8 +369,8 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   {
     using count_functor_type =
         Details::FECountEntriesFunctor<element_to_node_type, rowptrs_t, entries_t,
-                                        local_map_type, scratch_hash_table, global_edge_set,
-                                        flag_view, team_member, local_ordinal_type, global_ordinal_type>;
+                                       local_map_type, scratch_hash_table, global_edge_set,
+                                       flag_view, team_member, local_ordinal_type, global_ordinal_type>;
     while (true) {
       global_edge_set fallbackSet(fallbackSetSize);
       count_functor_type functor(
@@ -400,7 +400,7 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   typename rowptrs_t::value_type nnz;
   Kokkos::parallel_scan(
       range_policy(0, numLocalNodes + 1),
-      KOKKOS_LAMBDA(local_ordinal_type i, size_type& lsum, bool finalPass) {
+      KOKKOS_LAMBDA(local_ordinal_type i, size_type & lsum, bool finalPass) {
         size_type count = localRowptrs(i);
         if (finalPass)
           localRowptrs(i) = lsum;
@@ -413,9 +413,9 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   {
     using fill_functor_type =
         Details::FEFillEntriesFunctor<element_to_node_type, rowptrs_t, entries_t,
-                                       local_map_type, scratch_hash_table, scratch_counter,
-                                       global_edge_set, flag_view, team_member,
-                                       local_ordinal_type, global_ordinal_type>;
+                                      local_map_type, scratch_hash_table, scratch_counter,
+                                      global_edge_set, flag_view, team_member,
+                                      local_ordinal_type, global_ordinal_type>;
     while (true) {
       global_edge_set fallbackSet(fallbackSetSize);
       fill_functor_type functor(
