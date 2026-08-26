@@ -21,9 +21,6 @@
 #include "Kokkos_Sort.hpp"
 #include "KokkosBlas1_set.hpp"
 #include "KokkosBatched_QR_Decl.hpp"
-#ifdef out
-#include <KokkosBatched_Cholesky.hpp>
-#endif
 #include "KokkosBatched_ApplyQ_Decl.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Util.hpp"
@@ -572,8 +569,8 @@ class LocalFSAIFunctor {
     auto scale_factor = impl_ATS::one() / impl_ATS::sqrt(diagValue);
     for (local_ordinal_type i = 0; i < rowAinv.length; ++i) {
       auto thevalue = sub_ek(i) * scale_factor;
-      ;
-      if (thevalue == impl_ATS::zero()) thevalue = Teuchos::as<scalar_type>(1.e-15);  // make sure value retained in sparsity pattern
+
+      if (thevalue == impl_ATS::zero()) thevalue = Teuchos::as<decltype(thevalue)>(1.e-15);  // make sure value retained in sparsity pattern
       rowAinv.value(i) = thevalue;
     }
   }
