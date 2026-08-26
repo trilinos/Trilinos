@@ -58,7 +58,7 @@ using Tpetra::TestingUtilities::getDefaultComm;
 template <class GO>
 struct GlobalMesh {
   size_t numGlobalNodes = 0;
-  int nodesPerElement = 0;
+  int nodesPerElement   = 0;
   // element_to_node[e] is the list of global node IDs of global element e.
   std::vector<std::vector<GO>> element_to_node;
 
@@ -137,8 +137,7 @@ GlobalMesh<GO> makeTetMesh(int nx, int ny, int nz) {
         // Kuhn decomposition of a cube into 6 tets sharing the main diagonal
         // 0 - 7.  Each tet is {0, 7, a, b} where a->b walks the cube edges.
         static const int tets[6][4] = {
-            {0, 1, 3, 7}, {0, 3, 2, 7}, {0, 2, 6, 7},
-            {0, 6, 4, 7}, {0, 4, 5, 7}, {0, 5, 1, 7}};
+            {0, 1, 3, 7}, {0, 3, 2, 7}, {0, 2, 6, 7}, {0, 6, 4, 7}, {0, 4, 5, 7}, {0, 5, 1, 7}};
         for (int t = 0; t < 6; ++t) {
           mesh.element_to_node.push_back(
               {c[tets[t][0]], c[tets[t][1]], c[tets[t][2]], c[tets[t][3]]});
@@ -177,9 +176,9 @@ void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
   out << "=== GraphAssembly test: " << label << " ===" << endl;
   Teuchos::OSTab tab1(out);
 
-  auto comm          = getDefaultComm();
-  const int myRank   = comm->getRank();
-  const int numProcs = comm->getSize();
+  auto comm              = getDefaultComm();
+  const int myRank       = comm->getRank();
+  const int numProcs     = comm->getSize();
   constexpr GO indexBase = 0;
 
   const size_t numGlobalNodes    = mesh.numGlobalNodes;
@@ -194,12 +193,12 @@ void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
   // Rank r owns the global elements in [elemBegin, elemEnd).
   const size_t base      = numGlobalElements / numProcs;
   const size_t remainder = numGlobalElements % numProcs;
-  auto elemsOnRank    = [&](size_t r) -> size_t {
+  auto elemsOnRank       = [&](size_t r) -> size_t {
     return base + (r < remainder ? 1 : 0);
   };
   size_t elemBegin = 0;
   for (int r = 0; r < myRank; ++r) elemBegin += elemsOnRank(r);
-  const size_t elemEnd = elemBegin + elemsOnRank(myRank);
+  const size_t elemEnd          = elemBegin + elemsOnRank(myRank);
   const size_t numOwnedElements = elemEnd - elemBegin;
 
   // ---- Build the element-to-node connectivity of the owned elements. ----
@@ -210,8 +209,8 @@ void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
   auto ownedElementToNodeHost =
       Kokkos::create_mirror_view(ownedElementToNode);
   for (size_t e = 0; e < numOwnedElements; ++e) {
-    const size_t globalElem  = elemBegin + e;
-    const auto& elemNodes = mesh.element_to_node[globalElem];
+    const size_t globalElem = elemBegin + e;
+    const auto& elemNodes   = mesh.element_to_node[globalElem];
     for (int n = 0; n < mesh.nodesPerElement; ++n) {
       ownedElementToNodeHost(e, n) = elemNodes[n];
     }
@@ -226,8 +225,8 @@ void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
     ownedPlusSharedSet.insert(ownedMap->getGlobalElement(i));
   }
   for (size_t e = 0; e < numOwnedElements; ++e) {
-    const size_t globalElem  = elemBegin + e;
-    const auto& elemNodes = mesh.element_to_node[globalElem];
+    const size_t globalElem = elemBegin + e;
+    const auto& elemNodes   = mesh.element_to_node[globalElem];
     for (const GO node : elemNodes) ownedPlusSharedSet.insert(node);
   }
   std::vector<GO> ownedPlusSharedGIDs(ownedPlusSharedSet.begin(),
@@ -260,7 +259,7 @@ void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
       typename Tpetra::CrsGraph<LO, GO, NT>::nonconst_global_inds_host_view_type;
 
   for (size_t i = 0; i < numOwnedNodes; ++i) {
-    const GO gblRow = ownedMap->getGlobalElement(i);
+    const GO gblRow                  = ownedMap->getGlobalElement(i);
     const std::set<GO>& expectedCols = expected[gblRow];
 
     const size_t expectedNumEntries = expectedCols.size();
@@ -326,11 +325,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, GraphAssembly_Tet, LO, GO, NT) {
 // INSTANTIATIONS
 //
 
-#define UNIT_TEST_GROUP(LO, GO, NT)                                        \
+#define UNIT_TEST_GROUP(LO, GO, NT)                                          \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Quad, LO, GO, \
-                                       NT)                                 \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tri, LO, GO, \
-                                       NT)                                 \
+                                       NT)                                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tri, LO, GO,  \
+                                       NT)                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(CrsGraph, GraphAssembly_Tet, LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
