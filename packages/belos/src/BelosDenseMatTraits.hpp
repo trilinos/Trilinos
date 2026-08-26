@@ -228,6 +228,12 @@ View(const pointer_type &ptr, const IntType&... indices)
 
     static void nrm2(std::vector<MagnitudeType>&R, const DM &X)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    static void geqrf(DM &A, DM &tau)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    static void ungqr(const int k, DM& A, const DM& tau)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
   };
 
 } // namespace Belos

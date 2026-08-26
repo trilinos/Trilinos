@@ -442,7 +442,6 @@ namespace Belos {
     } else {
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-      Teuchos::BLAS<int,ScalarType> blas;
       currentUpdate = MVT::Clone( *V_, 1 );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!

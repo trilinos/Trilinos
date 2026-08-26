@@ -30,6 +30,8 @@
 #include "KokkosBlas1_nrm2.hpp"
 #include "KokkosBlas3_gemm.hpp"
 #include "KokkosBlas3_trsm.hpp"
+#include "KokkosLapack_geqrf.hpp"
+#include "KokkosLapack_gegqr.hpp"
 
 #include <vector>
 
@@ -605,6 +607,24 @@ namespace Belos {
     KokkosBlas::nrm2(R_view, X.view_device());
   }
 
+  static void geqrf(DM &A, DM &tau) {
+    TEUCHOS_ASSERT(!A.need_sync_device());
+    TEUCHOS_ASSERT(GetNumCols(tau) == 1);
+    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> info(Kokkos::ViewAllocateWithoutInitializing("geqrf_info"), 1);
+    auto tau_view = Kokkos::subview(tau.view_device(), Kokkos::ALL(), 0);
+    KokkosLapack::geqrf(A.view_device(),
+                        tau_view,
+                        info);
+    TEUCHOS_ASSERT(info(0) == 0);
+  }
+
+  static void ungqr(const int k, DM& A, const DM& tau) {
+    TEUCHOS_ASSERT(!A.need_sync_device());
+    TEUCHOS_ASSERT(GetNumCols(tau) == 1);
+    Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> info(Kokkos::ViewAllocateWithoutInitializing("geqrf_info"), 1);
+    KokkosLapack::gegqr(k, A.view_device(), Kokkos::subview(tau.view_device(), Kokkos::ALL(), 0), info);
+    TEUCHOS_ASSERT(info(0) == 0);
+  }
 };
 
 
