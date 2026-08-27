@@ -659,10 +659,10 @@ fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix, co
 
   Ordinal nnz_block_count = 0;
 #if KOKKOSKERNELS_VERSION >= 50299
-  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
+  KokkosKernels::kk_exclusive_parallel_prefix_sum<
       execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
 #else
-  KokkosKernels::kk_exclusive_parallel_prefix_sum<
+  KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
 #endif
   dev_col_view_t block_col_ids("block_col_ids", nnz_block_count);

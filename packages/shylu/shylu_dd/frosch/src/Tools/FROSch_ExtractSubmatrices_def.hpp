@@ -354,23 +354,23 @@ namespace FROSch {
                 nnzJJ);
 
             // make it into offsets
-#if KOKKOSKERNELS_VERSION >= 40199
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+#if KOKKOSKERNELS_VERSION >= 50299
+            KokkosKernels::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsI, RowptrII);
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+            KokkosKernels::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsI, RowptrIJ);
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+            KokkosKernels::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsJ, RowptrJI);
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
+            KokkosKernels::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsJ, RowptrJJ);
 #else
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsI, RowptrII);
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsI, RowptrIJ);
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsJ, RowptrJI);
-            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
                 (1+numRowsJ, RowptrJJ);
 #endif
 
