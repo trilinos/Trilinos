@@ -62,6 +62,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
+  using MagnitudeDenseMat = typename DMT::MagnitudeDenseMat;
+  using MDMT = DenseMatTraits<MagnitudeType,MagnitudeDenseMat>;
 
   //! @name Constructors/Destructor
   //@{
@@ -271,8 +273,10 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   int numBlocks_;
 
   // Storage for QR factorization of the least squares system.
-  std::vector<ScalarType> beta, sn;
-  std::vector<MagnitudeType> cs;
+  std::vector<ScalarType> beta;
+  Teuchos::RCP<DM> sn;
+  // std::vector<MagnitudeType> cs;
+  Teuchos::RCP<MagnitudeDenseMat> cs;
 
   //
   // Current solver state
@@ -406,8 +410,10 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         int newsd = blockSize_*(numBlocks_+1);
 
         if (blockSize_==1) {
-          cs.resize( newsd );
-          sn.resize( newsd );
+          cs = MDMT::Create(newsd, 1);
+          sn = DMT::Create(newsd, 1);
+          // cs.resize( newsd );
+          // sn.resize( newsd );
         }
         else {
           beta.resize( newsd );
@@ -758,30 +764,16 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
     // Apply previous transformations and compute new transformation to reduce upper-Hessenberg
     // system to upper-triangular form.
     //
-    DMT::SyncDeviceToHost(*R_);
-    DMT::SyncDeviceToHost(*z_);
+    
 
     if (blockSize_ == 1) {
-      //
-      // QR factorization of Least-Squares system with Givens rotations
-      //
-      for (i=0; i<curDim; i++) {
-        //
-        // Apply previous Givens rotations to new column of Hessenberg matrix
-        //
-        blas.ROT( 1, &DMT::Value(*R_,i,curDim), 1, &DMT::Value(*R_,i+1, curDim), 1, &cs[i], &sn[i] );
-      }
-      //
-      // Calculate new Givens rotation
-      //
-      blas.ROTG( &DMT::Value(*R_,curDim,curDim), &DMT::Value(*R_,curDim+1,curDim), &cs[curDim], &sn[curDim] );
-      DMT::Value(*R_,curDim+1,curDim) = zero;
-      //
-      // Update RHS w/ new transformation
-      //
-      blas.ROT( 1, &DMT::Value(*z_,curDim,0), 1, &DMT::Value(*z_,curDim+1,0), 1, &cs[curDim], &sn[curDim] );
+
+      DMT::updateLS(*R_, *z_, *cs, *sn, curDim, blockSize_);
+
     }
     else {
+      DMT::SyncDeviceToHost(*R_);
+      DMT::SyncDeviceToHost(*z_);
       //
       // QR factorization of Least-Squares system with Householder reflectors
       //
@@ -830,10 +822,9 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
           DMT::Value(*z_,curDim+j,i) -= sigma;
         }
       }
+      DMT::SyncHostToDevice(*R_);
+      DMT::SyncHostToDevice(*z_);
     } // end if (blockSize_ == 1)
-
-    DMT::SyncHostToDevice(*z_); 
-    DMT::SyncHostToDevice(*R_); 
 
     // If the least-squares problem is updated wrt "dim" then update the curDim_.
     if (dim >= curDim_ && dim < getMaxSubspaceDim()) {

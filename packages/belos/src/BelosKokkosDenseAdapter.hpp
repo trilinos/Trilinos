@@ -34,6 +34,8 @@
 #include "KokkosLapack_gegqr.hpp"
 #include "KokkosLapack_potrf.hpp"
 #include "KokkosLapack_potrs.hpp"
+#include "KokkosBatched_Rot.hpp"
+#include "KokkosBatched_Rotg.hpp"
 
 #include <vector>
 
@@ -271,9 +273,12 @@ namespace Belos {
   class DenseMatTraits<Scalar, Kokkos::DualView<typename KokkosKernels::ArithTraits<Scalar>::val_type **,Properties...>>{
 
   public:
-    typedef typename KokkosKernels::ArithTraits<Scalar>::val_type IST;
+    using ST = KokkosKernels::ArithTraits<Scalar>;
+    using IST = typename ST::val_type;
     using DM = Kokkos::DualView<IST**,Properties...>;
     using MagnitudeType = KokkosKernels::ArithTraits<IST>::mag_type;
+    using MagnitudeDenseMat = Kokkos::DualView<MagnitudeType**, Properties...>;
+    using MDMT = DenseMatTraits<MagnitudeType, MagnitudeDenseMat>;
 
     //@{ \name Creation methods
 
@@ -638,6 +643,39 @@ namespace Belos {
     TEUCHOS_ASSERT(!A.need_sync_device());
     TEUCHOS_ASSERT(!X.need_sync_device());
     KokkosLapack::potrs(uplo, A.view_device(), X.view_device());
+  }
+
+  static void updateLS(DM &H, DM &z, MagnitudeDenseMat&cs, DM &sn, int dim, int blockSize) {
+    Teuchos::BLAS<int, Scalar> blas;
+    const Scalar zero = ST::zero();
+
+    TEUCHOS_ASSERT(!H.need_sync_device())
+    TEUCHOS_ASSERT(!z.need_sync_device())
+    TEUCHOS_ASSERT(!cs.need_sync_device())
+    TEUCHOS_ASSERT(!sn.need_sync_device())
+
+    auto H_dv = H.view_device();
+    auto z_dv = z.view_device();
+    auto cs_dv = cs.view_device();
+    auto sn_dv = sn.view_device();
+
+    Kokkos::parallel_for("", Kokkos::RangePolicy<>(0, 1), KOKKOS_LAMBDA(const int k) {
+      for (int i = 0; i<dim; ++i) {
+        KokkosBatched::SerialRot<true>::invoke(Kokkos::subview(H_dv, Kokkos::make_pair(i, i+1), dim),
+                                               Kokkos::subview(H_dv, Kokkos::make_pair(i+1, i+2), dim),
+                                               cs_dv(i, 0),
+                                               sn_dv(i, 0));
+      }
+      KokkosBatched::Rotg::invoke(Kokkos::subview(H_dv, dim, dim),
+                                  Kokkos::subview(H_dv, dim+1, dim),
+                                  Kokkos::subview(cs_dv, dim, 0),
+                                  Kokkos::subview(sn_dv, dim, 0));
+      H_dv(dim+1, dim) = zero;
+      KokkosBatched::SerialRot<true>::invoke(Kokkos::subview(z_dv, Kokkos::make_pair(dim, dim+1), 0),
+                                             Kokkos::subview(z_dv, Kokkos::make_pair(dim+1, dim+2), 0),
+                                             cs_dv(dim, 0),
+                                             sn_dv(dim, 0));
+    });
   }
 };
 

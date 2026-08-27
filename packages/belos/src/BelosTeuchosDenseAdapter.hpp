@@ -171,8 +171,11 @@ namespace Belos {
   class DenseMatTraits<ScalarType, Teuchos::SerialDenseMatrix<int,ScalarType>>{
   public:
 
-    using MagnitudeType = typename Teuchos::ScalarTraits<ScalarType>::magnitudeType;
+    using ST = Teuchos::ScalarTraits<ScalarType>;
+    using MagnitudeType = typename ST::magnitudeType;
     using DM = Teuchos::SerialDenseMatrix<int,ScalarType>;
+    using MagnitudeDenseMat = Teuchos::SerialDenseMatrix<int, MagnitudeType>;
+    using MDMT = DenseMatTraits<MagnitudeType, MagnitudeDenseMat>;
     
     //@{ \name Creation methods
 
@@ -431,6 +434,26 @@ namespace Belos {
                   GetRawHostPtr(A), GetStride(A), GetConstRawHostPtr(tau), &work[0],
                   lwork, &info);
     TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, "LAPACK's _UNGQR failed to construct the Q factor.");
+  }
+
+  static void updateLS(DM &H, DM &z, MagnitudeDenseMat&cs, DM &sn, int dim, int blockSize) {
+    Teuchos::BLAS<int, ScalarType> blas;
+    const ScalarType zero = ST::zero();
+
+    for (int i=0; i<dim; i++) {
+      //
+      // Apply previous Givens rotations to new column of Hessenberg matrix
+      //
+      blas.ROT( 1, &Value(H,i,dim), 1, &Value(H,i+1, dim), 1, &MDMT::Value(cs, i, 0), &Value(sn, i, 0) );
+    }
+
+    // Calculate new Givens rotation
+
+    blas.ROTG( &Value(H,dim,dim), &Value(H,dim+1,dim), &MDMT::Value(cs, dim, 0), &Value(sn, dim, 0) );
+    Value(H,dim+1,dim) = zero;
+
+    // Update RHS w/ new transformation
+    blas.ROT( 1, &Value(z,dim,0), 1, &Value(z,dim+1,0), 1, &MDMT::Value(cs, dim, 0), &Value(sn, dim, 0) );
   }
 };
 
