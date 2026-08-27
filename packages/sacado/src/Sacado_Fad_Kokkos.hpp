@@ -40,6 +40,13 @@ struct ViewScalarStride {
     Sacado::Impl::LayoutScalarStride< typename ViewType::array_layout>::is_unit_stride;
 };
 
+template <typename ViewType> struct is_view_fad_contiguous {
+  static const bool value = false;
+};
+template <typename ViewType> struct is_dynrankview_fad_contiguous {
+  static const bool value = false;
+};
+
 } // namespace Sacado
 
 // Inject some things into Kokkos for backwards compatibility
@@ -52,6 +59,12 @@ using ThreadLocalScalarType SACADO_DEPRECATED_WITH_COMMENT(
 template<typename ViewType>
 using ViewScalarStride SACADO_DEPRECATED_WITH_COMMENT(
     "Use Sacado::ViewScalarStride instead of Kokkos::ViewScalarStride") = Sacado::ViewScalarStride<ViewType>;
+template<typename ViewType>
+using is_view_fad_contiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_view_fad_contiguous instead of Kokkos::is_view_fad_contiguous") = Sacado::is_view_fad_contiguous<ViewType>;
+template<typename ViewType>
+using is_dynrankview_fad_contiguous SACADO_DEPRECATED_WITH_COMMENT(
+    "Use Sacado::is_dynrankview_fad_contiguous instead of Kokkos::is_dynrankview_fad_contiguous") = Sacado::is_dynrankview_fad_contiguous<ViewType>;
 
 } // namespace Kokkos
 #endif
