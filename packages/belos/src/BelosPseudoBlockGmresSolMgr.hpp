@@ -98,6 +98,8 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
+    using MDM = typename DMT::MDM;
+    using MDMT = DenseMatTraits<MagnitudeType,MDM>;
 
   public:
 
@@ -1325,8 +1327,8 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
                 defState.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
                 defState.Z.push_back( Teuchos::rcp_const_cast<DM>( oldState.Z[i] ) );
                 defState.H.push_back( Teuchos::rcp_const_cast<DM>( oldState.H[i] ) );
-                defState.sn.push_back( Teuchos::rcp_const_cast<std::vector<ScalarType> >( oldState.sn[i] ) );
-                defState.cs.push_back( Teuchos::rcp_const_cast<std::vector<MagnitudeType> >(oldState.cs[i] ) );
+                defState.sn.push_back( Teuchos::rcp_const_cast<DM>( oldState.sn[i] ) );
+                defState.cs.push_back( Teuchos::rcp_const_cast<MDM>(oldState.cs[i] ) );
                 currRHSIdx[have] = currRHSIdx[i];
                 have++;
               }

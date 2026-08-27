@@ -20,7 +20,6 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "BelosDenseSolver.hpp"
-#include "KokkosKernels_ArithTraits.hpp"
 #include <vector>
 
 namespace Belos {
@@ -54,7 +53,10 @@ namespace Belos {
   {
   public:
 
-    using MagnitudeType = KokkosKernels::ArithTraits<ScalarType>::mag_type;
+    using ST = Teuchos::ScalarTraits<ScalarType>;
+    using MagnitudeType = typename ST::magnitudeType;
+    // using MDM = Teuchos::SerialDenseMatrix<int, MagnitudeType>;
+    // using MDMT = DenseMatTraits<MagnitudeType, MDM>;
 
     //@{ \name Creation methods
 
@@ -234,6 +236,9 @@ View(const pointer_type &ptr, const IntType&... indices)
 
     static void ungqr(const int k, DM& A, const DM& tau)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    // static void updateLSQR(DM &H, DM &z, MDM&cs, DM &sn, DM&beta, int dim, int blockSize)
+    // { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
   };
 
 } // namespace Belos

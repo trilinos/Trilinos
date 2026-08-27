@@ -171,8 +171,11 @@ namespace Belos {
   class DenseMatTraits<ScalarType, Teuchos::SerialDenseMatrix<int,ScalarType>>{
   public:
 
-    using MagnitudeType = typename Teuchos::ScalarTraits<ScalarType>::magnitudeType;
+    using ST = Teuchos::ScalarTraits<ScalarType>;
+    using MagnitudeType = typename ST::magnitudeType;
     using DM = Teuchos::SerialDenseMatrix<int,ScalarType>;
+    using MDM = Teuchos::SerialDenseMatrix<int, MagnitudeType>;
+    using MDMT = DenseMatTraits<MagnitudeType, MDM>;
     
     //@{ \name Creation methods
 
@@ -431,6 +434,78 @@ namespace Belos {
                   GetRawHostPtr(A), GetStride(A), GetConstRawHostPtr(tau), &work[0],
                   lwork, &info);
     TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::runtime_error, "LAPACK's _UNGQR failed to construct the Q factor.");
+  }
+
+  static void updateLSQR(DM &H, DM &z, Teuchos::RCP<MDM> cs, Teuchos::RCP<DM> sn, Teuchos::RCP<DM> beta, int dim, int blockSize) {
+    Teuchos::BLAS<int, ScalarType> blas;
+    const ScalarType zero = ST::zero();
+
+    if (blockSize == 1) {
+      for (int i=0; i<dim; i++) {
+        //
+        // Apply previous Givens rotations to new column of Hessenberg matrix
+        //
+        blas.ROT( 1, &Value(H,i,dim), 1, &Value(H,i+1, dim), 1, &MDMT::Value(*cs, i, 0), &Value(*sn, i, 0) );
+      }
+
+      // Calculate new Givens rotation
+      blas.ROTG( &Value(H,dim,dim), &Value(H,dim+1,dim), &MDMT::Value(*cs, dim, 0), &Value(*sn, dim, 0) );
+      Value(H,dim+1,dim) = zero;
+
+      // Update RHS w/ new transformation
+      blas.ROT( 1, &Value(z,dim,0), 1, &Value(z,dim+1,0), 1, &MDMT::Value(*cs, dim, 0), &Value(*sn, dim, 0) );
+    } else {
+      int maxidx;
+      ScalarType sigma, mu, vscale, maxelem;
+      //
+      // QR factorization of Least-Squares system with Householder reflectors
+      //
+      for (int j=0; j<blockSize; j++) {
+        //
+        // Apply previous Householder reflectors to new block of Hessenberg matrix
+        //
+        for (int i=0; i<dim+j; i++) {
+          sigma = blas.DOT( blockSize, &Value(H,i+1,i), 1, &Value(H,i+1,dim+j), 1);
+          sigma += ValueConst(H,i,dim+j);
+          sigma *= ST::conjugate(ValueConst(*beta, i, 0));
+          blas.AXPY(blockSize, ScalarType(-sigma), &Value(H,i+1,i), 1, &Value(H,i+1,dim+j), 1);
+          Value(H,i,dim+j) -= sigma;
+        }
+        //
+        // Compute new Householder reflector
+        //
+        maxidx = blas.IAMAX( blockSize+1, &Value(H,dim+j,dim+j), 1 );
+        maxelem = ST::magnitude(Value(H,dim+j+maxidx-1,dim+j));
+        for (int i=0; i<blockSize+1; i++)
+          Value(H,dim+j+i,dim+j) /= maxelem;
+        sigma = blas.DOT( blockSize, &Value(H,dim+j+1,dim+j), 1,
+                          &Value(H,dim+j+1,dim+j), 1 );
+        MagnitudeType sign_Rjj = -ST::real(Value(H,dim+j,dim+j)) /
+                 ST::magnitude(ST::real((Value(H,dim+j,dim+j))));
+        if (sigma == zero) {
+          Value(*beta, dim + j, 0) = zero;
+        } else {
+          mu = ST::squareroot(ST::conjugate(Value(H,dim+j,dim+j))*Value(H,dim+j,dim+j)+sigma);
+          vscale = ValueConst(H,dim+j,dim+j) - Teuchos::as<ScalarType>(sign_Rjj)*mu;
+          Value(*beta, dim + j, 0) = -Teuchos::as<ScalarType>(sign_Rjj) * vscale / mu;
+          Value(H,dim+j,dim+j) = Teuchos::as<ScalarType>(sign_Rjj)*maxelem*mu;
+          for (int i=0; i<blockSize; i++)
+            Value(H,dim+j+1+i,dim+j) /= vscale;
+        }
+        //
+        // Apply new Householder reflector to rhs
+        //
+        for (int i=0; i<blockSize; i++) {
+          sigma = blas.DOT( blockSize, &Value(H,dim+j+1,dim+j),
+                            1, &Value(z,dim+j+1,i), 1);
+          sigma += ValueConst(z,dim+j,i);
+          sigma *= ST::conjugate(ValueConst(*beta, dim+j, 0));
+          blas.AXPY(blockSize, ScalarType(-sigma), &Value(H,dim+j+1,dim+j),
+                    1, &Value(z,dim+j+1,i), 1);
+          Value(z,dim+j,i) -= sigma;
+        }
+      }
+    }
   }
 };
 

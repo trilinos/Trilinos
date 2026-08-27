@@ -61,6 +61,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
+  using MDM = typename DMT::MDM;
+  using MDMT = DenseMatTraits<MagnitudeType,MDM>;
 
   //! @name Constructors/Destructor
   //@{
@@ -260,8 +262,8 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   int numBlocks_;
 
   // Storage for QR factorization of the least squares system.
-  std::vector<ScalarType> beta, sn;
-  std::vector<MagnitudeType> cs;
+  Teuchos::RCP<DM> beta, sn;
+  Teuchos::RCP<MDM> cs;
 
   //
   // Current solver state
@@ -391,11 +393,11 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
         int newsd = blockSize_*(numBlocks_+1);
 
         if (blockSize_==1) {
-          cs.resize (newsd);
-          sn.resize (newsd);
+          cs = MDMT::Create(newsd, 1);
+          sn = DMT::Create(newsd, 1);
         }
         else {
-          beta.resize (newsd);
+          beta = DMT::Create(newsd, 1);
         }
 
         // Initialize the state storage
@@ -721,14 +723,6 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
   template<class ScalarType, class MV, class OP, class DM>
   void BlockFGmresIter<ScalarType,MV,OP,DM>::updateLSQR (int dim)
   {
-    typedef Teuchos::ScalarTraits<ScalarType> STS;
-    typedef Teuchos::ScalarTraits<MagnitudeType> STM;
-
-    const ScalarType zero = STS::zero ();
-    const ScalarType two = (STS::one () + STS::one());
-    ScalarType sigma, mu, vscale, maxelem;
-    Teuchos::BLAS<int, ScalarType> blas;
-
     // Get correct dimension based on input 'dim'.  Remember that
     // orthogonalization failures result in an exit before
     // updateLSQR() is called.  Therefore, it is possible that dim ==
@@ -738,80 +732,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP,DM> {
       curDim = dim;
     }
 
-    // Apply previous transformations, and compute new transformation
-    // to reduce upper Hessenberg system to upper triangular form.
-    // The type of transformation we use depends the block size.  We
-    // use Givens rotations for a block size of 1, and Householder
-    // reflectors otherwise.
-    DMT::SyncDeviceToHost( *H_ );
-    DMT::SyncDeviceToHost( *z_ );
-
-    if (blockSize_ == 1) {
-
-      // QR factorization of upper Hessenberg matrix using Givens rotations
-      for (int i = 0; i < curDim; ++i) {
-        // Apply previous Givens rotations to new column of Hessenberg matrix
-        blas.ROT (1, &DMT::Value(*R_,i, curDim), 1, &DMT::Value(*R_,i+1, curDim), 1, &cs[i], &sn[i]);
-      }
-
-      // Calculate new Givens rotation
-      blas.ROTG (&DMT::Value(*R_,curDim, curDim), &DMT::Value(*R_,curDim+1, curDim), &cs[curDim], &sn[curDim]);
-      DMT::Value(*R_,curDim+1, curDim) = zero;
-
-      // Update RHS w/ new transformation
-      blas.ROT (1, &DMT::Value(*z_,curDim,0), 1, &DMT::Value(*z_,curDim+1,0), 1, &cs[curDim], &sn[curDim]);
-    }
-    else {
-      // QR factorization of least-squares system using Householder reflectors.
-      for (int j = 0; j < blockSize_; ++j) {
-        // Apply previous Householder reflectors to new block of Hessenberg matrix
-        for (int i = 0; i < curDim + j; ++i) {
-          sigma = blas.DOT (blockSize_, &DMT::Value(*R_,i+1,i), 1, &DMT::Value(*R_,i+1,curDim+j), 1);
-          sigma += DMT::ValueConst(*R_,i,curDim+j);
-          sigma *= beta[i];
-          blas.AXPY (blockSize_, ScalarType(-sigma), &DMT::Value(*R_,i+1,i), 1, &DMT::Value(*R_,i+1,curDim+j), 1);
-          DMT::Value(*R_,i,curDim+j) -= sigma;
-        }
-
-        // Compute new Householder reflector
-        const int maxidx = blas.IAMAX (blockSize_+1, &DMT::Value(*R_,curDim+j,curDim+j), 1);
-        maxelem = DMT::ValueConst(*R_,curDim + j + maxidx - 1, curDim + j);
-        for (int i = 0; i < blockSize_ + 1; ++i) {
-          DMT::Value(*R_,curDim+j+i,curDim+j) /= maxelem;
-        }
-        sigma = blas.DOT (blockSize_, &DMT::Value(*R_,curDim + j + 1, curDim + j), 1,
-                          &DMT::Value(*R_,curDim + j + 1, curDim + j), 1);
-        if (sigma == zero) {
-          beta[curDim + j] = zero;
-        } else {
-          mu = STS::squareroot (DMT::Value(*R_,curDim+j,curDim+j)*DMT::Value(*R_,curDim+j,curDim+j)+sigma);
-          if (STS::real (DMT::Value(*R_,curDim + j, curDim + j)) < STM::zero ()) {
-            vscale = DMT::ValueConst(*R_,curDim+j,curDim+j) - mu;
-          } else {
-            vscale = -sigma / (DMT::Value(*R_,curDim+j, curDim+j) + mu);
-          }
-          beta[curDim+j] = two * vscale * vscale / (sigma + vscale*vscale);
-          DMT::Value(*R_,curDim+j, curDim+j) = maxelem*mu;
-          for (int i = 0; i < blockSize_; ++i) {
-            DMT::Value(*R_,curDim+j+1+i,curDim+j) /= vscale;
-          }
-        }
-
-        // Apply new Householder reflector to the right-hand side.
-        for (int i = 0; i < blockSize_; ++i) {
-          sigma = blas.DOT (blockSize_, &DMT::Value(*R_,curDim+j+1,curDim+j),
-                            1, &DMT::Value(*z_,curDim+j+1,i), 1);
-          sigma += DMT::ValueConst(*z_,curDim+j,i);
-          sigma *= beta[curDim+j];
-          blas.AXPY (blockSize_, ScalarType(-sigma), &DMT::Value(*R_,curDim+j+1,curDim+j),
-                     1, &DMT::Value(*z_,curDim+j+1,i), 1);
-          DMT::Value(*z_,curDim+j,i) -= sigma;
-        }
-      }
-    } // end if (blockSize_ == 1)
-
-    DMT::SyncHostToDevice( *H_ );
-    DMT::SyncHostToDevice( *z_ );
+    DMT::updateLSQR(*R_, *z_, cs, sn, beta, curDim, blockSize_);
 
     // If the least-squares problem is updated wrt "dim" then update curDim_.
     if (dim >= curDim_ && dim < getMaxSubspaceDim ()) {
