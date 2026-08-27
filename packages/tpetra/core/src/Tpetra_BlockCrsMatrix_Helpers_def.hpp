@@ -658,8 +658,13 @@ fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix, co
   }
 
   Ordinal nnz_block_count = 0;
+#if KOKKOSKERNELS_VERSION >= 50299
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
+#else
+  KokkosKernels::kk_exclusive_parallel_prefix_sum<
+      execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
+#endif
   dev_col_view_t block_col_ids("block_col_ids", nnz_block_count);
 
   // Find active blocks
@@ -768,8 +773,13 @@ fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix, co
       });
 
   Ordinal new_nnz_count = 0;
+#if KOKKOSKERNELS_VERSION >= 50299
+  KokkosKernels::kk_exclusive_parallel_prefix_sum<
+      execution_space>(new_rowmap.extent(0), new_rowmap, new_nnz_count);
+#else
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       execution_space>(new_rowmap.extent(0), new_rowmap, new_nnz_count);
+#endif
   // Now populate cols and vals
   dev_col_view_t new_col_ids("new_col_ids", new_nnz_count);
   dev_val_view_t new_vals("new_vals", new_nnz_count);
@@ -844,8 +854,13 @@ unfillFormerBlockCrs(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix)
       });
 
   Ordinal real_nnzs = 0;
+#if KOKKOSKERNELS_VERSION >= 50299
+  KokkosKernels::kk_exclusive_parallel_prefix_sum<
+      execution_space>(new_rowmap.extent(0), new_rowmap, real_nnzs);
+#else
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       execution_space>(new_rowmap.extent(0), new_rowmap, real_nnzs);
+#endif
   // Now populate cols and vals
   dev_col_view_t new_col_ids("new_col_ids", real_nnzs);
   dev_val_view_t new_vals("new_vals", real_nnzs);
