@@ -59,6 +59,9 @@ namespace Belos {
     typedef DenseMatTraits<ScalarType,DM> DMT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
 
+    mutable Teuchos::RCP<DM> tempMem_;
+    mutable Teuchos::RCP<DM> tempMem2_;
+
   public:
     //! @name Constructor/Destructor
     //@{
@@ -971,6 +974,9 @@ namespace Belos {
      */
     int xstart = xc - howMany;
 
+    if (tempMem_.is_null() || DMT::GetNumRows(*tempMem_)<2*xc)
+      tempMem_ = DMT::Create(2*xc, 1, false);
+
     for (int j = xstart; j < xc; j++) {
 
       // numX is
@@ -1011,7 +1017,7 @@ namespace Belos {
       }
 
       // Make storage for these Gram-Schmidt iterations.
-      Teuchos::RCP<DM> product = DMT::Create(numX,1);
+      auto product = DMT::Subview(*tempMem_, numX, 1);
       std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
       //
       // Save old MXj vector and compute Op-norm
@@ -1028,7 +1034,7 @@ namespace Belos {
 
       if (numX > 0) {
 
-        Teuchos::RCP<DM> P2 = DMT::Create(numX,1);
+        auto P2 = DMT::Subview(*tempMem_, numX, 1, /*startRow=*/numX);
 
         for (int i=0; i<max_ortho_steps_; ++i) {
 
@@ -1247,11 +1253,26 @@ namespace Belos {
       }
     }
 
+    int maxNumRows = 0;
+    int maxNumCols = 0;
+    for (int i=0; i<nq; i++) {
+      maxNumRows = std::max(maxNumRows, DMT::GetNumRows(*C[i]));
+      maxNumCols = std::max(maxNumCols, DMT::GetNumCols(*C[i]));
+    }
+    maxNumRows = std::max(maxNumRows, this->getMaxNumBlocksHint());
+    maxNumCols = std::max(maxNumCols, this->getMaxBlockSizeHint());
+    if (tempMem2_.is_null() ||
+        (DMT::GetNumRows(*tempMem2_) < maxNumRows) ||
+        (DMT::GetNumCols(*tempMem2_) < maxNumCols)) {
+      tempMem2_ = DMT::Create(maxNumRows, maxNumCols, false);
+    }
+
+
     // Do as many steps of classical Gram-Schmidt as required by max_ortho_steps_
     for (int j = 1; j < max_ortho_steps_; ++j) {
 
       for (int i=0; i<nq; i++) {
-        Teuchos::RCP<DM> C2 = DMT::Create(DMT::GetNumRows(*C[i]),DMT::GetNumCols(*C[i]));
+        auto C2 = DMT::Subview(*tempMem2_,DMT::GetNumRows(*C[i]),DMT::GetNumCols(*C[i]));
 
         // Apply another step of classical Gram-Schmidt
         {

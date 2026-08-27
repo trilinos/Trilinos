@@ -1480,6 +1480,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // GCRODR solver
 
+  ortho_->setMaxNumBlocksHint(numBlocks_);
+  ortho_->setMaxBlockSizeHint(1);
   RCP<GCRODRIteration<ScalarType,MV,OP,DM> > gcrodr_iter;
   if (isFlexible_) {
     gcrodr_iter = rcp(new FGCRODRIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist));
