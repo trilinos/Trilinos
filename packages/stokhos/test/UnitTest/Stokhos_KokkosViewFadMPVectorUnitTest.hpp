@@ -11,7 +11,7 @@
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include "Kokkos_View_Fad_Fwd.hpp"
+#include "Sacado_Fad_Kokkos_Fwd.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Ensemble_Sizes.hpp"
 #include "Sacado.hpp"
@@ -113,7 +113,7 @@ checkConstantFadVectorView(const ViewType& view,
   Kokkos::deep_copy(h_view, view);
 
   const size_type num_rows = h_view.extent(0);
-  const size_type num_fad = Kokkos::dimension_scalar(h_view)-1;
+  const size_type num_fad = Sacado::dimension_scalar(h_view)-1;
   const size_type num_ensemble = storage_type::static_size;
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
@@ -145,7 +145,7 @@ checkConstantFadVectorView2(const ViewType& view,
   Kokkos::deep_copy(h_view, view);
 
   bool success = true;
-  const size_type num_fad = Kokkos::dimension_scalar(h_view)-1;
+  const size_type num_fad = Sacado::dimension_scalar(h_view)-1;
   const size_type num_ensemble = storage_type::static_size;
   for (size_type i0=0; i0<h_view.extent(0); ++i0) {
   for (size_type i1=0; i1<h_view.extent(1); ++i1) {
