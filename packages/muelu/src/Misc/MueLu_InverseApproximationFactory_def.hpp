@@ -493,7 +493,7 @@ class LocalFSAIFunctor {
       }
     }
 #ifdef HAVE_MUELU_DEBUG  // code must also be compiled with -DKokkos_ENABLE_DEBUG=ON
-    KOKKOS_ASSERT(A_lclRowIndForDiag == -1 && "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry found in A.");
+    KOKKOS_ASSERT(A_lclRowIndForDiag != -1 && "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry found in A.");
 #endif
 
     Kokkos::Experimental::sort_thread(thread, column_indices);  // in order to apply binary search later
@@ -501,7 +501,7 @@ class LocalFSAIFunctor {
       if (column_indices(kkk) == A_lclRowIndForDiag) diagOffset = kkk;
     }
 #ifdef HAVE_MUELU_DEBUG
-    KOKKOS_ASSERT(diagOffset == -1 && "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry found in A.");
+    KOKKOS_ASSERT(diagOffset != -1 && "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry offset found in A.");
 #endif
 
     // Extract local part of A into a dense view.
@@ -514,7 +514,7 @@ class LocalFSAIFunctor {
       auto Ainv_colGid               = lclAinvColMap.getGlobalElement(i);  // for debugging
       local_ordinal_type A_lclRowInd = lclARowMap.getLocalElement(Ainv_colGid);
 #ifdef HAVE_MUELU_DEBUG
-      KOKKOS_ASSERT(A_lclRowInd == -1 && "MueLu::InverseApproximationFactory: Column global ID in Ainv not found in A rowmap");
+      KOKKOS_ASSERT(A_lclRowInd != -1 && "MueLu::InverseApproximationFactory: Column global ID in Ainv not found in A rowmap");
 #endif
       auto rowA = lclA.rowConst(A_lclRowInd);
 
@@ -566,7 +566,7 @@ class LocalFSAIFunctor {
 
     diagValue = sub_ek(diagOffset);
 #ifdef HAVE_MUELU_DEBUG
-    KOKKOS_ASSERT(impl_ATS::real(diagValue) <= 0.0 && "MueLu::InverseApproximationFactory::GetSparseInverse: non positive diagonal entry.");
+    KOKKOS_ASSERT(impl_ATS::real(diagValue) > 0.0 && "MueLu::InverseApproximationFactory::GetSparseInverse: non positive diagonal entry.");
 #endif
     auto scale_factor = impl_ATS::one() / impl_ATS::sqrt(diagValue);
     for (local_ordinal_type i = 0; i < rowAinv.length; ++i) {
