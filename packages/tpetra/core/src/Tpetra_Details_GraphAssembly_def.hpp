@@ -632,7 +632,7 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
       std::set<global_ordinal_type> extraSet;
       for (size_type i = 0; i < osNNZ; ++i) {
         const global_ordinal_type gid = osGlobalHost(i);
-        if (localOwnedPlusSharedMap2.getLocalElement(gid) == LO_INVALID2)
+        if (ownedPlusSharedMap_->getLocalElement(gid) == LO_INVALID2)
           extraSet.insert(gid);
       }
 
