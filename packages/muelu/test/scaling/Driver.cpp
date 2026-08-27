@@ -317,6 +317,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef KOKKOS_ENABLE_TUNING
   clp.setOption("tuning-with-kokkos", "no-tuning-with-kokkos", &kokkosTuning, "enable Kokkos tuning inferface");
 #endif
+  bool timeMatrixBuild = true;
+  clp.setOption("time-matrix-build", "no-time-matrix-build", &timeMatrixBuild, "whether to time matrix construction");
 
   clp.recogniseAllOptions(true);
 
@@ -434,7 +436,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
   } else
     globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
-  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
+  RCP<TimeMonitor> tm;
+  if (timeMatrixBuild)
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
   RCP<Matrix> A;
   RCP<const Map> map;
