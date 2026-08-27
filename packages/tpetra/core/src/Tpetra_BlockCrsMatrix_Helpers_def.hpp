@@ -659,8 +659,7 @@ fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix, co
 
   Ordinal nnz_block_count = 0;
 #if KOKKOSKERNELS_VERSION >= 50299
-  KokkosKernels::exclusive_parallel_prefix_sum<
-      execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
+  KokkosKernels::exclusive_parallel_prefix_sum(execution_space(), active_block_row_map, nnz_block_count);
 #else
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       execution_space>(active_block_row_map.extent(0), active_block_row_map, nnz_block_count);
@@ -774,8 +773,7 @@ fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix, co
 
   Ordinal new_nnz_count = 0;
 #if KOKKOSKERNELS_VERSION >= 50299
-  KokkosKernels::exclusive_parallel_prefix_sum<
-      execution_space>(new_rowmap.extent(0), new_rowmap, new_nnz_count);
+  KokkosKernels::exclusive_parallel_prefix_sum(execution_space(), new_rowmap, new_nnz_count);
 #else
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       execution_space>(new_rowmap.extent(0), new_rowmap, new_nnz_count);
@@ -855,8 +853,7 @@ unfillFormerBlockCrs(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix)
 
   Ordinal real_nnzs = 0;
 #if KOKKOSKERNELS_VERSION >= 50299
-  KokkosKernels::exclusive_parallel_prefix_sum<
-      execution_space>(new_rowmap.extent(0), new_rowmap, real_nnzs);
+  KokkosKernels::exclusive_parallel_prefix_sum(execution_space(), new_rowmap, real_nnzs);
 #else
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<
       execution_space>(new_rowmap.extent(0), new_rowmap, real_nnzs);

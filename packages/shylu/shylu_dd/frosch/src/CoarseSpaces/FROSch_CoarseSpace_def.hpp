@@ -231,8 +231,7 @@ namespace FROSch {
 
             // make it into offsets
 #if KOKKOSKERNELS_VERSION >= 50299
-            KokkosKernels::inclusive_parallel_prefix_sum<execution_space>
-              (1+numLocalRows, Rowptr);
+            KokkosKernels::inclusive_parallel_prefix_sum(execution_space(), Rowptr);
 #else
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
               (1+numLocalRows, Rowptr);

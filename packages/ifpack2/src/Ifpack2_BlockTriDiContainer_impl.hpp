@@ -2196,7 +2196,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       {
         size_type R_rowptr_final;
 #if KOKKOSKERNELS_VERSION >= 50299
-        KokkosKernels::exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr, R_rowptr_final);
+        KokkosKernels::exclusive_parallel_prefix_sum(execution_space(), R_rowptr, R_rowptr_final);
 #else
         KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr, R_rowptr_final);
 #endif
@@ -2204,7 +2204,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
         if (overlap_communication_and_computation) {
           size_type R_rowptr_remote_final;
 #if KOKKOSKERNELS_VERSION >= 50299
-          KokkosKernels::exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr_remote, R_rowptr_remote_final);
+          KokkosKernels::exclusive_parallel_prefix_sum(execution_space(), R_rowptr_remote, R_rowptr_remote_final);
 #else
           KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr_remote, R_rowptr_remote_final);
 #endif
