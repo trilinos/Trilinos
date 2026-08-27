@@ -1,5 +1,37 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 17.2.1 Release Notes                       August 28, 2026 #
+#                                                                             #
+###############################################################################
+
+This is a patch release with no new features.
+
+
+Amesos2:
+
+  - Fix compilation issues in Basker
+    https://github.com/trilinos/Trilinos/pull/15628
+
+Tpetra:
+
+  - Add a missing header.
+    https://github.com/trilinos/Trilinos/pull/15618
+
+
+Krino:
+
+  - Latest snapshot
+    https://github.com/trilinos/Trilinos/pull/15526
+
+
+Piro:
+
+  - Fix a compile error
+    https://github.com/trilinos/Trilinos/pull/15637
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 17.2 Release Notes                         August 19, 2026 #
 #                                                                             #
 ###############################################################################
