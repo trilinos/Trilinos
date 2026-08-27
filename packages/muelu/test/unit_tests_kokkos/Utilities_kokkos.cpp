@@ -129,7 +129,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, DetectDirichletCols, Scalar,
   Kokkos::deep_copy(dcolsHost, dcols);
 
   for (size_t col = 0; col < dcolsHost.extent(0); ++col) {
-    const auto isDirchletCol = col >= 4 and col <= 6;
+    const auto isDirchletCol = col == 5;
     TEST_EQUALITY(dcolsHost(col), isDirchletCol);
   }
 }  // DetectDirichletCols

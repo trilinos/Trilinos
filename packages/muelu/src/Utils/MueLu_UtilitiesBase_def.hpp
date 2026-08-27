@@ -1709,7 +1709,7 @@ UtilitiesBase<SC, LO, GO, NO>::
           auto length  = rowView.length;
 
           for (decltype(length) colID = 0; colID < length; colID++) {
-            if (rowView.value(colID) == one)
+            if (rowView.value(colID) != zero)
               myColsToZeroView(rowView.colidx(colID), 0) = impl_ATS::one();
           }
         }

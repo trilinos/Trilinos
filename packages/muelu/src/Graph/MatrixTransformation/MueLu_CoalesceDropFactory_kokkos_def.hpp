@@ -407,10 +407,10 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
             storeMinvAOnLevel = true;
           else {
             if (projectList.isParameter("Minv")) storeMinvOnLevel = true;
+            else storeMinvAOnLevel = true; // nothing found in project list, so default to storing MinvA
           }
-          // project list appears to be empty, so default behavior is to store MinvA
         } else
-          storeMinvAOnLevel = true;  // default behavior is to project MinvA
+          storeMinvAOnLevel = true;  // no project list given, so default to storing MinvA
 
         if (IsAvailable(currentLevel, "MinvA")) {
           A_drop = Get<RCP<Matrix>>(currentLevel, "MinvA");
