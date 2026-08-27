@@ -317,6 +317,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef KOKKOS_ENABLE_TUNING
   clp.setOption("tuning-with-kokkos", "no-tuning-with-kokkos", &kokkosTuning, "enable Kokkos tuning inferface");
 #endif
+  bool timeMatrixBuild = true;
+  clp.setOption("time-matrix-build", "no-time-matrix-build", &timeMatrixBuild, "time matrix construction (always true if not using stacked timers)");
 
   clp.recogniseAllOptions(true);
 
@@ -432,6 +434,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   if (useStackedTimer) {
     stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
     Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+    if (!timeMatrixBuild)
+      stacked_timer->disableTimers();  // will be reenabled below after linear system setup
   } else
     globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
@@ -583,6 +587,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       // Get a Kokkos context for tuning and setup the tuner
       size_t kokkos_context_id = 0;
 
+      // Timers might have been disabled by option --no-time-matrix-build.
+      if (useStackedTimer)
+        stacked_timer->enableTimers();
       // =========================================================================
       // Loop over the setup/solve pairs
       // =========================================================================
