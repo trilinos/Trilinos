@@ -1128,7 +1128,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 
         // convert to rowptrs
 #if KOKKOSKERNELS_VERSION >= 50299
-        KokkosKernels::kk_inclusive_parallel_prefix_sum<execution_space>(1 + localNumReducedRows, rowmap_view);
+        KokkosKernels::inclusive_parallel_prefix_sum<execution_space>(1 + localNumReducedRows, rowmap_view);
 #else
         KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>(1 + localNumReducedRows, rowmap_view);
 #endif

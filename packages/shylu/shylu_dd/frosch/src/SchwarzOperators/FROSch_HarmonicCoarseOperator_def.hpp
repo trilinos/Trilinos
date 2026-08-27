@@ -540,7 +540,7 @@ namespace FROSch {
 
                 // make it into offsets
 #if KOKKOSKERNELS_VERSION >= 50299
-                KokkosKernels::kk_inclusive_parallel_prefix_sum<execution_space>
+                KokkosKernels::inclusive_parallel_prefix_sum<execution_space>
                     (1+numRows, Rowptr);
 #else
                 KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
