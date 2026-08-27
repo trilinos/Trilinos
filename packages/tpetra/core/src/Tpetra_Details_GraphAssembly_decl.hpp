@@ -7,12 +7,12 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef TPETRA_GRAPHASSEMBLY_DECL_HPP
-#define TPETRA_GRAPHASSEMBLY_DECL_HPP
+#ifndef TPETRA_DETAILS_GRAPHASSEMBLY_DECL_HPP
+#define TPETRA_DETAILS_GRAPHASSEMBLY_DECL_HPP
 
-/// \file Tpetra_GraphAssembly_decl.hpp
+/// \file Tpetra_Details_GraphAssembly_decl.hpp
 ///
-/// Declaration of Tpetra::Experimental::GraphAssembly.
+/// Declaration of Tpetra::Details::GraphAssembly.
 
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_Map_fwd.hpp"
@@ -22,7 +22,7 @@
 #include "Kokkos_Core.hpp"
 
 namespace Tpetra {
-namespace Experimental {
+namespace Details {
 
 /// \class GraphAssembly
 /// \brief Assemble a Tpetra::CrsGraph for a finite-element problem entirely
@@ -39,9 +39,17 @@ namespace Experimental {
 /// The owned+shared -> owned communication is performed explicitly with a fused
 /// Export + fillComplete.
 ///
+/// There are two codepaths, selected by whether an owned+shared column map is
+/// provided to the constructor:
+///   - If a column map is provided, the global node IDs are mapped to local
+///     column indices directly inside the Fill functor, using that column map.
+///   - If no column map is provided, a globally-indexed local graph is built
+///     first, then Tpetra::Details::makeColMap constructs the column map, and a
+///     final parallel_for kernel remaps the global indices to local indices.
+///
 /// Typical usage:
 /// \code
-/// using Assembly = Tpetra::Experimental::GraphAssembly<>;
+/// using Assembly = Tpetra::Details::GraphAssembly<>;
 /// Assembly assembly(rowMap, ownedPlusSharedMap, ownedElementToNode);
 /// assembly.build();
 /// RCP<CrsGraph> graph = assembly.getGraph();                   // owned CrsGraph
@@ -94,9 +102,15 @@ class GraphAssembly {
   ///   both the row and column map of the intermediate assembly graph.
   /// \param ownedElementToNode [in] The element-to-node connectivity of the
   ///   locally-owned elements (global node IDs).  See #element_to_node_type.
+  /// \param ownedPlusSharedColMap [in] Optional owned+shared column map.  If
+  ///   provided, it is used to map global column IDs to local column indices
+  ///   inside the Fill functor.  If null, a column map is built with
+  ///   Tpetra::Details::makeColMap after a globally-indexed local graph has been
+  ///   assembled.
   GraphAssembly(const Teuchos::RCP<const map_type>& rowMap,
                 const Teuchos::RCP<const map_type>& ownedPlusSharedMap,
-                const element_to_node_type& ownedElementToNode);
+                const element_to_node_type& ownedElementToNode,
+                const Teuchos::RCP<const map_type>& ownedPlusSharedColMap = Teuchos::null);
 
   //! Destructor.
   ~GraphAssembly() = default;
@@ -132,6 +146,13 @@ class GraphAssembly {
   /// Useful for exporting the owned+shared matrix to owned.
   Teuchos::RCP<const export_type> getExporter() const;
 
+  /// \brief Get the owned+shared column map used by the assembled graph.
+  ///
+  /// If a column map was provided to the constructor, this returns it.
+  /// Otherwise, it returns the column map built by makeColMap during build().
+  /// Returns null if build() has not been called yet.
+  Teuchos::RCP<const map_type> getOwnedPlusSharedColMap() const;
+
   //@}
 
  private:
@@ -141,6 +162,8 @@ class GraphAssembly {
   Teuchos::RCP<const map_type> ownedPlusSharedMap_;
   //! Element-to-node connectivity (global node IDs) of the owned elements.
   element_to_node_type ownedElementToNode_;
+  //! Optional user-provided owned+shared column map (may be null).
+  Teuchos::RCP<const map_type> ownedPlusSharedColMap_;
 
   //! The assembled owned graph (result of build()).
   Teuchos::RCP<crs_graph_type> graph_;
@@ -150,7 +173,7 @@ class GraphAssembly {
   Teuchos::RCP<const export_type> exporter_;
 };
 
-}  // namespace Experimental
+}  // namespace Details
 }  // namespace Tpetra
 
-#endif  // TPETRA_GRAPHASSEMBLY_DECL_HPP
+#endif  // TPETRA_DETAILS_GRAPHASSEMBLY_DECL_HPP

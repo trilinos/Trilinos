@@ -9,7 +9,7 @@
 
 /// \file CrsGraph_GraphAssembly.cpp
 ///
-/// Unit tests for Tpetra::Experimental::GraphAssembly.
+/// Unit tests for Tpetra::Details::GraphAssembly.
 ///
 /// The finite-element example directory
 /// (core/example/Finite-Element-Assembly) only exercises GraphAssembly on a 2D
@@ -34,7 +34,7 @@
 
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_GraphAssembly.hpp"
+#include "Tpetra_Details_GraphAssembly.hpp"
 #include "Teuchos_CommHelpers.hpp"  // REDUCE_MIN, reduceAll
 #include "Tpetra_TestingUtilities.hpp"
 
@@ -171,7 +171,7 @@ template <class LO, class GO, class NT>
 void testMesh(const GlobalMesh<GO>& mesh, Teuchos::FancyOStream& out,
               bool& success, const std::string& label) {
   using map_type            = Tpetra::Map<LO, GO, NT>;
-  using graph_assembly_type = Tpetra::Experimental::GraphAssembly<LO, GO, NT>;
+  using graph_assembly_type = Tpetra::Details::GraphAssembly<LO, GO, NT>;
 
   out << "=== GraphAssembly test: " << label << " ===" << endl;
   Teuchos::OSTab tab1(out);

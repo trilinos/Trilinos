@@ -22,7 +22,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Tpetra_Assembly_Helpers.hpp"
-#include "Tpetra_GraphAssembly.hpp"
+#include "Tpetra_FECrsGraph.hpp"
 
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
@@ -327,41 +327,32 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     row_map->describe(out);
   }
 
-  // Use Tpetra::Experimental::GraphAssembly to construct the owned and
-  // owned+shared graphs. Does a fused export + fillComplete. We'll also use
-  // the GraphAssembly's exporter to communicate the matrix values later.
+  // Use Tpetra::assembleFECrsGraph (which internally uses
+  // Tpetra::Details::GraphAssembly) to construct a fully-assembled FECrsGraph.
+  // This performs, entirely on device, everything that begin/endAssembly of an
+  // FECrsGraph would do: the local owned+shared graph is assembled with Kokkos
+  // kernels and a fused Export + fillComplete produces the owned graph.
   auto domain_map = row_map;
   auto range_map  = row_map;
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
 
-  using graph_assembly_type =
-      Tpetra::Experimental::GraphAssembly<local_ordinal_type, global_ordinal_type,
-                                          map_type::node_type>;
-
-  RCP<crs_graph_type> crs_graph;
-  // The locally-assembled (owned+shared) graph and the Export used to move data
-  // from it to the owned graph.  Both are reused for the matrix/RHS fill below.
-  RCP<crs_graph_type> owned_plus_shared_graph;
-  RCP<const export_type> graph_exporter;
+  RCP<fe_graph_type> fe_graph;
   {
     RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
     // The element-to-node connectivity (global node IDs) of the owned elements,
-    // as a dynamic-rank-2 device view (what GraphAssembly expects).
-    graph_assembly_type::element_to_node_type owned_element_to_node_ids =
+    // as a dynamic-rank-2 device view of const GlobalOrdinal.
+    Kokkos::View<const global_ordinal_type**, deviceType> owned_element_to_node_ids =
         mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
 
-    graph_assembly_type assembler(row_map, owned_plus_shared_map, owned_element_to_node_ids);
-    assembler.build();
-
-    crs_graph               = assembler.getGraph();
-    owned_plus_shared_graph = assembler.getOwnedPlusSharedGraph();
-    graph_exporter          = assembler.getExporter();
+    fe_graph = Tpetra::assembleFECrsGraph<local_ordinal_type, global_ordinal_type,
+                                          map_type::node_type>(
+        owned_element_to_node_ids, row_map, owned_plus_shared_map);
   }
 
   // Print out verbose information about the graph.
-  if (opts.verbose) crs_graph->describe(out, Teuchos::VERB_EXTREME);
+  if (opts.verbose) fe_graph->describe(out, Teuchos::VERB_EXTREME);
 
   // Matrix Fill
   // -------------------
@@ -406,26 +397,23 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // in parallel.
   const int numOwnedElements = mesh.getNumOwnedElements();
 
-  // The final (owned) matrix and RHS.
-  RCP<crs_matrix_type> crs_matrix = rcp(new crs_matrix_type(crs_graph));
-  RCP<multivector_type> rhs       = rcp(new multivector_type(domain_map, 1));
+  // Build an FECrsMatrix and FEMultiVector on top of the assembled FE graph.
+  // These manage the owned+shared -> owned communication internally through the
+  // begin/endAssembly calls, exactly like the non-Kokkos path.
+  RCP<fe_matrix_type> fe_matrix = rcp(new fe_matrix_type(fe_graph));
+  RCP<fe_multivector_type> rhs =
+      rcp(new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
-  // The assembly matrix/RHS live on the owned+shared map and share the packed
-  // sparsity pattern that the Kokkos kernels above produced.  Assembling into
-  // these means every element contribution is a purely local, atomic
-  // sumIntoValues -- no "nonowned entry" bookkeeping at all.
-  RCP<crs_matrix_type> owned_plus_shared_matrix =
-      rcp(new crs_matrix_type(owned_plus_shared_graph));
-  RCP<multivector_type> owned_plus_shared_rhs =
-      rcp(new multivector_type(owned_plus_shared_map, 1));
-
-  // Row map and column map of the assembly objects are both the owned+shared
-  // map, so a single local map handles both row and column lookups.
-  auto localMap = owned_plus_shared_map->getLocalMap();
+  // Row map and column map local views for the assembly (owned+shared) objects.
+  auto localMap    = owned_plus_shared_map->getLocalMap();
+  auto localColMap = fe_matrix->getColMap()->getLocalMap();
 
   timerElementLoopMemory = Teuchos::null;
   {
     TimeMonitor timerElementLoopMatrix(*TimeMonitor::getNewTimer("2.2) ElementLoop  (Matrix)"));
+
+    // Put the FE matrix/RHS into assembly (owned+shared) mode.
+    Tpetra::beginAssembly(*fe_matrix, *rhs);
 
     auto owned_element_to_node_gids =
         mesh.getOwnedElementToNode().getDeviceView(
@@ -433,8 +421,8 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
 
     // Loop over elements
     auto localRHS =
-        owned_plus_shared_rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
-    auto localMatrix = owned_plus_shared_matrix->getLocalMatrixDevice();
+        rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    auto localMatrix = fe_matrix->getLocalMatrixDevice();
 
     // We're not doing explicit worksetting, but if we did, we'd do it here
     Kokkos::parallel_for(
@@ -451,14 +439,15 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           // Get the local column ids array for this element
           for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
             element_lcids[element_node_idx] =
-                localMap.getLocalElement(owned_element_to_node_gids(element_idx, element_node_idx));
+                localColMap.getLocalElement(owned_element_to_node_gids(element_idx, element_node_idx));
           }
 
           // For each node (row) on the current element:
           // - populate the values array
-          // - add the values to the assembly matrix.
+          // - add the values to the fe_matrix.
           for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
-            const local_ordinal_type local_row_id = element_lcids[element_node_idx];
+            const local_ordinal_type local_row_id =
+                localMap.getLocalElement(owned_element_to_node_gids(element_idx, element_node_idx));
 
             // Atomically contribute for sums: parallel elements may be contributing
             // to the same node at the same time
@@ -473,43 +462,28 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     execution_space().fence();
   }
 
-  // Communicate the matrix values explicitly: Export owned+shared -> owned with
-  // ADD.  The target matrix has a static (already fill-complete) graph, so every
-  // incoming entry lands via sumIntoGlobalValues on an existing position -- no
-  // structure changes, no reallocation.
+  // After the contributions are added, 'finalize' the matrix using endAssembly,
+  // which performs the owned+shared -> owned Export with ADD.
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("3) FillComplete (Matrix)"));
-    if (graph_exporter.is_null()) {
-      // Serial / single-rank: the assembly matrix already IS the answer, so just
-      // copy the values across (same graph, same ordering).
-      Kokkos::deep_copy(crs_matrix->getLocalMatrixDevice().values,
-                        owned_plus_shared_matrix->getLocalMatrixDevice().values);
-    } else {
-      crs_matrix->doExport(*owned_plus_shared_matrix, *graph_exporter, Tpetra::ADD);
-    }
-    crs_matrix->fillComplete(domain_map, range_map);
+    Tpetra::endAssembly(*fe_matrix);
   }
 
   {
-    // Communicate the RHS the same way: Export owned+shared -> owned with ADD.
+    // Global assemble the RHS the same way.
     TimeMonitor timer(*TimeMonitor::getNewTimer("4) GlobalAssemble (RHS)"));
-    if (graph_exporter.is_null()) {
-      Kokkos::deep_copy(rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll),
-                        owned_plus_shared_rhs->getLocalViewDevice(Tpetra::Access::ReadOnly));
-    } else {
-      rhs->doExport(*owned_plus_shared_rhs, *graph_exporter, Tpetra::ADD);
-    }
+    Tpetra::endAssembly(*rhs);
   }
 
   Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
-  // Print out crs_matrix details.
-  if (opts.verbose) crs_matrix->describe(out, Teuchos::VERB_EXTREME);
+  // Print out fe_matrix details.
+  if (opts.verbose) fe_matrix->describe(out, Teuchos::VERB_EXTREME);
 
   // Save crs_matrix as a MatrixMarket file.
   if (opts.saveMM) {
     std::ofstream ofs("crsMatrix_InsertGlobalIndices_FESPKokkos.out", std::ofstream::out);
-    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparse(ofs, crs_matrix);
+    Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparse(ofs, fe_matrix);
     std::ofstream ofs2("rhs_InsertGlobalIndices_FESPKokkos.out", std::ofstream::out);
     Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeDense(ofs2, rhs);
   }
