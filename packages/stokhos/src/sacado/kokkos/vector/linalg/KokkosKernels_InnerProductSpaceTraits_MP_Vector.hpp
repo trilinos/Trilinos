@@ -15,7 +15,7 @@
 
 #include "Sacado_MP_Vector.hpp"
 #include "KokkosKernels_InnerProductSpaceTraits.hpp"
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
+#include "KokkosKernels_ArithTraits_MP_Vector.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of KokkosKernels::InnerProductSpaceTraits for Sacado::MP::Vector

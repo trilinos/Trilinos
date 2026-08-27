@@ -26,7 +26,7 @@
 #endif
 
 // Kokkos-Linalg
-#include "Kokkos_ArithTraits_MP_Vector.hpp"
+#include "KokkosKernels_ArithTraits_MP_Vector.hpp"
 #include "KokkosKernels_InnerProductSpaceTraits_MP_Vector.hpp"
 #include "Kokkos_MV_MP_Vector.hpp"
 
