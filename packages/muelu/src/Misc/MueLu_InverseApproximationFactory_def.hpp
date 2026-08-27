@@ -24,6 +24,7 @@
 #include "KokkosBatched_ApplyQ_Decl.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
 #include "KokkosBatched_Util.hpp"
+#include <KokkosKernels_SimpleUtils.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
@@ -215,7 +216,7 @@ class LocalSPAIFunctor {
     local_ordinal_type diagOffset         = 0;
     {
       // Sort
-      Kokkos::Experimental::sort_team(thread, Kokkos::subview(column_indices, Kokkos::make_pair(0, numColEntries)));
+      Kokkos::Experimental::sort_thread(thread, Kokkos::subview(column_indices, Kokkos::make_pair(0, numColEntries)));
       // Merge
       if (numColEntries > 0)
         ++numUniqeColEntries;
@@ -230,7 +231,7 @@ class LocalSPAIFunctor {
         }
       }
     }
-    // create a unique version of the column indicies that has the correct length (as opposed
+    // create a unique version of the column indices that has the correct length (as opposed
     // to column_indices).  Can we instead resize column_indices with MemoryUnmanaged?
     // This is so that we can use binary search later on sorted list
     shared_lo_vector uniqueColIndicies(thread.team_scratch(scratchLevel), numUniqeColEntries);
@@ -251,9 +252,8 @@ class LocalSPAIFunctor {
         auto v = rowA.value(jj);
 
         // do binary search to find column in uniqueColIndices
-        auto it              = std::lower_bound(Kokkos::Experimental::begin(uniqueColIndicies), Kokkos::Experimental::end(uniqueColIndicies), j);
-        ptrdiff_t newIndex   = it - Kokkos::Experimental::begin(uniqueColIndicies);
-        localA(newIndex, ii) = v;
+        auto it        = KokkosKernels::lower_bound_thread(uniqueColIndicies, j);
+        localA(it, ii) = v;
       }
     }
 
@@ -492,15 +492,17 @@ class LocalFSAIFunctor {
         A_lclRowIndForDiag = A_lclRowInd;
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(A_lclRowIndForDiag == -1, Exceptions::RuntimeError,
-                               "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry found in A.");
+#ifdef HAVE_MUELU_DEBUG  // code must also be compiled with -DKokkos_ENABLE_DEBUG=ON
+    KOKKOS_ASSERT(A_lclRowIndForDiag == -1 && "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry found in A.");
+#endif
 
-    Kokkos::Experimental::sort_team(thread, column_indices);  // in order to apply binary search later
+    Kokkos::Experimental::sort_thread(thread, column_indices);  // in order to apply binary search later
     for (int kkk = 0; kkk < numColEntries; kkk++) {
       if (column_indices(kkk) == A_lclRowIndForDiag) diagOffset = kkk;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(diagOffset == -1, Exceptions::RuntimeError,
-                               "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry found in A.");
+#ifdef HAVE_MUELU_DEBUG
+    KOKKOS_ASSERT(diagOffset == -1 && "MueLu::InverseApproximationFactory::GetSparseInverse: no diagonal entry found in A.");
+#endif
 
     // Extract local part of A into a dense view.
     shared_matrix localA(thread.team_scratch(scratchLevel), numRowEntries, rowAinv.length);
@@ -511,7 +513,9 @@ class LocalFSAIFunctor {
       auto i                         = rowAinv.colidx(ii);
       auto Ainv_colGid               = lclAinvColMap.getGlobalElement(i);  // for debugging
       local_ordinal_type A_lclRowInd = lclARowMap.getLocalElement(Ainv_colGid);
-      TEUCHOS_TEST_FOR_EXCEPTION(A_lclRowInd == -1, Exceptions::RuntimeError, "MueLu::InverseApproximationFactory: Column global ID in Ainv not found in A rowmap\n");
+#ifdef HAVE_MUELU_DEBUG
+      KOKKOS_ASSERT(A_lclRowInd == -1 && "MueLu::InverseApproximationFactory: Column global ID in Ainv not found in A rowmap");
+#endif
       auto rowA = lclA.rowConst(A_lclRowInd);
 
       for (local_ordinal_type jj = 0; jj < rowA.length; ++jj) {
@@ -520,12 +524,9 @@ class LocalFSAIFunctor {
         // in lower triangular portion of matrix (because this might be faster?)
         auto A_colGid = lclAColMap.getGlobalElement(j);
         if (A_colGid <= A_rowGid) {
-          auto it = std::lower_bound(Kokkos::Experimental::begin(column_indices), Kokkos::Experimental::end(column_indices), j);
-          if (it != Kokkos::Experimental::end(column_indices) && *it == j) {
-            ptrdiff_t newIndex   = it - Kokkos::Experimental::begin(column_indices);
-            auto v               = rowA.value(jj);
-            localA(newIndex, ii) = v;
-          }
+          auto newIndex = KokkosKernels::lower_bound_thread(column_indices, j);
+          if ((newIndex < column_indices.extent(0)) && (column_indices(newIndex) == j))
+            localA(newIndex, ii) = rowA.value(jj);
         }
       }
     }
@@ -564,8 +565,9 @@ class LocalFSAIFunctor {
     // Set entries of Ainv.
 
     diagValue = sub_ek(diagOffset);
-    TEUCHOS_TEST_FOR_EXCEPTION(impl_ATS::real(diagValue) <= 0.0, Exceptions::RuntimeError,
-                               "MueLu::InverseApproximationFactory::GetSparseInverse: non positive diagonal entry.");
+#ifdef HAVE_MUELU_DEBUG
+    KOKKOS_ASSERT(impl_ATS::real(diagValue) <= 0.0 && "MueLu::InverseApproximationFactory::GetSparseInverse: non positive diagonal entry.");
+#endif
     auto scale_factor = impl_ATS::one() / impl_ATS::sqrt(diagValue);
     for (local_ordinal_type i = 0; i < rowAinv.length; ++i) {
       typename KokkosKernels::ArithTraits<decltype(diagValue)>::val_type thevalue = sub_ek(i) * scale_factor;
