@@ -1690,7 +1690,6 @@ UtilitiesBase<SC, LO, GO, NO>::
   using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
   SC zero = ATS::zero();
-  SC one  = ATS::one();
 
   auto localMatrix = A.getLocalMatrixDevice();
   LO numRows       = A.getLocalNumRows();

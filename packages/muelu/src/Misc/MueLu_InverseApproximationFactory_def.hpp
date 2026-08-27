@@ -568,7 +568,6 @@ class LocalFSAIFunctor {
                                "MueLu::InverseApproximationFactory::GetSparseInverse: non positive diagonal entry.");
     auto scale_factor = impl_ATS::one() / impl_ATS::sqrt(diagValue);
     for (local_ordinal_type i = 0; i < rowAinv.length; ++i) {
-//      auto thevalue = sub_ek(i) * scale_factor;
       typename KokkosKernels::ArithTraits<decltype(diagValue)>::val_type thevalue = sub_ek(i) * scale_factor;
 
       if (thevalue == impl_ATS::zero()) thevalue = impl_ATS::eps();

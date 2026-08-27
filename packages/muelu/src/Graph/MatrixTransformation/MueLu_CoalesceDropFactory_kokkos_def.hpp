@@ -406,8 +406,10 @@ std::tuple<GlobalOrdinal, GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrd
           if (projectList.isParameter("MinvA"))
             storeMinvAOnLevel = true;
           else {
-            if (projectList.isParameter("Minv")) storeMinvOnLevel = true;
-            else storeMinvAOnLevel = true; // nothing found in project list, so default to storing MinvA
+            if (projectList.isParameter("Minv"))
+              storeMinvOnLevel = true;
+            else
+              storeMinvAOnLevel = true;  // nothing found in project list, so default to storing MinvA
           }
         } else
           storeMinvAOnLevel = true;  // no project list given, so default to storing MinvA
