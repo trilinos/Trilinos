@@ -7,22 +7,22 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef KOKKOS_INNER_PRODUCT_SPACE_TRAITS_MP_VECTOR_HPP
-#define KOKKOS_INNER_PRODUCT_SPACE_TRAITS_MP_VECTOR_HPP
+#ifndef KOKKOSKERNELS_INNER_PRODUCT_SPACE_TRAITS_MP_VECTOR_HPP
+#define KOKKOSKERNELS_INNER_PRODUCT_SPACE_TRAITS_MP_VECTOR_HPP
 
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_STOKHOS_ENSEMBLE_REDUCT)
 
 #include "Sacado_MP_Vector.hpp"
-#include "Kokkos_InnerProductSpaceTraits.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
 #include "Kokkos_ArithTraits_MP_Vector.hpp"
 
 //----------------------------------------------------------------------------
-// Specializations of Kokkos::InnerProductSpaceTraits for Sacado::MP::Vector
+// Specializations of KokkosKernels::InnerProductSpaceTraits for Sacado::MP::Vector
 // scalar type
 //----------------------------------------------------------------------------
 
-namespace Kokkos {
+namespace KokkosKernels {
 namespace Details {
 
 template <typename S>
@@ -118,4 +118,4 @@ public:
 
 #endif
 
-#endif /* #ifndef KOKKOS_INNER_PRODUCT_SPACE_TRAITS_MP_VECTOR_HPP */
+#endif /* #ifndef KOKKOSKERNELS_INNER_PRODUCT_SPACE_TRAITS_MP_VECTOR_HPP */

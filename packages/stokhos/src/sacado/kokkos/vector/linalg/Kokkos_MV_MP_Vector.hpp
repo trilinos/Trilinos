@@ -12,7 +12,7 @@
 
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
-#include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
+#include "KokkosKernels_InnerProductSpaceTraits_MP_Vector.hpp"
 #include "Kokkos_Blas1_MP_Vector.hpp"
 
 //----------------------------------------------------------------------------

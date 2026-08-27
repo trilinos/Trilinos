@@ -764,7 +764,7 @@ IF (Stokhos_ENABLE_Sacado)
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
         sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
-        sacado/kokkos/vector/linalg/Kokkos_InnerProductSpaceTraits_MP_Vector.hpp
+        sacado/kokkos/vector/linalg/KokkosKernels_InnerProductSpaceTraits_MP_Vector.hpp
         )
     ENDIF()
     IF(Stokhos_ENABLE_PCE_Scalar_Type)
