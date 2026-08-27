@@ -1198,46 +1198,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, MinvADirichletTest
     Level fineLevel;
     TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
 
-    auto crsA = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A, true)->getCrsMatrix();
-    crsA->resumeFill();
+    {
+      auto crsA = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A, true)->getCrsMatrix();
+      crsA->resumeFill();
 
-    auto rowmap = A->getRowMap();
-    auto colmap = A->getColMap();
-    auto lclA   = A->getLocalMatrixHost();
+      auto rowmap = A->getRowMap();
+      auto colmap = A->getColMap();
+      auto lclA   = A->getLocalMatrixHost();
 
-    // set first nx rows of A to be Dirichlet
-    for (GO row_gid = 0; row_gid < nx; row_gid++) {
-      auto row_lid = rowmap->getLocalElement(row_gid);
-      auto col_lid = colmap->getLocalElement(row_gid);
-      if ((row_lid != INVALID) && (col_lid != INVALID)) {
-        auto row = lclA.row(row_lid);
-        for (LocalOrdinal k = 0; k < row.length; ++k) {
-          if (row.colidx(k) == col_lid)
-            row.value(k) = Teuchos::ScalarTraits<SC>::one();
-          else
-            row.value(k) = Teuchos::ScalarTraits<SC>::zero();
+      // set first nx rows of A to be Dirichlet
+      for (GO row_gid = 0; row_gid < nx; row_gid++) {
+        auto row_lid = rowmap->getLocalElement(row_gid);
+        auto col_lid = colmap->getLocalElement(row_gid);
+        if ((row_lid != INVALID) && (col_lid != INVALID)) {
+          auto row = lclA.row(row_lid);
+          for (LocalOrdinal k = 0; k < row.length; ++k) {
+            if (row.colidx(k) == col_lid)
+              row.value(k) = Teuchos::ScalarTraits<SC>::one();
+            else
+              row.value(k) = Teuchos::ScalarTraits<SC>::zero();
+          }
         }
       }
+      crsA->fillComplete();
     }
-    crsA->fillComplete();
 
     fineLevel.Set("A", A);
-    Teuchos::ParameterList mass_Pl;
-    mass_Pl.set("matrixType", "Star2D");
+    {
+      Teuchos::ParameterList mass_Pl;
+      mass_Pl.set("matrixType", "Star2D");
 
-    mass_Pl.set("nx", (GO)nx);
-    mass_Pl.set("ny", (GO)nx);
-    mass_Pl.set("a", 2.88);
-    mass_Pl.set("b", .72);
-    mass_Pl.set("c", .72);
-    mass_Pl.set("d", .72);
-    mass_Pl.set("e", .72);
-    mass_Pl.set("z1", .18);
-    mass_Pl.set("z2", .18);
-    mass_Pl.set("z3", .18);
-    mass_Pl.set("z4", .18);
-    RCP<Matrix> M = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mass_Pl, lib);
-    fineLevel.Set("M", M);
+      mass_Pl.set("nx", (GO)nx);
+      mass_Pl.set("ny", (GO)nx);
+      mass_Pl.set("a", 2.88);
+      mass_Pl.set("b", .72);
+      mass_Pl.set("c", .72);
+      mass_Pl.set("d", .72);
+      mass_Pl.set("e", .72);
+      mass_Pl.set("z1", .18);
+      mass_Pl.set("z2", .18);
+      mass_Pl.set("z3", .18);
+      mass_Pl.set("z4", .18);
+      RCP<Matrix> M = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mass_Pl, lib);
+      fineLevel.Set("M", M);
+    }
 
     CoalesceDropFactory_kokkos coalesceDropFact;
     coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
