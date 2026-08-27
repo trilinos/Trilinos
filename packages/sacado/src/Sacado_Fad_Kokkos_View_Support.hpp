@@ -366,7 +366,7 @@ KOKKOS_FUNCTION size_t dimension_scalar(const View &view) {
   if constexpr (Sacado::is_view_fad<View>::value) {
     return static_cast<size_t>(view.accessor().fad_size() + 1);
   } else {
-    return 0;
+    return 1; // For non-Fad views (or any other object), we return 1 to be consistent with a Fad with zero derivatives
   }
 }
 

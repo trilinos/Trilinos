@@ -307,17 +307,19 @@ namespace Intrepid2 {
             (i.e. the dimension of the type w.r.t. the type associated to the pointer type).
     */
 
-  template<typename T, typename ...P>
-  KOKKOS_INLINE_FUNCTION
-  constexpr typename
-  std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, unsigned >::type
-  dimension_scalar(const Kokkos::DynRankView<T, P...> /* view */) {return 1;}
+  // These should not be needed anymore as the Sacado implementation of dimension_scalar should handle this, so commenting out
 
-  template<typename T, typename ...P>
-  KOKKOS_INLINE_FUNCTION
-  constexpr typename
-  std::enable_if< std::is_standard_layout<typename Kokkos::View<T, P...>::value_type>::value && std::is_trivial<typename Kokkos::View<T, P...>::value_type>::value, unsigned >::type
-  dimension_scalar(const Kokkos::View<T, P...> /*view*/) {return 1;}
+  // template<typename T, typename ...P>
+  // KOKKOS_INLINE_FUNCTION
+  // constexpr typename
+  // std::enable_if< std::is_standard_layout<T>::value && std::is_trivial<T>::value, unsigned >::type
+  // dimension_scalar(const Kokkos::DynRankView<T, P...> /* view */) {return 1;}
+
+  // template<typename T, typename ...P>
+  // KOKKOS_INLINE_FUNCTION
+  // constexpr typename
+  // std::enable_if< std::is_standard_layout<typename Kokkos::View<T, P...>::value_type>::value && std::is_trivial<typename Kokkos::View<T, P...>::value_type>::value, unsigned >::type
+  // dimension_scalar(const Kokkos::View<T, P...> /*view*/) {return 1;}
 
   template<typename T, typename ...P>
   KOKKOS_FORCEINLINE_FUNCTION

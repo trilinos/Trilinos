@@ -1526,7 +1526,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   FadViewType v2 ("view2", num_rows, fad_size+1);
 
   // Check dimension scalar works
-  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v1), 0, out, success);
+  TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v1), 1, out, success);
   TEUCHOS_TEST_EQUALITY(Sacado::dimension_scalar(v2), fad_size+1, out, success);
 }
 

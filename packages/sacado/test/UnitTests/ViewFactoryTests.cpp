@@ -53,7 +53,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 		TEST_EQUALITY(vct1.extent(0), v1.extent(0));
 		TEST_EQUALITY(vct1.extent(1), v1.extent(1));
 		TEST_EQUALITY(vct1.extent(2), v1.extent(2));
-		TEST_EQUALITY( Sacado::dimension_scalar(vct1), 0);
+		TEST_EQUALITY( Sacado::dimension_scalar(vct1), 1);
     bool check_eq_kokkos_type = std::is_same < CommonValueType, ScalarArrayType >::value;
     bool check_eq_scalar_double = std::is_same < double, ScalarArrayType >::value;
     TEST_EQUALITY(check_eq_kokkos_type, true);
@@ -265,7 +265,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
   // Test creation of a Fad DynRankView from a double DynRankView
   {
     DynRankView<double> a("a",10,4,13);
-    TEST_EQUALITY(Sacado::dimension_scalar(a),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(a),1);
     TEST_EQUALITY(a.rank(),3);
 
     using b_type = Kokkos::DynRankView<FadType,Kokkos::LayoutRight>;
@@ -277,22 +277,22 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
   // Test a double DynRankView from a double DynRankView
   {
     DynRankView<double> a("a",10,4,13);
-    TEST_EQUALITY(Sacado::dimension_scalar(a),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(a),1);
     TEST_EQUALITY(a.rank(),3);
 
     auto b = Sacado::createDynRankView(a,"b",5,3,8);
-    TEST_EQUALITY(Sacado::dimension_scalar(b),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(b),1);
     TEST_EQUALITY(b.rank(),3);
   }
 
   // Test double rank 0
   {
     DynRankView<double> a("a",10,4,13);
-    TEST_EQUALITY(Sacado::dimension_scalar(a),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(a),1);
     TEST_EQUALITY(a.rank(),3);
 
     auto b = Sacado::createDynRankView(a,"b");
-    TEST_EQUALITY(Sacado::dimension_scalar(b),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(b),1);
     TEST_EQUALITY(b.rank(),0);
   }
 
@@ -314,7 +314,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     b_type b = Sacado::createViewWithType<b_type>(a,a.data(),5,3);
     TEST_EQUALITY(b.extent(0),5);
     TEST_EQUALITY(b.extent(1),3);
-    TEST_EQUALITY(Sacado::dimension_scalar(b),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(b),1);
   }
 
   // Test unmanaged view of Fad
@@ -346,7 +346,7 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(c.rank(),2);
     TEST_EQUALITY(c.extent(0),5);
     TEST_EQUALITY(c.extent(1),3);
-    TEST_EQUALITY(Sacado::dimension_scalar(b),0);
+    TEST_EQUALITY(Sacado::dimension_scalar(b),1);
   }
 
   // Test LayoutStride view of Fad
