@@ -96,6 +96,32 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
     EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_FLOAT
     )
 
+  # Inner Belos solve preconditioned by an Ifpack2 algebraic preconditioner,
+  # configured purely from XML (exercises the "Inner Prec *" keys added to the
+  # BelosPrecTpetra preconditioner factory).
+  IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
+    TRIBITS_ADD_TEST(
+      test_tpetra_belos
+      NAME test_tpetra_belos_prec_ifpack2
+      ARGS
+        "--input-file=stratimikos_BelosPrecIfpack2_ParameterList.xml --show-timer-summary"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      )
+
+    # Same, but the inner Belos solve (and its Ifpack2 prec) run at half
+    # precision.  Requires a half-precision scalar, hence the FLOAT guard.
+    TRIBITS_ADD_TEST(
+      test_tpetra_belos
+      NAME test_tpetra_belos_half_prec_ifpack2
+      ARGS
+        "--input-file=stratimikos_HalfBelosPrecIfpack2_ParameterList.xml --show-timer-summary"
+      COMM serial mpi
+      NUM_MPI_PROCS 4
+      EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_FLOAT
+      )
+  ENDIF()
+
   ASSERT_DEFINED(Belos_SOURCE_DIR)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestMtxFiles
@@ -111,6 +137,8 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
       stratimikos_BelosPrec_ParameterList.xml
       stratimikos_HalfBelosPrec_ParameterList.xml
       stratimikos_GMRES_IR_ParameterList.xml
+      stratimikos_BelosPrecIfpack2_ParameterList.xml
+      stratimikos_HalfBelosPrecIfpack2_ParameterList.xml
     EXEDEPS test_tpetra_belos
   )
 
