@@ -135,7 +135,7 @@ class User {
   Slot<Kokkos::HIP> HIPSlot;
 #endif
 #ifdef KOKKOS_ENABLE_SYCL
-  Slot<Kokkos::Experimental::SYCL> SYCLSlot;
+  Slot<Kokkos::SYCL> SYCLSlot;
 #endif
 
 };  // User
