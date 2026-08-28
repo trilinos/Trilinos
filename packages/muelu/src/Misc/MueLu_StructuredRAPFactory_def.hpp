@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
 #include <Xpetra_Matrix.hpp>
@@ -168,7 +169,7 @@ StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructuredGr
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                "StructuredRAPFactory: matrixType \"" << matrixType
-                                                                       << "\" is not supported for prebuilt Ac graph.");
+                                                                     << "\" is not supported for prebuilt Ac graph.");
   }
 
   const int minY = graphSpec.numDimensions > 1 ? -1 : 0;
@@ -260,8 +261,8 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
   RCP<const Teuchos::Comm<int>> comm = rowMap->getComm();
   const int myRank                   = comm->getRank();
   const int numRanks                 = comm->getSize();
-  const GO localMinGid = rowMap->getMinGlobalIndex();
-  const GO localMaxGid = rowMap->getMaxGlobalIndex();
+  const GO localMinGid               = rowMap->getMinGlobalIndex();
+  const GO localMaxGid               = rowMap->getMaxGlobalIndex();
   TEUCHOS_TEST_FOR_EXCEPTION((localMinGid - globalMinGid) % dofsPerNodeGO != 0, Exceptions::RuntimeError,
                              "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
                                                                          << "): local row range does not begin at a nodal boundary.");
@@ -545,11 +546,11 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStructu
         const size_t numNeighbors = getNeighbors(x, y, z);
         for (size_t neighbor = 0; neighbor < numNeighbors; ++neighbor) {
           for (LO colDof = 0; colDof < graphSpec.dofsPerNode; ++colDof) {
-            const GO colGid = getDofGid(neighborNodes[neighbor], colDof);
+            const GO colGid          = getDofGid(neighborNodes[neighbor], colDof);
             const bool localFastPath = colGid >= localMinGid && colGid <= localMaxGid;
-            const LO colLid = localFastPath
-                                  ? Teuchos::as<LO>(colGid - localMinGid)
-                                  : colMap->getLocalElement(colGid);
+            const LO colLid          = localFastPath
+                                           ? Teuchos::as<LO>(colGid - localMinGid)
+                                           : colMap->getLocalElement(colGid);
             TEUCHOS_TEST_FOR_EXCEPTION(colLid == Teuchos::OrdinalTraits<LO>::invalid(), Exceptions::RuntimeError,
                                        "StructuredRAPFactory::GetStructuredGraph(" << graphSpec.description
                                                                                    << "): column GID " << colGid
@@ -649,9 +650,9 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
     std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
 
 #ifdef KOKKOS_ENABLE_CUDA
-    bool isCuda = typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name();
+    const bool isCuda = std::is_same<typename Node::execution_space, Kokkos::Cuda>::value;
 #else
-    bool isCuda = false;
+    const bool isCuda = false;
 #endif
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -700,7 +701,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
           matrixType = Get<std::string>(fineLevel, "matrixType");
         Teuchos::Array<LocalOrdinal> lCoarseNodesPerDim =
             Get<Teuchos::Array<LocalOrdinal>>(fineLevel, "lCoarseNodesPerDim");
-        const int interpolationOrder = Get<int>(fineLevel, "structuredInterpolationOrder");
+        const int interpolationOrder        = Get<int>(fineLevel, "structuredInterpolationOrder");
         const StructuredGraphSpec graphSpec = GetStructuredGraphSpec(matrixType, interpolationOrder);
         GetOStream(Statistics1) << "StructuredRAP: Using " << graphSpec.description
                                 << " stencil with " << graphSpec.stencilOffsets.size()

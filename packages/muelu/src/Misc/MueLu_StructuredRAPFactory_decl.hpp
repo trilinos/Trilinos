@@ -92,7 +92,7 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
   //@{
 
   //! list of user-defined transfer Factories
-  std::vector<RCP<const FactoryBase> > transferFacts_;
+  std::vector<RCP<const FactoryBase>> transferFacts_;
 
   //@}
 

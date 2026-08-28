@@ -90,20 +90,20 @@ buildStructuredProblem(const std::string& matrixType,
 
   Teuchos::RCP<const Map> map;
   if (matrixType == "Laplace1D") {
-    problem.numDimensions = 1;
-    map = Galeri::Xpetra::CreateMap<LO, GO, NO>(TestHelpers::Parameters::getLib(), "Cartesian1D", comm, galeriList);
-    problem.coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LO, GO, Map, RealValuedMultiVector>("1D", map, galeriList);
+    problem.numDimensions   = 1;
+    map                     = Galeri::Xpetra::CreateMap<LO, GO, NO>(TestHelpers::Parameters::getLib(), "Cartesian1D", comm, galeriList);
+    problem.coordinates     = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LO, GO, Map, RealValuedMultiVector>("1D", map, galeriList);
     problem.lNodesPerDim[0] = galeriList.get<LO>("lnx");
   } else if (matrixType == "Laplace2D" || matrixType == "Elasticity2D") {
-    problem.numDimensions = 2;
-    map = Galeri::Xpetra::CreateMap<LO, GO, NO>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
-    problem.coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LO, GO, Map, RealValuedMultiVector>("2D", map, galeriList);
+    problem.numDimensions   = 2;
+    map                     = Galeri::Xpetra::CreateMap<LO, GO, NO>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+    problem.coordinates     = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LO, GO, Map, RealValuedMultiVector>("2D", map, galeriList);
     problem.lNodesPerDim[0] = galeriList.get<LO>("lnx");
     problem.lNodesPerDim[1] = galeriList.get<LO>("lny");
   } else if (matrixType == "Laplace3D" || matrixType == "Elasticity3D") {
-    problem.numDimensions = 3;
-    map = Galeri::Xpetra::CreateMap<LO, GO, NO>(TestHelpers::Parameters::getLib(), "Cartesian3D", comm, galeriList);
-    problem.coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LO, GO, Map, RealValuedMultiVector>("3D", map, galeriList);
+    problem.numDimensions   = 3;
+    map                     = Galeri::Xpetra::CreateMap<LO, GO, NO>(TestHelpers::Parameters::getLib(), "Cartesian3D", comm, galeriList);
+    problem.coordinates     = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LO, GO, Map, RealValuedMultiVector>("3D", map, galeriList);
     problem.lNodesPerDim[0] = galeriList.get<LO>("lnx");
     problem.lNodesPerDim[1] = galeriList.get<LO>("lny");
     problem.lNodesPerDim[2] = galeriList.get<LO>("lnz");
@@ -113,10 +113,10 @@ buildStructuredProblem(const std::string& matrixType,
 
   if (matrixType == "Elasticity2D") {
     problem.dofsPerNode = 2;
-    map = Xpetra::MapFactory<LO, GO, NO>::Build(map, problem.dofsPerNode);
+    map                 = Xpetra::MapFactory<LO, GO, NO>::Build(map, problem.dofsPerNode);
   } else if (matrixType == "Elasticity3D") {
     problem.dofsPerNode = 3;
-    map = Xpetra::MapFactory<LO, GO, NO>::Build(map, problem.dofsPerNode);
+    map                 = Xpetra::MapFactory<LO, GO, NO>::Build(map, problem.dofsPerNode);
   }
 
   Teuchos::RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > galeriProblem =
@@ -167,8 +167,6 @@ buildStructuredTransferData(const StructuredProblemData<Scalar, LocalOrdinal, Gl
 
   Teuchos::RCP<AmalgamationFactory> amalgamation = Teuchos::rcp(new AmalgamationFactory());
   Teuchos::RCP<CoalesceDropFactory> coalesceDrop = Teuchos::rcp(new CoalesceDropFactory());
-  coalesceDrop->SetParameter("lightweight wrap", Teuchos::ParameterEntry(true));
-  coalesceDrop->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.0));
   coalesceDrop->SetFactory("UnAmalgamationInfo", amalgamation);
 
   Teuchos::RCP<AggregationFactory> aggregation = Teuchos::rcp(new AggregationFactory());
@@ -286,9 +284,9 @@ void compareRAPMatrices(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, 
           << structuredNnz << " versus " << referenceNnz);
 
   const double maxGraphOverhead = 0.05;
-  const double graphOverhead = referenceNnz == 0
-                                   ? 0.0
-                                   : static_cast<double>(structuredNnz - referenceNnz) /
+  const double graphOverhead    = referenceNnz == 0
+                                      ? 0.0
+                                      : static_cast<double>(structuredNnz - referenceNnz) /
                                          static_cast<double>(referenceNnz);
   TEUCHOS_TEST_FOR_EXCEPTION(
       graphOverhead > maxGraphOverhead,
@@ -298,9 +296,9 @@ void compareRAPMatrices(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, 
           << " (overhead = " << graphOverhead
           << ", limit = " << maxGraphOverhead << ")");
 
-  const Teuchos::RCP<const Map> structuredRowMap = structuredAc->getRowMap();
-  const Teuchos::RCP<const Map> structuredColMap = structuredAc->getColMap();
-  const Teuchos::RCP<const Map> referenceColMap  = referenceAc->getColMap();
+  const Teuchos::RCP<const Map> structuredRowMap     = structuredAc->getRowMap();
+  const Teuchos::RCP<const Map> structuredColMap     = structuredAc->getColMap();
+  const Teuchos::RCP<const Map> referenceColMap      = referenceAc->getColMap();
   const Teuchos::RCP<const Teuchos::Comm<int> > comm = structuredRowMap->getComm();
 
   int localGraphMismatch = 0;
@@ -377,10 +375,10 @@ void compareRAPMatrices(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, 
   if (!difference->isFillComplete())
     difference->fillComplete(structuredAc->getDomainMap(), structuredAc->getRangeMap());
 
-  const real_type differenceNorm = difference->getFrobeniusNorm();
-  const real_type referenceNorm  = referenceAc->getFrobeniusNorm();
-  const real_type scale = std::max(referenceNorm, Teuchos::ScalarTraits<real_type>::one());
-  const real_type relativeError = differenceNorm / scale;
+  const real_type differenceNorm      = difference->getFrobeniusNorm();
+  const real_type referenceNorm       = referenceAc->getFrobeniusNorm();
+  const real_type scale               = std::max(referenceNorm, Teuchos::ScalarTraits<real_type>::one());
+  const real_type relativeError       = differenceNorm / scale;
   const real_type comparisonTolerance = 1000.0 * Teuchos::ScalarTraits<real_type>::eps();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -515,13 +513,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredRAPFactory, LinearElasticity3D, Scal
                                              -1, -1, -1, 1, "{2}", out);
 }  // LinearElasticity3D test
 
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, Constructor, Scalar, LO, GO, Node)   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantLaplace1D, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantLaplace2D, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, LinearLaplace2D, Scalar, LO, GO, Node)   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantLaplace3D, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, LinearLaplace3D, Scalar, LO, GO, Node)   \
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, Constructor, Scalar, LO, GO, Node)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantLaplace1D, Scalar, LO, GO, Node)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantLaplace2D, Scalar, LO, GO, Node)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, LinearLaplace2D, Scalar, LO, GO, Node)      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantLaplace3D, Scalar, LO, GO, Node)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, LinearLaplace3D, Scalar, LO, GO, Node)      \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantElasticity2D, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, ConstantElasticity3D, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredRAPFactory, LinearElasticity3D, Scalar, LO, GO, Node)

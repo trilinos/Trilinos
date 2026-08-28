@@ -205,7 +205,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   if (isStructuredRAPFactory)
     rapList.set("rap: matrix type", matrixType);
 
-  int numDimensions      = 0;
+  int numDimensions = 0;
   Teuchos::Array<LO> lNodesPerDim(3);
 
   // Create map and coordinates

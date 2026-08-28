@@ -163,14 +163,14 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       structured_interp_kokkos.xml
       structured_interp_line.xml
       structured_interp_sa_kokkos.xml
-      structured_scp_1dof.xml
-      structured_sparc_1dof.xml
-      structured_tentative_kokkos.xml
       structured_rapfactory_elasticity2d_const.xml
       structured_rapfactory_elasticity3d_const.xml
       structured_rapfactory_elasticity3d_lin.xml
       structured_rapfactory_laplace_const.xml
       structured_rapfactory_laplace_lin.xml
+      structured_scp_1dof.xml
+      structured_sparc_1dof.xml
+      structured_tentative_kokkos.xml
   )
 
 ENDIF()
