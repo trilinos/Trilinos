@@ -114,11 +114,12 @@ void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCoarseMap
   GetOStream(Statistics2) << "domainGIDOffset: " << domainGIDOffset << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
 
   // number of coarse level dofs (fixed by number of aggregates and blocksize data)
-  GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
-  GlobalOrdinal indexBase   = aggMap->getIndexBase();
+  GlobalOrdinal nCoarseDofsGlobal = aggregates->GetNumGlobalAggregatesComputeIfNeeded() * getFixedBlockSize();
+  GlobalOrdinal nCoarseDofs       = numAggs * getFixedBlockSize();
+  GlobalOrdinal indexBase         = aggMap->getIndexBase();
 
   RCP<const Map> coarseMap = StridedMapFactory::Build(aggMap->lib(),
-                                                      Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                      nCoarseDofsGlobal,
                                                       nCoarseDofs,
                                                       indexBase,
                                                       stridingInfo_,

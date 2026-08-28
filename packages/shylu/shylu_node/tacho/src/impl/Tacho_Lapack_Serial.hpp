@@ -219,6 +219,9 @@ template <typename T> struct LapackSerial {
         // zero out off-diagonal (assuming we hit null-space)
         for (int j = i+1; j < m; j++) { A[i + j*lda] = zero; }
         (*info) ++;
+      } else if (A[i + i*lda] == zero) {
+        (*info) = - (i+1);
+        return *info;
       } else {
         T alpha = A[i + i*lda];
   

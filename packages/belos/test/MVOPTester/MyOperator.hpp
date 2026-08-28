@@ -29,7 +29,7 @@
  *
  * \date Last modified on 01-Nov-05
  */
-template <class ScalarType, class DM>
+template <class ScalarType, class DM = Belos::DefaultDenseMatrix<int, ScalarType>>
 class MyOperator : public Belos::Operator<ScalarType, DM>
 {
 

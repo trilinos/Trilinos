@@ -134,8 +134,11 @@ testSolver (Teuchos::FancyOStream& out,
   Belos::SolverFactory<SC, MV, OP> factory;
 
   // Set up Belos solver parameters.
+  int verbosity = Belos::Errors + Belos::Warnings
+                  + Belos::TimingDetails + Belos::StatusTestDetails;
+
   Teuchos::RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList (solverName);
-  belosList->set ("Verbosity", Belos::Errors + Belos::Warnings);
+  belosList->set ("Verbosity", verbosity);
 
   try {
     solver = factory.create (solverName, belosList);
@@ -188,6 +191,13 @@ testSolver (Teuchos::FancyOStream& out,
       nonZeroX = true;
   } 
   if ( nonZeroX || (ret != Belos::NaNDetected) || ( solver->achievedTol() != MTS::one() ) ) {
+    success = false;
+    return;
+  }
+
+  if ( convertReturnTypeToString(ret) != "NaNDetected" ) {
+    out << "Return type and string conversion of return type do not match!"
+        << endl;
     success = false;
     return;
   }

@@ -90,6 +90,11 @@ public:
       bool conjugate = false;
       int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
+      if (ndefs < 0) {
+        // LDL_nopiv (without diag-perturb) encountered zero pivot
+        Kokkos::atomic_add(_rval, -1);
+        return;
+      }
 
       if (n_m > 0) {
         const value_type one(1), minus_one(-1), zero(0);
@@ -145,6 +150,11 @@ public:
       bool conjugate = false;
       int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
+      if (ndefs < 0) {
+        // LDL_nopiv (without diag-perturb) encountered zero pivot
+        Kokkos::atomic_add(_rval, -1);
+        return;
+      }
 
       if (n_m > 0) {
         // * Update off-diagonal block
@@ -232,6 +242,11 @@ public:
       bool conjugate = false;
       int ndefs = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL, conjugate);
       member.team_barrier();
+      if (ndefs < 0) {
+        // LDL_nopiv (without diag-perturb) encountered zero pivot
+        Kokkos::atomic_add(_rval, -1);
+        return;
+      }
 
       if (n_m > 0) {
         // * Update off-diagonal block

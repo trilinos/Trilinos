@@ -11,7 +11,10 @@
 // The right-hand-side from the HB file is used instead of random vectors.
 // The initial guesses are all set to zero.
 //
-// NOTE: No preconditioner is used in this case.
+// NOTE: No preconditioner is used in this case.  If --flexible is
+// provided, this exercises the flexible GCRODR path with no right
+// preconditioner; Belos::LinearProblem::applyRightPrec() falls back to
+// the identity operation.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -58,6 +61,7 @@ int main(int argc, char *argv[]) {
   bool debug = false;
   try {
     bool proc_verbose = false;
+    bool flexible = false;
     int frequency = -1;  // how often residuals are printed by solver
     int blocksize = 1;
     int numrhs = 1;
@@ -66,6 +70,9 @@ int main(int argc, char *argv[]) {
 
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("flexible","standard",&flexible,
+                   "Use flexible GCRODR.  No preconditioner is required; "
+                   "the right preconditioner application falls back to identity.");
     cmdp.setOption("debug","no-debug",&debug,"Print debug messages.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
@@ -116,6 +123,9 @@ int main(int argc, char *argv[]) {
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     belosList.set( "Num Blocks", numBlocks );
     belosList.set( "Num Recycled Blocks", numRecycledBlocks );
+    if (flexible) {
+      belosList.set( "Flexible GCRODR", true );
+    }
     if (verbose) {
       int verbosity = Belos::Errors + Belos::Warnings +
           Belos::TimingDetails + Belos::StatusTestDetails;
@@ -157,6 +167,8 @@ int main(int argc, char *argv[]) {
       std::cout << "Block size used by solver: " << blocksize << std::endl;
       std::cout << "Max number of GCRODR iterations: " << maxits << std::endl;
       std::cout << "Relative residual tolerance: " << tol << std::endl;
+      std::cout << "Flexible GCRODR: "
+                << (flexible ? "enabled" : "disabled") << std::endl;
       std::cout << std::endl;
     }
     // Perform solve
@@ -188,6 +200,11 @@ int main(int argc, char *argv[]) {
     solver.reset(Belos::Problem);
     ret = solver.solve();
     numIters3=solver.getNumIters();
+    if (proc_verbose) {
+      std::cout << "Iterations solve 1: " << numIters1 << std::endl;
+      std::cout << "Iterations solve 2: " << numIters2 << std::endl;
+      std::cout << "Iterations solve 3: " << numIters3 << std::endl;
+    }
     // Clean up.
     delete [] dvals;
     delete [] colptr;

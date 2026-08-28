@@ -923,8 +923,15 @@ public:
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs" (with diag-perturb)
+            //  r_val returns negative value if zero-pivot is encountered (without diag-perturb)
             int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
+            if (ndefs < 0) {
+              // LDL_nopiv (without diagonal perturbation) encountered zero pivot
+              _status = ndefs;
+              checkDeviceLapackStatus("LDL_nopiv<OnDevice>");
+              TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "LDL_nopiv (device) returns negative error code.");
+            }
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
@@ -1002,8 +1009,15 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs" (with diag-perturb)
+            //  r_val returns negative value if zero-pivot is encountered (without diag-perturb)
             int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
+            if (ndefs < 0) {
+              // LDL_nopiv (without diagonal perturbation) encountered zero pivot
+              _status = ndefs;
+              checkDeviceLapackStatus("LDL_nopiv<OnDevice>");
+              TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "LDL_nopiv (device) returns negative error code.");
+            }
 
             // Apply TRSM to off-diagonal blocks
             if (n_m > 0) {
@@ -1106,8 +1120,15 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs"
+            //  r_val is used internally to trak errors, which is accumulated into the return value "ndefs" (with diag-perturb)
+            //  r_val returns negative value if zero-pivot is encountered (without diag-perturb)
             int ndefs = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, pivot_tol, ATL, W, r_val);
+            if (ndefs < 0) {
+              // LDL_nopiv (without diagonal perturbation) encountered zero pivot
+              _status = ndefs;
+              checkDeviceLapackStatus("LDL_nopiv<OnDevice>");
+              TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "LDL_nopiv (device) returns negative error code.");
+            }
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             if (n_m > 0) {
@@ -3844,7 +3865,11 @@ public:
             Kokkos::deep_copy(h_rval, t_rval);
             int rval = h_rval(0);
             if (rval != 0) {
-              TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
+              if (this->getSolutionMethod() == 0) {
+                TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "SYTRF-nopiv (team) returns negative error code.");
+              } else {
+                TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
+              }
             }
             if (_h_num_device_calls_factor(lvl) > 0)
               Kokkos::fence(); // sync device-calls before calling update

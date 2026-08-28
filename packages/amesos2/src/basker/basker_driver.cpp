@@ -15,9 +15,6 @@
 #include "basker_decl.hpp"
 #include "basker_def.hpp"
 
-
-using namespace std;
-
 int main(int argc, char* argv[])
 {
 
@@ -46,7 +43,7 @@ int main(int argc, char* argv[])
   fp >> temp;
   annz = atoi(temp.c_str());
 
-  cout << "Size: " << anrow << " nnz: " << annz << endl;
+  std::cout << "Size: " << anrow << " nnz: " << annz << std::endl;
   Ap = new Int[anrow+1];
   Ai = new Int[annz];
   Ax = new Entry[annz];
@@ -63,7 +60,7 @@ int main(int argc, char* argv[])
       Ai[i] = atoi(t.c_str())-1;
       if(i == 0)
         {
-          cout << "First index: " << Ai[i] << endl;
+          std::cout << "First index: " << Ai[i] << std::endl;
         }
     }
   for(int i=0; i < annz; i++)
@@ -92,7 +89,7 @@ int main(int argc, char* argv[])
 
 
 
-  cout << "Done allocating space" << endl;
+  std::cout << "Done allocating space" << std::endl;
   BaskerClassicNS::BaskerClassic<int, double> mybasker;
   mybasker.factor(anrow, ancol,annz, Ap, Ai, Ax);
 
@@ -101,8 +98,8 @@ int main(int argc, char* argv[])
 
 
   free(pp);
-  //cout << "pp(0): " << pp[0] << endl;
-  //cout << "pp(2): " << pp[2] << endl;
+  //std::cout << "pp(0): " << pp[0] << std::endl;
+  //std::cout << "pp(2): " << pp[2] << std::endl;
 
   /*Try to solve a problem*/
   Entry *x = (Entry *)calloc(anrow, sizeof(Entry));
@@ -119,10 +116,10 @@ int main(int argc, char* argv[])
  mybasker.solve(b, x);
 
 
-  cout << "Solution:" << endl;
+  std::cout << "Solution:" << std::endl;
   for(int i = 0; i < anrow; i++)
     {
-      cout << x[i] << endl;
+      std::cout << x[i] << std::endl;
     }
 
 

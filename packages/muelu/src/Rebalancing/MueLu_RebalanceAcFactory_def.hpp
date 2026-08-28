@@ -102,6 +102,7 @@ void RebalanceAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level 
         GetOStream(Runtime0) << "Replacing maps with a subcommunicator" << std::endl;
         XpetraList.set("Restrict Communicator", true);
       }
+      XpetraList.set("compute global constants", IsPrint(Statistics1));
       // NOTE: If the communicator is restricted away, Build returns Teuchos::null.
       XpetraList.set("Timer Label", "MueLu::RebalanceAc-" + Teuchos::toString(coarseLevel.GetLevelID()));
       {

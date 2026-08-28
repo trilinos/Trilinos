@@ -22,4 +22,3 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMatrixTestFiles
                ./matrices/gap-ids-1proc-rowmap-tpetra.mm
                ./matrices/gap-ids-1proc-rowmap-epetra.mm
   )
-

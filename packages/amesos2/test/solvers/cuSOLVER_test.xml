@@ -153,6 +153,9 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="solver_params">
+      </ParameterList>
+
     </ParameterList>
   </ParameterList> <!-- end tacho_test_complex.mtx -->
 

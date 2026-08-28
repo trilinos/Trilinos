@@ -83,13 +83,22 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
         // == Factor ith row (!! Without checking for tiny pivot (note: nan if zero pivot) !!) ==
         // scaling the off-diagonal in the i-th row of the upper-triangular matrix
         Kokkos::parallel_for(policy_scale, KOKKOS_LAMBDA(const ordinal_type &j) {
-            A(i, j) /= A(i, i); });
+            if (A(i, i) != zero) A(i, j) /= A(i, i); });
 
         // update trailing submatrix
         Kokkos::parallel_for(policy_update, KOKKOS_LAMBDA(const ordinal_type &id) {
-          ordinal_type k = (i+1) + id / mn;
-          ordinal_type j = (i+1) + id % mn;
-          A(k, j) -= (conjugate ? arith_traits::conj(A(i, k)) : A(i, k)) * A(i, i) * A(i, j);
+          if (A(i, i) != zero) {
+              ordinal_type k = (i+1) + id / mn;
+              ordinal_type j = (i+1) + id % mn;
+              A(k, j) -= (conjugate ? arith_traits::conj(A(i, k)) : A(i, k)) * A(i, i) * A(i, j);
+          }
+        });
+
+        // record first zero pivot location
+        Kokkos::parallel_for(policy_diag, KOKKOS_LAMBDA(const ordinal_type &id) {
+          if (A(id, id) == zero && rval_d(0) == 0) {
+              rval_d(0) = -(id + 1);
+          }
         });
       }
     }
@@ -122,6 +131,7 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
       // Factorize Diagonal Block
       auto A11 = Kokkos::subview(A, range_type(i1, i2), range_type(i1, i2));
       int ndefs = invoke_col(member, tol, A11, r_val_view);
+      if (ndefs < 0) return ndefs;
 
       ordinal_type m2 = m - i2;
       if (m2 > 0) {

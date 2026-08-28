@@ -123,6 +123,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
              test_Jacobi_calore1_mm.xml
              test_Jacobi_calore1_mm_constGraph.xml
              test_Jacobi_coords_nos1_hb.xml
+             test_Jacobi_flexible_gcrodr_nos1_hb.xml
              test_Jacobi_gcrodr_nos1_hb.xml
              test_Jacobi_minres_bcsstk14_hb.xml
              test_Jacobi_nos1_hb.xml
@@ -275,6 +276,15 @@ IF(Tpetra_INST_DOUBLE)
     tif_belos
     NAME Jacobi_gcrodr_hb_belos
     ARGS "--xml_file=test_Jacobi_gcrodr_nos1_hb.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME Jacobi_flexible_gcrodr_hb_belos
+    ARGS "--xml_file=test_Jacobi_flexible_gcrodr_nos1_hb.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT

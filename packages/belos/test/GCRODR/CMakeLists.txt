@@ -7,12 +7,22 @@ IF(Teuchos_ENABLE_COMPLEX)
 
   TRIBITS_INCLUDE_DIRECTORIES(../MVOPTester)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     gcrodr_complex_hb
     SOURCES test_gcrodr_complex_hb.cpp
-    ARGS
-      "--verbose --filename=mhd1280b.cua"
-    )
+  )
+
+  TRIBITS_ADD_TEST(
+    gcrodr_complex_hb
+    NAME_POSTFIX standard
+    ARGS "--verbose --filename=mhd1280b.cua"
+  )
+
+  TRIBITS_ADD_TEST(
+    gcrodr_complex_hb
+    NAME_POSTFIX flexible
+    ARGS "--verbose --filename=mhd1280b.cua --flexible"
+  )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestGCRODRComplexFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices

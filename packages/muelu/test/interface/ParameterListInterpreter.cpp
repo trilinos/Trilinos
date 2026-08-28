@@ -336,6 +336,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         // Ignore the value of "lambdaMin"
         run_sed("'s/lambdaMin: [0-9]*.[0-9]*/lambdaMin = <ignored>/'", baseFile);
 
+        // Ignore Chebyshev eigenvalue
+        run_sed("'s/chebyshev: max eigenvalue (calculated by Ifpack2) = [0-9]*.[0-9]*/chebyshev: max eigenvalue (calculated by Ifpack2) = <ignored>/'", baseFile);
+
+        // Ignore prolongator damping factor
+        run_sed("'s/Prolongator damping factor = [0-9]*.[0-9]* (|[0-9]*.[0-9]* \\/ [0-9]*.[0-9]*|)/Prolongator damping factor = <ignored>/'", baseFile);
+
         // Ignore the value of "chebyshev: max eigenvalue"
         // NOTE: we skip lines with default value ([default])
         run_sed("'/[default]/! s/chebyshev: max eigenvalue = [0-9]*.[0-9]*/chebyshev: max eigenvalue = <ignored>/'", baseFile);

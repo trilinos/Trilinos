@@ -32,8 +32,6 @@ Matrix filtering (MueLu::FilteredAFactory)
 Filtered matrix is not being constructed as no filtering is being done
 PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
 Getting P from coarseLevel
-Reuse C pattern
-Reuse C pattern
 
 *******************************************************
 ***** Belos Iterative Solver:  Pseudo Block CG 
@@ -43,9 +41,7 @@ Reuse C pattern
 *****   Test 1 : Belos::StatusTestGenResNorm<>: (2-Norm Imp Res Vec) , tol = 1e-08
 *******************************************************
 Iter 0, [ 1] :    6.665458e+01
-Reuse C pattern
-Reuse C pattern
-Iter 1, [ 1] :    6.447167e-12
+Iter 1, [ 1] :    2.307178e-13
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -83,8 +79,6 @@ Matrix filtering (MueLu::FilteredAFactory)
 Filtered matrix is not being constructed as no filtering is being done
 PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
 Getting P from coarseLevel
-Reuse C pattern
-Reuse C pattern
 
 *******************************************************
 ***** Belos Iterative Solver:  Pseudo Block CG 
@@ -94,9 +88,7 @@ Reuse C pattern
 *****   Test 1 : Belos::StatusTestGenResNorm<>: (2-Norm Imp Res Vec) , tol = 1e-08
 *******************************************************
 Iter 0, [ 1] :    4.275004e+00
-Reuse C pattern
-Reuse C pattern
-Iter 1, [ 1] :    5.179015e-13
+Iter 1, [ 1] :    1.202650e-14
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]
@@ -113,18 +105,18 @@ presmoother ->
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
-Operator complexity = 1.44
+Operator complexity = 0.00
 Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows    nnz  nnz/row  c ratio  procs
   0    9999  29995     3.00               1
-  1    3333   9997     3.00     3.00      1
+  1    3333    N/A              3.00      1
   2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
+Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333]}
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
