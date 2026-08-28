@@ -1574,6 +1574,19 @@ scatter<int, int> (const int sendBuf[],
 
 template<>
 void
+scatterv<int, int> (const int sendBuf[],
+                    const int sendCount[],
+                    const int displs[],
+                    int recvBuf[],
+                    const int recvCount,
+                    const int root,
+                    const Comm<int>& comm)
+{
+  scattervImpl<int> (sendBuf, sendCount, displs, recvBuf, recvCount, root, comm);
+}
+
+template<>
+void
 scatterv<int, double> (const double sendBuf[],
                        const int sendCount[],
                        const int displs[],
