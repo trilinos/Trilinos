@@ -446,8 +446,17 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           // - populate the values array
           // - add the values to the fe_matrix.
           for (int element_node_idx = 0; element_node_idx < nodesPerElem; ++element_node_idx) {
+            // The matrix's owned+shared row map is the owned+shared map, so the
+            // matrix row is indexed by the owned+shared LID.
             const local_ordinal_type local_row_id =
                 localMap.getLocalElement(owned_element_to_node_gids(element_idx, element_node_idx));
+
+            // The RHS (an FEMultiVector) lives on the importer's target map,
+            // i.e. the graph's column map -- NOT the owned+shared row map (the
+            // two differ once the column map orders owned GIDs before remote
+            // GIDs, as the assembled owned column map does).  Index the RHS by
+            // its column-map LID, which is exactly element_lcids[node].
+            const local_ordinal_type local_rhs_row_id = element_lcids[element_node_idx];
 
             // Atomically contribute for sums: parallel elements may be contributing
             // to the same node at the same time
@@ -456,7 +465,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
                                         &(element_matrix[element_node_idx][col_idx]),
                                         true, true);
             }
-            Kokkos::atomic_add(&(localRHS(local_row_id, 0)), element_rhs[element_node_idx]);
+            Kokkos::atomic_add(&(localRHS(local_rhs_row_id, 0)), element_rhs[element_node_idx]);
           }
         });
     execution_space().fence();
