@@ -43,9 +43,17 @@ namespace Details {
 /// provided to the constructor:
 ///   - If a column map is provided, the global node IDs are mapped to local
 ///     column indices directly inside the Fill functor, using that column map.
-///   - If no column map is provided, a globally-indexed local graph is built
-///     first, then Tpetra::Details::makeColMap constructs the column map, and a
-///     final parallel_for kernel remaps the global indices to local indices.
+///   - If no column map is provided, the owned+shared map itself is used as the
+///     assembly column map (an owned element only touches owned or shared
+///     nodes, so no remote columns can appear at this stage).
+///
+/// In the parallel case, a fused Export + fillComplete then builds the owned
+/// graph and its column map (owned GIDs first, then remote GIDs grouped by
+/// owning process -- matching CrsGraph::makeColMap(ownedDomainMap)).  The
+/// owned+shared graph is finalized to share that same column map, with its
+/// owned rows carrying the merged structure and its shared rows keeping this
+/// process' partial contributions, so that the owned graph is a proper
+/// first-chunk subview of the owned+shared graph (as FECrsMatrix requires).
 ///
 /// Typical usage:
 /// \code
@@ -104,9 +112,8 @@ class GraphAssembly {
   ///   locally-owned elements (global node IDs).  See #element_to_node_type.
   /// \param ownedPlusSharedColMap [in] Optional owned+shared column map.  If
   ///   provided, it is used to map global column IDs to local column indices
-  ///   inside the Fill functor.  If null, a column map is built with
-  ///   Tpetra::Details::makeColMap after a globally-indexed local graph has been
-  ///   assembled.
+  ///   inside the Fill functor.  If null, the owned+shared map is used as the
+  ///   assembly column map.
   GraphAssembly(const Teuchos::RCP<const map_type>& rowMap,
                 const Teuchos::RCP<const map_type>& ownedPlusSharedMap,
                 const element_to_node_type& ownedElementToNode,

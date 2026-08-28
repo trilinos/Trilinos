@@ -311,9 +311,6 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   using entries_t        = typename local_graph_type::entries_type;
   using size_type        = typename rowptrs_t::value_type;
   using local_map_type   = typename map_type::local_map_type;
-  // Globally-indexed entries array (path 2): holds GlobalOrdinal column IDs.
-  using gbl_entries_t =
-      Kokkos::View<global_ordinal_type*, typename node_type::memory_space>;
 
   using range_policy  = Kokkos::RangePolicy<execution_space>;
   using team_policy   = Kokkos::TeamPolicy<execution_space>;
@@ -481,8 +478,11 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
     }
   };
 
-  // The owned+shared column map used by the assembled owned+shared graph.
+  // The owned+shared column map used by the assembled owned+shared graph, and
+  // the local (colMap-indexed) entries produced by the fill pass.  These are
+  // populated by one of the two paths below.
   RCP<const map_type> ownedPlusSharedColMap;
+  entries_t localEntries(Kokkos::ViewAllocateWithoutInitializing("localEntries"), nnz);
 
   if (haveColMap) {
     // -- Path 1: the user provided a column map. --------------------------
@@ -491,71 +491,37 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
     // functor.
     ownedPlusSharedColMap = ownedPlusSharedColMap_;
     auto localColMap      = ownedPlusSharedColMap->getLocalMap();
-
-    entries_t localEntries(Kokkos::ViewAllocateWithoutInitializing("localEntries"), nnz);
     runFill(localEntries, localColMap, std::false_type{});
-
-    local_graph_type localGraph(localEntries, localRowptrs);
-    Tpetra::Import_Util::sortCrsGraph(localGraph);
-
-    // Build a fill-complete owned+shared graph directly from the local graph.
-    // Using the 5-argument (lclGraph, row, col, domain, range) constructor sets
-    // domain = owned and range = owned+shared without any column reindexing, so
-    // the local column indices we just computed stay valid.  The owned domain
-    // map is what makes CrsGraph build the owned -> owned+shared Importer that
-    // the fused Export below relies on.
-    ownedPlusSharedGraph_ =
-        rcp(new crs_graph_type(localGraph,
-                               ownedPlusSharedMap_,   // row map
-                               ownedPlusSharedColMap, // column map
-                               rowMap_,               // domain map (owned)
-                               ownedPlusSharedMap_)); // range map
   } else {
     // -- Path 2: no column map provided. ----------------------------------
-    // FILL a globally-indexed entries array, then build the column map with
-    // Tpetra::Details::makeColMap and remap to local indices.
-    gbl_entries_t globalEntries(Kokkos::ViewAllocateWithoutInitializing("globalEntries"), nnz);
-    // For the global path, outColMap is unused; pass the owned+shared local map
-    // as a placeholder of the right type.
-    runFill(globalEntries, localOwnedPlusSharedMap, std::true_type{});
-
-    // Build the column map from the (global) column indices.  The domain map is
-    // the owned row map: makeColMap will locally-fit it into the column map.
-    {
-      RCP<const map_type> colMap;
-      const int err = Tpetra::Details::makeColMap<local_ordinal_type, global_ordinal_type, node_type>(
-          colMap, rowMap_, globalEntries);
-      TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
-                                 "Tpetra::Details::GraphAssembly::build: makeColMap failed.");
-      ownedPlusSharedColMap = colMap;
-    }
-
-    // Remap the global column indices to local indices w.r.t. the new colMap.
-    entries_t localEntries(Kokkos::ViewAllocateWithoutInitializing("localEntries"), nnz);
-    {
-      auto localColMap = ownedPlusSharedColMap->getLocalMap();
-      Kokkos::parallel_for(
-          "remapGlobalToLocalColumnIndices",
-          range_policy(0, nnz),
-          KOKKOS_LAMBDA(size_t i) {
-            localEntries(i) = localColMap.getLocalElement(globalEntries(i));
-          });
-    }
-
-    local_graph_type localGraph(localEntries, localRowptrs);
-    Tpetra::Import_Util::sortCrsGraph(localGraph);
-
-    ownedPlusSharedGraph_ =
-        rcp(new crs_graph_type(localGraph,
-                               ownedPlusSharedMap_,   // row map
-                               ownedPlusSharedColMap, // column map
-                               rowMap_,               // domain map (owned)
-                               ownedPlusSharedMap_)); // range map
+    // The assembled owned+shared graph's rows and columns are both indexed by
+    // the owned+shared map: an owned element's nodes are, by construction, all
+    // either owned or shared on this process, so the owned+shared map serves as
+    // the column map too and no makeColMap call is needed at this stage.  The
+    // fill pass therefore writes owned+shared LIDs directly.
+    ownedPlusSharedColMap = ownedPlusSharedMap_;
+    runFill(localEntries, localOwnedPlusSharedMap, std::false_type{});
   }
 
   ownedPlusSharedColMap_ = ownedPlusSharedColMap;
 
-  // -- Final step: build the owned graph. --
+  // Wrap the assembled (local, sorted) structure in a fill-complete owned+shared
+  // graph.  The 5-argument (lclGraph, row, col, domain, range) constructor sets
+  // domain = owned and range = owned+shared without any column reindexing, so
+  // the local column indices we just computed stay valid.  The owned domain map
+  // is what makes CrsGraph build the owned -> owned+shared Importer that the
+  // fused Export below relies on.  Its rows for shared nodes hold this process'
+  // partial contributions to rows owned elsewhere.
+  local_graph_type localGraph(localEntries, localRowptrs);
+  Tpetra::Import_Util::sortCrsGraph(localGraph);
+  ownedPlusSharedGraph_ =
+      rcp(new crs_graph_type(localGraph,
+                             ownedPlusSharedMap_,   // row map
+                             ownedPlusSharedColMap, // column map
+                             rowMap_,               // domain map (owned)
+                             ownedPlusSharedMap_)); // range map
+
+  // -- Final step: build the owned graph and finalize the owned+shared graph. --
   //
   // For compatibility with FECrsMatrix (whose owned matrix aliases the first
   // chunk of the owned+shared matrix's values), the owned graph must be a
@@ -563,8 +529,10 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
   // that to be correct, the owned rows of the owned+shared graph must contain
   // the fully MERGED structure (the union of every process' contributions),
   // while the shared rows keep only this process' partial contributions (so the
-  // matrix Export with ADD does not double count).  This mirrors what
-  // FECrsGraph::doOwnedPlusSharedToOwned does.
+  // matrix Export with ADD does not double count).  This mirrors exactly what
+  // FECrsGraph::doOwnedPlusSharedToOwned does: a restricted-mode self-export
+  // (which merges the owned rows in place but leaves the shared rows untouched),
+  // followed by makeColMap over all rows and an owned first-chunk subview.
   if (ownedPlusSharedMap_->isSameAs(*rowMap_)) {
     // Serial / single-rank case: nothing to communicate.  The assembly graph
     // already has exactly the owned structure; just re-map domain/range.
@@ -577,111 +545,119 @@ void GraphAssembly<LocalOrdinal, GlobalOrdinal, Node>::build() {
     exporter_                       = exporter;
 
     // (a) Build the merged owned graph via a fused Export + fillComplete.  This
-    //     gives the complete owned rows (union of all processes' contributions),
-    //     with a column map built by the fused path.
+    //     gives the complete owned rows (union of all processes' contributions).
+    //     Its column map is built by the fused path
+    //     (lowCommunicationMakeColMapAndReindex) with the OWNED domain map
+    //     (rowMap_), so the owned GIDs form the leading chunk followed by remote
+    //     GIDs grouped by owning process -- identical to what the serial
+    //     FECrsGraph::doOwnedPlusSharedToOwned path produces via
+    //     CrsGraph::makeColMap(getDomainMap()).  This is the graph returned by
+    //     getGraph(), and it defines the owned matrix's column map, keeping the
+    //     assembled owned matrix bit-for-bit identical to the serial path.
     graph_ = Tpetra::exportAndFillCompleteCrsGraph<crs_graph_type>(
         ownedPlusSharedGraph_, *exporter, rowMap_, rowMap_);
 
-    // (b) Build the owned+shared graph by Importing the merged owned graph onto
-    //     the owned+shared row map.  Every owned+shared row then holds the
-    //     complete (merged) structure of the corresponding owned row, and both
-    //     graphs share the same column map.  This makes the owned graph a proper
-    //     first-chunk subview of the owned+shared graph, which is exactly what
-    //     FECrsMatrix's value aliasing requires.  Extra structural positions in
-    //     the shared rows simply receive zero contributions during assembly, so
-    //     the Export-with-ADD of the matrix values is still correct.
-    using import_t = ::Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type>;
-    RCP<const import_t> ownedToOwnedPlusShared =
-        rcp(new import_t(rowMap_, ownedPlusSharedMap_));
-    Teuchos::RCP<const crs_graph_type> mergedOwnedConst = graph_;
-    RCP<crs_graph_type> mergedOwnedPlusShared =
-        Tpetra::importAndFillCompleteCrsGraph<crs_graph_type>(
-            mergedOwnedConst, *ownedToOwnedPlusShared,
-            ownedPlusSharedMap_,  // domainMap of the owned+shared graph
-            ownedPlusSharedMap_); // rangeMap of the owned+shared graph
-
-    // (c) Rebuild the owned+shared graph with a column map whose first chunk is
-    //     exactly the owned+shared map (same GIDs, same local ordering), followed
-    //     by any extra columns that the merge pulled in from across process
-    //     boundaries.  Keeping the owned+shared map as the column-map prefix
-    //     means matrix values and the right-hand side -- which the caller
-    //     assembles using owned+shared local IDs -- land in the right place,
-    //     while the appended columns capture the full merged owned-row structure.
+    // (b) Finalize the owned+shared graph so that it shares graph_'s column map
+    //     and so that its owned rows carry the merged structure, exactly as the
+    //     serial owned+shared graph does after the restricted-mode self-export.
+    //     We assemble its local structure directly, without any further
+    //     communication:
+    //       - owned rows [0, numOwnedRows)          <- graph_'s merged rows,
+    //       - shared rows [numOwnedRows, numOARows)  <- this process' partial
+    //                                                   contributions (the
+    //                                                   original assembled graph,
+    //                                                   reindexed to graph_'s
+    //                                                   column map).
+    //     The owned map is the leading chunk of the owned+shared map (locally
+    //     fitted), so the owned rows are precisely the first numOwnedRows rows.
+    //     graph_'s column map is a superset of the columns used by every
+    //     owned+shared row (the shared-row columns are all owned+shared nodes,
+    //     which the fused Export's colMap retains), so the reindex is exact.
     {
-      auto mergedLocal   = mergedOwnedPlusShared->getLocalGraphDevice();
-      auto mergedRowptrs = mergedLocal.row_map;
-      auto mergedEntries = mergedLocal.entries;
-      auto mergedColMap  = mergedOwnedPlusShared->getColMap()->getLocalMap();
-      const size_type osNNZ = static_cast<size_type>(mergedEntries.extent(0));
-      auto localOwnedPlusSharedMap2 = ownedPlusSharedMap_->getLocalMap();
-      const local_ordinal_type LO_INVALID2 =
-          Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
+      RCP<const map_type> finalColMap = graph_->getColMap();
+      auto finalLocalColMap           = finalColMap->getLocalMap();
 
-      // Global column IDs of the merged owned+shared structure.
-      gbl_entries_t osGlobal(Kokkos::ViewAllocateWithoutInitializing("osGlobal"), osNNZ);
+      const local_ordinal_type numOwnedRows =
+          static_cast<local_ordinal_type>(rowMap_->getLocalNumElements());
+      const local_ordinal_type numOARows =
+          static_cast<local_ordinal_type>(ownedPlusSharedMap_->getLocalNumElements());
+
+      // The merged owned rows (already indexed against finalColMap).
+      auto ownedLclGraph          = graph_->getLocalGraphDevice();
+      auto ownedRowptrs           = ownedLclGraph.row_map;
+      auto ownedEntries           = ownedLclGraph.entries;
+
+      // The original assembled owned+shared structure (indexed against the
+      // assembly column map, i.e. the owned+shared map for path 2, or the
+      // user-provided column map for path 1).  Reindex its shared rows to
+      // finalColMap via global IDs.
+      auto asmLclGraph            = ownedPlusSharedGraph_->getLocalGraphDevice();
+      auto asmRowptrs             = asmLclGraph.row_map;
+      auto asmEntries             = asmLclGraph.entries;
+      auto asmLocalColMap         = ownedPlusSharedColMap->getLocalMap();
+
+      // Build the final rowptrs: owned rows take their length from graph_, the
+      // shared rows keep their assembled length.
+      rowptrs_t finalRowptrs("finalRowptrs", numOARows + 1);
       Kokkos::parallel_for(
-          "owned+sharedLocalToGlobal", range_policy(0, osNNZ),
-          KOKKOS_LAMBDA(size_type i) {
-            osGlobal(i) = mergedColMap.getGlobalElement(mergedEntries(i));
+          "finalOwnedPlusSharedRowCounts",
+          range_policy(0, numOARows),
+          KOKKOS_LAMBDA(local_ordinal_type row) {
+            if (row < numOwnedRows)
+              finalRowptrs(row) = ownedRowptrs(row + 1) - ownedRowptrs(row);
+            else
+              finalRowptrs(row) = asmRowptrs(row + 1) - asmRowptrs(row);
+          });
+      size_type finalNNZ;
+      Kokkos::parallel_scan(
+          range_policy(0, numOARows + 1),
+          KOKKOS_LAMBDA(local_ordinal_type i, size_type & lsum, bool finalPass) {
+            size_type count = finalRowptrs(i);
+            if (finalPass)
+              finalRowptrs(i) = lsum;
+            lsum += count;
+          },
+          finalNNZ);
+
+      entries_t finalEntries(Kokkos::ViewAllocateWithoutInitializing("finalEntries"), finalNNZ);
+      Kokkos::parallel_for(
+          "finalOwnedPlusSharedFill",
+          range_policy(0, numOARows),
+          KOKKOS_LAMBDA(local_ordinal_type row) {
+            const size_type out = finalRowptrs(row);
+            if (row < numOwnedRows) {
+              // Copy the merged owned row verbatim (already finalColMap LIDs).
+              const size_type beg = ownedRowptrs(row);
+              const size_type end = ownedRowptrs(row + 1);
+              for (size_type k = beg; k < end; ++k)
+                finalEntries(out + (k - beg)) = ownedEntries(k);
+            } else {
+              // Reindex the assembled shared row into finalColMap via GID.
+              const size_type beg = asmRowptrs(row);
+              const size_type end = asmRowptrs(row + 1);
+              for (size_type k = beg; k < end; ++k) {
+                const global_ordinal_type gid =
+                    asmLocalColMap.getGlobalElement(asmEntries(k));
+                finalEntries(out + (k - beg)) =
+                    finalLocalColMap.getLocalElement(gid);
+              }
+            }
           });
 
-      // Collect (on host) the set of extra column GIDs that are NOT already in
-      // the owned+shared map, preserving a deterministic (sorted) order.
-      auto osGlobalHost = Kokkos::create_mirror_view(osGlobal);
-      Kokkos::deep_copy(osGlobalHost, osGlobal);
-      std::set<global_ordinal_type> extraSet;
-      for (size_type i = 0; i < osNNZ; ++i) {
-        const global_ordinal_type gid = osGlobalHost(i);
-        if (ownedPlusSharedMap_->getLocalElement(gid) == LO_INVALID2)
-          extraSet.insert(gid);
-      }
-
-      // Build the column-map GID list: owned+shared GIDs first (in their local
-      // order), then the extra GIDs.
-      const local_ordinal_type numOS =
-          static_cast<local_ordinal_type>(ownedPlusSharedMap_->getLocalNumElements());
-      Teuchos::Array<global_ordinal_type> colGIDs(numOS + extraSet.size());
-      {
-        auto osGidsHost = ownedPlusSharedMap_->getMyGlobalIndices();
-        for (local_ordinal_type i = 0; i < numOS; ++i)
-          colGIDs[i] = osGidsHost(i);
-        local_ordinal_type k = numOS;
-        for (const global_ordinal_type gid : extraSet)
-          colGIDs[k++] = gid;
-      }
-      const Tpetra::global_size_t GST_INVALID =
-          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-      RCP<const map_type> osColMap =
-          rcp(new map_type(GST_INVALID, colGIDs(), ownedPlusSharedMap_->getIndexBase(),
-                           ownedPlusSharedMap_->getComm()));
-
-      // Remap the structure to local indices w.r.t. this column map.
-      rowptrs_t osRowptrs("osRowptrs", mergedRowptrs.extent(0));
-      Kokkos::deep_copy(osRowptrs, mergedRowptrs);
-      entries_t osLocal(Kokkos::ViewAllocateWithoutInitializing("osLocal"), osNNZ);
-      {
-        auto localOsColMap = osColMap->getLocalMap();
-        Kokkos::parallel_for(
-            "owned+sharedGlobalToLocal", range_policy(0, osNNZ),
-            KOKKOS_LAMBDA(size_type i) {
-              osLocal(i) = localOsColMap.getLocalElement(osGlobal(i));
-            });
-      }
-
-      local_graph_type osGraph(osLocal, osRowptrs);
-      Tpetra::Import_Util::sortCrsGraph(osGraph);
+      local_graph_type finalLocalGraph(finalEntries, finalRowptrs);
+      // Owned rows are already sorted (copied from graph_); the shared rows were
+      // sorted in the owned+shared column map, but finalColMap may order columns
+      // differently, so sort again to be safe.
+      Tpetra::Import_Util::sortCrsGraph(finalLocalGraph);
 
       ownedPlusSharedGraph_ =
-          rcp(new crs_graph_type(osGraph,
+          rcp(new crs_graph_type(finalLocalGraph,
                                  ownedPlusSharedMap_,  // row map
-                                 osColMap,             // column map
+                                 finalColMap,          // column map (== graph_'s)
                                  rowMap_,              // domain map (owned)
                                  ownedPlusSharedMap_));// range map
-      ownedPlusSharedColMap_ = osColMap;
     }
-
-    // (d) The clean merged owned graph (from the fused Export) is what getGraph()
-    //     returns.  It is already stored in graph_.
+    ownedPlusSharedColMap_ = ownedPlusSharedGraph_->getColMap();
   }
 }
 
