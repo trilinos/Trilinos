@@ -1191,7 +1191,8 @@ void kokkos_kernels_mult_A_B_newmatrix(
         &kh, AnumRows, BnumRows, BnumCols, Aint.graph.row_map, Aint.graph.entries, Aint.values, false,
         Bint.graph.row_map, Bint.graph.entries, Bint.values, false, int_row_mapC, entriesC, valuesC);
     Kokkos::parallel_for(
-        int_row_mapC.size(), KOKKOS_LAMBDA(const int i) { row_mapC(i) = int_row_mapC(i); });
+        Kokkos::RangePolicy<typename device_t::execution_space>(0, int_row_mapC.size()),
+        KOKKOS_LAMBDA(const int i) { row_mapC(i) = int_row_mapC(i); });
     kh.destroy_spgemm_handle();
 
   } else {
@@ -1539,7 +1540,8 @@ void kokkos_kernels_jacobi_A_B_newmatrix(typename Teuchos::ScalarTraits<Scalar>:
     }
     // transfer the integer rowptrs back to the correct rowptr type
     Kokkos::parallel_for(
-        int_row_mapC.size(), KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
+        Kokkos::RangePolicy<typename device_t::execution_space>(0, int_row_mapC.size()),
+        KOKKOS_LAMBDA(int i) { row_mapC(i) = int_row_mapC(i); });
     kh.destroy_spgemm_handle();
   } else {
     handle_t kh;
