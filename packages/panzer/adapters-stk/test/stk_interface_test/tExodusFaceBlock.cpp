@@ -252,7 +252,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, set_face_field_data)
    mesh->getMyFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, faces);
 
    Kokkos::DynRankView<double,PHX::Device> faceValues;
-   faceValues = Kokkos::createDynRankView(faceValues,"faceValues",faces.size());
+   faceValues = Sacado::createDynRankView(faceValues,"faceValues",faces.size());
    auto faceValues_h = Kokkos::create_mirror_view(faceValues);
 
    std::vector<std::size_t> faceIds;

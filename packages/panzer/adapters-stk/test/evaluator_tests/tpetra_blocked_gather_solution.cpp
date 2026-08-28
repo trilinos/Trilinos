@@ -20,7 +20,7 @@
 #include <vector>
 
 // Kokkos
-#include "Kokkos_View_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 
 // Panzer
 #include "PanzerAdaptersSTK_config.hpp"

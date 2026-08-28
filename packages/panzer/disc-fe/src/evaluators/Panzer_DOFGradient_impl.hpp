@@ -45,7 +45,7 @@ namespace {
       num_fields_(grad_basis.extent(1)),
       num_points_(grad_basis.extent(2)),
       space_dim_(grad_basis.extent(3)),
-      fad_size_(Kokkos::dimension_scalar(dof_grad.get_view())),
+      fad_size_(Sacado::dimension_scalar(dof_grad.get_view())),
       use_shared_memory_(use_shared_memory) {}
 
     KOKKOS_INLINE_FUNCTION

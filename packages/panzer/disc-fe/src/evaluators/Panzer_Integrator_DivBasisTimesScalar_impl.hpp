@@ -21,7 +21,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
 // Kokkos
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
@@ -153,7 +153,7 @@ namespace panzer
     typename Traits::SetupData sd,
     PHX::FieldManager<Traits>& /* fm */)
   {
-    using Kokkos::createDynRankView;
+    using Sacado::createDynRankView;
     using panzer::getBasisIndex;
 
     auto kokkosFieldMults_h = Kokkos::create_mirror_view(kokkosFieldMults_);
@@ -168,7 +168,7 @@ namespace panzer
     bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
     if (!use_shared_memory) {
       if (Sacado::IsADType<ScalarT>::value) {
-	const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+	const auto fadSize = Sacado::dimension_scalar(field_.get_view());
 	tmp_ = PHX::View<ScalarT*>("panzer::Integrator::DivBasisTimesScalar::tmp_",field_.extent(0),fadSize);
       } else {
 	tmp_ = PHX::View<ScalarT*>("panzer::Integrator::DivBasisTimesScalar::tmp_",field_.extent(0));
@@ -268,7 +268,7 @@ namespace panzer
     const int cell = team.league_rank();
     const int numQP = scalar_.extent(1);
     const int numBases = basis_.extent(1);
-    const int fadSize = Kokkos::dimension_scalar(field_.get_view());
+    const int fadSize = Sacado::dimension_scalar(field_.get_view());
 
     scratch_view tmp;
     scratch_view tmp_field;
@@ -372,7 +372,7 @@ namespace panzer
     if (use_shared_memory) {
       int bytes;
       if (Sacado::IsADType<ScalarT>::value) {
-	const int fadSize = Kokkos::dimension_scalar(field_.get_view());
+	const int fadSize = Sacado::dimension_scalar(field_.get_view());
 	bytes = scratch_view::shmem_size(1,fadSize) + scratch_view::shmem_size(basis_.extent(1),fadSize);
       }
       else

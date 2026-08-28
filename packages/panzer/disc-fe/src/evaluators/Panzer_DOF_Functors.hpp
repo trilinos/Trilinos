@@ -82,7 +82,7 @@ public:
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), basis(in_basis),
       numFields(static_cast<int>(basis.extent(1))),
       numPoints(static_cast<int>(basis.extent(2))),
-      fadSize(static_cast<int>(Kokkos::dimension_scalar(dof_basis))),
+      fadSize(static_cast<int>(Sacado::dimension_scalar(dof_basis))),
       use_shared_memory(in_use_shared_memory)
   {}
 

@@ -21,7 +21,7 @@
 
 // Sacado header that defines some fad sizing…
 #ifdef HAVE_INTREPID2_SACADO
-#include <KokkosExp_View_Fad.hpp>
+#include <Sacado_Fad_Kokkos.hpp>
 #endif
 
 #include "Intrepid2_Basis.hpp"

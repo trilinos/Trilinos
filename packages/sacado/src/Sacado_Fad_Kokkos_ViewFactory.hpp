@@ -7,16 +7,15 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef KOKKOS_VIEW_FACTORY_HPP
-#define KOKKOS_VIEW_FACTORY_HPP
+#ifndef SACADO_FAD_KOKKOS_VIEW_FACTORY_HPP
+#define SACADO_FAD_KOKKOS_VIEW_FACTORY_HPP
 
 #include <type_traits>
 
 #include "Sacado_Traits.hpp"
-#include "KokkosExp_View_Fad.hpp"
-#include "Kokkos_DynRankView_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 
-namespace Kokkos {
+namespace Sacado {
 
 namespace Impl {
 
@@ -66,7 +65,7 @@ struct ViewFactory {
 
     using nc_value_type = typename ResultView::non_const_value_type;
     constexpr bool is_scalar = Sacado::IsScalarType<nc_value_type>::value;
-    constexpr bool is_dyn_rank = is_dyn_rank_view<ResultView>::value;
+    constexpr bool is_dyn_rank = Kokkos::is_dyn_rank_view<ResultView>::value;
 
     // rank == number of arguments
     constexpr unsigned rank = sizeof...(Dims);
@@ -78,7 +77,7 @@ struct ViewFactory {
     typename ResultView::array_layout layout(dims...);
 
     // Set scalar dimension
-    layout.dimension[rank] = dimension_scalar(views...);
+    layout.dimension[rank] = Sacado::dimension_scalar(views...);
 
     // Handle the case where all of the input view's are scalar's, but the
     // result isn't (e.g., a Fad), in which case we have to specify a valid
@@ -89,12 +88,11 @@ struct ViewFactory {
     // Reconstruct layout for dynamic rank
     if (is_dyn_rank) {
       constexpr unsigned r = is_scalar ? rank : rank + 1;
-      layout = Impl::reconstructLayout(layout, r);
+      layout = Kokkos::Impl::reconstructLayout(layout, r);
     }
 
-#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
     if constexpr (is_view_fad<ResultView>::value) {
-      size_t fad_size = dimension_scalar(views...);
+      size_t fad_size = Sacado::dimension_scalar(views...);
       if (fad_size == 0) fad_size = 1;
       if (!is_scalar) layout.dimension[rank] = is_dyn_rank ? KOKKOS_INVALID_INDEX : KOKKOS_IMPL_CTOR_DEFAULT_ARG;
       // turns out CtorProp can be just a pointer or a label...
@@ -110,9 +108,6 @@ struct ViewFactory {
     } else {
       return ResultView(prop, layout);
     }
-#else
-    return ResultView(prop, layout);
-#endif
   }
 
 };
@@ -121,13 +116,13 @@ struct ViewFactory {
 template <typename ResultViewType, typename InputViewType, typename CtorProp,
           typename ... Dims>
 typename std::enable_if<
-  is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
   ResultViewType>::type
 createDynRankViewWithType(const InputViewType& a,
                           const CtorProp& prop,
                           const Dims... dims)
 {
-  using view_factory = Kokkos::ViewFactory<InputViewType>;
+  using view_factory = Sacado::ViewFactory<InputViewType>;
   return view_factory::template create_view<ResultViewType>(a,prop,dims...);
 }
 
@@ -157,7 +152,7 @@ namespace Impl {
 //! Wrapper to simplify use of Sacado ViewFactory
 template <typename InputViewType, typename CtorProp, typename ... Dims >
 typename std::enable_if<
-  is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
   typename Impl::ResultDynRankView<InputViewType>::type
   >::type
 createDynRankView(const InputViewType& a,
@@ -165,23 +160,71 @@ createDynRankView(const InputViewType& a,
                   const Dims... dims)
 {
   using ResultViewType = typename Impl::ResultDynRankView<InputViewType>::type;
-  return createDynRankViewWithType<ResultViewType>(a, prop, dims...);
+  return Sacado::createDynRankViewWithType<ResultViewType>(a, prop, dims...);
 }
 
 //! Wrapper to simplify use of Sacado ViewFactory
 template <typename ResultViewType, typename InputViewType, typename CtorProp,
           typename ... Dims>
 typename std::enable_if<
-  is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
   ResultViewType>::type
 createViewWithType(const InputViewType& a,
                    const CtorProp& prop,
                    const Dims... dims)
 {
-  using view_factory = Kokkos::ViewFactory<InputViewType>;
+  using view_factory = Sacado::ViewFactory<InputViewType>;
   return view_factory::template create_view<ResultViewType>(a,prop,dims...);
 }
 
 }
 
-#endif /* #ifndef KOKKOS_VIEW_FACTORY_HPP */
+#ifdef SACADO_ENABLE_DEPRECATED_CODE
+namespace Kokkos {
+
+// Deprecated wrapper function for createDynRankViewWithType
+template <typename ResultViewType, typename InputViewType, typename CtorProp,
+          typename... Dims>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::createDynRankViewWithType() instead of Kokkos::createDynRankViewWithType()")
+typename std::enable_if<
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
+  ResultViewType>::type
+createDynRankViewWithType(const InputViewType& a,
+                          const CtorProp& prop,
+                          const Dims... dims)
+{
+  return Sacado::createDynRankViewWithType<ResultViewType>(a, prop, dims...);
+}
+
+// Deprecated wrapper function for createDynRankView
+template <typename InputViewType, typename CtorProp, typename... Dims>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::createDynRankView() instead of Kokkos::createDynRankView()")
+typename std::enable_if<
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
+  typename Sacado::Impl::ResultDynRankView<InputViewType>::type
+  >::type
+createDynRankView(const InputViewType& a,
+                  const CtorProp& prop,
+                  const Dims... dims)
+{
+  return Sacado::createDynRankView(a, prop, dims...);
+}
+
+// Deprecated wrapper function for createViewWithType
+template <typename ResultViewType, typename InputViewType, typename CtorProp,
+          typename... Dims>
+SACADO_DEPRECATED_WITH_COMMENT("Use Sacado::createViewWithType() instead of Kokkos::createViewWithType()")
+typename std::enable_if<
+  Kokkos::is_view<InputViewType>::value || Kokkos::is_dyn_rank_view<InputViewType>::value,
+  ResultViewType>::type
+createViewWithType(const InputViewType& a,
+                   const CtorProp& prop,
+                   const Dims... dims)
+{
+  return Sacado::createViewWithType<ResultViewType>(a, prop, dims...);
+}
+
+} // namespace Kokkos
+#endif
+
+#endif /* #ifndef SACADO_FAD_KOKKOS_VIEW_FACTORY_HPP */
