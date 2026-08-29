@@ -844,6 +844,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
     theKeysHost = Kokkos::create_mirror_view(theKeys);
     // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
     Kokkos::deep_copy(execution_space(), theKeysHost, theKeys);
+    execution_space().fence();
     auto countsHost = Kokkos::create_mirror_view(hostMemSpace, counts);
 
     for (offset_type k = 0; k < theNumKeys; ++k) {
