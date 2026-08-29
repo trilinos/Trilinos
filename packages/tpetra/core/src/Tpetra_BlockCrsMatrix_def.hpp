@@ -2838,7 +2838,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::
   size_t rowOffset = 0;
   size_t offset    = 0;
   LO bs            = getBlockSize();
-  execution_space().fence(); // ensure deep_copy to diagOffsetsHost is done
+  execution_space().fence();  // ensure deep_copy to diagOffsetsHost is done
   for (size_t r = 0; r < getLocalNumRows(); r++) {
     // move pointer to start of diagonal block
     offset = rowOffset + diagOffsetsHost(r) * bs * bs;
