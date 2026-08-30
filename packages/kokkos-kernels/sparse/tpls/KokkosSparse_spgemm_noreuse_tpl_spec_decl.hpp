@@ -117,14 +117,14 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
-#define SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)                                                  \
-  template <>                                                                                                      \
+#define SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, MEMSPACE)                                                             \
+  template <bool ETI_SPEC_AVAIL>                                                                                   \
   struct SPGEMM_NOREUSE<KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>,   \
                         KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
                         KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
-                        true, TPL_AVAIL> {                                                                         \
+                        true, ETI_SPEC_AVAIL> {                                                                    \
     using Matrix      = KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>;   \
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;               \
@@ -139,19 +139,14 @@ Matrix spgemm_noreuse_cusparse(KokkosSparse::SPGEMMAlgorithm algo, const MatrixC
     }                                                                                                              \
   };
 
-#define SPGEMM_NOREUSE_DECL_CUSPARSE_S(SCALAR, TPL_AVAIL)            \
-  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaSpace, TPL_AVAIL) \
-  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaUVMSpace, TPL_AVAIL)
+#define SPGEMM_NOREUSE_DECL_CUSPARSE_S(SCALAR)            \
+  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaSpace) \
+  SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, Kokkos::CudaUVMSpace)
 
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(float, true)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(double, true)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>, true)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>, true)
-
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(float, false)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(double, false)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>, false)
-SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>, false)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(float)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(double)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<float>)
+SPGEMM_NOREUSE_DECL_CUSPARSE_S(Kokkos::complex<double>)
 
 #endif
 
@@ -207,15 +202,15 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
-#define SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                                                              \
-  template <>                                                                                                         \
+#define SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC)                                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct SPGEMM_NOREUSE<                                                                                              \
       KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>,               \
       KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,                                \
       KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                               Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>,                                \
-      true, TPL_AVAIL> {                                                                                              \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
     using Matrix = KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>;  \
     using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, \
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;              \
@@ -229,15 +224,11 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
     }                                                                                                                 \
   };
 
-#define SPGEMM_NOREUSE_DECL_MKL_SE(SCALAR, EXEC) \
-  SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, true)    \
-  SPGEMM_NOREUSE_DECL_MKL(SCALAR, EXEC, false)
-
-#define SPGEMM_NOREUSE_DECL_MKL_E(EXEC)                    \
-  SPGEMM_NOREUSE_DECL_MKL_SE(float, EXEC)                  \
-  SPGEMM_NOREUSE_DECL_MKL_SE(double, EXEC)                 \
-  SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<float>, EXEC) \
-  SPGEMM_NOREUSE_DECL_MKL_SE(Kokkos::complex<double>, EXEC)
+#define SPGEMM_NOREUSE_DECL_MKL_E(EXEC)                 \
+  SPGEMM_NOREUSE_DECL_MKL(float, EXEC)                  \
+  SPGEMM_NOREUSE_DECL_MKL(double, EXEC)                 \
+  SPGEMM_NOREUSE_DECL_MKL(Kokkos::complex<float>, EXEC) \
+  SPGEMM_NOREUSE_DECL_MKL(Kokkos::complex<double>, EXEC)
 
 #ifdef KOKKOS_ENABLE_SERIAL
 SPGEMM_NOREUSE_DECL_MKL_E(Kokkos::Serial)

@@ -24,8 +24,8 @@ void impl_test_team_scal(int N) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
-  view_stride_adapter<ViewTypeA> x("X", N);
-  view_stride_adapter<ViewTypeB> y("Y", N);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
 
   ScalarA a(3);
   typename AT::mag_type eps  = AT::epsilon() * 1000;
@@ -97,8 +97,8 @@ void impl_test_team_scal_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
-  view_stride_adapter<ViewTypeA> x("X", N, K);
-  view_stride_adapter<ViewTypeB> y("Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N, K);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 

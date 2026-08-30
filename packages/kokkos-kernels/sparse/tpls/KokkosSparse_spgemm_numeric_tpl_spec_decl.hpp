@@ -128,8 +128,8 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
 }
 #endif
 
-#define SPGEMM_NUMERIC_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)                                                      \
-  template <>                                                                                                          \
+#define SPGEMM_NUMERIC_DECL_CUSPARSE(SCALAR, MEMSPACE)                                                                 \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct SPGEMM_NUMERIC<KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR,           \
                                                                          Kokkos::Cuda, MEMSPACE, MEMSPACE>,            \
                         Kokkos::View<const int *, KokkosKernels::default_layout,                                       \
@@ -150,7 +150,7 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                         \
                         Kokkos::View<SCALAR *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,  \
                                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                         \
-                        true, TPL_AVAIL> {                                                                             \
+                        true, ETI_SPEC_AVAIL> {                                                                        \
     using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR,          \
                                                                           Kokkos::Cuda, MEMSPACE, MEMSPACE>;           \
     using c_int_view_t =                                                                                               \
@@ -178,19 +178,14 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
     }                                                                                                                  \
   };
 
-#define SPGEMM_NUMERIC_DECL_CUSPARSE_S(SCALAR, TPL_AVAIL)            \
-  SPGEMM_NUMERIC_DECL_CUSPARSE(SCALAR, Kokkos::CudaSpace, TPL_AVAIL) \
-  SPGEMM_NUMERIC_DECL_CUSPARSE(SCALAR, Kokkos::CudaUVMSpace, TPL_AVAIL)
+#define SPGEMM_NUMERIC_DECL_CUSPARSE_S(SCALAR)            \
+  SPGEMM_NUMERIC_DECL_CUSPARSE(SCALAR, Kokkos::CudaSpace) \
+  SPGEMM_NUMERIC_DECL_CUSPARSE(SCALAR, Kokkos::CudaUVMSpace)
 
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(float, true)
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(double, true)
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(Kokkos::complex<float>, true)
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(Kokkos::complex<double>, true)
-
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(float, false)
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(double, false)
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(Kokkos::complex<float>, false)
-SPGEMM_NUMERIC_DECL_CUSPARSE_S(Kokkos::complex<double>, false)
+SPGEMM_NUMERIC_DECL_CUSPARSE_S(float)
+SPGEMM_NUMERIC_DECL_CUSPARSE_S(double)
+SPGEMM_NUMERIC_DECL_CUSPARSE_S(Kokkos::complex<float>)
+SPGEMM_NUMERIC_DECL_CUSPARSE_S(Kokkos::complex<double>)
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
@@ -265,8 +260,8 @@ void spgemm_numeric_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_l
   handle->set_call_numeric();
 }
 
-#define SPGEMM_NUMERIC_DECL_ROCSPARSE(SCALAR, TPL_AVAIL)                                                              \
-  template <>                                                                                                         \
+#define SPGEMM_NUMERIC_DECL_ROCSPARSE(SCALAR)                                                                         \
+  template <bool ETI_SPEC_AVAIL>                                                                                      \
   struct SPGEMM_NUMERIC<                                                                                              \
       KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR, Kokkos::HIP,               \
                                                        Kokkos::HIPSpace, Kokkos::HIPSpace>,                           \
@@ -288,7 +283,7 @@ void spgemm_numeric_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_l
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
       Kokkos::View<SCALAR *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,            \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      true, TPL_AVAIL> {                                                                                              \
+      true, ETI_SPEC_AVAIL> {                                                                                         \
     using KernelHandle =                                                                                              \
         KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR, Kokkos::HIP,             \
                                                          Kokkos::HIPSpace, Kokkos::HIPSpace>;                         \
@@ -318,15 +313,10 @@ void spgemm_numeric_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_l
     }                                                                                                                 \
   };
 
-SPGEMM_NUMERIC_DECL_ROCSPARSE(float, true)
-SPGEMM_NUMERIC_DECL_ROCSPARSE(double, true)
-SPGEMM_NUMERIC_DECL_ROCSPARSE(Kokkos::complex<float>, true)
-SPGEMM_NUMERIC_DECL_ROCSPARSE(Kokkos::complex<double>, true)
-
-SPGEMM_NUMERIC_DECL_ROCSPARSE(float, false)
-SPGEMM_NUMERIC_DECL_ROCSPARSE(double, false)
-SPGEMM_NUMERIC_DECL_ROCSPARSE(Kokkos::complex<float>, false)
-SPGEMM_NUMERIC_DECL_ROCSPARSE(Kokkos::complex<double>, false)
+SPGEMM_NUMERIC_DECL_ROCSPARSE(float)
+SPGEMM_NUMERIC_DECL_ROCSPARSE(double)
+SPGEMM_NUMERIC_DECL_ROCSPARSE(Kokkos::complex<float>)
+SPGEMM_NUMERIC_DECL_ROCSPARSE(Kokkos::complex<double>)
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
@@ -383,8 +373,8 @@ void spgemm_numeric_mkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t m
   handle->set_computed_entries();
 }
 
-#define SPGEMM_NUMERIC_DECL_MKL(SCALAR, EXEC, TPL_AVAIL)                                                               \
-  template <>                                                                                                          \
+#define SPGEMM_NUMERIC_DECL_MKL(SCALAR, EXEC)                                                                          \
+  template <bool ETI_SPEC_AVAIL>                                                                                       \
   struct SPGEMM_NUMERIC<                                                                                               \
       KokkosKernels::Experimental::KokkosKernelsHandle<const MKL_INT, const MKL_INT, const SCALAR, EXEC,               \
                                                        Kokkos::HostSpace, Kokkos::HostSpace>,                          \
@@ -406,7 +396,7 @@ void spgemm_numeric_mkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t m
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
       Kokkos::View<SCALAR *, KokkosKernels::default_layout, Kokkos::Device<EXEC, Kokkos::HostSpace>,                   \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
-      true, TPL_AVAIL> {                                                                                               \
+      true, ETI_SPEC_AVAIL> {                                                                                          \
     using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<const MKL_INT, const MKL_INT, const SCALAR,  \
                                                                           EXEC, Kokkos::HostSpace, Kokkos::HostSpace>; \
     using c_int_view_t =                                                                                               \
@@ -433,15 +423,11 @@ void spgemm_numeric_mkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t m
     }                                                                                                                  \
   };
 
-#define SPGEMM_NUMERIC_DECL_MKL_SE(SCALAR, EXEC) \
-  SPGEMM_NUMERIC_DECL_MKL(SCALAR, EXEC, true)    \
-  SPGEMM_NUMERIC_DECL_MKL(SCALAR, EXEC, false)
-
-#define SPGEMM_NUMERIC_DECL_MKL_E(EXEC)                    \
-  SPGEMM_NUMERIC_DECL_MKL_SE(float, EXEC)                  \
-  SPGEMM_NUMERIC_DECL_MKL_SE(double, EXEC)                 \
-  SPGEMM_NUMERIC_DECL_MKL_SE(Kokkos::complex<float>, EXEC) \
-  SPGEMM_NUMERIC_DECL_MKL_SE(Kokkos::complex<double>, EXEC)
+#define SPGEMM_NUMERIC_DECL_MKL_E(EXEC)                 \
+  SPGEMM_NUMERIC_DECL_MKL(float, EXEC)                  \
+  SPGEMM_NUMERIC_DECL_MKL(double, EXEC)                 \
+  SPGEMM_NUMERIC_DECL_MKL(Kokkos::complex<float>, EXEC) \
+  SPGEMM_NUMERIC_DECL_MKL(Kokkos::complex<double>, EXEC)
 
 #ifdef KOKKOS_ENABLE_SERIAL
 SPGEMM_NUMERIC_DECL_MKL_E(Kokkos::Serial)

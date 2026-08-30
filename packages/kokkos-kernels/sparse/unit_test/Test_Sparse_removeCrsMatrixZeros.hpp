@@ -194,8 +194,9 @@ void getTestInput(int test, Matrix& A, Matrix& Afiltered_ref) {
   // If we have a hardcoded reference, check that the reference impl is correct
   // on this case
   if (haveHardcodedReference) {
-    Matrix Afiltered_refimpl           = removeMatrixZerosReference(A);
-    bool referenceImplMatchesHardcoded = Test::is_same_matrix<Matrix, TestDevice>(Afiltered_ref, Afiltered_refimpl);
+    Matrix Afiltered_refimpl = removeMatrixZerosReference(A);
+    bool referenceImplMatchesHardcoded =
+        TestUtils::is_same_matrix<Matrix, TestDevice>(Afiltered_ref, Afiltered_refimpl);
     ASSERT_TRUE(referenceImplMatchesHardcoded) << "Test case " << test << ": reference impl gave wrong answer!";
   }
 }
@@ -209,7 +210,7 @@ void testRemoveCrsMatrixZeros(int testCase) {
   Matrix A, Afiltered_ref;
   getTestInput<Matrix>(testCase, A, Afiltered_ref);
   Matrix Afiltered_actual = KokkosSparse::removeCrsMatrixZeros(A);
-  bool matches            = Test::is_same_matrix<Matrix, TestDevice>(Afiltered_actual, Afiltered_ref);
+  bool matches            = TestUtils::is_same_matrix<Matrix, TestDevice>(Afiltered_actual, Afiltered_ref);
   EXPECT_TRUE(matches) << "Test case " << testCase << ": matrix with zeros filtered out does not match reference.";
 }
 

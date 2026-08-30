@@ -125,8 +125,8 @@ int test_batched_vector_math() {
 //   Kokkos::complex<mag_type> a0(3.2, -1.4), a1(1.2, 2.3);
 //   std::complex<mag_type> b0(3.2, -1.4), b1(1.2, 2.3);
 
-//   Test::EXPECT_NEAR_KK( ats::pow(a0,a1), std::pow(b0,b1), eps );
-//   Test::EXPECT_NEAR_KK( ats::pow(a0,a2), std::pow(b0,a2), eps );
+//   EXPECT_NEAR_KK( ats::pow(a0,a1), std::pow(b0,b1), eps );
+//   EXPECT_NEAR_KK( ats::pow(a0,a2), std::pow(b0,a2), eps );
 
 //   return 0;
 // }
