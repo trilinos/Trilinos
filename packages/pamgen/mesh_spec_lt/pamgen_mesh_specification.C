@@ -12,14 +12,16 @@
 
 #include "pamgen_element_dictionary.h"
 #include "pamgen_mesh_specification.h"
+#include "pamgen_kokkos_utils.h"
 #include <string.h>
 #include <time.h>
 #include <map>
 #include <vector>
+#include <Kokkos_Core.hpp>
 
 namespace ms_lt{
 
-  Mesh_Specification * ms_lt::Mesh_Specification::first_ms_static_storage = NULL;
+  Mesh_Specification * Mesh_Specification::first_ms_static_storage = NULL;
 
 
 /*****************************************************************************/
@@ -652,12 +654,81 @@ void Mesh_Specification::Free_Parallel_Data()
   return;
 }
 
+// Kokkos Device Functions for Mesh Specification
+// Device function to copy and offset coordinates
+KOKKOS_INLINE_FUNCTION
+void copy_and_offset_coords_device(const View2D<double>& dest_coords,
+                                  const View2D<double>& source_coords,
+                                  long long dest_offset,
+                                  long long source_offset,
+                                  long long num_nodes,
+                                  long long dim)
+{
+  for (long long i = 0; i < num_nodes; i++) {
+    for (long long d = 0; d < dim; d++) {
+      dest_coords(dest_offset + i, d) = source_coords(source_offset + i, d);
+    }
+  }
+}
+
+// Device function to copy and offset element connectivity
+KOKKOS_INLINE_FUNCTION
+void copy_and_offset_connectivity_device(const View2D<long long>& dest_conn,
+                                        const View2D<long long>& source_conn,
+                                        long long dest_offset,
+                                        long long source_offset,
+                                        long long num_elements,
+                                        long long nodes_per_element)
+{
+  for (long long i = 0; i < num_elements; i++) {
+    for (long long j = 0; j < nodes_per_element; j++) {
+      dest_conn(dest_offset + i, j) = source_conn(source_offset + i, j);
+    }
+  }
+}
+
+// Device function to copy and offset node sets
+KOKKOS_INLINE_FUNCTION
+void copy_and_offset_node_sets_device(View1D<long long>& dest_nodes,
+                                     const View1D<long long>& source_nodes,
+                                     long long node_offset,
+                                     long long num_nodes)
+{
+  for (long long i = 0; i < num_nodes; i++) {
+    dest_nodes(i) = source_nodes(i) + node_offset;
+  }
+}
+
+// Device function to copy and offset side sets
+KOKKOS_INLINE_FUNCTION
+void copy_and_offset_side_sets_device(View1D<long long>& dest_elements,
+                                     const View1D<long long>& source_elements,
+                                     View1D<long long>& dest_nodes,
+                                     const View1D<long long>& source_nodes,
+                                     long long element_offset,
+                                     long long node_offset,
+                                     long long num_elements,
+                                     long long num_nodes)
+{
+  // Copy and offset elements
+  for (long long i = 0; i < num_elements; i++) {
+    dest_elements(i) = source_elements(i) + element_offset;
+  }
+
+  // Copy and offset nodes
+  for (long long i = 0; i < num_nodes; i++) {
+    dest_nodes(i) = source_nodes(i) + node_offset;
+  }
+}
+
+} // namespace ms_lt
+
 /*****************************************************************************/
-Mesh_Specification * Mesh_Specification::consolidateMS()
+ms_lt::Mesh_Specification * ms_lt::Mesh_Specification::consolidateMS()
 /*****************************************************************************/
 {
   if(this->Next() == NULL)return this;
-  ms_lt::Mesh_Specification * ndb = new ms_lt::Mesh_Specification();
+  Mesh_Specification * ndb = new Mesh_Specification();
   if(!ndb)return ndb;
   /*global info*/
   {
@@ -687,9 +758,9 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
                                     0//num info recs
                                     );
 
-    long long *  bp  = ndb->getMSP(ms_lt::Mesh_Specification::BLOCK_PARENT_MESHES);
-    long long *  nsp = ndb->getMSP(ms_lt::Mesh_Specification::NODESET_PARENT_MESHES);
-    long long *  ssp = ndb->getMSP(ms_lt::Mesh_Specification::SIDESET_PARENT_MESHES);
+    long long *  bp  = ndb->getMSP(Mesh_Specification::BLOCK_PARENT_MESHES);
+    long long *  nsp = ndb->getMSP(Mesh_Specification::NODESET_PARENT_MESHES);
+    long long *  ssp = ndb->getMSP(Mesh_Specification::SIDESET_PARENT_MESHES);
 
     ms = this;
     nb = 0;
@@ -705,7 +776,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
       submesh_count ++;
       ms = ms->Next();
     }
-    msia[ms_lt::Mesh_Specification::NUM_PARENT_MESHES] = submesh_count;
+    msia[Mesh_Specification::NUM_PARENT_MESHES] = submesh_count;
   }
 
 
@@ -720,7 +791,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
   qa_recs[0][3] = s;
 
 
-  std::string *coord_names = ndb->getMSPSA(ms_lt::Mesh_Specification::COORDINATE_NAMES);
+  std::string *coord_names = ndb->getMSPSA(Mesh_Specification::COORDINATE_NAMES);
   coord_names[0] = "X";
   coord_names[1] = "Y";
   if(this->getMSI(DIM) ==3){
@@ -765,14 +836,14 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
       }
       ms = ms->Next();
     }
-    ndb->setMSI(ms_lt::Mesh_Specification::NUM_SIDE_SET_NODES,the_num_side_set_nodes);
+    ndb->setMSI(Mesh_Specification::NUM_SIDE_SET_NODES,the_num_side_set_nodes);
   }
 
   {
-    long long * const * dside_set_elements     = ndb->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_ELEMENTS);
-    long long * const * dside_set_faces        = ndb->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_FACES);
-    long long * const * dside_set_nodes        = ndb->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODES);
-    long long * const * dside_set_node_counter = ndb->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODE_COUNTER);
+    long long * const * dside_set_elements     = ndb->getMSPP(Mesh_Specification::SIDE_SET_ELEMENTS);
+    long long * const * dside_set_faces        = ndb->getMSPP(Mesh_Specification::SIDE_SET_FACES);
+    long long * const * dside_set_nodes        = ndb->getMSPP(Mesh_Specification::SIDE_SET_NODES);
+    long long * const * dside_set_node_counter = ndb->getMSPP(Mesh_Specification::SIDE_SET_NODE_COUNTER);
     Mesh_Specification * ms = this;
     int nsct = 0;
     int node_offset = 0;
@@ -781,10 +852,10 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
       long long * ne_in_ss = ms->getMSP(NUM_ELEMENTS_IN_SIDE_SET);
       long long * nn_in_ss = ms->getMSP(NUM_NODES_IN_SIDE_SET);
 
-      long long * const * sside_set_elements     = ms->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_ELEMENTS);
-      long long * const * sside_set_faces        = ms->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_FACES);
-      long long * const * sside_set_nodes        = ms->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODES);
-      long long * const * sside_set_node_counter = ms->getMSPP(ms_lt::Mesh_Specification::SIDE_SET_NODE_COUNTER);
+      long long * const * sside_set_elements     = ms->getMSPP(Mesh_Specification::SIDE_SET_ELEMENTS);
+      long long * const * sside_set_faces        = ms->getMSPP(Mesh_Specification::SIDE_SET_FACES);
+      long long * const * sside_set_nodes        = ms->getMSPP(Mesh_Specification::SIDE_SET_NODES);
+      long long * const * sside_set_node_counter = ms->getMSPP(Mesh_Specification::SIDE_SET_NODE_COUNTER);
       for(int ssct = 0; ssct <  ms->getMSI(NUM_SIDE_SETS);ssct ++,nsct ++){
         long long * sthe_elements = sside_set_elements[ssct];
         long long * sthe_faces = sside_set_faces[ssct];
@@ -834,10 +905,10 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
     Mesh_Specification * ms = this;
     int nsct = 0;
     long long node_offset = 0;
-    long long * const * dnode_set_nodes = ndb->getMSPP(ms_lt::Mesh_Specification::NODE_SET_NODES);
+    long long * const * dnode_set_nodes = ndb->getMSPP(Mesh_Specification::NODE_SET_NODES);
     while(ms){
-      long long * const * snode_set_nodes = ms->getMSPP(ms_lt::Mesh_Specification::NODE_SET_NODES);
-      long long * num_nodes_in_set =  ms->getMSP(ms_lt::Mesh_Specification::NUM_NODES_IN_NODE_SET);
+      long long * const * snode_set_nodes = ms->getMSPP(Mesh_Specification::NODE_SET_NODES);
+      long long * num_nodes_in_set =  ms->getMSP(Mesh_Specification::NUM_NODES_IN_NODE_SET);
 
       for(int ct = 0; ct <  ms->getMSI(NUM_NODE_SETS);ct ++,nsct ++){
         long long * dthe_nodes = dnode_set_nodes[nsct];
@@ -864,10 +935,10 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
     Mesh_Specification * ms = this;
     while(ms){
-      long long snb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
-      long long * sbids =  ms->getMSP(ms_lt::Mesh_Specification::BLOCK_ID);
-      long long * seib =  ms->getMSP(ms_lt::Mesh_Specification::ELEMENTS_IN_BLOCK);
-      long long * snpe =  ms->getMSP(ms_lt::Mesh_Specification::NODES_PER_ELEMENT);
+      long long snb = ms->getMSI(Mesh_Specification::NUM_BLOCKS);
+      long long * sbids =  ms->getMSP(Mesh_Specification::BLOCK_ID);
+      long long * seib =  ms->getMSP(Mesh_Specification::ELEMENTS_IN_BLOCK);
+      long long * snpe =  ms->getMSP(Mesh_Specification::NODES_PER_ELEMENT);
       for(int bct = 0; bct < snb; bct ++,block_count ++){
         ndb->Specify_Block_Information(block_count,// 0 based index
                                        sbids[bct] + block_offset,// 1 base count
@@ -891,15 +962,15 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
     int block_count = 0;
     int node_offset = 0;
-    long long * const * dlinks = ndb->getMSPP(ms_lt::Mesh_Specification::ELMT_NODE_LINKAGE);
+    long long * const * dlinks = ndb->getMSPP(Mesh_Specification::ELMT_NODE_LINKAGE);
     Mesh_Specification * ms = this;
     while(ms){
-      long long * const * slinks = ms->getMSPP(ms_lt::Mesh_Specification::ELMT_NODE_LINKAGE);
-      long long snb = ms->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);
+      long long * const * slinks = ms->getMSPP(Mesh_Specification::ELMT_NODE_LINKAGE);
+      long long snb = ms->getMSI(Mesh_Specification::NUM_BLOCKS);
       for(int bct = 0; bct < snb; bct ++,block_count ++){
         long long * sconn = slinks[bct];
         long long * dconn = dlinks[block_count];
-        long long * elem_in_block = ms->getMSP(ms_lt::Mesh_Specification::ELEMENTS_IN_BLOCK);
+        long long * elem_in_block = ms->getMSP(Mesh_Specification::ELEMENTS_IN_BLOCK);
         for(int elct = 0; elct < elem_in_block[bct];elct ++){
           for(int nct = 0; nct < num_nodes_per_element; nct ++){
             dconn[elct*num_nodes_per_element+nct] = sconn[elct*num_nodes_per_element+nct]+node_offset;
@@ -914,8 +985,8 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
   //element types
   {
     int dim = this->getMSI(DIM);
-    std::string *el_types = ndb->getMSPSA(ms_lt::Mesh_Specification::ELEMENT_TYPES);
-    for(long long bct = 0; bct < ndb->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);bct ++ ){
+    std::string *el_types = ndb->getMSPSA(Mesh_Specification::ELEMENT_TYPES);
+    for(long long bct = 0; bct < ndb->getMSI(Mesh_Specification::NUM_BLOCKS);bct ++ ){
       el_types[bct] = "QUAD";
       if(dim==3){
         el_types[bct] = "HEX";
@@ -925,14 +996,14 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
   //Global element numbers OFFSET IS WRONG SHOULD BE ACROSS ALL PROCS
   {
-    long long * the_map = ndb->getMSP(ms_lt::Mesh_Specification::ELEM_ORDER_MAP);
-    long long * dglobal_element_numbers = ndb->getMSP(ms_lt::Mesh_Specification::GLOBAL_ELEMENT_NUMBERS);
+    long long * the_map = ndb->getMSP(Mesh_Specification::ELEM_ORDER_MAP);
+    long long * dglobal_element_numbers = ndb->getMSP(Mesh_Specification::GLOBAL_ELEMENT_NUMBERS);
     long long element_offset = 0;
     long long tict = 0;
     Mesh_Specification * ms = this;
     while(ms){
-      long long * sthe_map = ms->getMSP(ms_lt::Mesh_Specification::ELEM_ORDER_MAP);
-      long long * sglobal_element_numbers = ms->getMSP(ms_lt::Mesh_Specification::GLOBAL_ELEMENT_NUMBERS);
+      long long * sthe_map = ms->getMSP(Mesh_Specification::ELEM_ORDER_MAP);
+      long long * sglobal_element_numbers = ms->getMSP(Mesh_Specification::GLOBAL_ELEMENT_NUMBERS);
       long long nels =  ms->getMSI(NUM_ELEMENTS);
       for(int ict = 0; ict < nels; ict++,tict++){
         the_map[tict] = sthe_map[ict] + element_offset;
@@ -945,12 +1016,12 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
   }
   //global node numbers OFFSET is WRONG SHOULD BE ACROSS ALL PROCESSORS
   {
-    long long * dglobal_node_numbers = ndb->getMSP(ms_lt::Mesh_Specification::GLOBAL_NODE_NUMBERS);
+    long long * dglobal_node_numbers = ndb->getMSP(Mesh_Specification::GLOBAL_NODE_NUMBERS);
     long long node_offset = 0;
     int tict = 0;
     Mesh_Specification * ms = this;
     while(ms){
-      long long * sglobal_node_numbers = ms->getMSP(ms_lt::Mesh_Specification::GLOBAL_NODE_NUMBERS);
+      long long * sglobal_node_numbers = ms->getMSP(Mesh_Specification::GLOBAL_NODE_NUMBERS);
       long long nnodes =  ms->getMSI(NUM_NODES);
       for(int ict = 0; ict < nnodes; ict++,tict++){
         dglobal_node_numbers[tict] = sglobal_node_numbers[ict] + node_offset;
@@ -987,18 +1058,18 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
                           this->getMSI(NUM_TOTAL_PROC),
                           this->getMSI(PROC_ID));
 
-    long long* elem_blk_ids_global =    ndb->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
+    long long* elem_blk_ids_global =    ndb->getMSP(Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
     for(long long bct = 0; bct <  gblks; bct++)elem_blk_ids_global[bct] = bct+1;// add 1 for block index
 
   }
 
   // element block counts
   {
-    long long* delem_blk_cnts_global =   ndb->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_CNTS_GLOBAL);
+    long long* delem_blk_cnts_global =   ndb->getMSP(Mesh_Specification::ELEM_BLK_CNTS_GLOBAL);
     int blk_cnt = 0;
     Mesh_Specification * ms = this;
     while(ms){
-      long long* sdelem_blk_cnts_global =   ms->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_CNTS_GLOBAL);
+      long long* sdelem_blk_cnts_global =   ms->getMSP(Mesh_Specification::ELEM_BLK_CNTS_GLOBAL);
       int nblk = ms->getMSI(NUM_ELM_BLKS_GLOBAL);
       for(int ict = 0; ict < nblk; ict ++,blk_cnt++){
         delem_blk_cnts_global[blk_cnt] = sdelem_blk_cnts_global[ict];
@@ -1011,16 +1082,16 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
   // ns global info
   {
-    long long* dns_ids_global =          ndb->getMSP(ms_lt::Mesh_Specification::NS_IDS_GLOBAL);
-    long long* dns_cnts_global =         ndb->getMSP(ms_lt::Mesh_Specification::NS_CNTS_GLOBAL);
-    long long* dns_df_cnts_global =      ndb->getMSP(ms_lt::Mesh_Specification::NS_DF_CNTS_GLOBAL);
+    long long* dns_ids_global =          ndb->getMSP(Mesh_Specification::NS_IDS_GLOBAL);
+    long long* dns_cnts_global =         ndb->getMSP(Mesh_Specification::NS_CNTS_GLOBAL);
+    long long* dns_df_cnts_global =      ndb->getMSP(Mesh_Specification::NS_DF_CNTS_GLOBAL);
     int nsct = 0;
     Mesh_Specification * ms = this;
     while(ms){
-      long long* sns_ids_global =          ms->getMSP(ms_lt::Mesh_Specification::NS_IDS_GLOBAL);
-      long long* sns_cnts_global =         ms->getMSP(ms_lt::Mesh_Specification::NS_CNTS_GLOBAL);
-      long long* sns_df_cnts_global =      ms->getMSP(ms_lt::Mesh_Specification::NS_DF_CNTS_GLOBAL);
-      int nns = ms->getMSI(ms_lt::Mesh_Specification::NUM_NODE_SETS_GLOBAL);
+      long long* sns_ids_global =          ms->getMSP(Mesh_Specification::NS_IDS_GLOBAL);
+      long long* sns_cnts_global =         ms->getMSP(Mesh_Specification::NS_CNTS_GLOBAL);
+      long long* sns_df_cnts_global =      ms->getMSP(Mesh_Specification::NS_DF_CNTS_GLOBAL);
+      int nns = ms->getMSI(Mesh_Specification::NUM_NODE_SETS_GLOBAL);
       for(int ict = 0; ict < nns; ict ++,nsct ++){
         dns_ids_global[nsct]     = sns_ids_global[ict];
         dns_cnts_global[nsct]    = sns_cnts_global[ict];
@@ -1032,16 +1103,16 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
   //ss global info
   {
-    long long* dss_ids_global =          ndb->getMSP(ms_lt::Mesh_Specification::SS_IDS_GLOBAL);
-    long long* dss_cnts_global =         ndb->getMSP(ms_lt::Mesh_Specification::SS_CNTS_GLOBAL);
-    long long* dss_df_cnts_global =      ndb->getMSP(ms_lt::Mesh_Specification::SS_DF_CNTS_GLOBAL);
+    long long* dss_ids_global =          ndb->getMSP(Mesh_Specification::SS_IDS_GLOBAL);
+    long long* dss_cnts_global =         ndb->getMSP(Mesh_Specification::SS_CNTS_GLOBAL);
+    long long* dss_df_cnts_global =      ndb->getMSP(Mesh_Specification::SS_DF_CNTS_GLOBAL);
     int ssct = 0;
     Mesh_Specification * ms = this;
     while(ms){
-      long long* sss_ids_global =          ms->getMSP(ms_lt::Mesh_Specification::SS_IDS_GLOBAL);
-      long long* sss_cnts_global =         ms->getMSP(ms_lt::Mesh_Specification::SS_CNTS_GLOBAL);
-      long long* sss_df_cnts_global =      ms->getMSP(ms_lt::Mesh_Specification::SS_DF_CNTS_GLOBAL);
-      int nss = ms->getMSI(ms_lt::Mesh_Specification::NUM_SIDE_SETS_GLOBAL);
+      long long* sss_ids_global =          ms->getMSP(Mesh_Specification::SS_IDS_GLOBAL);
+      long long* sss_cnts_global =         ms->getMSP(Mesh_Specification::SS_CNTS_GLOBAL);
+      long long* sss_df_cnts_global =      ms->getMSP(Mesh_Specification::SS_DF_CNTS_GLOBAL);
+      int nss = ms->getMSI(Mesh_Specification::NUM_SIDE_SETS_GLOBAL);
       for(int ict = 0; ict < nss; ict ++,ssct ++){
         dss_ids_global[ssct]     = sss_ids_global[ict];
         dss_cnts_global[ssct]    = sss_cnts_global[ict];
@@ -1071,9 +1142,9 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
       internal_element_list_size += ms->getMSI(NUM_INTERNAL_ELEMS);
       border_element_list_size   += ms->getMSI(NUM_BORDER_ELEMS);
 
-      long long * const * scnid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_IDS);
-      long long * const * sceid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_IDS);
-      long long * const * scsid    = ms->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS);
+      long long * const * scnid    = ms->getMSPP(Mesh_Specification::COMM_NODE_IDS);
+      long long * const * sceid    = ms->getMSPP(Mesh_Specification::COMM_ELEM_IDS);
+      long long * const * scsid    = ms->getMSPP(Mesh_Specification::COMM_SIDE_IDS);
 
       {
         int nncm = ms->getMSI(NUM_NODE_COMM_MAPS);
@@ -1085,7 +1156,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
 	  for (long long nctr = 0; nctr < nnodes; nctr ++){
 	    (node_proc_ids[proc_id]).push_back(scnid[ict][nctr]+node_offset);
-	    assert(proc_id == ms->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS)[ict][nctr]);
+	    assert(proc_id == ms->getMSPP(Mesh_Specification::COMM_NODE_PROC_IDS)[ict][nctr]);
           }
         }
       }
@@ -1100,7 +1171,7 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
           long long nels =  ecmap_cnts[ict];
 	  for(long long ectr = 0; ectr < nels;ectr++){
 	    (element_proc_ids[proc_id]).push_back(std::pair<long,long>(sceid[ict][ectr]+element_offset,scsid[ict][ectr]));
-	    assert(proc_id == ms->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS)[ict][ectr]);
+	    assert(proc_id == ms->getMSPP(Mesh_Specification::COMM_ELEM_PROC_IDS)[ict][ectr]);
           }
         }
       }
@@ -1120,10 +1191,10 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
                             );
 
     {
-      long long * ncnc = ndb->getMSP(ms_lt::Mesh_Specification::NODE_CMAP_NODE_CNTS);
-      long long * nci  = ndb->getMSP(ms_lt::Mesh_Specification::NODE_CMAP_IDS);
-      long long * ecec = ndb->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_ELEM_CNTS);
-      long long * eci  = ndb->getMSP(ms_lt::Mesh_Specification::ELEM_CMAP_IDS);
+      long long * ncnc = ndb->getMSP(Mesh_Specification::NODE_CMAP_NODE_CNTS);
+      long long * nci  = ndb->getMSP(Mesh_Specification::NODE_CMAP_IDS);
+      long long * ecec = ndb->getMSP(Mesh_Specification::ELEM_CMAP_ELEM_CNTS);
+      long long * eci  = ndb->getMSP(Mesh_Specification::ELEM_CMAP_IDS);
       std::map<long,std::vector<long>>::iterator mit;
       {
         int count = 0;
@@ -1147,11 +1218,11 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
     ndb->Allocate_Parallel_Data();
     {
 
-      long long * const * dcnid    = ndb->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_IDS);
-      long long * const * dcnpid   = ndb->getMSPP(ms_lt::Mesh_Specification::COMM_NODE_PROC_IDS);
-      long long * const * dceid    = ndb->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_IDS);
-      long long * const * dcsid    = ndb->getMSPP(ms_lt::Mesh_Specification::COMM_SIDE_IDS);
-      long long * const * dcepid   = ndb->getMSPP(ms_lt::Mesh_Specification::COMM_ELEM_PROC_IDS);
+      long long * const * dcnid    = ndb->getMSPP(Mesh_Specification::COMM_NODE_IDS);
+      long long * const * dcnpid   = ndb->getMSPP(Mesh_Specification::COMM_NODE_PROC_IDS);
+      long long * const * dceid    = ndb->getMSPP(Mesh_Specification::COMM_ELEM_IDS);
+      long long * const * dcsid    = ndb->getMSPP(Mesh_Specification::COMM_SIDE_IDS);
+      long long * const * dcepid   = ndb->getMSPP(Mesh_Specification::COMM_ELEM_PROC_IDS);
 
         {
 	std::map<long,std::vector<long>>::iterator mit;
@@ -1184,10 +1255,10 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
 
   //populate border nodes elements
   {
-    long long * dint_elems    = ndb->getMSP(ms_lt::Mesh_Specification::INTERNAL_ELEMENTS);
-    long long * dint_nodes    = ndb->getMSP(ms_lt::Mesh_Specification::INTERNAL_NODES);
-    long long * dborder_elems = ndb->getMSP(ms_lt::Mesh_Specification::BORDER_ELEMENTS);
-    long long * dborder_nodes = ndb->getMSP(ms_lt::Mesh_Specification::BORDER_NODES);
+    long long * dint_elems    = ndb->getMSP(Mesh_Specification::INTERNAL_ELEMENTS);
+    long long * dint_nodes    = ndb->getMSP(Mesh_Specification::INTERNAL_NODES);
+    long long * dborder_elems = ndb->getMSP(Mesh_Specification::BORDER_ELEMENTS);
+    long long * dborder_nodes = ndb->getMSP(Mesh_Specification::BORDER_NODES);
 
     int nin = 0;
     int nbn = 0;
@@ -1198,10 +1269,10 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
     int node_offset = 0;
     int element_offset = 0;
     while(ms){
-      long long * sint_elems    = ms->getMSP(ms_lt::Mesh_Specification::INTERNAL_ELEMENTS);
-      long long * sint_nodes    = ms->getMSP(ms_lt::Mesh_Specification::INTERNAL_NODES);
-      long long * sborder_elems = ms->getMSP(ms_lt::Mesh_Specification::BORDER_ELEMENTS);
-      long long * sborder_nodes = ms->getMSP(ms_lt::Mesh_Specification::BORDER_NODES);
+      long long * sint_elems    = ms->getMSP(Mesh_Specification::INTERNAL_ELEMENTS);
+      long long * sint_nodes    = ms->getMSP(Mesh_Specification::INTERNAL_NODES);
+      long long * sborder_elems = ms->getMSP(Mesh_Specification::BORDER_ELEMENTS);
+      long long * sborder_nodes = ms->getMSP(Mesh_Specification::BORDER_NODES);
 
       int internal_node_list_size    = ms->getMSI(NUM_INTERNAL_NODES);
       int border_node_list_size      = ms->getMSI(NUM_BORDER_NODES);
@@ -1226,5 +1297,115 @@ Mesh_Specification * Mesh_Specification::consolidateMS()
   return ndb;
 }
 
+// Kokkos versions of key Mesh_Specification functions
+namespace ms_lt {
 
+// Kokkos version of coordinate copying with offset
+void Mesh_Specification::Copy_Coordinates_Kokkos(Mesh_Specification* dest,
+                                                 long long node_offset,
+                                                 long long total_nodes)
+{
+  if (!coord || !dest->coord) return;
+
+  long long dim = msia[DIM];
+  long long num_nodes = msia[NUM_NODES];
+
+  // Create Kokkos views for coordinates
+  View2D<double> dest_coords("dest_coords", total_nodes, dim);
+  View2D<double> source_coords("source_coords", num_nodes, dim);
+
+  // Copy data from raw pointers to host views
+  auto dest_coords_host = Kokkos::create_mirror_view(dest_coords);
+  auto source_coords_host = Kokkos::create_mirror_view(source_coords);
+
+  // Fill source view
+  for (long long i = 0; i < num_nodes; i++) {
+    for (long long d = 0; d < dim; d++) {
+      source_coords_host(i, d) = coord[i + d * num_nodes];
+    }
+  }
+
+  // Copy to device
+  Kokkos::deep_copy(source_coords, source_coords_host);
+
+  // Call device function to copy and offset
+  Kokkos::parallel_for("copy_coords_kokkos", Kokkos::RangePolicy<>(0, 1),
+    KOKKOS_LAMBDA(const size_t) {
+      copy_and_offset_coords_device(dest_coords, source_coords, node_offset, 0, num_nodes, dim);
+    });
+
+  // Copy result back to host
+  Kokkos::deep_copy(dest_coords_host, dest_coords);
+
+  // Copy back to raw pointer
+  for (long long i = 0; i < num_nodes; i++) {
+    for (long long d = 0; d < dim; d++) {
+      dest->coord[node_offset + i + d * total_nodes] = dest_coords_host(node_offset + i, d);
+    }
+  }
 }
+
+// Kokkos version of connectivity copying with offset
+void Mesh_Specification::Copy_Connectivity_Kokkos(Mesh_Specification* dest,
+                                                  long long block_index,
+                                                  long long node_offset,
+                                                  long long element_offset)
+{
+  if (msia[NUM_BLOCKS] <= 0) return;
+
+  long long num_nodes_per_element = 8; // Default for 3D
+  if (msia[DIM] == 2) {
+    num_nodes_per_element = 4; // QUAD4 for 2D
+  }
+
+  // Get source connectivity
+  long long* const* source_conn = msppa[ELMT_NODE_LINKAGE];
+  long long* dest_conn_ptr = dest->msppa[ELMT_NODE_LINKAGE][block_index];
+
+  if (!source_conn || !dest_conn_ptr) return;
+
+  long long num_elements = mspa[ELEMENTS_IN_BLOCK][0]; // Simplified for example
+
+  // Create Kokkos views
+  View2D<long long> dest_conn("dest_conn", num_elements, num_nodes_per_element);
+  View2D<long long> source_conn_view("source_conn", num_elements, num_nodes_per_element);
+
+  // Copy data from raw pointers to host views
+  auto dest_conn_host = Kokkos::create_mirror_view(dest_conn);
+  auto source_conn_host = Kokkos::create_mirror_view(source_conn_view);
+
+  // Fill source view
+  for (long long i = 0; i < num_elements; i++) {
+    for (long long j = 0; j < num_nodes_per_element; j++) {
+      source_conn_host(i, j) = source_conn[0][i * num_nodes_per_element + j];
+    }
+  }
+
+  // Copy to device
+  Kokkos::deep_copy(source_conn_view, source_conn_host);
+
+  // Call device function to copy and offset connectivity
+  Kokkos::parallel_for("copy_connectivity_kokkos", Kokkos::RangePolicy<>(0, 1),
+    KOKKOS_LAMBDA(const size_t) {
+      copy_and_offset_connectivity_device(dest_conn, source_conn_view, 0, 0, num_elements, num_nodes_per_element);
+    });
+
+  // Apply node offset on host
+  Kokkos::deep_copy(dest_conn_host, dest_conn);
+  for (long long i = 0; i < num_elements; i++) {
+    for (long long j = 0; j < num_nodes_per_element; j++) {
+      dest_conn_host(i, j) += node_offset;
+    }
+  }
+
+  // Copy back to raw pointer
+  for (long long i = 0; i < num_elements; i++) {
+    for (long long j = 0; j < num_nodes_per_element; j++) {
+      dest_conn_ptr[i * num_nodes_per_element + j] = dest_conn_host(i, j);
+    }
+  }
+}
+
+} // namespace ms_lt
+
+
