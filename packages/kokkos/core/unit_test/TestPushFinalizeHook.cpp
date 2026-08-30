@@ -5,7 +5,7 @@
 #ifdef KOKKOS_ENABLE_EXPERIMENTAL_CXX20_MODULES
 import kokkos.core;
 #else
-#include <Kokkos_Core.hpp>
+#include <Kokkos_InitializeFinalize.hpp>
 #endif
 
 #include <gtest/gtest.h>
@@ -49,8 +49,6 @@ struct Hook4 {
 };
 
 TEST_F(PushFinalizeHook_DeathTest, called_in_reverse_order) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-
   std::string const expectedOutput([] {
     std::ostringstream os;
     os << hook4str << '\n'
@@ -85,8 +83,6 @@ char const my_terminate_handler_msg[] = "my terminate handler was called\n";
 }
 
 TEST_F(PushFinalizeHook_DeathTest, terminate_on_throw) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-
   auto terminate_handler = std::get_terminate();
 
   std::set_terminate(my_terminate_handler);
@@ -101,6 +97,18 @@ TEST_F(PushFinalizeHook_DeathTest, terminate_on_throw) {
       my_terminate_handler_msg);
 
   std::set_terminate(terminate_handler);
+}
+
+TEST_F(PushFinalizeHook_DeathTest, ignore_late_registration) {
+  EXPECT_EXIT(
+      {
+        Kokkos::initialize();
+        Kokkos::finalize();
+        // legal to register after finalize but will never be called
+        Kokkos::push_finalize_hook([] { throw 42; });
+        std::exit(EXIT_SUCCESS);
+      },
+      ::testing::ExitedWithCode(EXIT_SUCCESS), "");
 }
 
 }  // namespace
