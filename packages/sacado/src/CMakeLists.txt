@@ -21,7 +21,6 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/new_design)
 SET(HEADERS ${HEADERS}
-  new_design/Sacado_Fad_Exp_MathFunctions.hpp
   new_design/Sacado_Fad_Exp_Expression.hpp
   new_design/Sacado_Fad_Exp_ExpressionTraits.hpp
   new_design/Sacado_Fad_Exp_ExprAssign.hpp
