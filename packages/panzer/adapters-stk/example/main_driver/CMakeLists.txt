@@ -39,6 +39,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     rol_params.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
+    energy-ss-blocked-tp-fe-assembly.xml
     periodic_wedge.xml
     periodic_wedge.pam
     energy-periodic-32bit-limit.xml
@@ -126,6 +127,33 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-blocked-tp.xml
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+  )
+
+# Blocked counterpart of main_driver_energy-ss-tp-FEAssembly: assembles each block of the
+# Jacobian into a Tpetra::FECrsMatrix.  Tested against the analytic solution and the classic
+# assembly path.  The four responses cover all four blocks of the field order.
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-blocked-tp-FEAssembly
+  TEST_0 EXEC main_driver
+    ARGS  --i=energy-ss-blocked-tp-fe-assembly.xml --use-fe-assembly
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    OUTPUT_FILE main_driver-blocked-FEAssembly-fe.out
+  TEST_1 EXEC main_driver
+    ARGS  --i=energy-ss-blocked-tp-fe-assembly.xml --use-classic-assembly
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    OUTPUT_FILE main_driver-blocked-FEAssembly-classic.out
+  TEST_2 CMND python3
+    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/compareAssemblyModes.py
+         main_driver-blocked-FEAssembly-fe.out
+         main_driver-blocked-FEAssembly-classic.out
+         "T0 Integral=0.5"
+         "T2 Integral=0.5"
+         "T3 Integral=0.5"
+         "T4 Integral=0.5"
+    PASS_REGULAR_EXPRESSION "Test Passed"
+  COMM mpi
   )
 
 TRIBITS_ADD_ADVANCED_TEST(

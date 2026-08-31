@@ -45,8 +45,10 @@ using Teuchos::RCP;
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const BlockedDOFManager> & gidProvider)
+                              const Teuchos::RCP<const BlockedDOFManager> & gidProvider,
+                              bool useFEAssembly)
    : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(comm)
+   , useFEAssembly_(useFEAssembly)
 {
   for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
     gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);
@@ -61,8 +63,10 @@ BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders)
+                              const std::vector<Teuchos::RCP<const panzer::GlobalIndexer>> & gidProviders,
+                              bool useFEAssembly)
   : gidProviders_(gidProviders), comm_(comm)
+  , useFEAssembly_(useFEAssembly)
 {
   makeRoomForBlocks(gidProviders_.size());
 }
@@ -578,7 +582,19 @@ getThyraMatrix() const
       for(std::size_t j=0;j<blockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // build (i,j) block matrix and add it to blocked operator
-            Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > block = Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getTpetraMatrix(i,j));
+            //
+            // In FE mode the spaces must be stated explicitly rather than deduced from the
+            // matrix. A shared FECrsMatrix reports whichever maps its ACTIVE view has, and
+            // that view flips between owned+shared and owned across the assembly cycle --
+            // a freshly constructed one even starts in owned+shared. Deducing the spaces
+            // would stamp this owned operator with ghosted spaces. The classic path is
+            // unaffected, since its matrix only ever has the owned maps.
+            Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > block;
+            if(useFEAssembly_)
+               block = Thyra::tpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(
+                          getThyraRangeSpace(i),getThyraDomainSpace(j),getTpetraMatrix(i,j));
+            else
+               block = Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getTpetraMatrix(i,j));
             blockedOp->setNonconstBlock(i,j,block);
          }
       }
@@ -666,7 +682,23 @@ getGhostedThyraMatrix() const
       for(std::size_t j=0;j<blockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // build (i,j) block matrix and add it to blocked operator
-            Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > block = Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedTpetraMatrix(i,j));
+            //
+            // See getThyraMatrix(): in FE mode the spaces are stated explicitly, since the
+            // shared matrix's own maps follow its active view. This ghosted operator keeps
+            // the ghosted spaces, matching the ghosted container's vectors and the classic
+            // path, even though the matrix underneath is the same object the owned operator
+            // wraps.
+            Teuchos::RCP<Thyra::LinearOpBase<ScalarT> > block;
+            if(useFEAssembly_) {
+               Teuchos::RCP<const Thyra::ProductVectorSpaceBase<ScalarT> > gRange
+                  = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<ScalarT> >(getGhostedThyraRangeSpace(),true);
+               Teuchos::RCP<const Thyra::ProductVectorSpaceBase<ScalarT> > gDomain
+                  = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<ScalarT> >(getGhostedThyraDomainSpace(),true);
+               block = Thyra::tpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(
+                          gRange->getBlock(i),gDomain->getBlock(j),getGhostedTpetraMatrix(i,j));
+            }
+            else
+               block = Thyra::createLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGhostedTpetraMatrix(i,j));
             blockedOp->setNonconstBlock(i,j,block);
          }
       }
@@ -744,6 +776,17 @@ ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<ScalarT> & in,Thyra::LinearOp
 
             RCP<const CrsMatrixType> tp_in = rcp_dynamic_cast<const CrsMatrixType>(tp_op_in,true);
             RCP<CrsMatrixType> tp_out      = rcp_dynamic_cast<CrsMatrixType>(tp_op_out,true);
+
+            // In FE mode this block is one shared FECrsMatrix, and endFill()'s endAssembly()
+            // has already migrated its ghost rows onto the owned rows. Exporting it onto
+            // itself here would double every shared-interface contribution.
+            //
+            // The test has to be on the extracted Tpetra matrices: even when the blocks are
+            // shared, the owned and ghosted containers hold distinct DefaultBlockedLinearOp
+            // objects wrapping distinct Thyra::TpetraLinearOps, so comparing get_A() -- or
+            // the Thyra blocks -- would never report a match.
+            if(tp_in.get()==tp_out.get())
+               continue;
 
             // use Tpetra to do global communication
             ghostToGlobalTpetraMatrix(i,*tp_in,*tp_out);
@@ -1222,11 +1265,151 @@ buildTpetraGhostedGraph(int i,int j) const
    return graph;
 }
 
+// Build the FE graph for block (i,j).
+//
+// This walks the same element/GID traversal as buildTpetraGhostedGraph(i,j) -- rows come
+// from indexer i, columns from indexer j -- but hands the result to the FECrsGraph "V2"
+// constructor, which carries both the owned and the owned+shared graph in one object.
+//
+// There is no getColMap() in this class and none is needed: block (i,j) takes its rows from
+// indexer i and its columns from indexer j, so block j's row map IS this block's column map.
+// That is the same convention the classic path already uses -- buildTpetraGhostedGraph()
+// fill-completes with (getMap(j),getMap(i)).
+//
+// The V2 constructor requires that the owned row/domain gids appear, in the same order, as a
+// leading prefix of the owned+shared row/domain map. Every concrete panzer::GlobalIndexer
+// builds getOwnedAndGhostedIndices() as owned_ followed by ghosted_, so getMap(i)/
+// getGhostedMap(i) satisfy this directly.
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsGraphType>
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildFEGraph(int i,int j) const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   // NOTE: these must be RCP<const MapType> (not RCP<MapType>). FECrsGraph has both a "V1"
+   // ctor (4th positional arg = importer) and a "V2" ctor (4th positional arg =
+   // ownedPlusSharedDomainMap); Teuchos::RCP's converting constructor is an unconstrained
+   // template, so an RCP<MapType> is equally "convertible" to either as far as overload
+   // resolution is concerned. Typing the locals as RCP<const MapType> binds them to V2's
+   // domain-map parameter with no conversion at all, resolving the ambiguity in V2's favor.
+   RCP<const MapType> ownedRowMap             = getMap(i);
+   RCP<const MapType> ownedPlusSharedRowMap   = getGhostedMap(i);
+   RCP<const MapType> ownedDomainMap          = getMap(j);
+   RCP<const MapType> ownedPlusSharedDomainMap = getGhostedMap(j);
+
+   RCP<const GlobalIndexer> rowProvider = getGlobalIndexer(i);
+   RCP<const GlobalIndexer> colProvider = getGlobalIndexer(j);
+
+   std::vector<std::string> elementBlockIds;
+   gidProviders_[0]->getElementBlockIds(elementBlockIds); // each sub provider "should" have
+                                                          // the same element blocks
+
+   // count entries per owned+shared row, exactly as buildTpetraGhostedGraph() does
+   std::vector<size_t> nEntriesPerRow(ownedPlusSharedRowMap->getLocalNumElements(),0);
+
+   std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(*blockItr);
+
+      std::vector<GlobalOrdinalT> row_gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      for(std::size_t elmt=0;elmt<elements.size();elmt++) {
+         rowProvider->getElementGIDs(elements[elmt],row_gids);
+         colProvider->getElementGIDs(elements[elmt],col_gids);
+         for(std::size_t row=0;row<row_gids.size();row++) {
+            LocalOrdinalT lid = ownedPlusSharedRowMap->getLocalElement(row_gids[row]);
+            nEntriesPerRow[lid] += col_gids.size();
+         }
+      }
+   }
+
+   size_t maxNumRowEntries = 0;
+   for(std::size_t r=0;r<nEntriesPerRow.size();r++)
+      maxNumRowEntries = std::max(maxNumRowEntries,nEntriesPerRow[r]);
+
+   RCP<FECrsGraphType> feGraph = rcp(new FECrsGraphType(
+       ownedRowMap, ownedPlusSharedRowMap, maxNumRowEntries,
+       ownedPlusSharedDomainMap,
+       Teuchos::null,
+       ownedDomainMap));
+
+   feGraph->beginAssembly();
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(*blockItr);
+
+      std::vector<GlobalOrdinalT> row_gids;
+      std::vector<GlobalOrdinalT> col_gids;
+
+      for(std::size_t elmt=0;elmt<elements.size();elmt++) {
+         rowProvider->getElementGIDs(elements[elmt],row_gids);
+         colProvider->getElementGIDs(elements[elmt],col_gids);
+         for(std::size_t row=0;row<row_gids.size();row++)
+            feGraph->insertGlobalIndices(row_gids[row],col_gids);
+      }
+   }
+   feGraph->endAssembly();
+
+   return feGraph;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsGraphType>
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEGraph(int i,int j) const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "BlockedTpetraLinearObjFactory::getFEGraph: This factory was not constructed with "
+      "FE assembly enabled.");
+
+   typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<FECrsGraphType>,panzer::pair_hash> FEGraphMap;
+
+   typename FEGraphMap::const_iterator itr = feGraphs_.find(std::make_pair(i,j));
+   if(itr!=feGraphs_.end())
+      return itr->second;
+
+   Teuchos::RCP<FECrsGraphType> graph = buildFEGraph(i,j);
+   feGraphs_[std::make_pair(i,j)] = graph;
+   return graph;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<typename BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::FECrsMatrixType>
+BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getFEMatrix(int i,int j) const
+{
+   TEUCHOS_TEST_FOR_EXCEPTION(!useFEAssembly_,std::logic_error,
+      "BlockedTpetraLinearObjFactory::getFEMatrix: This factory was not constructed with "
+      "FE assembly enabled.");
+
+   typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<FECrsMatrixType>,panzer::pair_hash> FEMatrixMap;
+
+   typename FEMatrixMap::const_iterator itr = feMatrices_.find(std::make_pair(i,j));
+   if(itr!=feMatrices_.end())
+      return itr->second;
+
+   // Cached deliberately. The owned and ghosted containers must end up wrapping the SAME
+   // matrix per block, so that endAssembly() can migrate ghost contributions to the owned
+   // rows in place. Handing back a fresh matrix here (as the classic getTpetraMatrix does)
+   // would give the two containers disjoint storage and silently drop the ghost data.
+   Teuchos::RCP<FECrsMatrixType> mat = Teuchos::rcp(new FECrsMatrixType(getFEGraph(i,j)));
+   feMatrices_[std::make_pair(i,j)] = mat;
+   return mat;
+}
+
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraMatrix(int i,int j) const
 {
+   // In FE mode the owned and ghosted views are the same object, so both getters return the
+   // shared FE matrix. It is already fill-complete over (getMap(j),getMap(i)) once
+   // endAssembly() has run, which is what callers of the "owned" matrix expect.
+   if(useFEAssembly_)
+     return getFEMatrix(i,j);
+
    Teuchos::RCP<const MapType> map_i = getMap(i);
    Teuchos::RCP<const MapType> map_j = getMap(j);
 
@@ -1242,6 +1425,10 @@ Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
 BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedTpetraMatrix(int i,int j) const
 {
+   // See getTpetraMatrix(): one shared FE matrix serves as both views.
+   if(useFEAssembly_)
+     return getFEMatrix(i,j);
+
    Teuchos::RCP<const MapType> map_i = getGhostedMap(i);
    Teuchos::RCP<const MapType> map_j = getGhostedMap(j);
 
@@ -1304,22 +1491,175 @@ getBlockColCount() const
    return gidProviders_.size();
 }
 
+namespace blocked_tpetra_lof_detail {
+
+  /** Pull the Tpetra CrsMatrix out of block (i,j) of a Thyra blocked operator, or return
+    * null if that block is excluded. Mirrors the extraction the container already does.
+    */
+  template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+  Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >
+  getBlockAsCrsMatrix(Thyra::PhysicallyBlockedLinearOpBase<ScalarT> & Amat,int i,int j)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+    RCP<Thyra::LinearOpBase<ScalarT> > block = Amat.getNonconstBlock(i,j);
+    if(block==Teuchos::null)
+      return Teuchos::null;
+
+    RCP<Tpetra::Operator<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > t_block =
+        rcp_dynamic_cast<Thyra::TpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(block,true)->getTpetraOperator();
+
+    return rcp_dynamic_cast<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> >(t_block,true);
+  }
+
+}
+
+// In FE mode the fill lifecycle is driven here rather than delegated to the container.
+//
+// The container's beginFill()/endFill() call the plain, inherited CrsMatrix::resumeFill() /
+// fillComplete() on each block. For an FECrsMatrix that would silently bypass its owned /
+// owned+shared state machine, so ghost-row contributions would never be migrated to the
+// owned rows. The factory is the right place for the FE version: it is a single object
+// shared by both containers and it already owns the per-block matrix cache, whereas the
+// container is not templated on Traits and has no back-pointer to the factory.
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 beginFill(LinearObjContainer & loc) const
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::PhysicallyBlockedLinearOpBase;
+
   BTLOC & tloc = Teuchos::dyn_cast<BTLOC>(loc);
-  if(tloc.get_A()!=Teuchos::null)
+  if(tloc.get_A()==Teuchos::null)
+    return;
+
+  if(!useFEAssembly_) {
     tloc.beginFill();
+    return;
+  }
+
+  RCP<PhysicallyBlockedLinearOpBase<ScalarT> > Amat
+      = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<ScalarT> >(tloc.get_A(),true);
+
+  const int blockDim = static_cast<int>(gidProviders_.size());
+  for(int i=0;i<blockDim;i++) {
+    for(int j=0;j<blockDim;j++) {
+      RCP<CrsMatrixType> mat
+          = blocked_tpetra_lof_detail::getBlockAsCrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(*Amat,i,j);
+      if(mat==Teuchos::null)
+        continue;
+
+      RCP<FECrsMatrixType> feMat = rcp_dynamic_cast<FECrsMatrixType>(mat);
+      if(feMat==Teuchos::null) {
+        // not an FE block (should not happen in FE mode, but stay well behaved)
+        mat->resumeFill();
+        continue;
+      }
+
+      // The owned and ghosted containers hold the SAME matrix per block, and
+      // AssemblyEngine::evaluate() calls beginFill() on both. FECrsMatrix::beginAssembly()
+      // asserts its fill state is "closed", so the second call would throw; tracking which
+      // matrix already has an assembly open per block collapses the pair into the single
+      // begin the FE state machine expects. This cannot be asked of the matrix directly --
+      // see feAssemblyOpenOn_.
+      const std::pair<int,int> key(i,j);
+      typename std::unordered_map<std::pair<int,int>,const FECrsMatrixType *,panzer::pair_hash>::const_iterator
+          openItr = feAssemblyOpenOn_.find(key);
+      if(openItr!=feAssemblyOpenOn_.end() && openItr->second==feMat.get())
+        continue;
+
+      feMat->beginAssembly();
+
+      // Clear ONLY the ghost rows of this block.
+      //
+      // Stale data can only accumulate there. Between assemblies the matrix rests in its
+      // OWNED view, whose values alias just the leading chunk of the owned+shared array
+      // (see Tpetra_FECrsMatrix_def.hpp, "we'll grab the first chunk of the Owned+Shared
+      // matrix's values array"). A caller's setAllToScalar therefore reaches owned rows but
+      // never the ghost rows, and endAssembly() does not clear them either, being a
+      // combining self-export that leaves its source untouched. Without this the next
+      // assembly sums onto the previous one's ghost contributions and inflates every
+      // shared-interface dof.
+      //
+      // Deliberately NOT setAllToScalar(0.0) over the whole block: callers legitimately set
+      // matrix values before calling beginFill (adjustForDirichletConditions is exercised
+      // exactly that way), and wiping all of it would silently discard their data. Owned
+      // rows are the caller's to manage; the ghost rows are scratch space that must start
+      // each assembly at zero.
+      //
+      // Relies on the FECrsGraph invariant that owned rows are a prefix of the owned+shared
+      // rows, which is what the V2 constructor guarantees.
+      {
+        auto rowptrs = feMat->getLocalRowPtrsHost();
+        auto lclMat  = feMat->getLocalMatrixDevice();
+        const size_t numOwnedRows = getMap(i)->getLocalNumElements();
+        const size_t numRows      = static_cast<size_t>(lclMat.numRows());
+        if(numOwnedRows < numRows) {
+          const size_t firstGhostEntry = rowptrs(numOwnedRows);
+          auto vals = lclMat.values;
+          if(firstGhostEntry < vals.extent(0))
+            Kokkos::deep_copy(Kokkos::subview(vals,Kokkos::make_pair(firstGhostEntry,vals.extent(0))),0.0);
+        }
+      }
+
+      feAssemblyOpenOn_[key] = feMat.get();
+    }
+  }
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 endFill(LinearObjContainer & loc) const
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::PhysicallyBlockedLinearOpBase;
+
   BTLOC & tloc = Teuchos::dyn_cast<BTLOC>(loc);
-  if(tloc.get_A()!=Teuchos::null)
+  if(tloc.get_A()==Teuchos::null)
+    return;
+
+  if(!useFEAssembly_) {
     tloc.endFill();
+    return;
+  }
+
+  RCP<PhysicallyBlockedLinearOpBase<ScalarT> > Amat
+      = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<ScalarT> >(tloc.get_A(),true);
+
+  const int blockDim = static_cast<int>(gidProviders_.size());
+  for(int i=0;i<blockDim;i++) {
+    for(int j=0;j<blockDim;j++) {
+      RCP<CrsMatrixType> mat
+          = blocked_tpetra_lof_detail::getBlockAsCrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(*Amat,i,j);
+      if(mat==Teuchos::null)
+        continue;
+
+      RCP<FECrsMatrixType> feMat = rcp_dynamic_cast<FECrsMatrixType>(mat);
+      if(feMat==Teuchos::null) {
+        mat->fillComplete(getMap(j),getMap(i));
+        continue;
+      }
+
+      // See beginFill(): must go through endAssembly(), not the plain fillComplete(), so the
+      // owned+shared -> owned cross-rank merge happens. This single endAssembly() IS the
+      // ghost->global migration for this block, which is why ghostToGlobalThyraMatrix()
+      // skips the export for shared FE blocks.
+      //
+      // Mirror of the beginFill() guard: endFill() is likewise called on both containers
+      // holding the same matrix, and endAssembly() asserts its fill state is "open", so only
+      // the first call may run it.
+      const std::pair<int,int> key(i,j);
+      typename std::unordered_map<std::pair<int,int>,const FECrsMatrixType *,panzer::pair_hash>::const_iterator
+          openItr = feAssemblyOpenOn_.find(key);
+      if(openItr!=feAssemblyOpenOn_.end() && openItr->second==feMat.get()) {
+        feMat->endAssembly();
+        feAssemblyOpenOn_.erase(key);
+      }
+    }
+  }
 }
 
 }

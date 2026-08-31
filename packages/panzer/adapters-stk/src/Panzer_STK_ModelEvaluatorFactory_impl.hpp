@@ -281,7 +281,7 @@ namespace panzer_stk {
     bool useFEAssembly = assembly_params.get<bool>("Use FE Assembly");
     bool useThyraME = !assembly_params.get<bool>("Use Epetra ME");
 
-    // Only the flat (non-blocked) Tpetra linear object factory implements FE assembly.
+    // FE assembly is implemented for the Tpetra linear object factories, flat and blocked.
     // Fail here rather than quietly falling through to a classic factory, which would let a
     // run that requested FE assembly silently not use it.
     TEUCHOS_TEST_FOR_EXCEPTION(useFEAssembly && !useTpetra,std::logic_error,
@@ -480,14 +480,6 @@ namespace panzer_stk {
     }
     else if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && useTpetra) {
 
-       // as above: BlockedTpetraLinearObjFactory has no FE assembly path, so refuse rather
-       // than build a classic factory for a run that asked for FE assembly.
-       TEUCHOS_TEST_FOR_EXCEPTION(useFEAssembly,std::logic_error,
-         "panzer_stk::ModelEvaluatorFactory: Assembly parameter \"Use FE Assembly\"=true is "
-         "not supported with a blocked field order; FE assembly is only implemented for the "
-         "flat (non-blocked) Tpetra linear object factory.");
-
-
        // Can't yet handle interface conditions for this system
        TEUCHOS_TEST_FOR_EXCEPTION(has_interface_condition,
                                   Teuchos::Exceptions::InvalidParameter,
@@ -506,7 +498,8 @@ namespace panzer_stk {
 
        Teuchos::RCP<panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> > bloLinObjFactory
         = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>(mpi_comm,
-                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager)));
+                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager),
+                                                          useFEAssembly));
 
        // parse any explicitly excluded pairs or blocks
        const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");

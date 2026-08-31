@@ -39,6 +39,7 @@
 
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -837,6 +838,279 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, exclusion)
       TEST_ASSERT(!blo->getNonconstBlock(2,0).is_null());
       TEST_ASSERT(blo->getNonconstBlock(2,1).is_null());
       TEST_ASSERT(!blo->getNonconstBlock(2,2).is_null());
+   }
+}
+
+
+// FE assembly tests
+/////////////////////////////////////////////////////////////////////
+
+typedef Tpetra::FECrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> FECrsMatrixType;
+
+// Run one AssemblyEngine-style cycle: sum 1.0 into every (row,col) entry the element
+// traversal touches -- the same sparsity a scatter evaluator produces -- for every block of
+// the ghosted matrix, then migrate ghost -> owned. Returns the owned row sums, block by
+// block, which is a value-level summary that must agree between the classic and FE paths.
+std::vector<std::vector<double> >
+assembleOnesAndCollectOwnedRowSums(const Teuchos::RCP<BLOFact> & la_factory,
+                                   const Teuchos::RCP<const panzer::BlockedDOFManager> & blkIndexer,
+                                   int numBlocks,
+                                   const Teuchos::RCP<LinearObjContainer> & global,
+                                   const Teuchos::RCP<LinearObjContainer> & ghosted)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  RCP<Thyra::LinearOpBase<double> > gh_A = rcp_dynamic_cast<BLOC>(ghosted)->get_A();
+
+  // AssemblyEngine's ordering: beginFill(ghosted), scatter, ghostToGlobal,
+  // beginFill(global), endFill(global), endFill(ghosted).
+  la_factory->beginFill(*ghosted);
+
+  std::vector<std::string> elementBlockIds;
+  blkIndexer->getFieldDOFManagers()[0]->getElementBlockIds(elementBlockIds);
+
+  for(int i=0;i<numBlocks;i++) {
+    for(int j=0;j<numBlocks;j++) {
+      RCP<CrsMatrixType> mat = getSubBlock_tp(i,j,*gh_A);
+      if(mat==Teuchos::null)
+        continue;
+
+      RCP<const panzer::GlobalIndexer> rowProvider = blkIndexer->getFieldDOFManagers()[i];
+      RCP<const panzer::GlobalIndexer> colProvider = blkIndexer->getFieldDOFManagers()[j];
+
+      for(std::size_t b=0;b<elementBlockIds.size();b++) {
+        const std::vector<LocalOrdinalT> & elements =
+            blkIndexer->getFieldDOFManagers()[0]->getElementBlock(elementBlockIds[b]);
+
+        std::vector<GlobalOrdinalT> row_gids, col_gids;
+        for(std::size_t e=0;e<elements.size();e++) {
+          rowProvider->getElementGIDs(elements[e],row_gids);
+          colProvider->getElementGIDs(elements[e],col_gids);
+
+          Teuchos::Array<GlobalOrdinalT> cols(col_gids.begin(),col_gids.end());
+          Teuchos::Array<double> vals(col_gids.size(),1.0);
+          for(std::size_t r=0;r<row_gids.size();r++)
+            mat->sumIntoGlobalValues(row_gids[r],cols,vals);
+        }
+      }
+    }
+  }
+
+  la_factory->ghostToGlobalContainer(*ghosted,*global,LinearObjContainer::Mat);
+  la_factory->beginFill(*global);
+  la_factory->endFill(*global);
+  la_factory->endFill(*ghosted);
+
+  RCP<Thyra::LinearOpBase<double> > g_A = rcp_dynamic_cast<BLOC>(global)->get_A();
+
+  std::vector<std::vector<double> > result(numBlocks);
+  for(int i=0;i<numBlocks;i++) {
+    RCP<const MapType> ownedMap = la_factory->getMap(i);
+    std::vector<double> rowSums(ownedMap->getLocalNumElements(),0.0);
+
+    for(int j=0;j<numBlocks;j++) {
+      RCP<CrsMatrixType> mat = getSubBlock_tp(i,j,*g_A);
+      if(mat==Teuchos::null)
+        continue;
+
+      for(size_t lr=0;lr<ownedMap->getLocalNumElements();lr++) {
+        GlobalOrdinalT gid = ownedMap->getGlobalElement(lr);
+        size_t numEnt = mat->getNumEntriesInGlobalRow(gid);
+        typename CrsMatrixType::nonconst_global_inds_host_view_type inds("inds",numEnt);
+        typename CrsMatrixType::nonconst_values_host_view_type vals("vals",numEnt);
+        size_t n = 0;
+        mat->getGlobalRowCopy(gid,inds,vals,n);
+        for(size_t k=0;k<n;k++)
+          rowSums[lr] += vals(k);
+      }
+    }
+    result[i] = rowSums;
+  }
+
+  return result;
+}
+
+// The flag is opt-in and it changes what the matrix getters hand back.
+//
+// Classic: getTpetraMatrix(i,j) and getGhostedTpetraMatrix(i,j) allocate a fresh, disjoint
+// matrix on every call. FE: both return the one cached FECrsMatrix for that block, which is
+// what lets endAssembly() migrate ghost rows onto owned rows in place.
+TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, fe_opt_in)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+   #else
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
+   #endif
+
+   int numBlocks = 2;
+   RCP<const panzer::BlockedDOFManager> blkIndexer
+         = buildBlockedIndexer64(comm->getRank(),comm->getSize(),numBlocks);
+
+   // default: unchanged classic behavior
+   {
+      RCP<BLOFact> classic = rcp(new BLOFact(comm,blkIndexer));
+      TEST_ASSERT(!classic->useFEAssembly());
+
+      for(int i=0;i<numBlocks;i++) {
+         for(int j=0;j<numBlocks;j++) {
+            RCP<CrsMatrixType> owned   = classic->getTpetraMatrix(i,j);
+            RCP<CrsMatrixType> ghosted = classic->getGhostedTpetraMatrix(i,j);
+
+            TEST_ASSERT(owned.get()!=ghosted.get());
+            TEST_ASSERT(rcp_dynamic_cast<FECrsMatrixType>(owned)==Teuchos::null);
+
+            // each call allocates anew
+            TEST_ASSERT(classic->getTpetraMatrix(i,j).get()!=owned.get());
+         }
+      }
+   }
+
+   // opt in
+   {
+      RCP<BLOFact> fe = rcp(new BLOFact(comm,blkIndexer,true));
+      TEST_ASSERT(fe->useFEAssembly());
+
+      for(int i=0;i<numBlocks;i++) {
+         for(int j=0;j<numBlocks;j++) {
+            RCP<CrsMatrixType> owned   = fe->getTpetraMatrix(i,j);
+            RCP<CrsMatrixType> ghosted = fe->getGhostedTpetraMatrix(i,j);
+
+            // the shared object: this is the whole point of FE mode
+            TEST_ASSERT(owned.get()==ghosted.get());
+            TEST_ASSERT(rcp_dynamic_cast<FECrsMatrixType>(owned)!=Teuchos::null);
+
+            // cached, so repeated calls keep returning it
+            TEST_ASSERT(fe->getTpetraMatrix(i,j).get()==owned.get());
+
+            // The graph rests in its OWNED view once endAssembly() has run, so this is the
+            // owned row map, not the ghosted one.
+            TEST_ASSERT(fe->getFEGraph(i,j)->getRowMap()->isSameAs(*fe->getMap(i)));
+         }
+      }
+
+      // The blocked operators must declare stable spaces -- owned for the owned operator,
+      // ghosted for the ghosted one -- even though both wrap the same FECrsMatrix per block.
+      //
+      // The matrix's own getRangeMap()/getDomainMap() cannot be used for this: they follow
+      // whichever view is active, which flips across the assembly cycle (and a freshly built
+      // FECrsMatrix starts in owned+shared, not owned). So the factory states the spaces
+      // explicitly instead of letting Thyra deduce them from the matrix.
+      RCP<Thyra::BlockedLinearOpBase<double> > ownedOp
+         = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(fe->getThyraMatrix(),true);
+      RCP<Thyra::BlockedLinearOpBase<double> > ghostedOp = fe->getGhostedThyraMatrix();
+
+      for(int i=0;i<numBlocks;i++) {
+         for(int j=0;j<numBlocks;j++) {
+            TEST_ASSERT(ownedOp->getBlock(i,j)->range()->isCompatible(*fe->getThyraRangeSpace(i)));
+            TEST_ASSERT(ownedOp->getBlock(i,j)->domain()->isCompatible(*fe->getThyraDomainSpace(j)));
+
+            RCP<const Thyra::ProductVectorSpaceBase<double> > gRange
+               = rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(fe->getGhostedThyraRangeSpace(),true);
+            RCP<const Thyra::ProductVectorSpaceBase<double> > gDomain
+               = rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(fe->getGhostedThyraDomainSpace(),true);
+
+            TEST_ASSERT(ghostedOp->getBlock(i,j)->range()->isCompatible(*gRange->getBlock(i)));
+            TEST_ASSERT(ghostedOp->getBlock(i,j)->domain()->isCompatible(*gDomain->getBlock(j)));
+         }
+      }
+   }
+}
+
+// The two paths must produce the same owned matrix. The pre-existing blocked ghostToGlobal
+// and graph_constr tests only print their matrices, so this is also the first value-level
+// check of the blocked ghost->global migration.
+TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, fe_matches_classic_assembly)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+   #else
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
+   #endif
+
+   int numBlocks = 2;
+   RCP<const panzer::BlockedDOFManager> blkIndexer
+         = buildBlockedIndexer64(comm->getRank(),comm->getSize(),numBlocks);
+
+   std::vector<std::vector<double> > classicSums, feSums;
+
+   {
+      RCP<BLOFact> la_factory = rcp(new BLOFact(comm,blkIndexer));
+      RCP<LinearObjContainer> global  = la_factory->buildLinearObjContainer();
+      RCP<LinearObjContainer> ghosted = la_factory->buildGhostedLinearObjContainer();
+      la_factory->initializeContainer(LinearObjContainer::Mat,*global);
+      la_factory->initializeGhostedContainer(LinearObjContainer::Mat,*ghosted);
+      rcp_dynamic_cast<BLOC>(ghosted)->initializeMatrix(0.0);
+
+      classicSums = assembleOnesAndCollectOwnedRowSums(la_factory,blkIndexer,numBlocks,global,ghosted);
+   }
+
+   {
+      RCP<BLOFact> la_factory = rcp(new BLOFact(comm,blkIndexer,true));
+      RCP<LinearObjContainer> global  = la_factory->buildLinearObjContainer();
+      RCP<LinearObjContainer> ghosted = la_factory->buildGhostedLinearObjContainer();
+      la_factory->initializeContainer(LinearObjContainer::Mat,*global);
+      la_factory->initializeGhostedContainer(LinearObjContainer::Mat,*ghosted);
+      rcp_dynamic_cast<BLOC>(ghosted)->initializeMatrix(0.0);
+
+      feSums = assembleOnesAndCollectOwnedRowSums(la_factory,blkIndexer,numBlocks,global,ghosted);
+   }
+
+   TEST_EQUALITY(classicSums.size(),feSums.size());
+   for(std::size_t blk=0;blk<classicSums.size();blk++) {
+      TEST_EQUALITY(classicSums[blk].size(),feSums[blk].size());
+      for(std::size_t r=0;r<classicSums[blk].size();r++) {
+         out << "  block " << blk << " owned row " << r
+             << ": classic=" << classicSums[blk][r] << " fe=" << feSums[blk][r] << std::endl;
+         TEST_FLOATING_EQUALITY(feSums[blk][r],classicSums[blk][r],1e-14);
+      }
+   }
+}
+
+// Blocked counterpart of tTpetraLinearObjFactory::fe_repeated_assembly_is_not_polluted.
+//
+// Assembling twice with the matrix zeroed in between must give the same answer both times.
+// For an FECrsMatrix that is not automatic: its owned view aliases only the leading chunk of
+// the owned+shared values, so the pre-assembly initializeMatrix(0.0) reaches owned rows only
+// and would otherwise leave ghost rows holding the previous cycle's contributions. Each
+// block needs its ghost rows cleared, which is what the factory's beginFill() does.
+TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, fe_repeated_assembly_is_not_polluted)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+   #else
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
+   #endif
+
+   int numBlocks = 2;
+   RCP<const panzer::BlockedDOFManager> blkIndexer
+         = buildBlockedIndexer64(comm->getRank(),comm->getSize(),numBlocks);
+
+   RCP<BLOFact> la_factory = rcp(new BLOFact(comm,blkIndexer,true));
+
+   RCP<LinearObjContainer> global  = la_factory->buildLinearObjContainer();
+   RCP<LinearObjContainer> ghosted = la_factory->buildGhostedLinearObjContainer();
+   la_factory->initializeContainer(LinearObjContainer::Mat,*global);
+   la_factory->initializeGhostedContainer(LinearObjContainer::Mat,*ghosted);
+
+   rcp_dynamic_cast<BLOC>(ghosted)->initializeMatrix(0.0);
+   std::vector<std::vector<double> > firstPass
+      = assembleOnesAndCollectOwnedRowSums(la_factory,blkIndexer,numBlocks,global,ghosted);
+
+   // exactly what panzer::ModelEvaluator does before the next Jacobian evaluation
+   rcp_dynamic_cast<BLOC>(ghosted)->initializeMatrix(0.0);
+   std::vector<std::vector<double> > secondPass
+      = assembleOnesAndCollectOwnedRowSums(la_factory,blkIndexer,numBlocks,global,ghosted);
+
+   TEST_EQUALITY(firstPass.size(),secondPass.size());
+   for(std::size_t blk=0;blk<firstPass.size();blk++) {
+      TEST_EQUALITY(firstPass[blk].size(),secondPass[blk].size());
+      for(std::size_t r=0;r<firstPass[blk].size();r++) {
+         out << "  block " << blk << " owned row " << r
+             << ": first=" << firstPass[blk][r] << " second=" << secondPass[blk][r] << std::endl;
+         TEST_FLOATING_EQUALITY(secondPass[blk][r],firstPass[blk][r],1e-14);
+      }
    }
 }
 
