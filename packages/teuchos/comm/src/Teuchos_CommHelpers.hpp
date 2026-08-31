@@ -150,6 +150,26 @@ alltoAll (const Packet sendBuf[],
      << ">: Generic version is not yet implemented.");
 }
 
+/// \brief Scatter values from all processes to all processes.
+/// \relates Comm
+///
+/// This wraps MPI_Alltoallv in an MPI build, when Comm implements MpiComm.
+template<typename Ordinal, typename Packet>
+void
+alltoAllv (const Packet sendBuf[],
+           const Ordinal sendCounts[],
+           const Ordinal sendDispls[],
+           Packet recvBuf[],
+           const Ordinal recvCounts[],
+           const Ordinal recvDispls[],
+           const Comm<Ordinal>& comm)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Teuchos::alltoAllv<" <<
+     TypeNameTraits<Ordinal>::name () << "," << TypeNameTraits<Packet>::name ()
+     << ">: Generic version is not yet implemented.");
+}
+
 /** \brief Broadcast array of objects that use value semantics using
  * customized serializer.
  *
@@ -1580,6 +1600,16 @@ isend<int, std::complex<float> > (const ArrayRCP<const std::complex<float> >& se
 // Specialization for Ordinal=int and Packet=double.
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
+alltoAllv<int, double> (const double sendBuf[],
+                        const int sendCounts[],
+                        const int sendDispls[],
+                        double recvBuf[],
+                        const int recvCounts[],
+                        const int recvDispls[],
+                        const Comm<int>& comm);
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, double> (const Comm<int>& comm,
                         const EReductionType reductType,
                         const int count,
@@ -1907,6 +1937,16 @@ alltoAll<int, int> (const int sendBuf[],
                     int recvBuf[],
                     const int recvCount,
                     const Comm<int>& comm);
+
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+alltoAllv<int, int> (const int sendBuf[],
+                     const int sendCounts[],
+                     const int sendDispls[],
+                     int recvBuf[],
+                     const int recvCounts[],
+                     const int recvDispls[],
+                     const Comm<int>& comm);
 
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void

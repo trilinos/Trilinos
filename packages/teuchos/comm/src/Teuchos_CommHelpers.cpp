@@ -90,6 +90,56 @@ alltoAllImpl (const T sendBuf[],
 #endif // HAVE_TEUCHOS_MPI
 }
 
+template<class T>
+void
+alltoAllvImpl (const T sendBuf[],
+               const int sendCounts[],
+               const int sendDispls[],
+               T recvBuf[],
+               const int recvCounts[],
+               const int recvDispls[],
+               const Comm<int>& comm)
+{
+#ifdef HAVE_TEUCHOS_MPI
+  using Teuchos::Details::MpiTypeTraits;
+
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) {
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      alltoAllv (sendBuf, sendCounts, sendDispls, recvBuf, recvCounts, recvDispls, comm);
+    }
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      std::copy (sendBuf, sendBuf + sendCounts[0], recvBuf);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
+
+    int err = MPI_SUCCESS;
+    err = MPI_Alltoallv(sendBuf, sendCounts, sendDispls, rawMpiType,
+                        recvBuf, recvCounts, recvDispls, rawMpiType,
+                        rawMpiComm);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      err != MPI_SUCCESS,
+      std::runtime_error,
+      "MPI_Alltoallv failed with the following error: "
+      << ::Teuchos::Details::getMpiErrorString (err));
+  }
+#else
+  // We've built without MPI, so just assume it's a SerialComm and copy the data.
+  std::copy (sendBuf, sendBuf + sendCounts[0], recvBuf);
+#endif
+}
+
 /// \brief Generic implementation of reduceAll().
 /// \tparam T The type of data on which to reduce.  The requirements
 ///   for this type are the same as for the template parameter T of
@@ -1047,6 +1097,20 @@ isend (const ArrayRCP<const std::complex<float> >& sendBuffer,
 // Specialization for Ordinal=int and Packet=double.
 template<>
 void
+alltoAllv<int, double> (const double sendBuf[],
+                        const int sendCounts[],
+                        const int sendDispls[],
+                        double recvBuf[],
+                        const int recvCounts[],
+                        const int recvDispls[],
+                        const Comm<int>& comm)
+{
+  alltoAllvImpl<double> (sendBuf, sendCounts, sendDispls,
+                         recvBuf, recvCounts, recvDispls, comm);
+}
+
+template<>
+void
 reduceAll<int, double> (const Comm<int>& comm,
                         const EReductionType reductType,
                         const int count,
@@ -1592,6 +1656,20 @@ alltoAll<int, int> (const int sendBuf[],
                     const Comm<int>& comm)
 {
   alltoAllImpl<int> (sendBuf, sendCount, recvBuf, recvCount, comm);
+}
+
+template<>
+void
+alltoAllv<int, int> (const int sendBuf[],
+                     const int sendCounts[],
+                     const int sendDispls[],
+                     int recvBuf[],
+                     const int recvCounts[],
+                     const int recvDispls[],
+                     const Comm<int>& comm)
+{
+  alltoAllvImpl<int> (sendBuf, sendCounts, sendDispls,
+                      recvBuf, recvCounts, recvDispls, comm);
 }
 
 template<>

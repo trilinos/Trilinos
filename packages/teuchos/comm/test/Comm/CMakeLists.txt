@@ -69,6 +69,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  alltoallv
+  SOURCES
+    alltoallv.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1-10
+  ARGS "--output-show-proc-rank --show-test-details=ALL"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   reduce
   SOURCES
     reduce.cpp
