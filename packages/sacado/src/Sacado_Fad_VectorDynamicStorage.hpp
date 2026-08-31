@@ -14,14 +14,4 @@
 
 #include "Sacado_Fad_Exp_VectorDynamicStorage.hpp"
 
-namespace Sacado {
-  namespace Fad {
-
-    template <typename T, typename U = T>
-    using VectorDynamicStorage = Exp::VectorDynamicStorage<T,U>;
-
-  }
-}
-
-
 #endif // SACADO_FAD_VECTORDYNAMICSTORAGE_HPP

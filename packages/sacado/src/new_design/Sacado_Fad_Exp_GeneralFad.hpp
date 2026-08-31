@@ -19,7 +19,6 @@ namespace Sacado {
 
   //! Namespace for forward-mode AD classes
   namespace Fad {
-  namespace Exp {
 
     //! Forward-mode AD class templated on the storage for the derivative array
     /*!
@@ -333,27 +332,26 @@ namespace Sacado {
       static constexpr bool value = true;
     };
 
-  } // namespace Exp
   } // namespace Fad
 
   template <typename S>
-  struct IsView< Fad::Exp::GeneralFad<S> > {
-    static constexpr bool value =  Fad::Exp::GeneralFad<S>::is_view;
+  struct IsView< Fad::GeneralFad<S> > {
+    static constexpr bool value =  Fad::GeneralFad<S>::is_view;
   };
 
   template <typename S>
-  struct IsFad< Fad::Exp::GeneralFad<S> > {
+  struct IsFad< Fad::GeneralFad<S> > {
     static constexpr bool value = true;
   };
 
   template <typename S>
-  struct IsExpr< Fad::Exp::GeneralFad<S> > {
+  struct IsExpr< Fad::GeneralFad<S> > {
     static constexpr bool value = true;
   };
 
   template <typename S>
-  struct BaseExprType< Fad::Exp::GeneralFad<S> > {
-    typedef Fad::Exp::GeneralFad<S> type;
+  struct BaseExprType< Fad::GeneralFad<S> > {
+    typedef Fad::GeneralFad<S> type;
   };
 
 } // namespace Sacado

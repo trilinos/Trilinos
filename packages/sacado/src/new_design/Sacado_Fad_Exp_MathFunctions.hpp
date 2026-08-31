@@ -21,7 +21,6 @@
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
     template <typename T> class Expr;                                   \
     template <typename T>                                               \
     SACADO_INLINE_FUNCTION                                              \
@@ -29,12 +28,11 @@ namespace Sacado {                                                      \
            typename T::expr_spec_type >                                 \
     OP (const Expr<T>&);                                                \
   }                                                                     \
-  }                                                                     \
                                                                         \
 }                                                                       \
                                                                         \
 namespace std {                                                         \
-  using Sacado::Fad::Exp::OP;                                           \
+  using Sacado::Fad::OP;                                                \
 }
 
 UNARYFUNC_MACRO(exp, ExpOp)
@@ -66,7 +64,7 @@ UNARYFUNC_MACRO(cbrt, CbrtOp)
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
+                                                         \
     template <typename T> class Expr;                                   \
     template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
@@ -97,12 +95,11 @@ namespace Sacado {                                                      \
     SACADO_FAD_EXP_OP_ENABLE_EXPR_SCALAR(FADOP)                         \
     OP (const Expr<T>&, const typename T::scalar_type&);                \
   }                                                                     \
-  }                                                                     \
                                                                         \
 }                                                                       \
                                                                         \
 namespace std {                                                         \
-  using Sacado::Fad::Exp::OP;                                           \
+  using Sacado::Fad::OP;                                                \
 }
 
 BINARYFUNC_MACRO(atan2, Atan2Op)
@@ -116,7 +113,6 @@ BINARYFUNC_MACRO(min, MinOp)
 
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
     template <typename S> class GeneralFad;
     template <typename ValT, unsigned sl, unsigned ss, typename U>
     class ViewFadPtr;
@@ -202,23 +198,22 @@ namespace Sacado {
     SACADO_INLINE_FUNCTION U
     atomic_fetch_div(ViewFadPtr<ValT,sl,ss,U> dest, const Expr<T>& val);
   }
-  }
 }
 
 namespace Kokkos {
-  using Sacado::Fad::Exp::atomic_add;
-  using Sacado::Fad::Exp::atomic_max_fetch;
-  using Sacado::Fad::Exp::atomic_min_fetch;
-  using Sacado::Fad::Exp::atomic_add_fetch;
-  using Sacado::Fad::Exp::atomic_sub_fetch;
-  using Sacado::Fad::Exp::atomic_mul_fetch;
-  using Sacado::Fad::Exp::atomic_div_fetch;
-  using Sacado::Fad::Exp::atomic_fetch_max;
-  using Sacado::Fad::Exp::atomic_fetch_min;
-  using Sacado::Fad::Exp::atomic_fetch_add;
-  using Sacado::Fad::Exp::atomic_fetch_sub;
-  using Sacado::Fad::Exp::atomic_fetch_mul;
-  using Sacado::Fad::Exp::atomic_fetch_div;
+  using Sacado::Fad::atomic_add;
+  using Sacado::Fad::atomic_max_fetch;
+  using Sacado::Fad::atomic_min_fetch;
+  using Sacado::Fad::atomic_add_fetch;
+  using Sacado::Fad::atomic_sub_fetch;
+  using Sacado::Fad::atomic_mul_fetch;
+  using Sacado::Fad::atomic_div_fetch;
+  using Sacado::Fad::atomic_fetch_max;
+  using Sacado::Fad::atomic_fetch_min;
+  using Sacado::Fad::atomic_fetch_add;
+  using Sacado::Fad::atomic_fetch_sub;
+  using Sacado::Fad::atomic_fetch_mul;
+  using Sacado::Fad::atomic_fetch_div;
 }
 
 #endif

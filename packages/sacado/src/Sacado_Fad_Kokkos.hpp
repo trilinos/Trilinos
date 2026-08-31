@@ -117,36 +117,29 @@ namespace Sacado {
   //
   // For SLFad, divde the array size by the given stride
   namespace Fad {
-  namespace Exp {
-    template <typename T, int N> class StaticStorage;
-    template <typename S> class GeneralFad;
-  }
+  
   }
   template <typename T, int N, unsigned Stride>
-  struct LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,N> >,
+  struct LocalScalarType< Fad::GeneralFad< Fad::StaticStorage<T,N> >,
                           Stride > {
     static const int Ns = (N+Stride-1) / Stride;
-    typedef Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> > type;
+    typedef Fad::GeneralFad< Fad::StaticStorage<T,Ns> > type;
   };
   // Type of local scalar type when partitioning a view
   //
   // For SFad, divde the array size by the given stride.  If it divides evenly,
   // use SFad, otherwise use SLFad
   namespace Fad {
-  namespace Exp {
-    template <typename T, int N> class StaticFixedStorage;
-    template <typename T, int N> class StaticStorage;
-    template <typename S> class GeneralFad;
-  }
+  
   }
   template <typename T, int N, unsigned Stride>
-  struct LocalScalarType< Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,N> >,
+  struct LocalScalarType< Fad::GeneralFad< Fad::StaticFixedStorage<T,N> >,
                           Stride > {
     static const int Ns = (N+Stride-1) / Stride;
     typedef typename std::conditional<
       Ns == N/Stride ,
-      Fad::Exp::GeneralFad< Fad::Exp::StaticFixedStorage<T,Ns> > ,
-      Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> >
+      Fad::GeneralFad< Fad::StaticFixedStorage<T,Ns> > ,
+      Fad::GeneralFad< Fad::StaticStorage<T,Ns> >
     >::type type;
   };
 

@@ -10,12 +10,10 @@
 #ifndef SACADO_FAD_EXP_EXTENDER_HPP
 #define SACADO_FAD_EXP_EXTENDER_HPP
 
-#include "Sacado_Fad_Expression.hpp"
+#include "Sacado_Fad_Exp_Expression.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     //! Extension class for extending interface of its argument
     template <typename T, typename Enabled = void>
@@ -27,7 +25,6 @@ namespace Sacado {
       typedef ExprSpecDefault expr_spec_type;
     };
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

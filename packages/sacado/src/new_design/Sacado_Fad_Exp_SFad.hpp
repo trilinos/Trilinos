@@ -14,14 +14,11 @@
 #include "Sacado_Fad_Exp_StaticFixedStorage.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     template <typename T, int Num>
     using SFad = GeneralFad< StaticFixedStorage<T,Num> >;
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

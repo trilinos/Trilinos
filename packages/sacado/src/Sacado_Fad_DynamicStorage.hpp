@@ -14,14 +14,4 @@
 
 #include "Sacado_Fad_Exp_DynamicStorage.hpp"
 
-namespace Sacado {
-  namespace Fad {
-
-    template <typename T, typename U = T>
-    using DynamicStorage = Exp::DynamicStorage<T,U>;
-
-  }
-}
-
-
 #endif // SACADO_FAD_DYNAMICSTORAGE_HPP

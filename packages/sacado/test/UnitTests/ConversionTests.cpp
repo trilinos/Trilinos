@@ -15,7 +15,6 @@
 #include "Teuchos_TestingHelpers.hpp"
 
 #include "Sacado_No_Kokkos.hpp"
-#include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #include "Sacado_mpl_apply.hpp"
 
@@ -169,13 +168,11 @@ typedef Sacado::Fad::DFad<double> Fad_DFadType;
 typedef Sacado::Fad::SLFad<double,global_fad_size> Fad_SLFadType;
 typedef Sacado::Fad::SFad<double,global_fad_size> Fad_SFadType;
 typedef Sacado::Fad::DVFad<double> Fad_DVFadType;
-typedef Sacado::Fad::SimpleFad<double> Fad_SimpleFadType;
 typedef Sacado::Fad::ViewFad<double,global_fad_size,1,Fad_DFadType> Fad_VFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_DFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SLFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_DVFadType )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ADConversions, Fad_SimpleFadType )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Conversion, ViewConversions, Fad_VFadType )
 
 typedef Sacado::ELRFad::DFad<double> ELRFad_DFadType;

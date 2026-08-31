@@ -19,7 +19,7 @@ namespace Sacado {
   template <typename T> struct ValueType;
 
   namespace Fad {
-  namespace Exp {
+  
 
     template <typename T, typename E> class UnaryPlusOp;
     template <typename T, typename E> class UnaryMinusOp;
@@ -90,7 +90,6 @@ namespace Sacado {
               typename Impl = typename PowerImpl::Selector<T1,T2>::type >
     class PowerOp;
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

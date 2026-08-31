@@ -28,7 +28,6 @@
 #define FAD_UNARYOP_MACRO(OPNAME,OP,USING,VALUE,DX,FASTACCESSDX)        \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
                                                                         \
     template <typename T, typename ExprSpec>                            \
     class OP {};                                                        \
@@ -101,32 +100,31 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
   }                                                                     \
-  }                                                                     \
                                                                         \
   template <typename T, typename E>                                     \
-  struct IsExpr< Fad::Exp::OP< T,E > > {                                \
+  struct IsExpr< Fad::OP< T,E > > {                                \
     static const bool value = true;                                     \
   };                                                                    \
                                                                         \
   template <typename T, typename E>                                     \
-  struct BaseExprType< Fad::Exp::OP< T,E > > {                          \
+  struct BaseExprType< Fad::OP< T,E > > {                          \
     typedef typename BaseExprType<T>::type type;                        \
   };                                                                    \
                                                                         \
   template <typename T, typename E>                                     \
-  struct IsSimdType< Fad::Exp::OP< T,E > > {                            \
+  struct IsSimdType< Fad::OP< T,E > > {                            \
     static const bool value =                                           \
-      IsSimdType< typename Fad::Exp::OP< T,E >::scalar_type >::value;   \
+      IsSimdType< typename Fad::OP< T,E >::scalar_type >::value;   \
   };                                                                    \
                                                                         \
   template <typename T, typename E>                                     \
-  struct ValueType< Fad::Exp::OP< T,E > > {                             \
-    typedef typename Fad::Exp::OP< T,E >::value_type type;              \
+  struct ValueType< Fad::OP< T,E > > {                             \
+    typedef typename Fad::OP< T,E >::value_type type;              \
   };                                                                    \
                                                                         \
   template <typename T, typename E>                                     \
-  struct ScalarType< Fad::Exp::OP< T,E > > {                            \
-    typedef typename Fad::Exp::OP< T,E >::scalar_type type;             \
+  struct ScalarType< Fad::OP< T,E > > {                            \
+    typedef typename Fad::OP< T,E >::scalar_type type;             \
   };                                                                    \
                                                                         \
 }
@@ -284,7 +282,6 @@ FAD_UNARYOP_MACRO(cbrt,
 // zero to avoid throwing FPEs.
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
 
     template <typename T, typename ExprSpec, bool is_simd>
     class SafeSqrtOp {};
@@ -414,32 +411,31 @@ namespace Sacado {
     };
 
   }
-  }
 
   template <typename T, typename E>
-  struct IsExpr< Fad::Exp::SafeSqrtOp< T,E > > {
+  struct IsExpr< Fad::SafeSqrtOp< T,E > > {
     static const bool value = true;
   };
 
   template <typename T, typename E>
-  struct BaseExprType< Fad::Exp::SafeSqrtOp< T,E > > {
+  struct BaseExprType< Fad::SafeSqrtOp< T,E > > {
     typedef typename BaseExprType<T>::type type;
   };
 
   template <typename T, typename E>
-  struct IsSimdType< Fad::Exp::SafeSqrtOp< T,E > > {
+  struct IsSimdType< Fad::SafeSqrtOp< T,E > > {
     static const bool value =
-      IsSimdType< typename Fad::Exp::SafeSqrtOp< T,E >::scalar_type >::value;
+      IsSimdType< typename Fad::SafeSqrtOp< T,E >::scalar_type >::value;
   };
 
   template <typename T, typename E>
-  struct ValueType< Fad::Exp::SafeSqrtOp< T,E > > {
-    typedef typename Fad::Exp::SafeSqrtOp< T,E >::value_type type;
+  struct ValueType< Fad::SafeSqrtOp< T,E > > {
+    typedef typename Fad::SafeSqrtOp< T,E >::value_type type;
   };
 
   template <typename T, typename E>
-  struct ScalarType< Fad::Exp::SafeSqrtOp< T,E > > {
-    typedef typename Fad::Exp::SafeSqrtOp< T,E >::scalar_type type;
+  struct ScalarType< Fad::SafeSqrtOp< T,E > > {
+    typedef typename Fad::SafeSqrtOp< T,E >::scalar_type type;
   };
 
 }
@@ -449,7 +445,7 @@ namespace Sacado {
 #define FAD_BINARYOP_MACRO(OPNAME,OP,USING,VALUE,DX,CDX1,CDX2,FASTACCESSDX,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
+                                                         \
                                                                         \
     template <typename T1, typename T2,                                 \
               bool is_const_T1, bool is_const_T2,                       \
@@ -701,15 +697,14 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
   }                                                                     \
-  }                                                                     \
                                                                         \
   template <typename T1, typename T2, bool c1, bool c2, typename E>     \
-  struct IsExpr< Fad::Exp::OP< T1, T2, c1, c2, E > > {                  \
+  struct IsExpr< Fad::OP< T1, T2, c1, c2, E > > {                  \
     static constexpr bool value = true;                                 \
   };                                                                    \
                                                                         \
   template <typename T1, typename T2, bool c1, bool c2, typename E>     \
-  struct BaseExprType< Fad::Exp::OP< T1, T2, c1, c2, E > > {            \
+  struct BaseExprType< Fad::OP< T1, T2, c1, c2, E > > {            \
     typedef typename BaseExprType<T1>::type base_expr_1;                \
     typedef typename BaseExprType<T2>::type base_expr_2;                \
     typedef typename Sacado::Promote<base_expr_1,                       \
@@ -717,19 +712,19 @@ namespace Sacado {                                                      \
   };                                                                    \
                                                                         \
   template <typename T1, typename T2, bool c1, bool c2, typename E>     \
-  struct IsSimdType< Fad::Exp::OP< T1, T2, c1, c2, E > > {              \
+  struct IsSimdType< Fad::OP< T1, T2, c1, c2, E > > {              \
     static const bool value =                                           \
-      IsSimdType< typename Fad::Exp::OP< T1, T2, c1, c2, E >::value_type >::value; \
+      IsSimdType< typename Fad::OP< T1, T2, c1, c2, E >::value_type >::value; \
   };                                                                    \
                                                                         \
   template <typename T1, typename T2, bool c1, bool c2, typename E>     \
-  struct ValueType< Fad::Exp::OP< T1, T2, c1, c2, E > > {               \
-    typedef typename Fad::Exp::OP< T1, T2, c1, c2, E >::value_type type;\
+  struct ValueType< Fad::OP< T1, T2, c1, c2, E > > {               \
+    typedef typename Fad::OP< T1, T2, c1, c2, E >::value_type type;\
   };                                                                    \
                                                                         \
   template <typename T1, typename T2, bool c1, bool c2, typename E>     \
-  struct ScalarType< Fad::Exp::OP< T1, T2, c1, c2, E > > {              \
-    typedef typename Fad::Exp::OP< T1, T2, c1, c2, E >::scalar_type type;\
+  struct ScalarType< Fad::OP< T1, T2, c1, c2, E > > {              \
+    typedef typename Fad::OP< T1, T2, c1, c2, E >::scalar_type type;\
   };                                                                    \
                                                                         \
 }
@@ -863,7 +858,6 @@ FAD_BINARYOP_MACRO(min,
 // zero to avoid throwing FPEs.
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
 
     template <typename T1, typename T2,
               bool is_const_T1, bool is_const_T2,
@@ -1663,15 +1657,14 @@ namespace Sacado {
     };
 
   }
-  }
 
   template <typename T1, typename T2, bool c1, bool c2, typename E>
-  struct IsExpr< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+  struct IsExpr< Fad::PowerOp< T1, T2, c1, c2, E > > {
     static constexpr bool value = true;
   };
 
   template <typename T1, typename T2, bool c1, bool c2, typename E>
-  struct BaseExprType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+  struct BaseExprType< Fad::PowerOp< T1, T2, c1, c2, E > > {
     typedef typename BaseExprType<T1>::type base_expr_1;
     typedef typename BaseExprType<T2>::type base_expr_2;
     typedef typename Sacado::Promote<base_expr_1,
@@ -1679,19 +1672,19 @@ namespace Sacado {
   };
 
   template <typename T1, typename T2, bool c1, bool c2, typename E>
-  struct IsSimdType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
+  struct IsSimdType< Fad::PowerOp< T1, T2, c1, c2, E > > {
     static const bool value =
-      IsSimdType< typename Fad::Exp::PowerOp< T1, T2, c1, c2, E >::value_type >::value;
+      IsSimdType< typename Fad::PowerOp< T1, T2, c1, c2, E >::value_type >::value;
   };
 
   template <typename T1, typename T2, bool c1, bool c2, typename E>
-  struct ValueType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
-    typedef typename Fad::Exp::PowerOp< T1, T2, c1, c2, E >::value_type type;
+  struct ValueType< Fad::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename Fad::PowerOp< T1, T2, c1, c2, E >::value_type type;
   };
 
   template <typename T1, typename T2, bool c1, bool c2, typename E>
-  struct ScalarType< Fad::Exp::PowerOp< T1, T2, c1, c2, E > > {
-    typedef typename Fad::Exp::PowerOp< T1, T2, c1, c2, E >::scalar_type type;
+  struct ScalarType< Fad::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename Fad::PowerOp< T1, T2, c1, c2, E >::scalar_type type;
   };
 
 }
@@ -1702,7 +1695,6 @@ namespace Sacado {
 
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
 
     template <typename CondT, typename T1, typename T2,
               bool is_const_T1, bool is_const_T2,
@@ -1975,17 +1967,16 @@ namespace Sacado {
     };
 
   }
-  }
 
   template <typename CondT, typename T1, typename T2, bool c1, bool c2,
             typename E>
-  struct IsExpr< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+  struct IsExpr< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
     static constexpr bool value = true;
   };
 
   template <typename CondT, typename T1, typename T2, bool c1, bool c2,
             typename E>
-  struct BaseExprType< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+  struct BaseExprType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
     typedef typename BaseExprType<T1>::type base_expr_1;
     typedef typename BaseExprType<T2>::type base_expr_2;
     typedef typename Sacado::Promote<base_expr_1,
@@ -1994,21 +1985,21 @@ namespace Sacado {
 
   template <typename CondT, typename T1, typename T2, bool c1, bool c2,
             typename E>
-  struct IsSimdType< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+  struct IsSimdType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
     static const bool value =
-      IsSimdType< typename Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type >::value;
+      IsSimdType< typename Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type >::value;
   };
 
   template <typename CondT, typename T1, typename T2, bool c1, bool c2,
             typename E>
-  struct ValueType< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
-    typedef typename Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type type;
+  struct ValueType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    typedef typename Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type type;
   };
 
   template <typename CondT, typename T1, typename T2, bool c1, bool c2,
             typename E>
-  struct ScalarType< Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
-    typedef typename Fad::Exp::IfThenElseOp< CondT, T1, T2, c1, c2, E >::scalar_type type;
+  struct ScalarType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    typedef typename Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E >::scalar_type type;
   };
 }
 
@@ -2018,7 +2009,6 @@ namespace Sacado {
 
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
   namespace Impl {
     // Helper trait to determine return type of logical comparison operations
     // (==, !=, ...), usually bool but maybe something else for SIMD types.
@@ -2035,13 +2025,12 @@ namespace Sacado {
     };
   }
   }
-  }
 }
 
 #define FAD_RELOP_MACRO(OP)                                             \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
+                                                         \
     template <typename T1, typename T2>                                 \
     SACADO_INLINE_FUNCTION                                              \
     typename mpl::enable_if_c<                                          \
@@ -2073,7 +2062,6 @@ namespace Sacado {                                                      \
       return expr1.derived().val() OP b;                                \
     }                                                                   \
   }                                                                     \
-  }                                                                     \
 }                                                                       \
 
 FAD_RELOP_MACRO(==)
@@ -2090,9 +2078,7 @@ FAD_RELOP_MACRO(|)
 #undef FAD_RELOP_MACRO
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     template <typename ExprT>
     SACADO_INLINE_FUNCTION
@@ -2101,16 +2087,13 @@ namespace Sacado {
       return ! expr.derived().val();
     }
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado
 
 //-------------------------- Boolean Operators -----------------------
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     template <typename T>
     SACADO_INLINE_FUNCTION
@@ -2122,7 +2105,6 @@ namespace Sacado {
       return !is_zero;
     }
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado
@@ -2130,7 +2112,7 @@ namespace Sacado {
 #define FAD_BOOL_MACRO(OP)                                              \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
+                                                         \
     template <typename T1, typename T2>                                 \
     SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
@@ -2158,7 +2140,6 @@ namespace Sacado {                                                      \
       return toBool(expr1) OP b;                                        \
     }                                                                   \
   }                                                                     \
-  }                                                                     \
 }
 
 FAD_BOOL_MACRO(&&)
@@ -2169,9 +2150,7 @@ FAD_BOOL_MACRO(||)
 //-------------------------- I/O Operators -----------------------
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     template <typename T>
     std::ostream& operator << (std::ostream& os, const Expr<T>& xx) {
@@ -2186,7 +2165,6 @@ namespace Sacado {
       return os;
     }
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado
@@ -2196,9 +2174,7 @@ namespace Sacado {
 //-------------------------- Atomic Operators -----------------------
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     // Overload of Kokkos::atomic_add for Fad types.
     template <typename S>
@@ -2228,7 +2204,6 @@ namespace Sacado {
         atomic_add(&(dst->val()), x.val());
     }
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

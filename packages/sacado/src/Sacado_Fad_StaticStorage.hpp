@@ -14,14 +14,4 @@
 
 #include "Sacado_Fad_Exp_StaticStorage.hpp"
 
-namespace Sacado {
-  namespace Fad {
-
-    template <typename T, int N>
-    using StaticStorage = Exp::StaticStorage<T,N>;
-
-  }
-}
-
-
 #endif // SACADO_FAD_STATICSTORAGE_HPP

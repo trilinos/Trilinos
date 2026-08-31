@@ -36,14 +36,6 @@
 #include "Sacado_ConfigDefs.h"
 
 #include "Sacado_Fad_Exp_SFad.hpp"
-
-namespace Sacado {
-  namespace Fad {
-    template <typename T, int Num>
-    using SFad = Exp::GeneralFad< Exp::StaticFixedStorage<T,Num> >;
-  }
-}
-
 #include "Sacado_Fad_ViewFad.hpp"
 
 #endif // SACADO_FAD_SFAD_HPP

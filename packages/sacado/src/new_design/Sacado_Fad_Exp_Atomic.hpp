@@ -18,9 +18,7 @@
 #include "impl/Kokkos_Error.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     // Overload of Kokkos::atomic_add for ViewFad types.
     template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
@@ -562,7 +560,6 @@ namespace Sacado {
       return Impl::atomic_fetch_oper(Impl::DivOper(), dest, val);
     }
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

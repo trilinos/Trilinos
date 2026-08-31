@@ -13,9 +13,7 @@
 #include "Sacado_Traits.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     //! Wrapper for a generic expression template
     /*!
@@ -94,16 +92,15 @@ namespace Sacado {
     // Tag for delegating expression template specializations
     class ExprSpecDefault {};
 
-  } // namespace Exp
   } // namespace Fad
 
   template <typename T>
-  struct IsExpr< Fad::Exp::Expr<T> > {
+  struct IsExpr< Fad::Expr<T> > {
     static constexpr bool value = true;
   };
 
   template <typename T>
-  struct BaseExprType< Fad::Exp::Expr<T> > {
+  struct BaseExprType< Fad::Expr<T> > {
     typedef typename BaseExprType<T>::type type;
   };
 

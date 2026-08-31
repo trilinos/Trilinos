@@ -19,9 +19,7 @@
 #include "Sacado_mpl_apply.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
 #ifndef SACADO_FAD_DERIV_LOOP
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
@@ -229,7 +227,6 @@ namespace Sacado {
 
     }; // class ViewStorage
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

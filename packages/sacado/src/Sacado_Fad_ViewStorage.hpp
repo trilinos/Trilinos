@@ -14,15 +14,4 @@
 
 #include "Sacado_Fad_Exp_ViewStorage.hpp"
 
-namespace Sacado {
-  namespace Fad {
-
-    template <typename T, unsigned static_length, unsigned static_stride,
-              typename U>
-    using ViewStorage = Exp::ViewStorage<T,static_length,static_stride,U>;
-
-  }
-}
-
-
 #endif // SACADO_FAD_VIEWSTORAGE_HPP

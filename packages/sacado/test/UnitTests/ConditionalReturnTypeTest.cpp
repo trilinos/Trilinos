@@ -35,9 +35,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ConditionalReturnType, Fad, FAD )
 }
 
 const int global_fad_size = 10;
-typedef Sacado::Fad::Exp::DFad<double> Fad_DFadType;
-typedef Sacado::Fad::Exp::SFad<double,global_fad_size> Fad_SFadType;
-typedef Sacado::Fad::Exp::SLFad<double,global_fad_size> Fad_SLFadType;
+typedef Sacado::Fad::DFad<double> Fad_DFadType;
+typedef Sacado::Fad::SFad<double,global_fad_size> Fad_SFadType;
+typedef Sacado::Fad::SLFad<double,global_fad_size> Fad_SLFadType;
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(ConditionalReturnType, Fad, Fad_DFadType)
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(ConditionalReturnType, Fad, Fad_SFadType)
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(ConditionalReturnType, Fad, Fad_SLFadType)

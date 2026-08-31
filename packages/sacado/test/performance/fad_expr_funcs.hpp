@@ -11,7 +11,6 @@
 #define FAD_EXPR_FUNCS_HPP
 
 #include "Sacado.hpp"
-#include "Sacado_Fad_SimpleFad.hpp"
 
 // ADOL-C includes
 #ifdef HAVE_ADOLC

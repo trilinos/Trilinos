@@ -13,14 +13,6 @@
 #include "Sacado_ConfigDefs.h"
 
 #include "Sacado_Fad_Exp_DFad.hpp"
-
-namespace Sacado {
-  namespace Fad {
-    template <typename T>
-    using DFad = Exp::GeneralFad< Exp::DynamicStorage<T> >;
-  }
-}
-
 #include "Sacado_Fad_ViewFad.hpp"
 
 #endif // SACADO_FAD_DFAD_HPP

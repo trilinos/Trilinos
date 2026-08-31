@@ -17,9 +17,7 @@
 #include "Sacado_StaticArrayTraits.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     //! Derivative array storage class using static memory allocation
     /*!
@@ -224,7 +222,6 @@ namespace Sacado {
 
     }; // class StaticStorage
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

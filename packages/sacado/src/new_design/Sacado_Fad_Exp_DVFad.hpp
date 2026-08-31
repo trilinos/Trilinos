@@ -14,14 +14,11 @@
 #include "Sacado_Fad_Exp_VectorDynamicStorage.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     template <typename T>
     using DVFad = GeneralFad< VectorDynamicStorage<T> >;
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

@@ -14,25 +14,16 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Base.hpp"
-#include "Sacado_Fad_ExpressionFwd.hpp"
 #include "Sacado_SFINAE_Macros.hpp"
 
 // Note:  Sacado::Fad::Ops are forward-declared here, instead of in macros
 // below.
 #include "Sacado_Fad_Ops_Fwd.hpp"
 
+#include "Sacado_Fad_Exp_MathFunctions.hpp"
+
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
 namespace Sacado {                                                      \
-                                                                        \
-  namespace Fad {                                                       \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
-                                                                        \
-    template <typename T> class SimpleFad;                              \
-    template <typename T>                                               \
-    SimpleFad<T> OP (const SimpleFad<T>&);                              \
-  }                                                                     \
                                                                         \
   namespace ELRFad {                                                    \
     template <typename T> class FADOP;                                  \
@@ -119,76 +110,10 @@ UNARYFUNC_MACRO(cbrt, CbrtOp)
 
 #undef UNARYFUNC_MACRO
 
-namespace Sacado {
-  namespace Fad {
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-
-  namespace ELRFad {
-    template <typename T> class SafeSqrtOp;
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-
-  namespace CacheFad {
-    template <typename T> class SafeSqrtOp;
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-
-  namespace ELRCacheFad {
-    template <typename T> class SafeSqrtOp;
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > > safe_sqrt (const Expr<T>&);
-  }
-}
-
 #define BINARYFUNC_MACRO(OP,FADOP)                                      \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-    template <typename T> class ConstExpr;                              \
-    template <typename T> struct IsFadExpr;                             \
-    template <typename T> struct ExprLevel;                             \
-    template <typename T1, typename T2>                                 \
-    SACADO_INLINE_FUNCTION                                              \
-    typename mpl::enable_if_c<                                          \
-       ExprLevel< Expr<T1> >::value == ExprLevel< Expr<T2> >::value,    \
-       Expr< FADOP< Expr<T1>, Expr<T2> > >                              \
-      >::type                                                           \
-    /*SACADO_FAD_OP_ENABLE_EXPR_EXPR(FADOP)*/                           \
-    OP (const Expr<T1>&, const Expr<T2>&);                              \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T>, Expr<T> > >                                   \
-    OP (const Expr<T>&, const Expr<T>&);                                \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >   \
-    OP (const typename Expr<T>::value_type&, const Expr<T>&);           \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >   \
-    OP (const Expr<T>&, const typename Expr<T>::value_type&);           \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(FADOP)                             \
-    OP (const typename Expr<T>::scalar_type&, const Expr<T>&);          \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(FADOP)                             \
-    OP (const Expr<T>&, const typename Expr<T>::scalar_type&);          \
-                                                                        \
     template <typename T> class SimpleFad;                              \
     template <typename T>                                               \
     SimpleFad<T>                                                        \
@@ -508,10 +433,6 @@ namespace Kokkos {
   using Sacado::ELRCacheFad::atomic_add;
 }
 
-#endif
-
-#ifdef SACADO_ENABLE_NEW_DESIGN
-#include "Sacado_Fad_Exp_MathFunctions.hpp"
 #endif
 
 #endif // SACADO_MATHFUNCTIONS_HPP

@@ -17,7 +17,7 @@ struct is_dfad {
 };
 
 template <typename T>
-struct is_dfad< Sacado::Fad::Exp::DFad<T> > {
+struct is_dfad< Sacado::Fad::DFad<T> > {
   static const bool value = true;
 };
 
@@ -407,9 +407,9 @@ typedef Sacado::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
 
 // Full set of atomics only implemented for new design
 #if SACADO_ENABLE_NEW_DESIGN
-typedef Sacado::Fad::Exp::DFad<double> DFadType;
-typedef Sacado::Fad::Exp::SLFad<double,2*global_fad_size> SLFadType;
-typedef Sacado::Fad::Exp::SFad<double,global_fad_size> SFadType;
+typedef Sacado::Fad::DFad<double> DFadType;
+typedef Sacado::Fad::SLFad<double,2*global_fad_size> SLFadType;
+typedef Sacado::Fad::SFad<double,global_fad_size> SFadType;
 
 #if SACADO_TEST_DFAD
 #define VIEW_FAD_TESTS_D( D )                            \

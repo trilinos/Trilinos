@@ -17,9 +17,7 @@
 #include "Sacado_DynamicArrayTraits.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     //! Derivative array storage class using dynamic memory allocation
     template <typename T, typename U = T>
@@ -264,7 +262,6 @@ namespace Sacado {
 
     }; // class DynamicStorage
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado

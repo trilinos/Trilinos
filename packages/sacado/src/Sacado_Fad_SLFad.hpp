@@ -13,14 +13,6 @@
 #include "Sacado_ConfigDefs.h"
 
 #include "Sacado_Fad_Exp_SLFad.hpp"
-
-namespace Sacado {
-  namespace Fad {
-    template <typename T, int Num>
-    using SLFad = Exp::GeneralFad< Exp::StaticStorage<T,Num> >;
-  }
-}
-
 #include "Sacado_Fad_ViewFad.hpp"
 
 #endif // SACADO_FAD_SLFAD_HPP
