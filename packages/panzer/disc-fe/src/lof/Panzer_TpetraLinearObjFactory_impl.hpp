@@ -1029,6 +1029,39 @@ beginFill(LinearObjContainer & loc) const
     if(feA!=Teuchos::null) {
       if(feAssemblyOpenOn_!=feA.get()) {
         feA->beginAssembly();
+
+        // Clear ONLY the ghost rows.
+        //
+        // Stale data can only accumulate there. Between assemblies the matrix rests in its
+        // OWNED view, whose values alias just the leading chunk of the owned+shared array
+        // (see Tpetra_FECrsMatrix_def.hpp, "we'll grab the first chunk of the Owned+Shared
+        // matrix's values array"). A caller's setAllToScalar therefore reaches owned rows
+        // but never the ghost rows, and endAssembly() does not clear them either, being a
+        // combining self-export that leaves its source untouched. Without this the next
+        // assembly sums onto the previous one's ghost contributions and inflates every
+        // shared-interface dof.
+        //
+        // Deliberately NOT setAllToScalar(0.0) over the whole matrix: callers legitimately
+        // set matrix values before calling beginFill (adjustForDirichletConditions is
+        // exercised exactly that way), and wiping all of it would silently discard their
+        // data. Owned rows are the caller's to manage; the ghost rows are scratch space
+        // that must start each assembly at zero.
+        //
+        // Relies on the FECrsGraph invariant that owned rows are a prefix of the
+        // owned+shared rows, which is what the V2 constructor guarantees.
+        {
+          auto rowptrs = feA->getLocalRowPtrsHost();
+          auto lclMat  = feA->getLocalMatrixDevice();
+          const size_t numOwnedRows = getMap()->getLocalNumElements();
+          const size_t numRows      = static_cast<size_t>(lclMat.numRows());
+          if(numOwnedRows < numRows) {
+            const size_t firstGhostEntry = rowptrs(numOwnedRows);
+            auto vals = lclMat.values;
+            if(firstGhostEntry < vals.extent(0))
+              Kokkos::deep_copy(Kokkos::subview(vals,Kokkos::make_pair(firstGhostEntry,vals.extent(0))),0.0);
+          }
+        }
+
         feAssemblyOpenOn_ = feA.get();
       }
     }

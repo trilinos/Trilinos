@@ -1198,4 +1198,106 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_multivector_exports_like_ghosted)
    }
 }
 
+// Assembling twice with the matrix zeroed in between must give the same answer both times.
+//
+// This is not obviously true for an FECrsMatrix. Its owned view aliases only the LEADING
+// CHUNK of the owned+shared values array (see Tpetra_FECrsMatrix_def.hpp, "we'll grab the
+// first chunk of the Owned+Shared matrix's values array"). After the first cycle the matrix
+// rests in its owned view, so panzer::ModelEvaluator's usual pre-assembly
+// initializeMatrix(0.0) -- which is a bare setAllToScalar -- reaches owned rows only and
+// leaves the GHOST rows holding the previous cycle's contributions. endAssembly() does not
+// clear them either: it is a combining self-export, which leaves its source untouched. The
+// second cycle then sums onto stale data and inflates every shared-interface dof.
+//
+// Nothing else in Panzer catches this. The classic path cannot exhibit it at all: there the
+// ghosted matrix is an ordinary CrsMatrix whose rows are every one of them locally owned, so
+// setAllToScalar zeroes the whole thing. That is what the multi-Newton-step tests exercise --
+// main_driver_energy-ss-tp-delay-prec, for one, drives a nonlinear "T Squared Source". The two
+// tests that do opt into FE assembly (main_driver_energy-ss-tp-FEAssembly and PoissonExample
+// with --use-fe-assembly) are both linear and converge in a single Newton step. So no existing
+// test both selects the FE path and assembles twice.
+TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_repeated_assembly_is_not_polluted)
+{
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::Comm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+   #else
+      Teuchos::RCP<Teuchos::Comm<int> > failure_comm = THIS_,_SERIAL_BUILDS_,_SHOULD_FAIL;
+   #endif
+
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
+
+   RCP<panzer::GlobalIndexer> indexer
+         = rcp(new unit_test::GlobalIndexer(myRank,numProc));
+
+   typedef panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> LOFType;
+   typedef panzer::TpetraLinearObjContainer<double,int,panzer::GlobalOrdinal> LOCType;
+   typedef panzer::LinearObjContainer LOC;
+
+   Teuchos::RCP<LOFType> la_factory
+         = Teuchos::rcp(new LOFType(tComm.getConst(),indexer,true));
+
+   RCP<LinearObjContainer> gLoc = la_factory->buildLinearObjContainer();
+   RCP<LinearObjContainer> ghLoc = la_factory->buildGhostedLinearObjContainer();
+   la_factory->initializeContainer(LOC::Mat,*gLoc);
+   la_factory->initializeGhostedContainer(LOC::Mat,*ghLoc);
+
+   RCP<LOCType> gt = rcp_dynamic_cast<LOCType>(gLoc);
+   RCP<LOCType> ght = rcp_dynamic_cast<LOCType>(ghLoc);
+   RCP<LOFType::FECrsMatrixType> feA
+      = Teuchos::rcp_dynamic_cast<LOFType::FECrsMatrixType>(ght->get_A());
+   TEST_ASSERT(feA!=Teuchos::null);
+
+   std::vector<panzer::GlobalOrdinal> ghosted, ownedIdx;
+   indexer->getOwnedAndGhostedIndices(ghosted);
+   indexer->getOwnedIndices(ownedIdx);
+
+   // One AssemblyEngine-style cycle: sum 1.0 into the diagonal of every row this rank can
+   // see through its ghosted map, then migrate. Returns the resulting owned diagonals.
+   auto runCycleAndCollectOwnedDiagonals = [&]() {
+      la_factory->beginFill(*ghLoc);
+      {
+         Teuchos::Array<panzer::GlobalOrdinal> cols(1);
+         Teuchos::Array<double> vals(1); vals[0] = 1.0;
+         for(std::size_t i=0;i<ghosted.size();i++) {
+            cols[0] = ghosted[i];
+            feA->sumIntoGlobalValues(ghosted[i],cols,vals);
+         }
+      }
+      la_factory->ghostToGlobalContainer(*ghLoc,*gLoc,LOC::Mat);
+      la_factory->beginFill(*gLoc);
+      la_factory->endFill(*gLoc);
+      la_factory->endFill(*ghLoc);
+
+      std::vector<double> diags;
+      for(std::size_t i=0;i<ownedIdx.size();i++) {
+         panzer::GlobalOrdinal gid = ownedIdx[i];
+         size_t numEnt = feA->getNumEntriesInGlobalRow(gid);
+         LOFType::CrsMatrixType::nonconst_global_inds_host_view_type inds("inds",numEnt);
+         LOFType::CrsMatrixType::nonconst_values_host_view_type vals("vals",numEnt);
+         size_t n = 0;
+         feA->getGlobalRowCopy(gid,inds,vals,n);
+         double d = 0.0;
+         for(size_t k=0;k<n;k++)
+            if(inds(k)==gid) d = vals(k);
+         diags.push_back(d);
+      }
+      return diags;
+   };
+
+   std::vector<double> firstPass = runCycleAndCollectOwnedDiagonals();
+
+   // Exactly what panzer::ModelEvaluator does before the next Jacobian evaluation.
+   ght->initializeMatrix(0.0);
+
+   std::vector<double> secondPass = runCycleAndCollectOwnedDiagonals();
+
+   TEST_EQUALITY(firstPass.size(),secondPass.size());
+   for(std::size_t i=0;i<firstPass.size();i++) {
+      out << "  owned gid " << ownedIdx[i]
+          << ": first=" << firstPass[i] << " second=" << secondPass[i] << std::endl;
+      TEST_FLOATING_EQUALITY(secondPass[i],firstPass[i],1e-14);
+   }
+}
+
 }
