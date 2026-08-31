@@ -6,22 +6,27 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <Akri_Unit_LogRedirecter.hpp>
+#ifndef AKRI_LOGREDIRECTER_H_
+#define AKRI_LOGREDIRECTER_H_
 
-#include <Akri_DiagWriter.hpp>
+#include <sstream>
 
 namespace krino {
 
-LogRedirecter::LogRedirecter()
-: myOriginalBuffer(krinolog.getStream().rdbuf())
+class LogRedirecter
 {
-  krinolog.getStream().rdbuf(&myBuffer);
+public:
+  LogRedirecter();
+  ~LogRedirecter();
+
+  void clear() { myBuffer.str(""); }
+  std::string get_log() const { return myBuffer.str(); }
+private:
+  std::stringbuf myBuffer;
+  std::streambuf * myOriginalBuffer;
+};
+
 }
 
-LogRedirecter::~LogRedirecter()
-{
-  krinolog.getStream().rdbuf(myOriginalBuffer);
-}
 
-}
-
+#endif

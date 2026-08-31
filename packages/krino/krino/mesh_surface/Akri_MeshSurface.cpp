@@ -31,7 +31,7 @@ void Parallel_Facet_File_Reader::read(const std::string & read_description, cons
 
   if (0 == stk::EnvData::parallel_rank() )
   {
-    my_input.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    my_input.exceptions(std::ifstream::badbit);
     try
     {
       read_function();
@@ -144,7 +144,7 @@ void FACSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
   my_reader.read("reading points", [this, &points](){read_points(points);});
 
   int num_facets = 0;
-  my_reader.read("reading number of facets", [&input, &num_facets](){input >> num_facets; STK_ThrowRequire(num_facets > 0);});
+  my_reader.read("reading number of facets", [&input, &num_facets](){ STK_ThrowRequire((input >> num_facets) && num_facets > 0); });
 
   int batch_size = 0;
   int num_batches = 0;
@@ -171,9 +171,8 @@ void FACSurface::read_points(std::vector<stk::math::Vector3d> & points)
   {
     int id;
     double X, Y, Z;
-    input >> id;
-    STK_ThrowRequire(id >= 0 && id < num_points);
-    input >> X >> Y >> Z;
+    STK_ThrowRequire((input >> id) && id >= 0 && id < num_points);
+    STK_ThrowRequire(input >> X >> Y >> Z);
     points.emplace_back(X*my_scale[0], Y*my_scale[1], Z*my_scale[2]);
   }
 }
@@ -186,9 +185,8 @@ void FACSurface::read_facets(const int batch_size, const int num_facets, const s
   {
     int id;
     int p1, p2, p3;
-    input >> id;
-    STK_ThrowRequire(id >= 0 && id < num_facets);
-    input >> p1 >> p2 >> p3;
+    STK_ThrowRequire((input >> id) && id >= 0 && id < num_facets);
+    STK_ThrowRequire(input >> p1 >> p2 >> p3);
 
     STK_ThrowRequire(p1 >= 0 && p1 < num_points);
     STK_ThrowRequire(p2 >= 0 && p2 < num_points);
@@ -281,23 +279,22 @@ void PLYSurface::read_header(int & num_points, int & num_facets)
 
   // Read in the file identifier
   std::string symbol;
-  input >> symbol;
-  STK_ThrowRequire(symbol.compare("ply") == 0);
+  STK_ThrowRequire((input >> symbol) && symbol.compare("ply") == 0);
 
   while (symbol.compare("end_header") != 0)
   {
     STK_ThrowErrorMsgIf(input.eof(), "Problem reading PLY file, reached end of file.");
-    input >> symbol;
+    STK_ThrowRequire(input >> symbol);
     if (symbol.compare("element") == 0)
     {
-      input >> symbol;
+      STK_ThrowRequire(input >> symbol);
       if (symbol.compare("vertex") == 0)
       {
         input >> num_points;
       }
       else if (symbol.compare("face") == 0)
       {
-        input >> num_facets;
+        STK_ThrowRequire(input >> num_facets);
       }
     }
   }
@@ -311,7 +308,7 @@ void PLYSurface::read_points(const int num_points, std::vector<stk::math::Vector
   for ( int i = 0; i < num_points; i++ )
   {
     double X, Y, Z;
-    input >> X >> Y >> Z;
+    STK_ThrowRequire(input >> X >> Y >> Z);
     points.emplace_back(X*my_scale[0], Y*my_scale[1], Z*my_scale[2]);
   }
   // Move to start of next line to prepare for reading facets
@@ -332,7 +329,7 @@ void PLYSurface::read_facets(const int batch_size, const std::vector<stk::math::
     std::stringstream linestream(line);
     linestream >> num_facet_nodes;
     STK_ThrowRequireMsg(num_facet_nodes == 3, "Failed to read face connectivity correctly.");
-    linestream >> p1 >> p2 >> p3;
+    STK_ThrowRequire(linestream >> p1 >> p2 >> p3);
     STK_ThrowRequire(p1 < num_points);
     STK_ThrowRequire(p2 < num_points);
     STK_ThrowRequire(p3 < num_points);
@@ -388,48 +385,83 @@ static bool is_finite_normal(const stk::math::Vector3d normal)
   return finiteFlag;
 }
 
-void read_ascii_facet(std::ifstream & input, const stk::math::Vector3d & scale, const int sign, std::array<stk::math::Vector3d,3> & facetPts, bool & isFacetValid)
+static std::string trim_whitespace(const std::string& s)
 {
-  std::string symbol, nx, ny, nz;
-  double X, Y, Z;
-
-  // Read in the facet normal
-  input >> symbol;
-  STK_ThrowRequire(symbol.compare("normal")  == 0);
-  input >> nx >> ny >> nz;
-  const stk::math::Vector3d normal(std::atof(nx.c_str()), std::atof(ny.c_str()), std::atof(nz.c_str()));
-
-  // Read in the "outer loop" line
-  input >> symbol;
-  STK_ThrowRequire(symbol.compare("outer") == 0);
-  input >> symbol;
-  STK_ThrowRequire(symbol.compare("loop") == 0);
-
-  // Read in the vertices
-  for (int i=0; i<3; i++) {
-    input >> symbol;
-    STK_ThrowRequire(symbol.compare("vertex") == 0);
-    input >> X >> Y >> Z;
-
-    facetPts[i] = stk::math::Vector3d(X*scale[0], Y*scale[1], Z*scale[2]);
+  size_t start = 0;
+  while (start < s.size() && std::isspace(static_cast<unsigned char>(s[start]))) {
+      ++start;
   }
 
-  // Read in the "endloop" and "endfacet" lines
-  input >> symbol;
-  STK_ThrowRequire(symbol.compare("endloop") == 0);
-  input >> symbol;
-  STK_ThrowRequire(symbol.compare("endfacet") == 0);
+  size_t end = s.size();
+  while (end > start && std::isspace(static_cast<unsigned char>(s[end - 1]))) {
+      --end;
+  }
 
-  isFacetValid = is_finite_normal(normal) && !Facet3d::is_degenerate(facetPts);
-  flip_facet_with_negative_sign(facetPts, sign);
+  return s.substr(start, end - start);
 }
 
-static bool read_start_of_next_ascii_facet(std::ifstream & input)
+static bool starts_with(const std::string& s, const std::string& prefix)
 {
-  // Read the next line
-  std::string symbol;
-  input >> symbol;
-  return symbol.compare("facet") == 0;
+  return s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0;
+}
+
+static void parse_ascii_vector3d(const std::string& s, stk::math::Vector3d & v)
+{
+  std::istringstream iss(s);
+  if (!(iss >> v[0] >> v[1] >> v[2]))
+    throw std::runtime_error("Failed to parse 3D vector");
+}
+
+static void parse_ascii_prefix_and_vector3d(const std::string& line, const std::string & prefix, stk::math::Vector3d & v)
+{
+  if (!starts_with(line, prefix))
+    throw std::runtime_error("Expected '" + prefix + " x y z'");
+
+  parse_ascii_vector3d(line.substr(prefix.length()), v);
+}
+
+static void parse_ascii_prefix_and_vector3d(std::istream& in, const std::string & prefix, stk::math::Vector3d & v)
+{
+  std::string line;
+  if (!std::getline(in, line))
+    throw std::runtime_error("Unexpected EOF before '" + prefix + " x y z'");
+  line = trim_whitespace(line);
+  parse_ascii_prefix_and_vector3d(line, prefix, v);
+}
+
+static void parse_and_expect_token(std::istream& in, const std::string& expectedToken)
+{
+  std::string line;
+  if (!std::getline(in, line))
+    throw std::runtime_error("Unexpected EOF before " + expectedToken + "'");
+  line = trim_whitespace(line);
+  if (line != expectedToken)
+    throw std::runtime_error("Expected '" + expectedToken + "'");
+}
+
+static void parse_ascii_facet(std::istream& in, const std::string& firstLine, stk::math::Vector3d & facetNormal, std::array<stk::math::Vector3d,3> & facetPts)
+{
+  parse_ascii_prefix_and_vector3d(firstLine, "facet normal", facetNormal);
+
+  parse_and_expect_token(in, "outer loop");
+
+  for (int i = 0; i < 3; ++i)
+    parse_ascii_prefix_and_vector3d(in, "vertex", facetPts[i]);
+
+  parse_and_expect_token(in, "endloop");
+  parse_and_expect_token(in, "endfacet");
+}
+
+static void read_ascii_facet(std::istream& in, const std::string& firstLine, const stk::math::Vector3d & scale, const int sign, std::array<stk::math::Vector3d,3> & facetPts, bool & isFacetValid)
+{
+  stk::math::Vector3d facetNormal;
+  parse_ascii_facet(in, firstLine, facetNormal, facetPts);
+
+  for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j)
+      facetPts[i][j] *= scale[j];
+  isFacetValid = is_finite_normal(facetNormal) && !Facet3d::is_degenerate(facetPts);
+  flip_facet_with_negative_sign(facetPts, sign);
 }
 
 static float read_binary_float(std::ifstream& input)
@@ -539,21 +571,11 @@ STLSurface::read_header()
 {
   std::ifstream & input = my_reader.input();
 
-  std::string symbol;
-  input >> symbol;
-  my_is_ascii = symbol.compare("solid") == 0;
+  std::string line;
+  std::getline(input, line);
+  my_is_ascii = starts_with(line, "solid");
 
-  if (my_is_ascii)
-  {
-    // Read in strings until you get to facet
-    while (symbol.compare("facet") != 0)
-    {
-      STK_ThrowErrorMsgIf(input.eof(), "Problem reading STL file, no facets found.");
-      input >> symbol;
-    }
-    krinolog << "Reading ASCII STL file." << stk::diag::dendl;
-  }
-  else
+  if (!my_is_ascii)
   {
     char header_info[80] = "";
     input.clear();
@@ -580,18 +602,28 @@ unsigned STLSurface::read_ascii_facets(const unsigned max_batch_size)
 
   bool isFacetValid = false;
   std::array<stk::math::Vector3d,3> facetPts;
+  std::string line;
 
   unsigned count = 0;
-  bool done = false;
-  while (!done)
+  while (count < max_batch_size && std::getline(input, line))
   {
-    read_ascii_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
-    if (isFacetValid)
+    line = trim_whitespace(line);
+    if (starts_with(line, "facet"))
     {
-      emplace_back_3d(facetPts[0], facetPts[1], facetPts[2]);
-      ++count;
+      read_ascii_facet(input, line, my_scale, my_dist_sign, facetPts, isFacetValid);
+      if (isFacetValid)
+      {
+        emplace_back_3d(facetPts[0], facetPts[1], facetPts[2]);
+        ++count;
+      }
     }
-    done = (!read_start_of_next_ascii_facet(input) || count >= max_batch_size);
+    else
+    {
+      if (starts_with(line, "solid"))
+        krinolog << "STL file contains multiple solids which are being read together. This will not behave well if the surfaces intersect." << stk::diag::dendl;
+      else if (!line.empty() && !starts_with(line, "endsolid"))
+        throw std::runtime_error("Unexpected line '" + line + "'");
+    }
   }
   return count;
 }
@@ -628,19 +660,24 @@ BoundingBox STLSurface::get_ascii_facet_bounding_box()
 
   BoundingBox bbox;
 
-  bool done = false;
-  while (!done)
+  std::string line;
+  while (std::getline(input, line))
   {
-    read_ascii_facet(input, my_scale, my_dist_sign, facetPts, isFacetValid);
-    if (isFacetValid)
+    line = trim_whitespace(line);
+    if (starts_with(line, "facet"))
     {
-      const Facet3d facet(facetPts[0], facetPts[1], facetPts[2]);
-      facet.insert_into(bbox);
+      read_ascii_facet(input, line, my_scale, my_dist_sign, facetPts, isFacetValid);
+      if (isFacetValid)
+      {
+        const Facet3d facet(facetPts[0], facetPts[1], facetPts[2]);
+        facet.insert_into(bbox);
+      }
     }
-    done = !read_start_of_next_ascii_facet(input);
   }
   return bbox;
 }
+
+
 
 BoundingBox STLSurface::get_binary_facet_bounding_box(const unsigned numFacets)
 {

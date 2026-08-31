@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
 
 #include "Piro_SteadyStateSolver.hpp"
 

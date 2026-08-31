@@ -264,6 +264,40 @@ struct FourDisconnectedTris
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn};
 };
 
+struct FourRightTris
+{
+   /*
+      4
+      | \
+      3---2
+      |\  |
+      | \ |
+      |  \|
+      0---1
+      | /
+      5
+   */
+
+  FourRightTris() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.0,  0.0 },
+        { 1.0,  0.0 },
+        { 1.0,  1.0 },
+        { 0.0,  1.0 },
+        { 0.0,  2.0 },
+        { 0.0, -1.0 }
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{0, 1, 3}};
+    std::array<unsigned,3> Tri2Conn{{1, 2, 3}};
+    std::array<unsigned,3> Tri3Conn{{3, 2, 4}};
+    std::array<unsigned,3> Tri4Conn{{1, 0, 5}};
+
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn};
+};
+
 struct RegularTet
 {
     RegularTet() = default;
@@ -506,6 +540,34 @@ struct PatchOfRegularTrisAroundNode
     std::array<unsigned,3> Tri5Conn{{0, 5, 6}};
     std::array<unsigned,3> Tri6Conn{{0, 6, 1}};
     std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn};
+};
+
+struct SquareOf8Tris
+{
+  SquareOf8Tris() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        {-1.0,-1.0},
+        { 1.0,-1.0},
+        { 1.0, 1.0},
+        {-1.0, 1.0},
+        { 0.0,-1.0},
+        { 1.0, 0.0},
+        { 0.0, 1.0},
+        {-1.0, 0.0},
+        { 0.0, 0.0},
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{8, 0, 4}};
+    std::array<unsigned,3> Tri2Conn{{8, 4, 1}};
+    std::array<unsigned,3> Tri3Conn{{8, 1, 5}};
+    std::array<unsigned,3> Tri4Conn{{8, 5, 2}};
+    std::array<unsigned,3> Tri5Conn{{8, 2, 6}};
+    std::array<unsigned,3> Tri6Conn{{8, 6, 3}};
+    std::array<unsigned,3> Tri7Conn{{8, 3, 7}};
+    std::array<unsigned,3> Tri8Conn{{8, 7, 0}};
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn, Tri7Conn, Tri8Conn};
 };
 
 struct RegularQuad
@@ -823,6 +885,31 @@ struct RegularTetSplitAtCentroid
     std::array<unsigned,4> TetConn2{{1, 3, 4, 0}};
     std::array<unsigned,4> TetConn3{{1, 2, 3, 0}};
     std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3};
+};
+
+struct StackofSixRightTris
+{
+  StackofSixRightTris() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TRIANGLE_3_2D;
+    std::vector<stk::math::Vector2d> nodeLocs
+    {{
+        { 0.000,  0.000 },
+        { 1.000,  0.000 },
+        { 1.000,  1.000 },
+        { 1.000,  2.000 },
+        { 1.000,  3.000 },
+        { 0.000,  3.000 },
+        { 0.000,  2.000 },
+        { 0.000,  1.000 }
+    }};
+
+    std::array<unsigned,3> Tri1Conn{{0, 1, 2}};
+    std::array<unsigned,3> Tri2Conn{{0, 2, 7}};
+    std::array<unsigned,3> Tri3Conn{{2, 6, 7}};
+    std::array<unsigned,3> Tri4Conn{{2, 3, 6}};
+    std::array<unsigned,3> Tri5Conn{{3, 4, 6}};
+    std::array<unsigned,3> Tri6Conn{{4, 5, 6}};
+    std::vector<std::array<unsigned, 3>> allElementConn{Tri1Conn, Tri2Conn, Tri3Conn, Tri4Conn, Tri5Conn, Tri6Conn};
 };
 
 }

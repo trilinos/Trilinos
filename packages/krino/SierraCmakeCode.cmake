@@ -289,6 +289,8 @@ add_library(krino_math_utils)
 FILE(GLOB krino_math_utils_headers CONFIGURE_DEPENDS krino/math_utils/*.hpp)
 FILE(GLOB krino_math_utils_sources CONFIGURE_DEPENDS krino/math_utils/*.cpp)
 target_sources(krino_math_utils PRIVATE ${krino_math_utils_sources})
+find_package(Boost REQUIRED)
+target_link_libraries(krino_math_utils PRIVATE Boost::headers)
 target_link_libraries(krino_math_utils PUBLIC krino_diagwriter)
 find_package(stk REQUIRED)
 target_link_libraries(krino_math_utils PUBLIC stk::stk_math)
@@ -354,6 +356,86 @@ install(
     TARGETS krino_mesh_utils
     EXPORT krinoTargets
     FILE_SET krino_mesh_utils_headers
+        DESTINATION include/krino
+        INCLUDES DESTINATION include/krino
+)
+
+add_library(krino_mesh_quality)
+FILE(GLOB krino_mesh_quality_headers CONFIGURE_DEPENDS krino/mesh_quality/*.hpp)
+FILE(GLOB krino_mesh_quality_sources CONFIGURE_DEPENDS krino/mesh_quality/*.cpp)
+target_sources(krino_mesh_quality PRIVATE ${krino_mesh_quality_sources})
+target_link_libraries(krino_mesh_quality PUBLIC krino_quality_metric)
+target_link_libraries(krino_mesh_quality PUBLIC krino_mesh_utils)
+find_package(stk REQUIRED)
+target_link_libraries(krino_mesh_quality PUBLIC stk::stk_math)
+target_link_libraries(krino_mesh_quality PUBLIC stk::stk_mesh_base)
+target_link_libraries(krino_mesh_quality PUBLIC stk::stk_topology)
+target_include_directories(krino_mesh_quality PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/mesh_quality>
+    $<INSTALL_INTERFACE:include/krino>
+    $<INSTALL_INTERFACE:include/krino/krino/mesh_quality>)
+target_sources(krino_mesh_quality PUBLIC
+    FILE_SET krino_mesh_quality_headers
+    TYPE HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES ${krino_mesh_quality_headers})
+target_compile_definitions(krino_mesh_quality PUBLIC KRINO_BUILT_IN_SIERRA)
+if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+    target_compile_definitions(krino_mesh_quality PUBLIC Build64)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    target_compile_options(krino_mesh_quality PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    target_compile_options(krino_mesh_quality PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
+endif ()
+install(
+    TARGETS krino_mesh_quality
+    EXPORT krinoTargets
+    FILE_SET krino_mesh_quality_headers
+        DESTINATION include/krino
+        INCLUDES DESTINATION include/krino
+)
+
+add_library(krino_smoothing)
+FILE(GLOB krino_smoothing_headers CONFIGURE_DEPENDS krino/smoothing/*.hpp)
+FILE(GLOB krino_smoothing_sources CONFIGURE_DEPENDS krino/smoothing/*.cpp)
+target_sources(krino_smoothing PRIVATE ${krino_smoothing_sources})
+target_link_libraries(krino_smoothing PUBLIC krino_diagwriter)
+target_link_libraries(krino_smoothing PUBLIC krino_math_utils)
+target_link_libraries(krino_smoothing PUBLIC krino_mesh_quality)
+target_link_libraries(krino_smoothing PUBLIC krino_mesh_utils)
+target_link_libraries(krino_smoothing PUBLIC krino_quality_metric_sens)
+find_package(stk REQUIRED)
+target_link_libraries(krino_smoothing PUBLIC stk::stk_math)
+target_link_libraries(krino_smoothing PUBLIC stk::stk_mesh_base)
+find_package(MiniTensor REQUIRED)
+target_link_libraries(krino_smoothing PUBLIC MiniTensor::all_libs)
+target_include_directories(krino_smoothing PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/smoothing>
+    $<INSTALL_INTERFACE:include/krino>
+    $<INSTALL_INTERFACE:include/krino/krino/smoothing>)
+target_sources(krino_smoothing PUBLIC
+    FILE_SET krino_smoothing_headers
+    TYPE HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES ${krino_smoothing_headers})
+target_compile_definitions(krino_smoothing PUBLIC KRINO_BUILT_IN_SIERRA)
+if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+    target_compile_definitions(krino_smoothing PUBLIC Build64)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    target_compile_options(krino_smoothing PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    target_compile_options(krino_smoothing PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
+endif ()
+install(
+    TARGETS krino_smoothing
+    EXPORT krinoTargets
+    FILE_SET krino_smoothing_headers
         DESTINATION include/krino
         INCLUDES DESTINATION include/krino
 )
@@ -485,9 +567,11 @@ target_link_libraries(krino_lib PUBLIC krino_mesh_surface)
 target_link_libraries(krino_lib PUBLIC krino_mesh_utils)
 target_link_libraries(krino_lib PUBLIC krino_quality_metric)
 target_link_libraries(krino_lib PUBLIC krino_quality_metric_sens)
+target_link_libraries(krino_lib PUBLIC krino_mesh_quality)
 target_link_libraries(krino_lib PUBLIC krino_refinement)
 target_link_libraries(krino_lib PUBLIC krino_refinement_rebalance)
 target_link_libraries(krino_lib PUBLIC krino_surface)
+target_link_libraries(krino_lib PUBLIC krino_smoothing)
 find_package(stk REQUIRED)
 target_link_libraries(krino_lib PUBLIC stk::stk_emend)
 target_link_libraries(krino_lib PUBLIC stk::stk_io)

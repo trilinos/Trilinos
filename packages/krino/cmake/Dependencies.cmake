@@ -1,4 +1,19 @@
-SET(LIB_REQUIRED_DEP_PACKAGES SEACASIoss SEACASExodus STKBalance STKExprEval STKMath STKIO STKSearch STKTopology STKUtil STKTools STKEmend Intrepid2 Sacado ROL)
+SET(LIB_REQUIRED_DEP_PACKAGES 
+    SEACASIoss 
+    SEACASExodus 
+    STKBalance 
+    STKExprEval 
+    STKMath 
+    STKIO 
+    STKSearch 
+    STKTopology 
+    STKUtil 
+    STKTools 
+    STKEmend 
+    Intrepid2 
+    Sacado 
+    MiniTensor
+    ROL)
 SET(LIB_OPTIONAL_DEP_PACKAGES)
 SET(TEST_REQUIRED_DEP_PACKAGES STKUnit_test_utils)
 SET(TEST_OPTIONAL_DEP_PACKAGES)
