@@ -132,6 +132,24 @@ void broadcast(
   const int rootRank, const ArrayView<const Ptr<Packet> > &buffer
   );
 
+/// \brief Scatter values from all processes to all processes.
+/// \relates Comm
+///
+/// This wraps MPI_Alltoall in an MPI build, when Comm implements MpiComm.
+template<typename Ordinal, typename Packet>
+void
+alltoAll (const Packet sendBuf[],
+          const Ordinal sendCount,
+          Packet recvBuf[],
+          const Ordinal recvCount,
+          const Comm<Ordinal>& comm)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Teuchos::alltoAll<" <<
+     TypeNameTraits<Ordinal>::name () << "," << TypeNameTraits<Packet>::name ()
+     << ">: Generic version is not yet implemented.");
+}
+
 /** \brief Broadcast array of objects that use value semantics using
  * customized serializer.
  *
@@ -1882,6 +1900,14 @@ isend<int, unsigned long> (const ArrayRCP<const unsigned long>& sendBuffer,
                            const Comm<int>& comm);
 
 // Specialization for Ordinal=int and Packet=int.
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+alltoAll<int, int> (const int sendBuf[],
+                    const int sendCount,
+                    int recvBuf[],
+                    const int recvCount,
+                    const Comm<int>& comm);
+
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 gather<int, int> (const int sendBuf[],
