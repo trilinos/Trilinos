@@ -7,15 +7,14 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_EXP_MP_VECTOR_HPP
-#define SACADO_FAD_EXP_MP_VECTOR_HPP
+#ifndef SACADO_FAD_MP_VECTOR_HPP
+#define SACADO_FAD_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
 
 namespace Sacado {
 
   namespace Fad {
-  namespace Exp {
 
     //! Expression template specialization tag for Fad< MP::Vector >
     class ExprSpecMPVector {};
@@ -402,18 +401,16 @@ namespace Sacado {
 
     };
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado
 
 // Specialize expression template operators to add similar extensions
-#include "Sacado_Fad_Exp_Ops.hpp"
+#include "Sacado_Fad_Ops.hpp"
 
 #define FAD_UNARYOP_MACRO(OPNAME,OP,USING,MPVALUE,VALUE,DX,FASTACCESSDX) \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
                                                                         \
     template <typename T>                                               \
     class OP< T,ExprSpecMPVector > :                                    \
@@ -468,7 +465,6 @@ namespace Sacado {                                                      \
       const T& expr;                                                    \
     };                                                                  \
                                                                         \
-  }                                                                     \
   }                                                                     \
                                                                         \
 }
@@ -634,7 +630,6 @@ FAD_UNARYOP_MACRO(cbrt,
 
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
 
     // For MP::Vector scalar type, promote constants up to expression's value
     // type.  If the constant type is the same as the value type, we can store
@@ -651,13 +646,11 @@ namespace Sacado {
       typedef ValueType& type;
     };
   }
-  }
 }
 
 #define FAD_BINARYOP_MACRO(OPNAME,OP,USING,MPVALUE,VALUE,DX,CDX1,CDX2,FASTACCESSDX,MPVAL_CONST_DX_1,MPVAL_CONST_DX_2,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-  namespace Exp {                                                       \
                                                                         \
     template <typename T1, typename T2 >                                \
     class OP< T1, T2, false, false, ExprSpecMPVector > :                \
@@ -849,7 +842,6 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
   }                                                                     \
-  }                                                                     \
                                                                         \
 }
 
@@ -1005,7 +997,6 @@ FAD_BINARYOP_MACRO(min,
 // zero to avoid throwing FPEs.
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
 
     //
     // Implementation for simd type using if_then_else()
@@ -1409,7 +1400,6 @@ namespace Sacado {
     };
 
   }
-  }
 }
 
 //--------------------------if_then_else operator -----------------------
@@ -1418,7 +1408,6 @@ namespace Sacado {
 
 namespace Sacado {
   namespace Fad {
-  namespace Exp {
 
     template <typename CondT, typename T1, typename T2>
     class IfThenElseOp< CondT,T1,T2,false,false,ExprSpecMPVector > :
@@ -1596,9 +1585,8 @@ namespace Sacado {
     };
 
   }
-  }
 }
 
 #undef FAD_BINARYOP_MACRO
 
-#endif // SACADO_FAD_EXP_MP_VECTOR_HPP
+#endif // SACADO_FAD_MP_VECTOR_HPP
