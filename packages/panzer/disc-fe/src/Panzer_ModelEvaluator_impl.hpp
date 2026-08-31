@@ -544,6 +544,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
   }
 
   ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
+  ae_inargs.addGlobalEvaluationData(assemblyGlobalEvaluationData_);
 
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::ThyraObjContainer<Scalar> > thGlobalContainer =
@@ -841,6 +842,14 @@ addNonParameterGlobalEvaluationData(const std::string & key,
                                     const Teuchos::RCP<GlobalEvaluationData> & ged)
 {
    nonParamGlobalEvaluationData_.addDataObject(key,ged);
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+addGlobalEvaluationDataToAssemblyInArgs(const std::string & key,
+                                        const Teuchos::RCP<GlobalEvaluationData> & ged)
+{
+   assemblyGlobalEvaluationData_.addDataObject(key, ged);
 }
 
 template <typename Scalar>
