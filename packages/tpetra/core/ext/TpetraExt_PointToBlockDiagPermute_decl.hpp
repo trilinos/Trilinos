@@ -12,6 +12,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -26,6 +27,8 @@ namespace Tpetra::Ext {
  *   - explicit local block starts + local/global block entry ids
  *
  * The extracted block diagonal may be materialized as a Tpetra::CrsMatrix.
+ * The materialized matrix represents the explicit inverse of the extracted
+ * block diagonal, matching the semantics expected by Teko's BlkDiag path.
  */
 template <class Scalar        = ::Tpetra::Details::DefaultTypes::scalar_type,
           class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
@@ -33,10 +36,11 @@ template <class Scalar        = ::Tpetra::Details::DefaultTypes::scalar_type,
           class Node          = ::Tpetra::Details::DefaultTypes::node_type>
 class PointToBlockDiagPermute {
  public:
-  using map_type    = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-  using crs_type    = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using mv_type     = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using vector_type = Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using map_type       = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using crs_type       = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using mv_type        = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using vector_type    = Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using dense_mat_type = Teuchos::SerialDenseMatrix<int, Scalar>;
 
   explicit PointToBlockDiagPermute(const crs_type& A);
 
@@ -45,6 +49,16 @@ class PointToBlockDiagPermute {
   int setParameters(Teuchos::ParameterList& list);
   int compute();
 
+  /** \brief Apply the inverse block diagonal to X, returning Y.
+   *
+   * This applies the inverse of the extracted local block diagonal, not the
+   * original matrix.
+   */
+  int applyInverse(const mv_type& X, mv_type& Y) const;
+
+  /** \brief Return an explicit sparse matrix representation of the inverse
+   * block diagonal.
+   */
   Teuchos::RCP<crs_type> createCrsMatrix() const { return blockDiagMatrix_; }
 
  private:
@@ -61,6 +75,10 @@ class PointToBlockDiagPermute {
 
   Teuchos::RCP<const map_type> compatibleMap_;
   Teuchos::RCP<crs_type> blockDiagMatrix_;
+
+  // Inverse dense blocks and mapping from block row -> local matrix row.
+  std::vector<dense_mat_type> invBlocks_;
+  std::vector<std::vector<LocalOrdinal> > blockRows_;
 
   void cleanupBlockInfo();
   int setupContiguousMode();
