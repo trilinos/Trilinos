@@ -32,13 +32,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT}
   )
 
-# Force new FAD design (old design removed in Stage 1 refactoring)
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_NEW_FAD_DESIGN_IS_DEFAULT
-  SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-  "New FAD design is always enabled (old design removed)"
-  ON
-  )
 # Force the option to always be ON (not user-modifiable)
 SET(${PACKAGE_NAME}_NEW_FAD_DESIGN_IS_DEFAULT ON CACHE BOOL
     "New FAD design is always enabled (old design removed)" FORCE)

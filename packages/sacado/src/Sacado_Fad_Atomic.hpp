@@ -7,13 +7,13 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_EXP_ATOMIC_HPP
-#define SACADO_FAD_EXP_ATOMIC_HPP
+#ifndef SACADO_FAD_ATOMIC_HPP
+#define SACADO_FAD_ATOMIC_HPP
 
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOS)
 
-#include "Sacado_Fad_Exp_ViewFad.hpp"
+#include "Sacado_Fad_ViewFad.hpp"
 #include "Kokkos_Atomic.hpp"
 #include "impl/Kokkos_Error.hpp"
 
@@ -565,4 +565,4 @@ namespace Sacado {
 } // namespace Sacado
 
 #endif // HAVE_SACADO_KOKKOS
-#endif // SACADO_FAD_EXP_VIEWFAD_HPP
+#endif // SACADO_FAD_VIEWFAD_HPP

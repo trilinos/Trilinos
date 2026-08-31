@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_EXP_EXPRASSIGN_HPP
-#define SACADO_FAD_EXP_EXPRASSIGN_HPP
+#ifndef SACADO_FAD_EXPRASSIGN_HPP
+#define SACADO_FAD_EXPRASSIGN_HPP
 
 namespace Sacado {
   namespace Fad {
@@ -321,4 +321,4 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#endif // SACADO_FAD_EXP_EXPRASSIGN_HPP
+#endif // SACADO_FAD_EXPRASSIGN_HPP

@@ -406,7 +406,6 @@ typedef Sacado::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
 #endif
 
 // Full set of atomics only implemented for new design
-#if SACADO_ENABLE_NEW_DESIGN
 typedef Sacado::Fad::DFad<double> DFadType;
 typedef Sacado::Fad::SLFad<double,2*global_fad_size> SLFadType;
 typedef Sacado::Fad::SFad<double,global_fad_size> SFadType;
@@ -420,10 +419,4 @@ typedef Sacado::Fad::SFad<double,global_fad_size> SFadType;
 #define VIEW_FAD_TESTS_D( D )                            \
   VIEW_FAD_TESTS_FD( SFadType, D )                       \
   VIEW_FAD_TESTS_FD( SLFadType, D )
-#endif
-
-#else
-
-#define VIEW_FAD_TESTS_D( D ) /* */
-
 #endif

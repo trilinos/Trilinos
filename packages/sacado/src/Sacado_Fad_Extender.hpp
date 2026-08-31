@@ -7,10 +7,10 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_EXP_EXTENDER_HPP
-#define SACADO_FAD_EXP_EXTENDER_HPP
+#ifndef SACADO_FAD_EXTENDER_HPP
+#define SACADO_FAD_EXTENDER_HPP
 
-#include "Sacado_Fad_Exp_Expression.hpp"
+#include "Sacado_Fad_Expression.hpp"
 
 namespace Sacado {
   namespace Fad {
@@ -29,4 +29,4 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#endif // SACADO_FAD_EXP_EXTENDER_HPP
+#endif // SACADO_FAD_EXTENDER_HPP

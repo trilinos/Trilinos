@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_EXP_GENERALFADTRAITS_HPP
-#define SACADO_FAD_EXP_GENERALFADTRAITS_HPP
+#ifndef SACADO_FAD_GENERALFADTRAITS_HPP
+#define SACADO_FAD_GENERALFADTRAITS_HPP
 
 #include "Sacado_Traits.hpp"
 
@@ -195,4 +195,4 @@ namespace Teuchos {
 #include "Sacado_Fad_Kokkos.hpp"
 #endif
 
-#endif // SACADO_FAD_EXP_GENERALFADTRAITS_HPP
+#endif // SACADO_FAD_GENERALFADTRAITS_HPP

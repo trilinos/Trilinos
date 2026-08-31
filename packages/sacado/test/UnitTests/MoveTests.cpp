@@ -14,9 +14,8 @@
 
 #include "Sacado_No_Kokkos.hpp"
 
-#if SACADO_ENABLE_NEW_DESIGN
-#include "Sacado_Fad_Exp_DVFad.hpp"
-#include "Sacado_Fad_Exp_ViewFad.hpp"
+#include "Sacado_Fad_DVFad.hpp"
+#include "Sacado_Fad_ViewFad.hpp"
 
 // Size used for all Fad types
 const int global_fad_size = 10;
@@ -406,8 +405,6 @@ TEUCHOS_UNIT_TEST( MoveAssignmentTests, ViewFad )
     TEST_EQUALITY_CONST( x.dx(i), value_type(2.0+i) );
   }
 }
-
-#endif
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);

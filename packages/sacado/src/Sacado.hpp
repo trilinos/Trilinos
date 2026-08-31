@@ -27,8 +27,8 @@
 
 // Traits for all of the Sacado classes -- Include these first so they are all
 // defined before any nesting of AD classes
-#include "Sacado_Fad_Exp_ExpressionTraits.hpp"
-#include "Sacado_Fad_Exp_GeneralFadTraits.hpp"
+#include "Sacado_Fad_ExpressionTraits.hpp"
+#include "Sacado_Fad_GeneralFadTraits.hpp"
 #include "Sacado_ELRFad_ExpressionTraits.hpp"
 #include "Sacado_ELRFad_DFadTraits.hpp"
 #include "Sacado_ELRFad_SFadTraits.hpp"
@@ -42,7 +42,6 @@
 #include "Sacado_ELRCacheFad_SFadTraits.hpp"
 #include "Sacado_ELRCacheFad_SLFadTraits.hpp"
 #if !defined(__CUDACC__) && !defined(__HIPCC__ )
-#include "Sacado_Fad_DVFadTraits.hpp"
 #include "Sacado_LFad_LogicalSparseTraits.hpp"
 #include "Sacado_ScalarFlopCounterTraits.hpp"
 #include "Sacado_Tay_TaylorTraits.hpp"
@@ -52,11 +51,11 @@
 #endif
 
 // Standard forward AD classes
-#include "Sacado_Fad_Exp_DFad.hpp"
-#include "Sacado_Fad_Exp_SFad.hpp"
-#include "Sacado_Fad_Exp_SLFad.hpp"
-#include "Sacado_Fad_Exp_ViewFad.hpp"
-#include "Sacado_Fad_Exp_Atomic.hpp"
+#include "Sacado_Fad_DFad.hpp"
+#include "Sacado_Fad_SFad.hpp"
+#include "Sacado_Fad_SLFad.hpp"
+#include "Sacado_Fad_ViewFad.hpp"
+#include "Sacado_Fad_Atomic.hpp"
 
 // Expression-level-reverse forward AD classes
 #include "Sacado_ELRFad_DFad.hpp"

@@ -10,8 +10,17 @@
 #ifndef SACADO_FAD_DVFAD_HPP
 #define SACADO_FAD_DVFAD_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_VectorDynamicStorage.hpp"
 
-#include "Sacado_Fad_Exp_DVFad.hpp"
+namespace Sacado {
+  namespace Fad {
 
-#endif // SACADO_FAD_DFAD_HPP
+    template <typename T>
+    using DVFad = GeneralFad< VectorDynamicStorage<T> >;
+
+  } // namespace Fad
+
+} // namespace Sacado
+
+#endif // SACADO_FAD_DVFAD_HPP

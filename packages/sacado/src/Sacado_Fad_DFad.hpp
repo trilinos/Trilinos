@@ -10,9 +10,17 @@
 #ifndef SACADO_FAD_DFAD_HPP
 #define SACADO_FAD_DFAD_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_DynamicStorage.hpp"
 
-#include "Sacado_Fad_Exp_DFad.hpp"
-#include "Sacado_Fad_ViewFad.hpp"
+namespace Sacado {
+  namespace Fad {
+
+    template <typename T>
+    using DFad = GeneralFad< DynamicStorage<T> >;
+
+  } // namespace Fad
+
+} // namespace Sacado
 
 #endif // SACADO_FAD_DFAD_HPP
