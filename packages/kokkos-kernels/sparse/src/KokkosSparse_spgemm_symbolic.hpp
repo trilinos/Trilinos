@@ -115,10 +115,19 @@ void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_
   // is to be called. The KokkosKernels (non-TPL) implementation does not
   // actually require sorted indices yet. And Tpetra uses size_type = size_t, so
   // it will (currently) not be calling a TPL path.
+  //
 #ifndef NDEBUG
+  // Temporary fix for #15653: skip the check unless TPL is cuSPARSE or rocSPARSE, since
+  // MKL's mkl_sparse_sp2m does not actually require sorted input
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE)
+#if defined(CUSPARSE_VERSION) && (CUSPARSE_VERSION >= 12710)
+  // Temporary partial fix for #15105: since cusparse 12.7.1 we never call the cusparse spgemmReuse interface
+  // that required sorted inputs, so it's safe to skip the check in this case too
+#else
   if constexpr (KokkosSparse::Impl::spgemm_symbolic_tpl_spec_avail<
                     const_handle_type, Internal_alno_row_view_t_, Internal_alno_nnz_view_t_, Internal_blno_row_view_t_,
-                    Internal_blno_nnz_view_t_, Internal_clno_row_view_t_>::value) {
+                    Internal_blno_nnz_view_t_, Internal_clno_row_view_t_>::value &&
+                KokkosKernels::Impl::is_gpu_exec_space_v<c_exec_t>) {
     if (!KokkosSparse::Impl::isCrsGraphSorted(const_a_r, const_a_l))
       throw std::runtime_error(
           "KokkosSparse::spgemm_symbolic: entries of A are not sorted within "
@@ -128,6 +137,8 @@ void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_
           "KokkosSparse::spgemm_symbolic: entries of B are not sorted within "
           "rows. May use KokkosSparse::sort_crs_matrix to sort it.");
   }
+#endif
+#endif
 #endif
 
   auto spgemmHandle = tmp_handle.get_spgemm_handle();
