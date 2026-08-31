@@ -153,7 +153,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     NUM_MPI_PROCS 4
     OUTPUT_FILE PoissonExample-FEAssembly-classic.out
   TEST_2 CMND python3
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/compareAssemblyModes.py
+    ARGS ${PACKAGE_SOURCE_DIR}/example/utilities/compareAssemblyModes.py
          PoissonExample-FEAssembly-fe.out
          PoissonExample-FEAssembly-classic.out
          "L2 Error"

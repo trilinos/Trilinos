@@ -92,7 +92,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     NUM_MPI_PROCS 2
     OUTPUT_FILE main_driver-FEAssembly-classic.out
   TEST_2 CMND python3
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/compareAssemblyModes.py
+    ARGS ${PACKAGE_SOURCE_DIR}/example/utilities/compareAssemblyModes.py
          main_driver-FEAssembly-fe.out
          main_driver-FEAssembly-classic.out
          "Temperature Integral=0.5"
@@ -145,7 +145,7 @@ TRIBITS_ADD_ADVANCED_TEST(
     NUM_MPI_PROCS 2
     OUTPUT_FILE main_driver-blocked-FEAssembly-classic.out
   TEST_2 CMND python3
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/compareAssemblyModes.py
+    ARGS ${PACKAGE_SOURCE_DIR}/example/utilities/compareAssemblyModes.py
          main_driver-blocked-FEAssembly-fe.out
          main_driver-blocked-FEAssembly-classic.out
          "T0 Integral=0.5"
