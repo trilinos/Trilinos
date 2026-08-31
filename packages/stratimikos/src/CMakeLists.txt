@@ -12,6 +12,17 @@ IF (HAVE_STRATIMIKOS_AMESOS2)
   ENDIF()
 ENDIF()
 
+# Set HAVE_BELOS_TPETRA if it's globally set by Belos package
+# This is required for Stratimikos to register Tpetra-based Belos solvers
+IF (DEFINED HAVE_BELOS_TPETRA)
+  # Variable already set by Belos
+ELSEIF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+  # Check if Belos has Tpetra support for backwards compatibility
+  IF (TARGET Belos::belostpetra OR TARGET belostpetra)
+    SET(HAVE_BELOS_TPETRA ON)
+  ENDIF()
+ENDIF()
+
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_Config.h)
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_InternalConfig.h)
 
