@@ -53,6 +53,7 @@ inline ROL::Ptr<const ROL::ParameterList> getValidROLParameters() {
       krylov.set("Absolute Tolerance",        1.e-4                                   );
       krylov.set("Relative Tolerance",        1.e-2                                   );
       krylov.set("Iteration Limit",           100                                     );
+      krylov.set("Verbosity",                 0                                       );
       krylov.set("User Defined Krylov Name",  "Unspecified User Defined Krylov Method");
 
   /* ===== STEP SUBLIST ============================================== */    
