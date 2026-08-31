@@ -128,17 +128,6 @@ namespace Sacado {
     static const int Ns = (N+Stride-1) / Stride;
     typedef Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> > type;
   };
-#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-  namespace Fad {
-    template <typename T, int N> class SLFad;
-  }
-  template <typename T, int N, unsigned Stride>
-  struct LocalScalarType< Fad::SLFad<T,N>, Stride > {
-    static const int Ns = (N+Stride-1) / Stride;
-    typedef Fad::SLFad<T,Ns> type;
-  };
-#endif
-
   // Type of local scalar type when partitioning a view
   //
   // For SFad, divde the array size by the given stride.  If it divides evenly,
@@ -160,17 +149,6 @@ namespace Sacado {
       Fad::Exp::GeneralFad< Fad::Exp::StaticStorage<T,Ns> >
     >::type type;
   };
-
-#ifndef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-  namespace Fad {
-    template <typename T, int N> class SFad;
-  }
-  template <typename T, int N, unsigned Stride>
-  struct LocalScalarType< Fad::SFad<T,N>, Stride > {
-    static const int Ns = (N+Stride-1) / Stride;
-    typedef typename std::conditional< Ns == N/Stride , Fad::SFad<T,Ns> , Fad::SLFad<T,Ns> >::type type;
-  };
-#endif
 
   template <unsigned Stride, typename T>
   KOKKOS_INLINE_FUNCTION

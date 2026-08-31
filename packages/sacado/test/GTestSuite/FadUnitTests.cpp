@@ -15,11 +15,7 @@ typedef ::testing::Types<
   Sacado::Fad::DFad<double>,
   Sacado::Fad::SFad<double,5>,
   Sacado::Fad::SLFad<double,5>,
-#if defined(SACADO_ENABLE_NEW_DESIGN) && !defined(SACADO_NEW_FAD_DESIGN_IS_DEFAULT)
-  Sacado::Fad::Exp::DFad<double>,
-  Sacado::Fad::Exp::SFad<double,5>,
-  Sacado::Fad::Exp::SLFad<double,5>,
-#endif
+
   Sacado::Fad::SimpleFad<double>,
   Sacado::Fad::DVFad<double>
   > FadTypes;

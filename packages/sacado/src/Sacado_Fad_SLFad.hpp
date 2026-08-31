@@ -12,8 +12,6 @@
 
 #include "Sacado_ConfigDefs.h"
 
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
 #include "Sacado_Fad_Exp_SLFad.hpp"
 
 namespace Sacado {
@@ -22,18 +20,6 @@ namespace Sacado {
     using SLFad = Exp::GeneralFad< Exp::StaticStorage<T,Num> >;
   }
 }
-
-#else
-
-#include "Sacado_Fad_GeneralFadExpr.hpp"
-#include "Sacado_Fad_SLFadTraits.hpp"
-#include "Sacado_Fad_StaticStorage.hpp"
-
-#define FAD_NS Fad
-#include "Sacado_Fad_SLFad_tmpl.hpp"
-#undef FAD_NS
-
-#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #include "Sacado_Fad_ViewFad.hpp"
 
