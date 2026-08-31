@@ -82,12 +82,12 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-tp-FEAssembly
   TEST_0 EXEC main_driver
-    ARGS  --i=energy-ss-tp-fe-assembly.xml --exodus-io-num-procs=1 --use-fe-assembly
+    ARGS  --i=energy-ss-tp-fe-assembly.xml --exodus-io-num-procs=1 --assembly=fe
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 2
     OUTPUT_FILE main_driver-FEAssembly-fe.out
   TEST_1 EXEC main_driver
-    ARGS  --i=energy-ss-tp-fe-assembly.xml --exodus-io-num-procs=1 --use-classic-assembly
+    ARGS  --i=energy-ss-tp-fe-assembly.xml --exodus-io-num-procs=1 --assembly=classic
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 2
     OUTPUT_FILE main_driver-FEAssembly-classic.out
@@ -135,12 +135,12 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
   main_driver_energy-ss-blocked-tp-FEAssembly
   TEST_0 EXEC main_driver
-    ARGS  --i=energy-ss-blocked-tp-fe-assembly.xml --use-fe-assembly
+    ARGS  --i=energy-ss-blocked-tp-fe-assembly.xml --assembly=fe
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 2
     OUTPUT_FILE main_driver-blocked-FEAssembly-fe.out
   TEST_1 EXEC main_driver
-    ARGS  --i=energy-ss-blocked-tp-fe-assembly.xml --use-classic-assembly
+    ARGS  --i=energy-ss-blocked-tp-fe-assembly.xml --assembly=classic
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 2
     OUTPUT_FILE main_driver-blocked-FEAssembly-classic.out

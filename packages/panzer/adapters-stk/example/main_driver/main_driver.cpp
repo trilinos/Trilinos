@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     bool pointCalculation = false;
     bool printTimers = false;
     bool printInputPL = false;
-    bool useFEAssembly = false;
+    std::string assemblyMode = "input file";
     {
       Teuchos::CommandLineProcessor clp;
 
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
       clp.setOption("point-calc","disable-point-calc", &pointCalculation, "Enable the probe evaluator unit test.");
       clp.setOption("time","no-time", &printTimers, "Print the timing information.");
       clp.setOption("pl","no-pl", &printInputPL, "Print the input ParameterList at the start of the run.");
-      clp.setOption("use-fe-assembly","use-classic-assembly", &useFEAssembly, "Assemble the Jacobian into a Tpetra::FECrsMatrix rather than separate owned/ghosted matrices joined by an explicit export. Sets the Assembly sublist's \"Use FE Assembly\". Requires a Tpetra, non-blocked problem.");
+      clp.setOption("assembly", &assemblyMode, "Which assembly path to use for the Jacobian. Valid values are \"fe\", \"classic\" and \"input file\" (default). \"fe\" assembles into a Tpetra::FECrsMatrix; \"classic\" assembles into separate owned/ghosted matrices joined by an explicit export. Both override the Assembly sublist's \"Use FE Assembly\" entry in the input file. \"input file\" leaves that entry alone, so the input file decides; if the input file does not set it, classic is used. FE assembly requires a Tpetra problem, flat or blocked.");
 
       Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
 	clp.parse(argc,argv,&std::cerr);
@@ -118,13 +118,33 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Teuchos::ParameterList> input_params = Teuchos::rcp(new Teuchos::ParameterList("User_App Parameters"));
     Teuchos::updateParametersFromXmlFileAndBroadcast(input_file_name, input_params.ptr(), *comm);
 
-    // Let the command line pick the assembly path. The flag's default (false) matches the
-    // parameter's default, so runs that do not pass it behave exactly as before. The
-    // ModelEvaluatorFactory rejects this outright for problem setups that have no FE
-    // assembly path (non-Tpetra, or blocked), so asking for FE and not getting it fails
-    // loudly rather than silently running the classic path.
-    input_params->sublist("Assembly").set<bool>("Use FE Assembly",useFEAssembly);
-    *out << "Assembly mode: " << (useFEAssembly ? "FE (Tpetra::FECrsMatrix)" : "classic") << std::endl;
+    // Resolve the assembly path. "fe" and "classic" override whatever the input file says;
+    // "input file" defers to it, falling back to classic when the input file is silent. The
+    // ModelEvaluatorFactory rejects FE assembly outright for problem setups that have no FE
+    // path (non-Tpetra), so asking for FE and not getting it fails loudly rather than
+    // silently running the classic path.
+    {
+      Teuchos::ParameterList& assembly_pl = input_params->sublist("Assembly");
+      const char* source = "command line";
+      if (assemblyMode == "fe")
+        assembly_pl.set<bool>("Use FE Assembly",true);
+      else if (assemblyMode == "classic")
+        assembly_pl.set<bool>("Use FE Assembly",false);
+      else if (assemblyMode == "input file") {
+        source = "input file";
+        if (!assembly_pl.isParameter("Use FE Assembly")) {
+          assembly_pl.set<bool>("Use FE Assembly",false);
+          source = "default";
+        }
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "Invalid --assembly=\"" << assemblyMode << "\". Valid values are \"fe\", \"classic\" and \"input file\".");
+      }
+
+      *out << "Assembly mode (from " << source << "): "
+           << (assembly_pl.get<bool>("Use FE Assembly") ? "FE (Tpetra::FECrsMatrix)" : "classic") << std::endl;
+    }
 
     if (printInputPL)
       *out << *input_params << std::endl;

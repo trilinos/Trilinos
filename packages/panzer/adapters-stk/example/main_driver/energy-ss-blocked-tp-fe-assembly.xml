@@ -109,6 +109,8 @@
         <Parameter name="Field Order" type="string" value="blocked: T0_TEMPERATURE - T1_TEMPERATURE T2_TEMPERATURE - T3_TEMPERATURE - T4_TEMPERATURE"/>
         <Parameter name="Workset Size" type="int" value="75"/>
         <Parameter name="Use Tpetra" type="bool" value="true"/>
+        <!-- The "assembly" command line flag can override this value -->
+        <Parameter name="Use FE Assembly" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">

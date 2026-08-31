@@ -67,6 +67,8 @@
     <ParameterList name="Assembly">
         <Parameter name="Workset Size" type="int" value="99"/>
         <Parameter name="Use Tpetra" type="bool" value="true"/>
+        <!-- The "assembly" command line flag can override this value -->
+        <Parameter name="Use FE Assembly" type="bool" value="true"/>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">
