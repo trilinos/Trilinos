@@ -35,6 +35,13 @@
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 
+// Helpers::Op2NonConstTpetraCrs unwraps an Xpetra::Matrix (CrsMatrixWrap) to its
+// underlying Tpetra::CrsMatrix, throwing Xpetra::Exceptions::BadCast on a non-Tpetra
+// (e.g. Epetra) block -- this is the Epetra guard for the Tpetra-only delegation.
+#include "Xpetra_Helpers.hpp"
+// TpetraCrsMatrix is used to re-wrap the Tpetra::CrsMatrix returned by op_->Merge().
+#include "Xpetra_TpetraCrsMatrix.hpp"
+
 #ifdef HAVE_XPETRA_THYRA
 #include <Thyra_ProductVectorSpaceBase.hpp>
 #include <Thyra_VectorSpaceBase.hpp>
@@ -69,6 +76,9 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
     for (size_t c = 0; c < Cols(); ++c)
       blocks_.push_back(MatrixFactory::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
 
+  // Build and sync the wrapped Tpetra core object
+  buildAndSyncOp();
+
   // Default view
   CreateDefaultView();
 }
@@ -89,6 +99,9 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(Te
   for (size_t r = 0; r < Rows(); ++r)
     for (size_t c = 0; c < Cols(); ++c)
       blocks_.push_back(MatrixFactory::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
+
+  // Build and sync the wrapped Tpetra core object
+  buildAndSyncOp();
 
   // Default view
   CreateDefaultView();
@@ -180,6 +193,10 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
       }
     }
   }
+
+  // Build and sync the wrapped Tpetra core object
+  buildAndSyncOp();
+
   // Default view
   CreateDefaultView();
 }
@@ -220,6 +237,40 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> BlockedCrsMat
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~BlockedCrsMatrix() = default;
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unwrapBlock(const Teuchos::RCP<Matrix>& mat) const {
+  if (mat.is_null())
+    return Teuchos::null;
+
+  // A nested blocked block unwraps to its own wrapped Tpetra::BlockedCrsMatrix.
+  Teuchos::RCP<BlockedCrsMatrix> bmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+  if (!bmat.is_null())
+    return bmat->getTpetra_BlockedCrsMatrix();
+
+  // A leaf CrsMatrixWrap unwraps to its Tpetra::CrsMatrix.  Op2NonConstTpetraCrs throws
+  // Xpetra::Exceptions::BadCast if the block is not Tpetra-backed (e.g. Epetra).
+  return Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraCrs(mat);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildAndSyncOp() {
+  // Build the Tpetra core from the same map extractors this wrapper holds.  The core
+  // constructor auto-builds its own (empty) Tpetra blocks; we immediately overwrite them
+  // with the unwrapped Xpetra cache blocks so that op_ and the cache share the same
+  // underlying Tpetra objects.  The numEntriesPerRow argument is irrelevant here since the
+  // auto-built blocks are replaced; pass 0.
+  Teuchos::RCP<const ::Tpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tRange =
+      rangemaps_->getTpetra_MapExtractor();
+  Teuchos::RCP<const ::Tpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tDomain =
+      domainmaps_->getTpetra_MapExtractor();
+  op_ = Teuchos::rcp(new tpetra_blockedcrsmatrix_type(tRange, tDomain, 0));
+
+  for (size_t r = 0; r < Rows(); ++r)
+    for (size_t c = 0; c < Cols(); ++c)
+      op_->setMatrix(r, c, unwrapBlock(blocks_[r * Cols() + c]));
+}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal>& cols, const ArrayView<const Scalar>& vals) {
@@ -379,162 +430,78 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillComplete(c
 #endif
 }
 
+// The RowMatrix aggregate queries below (counts, indexing state, fill state) are the
+// real block-reduction logic and live in the Tpetra core; the wrapper simply forwards.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 global_size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getGlobalNumRows() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumRows");
-  global_size_t globalNumRows = 0;
-
-  for (size_t row = 0; row < Rows(); row++)
-    for (size_t col = 0; col < Cols(); col++)
-      if (!getMatrix(row, col).is_null()) {
-        globalNumRows += getMatrix(row, col)->getGlobalNumRows();
-        break;  // we need only one non-null matrix in a row
-      }
-
-  return globalNumRows;
+  return op_->getGlobalNumRows();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 global_size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getGlobalNumCols() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumCols");
-  global_size_t globalNumCols = 0;
-
-  for (size_t col = 0; col < Cols(); col++)
-    for (size_t row = 0; row < Rows(); row++)
-      if (!getMatrix(row, col).is_null()) {
-        globalNumCols += getMatrix(row, col)->getGlobalNumCols();
-        break;  // we need only one non-null matrix in a col
-      }
-
-  return globalNumCols;
+  return op_->getGlobalNumCols();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalNumRows() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalNumRows");
-  global_size_t nodeNumRows = 0;
-
-  for (size_t row = 0; row < Rows(); ++row)
-    for (size_t col = 0; col < Cols(); col++)
-      if (!getMatrix(row, col).is_null()) {
-        nodeNumRows += getMatrix(row, col)->getLocalNumRows();
-        break;  // we need only one non-null matrix in a row
-      }
-
-  return nodeNumRows;
+  return op_->getLocalNumRows();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 global_size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getGlobalNumEntries() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumEntries");
-  global_size_t globalNumEntries = 0;
-
-  for (size_t row = 0; row < Rows(); ++row)
-    for (size_t col = 0; col < Cols(); ++col)
-      if (!getMatrix(row, col).is_null())
-        globalNumEntries += getMatrix(row, col)->getGlobalNumEntries();
-
-  return globalNumEntries;
+  return op_->getGlobalNumEntries();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalNumEntries() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalNumEntries");
-  global_size_t nodeNumEntries = 0;
-
-  for (size_t row = 0; row < Rows(); ++row)
-    for (size_t col = 0; col < Cols(); ++col)
-      if (!getMatrix(row, col).is_null())
-        nodeNumEntries += getMatrix(row, col)->getLocalNumEntries();
-
-  return nodeNumEntries;
+  return op_->getLocalNumEntries();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNumEntriesInLocalRow(LocalOrdinal localRow) const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInLocalRow");
-  GlobalOrdinal gid           = this->getRowMap()->getGlobalElement(localRow);
-  size_t row                  = getBlockedRangeMap()->getMapIndexForGID(gid);
-  LocalOrdinal lid            = getBlockedRangeMap()->getMap(row)->getLocalElement(gid);
-  size_t numEntriesInLocalRow = 0;
-  for (size_t col = 0; col < Cols(); ++col)
-    if (!getMatrix(row, col).is_null())
-      numEntriesInLocalRow += getMatrix(row, col)->getNumEntriesInLocalRow(lid);
-  return numEntriesInLocalRow;
+  return op_->getNumEntriesInLocalRow(localRow);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInGlobalRow");
-  size_t row                   = getBlockedRangeMap()->getMapIndexForGID(globalRow);
-  size_t numEntriesInGlobalRow = 0;
-  for (size_t col = 0; col < Cols(); ++col)
-    if (!getMatrix(row, col).is_null())
-      numEntriesInGlobalRow += getMatrix(row, col)->getNumEntriesInGlobalRow(globalRow);
-  return numEntriesInGlobalRow;
+  return op_->getNumEntriesInGlobalRow(globalRow);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getGlobalMaxNumRowEntries() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalMaxNumRowEntries");
-  global_size_t globalMaxEntries = 0;
-
-  for (size_t row = 0; row < Rows(); row++) {
-    global_size_t globalMaxEntriesBlockRows = 0;
-    for (size_t col = 0; col < Cols(); col++) {
-      if (!getMatrix(row, col).is_null()) {
-        globalMaxEntriesBlockRows += getMatrix(row, col)->getGlobalMaxNumRowEntries();
-      }
-    }
-    if (globalMaxEntriesBlockRows > globalMaxEntries)
-      globalMaxEntries = globalMaxEntriesBlockRows;
-  }
-  return globalMaxEntries;
+  return op_->getGlobalMaxNumRowEntries();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalMaxNumRowEntries() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalMaxNumRowEntries");
-  size_t localMaxEntries = 0;
-
-  for (size_t row = 0; row < Rows(); row++) {
-    size_t localMaxEntriesBlockRows = 0;
-    for (size_t col = 0; col < Cols(); col++) {
-      if (!getMatrix(row, col).is_null()) {
-        localMaxEntriesBlockRows += getMatrix(row, col)->getLocalMaxNumRowEntries();
-      }
-    }
-    if (localMaxEntriesBlockRows > localMaxEntries)
-      localMaxEntries = localMaxEntriesBlockRows;
-  }
-  return localMaxEntries;
+  return op_->getLocalMaxNumRowEntries();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isLocallyIndexed() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::isLocallyIndexed");
-  for (size_t i = 0; i < blocks_.size(); ++i)
-    if (blocks_[i] != Teuchos::null && !blocks_[i]->isLocallyIndexed())
-      return false;
-  return true;
+  return op_->isLocallyIndexed();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isGloballyIndexed() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::isGloballyIndexed");
-  for (size_t i = 0; i < blocks_.size(); i++)
-    if (blocks_[i] != Teuchos::null && !blocks_[i]->isGloballyIndexed())
-      return false;
-  return true;
+  return op_->isGloballyIndexed();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isFillComplete() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::isFillComplete");
-  for (size_t i = 0; i < blocks_.size(); i++)
-    if (blocks_[i] != Teuchos::null && !blocks_[i]->isFillComplete())
-      return false;
-  return true;
+  return op_->isFillComplete();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -689,16 +656,7 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::rightScale(con
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 typename ScalarTraits<Scalar>::magnitudeType BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getFrobeniusNorm() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::getFrobeniusNorm");
-  typename ScalarTraits<Scalar>::magnitudeType ret = Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero());
-  for (size_t col = 0; col < Cols(); ++col) {
-    for (size_t row = 0; row < Rows(); ++row) {
-      if (getMatrix(row, col) != Teuchos::null) {
-        typename ScalarTraits<Scalar>::magnitudeType n = getMatrix(row, col)->getFrobeniusNorm();
-        ret += n * n;
-      }
-    }
-  }
-  return Teuchos::ScalarTraits<typename ScalarTraits<Scalar>::magnitudeType>::squareroot(ret);
+  return op_->getFrobeniusNorm();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -715,92 +673,19 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
                                                                         Scalar alpha,
                                                                         Scalar beta) const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::apply");
-  // using Teuchos::RCP;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS, Xpetra::Exceptions::RuntimeError,
-                             "apply() only supports the following modes: NO_TRANS and TRANS.");
-
-  // check whether input parameters are blocked or not
-  RCP<const MultiVector> refX         = rcpFromRef(X);
-  RCP<const BlockedMultiVector> refbX = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(refX);
-  // RCP<MultiVector>               tmpY = rcpFromRef(Y);
-  // RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
-
-  // TODO get rid of me: adapt MapExtractor
-  bool bBlockedX = (refbX != Teuchos::null) ? true : false;
-
-  // create (temporary) vectors for output
-  // In the end we call Y.update(alpha, *tmpY, beta). Therefore we need a new vector storing the temporary results
-  RCP<MultiVector> tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors(), true);
-
-  // RCP<Teuchos::FancyOStream> out = rcp(new Teuchos::FancyOStream(rcp(&std::cout,false)));
-
-  SC one = ScalarTraits<SC>::one();
-
-  if (mode == Teuchos::NO_TRANS) {
-    for (size_t row = 0; row < Rows(); row++) {
-      RCP<MultiVector> Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, true);
-      for (size_t col = 0; col < Cols(); col++) {
-        // extract matrix block
-        RCP<Matrix> Ablock = getMatrix(row, col);
-
-        if (Ablock.is_null())
-          continue;
-
-        // check whether Ablock is itself a blocked operator
-        // If it is a blocked operator we have to provide Xpetra style GIDs, i.e. we have to transform GIDs
-        bool bBlockedSubMatrix = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ablock) == Teuchos::null ? false : true;
-
-        // input/output vectors for local block operation
-        RCP<const MultiVector> Xblock = Teuchos::null;  // subpart of X vector to be applied to subblock of A
-
-        // extract sub part of X using Xpetra or Thyra GIDs
-        // if submatrix is again blocked, we extract it using Xpetra style gids. If it is a single
-        // block matrix we use the Thyra or Xpetra style GIDs that are used to store the matrix
-        if (bBlockedX)
-          Xblock = domainmaps_->ExtractVector(refbX, col, bDomainThyraMode_);
-        else
-          Xblock = domainmaps_->ExtractVector(refX, col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
-
-        RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, false);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
-        Ablock->apply(*Xblock, *tmpYblock);
-
-        Yblock->update(one, *tmpYblock, one);
-      }
-      rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
-    }
-
-  } else if (mode == Teuchos::TRANS) {
-    // TODO: test me!
-    for (size_t col = 0; col < Cols(); col++) {
-      RCP<MultiVector> Yblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_, true);
-
-      for (size_t row = 0; row < Rows(); row++) {
-        RCP<Matrix> Ablock = getMatrix(row, col);
-
-        if (Ablock.is_null())
-          continue;
-
-        // check whether Ablock is itself a blocked operator
-        // If it is a blocked operator we have to provide Xpetra style GIDs, i.e. we have to transform GIDs
-        bool bBlockedSubMatrix = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ablock) == Teuchos::null ? false : true;
-
-        RCP<const MultiVector> Xblock = Teuchos::null;
-
-        // extract sub part of X using Xpetra or Thyra GIDs
-        if (bBlockedX)
-          Xblock = rangemaps_->ExtractVector(refbX, row, bRangeThyraMode_);
-        else
-          Xblock = rangemaps_->ExtractVector(refX, row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
-        RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_, false);
-        Ablock->apply(*Xblock, *tmpYblock, Teuchos::TRANS);
-
-        Yblock->update(one, *tmpYblock, one);
-      }
-      domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
-    }
-  }
-  Y.update(alpha, *tmpY, beta);
+  // The full block-apply algorithm (blocked/non-blocked detection, Thyra/Xpetra GID
+  // handling, per-block dispatch) lives in the Tpetra core.  Unwrap X and Y to their
+  // underlying Tpetra objects -- blocked Xpetra vectors unwrap to Tpetra::BlockedMultiVector
+  // so op_ sees the same blocked structure -- and forward.  Bind explicitly-typed RCP
+  // intermediates first to avoid an unwrapMultiVector overload ambiguity.
+  Teuchos::RCP<const MultiVector> refX = Teuchos::rcpFromRef(X);
+  Teuchos::RCP<MultiVector> refY       = Teuchos::rcpFromRef(Y);
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tX =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(refX);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tY =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(refY);
+  op_->apply(*tX, *tY, mode, alpha, beta);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -885,59 +770,16 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::bgs_apply(
     Scalar beta             ///< scaling factor for linear combination with result vector
 ) const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::bgs_apply");
-  // using Teuchos::RCP;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS, Xpetra::Exceptions::RuntimeError,
-                             "apply() only supports the following modes: NO_TRANS and TRANS.");
-
-  // check whether input parameters are blocked or not
-  RCP<const MultiVector> refX         = rcpFromRef(X);
-  RCP<const BlockedMultiVector> refbX = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(refX);
-  // RCP<MultiVector>               tmpY = rcpFromRef(Y);
-  // RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
-
-  bool bBlockedX = (refbX != Teuchos::null) ? true : false;
-
-  // create (temporary) vectors for output
-  // In the end we call Y.update(alpha, *tmpY, beta). Therefore we need a new vector storing the temporary results
-  RCP<MultiVector> tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors(), true);
-
-  SC one = ScalarTraits<SC>::one();
-
-  if (mode == Teuchos::NO_TRANS) {
-    RCP<MultiVector> Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, true);
-    for (size_t col = 0; col < Cols(); col++) {
-      // extract matrix block
-      RCP<Matrix> Ablock = getMatrix(row, col);
-
-      if (Ablock.is_null())
-        continue;
-
-      // check whether Ablock is itself a blocked operator
-      // If it is a blocked operator we have to provide Xpetra style GIDs, i.e. we have to transform GIDs
-      bool bBlockedSubMatrix = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ablock) == Teuchos::null ? false : true;
-
-      // input/output vectors for local block operation
-      RCP<const MultiVector> Xblock = Teuchos::null;  // subpart of X vector to be applied to subblock of A
-
-      // extract sub part of X using Xpetra or Thyra GIDs
-      // if submatrix is again blocked, we extract it using Xpetra style gids. If it is a single
-      // block matrix we use the Thyra or Xpetra style GIDs that are used to store the matrix
-      if (bBlockedX)
-        Xblock = domainmaps_->ExtractVector(refbX, col, bDomainThyraMode_);
-      else
-        Xblock = domainmaps_->ExtractVector(refX, col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
-
-      RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, false);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
-      Ablock->apply(*Xblock, *tmpYblock);
-
-      Yblock->update(one, *tmpYblock, one);
-    }
-    rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetar::BlockedCrsMatrix::bgs_apply: not implemented for transpose case.");
-  }
-  Y.update(alpha, *tmpY, beta);
+  // Block-Gauss-Seidel single-block-row apply lives in the Tpetra core.  Unwrap X/Y as in
+  // apply() (blocked Xpetra vectors unwrap to Tpetra::BlockedMultiVector) and forward.
+  Teuchos::RCP<const MultiVector> refX = Teuchos::rcpFromRef(X);
+  Teuchos::RCP<MultiVector> refY       = Teuchos::rcpFromRef(Y);
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tX =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(refX);
+  Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tY =
+      BlockedMultiVectorDetails::unwrapMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(refY);
+  op_->bgs_apply(*tX, *tY, row, mode, alpha, beta);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1120,127 +962,23 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setMatrix(size
   TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
   TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
   if (!mat.is_null() && r != c) is_diagonal_ = false;
-  // set matrix
+  // set matrix in the Xpetra identity cache ...
   blocks_[r * Cols() + c] = mat;
+  // ... and, unwrapped, in the Tpetra core (throws BadCast on an Epetra-backed block).
+  op_->setMatrix(r, c, unwrapBlock(mat));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Merge() const {
   XPETRA_MONITOR("XpetraBlockedCrsMatrix::Merge");
-  using Teuchos::RCP;
-  using Teuchos::rcp_dynamic_cast;
-  Scalar one = ScalarTraits<SC>::one();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(bRangeThyraMode_ != bDomainThyraMode_, Xpetra::Exceptions::RuntimeError,
-                             "BlockedCrsMatrix::Merge: only implemented for Xpetra-style or Thyra-style numbering. No mixup allowed!");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Xpetra::Exceptions::RuntimeError,
-                             "BlockedCrsMatrix::Merge: BlockMatrix must be fill-completed.");
-
-  LocalOrdinal lclNumRows = getFullRangeMap()->getLocalNumElements();
-  Teuchos::ArrayRCP<size_t> numEntPerRow(lclNumRows);
-  for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow)
-    numEntPerRow[lclRow] = getNumEntriesInLocalRow(lclRow);
-
-  RCP<Matrix> sparse = MatrixFactory::Build(getFullRangeMap(), numEntPerRow);
-
-  if (bRangeThyraMode_ == false) {
-    // Xpetra mode
-    for (size_t i = 0; i < Rows(); i++) {
-      for (size_t j = 0; j < Cols(); j++) {
-        if (getMatrix(i, j) != Teuchos::null) {
-          RCP<const Matrix> mat = getMatrix(i, j);
-
-          // recursively call Merge routine
-          RCP<const BlockedCrsMatrix> bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
-          if (bMat != Teuchos::null) mat = bMat->Merge();
-
-          bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
-          TEUCHOS_TEST_FOR_EXCEPTION(bMat != Teuchos::null, Xpetra::Exceptions::RuntimeError,
-                                     "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!");
-
-          // jump over empty blocks
-          if (mat->getLocalNumEntries() == 0) continue;
-
-          this->Add(*mat, one, *sparse, one);
-        }
-      }
-    }
-  } else {
-    // Thyra mode
-    for (size_t i = 0; i < Rows(); i++) {
-      for (size_t j = 0; j < Cols(); j++) {
-        if (getMatrix(i, j) != Teuchos::null) {
-          RCP<const Matrix> mat = getMatrix(i, j);
-          // recursively call Merge routine
-          RCP<const BlockedCrsMatrix> bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
-          if (bMat != Teuchos::null) mat = bMat->Merge();
-
-          bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
-          TEUCHOS_TEST_FOR_EXCEPTION(bMat != Teuchos::null, Xpetra::Exceptions::RuntimeError,
-                                     "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!");
-
-          // check whether we have a CrsMatrix block (no blocked operator)
-          RCP<const CrsMatrixWrap> crsMat = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(mat);
-          TEUCHOS_ASSERT(crsMat != Teuchos::null);
-
-          // these are the thyra style maps of the matrix
-          RCP<const Map> trowMap = mat->getRowMap();
-          RCP<const Map> tcolMap = mat->getColMap();
-          RCP<const Map> tdomMap = mat->getDomainMap();
-
-          // get Xpetra maps
-          RCP<const Map> xrowMap = getRangeMapExtractor()->getMap(i, false);
-          RCP<const Map> xdomMap = getDomainMapExtractor()->getMap(j, false);
-
-          // generate column map with Xpetra GIDs
-          // We have to do this separately for each block since the column
-          // map of each block might be different in the same block column
-          Teuchos::RCP<Map> xcolMap = MapUtils::transformThyra2XpetraGIDs(
-              *tcolMap,
-              *tdomMap,
-              *xdomMap);
-
-          // jump over empty blocks
-          if (mat->getLocalNumEntries() == 0) continue;
-
-          size_t maxNumEntries = mat->getLocalMaxNumRowEntries();
-
-          size_t numEntries;
-          Array<GO> inds(maxNumEntries);
-          Array<GO> inds2(maxNumEntries);
-          Array<SC> vals(maxNumEntries);
-
-          // loop over all rows and add entries
-          for (size_t k = 0; k < mat->getLocalNumRows(); k++) {
-            GlobalOrdinal rowTGID = trowMap->getGlobalElement(k);
-            crsMat->getCrsMatrix()->getGlobalRowCopy(rowTGID, inds(), vals(), numEntries);
-
-            // create new indices array
-            for (size_t l = 0; l < numEntries; ++l) {
-              LocalOrdinal lid = tcolMap->getLocalElement(inds[l]);
-              inds2[l]         = xcolMap->getGlobalElement(lid);
-            }
-
-            GlobalOrdinal rowXGID = xrowMap->getGlobalElement(k);
-            sparse->insertGlobalValues(
-                rowXGID, inds2(0, numEntries),
-                vals(0, numEntries));
-          }
-        }
-      }
-    }
-  }
-
-  sparse->fillComplete(getFullDomainMap(), getFullRangeMap());
-
-  TEUCHOS_TEST_FOR_EXCEPTION(sparse->getLocalNumEntries() != getLocalNumEntries(), Xpetra::Exceptions::RuntimeError,
-                             "BlockedCrsMatrix::Merge: Local number of entries of merged matrix does not coincide with local number of entries of blocked operator.");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(sparse->getGlobalNumEntries() != getGlobalNumEntries(), Xpetra::Exceptions::RuntimeError,
-                             "BlockedCrsMatrix::Merge: Global number of entries of merged matrix does not coincide with global number of entries of blocked operator.");
-
-  return sparse;
+  // The full merge (Xpetra- and Thyra-style GID handling, recursive merge of nested
+  // blocked sub-operators, assembly into a single fill-completed CrsMatrix) lives in the
+  // Tpetra core.  Forward to it and re-wrap the returned Tpetra::CrsMatrix as an
+  // Xpetra::Matrix (CrsMatrixWrap around a TpetraCrsMatrix), matching the legacy return type.
+  Teuchos::RCP<::Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmerged = op_->Merge();
+  Teuchos::RCP<CrsMatrix> xmerged = Teuchos::rcp(new TpetraCrsMatrix(tmerged));
+  return Teuchos::rcp(new CrsMatrixWrap(xmerged));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

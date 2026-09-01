@@ -34,6 +34,20 @@
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 
+// Xpetra::BlockedCrsMatrix is now a thin wrapper around Tpetra::BlockedCrsMatrix.  The
+// real block-operator logic (apply/bgs_apply/residual, Merge, the RowMatrix aggregate
+// reductions, fillComplete map bookkeeping) lives in Tpetra; this class holds an
+// RCP<Tpetra::BlockedCrsMatrix> (op_) plus a parallel std::vector<RCP<Xpetra::Matrix>>
+// (blocks_) that caches exactly the Xpetra blocks it was handed.  Each cached Xpetra
+// block and the corresponding Tpetra block inside op_ reference the *same* underlying
+// Tpetra object, so block-level mutations stay in sync no matter which side performs
+// them.  getMatrix() returns the cache to preserve RCP/dynamic-type identity (so MueLu's
+// rcp_dynamic_cast<BlockedCrsMatrix> on nested blocks keeps working); setMatrix() writes
+// both the cache and the unwrapped Tpetra block (throwing Xpetra::Exceptions::BadCast on
+// an Epetra-backed block).  The Thyra constructor and getThyraOperator() stay here (Thyra
+// is not a Tpetra dependency).
+#include <Tpetra_BlockedCrsMatrix_decl.hpp>
+
 #ifdef HAVE_XPETRA_THYRA
 #include <Thyra_ProductVectorSpaceBase.hpp>
 #include <Thyra_VectorSpaceBase.hpp>
@@ -68,6 +82,9 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node node_type;
+
+  //! The type of the underlying Tpetra::BlockedCrsMatrix.
+  using tpetra_blockedcrsmatrix_type = ::Tpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
  private:
 #undef XPETRA_BLOCKEDCRSMATRIX_SHORT
@@ -542,6 +559,15 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
 #ifdef HAVE_XPETRA_THYRA
   Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > getThyraOperator();
 #endif
+
+  //! @name Xpetra-specific accessors for the wrapped Tpetra object
+  //@{
+
+  //! Get the underlying Tpetra::BlockedCrsMatrix object.
+  Teuchos::RCP<tpetra_blockedcrsmatrix_type> getTpetra_BlockedCrsMatrix() const { return op_; }
+
+  //@}
+
   //! Returns the block size of the storage mechanism
   LocalOrdinal GetStorageBlockSize() const;
 
@@ -567,6 +593,23 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
    */
   void Add(const Matrix& A, const Scalar scalarA, Matrix& B, const Scalar scalarB) const;
 
+  /// Unwrap an Xpetra block into the underlying Tpetra::RowMatrix expected by the core.
+  /**
+   * A nested Xpetra::BlockedCrsMatrix unwraps to its wrapped Tpetra::BlockedCrsMatrix
+   * (via getTpetra_BlockedCrsMatrix()); a leaf CrsMatrixWrap unwraps to its
+   * Tpetra::CrsMatrix via Xpetra::Helpers::Op2NonConstTpetraCrs, which throws
+   * Xpetra::Exceptions::BadCast on an Epetra-backed block.  A null block maps to null.
+   */
+  Teuchos::RCP<::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  unwrapBlock(const Teuchos::RCP<Matrix>& mat) const;
+
+  /// Build the wrapped Tpetra core (op_) from rangemaps_/domainmaps_ and populate it with
+  /// the unwrapped Xpetra blocks currently held in the cache (blocks_).  Called from each
+  /// constructor after rangemaps_/domainmaps_ and blocks_ have been set.  This makes the
+  /// Tpetra block inside op_ and the corresponding cached Xpetra block reference the same
+  /// underlying Tpetra object.
+  void buildAndSyncOp();
+
   //@}
 
   // Default view is created after fillComplete()
@@ -578,7 +621,10 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   Teuchos::RCP<const MapExtractor> domainmaps_;  ///< full domain map together with all partial domain maps
   Teuchos::RCP<const MapExtractor> rangemaps_;   ///< full range map together with all partial domain maps
 
-  std::vector<Teuchos::RCP<Matrix> > blocks_;  ///< row major matrix block storage
+  //! The wrapped Tpetra::BlockedCrsMatrix (owns the real block-operator logic).
+  Teuchos::RCP<tpetra_blockedcrsmatrix_type> op_;
+
+  std::vector<Teuchos::RCP<Matrix> > blocks_;  ///< row major matrix block storage (Xpetra identity cache; shares underlying Tpetra objects with op_)
 #ifdef HAVE_XPETRA_THYRA
   Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_;  ///< underlying thyra operator
 #endif
