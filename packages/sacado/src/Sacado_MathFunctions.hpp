@@ -21,7 +21,7 @@
 // below.
 #include "Sacado_Fad_Ops_Fwd.hpp"
 
-#define UNARYFUNC_MACRO(OP,FADOP)                                       \
+#define SACADO_UNARYFUNC_MACRO(OP,FADOP)                                \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
@@ -39,36 +39,36 @@ namespace std {                                                         \
   using Sacado::Fad::OP;                                                \
 }
 
-UNARYFUNC_MACRO(exp, ExpOp)
-UNARYFUNC_MACRO(expm1, ExpM1Op)
-UNARYFUNC_MACRO(log, LogOp)
-UNARYFUNC_MACRO(log1p, Log1POp)
-UNARYFUNC_MACRO(log10, Log10Op)
-UNARYFUNC_MACRO(sqrt, SqrtOp)
-UNARYFUNC_MACRO(safe_sqrt, SafeSqrtOp)
-UNARYFUNC_MACRO(cos, CosOp)
-UNARYFUNC_MACRO(sin, SinOp)
-UNARYFUNC_MACRO(tan, TanOp)
-UNARYFUNC_MACRO(acos, ACosOp)
-UNARYFUNC_MACRO(asin, ASinOp)
-UNARYFUNC_MACRO(atan, ATanOp)
-UNARYFUNC_MACRO(cosh, CoshOp)
-UNARYFUNC_MACRO(sinh, SinhOp)
-UNARYFUNC_MACRO(tanh, TanhOp)
-UNARYFUNC_MACRO(acosh, ACoshOp)
-UNARYFUNC_MACRO(asinh, ASinhOp)
-UNARYFUNC_MACRO(atanh, ATanhOp)
-UNARYFUNC_MACRO(abs, AbsOp)
-UNARYFUNC_MACRO(fabs, FAbsOp)
-UNARYFUNC_MACRO(cbrt, CbrtOp)
+SACADO_UNARYFUNC_MACRO(exp, ExpOp)
+SACADO_UNARYFUNC_MACRO(expm1, ExpM1Op)
+SACADO_UNARYFUNC_MACRO(log, LogOp)
+SACADO_UNARYFUNC_MACRO(log1p, Log1POp)
+SACADO_UNARYFUNC_MACRO(log10, Log10Op)
+SACADO_UNARYFUNC_MACRO(sqrt, SqrtOp)
+SACADO_UNARYFUNC_MACRO(safe_sqrt, SafeSqrtOp)
+SACADO_UNARYFUNC_MACRO(cos, CosOp)
+SACADO_UNARYFUNC_MACRO(sin, SinOp)
+SACADO_UNARYFUNC_MACRO(tan, TanOp)
+SACADO_UNARYFUNC_MACRO(acos, ACosOp)
+SACADO_UNARYFUNC_MACRO(asin, ASinOp)
+SACADO_UNARYFUNC_MACRO(atan, ATanOp)
+SACADO_UNARYFUNC_MACRO(cosh, CoshOp)
+SACADO_UNARYFUNC_MACRO(sinh, SinhOp)
+SACADO_UNARYFUNC_MACRO(tanh, TanhOp)
+SACADO_UNARYFUNC_MACRO(acosh, ACoshOp)
+SACADO_UNARYFUNC_MACRO(asinh, ASinhOp)
+SACADO_UNARYFUNC_MACRO(atanh, ATanhOp)
+SACADO_UNARYFUNC_MACRO(abs, AbsOp)
+SACADO_UNARYFUNC_MACRO(fabs, FAbsOp)
+SACADO_UNARYFUNC_MACRO(cbrt, CbrtOp)
 
-#undef UNARYFUNC_MACRO
+#undef SACADO_UNARYFUNC_MACRO
 
-#define BINARYFUNC_MACRO(OP,FADOP)                                      \
+#define SACADO_BINARYFUNC_MACRO(OP,FADOP)                               \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
-                                                         \
+                                                                        \
     template <typename T> class Expr;                                   \
     template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \
@@ -106,12 +106,12 @@ namespace std {                                                         \
   using Sacado::Fad::OP;                                                \
 }
 
-BINARYFUNC_MACRO(atan2, Atan2Op)
-BINARYFUNC_MACRO(pow, PowerOp)
-BINARYFUNC_MACRO(max, MaxOp)
-BINARYFUNC_MACRO(min, MinOp)
+SACADO_BINARYFUNC_MACRO(atan2, Atan2Op)
+SACADO_BINARYFUNC_MACRO(pow, PowerOp)
+SACADO_BINARYFUNC_MACRO(max, MaxOp)
+SACADO_BINARYFUNC_MACRO(min, MinOp)
 
-#undef BINARYFUNC_MACRO
+#undef SACADO_BINARYFUNC_MACRO
 
 #if defined(HAVE_SACADO_KOKKOS)
 
@@ -222,7 +222,7 @@ namespace Kokkos {
 
 #endif
 
-#define UNARYFUNC_MACRO(OP,FADOP)                                       \
+#define SACADO_UNARYFUNC_MACRO(OP,FADOP)                                \
 namespace Sacado {                                                      \
                                                                         \
   namespace ELRFad {                                                    \
@@ -286,31 +286,31 @@ namespace std {                                                         \
   using Sacado::Rad::OP;                                                \
 }
 
-UNARYFUNC_MACRO(exp, ExpOp)
-UNARYFUNC_MACRO(expm1, ExpM1Op)
-UNARYFUNC_MACRO(log, LogOp)
-UNARYFUNC_MACRO(log1p, Log1POp)
-UNARYFUNC_MACRO(log10, Log10Op)
-UNARYFUNC_MACRO(sqrt, SqrtOp)
-UNARYFUNC_MACRO(cos, CosOp)
-UNARYFUNC_MACRO(sin, SinOp)
-UNARYFUNC_MACRO(tan, TanOp)
-UNARYFUNC_MACRO(acos, ACosOp)
-UNARYFUNC_MACRO(asin, ASinOp)
-UNARYFUNC_MACRO(atan, ATanOp)
-UNARYFUNC_MACRO(cosh, CoshOp)
-UNARYFUNC_MACRO(sinh, SinhOp)
-UNARYFUNC_MACRO(tanh, TanhOp)
-UNARYFUNC_MACRO(acosh, ACoshOp)
-UNARYFUNC_MACRO(asinh, ASinhOp)
-UNARYFUNC_MACRO(atanh, ATanhOp)
-UNARYFUNC_MACRO(abs, AbsOp)
-UNARYFUNC_MACRO(fabs, FAbsOp)
-UNARYFUNC_MACRO(cbrt, CbrtOp)
+SACADO_UNARYFUNC_MACRO(exp, ExpOp)
+SACADO_UNARYFUNC_MACRO(expm1, ExpM1Op)
+SACADO_UNARYFUNC_MACRO(log, LogOp)
+SACADO_UNARYFUNC_MACRO(log1p, Log1POp)
+SACADO_UNARYFUNC_MACRO(log10, Log10Op)
+SACADO_UNARYFUNC_MACRO(sqrt, SqrtOp)
+SACADO_UNARYFUNC_MACRO(cos, CosOp)
+SACADO_UNARYFUNC_MACRO(sin, SinOp)
+SACADO_UNARYFUNC_MACRO(tan, TanOp)
+SACADO_UNARYFUNC_MACRO(acos, ACosOp)
+SACADO_UNARYFUNC_MACRO(asin, ASinOp)
+SACADO_UNARYFUNC_MACRO(atan, ATanOp)
+SACADO_UNARYFUNC_MACRO(cosh, CoshOp)
+SACADO_UNARYFUNC_MACRO(sinh, SinhOp)
+SACADO_UNARYFUNC_MACRO(tanh, TanhOp)
+SACADO_UNARYFUNC_MACRO(acosh, ACoshOp)
+SACADO_UNARYFUNC_MACRO(asinh, ASinhOp)
+SACADO_UNARYFUNC_MACRO(atanh, ATanhOp)
+SACADO_UNARYFUNC_MACRO(abs, AbsOp)
+SACADO_UNARYFUNC_MACRO(fabs, FAbsOp)
+SACADO_UNARYFUNC_MACRO(cbrt, CbrtOp)
 
-#undef UNARYFUNC_MACRO
+#undef SACADO_UNARYFUNC_MACRO
 
-#define BINARYFUNC_MACRO(OP,FADOP)                                      \
+#define SACADO_BINARYFUNC_MACRO(OP,FADOP)                               \
 namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
@@ -558,12 +558,12 @@ namespace std {                                                         \
   using Sacado::Rad::OP;                                                \
 }
 
-BINARYFUNC_MACRO(atan2, Atan2Op)
-BINARYFUNC_MACRO(pow, PowerOp)
-BINARYFUNC_MACRO(max, MaxOp)
-BINARYFUNC_MACRO(min, MinOp)
+SACADO_BINARYFUNC_MACRO(atan2, Atan2Op)
+SACADO_BINARYFUNC_MACRO(pow, PowerOp)
+SACADO_BINARYFUNC_MACRO(max, MaxOp)
+SACADO_BINARYFUNC_MACRO(min, MinOp)
 
-#undef BINARYFUNC_MACRO
+#undef SACADO_BINARYFUNC_MACRO
 
 #if defined(HAVE_SACADO_KOKKOS)
 
