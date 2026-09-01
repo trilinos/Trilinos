@@ -830,6 +830,15 @@ buildFEGraph() const
        Teuchos::null,
        ownedDomainMap));
 
+   // Panzer's DOFManager does not guarantee a locally owned element has an owned dof, so
+   // Tpetra's debug-only check for that is too strict here; the cost is at most a structurally
+   // empty column. Must be set after construction -- the ctor's validator rejects the option.
+   {
+      Teuchos::RCP<Teuchos::ParameterList> feGraphParams = Teuchos::parameterList();
+      feGraphParams->set("Check Col GIDs In At Least One Owned Row",false);
+      feGraph->setParameterList(feGraphParams);
+   }
+
    // Now insert entries into the graph
    feGraph->beginAssembly();
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
