@@ -626,14 +626,28 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
 
   bool bBlockedX = (refbX != Teuchos::null) ? true : false;
 
+  // NOTE (Tpetra port): unlike Xpetra::MultiVector, Tpetra::MultiVector::getNumVectors(),
+  // getMap() and update() are NOT virtual.  When Y is actually a BlockedMultiVector but is
+  // referenced here as a plain MultiVector&, those accessors would bind to the (empty)
+  // MultiVector base sub-object and report 0 columns / a null map.  Recover the blocked
+  // type and query/operate through it so the output vectors are sized correctly.
+  Teuchos::RCP<MultiVector> refY         = Teuchos::rcpFromRef(Y);
+  Teuchos::RCP<BlockedMultiVector> refbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(refY);
+  const bool bBlockedY                   = !refbY.is_null();
+  const size_t numVecsY                  = bBlockedY ? refbY->getNumVectors() : Y.getNumVectors();
+
   // create (temporary) vectors for output; in the end we call Y.update(alpha, *tmpY, beta).
-  Teuchos::RCP<MultiVector> tmpY = Teuchos::rcp(new MultiVector(Y.getMap(), Y.getNumVectors(), true));
+  Teuchos::RCP<MultiVector> tmpY;
+  if (bBlockedY)
+    tmpY = Teuchos::rcp(new BlockedMultiVector(refbY->getBlockedMap(), numVecsY, true));
+  else
+    tmpY = Teuchos::rcp(new MultiVector(Y.getMap(), numVecsY, true));
 
   Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
   if (mode == Teuchos::NO_TRANS) {
     for (size_t row = 0; row < Rows(); row++) {
-      Teuchos::RCP<MultiVector> Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, true);
+      Teuchos::RCP<MultiVector> Yblock = rangemaps_->getVector(row, numVecsY, bRangeThyraMode_, true);
       for (size_t col = 0; col < Cols(); col++) {
         Teuchos::RCP<RowMatrix> Ablock = getMatrix(row, col);
 
@@ -651,7 +665,7 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
         else
           Xblock = domainmaps_->ExtractVector(refX, col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
 
-        Teuchos::RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, false);
+        Teuchos::RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, numVecsY, bRangeThyraMode_, false);
         Ablock->apply(*Xblock, *tmpYblock);
 
         Yblock->update(one, *tmpYblock, one);
@@ -661,7 +675,7 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
 
   } else if (mode == Teuchos::TRANS) {
     for (size_t col = 0; col < Cols(); col++) {
-      Teuchos::RCP<MultiVector> Yblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_, true);
+      Teuchos::RCP<MultiVector> Yblock = domainmaps_->getVector(col, numVecsY, bDomainThyraMode_, true);
 
       for (size_t row = 0; row < Rows(); row++) {
         Teuchos::RCP<RowMatrix> Ablock = getMatrix(row, col);
@@ -677,7 +691,7 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
           Xblock = rangemaps_->ExtractVector(refbX, row, bRangeThyraMode_);
         else
           Xblock = rangemaps_->ExtractVector(refX, row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
-        Teuchos::RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_, false);
+        Teuchos::RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, numVecsY, bDomainThyraMode_, false);
         Ablock->apply(*Xblock, *tmpYblock, Teuchos::TRANS);
 
         Yblock->update(one, *tmpYblock, one);
@@ -685,7 +699,12 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const Mu
       domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
     }
   }
-  Y.update(alpha, *tmpY, beta);
+  // NOTE (Tpetra port): dispatch update() through the blocked type when Y is blocked
+  // (base MultiVector::update() is non-virtual and would no-op on the empty base).
+  if (bBlockedY)
+    refbY->update(alpha, *tmpY, beta);
+  else
+    Y.update(alpha, *tmpY, beta);
 }
 
 // ---------------------------------------------------------------------------
@@ -771,12 +790,23 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::bgs_apply(cons
 
   bool bBlockedX = (refbX != Teuchos::null) ? true : false;
 
-  Teuchos::RCP<MultiVector> tmpY = Teuchos::rcp(new MultiVector(Y.getMap(), Y.getNumVectors(), true));
+  // NOTE (Tpetra port): see apply() above. getNumVectors()/getMap()/update() are non-virtual
+  // on the MultiVector base, so recover the blocked type of Y and work through it.
+  Teuchos::RCP<MultiVector> refY         = Teuchos::rcpFromRef(Y);
+  Teuchos::RCP<BlockedMultiVector> refbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(refY);
+  const bool bBlockedY                   = !refbY.is_null();
+  const size_t numVecsY                  = bBlockedY ? refbY->getNumVectors() : Y.getNumVectors();
+
+  Teuchos::RCP<MultiVector> tmpY;
+  if (bBlockedY)
+    tmpY = Teuchos::rcp(new BlockedMultiVector(refbY->getBlockedMap(), numVecsY, true));
+  else
+    tmpY = Teuchos::rcp(new MultiVector(Y.getMap(), numVecsY, true));
 
   Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
   if (mode == Teuchos::NO_TRANS) {
-    Teuchos::RCP<MultiVector> Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, true);
+    Teuchos::RCP<MultiVector> Yblock = rangemaps_->getVector(row, numVecsY, bRangeThyraMode_, true);
     for (size_t col = 0; col < Cols(); col++) {
       Teuchos::RCP<RowMatrix> Ablock = getMatrix(row, col);
 
@@ -792,7 +822,7 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::bgs_apply(cons
       else
         Xblock = domainmaps_->ExtractVector(refX, col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
 
-      Teuchos::RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_, false);
+      Teuchos::RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, numVecsY, bRangeThyraMode_, false);
       Ablock->apply(*Xblock, *tmpYblock);
 
       Yblock->update(one, *tmpYblock, one);
@@ -801,7 +831,10 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::bgs_apply(cons
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Tpetra::BlockedCrsMatrix::bgs_apply: not implemented for transpose case.");
   }
-  Y.update(alpha, *tmpY, beta);
+  if (bBlockedY)
+    refbY->update(alpha, *tmpY, beta);
+  else
+    Y.update(alpha, *tmpY, beta);
 }
 
 // ---------------------------------------------------------------------------
