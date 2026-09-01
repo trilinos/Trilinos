@@ -1213,6 +1213,12 @@ class Map : public Teuchos::Describable {
   /// communicator.
   void computeGlobalConstants() const;
 
+  /// \brief Copy global constants from a different map.
+  ///
+  /// This is useful when two maps have the same global IDs but different
+  /// distributions. This situation arise for example in repartitioning.
+  void copyGlobalConstants(const Map<local_ordinal_type, global_ordinal_type, Node>& map);
+
   /// \brief A mapping from local IDs to global IDs.
   ///
   /// By definition, this mapping is local; it only contains global
