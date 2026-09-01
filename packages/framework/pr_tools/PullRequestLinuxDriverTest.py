@@ -89,6 +89,13 @@ def parse_args():
                           help="Location of the CTest driver script to load via `-S`.",
                           required=False)
 
+    optional.add_argument('--extra-ctest-driver-args',
+                          dest="extra_ctest_driver_args",
+                          action='store',
+                          default="",
+                          help="Extra command-line arguments to pass to the CTest driver script.",
+                          required=False)
+
     optional.add_argument('--ctest-drop-site',
                           dest="ctest_drop_site",
                           action='store',
