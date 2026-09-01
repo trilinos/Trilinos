@@ -40,23 +40,11 @@ def parse_args():
     default_filename_packageenables = os.path.join("..", "packageEnables.cmake")
     default_filename_subprojects = os.path.join("..", "package_subproject_list.cmake")
 
-    required.add_argument('--target-branch-name',
-                          dest="target_branch_name",
-                          action='store',
-                          help='Branch to merge into',
-                          required=False)
-
     required.add_argument('--genconfig-build-name',
                           dest="genconfig_build_name",
                           action='store',
                           help='The job base name for the cmake configuration',
                           required=True)
-
-    required.add_argument('--pullrequest-number',
-                          dest="pullrequest_number",
-                          action='store',
-                          help='The github PR number',
-                          required=False)
 
     required.add_argument('--source-dir',
                           dest="source_dir",
@@ -236,6 +224,18 @@ def parse_args():
                           action="store",
                           default="",
                           help="Extra arguments that will be passed to the CTest driver for configure/build/test/submit.")
+
+    optional.add_argument('--pullrequest-number',
+                          dest="pullrequest_number",
+                          action='store',
+                          help='The github PR number',
+                          required=False)
+
+    optional.add_argument('--target-branch-name',
+                          dest="target_branch_name",
+                          action='store',
+                          help='Branch to merge into',
+                          required=False)
 
     arguments = parser.parse_args()
 
