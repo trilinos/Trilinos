@@ -579,11 +579,11 @@ getWarpBlendLatticeTriangle( Kokkos::DynRankView<pointValueType,pointProperties.
 
    Kokkos::DynRankView<pointValueType, Kokkos::DefaultHostExecutionSpace> refPts("refPts", 1, N,2);
 
-   Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame( refPts ,
-                                              warXY ,
-                                              warburtonVerts ,
-                                              shards::getCellTopologyData< shards::Triangle<3> >()
-                                              );
+   Intrepid2::CellTools<Kokkos::HostSpace::device_type>::mapToReferenceFrame( refPts ,
+                                                                             warXY ,
+                                                                             warburtonVerts ,
+                                                                             shards::getCellTopologyData< shards::Triangle<3> >()
+                                                                             );
 
 
    auto pointsHost = Kokkos::create_mirror_view(points);
@@ -920,10 +920,10 @@ getWarpBlendLatticeTetrahedron(Kokkos::DynRankView<pointValueType,pointPropertie
 
    // now we convert to Pavel's reference triangle!
    Kokkos::DynRankView<pointValueType,Kokkos::DefaultHostExecutionSpace> refPts("refPts",1,N,3);
-   CellTools<Kokkos::HostSpace>::mapToReferenceFrame( refPts ,updatedPoints ,
-                                           warVerts_ ,
-                                           shards::getCellTopologyData<shards::Tetrahedron<4> >()
-                                           );
+   CellTools<Kokkos::HostSpace::device_type>::mapToReferenceFrame( refPts ,updatedPoints ,
+                                                                  warVerts_ ,
+                                                                  shards::getCellTopologyData<shards::Tetrahedron<4> >()
+                                                                  );
 
    auto pointsHost = Kokkos::create_mirror_view(points);
    // now write from refPts into points, taking offset into account
@@ -950,4 +950,27 @@ getWarpBlendLatticeTetrahedron(Kokkos::DynRankView<pointValueType,pointPropertie
 
 
 } // face Intrepid
+
+
+#define INTREPID2_POINTTOOLS_INSTANT(POINT_TYPE, POINT_PROPERTIES, EXTERN) \
+ EXTERN template void Intrepid2::PointTools::getLattice<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, shards::CellTopology, int, int, Intrepid2::EPointType); \
+ EXTERN template void Intrepid2::PointTools::getLatticeLine<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int, Intrepid2::EPointType); \
+ EXTERN template void Intrepid2::PointTools::getLatticeTriangle<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int, Intrepid2::EPointType); \
+ EXTERN template void Intrepid2::PointTools::getLatticeTetrahedron<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int, Intrepid2::EPointType); \
+ EXTERN template void Intrepid2::PointTools::getLatticePyramid<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int, Intrepid2::EPointType); \
+ EXTERN template void Intrepid2::PointTools::getEquispacedLatticeLine<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int); \
+ EXTERN template void Intrepid2::PointTools::getEquispacedLatticeTriangle<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int); \
+ EXTERN template void Intrepid2::PointTools::getEquispacedLatticeTetrahedron<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int); \
+ EXTERN template void Intrepid2::PointTools::getWarpBlendLatticeLine<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int); \
+ EXTERN template void Intrepid2::PointTools::getWarpBlendLatticeTriangle<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int); \
+ EXTERN template void Intrepid2::PointTools::getWarpBlendLatticeTetrahedron<POINT_TYPE, POINT_PROPERTIES>(Kokkos::DynRankView<POINT_TYPE, POINT_PROPERTIES>, int, int);
+
+#define COMMA ,
+
+INTREPID2_POINTTOOLS_INSTANT(double, Kokkos::DefaultHostExecutionSpace, extern);
+INTREPID2_POINTTOOLS_INSTANT(double, Kokkos::DefaultHostExecutionSpace::device_type, extern);
+INTREPID2_POINTTOOLS_INSTANT(double, Kokkos::LayoutRight COMMA Kokkos::DefaultHostExecutionSpace, extern);
+INTREPID2_POINTTOOLS_INSTANT(double, Kokkos::LayoutRight COMMA Kokkos::DefaultHostExecutionSpace::device_type, extern);
+INTREPID2_POINTTOOLS_INSTANT(double, Kokkos::LayoutRight COMMA Kokkos::HostSpace, extern);
+
 #endif

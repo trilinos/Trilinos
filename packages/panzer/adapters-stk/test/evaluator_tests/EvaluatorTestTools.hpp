@@ -78,7 +78,7 @@ WorksetsAndOrts getWorksetsAndOrtsForFields(
       auto name = map.first;
       auto bd = map.second;
 
-      auto intrepid_basis = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>(bd.getType(),bd.getOrder(),cell_topology);
+      auto intrepid_basis = panzer::createIntrepid2Basis<PHX::Device::device_type,double,double>(bd.getType(),bd.getOrder(),cell_topology);
       auto field_pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(intrepid_basis));
 
       // Add field to dof manager to lock in the field pattern

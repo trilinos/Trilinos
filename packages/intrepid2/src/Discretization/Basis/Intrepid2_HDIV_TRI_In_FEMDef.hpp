@@ -211,7 +211,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
   // tabulate the scalar orthonormal basis at cubature points
   Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hdiv::Tri::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
-  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+  Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                      phisAtCubPoints,
                                                                                                                      cubPoints,
                                                                                                                      order,
@@ -271,7 +271,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
         edge ,
         cellTopo );
 
-    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                        phisAtEdgePoints,
                                                                                                                        edgePts,
                                                                                                                        order,
@@ -327,7 +327,7 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
 
     Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     phisAtInternalPoints("Hdiv::Tri::In::phisAtInternalPoints", cardPn , numPtsPerCell );
-    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
+    Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::device_type,Parameters::MaxNumPtsPerBasisEval>(typename Kokkos::HostSpace::execution_space{},
                                                                                                                        phisAtInternalPoints,
                                                                                                                        internalPoints,
                                                                                                                        order,
@@ -496,5 +496,11 @@ Basis_HDIV_TRI_In_FEM( const ordinal_type order,
   }
 
 } // namespace Intrepid2
+
+#define HDIV_TRI_In_FEM_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)       \
+  EXTERN template class Intrepid2::Basis_HDIV_TRI_In_FEM<DEVICE, OUTPUT_TYPE,  \
+                                                         POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(HDIV_TRI_In_FEM_INSTANT);
 
 #endif

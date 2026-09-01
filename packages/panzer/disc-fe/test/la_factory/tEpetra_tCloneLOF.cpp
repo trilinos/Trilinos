@@ -54,7 +54,7 @@ template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
    // build a geometric pattern from a single basis
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type);
+   RCP<Intrepid2::Basis<PHX::Device::device_type,double,double> > basis = rcp(new Intrepid2Type);
    RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
    return pattern;
 }
@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
 
    RCP<panzer::DOFManager> indexer = rcp(new panzer::DOFManager());
    indexer->setConnManager(connManager,MPI_COMM_WORLD);
@@ -127,9 +127,9 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
    RCP<const FieldPattern> patternC2
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device::device_type,double,double> >();
 
    RCP<panzer::BlockedDOFManager> indexer = rcp(new panzer::BlockedDOFManager());
    {
@@ -223,9 +223,9 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
    RCP<ConnManager> connManager = rcp(new unit_test::ConnManager(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::Device::device_type,double,double> >();
    RCP<const FieldPattern> patternC2
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::Device::device_type,double,double> >();
 
    RCP<panzer::BlockedDOFManager> indexer = rcp(new panzer::BlockedDOFManager());
    {

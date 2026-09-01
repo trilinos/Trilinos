@@ -37,7 +37,7 @@
 #include "obj_navier-stokesK.hpp"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 template<class Real>
 Real random(const Teuchos::Comm<int> &comm,

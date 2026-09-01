@@ -33,7 +33,7 @@
 #include "obj_poissonK.hpp"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 template<class Real>
 class stateSolution : public Solution<Real> {

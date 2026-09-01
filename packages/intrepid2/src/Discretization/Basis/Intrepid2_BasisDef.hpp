@@ -924,4 +924,9 @@ namespace Intrepid2 {
   }
 }
 
+#define BASIS_INSTANT(DEVICE, OUTPUT_TYPE, POINT_TYPE, EXTERN)                 \
+  EXTERN template class Intrepid2::Basis<DEVICE, OUTPUT_TYPE, POINT_TYPE>;
+
+INTREPID2_ETI_DEVICE_DEF(BASIS_INSTANT);
+
 #endif

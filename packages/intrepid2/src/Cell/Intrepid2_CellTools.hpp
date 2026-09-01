@@ -131,6 +131,8 @@ namespace Intrepid2 {
              typename pointValueType>
     static Teuchos::RCP<Basis<DeviceType,outputValueType,pointValueType> >
     createHGradBasis( const shards::CellTopology cellTopo ) {
+      static_assert(Kokkos::is_device_v<DeviceType>);
+
       Teuchos::RCP<Basis<DeviceType,outputValueType,pointValueType> > r_val;
 
       switch (cellTopo.getKey()) {
@@ -1866,5 +1868,9 @@ public:
 
 #include "Intrepid2_CellToolsDefInclusion.hpp"
 
+#define INTREPID2_CELLTOOLS_INSTANT(DEVICE, OUTPUT_VALUE_TYPE, POINT_VALUE_TYPE, EXTERN) \
+ EXTERN template Teuchos::RCP<Intrepid2::Basis<DEVICE, OUTPUT_VALUE_TYPE, POINT_VALUE_TYPE> > Intrepid2::CellTools<DEVICE>::createHGradBasis<OUTPUT_VALUE_TYPE, POINT_VALUE_TYPE>(shards::CellTopology);
+
+INTREPID2_CELLTOOLS_INSTANT(Kokkos::DefaultExecutionSpace::device_type, double, double, extern);
 
 #endif

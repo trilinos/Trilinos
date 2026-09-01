@@ -247,7 +247,7 @@ using namespace Intrepid2;
      */
     bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable, std::vector<double> *volume_histogram) //, stk::mesh::Part& mesh_part )
     {
-      using DynRankView = Kokkos::DynRankView<double, Kokkos::HostSpace>;
+      using DynRankView = Kokkos::DynRankView<double, typename Kokkos::HostSpace::device_type>;
       const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
       const unsigned p_rank = bulk.parallel_rank();
       bool checkLocalJacobians = m_checkLocalJacobians;
@@ -363,10 +363,10 @@ using namespace Intrepid2;
 
               DefaultCubatureFactory cubFactory;                                              // create cubature factory
               unsigned cubDegree = 2;                                                                      // set cubature degree, e.g. 2
-              Teuchos::RCP<Cubature<Kokkos::HostSpace,double,double> > myCub;
+              Teuchos::RCP<Cubature<typename Kokkos::HostSpace::device_type,double,double> > myCub;
               bool hasGoodTopo = true;
               try {
-                myCub = cubFactory.create<Kokkos::HostSpace,double,double>(cell_topo, cubDegree);         // create default cubature
+                myCub = cubFactory.create<typename Kokkos::HostSpace::device_type,double,double>(cell_topo, cubDegree);         // create default cubature
               }
               catch(...)
                 {
@@ -398,9 +398,9 @@ using namespace Intrepid2;
 
                   // Methods to compute cell Jacobians, their inverses and their determinants
 
-                  Intrepid2::CellTools<Kokkos::HostSpace>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
-                  Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
-                  Intrepid2::CellTools<Kokkos::HostSpace>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
+                  Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::setJacobian(jacobian, cub_points, cellNodes, cell_topo);           // compute cell Jacobians
+                  Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::setJacobianInv(jacobian_inv, jacobian);                            // compute inverses of cell Jacobians
+                  Intrepid2::CellTools<typename Kokkos::HostSpace::device_type>::setJacobianDet(jacobian_det, jacobian);                            // compute determinants of cell Jacobians
 
                   DynRankView weightedMeasure("weightedMeasure", numCells, numCubPoints);
 

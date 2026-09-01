@@ -21,6 +21,7 @@
 #include "Intrepid2_TensorPoints.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
+#include "Intrepid2_ETI_Macros.hpp"
 
 namespace Intrepid2 {
 

@@ -34,7 +34,7 @@
 #include "obj_helmholtzK.hpp"
 
 using RealT = double;
-using DeviceT = Kokkos::HostSpace;
+using DeviceT = typename Kokkos::HostSpace::device_type;
 
 int main(int argc, char *argv[]) {
   /*** Initialize communicator. ***/

@@ -61,7 +61,7 @@ private:
 
   Teuchos::RCP<const PureBasis> basis_;
   Teuchos::RCP<const PointRule> pointRule_;
-  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType sideParam_;
+  Intrepid2::RefSubcellParametrization<typename PHX::Device::device_type>::ConstViewType sideParam_;
   PointValues2<double> pointValues_;
   PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;
 
