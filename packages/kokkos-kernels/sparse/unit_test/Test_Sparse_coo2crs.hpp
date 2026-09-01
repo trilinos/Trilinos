@@ -159,14 +159,14 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
       // NOTE: ASSERT_EQ doesn't work -- values may be summed in different
       // orders We sum at most m x n values.
       auto eps = crsMatRef.numCols() * crsMatRef.numRows() * 10e1 * ats::epsilon();
-      EXPECT_NEAR_KK(crs_vals_ref(j), crs_vals(k), eps, fail_msg + " mismatched values!" + failure_info);
+      EXPECT_NEAR_KK(crs_vals_ref(j), crs_vals(k), eps) << fail_msg + " mismatched values!" + failure_info;
     }
   }
 }
 
 template <class ScalarType, class LayoutType, class Device>
 void doCoo2Crs(size_t m, size_t n, ScalarType min_val, ScalarType max_val) {
-  RandCooMat<ScalarType, LayoutType, Device> cooMat(m, n, m * n, min_val, max_val);
+  TestUtils::RandCooMat<ScalarType, LayoutType, Device> cooMat(m, n, m * n, min_val, max_val);
   auto randRow  = cooMat.get_row();
   auto randCol  = cooMat.get_col();
   auto randData = cooMat.get_data();
@@ -227,7 +227,7 @@ TEST_F(TestCategory, sparse_coo2crs) {
     doAllCoo2Crs<TestDevice>(m, n);
   }
 
-  RandCooMat<double, Kokkos::LayoutRight, TestDevice> cooMat(2, 2, 2 * 2, 10, 10);
+  TestUtils::RandCooMat<double, Kokkos::LayoutRight, TestDevice> cooMat(2, 2, 2 * 2, 10, 10);
   auto crsMatrix = KokkosSparse::coo2crs(2, 2, cooMat.get_row(), cooMat.get_col(), cooMat.get_data());
   auto cooMatrix = KokkosSparse::crs2coo(crsMatrix);
 

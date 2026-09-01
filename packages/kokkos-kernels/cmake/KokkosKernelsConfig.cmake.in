@@ -7,6 +7,11 @@ include(CMakeFindDependencyMacro)
 
 @KOKKOSKERNELS_TPL_EXPORTS@
 
+set(KokkosKernels_TPLS @KOKKOSKERNELS_TPL_LIST@)
+foreach(TPL ${KokkosKernels_TPLS})
+  set(KokkosKernels_ENABLE_TPL_${TPL} ON)
+endforeach()
+
 if(NOT Kokkos_FOUND)
   find_dependency(Kokkos HINTS @Kokkos_DIR@)
 endif()

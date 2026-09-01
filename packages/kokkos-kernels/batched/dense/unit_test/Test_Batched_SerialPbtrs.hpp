@@ -36,7 +36,7 @@ struct Functor_BatchedSerialPbtrf {
   inline void run() {
     using value_type = typename ABViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialPbtrs");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_ab.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
@@ -63,7 +63,7 @@ struct Functor_BatchedSerialPbtrs {
   inline int run() {
     using value_type = typename ABViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialPbtrs");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -99,7 +99,7 @@ struct Functor_BatchedSerialGemv {
   inline void run() {
     using value_type = typename AViewType::non_const_value_type;
     std::string name_region("KokkosBatched::Test::SerialPbtrs");
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::RangePolicy<execution_space> policy(0, m_x.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
@@ -184,7 +184,7 @@ void impl_test_batched_pbtrs_analytical(const int N) {
   // Check x0 = x1
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
-      Test::EXPECT_NEAR_KK_REL(h_x0(ib, i), h_x_ref(ib, i), eps);
+      EXPECT_NEAR_KK_REL(h_x0(ib, i), h_x_ref(ib, i), eps);
     }
   }
 }
@@ -254,7 +254,7 @@ void impl_test_batched_pbtrs(const int N, const int k, const int BlkSize) {
   // Check A * x0 = x_ref
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize; i++) {
-      Test::EXPECT_NEAR_KK_REL(h_y0(ib, i), h_x_ref(ib, i), eps);
+      EXPECT_NEAR_KK_REL(h_y0(ib, i), h_x_ref(ib, i), eps);
     }
   }
 }

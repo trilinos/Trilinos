@@ -361,45 +361,6 @@ struct Fill_Reverse_Map {
   }
 };
 
-template <typename forward_array_type, typename MyExecSpace>
-void inclusive_parallel_prefix_sum(MyExecSpace my_exec_space, typename forward_array_type::value_type num_elements,
-                                   forward_array_type arr) {
-  return kk_inclusive_parallel_prefix_sum(my_exec_space, num_elements, arr);
-}
-
-template <typename forward_array_type, typename MyExecSpace>
-void inclusive_parallel_prefix_sum(typename forward_array_type::value_type num_elements, forward_array_type arr) {
-  MyExecSpace my_exec_space;
-  return inclusive_parallel_prefix_sum(my_exec_space, num_elements, arr);
-}
-
-template <typename forward_array_type, typename MyExecSpace>
-void exclusive_parallel_prefix_sum(typename forward_array_type::value_type num_elements, forward_array_type arr) {
-  kk_exclusive_parallel_prefix_sum<MyExecSpace>(num_elements, arr);
-}
-
-template <typename array_type>
-struct PropogataMaxValstoZeros {
-  typedef typename array_type::value_type idx;
-  array_type array_sum;
-  PropogataMaxValstoZeros(array_type arr_) : array_sum(arr_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii, idx &update, const bool final) const {
-    idx value = array_sum(ii);
-    if (value != 0) {
-      update = value;
-    } else if (final) {
-      array_sum(ii) = idx(update);
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void join(idx &update, const idx &input) const {
-    if (input > update) update = input;
-  }
-};
-
 template <typename out_array_t, typename in_array_t, typename scalar_1, typename scalar_2, typename MyExecSpace>
 void a_times_x_plus_b(typename in_array_t::value_type num_elements, in_array_t out_arr, in_array_t in_arr, scalar_1 a,
                       scalar_2 b) {
@@ -411,50 +372,6 @@ void modular_view(typename in_array_type::value_type num_elements, out_array_typ
                   int mod_factor_) {
   kk_modular_view<out_array_type, in_array_type, MyExecSpace>(num_elements, out_arr, in_arr, mod_factor_);
 }
-
-template <typename array_type>
-struct LinearInitialization {
-  typedef typename array_type::value_type idx;
-  array_type array_sum;
-  LinearInitialization(array_type arr_) : array_sum(arr_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii) const { array_sum(ii) = ii; }
-};
-template <typename array_type, typename MyExecSpace>
-void linear_init(typename array_type::value_type num_elements, array_type arr) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_for("KokkosKernels::Common::LinearInit", my_exec_space(0, num_elements),
-                       LinearInitialization<array_type>(arr));
-}
-
-template <typename forward_array_type, typename MyExecSpace>
-void remove_zeros_in_xadj_vector(typename forward_array_type::value_type num_elements, forward_array_type arr) {
-  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
-  Kokkos::parallel_scan("KokkosKernels::Common::RemoveZerosInXadjVector", my_exec_space(0, num_elements),
-                        PropogataMaxValstoZeros<forward_array_type>(arr));
-}
-
-template <typename forward_array_type, typename reverse_array_type>
-struct FillReverseBegins {
-  const forward_array_type &forward_map;  // vertex to colors
-  reverse_array_type &reverse_map_xadj;   // colors to vertex xadj
-
-  FillReverseBegins(const forward_array_type &forward_map_,  // vertex to colors
-                    reverse_array_type &reverse_map_xadj_    // colors to vertex xadj
-                    )
-      : forward_map(forward_map_), reverse_map_xadj(reverse_map_xadj_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t ii) const {
-    typename forward_array_type::value_type prev_col = forward_map(ii - 1);
-    typename forward_array_type::value_type cur_col  = forward_map(ii);
-    while (prev_col < cur_col) {
-      prev_col += 1;
-      forward_map(prev_col) = ii + 1;
-    }
-  }
-};
 
 template <typename forward_map_type, typename reverse_map_type>
 struct Reverse_Map_Scale_Init {
@@ -589,7 +506,7 @@ void create_reverse_map(MyExecSpace my_exec_space,
     Kokkos::parallel_for("KokkosKernels::Common::ReverseMapScaleInit",
                          range_policy_t(my_exec_space, 0, num_forward_elements), rmi);
 
-    inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(my_exec_space, tmp_reverse_size + 1, tmp_color_xadj);
+    KokkosKernels::inclusive_parallel_prefix_sum(my_exec_space, tmp_color_xadj);
 
     Kokkos::parallel_for(
         "KokkosKernels::Common::StridedCopy", range_policy_t(my_exec_space, 0, num_reverse_elements + 1),
@@ -609,8 +526,7 @@ void create_reverse_map(MyExecSpace my_exec_space,
     Kokkos::parallel_for("KokkosKernels::Common::ReverseMapInit",
                          range_policy_t(my_exec_space, 0, num_forward_elements), rmi);
 
-    inclusive_parallel_prefix_sum<reverse_array_type, MyExecSpace>(my_exec_space, num_reverse_elements + 1,
-                                                                   reverse_map_xadj);
+    KokkosKernels::inclusive_parallel_prefix_sum(my_exec_space, reverse_map_xadj);
     Kokkos::deep_copy(my_exec_space, tmp_color_xadj, reverse_map_xadj);
     Fill_Reverse_Map<forward_array_type, reverse_array_type> frm(forward_map, tmp_color_xadj, reverse_map_adj);
     Kokkos::parallel_for("KokkosKernels::Common::FillReverseMap",
@@ -717,25 +633,6 @@ void permute_block_vector(typename idx_array_type::value_type num_elements, int 
   permute_block_vector(MyExecSpace(), num_elements, block_size, old_to_new_index_map, old_vector, new_vector);
 }
 
-// TODO BMK: clean this up by removing 1st argument. It is unused but
-// its name gives the impression that only num_elements of the vector are
-// zeroed, when really it's always the whole thing.
-template <class ExecSpaceIn, typename value_array_type>
-void zero_vector(ExecSpaceIn &exec_space_in, typename value_array_type::value_type /* num_elements */,
-                 value_array_type &vector) {
-  typedef typename value_array_type::non_const_value_type val_type;
-  Kokkos::deep_copy(exec_space_in, vector, KokkosKernels::ArithTraits<val_type>::zero());
-  exec_space_in.fence();
-}
-
-template <typename value_array_type, typename MyExecSpace>
-void zero_vector(typename value_array_type::value_type /* num_elements */, value_array_type &vector) {
-  using ne_tmp_t  = typename value_array_type::value_type;
-  ne_tmp_t ne_tmp = ne_tmp_t(0);
-  MyExecSpace my_exec_space;
-  zero_vector(my_exec_space, ne_tmp, vector);
-}
-
 template <typename v1, typename v2, typename v3>
 struct MarkDuplicateSortedKeyValuePairs {
   v1 keys;
@@ -802,6 +699,8 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
                                                  in_lno_row_view_t xadj, in_lno_nnz_view_t adj,
                                                  out_lno_nnz_view_t &sym_srcs, out_lno_nnz_view_t &sym_dsts_) {
   typedef typename in_lno_row_view_t::non_const_value_type idx;
+  // Get an appropriate type to store the temporary offsets view pre_pps_
+  typedef Kokkos::View<idx *, MyExecSpace> out_lno_row_view_t;
 
   idx nnz = adj.extent(0);
 
@@ -816,14 +715,14 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
   // TODO: Should change this to temporary memory space?
   typedef Kokkos::UnorderedMap<Kokkos::pair<idx, idx>, void, MyExecSpace> hashmap_t;
 
-  out_lno_nnz_view_t pre_pps_("pre_pps", num_rows_to_symmetrize + 1);
+  out_lno_row_view_t pre_pps_("pre_pps", num_rows_to_symmetrize + 1);
 
   idx num_symmetric_edges = 0;
   {
     hashmap_t umap(nnz);
     umap.clear();
     umap.end_erase();
-    FillSymmetricLowerEdgesHashMap<in_lno_row_view_t, in_lno_nnz_view_t, hashmap_t, out_lno_nnz_view_t, team_member_t>
+    FillSymmetricLowerEdgesHashMap<in_lno_row_view_t, in_lno_nnz_view_t, hashmap_t, out_lno_row_view_t, team_member_t>
         fse(num_rows_to_symmetrize, xadj, adj, umap, pre_pps_);
 
     int teamSizeMax = 0;
@@ -842,20 +741,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
   }
 
   if (num_rows_to_symmetrize > 0)
-    exclusive_parallel_prefix_sum<out_lno_nnz_view_t, MyExecSpace>(num_rows_to_symmetrize + 1, pre_pps_);
-  MyExecSpace().fence();
-
-  auto d_sym_edge_size = Kokkos::subview(pre_pps_, num_rows_to_symmetrize);
-  auto h_sym_edge_size = Kokkos::create_mirror_view(d_sym_edge_size);
-  Kokkos::deep_copy(h_sym_edge_size, d_sym_edge_size);
-  num_symmetric_edges = h_sym_edge_size();
-  /*
-  typename out_lno_nnz_view_t::host_mirror_type h_sym_edge_size =
-  Kokkos::create_mirror_view (pre_pps_);
-
-  Kokkos::deep_copy (h_sym_edge_size , pre_pps_);
-  num_symmetric_edges = h_sym_edge_size(h_sym_edge_size.extent(0) - 1);
-  */
+    KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), pre_pps_, num_symmetric_edges);
 
   sym_srcs  = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_srcs"), num_symmetric_edges);
   sym_dsts_ = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_dsts_"), num_symmetric_edges);
@@ -863,7 +749,7 @@ void symmetrize_and_get_lower_diagonal_edge_list(typename in_lno_nnz_view_t::val
   {
     hashmap_t umap(nnz);
     FillSymmetricEdgeList_HashMap<in_lno_row_view_t, in_lno_nnz_view_t, hashmap_t, out_lno_nnz_view_t,
-                                  out_lno_nnz_view_t, team_member_t>
+                                  out_lno_row_view_t, team_member_t>
         FSCH(num_rows_to_symmetrize, xadj, adj, umap, sym_srcs, sym_dsts_, pre_pps_);
 
     int teamSizeMax = 0;
@@ -901,7 +787,7 @@ void symmetrize_graph_symbolic_hashmap(typename in_lno_row_view_t::value_type nu
 
   out_lno_row_view_t pre_pps_("pre_pps", num_rows_to_symmetrize + 1);
 
-  idx num_symmetric_edges = 0;
+  typename out_lno_row_view_t::non_const_value_type num_symmetric_edges = 0;
   {
     hashmap_t umap(nnz);
     umap.clear();
@@ -923,18 +809,9 @@ void symmetrize_graph_symbolic_hashmap(typename in_lno_row_view_t::value_type nu
   }
 
   if (num_rows_to_symmetrize > 0)
-    exclusive_parallel_prefix_sum<out_lno_row_view_t, MyExecSpace>(num_rows_to_symmetrize + 1, pre_pps_);
-  MyExecSpace().fence();
-
-  // out_lno_row_view_t d_sym_edge_size = Kokkos::subview(pre_pps_,
-  // num_rows_to_symmetrize, num_rows_to_symmetrize );
-  typename out_lno_row_view_t::host_mirror_type h_sym_edge_size = Kokkos::create_mirror_view(pre_pps_);
-
-  Kokkos::deep_copy(h_sym_edge_size, pre_pps_);
-  num_symmetric_edges = h_sym_edge_size(h_sym_edge_size.extent(0) - 1);
+    KokkosKernels::exclusive_parallel_prefix_sum(MyExecSpace(), pre_pps_, num_symmetric_edges);
 
   sym_adj = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_adj"), num_symmetric_edges);
-  MyExecSpace().fence();
   sym_xadj =
       out_lno_row_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_xadj"), num_rows_to_symmetrize + 1);
   Kokkos::deep_copy(sym_xadj, pre_pps_);

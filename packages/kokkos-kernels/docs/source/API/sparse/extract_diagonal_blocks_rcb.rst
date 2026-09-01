@@ -11,7 +11,13 @@ Defined in header: :code:`KokkosSparse_Utils.hpp`
       const std::vector<typename crsMat_t::non_const_ordinal_type> partition_sizes_rcb,
       std::vector<crsMat_t> &DiagBlk_v);
 
-Extract diagonal blocks from a square CRS matrix using the pre-run RCB partition information. This function must be called after applying RCB to the coordinates associated with the rows/columns of the CRS matrix.
+  template <typename crsMat_t, typename perm_view_type>
+  void kk_extract_diagonal_blocks_crsmatrix_with_rcb(
+      const crsMat_t &A, const perm_view_type &perm_rcb, const perm_view_type &reverse_perm_rcb,
+      const std::vector<typename crsMat_t::non_const_ordinal_type> partition_sizes_rcb,
+      std::vector<crsMat_t> &DiagBlk_v);
+
+Extract diagonal blocks from a square CRS matrix using the pre-run RCB partition information (sequential implementation and device implementation). This function must be called after applying RCB to the coordinates associated with the rows/columns of the CRS matrix.
 
 The number of diagonal blocks is the number of partitions for RCB.
 

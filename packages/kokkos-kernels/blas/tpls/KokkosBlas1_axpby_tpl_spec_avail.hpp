@@ -20,44 +20,39 @@ namespace Impl {
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-#define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(SCALAR, LAYOUT, MEMSPACE)                                             \
-  template <class ExecSpace>                                                                                        \
+#define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(SCALAR)                                                               \
+  template <typename ExecSpace>                                                                                     \
+    requires(std::is_same_v<typename ExecSpace::memory_space, Kokkos::HostSpace>)                                   \
   struct axpby_tpl_spec_avail<                                                                                      \
       ExecSpace, SCALAR,                                                                                            \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                       \
-      SCALAR,                                                                                                       \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1> {                                                                                                          \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, SCALAR, \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1> {          \
     enum : bool { value = true };                                                                                   \
   };
 
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(double, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(float, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::HostSpace)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(double)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(float)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<double>)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_BLAS(Kokkos::complex<float>)
 
 #endif
 
 // cuBLAS
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 
-#define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(SCALAR, LAYOUT, MEMSPACE)                                           \
-  template <class ExecSpace>                                                                                        \
-  struct axpby_tpl_spec_avail<                                                                                      \
-      ExecSpace, SCALAR,                                                                                            \
-      Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>,                                      \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >,                                                       \
-      SCALAR,                                                                                                       \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-      1> {                                                                                                          \
-    enum : bool { value = true };                                                                                   \
+#define KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(SCALAR)                                                                \
+  template <>                                                                                                          \
+  struct axpby_tpl_spec_avail<                                                                                         \
+      Kokkos::Cuda, SCALAR,                                                                                            \
+      Kokkos::View<const SCALAR*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, SCALAR, \
+      Kokkos::View<SCALAR*, Kokkos::LayoutLeft, Kokkos::Cuda, Kokkos::MemoryTraits<Kokkos::Unmanaged> >, 1> {          \
+    enum : bool { value = true };                                                                                      \
   };
 
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(double, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(float, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(double)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(float)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<double>)
+KOKKOSBLAS1_AXPBY_TPL_SPEC_AVAIL_CUBLAS(Kokkos::complex<float>)
 
 #endif
 }  // namespace Impl

@@ -7,7 +7,7 @@
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_SortCrs.hpp"
 
-namespace Test {
+namespace TestUtils {
 
 template <typename crsMat_t, typename vector_t>
 vector_t create_random_y_vector(crsMat_t crsMat, vector_t x_vector) {
@@ -178,6 +178,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference) {
   }
   return true;
 }
-}  // namespace Test
+
+}  // namespace TestUtils
 
 #endif  // TEST_SPARSE_UTILS_HPP

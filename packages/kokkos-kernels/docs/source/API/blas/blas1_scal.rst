@@ -44,6 +44,14 @@ Type Requirements
   - ``Kokkos::SpaceAccessibility<execution_space, typename RMV::memory_space>::accessible == true``
   - ``RMV::rank == XMV::rank``
 
+- `AV` must be one of:
+
+  - A **scalar** value (e.g. ``double``). A single value scales all elements of ``X``.
+
+  - A **rank-0** Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ (e.g. ``Kokkos::View<const double>``).
+
+  - A **rank-1** Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ with ``AV::rank == 1``. Only valid when ``RMV::rank == XMV::rank == 2`` (multivector). Column ``j`` of ``X`` is scaled by ``a(j)``.
+
 Example
 =======
 

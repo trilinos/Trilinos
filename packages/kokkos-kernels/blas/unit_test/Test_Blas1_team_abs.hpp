@@ -26,8 +26,8 @@ void impl_test_team_abs(int N) {
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;
 
-  view_stride_adapter<ViewTypeA> x("X", N);
-  view_stride_adapter<ViewTypeB> y("Y", N);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N);
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
@@ -86,8 +86,8 @@ void impl_test_team_abs_mv(int N, int K) {
   typedef typename ViewTypeB::value_type ScalarB;
   typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
-  view_stride_adapter<ViewTypeA> x("X", N, K);
-  view_stride_adapter<ViewTypeB> y("Y", N, K);
+  TestUtils::view_stride_adapter<ViewTypeA> x("X", N, K);
+  TestUtils::view_stride_adapter<ViewTypeB> y("Y", N, K);
 
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
 

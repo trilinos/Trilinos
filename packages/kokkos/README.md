@@ -42,20 +42,20 @@ To start learning about Kokkos:
 
 - [API reference](https://kokkos.org/kokkos-core-wiki/): organized by category, i.e., [core](https://kokkos.org/kokkos-core-wiki/API/core-index.html), [algorithms](https://kokkos.org/kokkos-core-wiki/API/algorithms-index.html), [containers](https://kokkos.org/kokkos-core-wiki/API/containers-index.html), and [simd](https://kokkos.org/kokkos-core-wiki/API/simd-index.html).
 
-- [Use cases and Examples](https://kokkos.org/kokkos-core-wiki/tutorials-and-examples/use-cases-and-examples.html): a serie of examples ranging from how to use Kokkos with MPI to Fortran interoperability.
+- [Use cases and Examples](https://kokkos.org/kokkos-core-wiki/tutorials-and-examples/use-cases-and-examples.html): a series of examples ranging from how to use Kokkos with MPI to Fortran interoperability.
 
 ## Obtaining Kokkos
 
 The latest release of Kokkos can be obtained from the [GitHub releases page](https://github.com/kokkos/kokkos/releases/latest).
 
-The current release is [5.2.0](https://github.com/kokkos/kokkos/releases/tag/5.2.0).
+The current release is [5.1.0](https://github.com/kokkos/kokkos/releases/tag/5.1.0).
 
 ```bash
-curl -OJ -L https://github.com/kokkos/kokkos/releases/download/5.2.0/kokkos-5.2.0.tar.gz
+curl -OJ -L https://github.com/kokkos/kokkos/releases/download/5.1.0/kokkos-5.1.0.tar.gz
 # Or with wget
-wget https://github.com/kokkos/kokkos/releases/download/5.2.0/kokkos-5.2.0.tar.gz
+wget https://github.com/kokkos/kokkos/releases/download/5.1.0/kokkos-5.1.0.tar.gz
 # Or with git
-git clone --depth=2 --branch 5.2.0 https://github.com/kokkos/kokkos.git
+git clone --depth=2 --branch 5.1.0 https://github.com/kokkos/kokkos.git
 ```
 
 To clone the latest development version of Kokkos from GitHub:

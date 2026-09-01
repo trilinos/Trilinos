@@ -64,7 +64,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
   if (algo_type == GemmKokkosBatchedAlgos::KK_DBLBUF) {
     // Check for DblBuf runtime errors related to team_size
     try {
-      fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
+      fmsg = TestUtils::kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
       KokkosBatched::Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle, ScalarType,
                                              decltype(a_actual), decltype(b_actual), decltype(c_actual),
                                              BoundsCheck::Yes, AlphaTag::No, 65536, 1, 65536>(
@@ -76,7 +76,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
 
     // Check for DblBuf runtime errors related to vector_len
     try {
-      fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
+      fmsg = TestUtils::kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
       KokkosBatched::Impl::BatchedDblBufGemm<transA, transB, batchLayout, BatchedGemmHandle, ScalarType,
                                              decltype(a_actual), decltype(b_actual), decltype(c_actual),
                                              BoundsCheck::No, AlphaTag::No, 65536, 65536 * 2, 65536>(
@@ -97,7 +97,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
     }
 #endif
 
-    fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
+    fmsg = TestUtils::kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
     ret  = BatchedGemm<transA, transB, batchLayout>(batchedGemmHandle, alpha, a_actual, b_actual, beta,
                                                    c_actual);  // Compute c_actual
   } catch (const std::runtime_error& error) {
@@ -170,7 +170,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
     }
   }
 
-  EXPECT_NEAR_KK(diff / sum, 0, eps, fmsg + fmsg_rhs);
+  EXPECT_NEAR_KK(diff / sum, 0, eps) << fmsg + fmsg_rhs;
 }
 
 template <typename DeviceType, typename ViewType, typename ScalarType, typename ParamTagType>
@@ -239,7 +239,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
             ScalarType alpha = 0.34;
             ScalarType beta  = 0.43;
             BatchedGemm<ta, tb, bl>(&batchedGemmHandle, alpha, a_actual, b_actual, beta, c_actual);
-            std::string fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
+            std::string fmsg = TestUtils::kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
             FAIL() << fmsg;
           } catch (const std::runtime_error& error) {
           }
@@ -248,7 +248,7 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || (ARMPL_BUILD < 1058)
         if (algo_type == BaseTplAlgos::ARMPL) {
         } else {
-          std::string fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
+          std::string fmsg = TestUtils::kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
           FAIL() << fmsg;
         }
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
@@ -309,7 +309,7 @@ int test_batched_gemm() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   if constexpr (std::is_same_v<typename ParamTagType::batchLayout, typename BatchLayout::Right>) {
     using param_tag_type =
-        ::Test::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Right>;
+        TestUtils::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Right>;
     typedef Kokkos::View<ValueType***, Kokkos::LayoutLeft, DeviceType> llVt;
     test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType, param_tag_type>(0);
     test_batched_gemm_with_layout<llVt, DeviceType, ValueType, ScalarType, param_tag_type>(1);
@@ -327,7 +327,7 @@ int test_batched_gemm() {
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
   if constexpr (std::is_same_v<typename ParamTagType::batchLayout, typename BatchLayout::Left>) {
     using param_tag_type =
-        ::Test::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Left>;
+        TestUtils::SharedParamTag<typename ParamTagType::transA, typename ParamTagType::transB, BatchLayout::Left>;
     typedef Kokkos::View<ValueType***, Kokkos::LayoutRight, DeviceType> lrVt;
     test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType, param_tag_type>(0);
     test_batched_gemm_with_layout<lrVt, DeviceType, ValueType, ScalarType, param_tag_type>(1);

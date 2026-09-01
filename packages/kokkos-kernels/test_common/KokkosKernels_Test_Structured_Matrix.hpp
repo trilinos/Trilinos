@@ -1516,7 +1516,7 @@ struct fill_3D_matrix_functor {
 
     // Fill column indices
     columns(rowOffset - 5) = rowIdx - ny * nx;
-    columns(rowOffset - 4) = rowIdx - 1;
+    columns(rowOffset - 4) = rowIdx - nx;
     columns(rowOffset - 3) = rowIdx;
     columns(rowOffset - 2) = rowIdx + 1;
     columns(rowOffset - 1) = rowIdx + nx;
@@ -2209,7 +2209,7 @@ struct fill_3D_matrix_functor {
     // Fill column indices
     columns(rowOffset - 18) = rowIdx - ny * nx - nx - 1;
     columns(rowOffset - 17) = rowIdx - ny * nx - nx;
-    columns(rowOffset - 16) = rowIdx - ny * nx - 1;
+    columns(rowOffset - 16) = rowIdx - ny * nx - nx + 1;
     columns(rowOffset - 15) = rowIdx - ny * nx - 1;
     columns(rowOffset - 14) = rowIdx - ny * nx;
     columns(rowOffset - 13) = rowIdx - ny * nx + 1;
@@ -2636,6 +2636,7 @@ struct fill_3D_matrix_functor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const yEdgeFETag&, const ordinal_type idx) const {
+    // Bottom-Left Edge
     // Compute row index
     ordinal_type j      = idx;
     ordinal_type rowIdx = (j + 1) * nx;
@@ -2687,6 +2688,7 @@ struct fill_3D_matrix_functor {
       values(rowOffset - 1)  = -1.0;
     }
 
+    // Bottom-Right Edge
     // Compute row index
     j              = idx;
     ordinal_type i = nx - 1;
@@ -2739,6 +2741,7 @@ struct fill_3D_matrix_functor {
       values(rowOffset - 1)  = 0.0;
     }
 
+    // Top-Left Edge
     // Compute row index
     ordinal_type k = nz - 2;
     j              = idx;
@@ -2750,16 +2753,16 @@ struct fill_3D_matrix_functor {
     rowmap(rowIdx + 1) = rowOffset;
 
     // Fill column indices
-    columns(rowOffset - 12) = rowIdx - nx * ny - 1;
-    columns(rowOffset - 11) = rowIdx - nx * ny;
-    columns(rowOffset - 10) = rowIdx - nx * ny + 1;
-    columns(rowOffset - 9)  = rowIdx - nx * ny + nx - 1;
+    columns(rowOffset - 12) = rowIdx - nx * ny - nx;
+    columns(rowOffset - 11) = rowIdx - nx * ny - nx + 1;
+    columns(rowOffset - 10) = rowIdx - nx * ny;
+    columns(rowOffset - 9)  = rowIdx - nx * ny + 1;
     columns(rowOffset - 8)  = rowIdx - nx * ny + nx;
     columns(rowOffset - 7)  = rowIdx - nx * ny + nx + 1;
-    columns(rowOffset - 6)  = rowIdx - 1;
-    columns(rowOffset - 5)  = rowIdx;
-    columns(rowOffset - 4)  = rowIdx + 1;
-    columns(rowOffset - 3)  = rowIdx + nx - 1;
+    columns(rowOffset - 6)  = rowIdx - nx;
+    columns(rowOffset - 5)  = rowIdx - nx + 1;
+    columns(rowOffset - 4)  = rowIdx;
+    columns(rowOffset - 3)  = rowIdx + 1;
     columns(rowOffset - 2)  = rowIdx + nx;
     columns(rowOffset - 1)  = rowIdx + nx + 1;
     if (topBC == 1 || leftBC == 1) {
@@ -2792,6 +2795,7 @@ struct fill_3D_matrix_functor {
       values(rowOffset - 1)  = -1.0;
     }
 
+    // Top-Right Edge
     // Compute row index
     k      = nz - 2;
     j      = idx;

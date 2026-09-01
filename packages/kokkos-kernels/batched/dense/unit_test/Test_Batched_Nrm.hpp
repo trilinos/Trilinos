@@ -39,7 +39,7 @@ struct Functor_BatchedNrm {
                               : std::is_same_v<ArgMode, KokkosBatched::Mode::Team>
                                   ? "KokkosBatched::Test::TeamNrm"
                                   : "KokkosBatched::Test::TeamVectorNrm";
-    const std::string name_value_type = Test::value_type_name<value_type>();
+    const std::string name_value_type = TestUtils::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
@@ -56,12 +56,14 @@ struct Functor_BatchedNrm {
 /// z = [1 + 2j, 3 + 4j, 5 + 6j]
 /// L1 norm: x: 9, z: 21
 /// L2 norm: x: sqrt(1^2 + 3^2 + 5^2) = sqrt(35), z: sqrt((1^2 + 2^2) + (3^2 + 4^2) + (5^2 + 6^2)) = sqrt(91)
-/// Linf norm: x: 5, z: sqrt(5^2 + 6^2) = sqrt(61)
+/// Linf norm: x: 5, z: 5 + 6 = 11
+/// GenuineL1 norm: x: 9, z: sqrt(1^2 + 2^2) + sqrt(3^2 + 4^2) + sqrt(5^2 + 6^2) = sqrt(5) + sqrt(25) + sqrt(61)
+/// GenuineLInf norm: x: 5, z: sqrt(5^2 + 6^2) = sqrt(61)
 ///
 /// \tparam DeviceType Kokkos device type
 /// \tparam ScalarType Kokkos scalar type
 /// \tparam LayoutType Kokkos layout type for the views
-/// \tparam ArgNorm: one of L1, L2, Linf, ScaledL2
+/// \tparam ArgNorm: one of L1, L2, Linf, ScaledL2, GenuineL1
 /// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
 ///
 /// \param[in] Nb Batch size of vectors
@@ -96,20 +98,25 @@ void impl_test_batched_nrm_analytical(const std::size_t Nb) {
       // L1 norm: 21, L2 norm: sqrt(91), Linf norm: sqrt(61)
       h_norm_ref(ib) = std::is_same_v<ArgNorm, Norm::L1>         ? RealType(21)
                        : std::is_same_v<ArgNorm, Norm::L2>       ? Kokkos::sqrt(RealType(91))
-                       : std::is_same_v<ArgNorm, Norm::LInf>     ? Kokkos::sqrt(RealType(61))
+                       : std::is_same_v<ArgNorm, Norm::LInf>     ? RealType(11)
                        : std::is_same_v<ArgNorm, Norm::ScaledL2> ? Kokkos::sqrt(RealType(91))
-                                                                 : RealType(-1);
+                       : std::is_same_v<ArgNorm, Norm::GenuineL1>
+                           ? (Kokkos::sqrt(RealType(5)) + 5 + Kokkos::sqrt(RealType(61)))
+                       : std::is_same_v<ArgNorm, Norm::GenuineLInf> ? Kokkos::sqrt(RealType(61))
+                                                                    : RealType(-1);
     } else {
       h_x(ib, 0) = ScalarType(1);
       h_x(ib, 1) = ScalarType(3);
       h_x(ib, 2) = ScalarType(5);
 
       // L1 norm: 9, L2 norm: sqrt(35), Linf norm: 5
-      h_norm_ref(ib) = std::is_same_v<ArgNorm, Norm::L1>         ? RealType(9)
-                       : std::is_same_v<ArgNorm, Norm::L2>       ? ats::sqrt(RealType(35))
-                       : std::is_same_v<ArgNorm, Norm::LInf>     ? RealType(5)
-                       : std::is_same_v<ArgNorm, Norm::ScaledL2> ? ats::sqrt(RealType(35))
-                                                                 : RealType(-1);
+      h_norm_ref(ib) = std::is_same_v<ArgNorm, Norm::L1>            ? RealType(9)
+                       : std::is_same_v<ArgNorm, Norm::L2>          ? ats::sqrt(RealType(35))
+                       : std::is_same_v<ArgNorm, Norm::LInf>        ? RealType(5)
+                       : std::is_same_v<ArgNorm, Norm::ScaledL2>    ? ats::sqrt(RealType(35))
+                       : std::is_same_v<ArgNorm, Norm::GenuineL1>   ? RealType(9)
+                       : std::is_same_v<ArgNorm, Norm::GenuineLInf> ? RealType(5)
+                                                                    : RealType(-1);
     }
   }
 
@@ -130,8 +137,8 @@ void impl_test_batched_nrm_analytical(const std::size_t Nb) {
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    KK_EXPECT_NEAR(h_norm(ib), h_norm_ref(ib), eps);
-    KK_EXPECT_NEAR(h_norm_s(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
   }
 }
 
@@ -212,8 +219,8 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
   auto h_norm_s = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, norm_s);
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    KK_EXPECT_NEAR(h_norm(ib), h_norm_ref(ib), eps);
-    KK_EXPECT_NEAR(h_norm_s(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
   }
 }
 
@@ -222,7 +229,7 @@ void impl_test_batched_nrm_overflow(const std::size_t Nb) {
 /// \tparam DeviceType Kokkos device type
 /// \tparam ScalarType Kokkos scalar type
 /// \tparam LayoutType Kokkos layout type for the views
-/// \tparam ArgNorm: one of L1, L2, Linf, ScaledL2
+/// \tparam ArgNorm: one of L1, L2, Linf, ScaledL2, GenuineL1, GenuineLInf
 /// \tparam ArgMode: one of Mode::Serial, Mode::Team, Mode::TeamVector
 ///
 /// \param[in] Nb Batch size of vectors
@@ -287,6 +294,15 @@ void impl_test_batched_nrm(const std::size_t Nb, const std::size_t N) {
       norm_tmp = Kokkos::sqrt(norm_tmp);
     } else if constexpr (std::is_same_v<ArgNorm, Norm::LInf>) {
       for (std::size_t i = 0; i < N; i++) {
+        const auto abs_val = asum(h_x(ib, i));
+        if (abs_val > norm_tmp) norm_tmp = abs_val;
+      }
+    } else if constexpr (std::is_same_v<ArgNorm, Norm::GenuineL1>) {
+      for (std::size_t i = 0; i < N; i++) {
+        norm_tmp += ats::abs(h_x(ib, i));
+      }
+    } else if constexpr (std::is_same_v<ArgNorm, Norm::GenuineLInf>) {
+      for (std::size_t i = 0; i < N; i++) {
         const auto abs_val = ats::abs(h_x(ib, i));
         if (abs_val > norm_tmp) norm_tmp = abs_val;
       }
@@ -300,8 +316,8 @@ void impl_test_batched_nrm(const std::size_t Nb, const std::size_t N) {
 
   // Check if norm is correct
   for (std::size_t ib = 0; ib < Nb; ib++) {
-    KK_EXPECT_NEAR(h_norm(ib), h_norm_ref(ib), eps);
-    KK_EXPECT_NEAR(h_norm_s(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm(ib), h_norm_ref(ib), eps);
+    EXPECT_NEAR_KK(h_norm_s(ib), h_norm_ref(ib), eps);
   }
 }
 
@@ -351,44 +367,60 @@ int test_batched_nrm() {
 TEST_F(TestCategory, test_batched_serial_nrm_l1_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::L1, KokkosBatched::Mode::Serial>();
 }
+TEST_F(TestCategory, test_batched_serial_nrm_genuinel1_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Serial>();
+}
 TEST_F(TestCategory, test_batched_serial_nrm_l2_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::L2, KokkosBatched::Mode::Serial>();
 }
-
+TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
+}
 TEST_F(TestCategory, test_batched_serial_nrm_linf_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Serial>();
 }
-
-TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_float) {
-  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_nrm_genuinelinf_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Serial>();
 }
 
 // Team
 TEST_F(TestCategory, test_batched_team_nrm_l1_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::L1, KokkosBatched::Mode::Team>();
 }
+TEST_F(TestCategory, test_batched_team_nrm_genuinel1_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Team>();
+}
 TEST_F(TestCategory, test_batched_team_nrm_l2_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::L2, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_nrm_linf_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Team>();
 }
-TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_float) {
-  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_nrm_genuinelinf_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
 TEST_F(TestCategory, test_batched_teamvector_nrm_l1_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::L1, KokkosBatched::Mode::TeamVector>();
 }
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinel1_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::TeamVector>();
+}
 TEST_F(TestCategory, test_batched_teamvector_nrm_l2_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::L2, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_nrm_linf_float) {
   test_batched_nrm<TestDevice, float, KokkosBatched::Norm::LInf, KokkosBatched::Mode::TeamVector>();
 }
-TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_float) {
-  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::TeamVector>();
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinelinf_float) {
+  test_batched_nrm<TestDevice, float, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 
@@ -397,42 +429,60 @@ TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_float) {
 TEST_F(TestCategory, test_batched_serial_nrm_l1_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::L1, KokkosBatched::Mode::Serial>();
 }
+TEST_F(TestCategory, test_batched_serial_nrm_genuinel1_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Serial>();
+}
 TEST_F(TestCategory, test_batched_serial_nrm_l2_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::L2, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
 }
 TEST_F(TestCategory, test_batched_serial_nrm_linf_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Serial>();
 }
-TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_double) {
-  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_nrm_genuinelinf_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Serial>();
 }
 
 // Team
 TEST_F(TestCategory, test_batched_team_nrm_l1_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::L1, KokkosBatched::Mode::Team>();
 }
+TEST_F(TestCategory, test_batched_team_nrm_genuinel1_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Team>();
+}
 TEST_F(TestCategory, test_batched_team_nrm_l2_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::L2, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_nrm_linf_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Team>();
 }
-TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_double) {
-  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_nrm_genuinelinf_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
 TEST_F(TestCategory, test_batched_teamvector_nrm_l1_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::L1, KokkosBatched::Mode::TeamVector>();
 }
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinel1_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::TeamVector>();
+}
 TEST_F(TestCategory, test_batched_teamvector_nrm_l2_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::L2, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_nrm_linf_double) {
   test_batched_nrm<TestDevice, double, KokkosBatched::Norm::LInf, KokkosBatched::Mode::TeamVector>();
 }
-TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_double) {
-  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::TeamVector>();
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinelinf_double) {
+  test_batched_nrm<TestDevice, double, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::TeamVector>();
 }
 #endif
 
@@ -441,42 +491,62 @@ TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_double) {
 TEST_F(TestCategory, test_batched_serial_nrm_l1_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::L1, KokkosBatched::Mode::Serial>();
 }
+TEST_F(TestCategory, test_batched_serial_nrm_genuinel1_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Serial>();
+}
 TEST_F(TestCategory, test_batched_serial_nrm_l2_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::L2, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
 }
 TEST_F(TestCategory, test_batched_serial_nrm_linf_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Serial>();
 }
-TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_fcomplex) {
-  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_nrm_genuinelinf_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Serial>();
 }
 
 // Team
 TEST_F(TestCategory, test_batched_team_nrm_l1_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::L1, KokkosBatched::Mode::Team>();
 }
+TEST_F(TestCategory, test_batched_team_nrm_genuinel1_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Team>();
+}
 TEST_F(TestCategory, test_batched_team_nrm_l2_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::L2, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_nrm_linf_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Team>();
 }
-TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_fcomplex) {
-  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_nrm_genuinelinf_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
 TEST_F(TestCategory, test_batched_teamvector_nrm_l1_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::L1, KokkosBatched::Mode::TeamVector>();
 }
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinel1_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::GenuineL1,
+                   KokkosBatched::Mode::TeamVector>();
+}
 TEST_F(TestCategory, test_batched_teamvector_nrm_l2_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::L2, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::ScaledL2,
+                   KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_nrm_linf_fcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::LInf, KokkosBatched::Mode::TeamVector>();
 }
-TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_fcomplex) {
-  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::ScaledL2,
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinelinf_fcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<float>, KokkosBatched::Norm::GenuineLInf,
                    KokkosBatched::Mode::TeamVector>();
 }
 #endif
@@ -486,42 +556,64 @@ TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_fcomplex) {
 TEST_F(TestCategory, test_batched_serial_nrm_l1_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::L1, KokkosBatched::Mode::Serial>();
 }
+TEST_F(TestCategory, test_batched_serial_nrm_genuinel1_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Serial>();
+}
 TEST_F(TestCategory, test_batched_serial_nrm_l2_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::L2, KokkosBatched::Mode::Serial>();
+}
+TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
 }
 TEST_F(TestCategory, test_batched_serial_nrm_linf_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Serial>();
 }
-TEST_F(TestCategory, test_batched_serial_nrm_scaled_l2_dcomplex) {
-  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Serial>();
+TEST_F(TestCategory, test_batched_serial_nrm_genuinelinf_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::GenuineLInf,
+                   KokkosBatched::Mode::Serial>();
 }
 
 // Team
 TEST_F(TestCategory, test_batched_team_nrm_l1_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::L1, KokkosBatched::Mode::Team>();
 }
+TEST_F(TestCategory, test_batched_team_nrm_genuinel1_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::GenuineL1, KokkosBatched::Mode::Team>();
+}
 TEST_F(TestCategory, test_batched_team_nrm_l2_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::L2, KokkosBatched::Mode::Team>();
+}
+TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
 }
 TEST_F(TestCategory, test_batched_team_nrm_linf_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::LInf, KokkosBatched::Mode::Team>();
 }
-TEST_F(TestCategory, test_batched_team_nrm_scaled_l2_dcomplex) {
-  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::ScaledL2, KokkosBatched::Mode::Team>();
+TEST_F(TestCategory, test_batched_team_nrm_genuinelinf_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::GenuineLInf, KokkosBatched::Mode::Team>();
 }
 
 // TeamVector
 TEST_F(TestCategory, test_batched_teamvector_nrm_l1_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::L1, KokkosBatched::Mode::TeamVector>();
 }
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinel1_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::GenuineL1,
+                   KokkosBatched::Mode::TeamVector>();
+}
 TEST_F(TestCategory, test_batched_teamvector_nrm_l2_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::L2, KokkosBatched::Mode::TeamVector>();
-}
-TEST_F(TestCategory, test_batched_teamvector_nrm_linf_dcomplex) {
-  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::LInf, KokkosBatched::Mode::TeamVector>();
 }
 TEST_F(TestCategory, test_batched_teamvector_nrm_scaled_l2_dcomplex) {
   test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::ScaledL2,
                    KokkosBatched::Mode::TeamVector>();
 }
+TEST_F(TestCategory, test_batched_teamvector_nrm_linf_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::LInf, KokkosBatched::Mode::TeamVector>();
+}
+TEST_F(TestCategory, test_batched_teamvector_nrm_genuinelinf_dcomplex) {
+  test_batched_nrm<TestDevice, Kokkos::complex<double>, KokkosBatched::Norm::GenuineLInf,
+                   KokkosBatched::Mode::TeamVector>();
+}
+
 #endif
