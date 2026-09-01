@@ -44,6 +44,14 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
   map_ = Teuchos::rcp(new tpetra_blockedmap_type(toTpetra(fullmap),
                                                  BlockedMapDetails::toTpetraMaps<LocalOrdinal, GlobalOrdinal, Node>(maps),
                                                  bThyraMode));
+  // Retain the original Xpetra sub-maps so getMap() preserves nested
+  // BlockedMap identity (the Tpetra core keeps only flattened plain maps).
+  // In Xpetra-style numbering these are the returned sub-maps; in Thyra-style
+  // numbering the incoming maps are the Thyra-numbered sub-maps.
+  if (bThyraMode)
+    thyraMapsXpetra_ = maps;
+  else
+    mapsXpetra_ = maps;
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -51,6 +59,10 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
     BlockedMap(const std::vector<RCP<const Map>>& maps, const std::vector<RCP<const Map>>& thyramaps) {
   map_ = Teuchos::rcp(new tpetra_blockedmap_type(BlockedMapDetails::toTpetraMaps<LocalOrdinal, GlobalOrdinal, Node>(maps),
                                                  BlockedMapDetails::toTpetraMaps<LocalOrdinal, GlobalOrdinal, Node>(thyramaps)));
+  // Retain the original Xpetra sub-maps so getMap() preserves nested
+  // BlockedMap identity for both numbering styles.
+  mapsXpetra_      = maps;
+  thyraMapsXpetra_ = thyramaps;
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -293,19 +305,21 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
                             "BlockedMap::getMap: tried to access block " << i << ", but BlockedMap has only " << getNumMaps()
                                                                          << " blocks! Block indices must be between 0 and " << getNumMaps() - 1
                                                                          << ".");
-  // (re)build the identity caches if needed
-  if (mapsXpetra_.size() != getNumMaps()) {
-    const size_t n = getNumMaps();
-    mapsXpetra_.assign(n, Teuchos::null);
-    thyraMapsXpetra_.assign(n, Teuchos::null);
-    for (size_t k = 0; k < n; ++k) {
-      mapsXpetra_[k] = toXpetra(map_->getMap(k, false));
-      if (map_->getThyraMode())
-        thyraMapsXpetra_[k] = toXpetra(map_->getMap(k, true));
-    }
-  }
+  // Size the identity caches without discarding any entries the constructor
+  // pre-populated: when this BlockedMap was built from Xpetra sub-maps, those
+  // originals are cached here so nested BlockedMap identity survives
+  // getMap()/rcp_dynamic_cast (the Tpetra core stores only flattened plain
+  // maps and cannot represent a nested BlockedMap).  resize() preserves
+  // existing slots; empty slots are filled lazily from the Tpetra core below.
+  const size_t n = getNumMaps();
+  if (mapsXpetra_.size() != n)
+    mapsXpetra_.resize(n);
+  if (thyraMapsXpetra_.size() != n)
+    thyraMapsXpetra_.resize(n);
 
   if (map_->getThyraMode() == true && bThyraMode == true) {
+    if (thyraMapsXpetra_[i].is_null())
+      thyraMapsXpetra_[i] = toXpetra(map_->getMap(i, true));
     return thyraMapsXpetra_[i];
   }
 
@@ -313,6 +327,8 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
                             Xpetra::Exceptions::RuntimeError,
                             "BlockedMap::getMap: cannot return sub map in Thyra-style numbering if BlockedMap object is not created using "
                             "Thyra-style numbered submaps.");
+  if (mapsXpetra_[i].is_null())
+    mapsXpetra_[i] = toXpetra(map_->getMap(i, false));
   return mapsXpetra_[i];
 }
 

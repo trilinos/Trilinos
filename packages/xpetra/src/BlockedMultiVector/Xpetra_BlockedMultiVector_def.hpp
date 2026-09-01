@@ -69,6 +69,9 @@ BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                        size_t NumVectors,
                        bool zeroOut) {
   vec_ = Teuchos::rcp(new tpetra_blockedmultivector_type(map->getTpetra_BlockedMap(), NumVectors, zeroOut));
+  // Retain the Xpetra BlockedMap so getBlockedMap() preserves nested BlockedMap
+  // identity (the Tpetra core keeps only a flattened blocked map).
+  blockedMapXpetra_ = map;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -77,6 +80,7 @@ BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                        Teuchos::RCP<const MultiVector> v) {
   vec_ = Teuchos::rcp(new tpetra_blockedmultivector_type(bmap->getTpetra_BlockedMap(),
                                                          BlockedMultiVectorDetails::unwrapMultiVector(v)));
+  blockedMapXpetra_ = bmap;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -92,6 +96,7 @@ BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(mapExtractor->getFullMap(), maps, mapExtractor->getThyraMode()));
   vec_ = Teuchos::rcp(new tpetra_blockedmultivector_type(bmap->getTpetra_BlockedMap(),
                                                          BlockedMultiVectorDetails::unwrapMultiVector(v)));
+  blockedMapXpetra_ = bmap;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -102,6 +107,7 @@ BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   for (size_t i = 0; i < vin.size(); ++i)
     tvin[i] = BlockedMultiVectorDetails::unwrapMultiVector(vin[i]);
   vec_ = Teuchos::rcp(new tpetra_blockedmultivector_type(map->getTpetra_BlockedMap(), tvin));
+  blockedMapXpetra_ = map;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -328,9 +334,11 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // A blocked map replaces the whole block structure; a plain map goes to the single-block overload.
   RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap =
       Teuchos::rcp_dynamic_cast<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>(map);
-  if (!bmap.is_null())
+  if (!bmap.is_null()) {
     vec_->replaceMap(bmap->getTpetra_BlockedMap());
-  else
+    // Retain the Xpetra blocked map so getBlockedMap() preserves nested identity.
+    blockedMapXpetra_ = bmap;
+  } else
     vec_->replaceMap(toTpetra(map));
 }
 

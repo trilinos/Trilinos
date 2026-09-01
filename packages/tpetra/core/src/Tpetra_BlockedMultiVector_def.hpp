@@ -224,7 +224,12 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     update(const Scalar& alpha, const MultiVector& A, const Scalar& beta) {
   Teuchos::RCP<const MultiVector> rcpA      = Teuchos::rcpFromRef(A);
   Teuchos::RCP<const BlockedMultiVector> bA = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpA);
-  TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != rcpA->getNumVectors(),
+  // NOTE (Tpetra port): Tpetra::MultiVector::getNumVectors() is NOT virtual (unlike
+  // Xpetra's), so querying it through an RCP<const MultiVector> that actually refers to a
+  // BlockedMultiVector reports the empty base object's column count.  Query the true count
+  // through the blocked interface when A is itself a BlockedMultiVector.
+  const size_t aNumVectors = bA.is_null() ? rcpA->getNumVectors() : bA->getNumVectors();
+  TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != aNumVectors,
                              std::runtime_error,
                              "BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector).");
   if (bA != Teuchos::null) {
