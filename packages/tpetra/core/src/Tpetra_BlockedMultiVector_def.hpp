@@ -523,10 +523,16 @@ void BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TEUCHOS_TEST_FOR_EXCEPTION(r >= map_->getNumMaps(),
                              std::out_of_range,
                              "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << map_->getNumMaps() << " partial blocks.");
-  TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != v->getNumVectors(),
+  // NOTE (Tpetra port): Tpetra::MultiVector::getNumVectors() is NOT virtual (unlike
+  // Xpetra's), so a blocked partial vector passed here through an RCP<const MultiVector>
+  // would report the empty base object's column count.  Query the true count through the
+  // blocked interface when the incoming vector is itself a BlockedMultiVector.
+  Teuchos::RCP<const BlockedMultiVector> vblocked = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(v);
+  const size_t vNumVectors                        = vblocked.is_null() ? v->getNumVectors() : vblocked->getNumVectors();
+  TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != vNumVectors,
                              std::runtime_error,
                              "The BlockedMultiVectors expects " << getNumVectors() << " vectors. The provided partial multivector has "
-                                                                << v->getNumVectors() << " vectors.");
+                                                                << vNumVectors << " vectors.");
   TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() != bThyraMode,
                              std::runtime_error,
                              "BlockedMultiVector::setMultiVector: inconsistent Thyra mode");
