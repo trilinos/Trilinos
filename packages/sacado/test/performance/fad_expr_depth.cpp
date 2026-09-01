@@ -448,8 +448,6 @@ int main() {
     "Sacado::CacheFad::DFad", "fad_expr_depth_cache_dfad.txt");
   print_times< Sacado::ELRCacheFad::DFad<double> >(
     "Sacado::ELRCacheFad::DFad", "fad_expr_depth_elr_cache_dfad.txt");
-  print_times< Sacado::Fad::SimpleFad<double> >(
-    "Sacado::Fad::SimpleFad", "fad_expr_depth_simple_fad.txt");
 #ifdef HAVE_ADOLC
   print_times_adolc("ADOL-C", "fad_expr_depth_adolc.txt");
 #endif

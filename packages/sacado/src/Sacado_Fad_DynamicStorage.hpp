@@ -10,28 +10,13 @@
 #ifndef SACADO_FAD_DYNAMICSTORAGE_HPP
 #define SACADO_FAD_DYNAMICSTORAGE_HPP
 
+#include <type_traits>
+#include <utility>
+
 #include "Sacado_ConfigDefs.h"
-
-#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
-
-#include "Sacado_Fad_Exp_DynamicStorage.hpp"
-
-namespace Sacado {
-  namespace Fad {
-
-    template <typename T, typename U = T>
-    using DynamicStorage = Exp::DynamicStorage<T,U>;
-
-  }
-}
-
-#else
-
-#include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
 
 namespace Sacado {
-
   namespace Fad {
 
     //! Derivative array storage class using dynamic memory allocation
@@ -40,20 +25,40 @@ namespace Sacado {
 
     public:
 
-      typedef T value_type;
+      typedef typename std::remove_cv<T>::type value_type;
+      static constexpr bool is_statically_sized = false;
+      static constexpr int static_size = 0;
+      static constexpr bool is_view = false;
+
+      //! Turn DynamicStorage into a meta-function class usable with mpl::apply
+      template <typename TT, typename UU = TT>
+      struct apply {
+        typedef DynamicStorage<TT,UU> type;
+      };
+
+      //! Replace static derivative length
+      template <int N>
+      struct apply_N {
+        typedef DynamicStorage<T,U> type;
+      };
 
       //! Default constructor
-      template <typename S>
       SACADO_INLINE_FUNCTION
-      DynamicStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
-        val_(x), sz_(0), len_(0), dx_(NULL) {}
+      DynamicStorage() :
+        val_(), sz_(0), len_(0), dx_(nullptr) {}
+
+      //! Constructor with value
+      SACADO_INLINE_FUNCTION
+      DynamicStorage(const T & x) :
+        val_(x), sz_(0), len_(0), dx_(nullptr) {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
       SACADO_INLINE_FUNCTION
-      DynamicStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
+      DynamicStorage(const int sz, const T & x,
+                     const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz), len_(sz) {
         if (zero_out == InitDerivArray)
           dx_ = ds_array<U>::get_and_fill(sz_);
@@ -61,11 +66,32 @@ namespace Sacado {
           dx_ = ds_array<U>::get(sz_);
       }
 
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      SACADO_INLINE_FUNCTION
+      DynamicStorage(const int sz, const int i, const value_type & x) :
+        DynamicStorage(sz, x, InitDerivArray) {
+        dx_[i]=1.;
+      }
+
       //! Copy constructor
       SACADO_INLINE_FUNCTION
       DynamicStorage(const DynamicStorage& x) :
         val_(x.val_), sz_(x.sz_), len_(x.sz_) {
         dx_ = ds_array<U>::get_and_fill(x.dx_, sz_);
+      }
+
+      //! Move constructor
+      SACADO_INLINE_FUNCTION
+      DynamicStorage(DynamicStorage&& x) :
+        val_(std::move(x.val_)), sz_(x.sz_), len_(x.len_), dx_(x.dx_) {
+        x.sz_ = 0;
+        x.len_ = 0;
+        x.dx_ = nullptr;
       }
 
       //! Destructor
@@ -93,6 +119,20 @@ namespace Sacado {
           }
           else
             ds_array<U>::copy(x.dx_, dx_, sz_);
+        }
+        return *this;
+      }
+
+      //! Move assignment
+      SACADO_INLINE_FUNCTION
+      DynamicStorage& operator=(DynamicStorage&& x) {
+        if (this != &x) {
+          if (len_ != 0)
+            ds_array<U>::destroy_and_release(dx_, len_);
+          val_ = std::move(x.val_);
+          sz_ = x.sz_; x.sz_ = 0;
+          len_ = x.len_; x.len_ = 0;
+          dx_ = x.dx_; x.dx_ = nullptr;
         }
         return *this;
       }
@@ -176,7 +216,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       const U* dx() const { return dx_;}
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD_STRIDED) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
 
       //! Returns derivative component \c i with bounds checking
       SACADO_INLINE_FUNCTION
@@ -225,7 +265,5 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
-
-#endif // SACADO_NEW_FAD_DESIGN_IS_DEFAULT
 
 #endif // SACADO_FAD_DYNAMICSTORAGE_HPP

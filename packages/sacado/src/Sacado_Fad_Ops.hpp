@@ -4,77 +4,55 @@
 //
 // Copyright 2006 NTESS and the Sacado contributors.
 // SPDX-License-Identifier: LGPL-2.1-or-later
-//
-// ***********************************************************************
-//
-// The forward-mode AD classes in Sacado are a derivative work of the
-// expression template classes in the Fad package by Nicolas Di Cesare.
-// The following banner is included in the original Fad source code:
-//
-// ************ DO NOT REMOVE THIS BANNER ****************
-//
-//  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
-//  http://www.ann.jussieu.fr/~dicesare
-//
-//            CEMRACS 98 : C++ courses,
-//         templates : new C++ techniques
-//            for scientific computing
-//
-//********************************************************
-//
-//  A short implementation ( not all operators and
-//  functions are overloaded ) of 1st order Automatic
-//  Differentiation in forward mode (FAD) using
-//  EXPRESSION TEMPLATES.
-//
-//********************************************************
+// *****************************************************************************
 // @HEADER
 
 #ifndef SACADO_FAD_OPS_HPP
 #define SACADO_FAD_OPS_HPP
 
+#include <type_traits>
+#include <ostream>
+
 #include "Sacado_Fad_Expression.hpp"
+#include "Sacado_Fad_ExpressionTraits.hpp"
 #include "Sacado_Fad_Ops_Fwd.hpp"
 #include "Sacado_cmath.hpp"
-#include <ostream>      // for std::ostream
+
+#include "Sacado_mpl_has_equal_to.hpp"
+
+#if defined(HAVE_SACADO_KOKKOS)
+#include "Kokkos_Atomic.hpp"
+#include "impl/Kokkos_Error.hpp"
+#endif
 
 #define FAD_UNARYOP_MACRO(OPNAME,OP,USING,VALUE,DX,FASTACCESSDX)        \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
                                                                         \
-    template <typename ExprT>                                           \
+    template <typename T, typename ExprSpec>                            \
     class OP {};                                                        \
                                                                         \
-    template <typename ExprT>                                           \
-    struct ExprSpec< OP<ExprT> > {                                      \
-      typedef typename ExprSpec<ExprT>::type type;                      \
-    };                                                                  \
-                                                                        \
-    template <typename ExprT>                                           \
-    class Expr< OP<ExprT>,ExprSpecDefault > {                           \
+    template <typename T>                                               \
+    class OP< T,ExprSpecDefault > :                                     \
+      public Expr< OP<T,ExprSpecDefault> > {                            \
     public:                                                             \
                                                                         \
+      typedef typename std::remove_cv<T>::type ExprT;                   \
       typedef typename ExprT::value_type value_type;                    \
       typedef typename ExprT::scalar_type scalar_type;                  \
-      typedef typename ExprT::base_expr_type base_expr_type;            \
+                                                                        \
+      typedef ExprSpecDefault expr_spec_type;                           \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      explicit Expr(const ExprT& expr_) : expr(expr_)  {}               \
+      explicit OP(const T& expr_) : expr(expr_)  {}                     \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
       int size() const { return expr.size(); }                          \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      bool hasFastAccess() const { return expr.hasFastAccess(); }       \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      bool isPassive() const { return expr.isPassive();}                \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      bool updateValue() const { return expr.updateValue(); }           \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      void cache() const {}                                             \
+      bool hasFastAccess() const {                                      \
+        return expr.hasFastAccess();                                    \
+      }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
@@ -96,19 +74,58 @@ namespace Sacado {                                                      \
                                                                         \
     protected:                                                          \
                                                                         \
-      const ExprT& expr;                                                \
+      const T& expr;                                                    \
     };                                                                  \
                                                                         \
     template <typename T>                                               \
     SACADO_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T> > >                                               \
+    OP< typename Expr<T>::derived_type,                                 \
+        typename T::expr_spec_type >                                    \
     OPNAME (const Expr<T>& expr)                                        \
     {                                                                   \
-      typedef OP< Expr<T> > expr_t;                                     \
+      typedef OP< typename Expr<T>::derived_type,                       \
+                  typename T::expr_spec_type > expr_t;                  \
                                                                         \
-      return Expr<expr_t>(expr);                                        \
+      return expr_t(expr.derived());                                    \
     }                                                                   \
+                                                                        \
+    template <typename T, typename E>                                   \
+    struct ExprLevel< OP< T,E > > {                                     \
+      static const unsigned value = ExprLevel<T>::value;                \
+    };                                                                  \
+                                                                        \
+    template <typename T, typename E>                                   \
+    struct IsFadExpr< OP< T,E > > {                                     \
+      static const unsigned value = true;                               \
+    };                                                                  \
+                                                                        \
   }                                                                     \
+                                                                        \
+  template <typename T, typename E>                                     \
+  struct IsExpr< Fad::OP< T,E > > {                                \
+    static const bool value = true;                                     \
+  };                                                                    \
+                                                                        \
+  template <typename T, typename E>                                     \
+  struct BaseExprType< Fad::OP< T,E > > {                          \
+    typedef typename BaseExprType<T>::type type;                        \
+  };                                                                    \
+                                                                        \
+  template <typename T, typename E>                                     \
+  struct IsSimdType< Fad::OP< T,E > > {                            \
+    static const bool value =                                           \
+      IsSimdType< typename Fad::OP< T,E >::scalar_type >::value;   \
+  };                                                                    \
+                                                                        \
+  template <typename T, typename E>                                     \
+  struct ValueType< Fad::OP< T,E > > {                             \
+    typedef typename Fad::OP< T,E >::value_type type;              \
+  };                                                                    \
+                                                                        \
+  template <typename T, typename E>                                     \
+  struct ScalarType< Fad::OP< T,E > > {                            \
+    typedef typename Fad::OP< T,E >::scalar_type type;             \
+  };                                                                    \
                                                                         \
 }
 
@@ -132,7 +149,7 @@ FAD_UNARYOP_MACRO(exp,
                   exp(expr.val())*expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(expm1,
                   ExpM1Op,
-                  using std::expm1;,
+                  using std::expm1; using std::exp;,
                   expm1(expr.val()),
                   exp(expr.val())*expr.dx(i),
                   exp(expr.val())*expr.fastAccessDx(i))
@@ -175,7 +192,7 @@ FAD_UNARYOP_MACRO(sin,
 FAD_UNARYOP_MACRO(tan,
                   TanOp,
                   using std::tan;,
-                  std::tan(expr.val()),
+                  tan(expr.val()),
                   expr.dx(i)*
                     (value_type(1)+ tan(expr.val())* tan(expr.val())),
                   expr.fastAccessDx(i)*
@@ -259,8 +276,6 @@ FAD_UNARYOP_MACRO(cbrt,
                   expr.dx(i)/(value_type(3)*cbrt(expr.val()*expr.val())),
                   expr.fastAccessDx(i)/(value_type(3)*cbrt(expr.val()*expr.val())))
 
-#undef FAD_UNARYOP_MACRO
-
 // Special handling for safe_sqrt() to provide specializations of SafeSqrtOp for
 // "simd" value types that use if_then_else(). The only reason for not using
 // if_then_else() always is to avoid evaluating the derivative if the value is
@@ -268,42 +283,33 @@ FAD_UNARYOP_MACRO(cbrt,
 namespace Sacado {
   namespace Fad {
 
-    template <typename ExprT, bool is_simd>
+    template <typename T, typename ExprSpec, bool is_simd>
     class SafeSqrtOp {};
-
-    template <typename ExprT>
-    struct ExprSpec< SafeSqrtOp<ExprT> > {
-      typedef typename ExprSpec<ExprT>::type type;
-    };
 
     //
     // Implementation for simd type using if_then_else()
     //
-    template <typename ExprT>
-    class Expr< SafeSqrtOp<ExprT,true>,ExprSpecDefault > {
+    template <typename T>
+    class SafeSqrtOp< T,ExprSpecDefault,true > :
+      public Expr< SafeSqrtOp<T,ExprSpecDefault> > {
     public:
 
+      typedef typename std::remove_cv<T>::type ExprT;
       typedef typename ExprT::value_type value_type;
       typedef typename ExprT::scalar_type scalar_type;
-      typedef typename ExprT::base_expr_type base_expr_type;
+
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
+      explicit SafeSqrtOp(const T& expr_) : expr(expr_)  {}
 
       SACADO_INLINE_FUNCTION
       int size() const { return expr.size(); }
 
       SACADO_INLINE_FUNCTION
-      bool hasFastAccess() const { return expr.hasFastAccess(); }
-
-      SACADO_INLINE_FUNCTION
-      bool isPassive() const { return expr.isPassive();}
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
+      bool hasFastAccess() const {
+        return expr.hasFastAccess();
+      }
 
       SACADO_INLINE_FUNCTION
       value_type val() const {
@@ -329,37 +335,33 @@ namespace Sacado {
 
     protected:
 
-      const ExprT& expr;
+      const T& expr;
     };
 
     //
     // Specialization for scalar types using ternary operator
     //
-    template <typename ExprT>
-    class Expr< SafeSqrtOp<ExprT,false>,ExprSpecDefault > {
+    template <typename T>
+    class SafeSqrtOp< T,ExprSpecDefault,false > :
+      public Expr< SafeSqrtOp<T,ExprSpecDefault> > {
     public:
 
+      typedef typename std::remove_cv<T>::type ExprT;
       typedef typename ExprT::value_type value_type;
       typedef typename ExprT::scalar_type scalar_type;
-      typedef typename ExprT::base_expr_type base_expr_type;
+
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      explicit Expr(const ExprT& expr_) : expr(expr_)  {}
+      explicit SafeSqrtOp(const T& expr_) : expr(expr_)  {}
 
       SACADO_INLINE_FUNCTION
       int size() const { return expr.size(); }
 
       SACADO_INLINE_FUNCTION
-      bool hasFastAccess() const { return expr.hasFastAccess(); }
-
-      SACADO_INLINE_FUNCTION
-      bool isPassive() const { return expr.isPassive();}
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
+      bool hasFastAccess() const {
+        return expr.hasFastAccess();
+      }
 
       SACADO_INLINE_FUNCTION
       value_type val() const {
@@ -383,39 +385,80 @@ namespace Sacado {
 
     protected:
 
-      const ExprT& expr;
+      const T& expr;
     };
 
     template <typename T>
     SACADO_INLINE_FUNCTION
-    Expr< SafeSqrtOp< Expr<T> > >
+    SafeSqrtOp< typename Expr<T>::derived_type,
+                typename T::expr_spec_type >
     safe_sqrt (const Expr<T>& expr)
     {
-      typedef SafeSqrtOp< Expr<T> > expr_t;
+      typedef SafeSqrtOp< typename Expr<T>::derived_type,
+                          typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(expr);
+      return expr_t(expr.derived());
     }
+
+    template <typename T, typename E>
+    struct ExprLevel< SafeSqrtOp< T,E > > {
+      static const unsigned value = ExprLevel<T>::value;
+    };
+
+    template <typename T, typename E>
+    struct IsFadExpr< SafeSqrtOp< T,E > > {
+      static const unsigned value = true;
+    };
+
   }
+
+  template <typename T, typename E>
+  struct IsExpr< Fad::SafeSqrtOp< T,E > > {
+    static const bool value = true;
+  };
+
+  template <typename T, typename E>
+  struct BaseExprType< Fad::SafeSqrtOp< T,E > > {
+    typedef typename BaseExprType<T>::type type;
+  };
+
+  template <typename T, typename E>
+  struct IsSimdType< Fad::SafeSqrtOp< T,E > > {
+    static const bool value =
+      IsSimdType< typename Fad::SafeSqrtOp< T,E >::scalar_type >::value;
+  };
+
+  template <typename T, typename E>
+  struct ValueType< Fad::SafeSqrtOp< T,E > > {
+    typedef typename Fad::SafeSqrtOp< T,E >::value_type type;
+  };
+
+  template <typename T, typename E>
+  struct ScalarType< Fad::SafeSqrtOp< T,E > > {
+    typedef typename Fad::SafeSqrtOp< T,E >::scalar_type type;
+  };
 
 }
 
-#define FAD_BINARYOP_MACRO(OPNAME,OP,USING,VALUE,DX,FASTACCESSDX,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
+#undef FAD_UNARYOP_MACRO
+
+#define FAD_BINARYOP_MACRO(OPNAME,OP,USING,VALUE,DX,CDX1,CDX2,FASTACCESSDX,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
+                                                         \
                                                                         \
-    template <typename ExprT1, typename ExprT2>                         \
+    template <typename T1, typename T2,                                 \
+              bool is_const_T1, bool is_const_T2,                       \
+              typename ExprSpec >                                       \
     class OP {};                                                        \
                                                                         \
-    template <typename ExprT1, typename ExprT2>                         \
-    struct ExprSpec< OP< ExprT1, ExprT2 > > {                           \
-      typedef typename ExprSpec<ExprT1>::type type;                     \
-    };                                                                  \
-                                                                        \
-    template <typename ExprT1, typename ExprT2>                         \
-    class Expr< OP< ExprT1, ExprT2 >,ExprSpecDefault > {                \
-                                                                        \
+    template <typename T1, typename T2>                                 \
+    class OP< T1, T2, false, false, ExprSpecDefault > :                 \
+      public Expr< OP< T1, T2, false, false, ExprSpecDefault > > {      \
     public:                                                             \
                                                                         \
+      typedef typename std::remove_cv<T1>::type ExprT1;                 \
+      typedef typename std::remove_cv<T2>::type ExprT2;                 \
       typedef typename ExprT1::value_type value_type_1;                 \
       typedef typename ExprT2::value_type value_type_2;                 \
       typedef typename Sacado::Promote<value_type_1,                    \
@@ -426,18 +469,15 @@ namespace Sacado {                                                      \
       typedef typename Sacado::Promote<scalar_type_1,                   \
                                        scalar_type_2>::type scalar_type; \
                                                                         \
-      typedef typename ExprT1::base_expr_type base_expr_type_1;         \
-      typedef typename ExprT2::base_expr_type base_expr_type_2;         \
-      typedef typename Sacado::Promote<base_expr_type_1,                \
-                                       base_expr_type_2>::type base_expr_type; \
+      typedef ExprSpecDefault expr_spec_type;                           \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :                \
+      OP(const T1& expr1_, const T2& expr2_) :                          \
         expr1(expr1_), expr2(expr2_) {}                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
       int size() const {                                                \
-        int sz1 = expr1.size(), sz2 = expr2.size();                     \
+        const int sz1 = expr1.size(), sz2 = expr2.size();               \
         return sz1 > sz2 ? sz1 : sz2;                                   \
       }                                                                 \
                                                                         \
@@ -447,72 +487,50 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      bool isPassive() const {                                          \
-        return expr1.isPassive() && expr2.isPassive();                  \
-      }                                                                 \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      bool updateValue() const {                                        \
-        return expr1.updateValue() && expr2.updateValue();              \
-      }                                                                 \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      void cache() const {}                                             \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      const value_type val() const {                                    \
+      value_type val() const {                                          \
         USING                                                           \
         return VALUE;                                                   \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      const value_type dx(int i) const {                                \
+      value_type dx(int i) const {                                      \
         USING                                                           \
-        return DX;                                                      \
+        const int sz1 = expr1.size(), sz2 = expr2.size();               \
+        if (sz1 > 0 && sz2 > 0)                                         \
+          return DX;                                                    \
+        else if (sz1 > 0)                                               \
+          return CDX2;                                                  \
+        else                                                            \
+          return CDX1;                                                  \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      const value_type fastAccessDx(int i) const {                      \
+      value_type fastAccessDx(int i) const {                            \
         USING                                                           \
         return FASTACCESSDX;                                            \
       }                                                                 \
                                                                         \
     protected:                                                          \
                                                                         \
-      const ExprT1& expr1;                                              \
-      const ExprT2& expr2;                                              \
+      const T1& expr1;                                                  \
+      const T2& expr2;                                                  \
                                                                         \
     };                                                                  \
                                                                         \
-    template <typename ExprT1, typename T2>                             \
-    struct ExprSpec< OP< ExprT1, ConstExpr<T2> > > {                    \
-      typedef typename ExprSpec<ExprT1>::type type;                     \
-    };                                                                  \
-                                                                        \
-    template <typename ExprT1, typename T2>                             \
-    class Expr< OP< ExprT1, ConstExpr<T2> >,ExprSpecDefault > {         \
-                                                                        \
+    template <typename T1, typename T2>                                 \
+    class OP< T1, T2, false, true, ExprSpecDefault >                    \
+      : public Expr< OP< T1, T2, false, true, ExprSpecDefault > > {     \
     public:                                                             \
                                                                         \
-      typedef ConstExpr<T2> ConstT;                                     \
-      typedef ConstExpr<T2> ExprT2;                                     \
-      typedef typename ExprT1::value_type value_type_1;                 \
-      typedef typename ExprT2::value_type value_type_2;                 \
-      typedef typename Sacado::Promote<value_type_1,                    \
-                                       value_type_2>::type value_type;  \
+      typedef typename std::remove_cv<T1>::type ExprT1;                 \
+      typedef T2 ConstT;                                                \
+      typedef typename ExprT1::value_type value_type;                   \
+      typedef typename ExprT1::scalar_type scalar_type;                 \
                                                                         \
-      typedef typename ExprT1::scalar_type scalar_type_1;               \
-      typedef typename ExprT2::scalar_type scalar_type_2;               \
-      typedef typename Sacado::Promote<scalar_type_1,                   \
-                                       scalar_type_2>::type scalar_type; \
-                                                                        \
-      typedef typename ExprT1::base_expr_type base_expr_type_1;         \
-      typedef typename ExprT2::base_expr_type base_expr_type_2;         \
-      typedef typename Sacado::Promote<base_expr_type_1,                \
-                                       base_expr_type_2>::type base_expr_type; \
+      typedef ExprSpecDefault expr_spec_type;                           \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      Expr(const ExprT1& expr1_, const ConstT& c_) :                    \
+      OP(const T1& expr1_, const ConstT& c_) :                          \
         expr1(expr1_), c(c_) {}                                         \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
@@ -526,70 +544,43 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      bool isPassive() const {                                          \
-        return expr1.isPassive();                                       \
-      }                                                                 \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      bool updateValue() const { return expr1.updateValue(); }          \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      void cache() const {}                                             \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      const value_type val() const {                                    \
+      value_type val() const {                                          \
         USING                                                           \
         return VAL_CONST_DX_2;                                          \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      const value_type dx(int i) const {                                \
+      value_type dx(int i) const {                                      \
         USING                                                           \
         return CONST_DX_2;                                              \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      const value_type fastAccessDx(int i) const {                      \
+      value_type fastAccessDx(int i) const {                            \
         USING                                                           \
         return CONST_FASTACCESSDX_2;                                    \
       }                                                                 \
                                                                         \
     protected:                                                          \
                                                                         \
-      const ExprT1& expr1;                                              \
-      ConstT c;                                                         \
+      const T1& expr1;                                                  \
+      const ConstT& c;                                                  \
     };                                                                  \
                                                                         \
-    template <typename T1, typename ExprT2>                             \
-    struct ExprSpec< OP< ConstExpr<T1>, ExprT2 > > {                    \
-      typedef typename ExprSpec<ExprT2>::type type;                     \
-    };                                                                  \
-                                                                        \
-    template <typename T1, typename ExprT2>                             \
-    class Expr< OP< ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {         \
-                                                                        \
+    template <typename T1, typename T2>                                 \
+    class OP< T1, T2, true, false, ExprSpecDefault >                    \
+      : public Expr< OP< T1, T2, true, false, ExprSpecDefault > > {     \
     public:                                                             \
                                                                         \
-      typedef ConstExpr<T1> ConstT;                                     \
-      typedef ConstExpr<T1> ExprT1;                                     \
-      typedef typename ExprT1::value_type value_type_1;                 \
-      typedef typename ExprT2::value_type value_type_2;                 \
-      typedef typename Sacado::Promote<value_type_1,                    \
-                                       value_type_2>::type value_type;  \
+      typedef typename std::remove_cv<T2>::type ExprT2;                 \
+      typedef T1 ConstT;                                                \
+      typedef typename ExprT2::value_type value_type;                   \
+      typedef typename ExprT2::scalar_type scalar_type;                 \
                                                                         \
-      typedef typename ExprT1::scalar_type scalar_type_1;               \
-      typedef typename ExprT2::scalar_type scalar_type_2;               \
-      typedef typename Sacado::Promote<scalar_type_1,                   \
-                                       scalar_type_2>::type scalar_type; \
-                                                                        \
-      typedef typename ExprT1::base_expr_type base_expr_type_1;         \
-      typedef typename ExprT2::base_expr_type base_expr_type_2;         \
-      typedef typename Sacado::Promote<base_expr_type_1,                \
-                                       base_expr_type_2>::type base_expr_type; \
-                                                                        \
+      typedef ExprSpecDefault expr_spec_type;                           \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      Expr(const ConstT& c_, const ExprT2& expr2_) :                    \
+      OP(const ConstT& c_, const T2& expr2_) :                          \
         c(c_), expr2(expr2_) {}                                         \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
@@ -603,114 +594,138 @@ namespace Sacado {                                                      \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      bool isPassive() const {                                          \
-        return expr2.isPassive();                                       \
-      }                                                                 \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      bool updateValue() const { return expr2.updateValue(); }          \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      void cache() const {}                                             \
-                                                                        \
-      SACADO_INLINE_FUNCTION                                            \
-      const value_type val() const {                                    \
+      value_type val() const {                                          \
         USING                                                           \
         return VAL_CONST_DX_1;                                          \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      const value_type dx(int i) const {                                \
+      value_type dx(int i) const {                                      \
         USING                                                           \
         return CONST_DX_1;                                              \
       }                                                                 \
                                                                         \
       SACADO_INLINE_FUNCTION                                            \
-      const value_type fastAccessDx(int i) const {                      \
+      value_type fastAccessDx(int i) const {                            \
         USING                                                           \
         return CONST_FASTACCESSDX_1;                                    \
       }                                                                 \
                                                                         \
     protected:                                                          \
                                                                         \
-      ConstT c;                                                         \
-      const ExprT2& expr2;                                              \
+      const ConstT& c;                                                  \
+      const T2& expr2;                                                  \
     };                                                                  \
                                                                         \
     template <typename T1, typename T2>                                 \
     SACADO_INLINE_FUNCTION                                              \
-    typename mpl::enable_if_c<                                          \
-       ExprLevel< Expr<T1> >::value == ExprLevel< Expr<T2> >::value,    \
-       Expr< OP< Expr<T1>, Expr<T2> > >                                 \
-     >::type                                                            \
-    /*SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)*/                              \
-    OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)               \
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_EXPR(OP)                              \
+    OPNAME (const T1& expr1, const T2& expr2)                           \
     {                                                                   \
-      typedef OP< Expr<T1>, Expr<T2> > expr_t;                          \
+      typedef OP< typename Expr<T1>::derived_type,                      \
+                  typename Expr<T2>::derived_type,                      \
+                  false, false, typename T1::expr_spec_type > expr_t;   \
                                                                         \
-      return Expr<expr_t>(expr1, expr2);                                \
+      return expr_t(expr1.derived(), expr2.derived());                  \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
     SACADO_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T>, Expr<T> > >                                      \
-    OPNAME (const Expr<T>& expr1, const Expr<T>& expr2)                 \
-    {                                                                   \
-      typedef OP< Expr<T>, Expr<T> > expr_t;                            \
-                                                                        \
-      return Expr<expr_t>(expr1, expr2);                                \
-    }                                                                   \
-                                                                        \
-    template <typename T>                                               \
-    SACADO_INLINE_FUNCTION                                              \
-    Expr< OP< ConstExpr<typename Expr<T>::value_type>,                  \
-              Expr<T> > >                                               \
-    OPNAME (const typename Expr<T>::value_type& c,                      \
+    OP< typename T::value_type, typename Expr<T>::derived_type,         \
+        true, false, typename T::expr_spec_type >                       \
+    OPNAME (const typename T::value_type& c,                            \
             const Expr<T>& expr)                                        \
     {                                                                   \
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;           \
-      typedef OP< ConstT, Expr<T> > expr_t;                             \
+      typedef typename T::value_type ConstT;                            \
+      typedef OP< ConstT, typename Expr<T>::derived_type,               \
+                  true, false, typename T::expr_spec_type > expr_t;     \
                                                                         \
-      return Expr<expr_t>(ConstT(c), expr);                             \
+      return expr_t(c, expr.derived());                                 \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
     SACADO_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T>,                                                  \
-              ConstExpr<typename Expr<T>::value_type> > >               \
+    OP< typename Expr<T>::derived_type, typename T::value_type,         \
+        false, true, typename T::expr_spec_type >                       \
     OPNAME (const Expr<T>& expr,                                        \
-            const typename Expr<T>::value_type& c)                      \
+            const typename T::value_type& c)                            \
     {                                                                   \
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;           \
-      typedef OP< Expr<T>, ConstT > expr_t;                             \
+      typedef typename T::value_type ConstT;                            \
+      typedef OP< typename Expr<T>::derived_type, ConstT,               \
+                  false, true, typename T::expr_spec_type > expr_t;     \
                                                                         \
-      return Expr<expr_t>(expr, ConstT(c));                             \
+      return expr_t(expr.derived(), c);                                 \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
     SACADO_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                                \
-    OPNAME (const typename Expr<T>::scalar_type& c,                     \
+    SACADO_FAD_EXP_OP_ENABLE_SCALAR_EXPR(OP)                            \
+    OPNAME (const typename T::scalar_type& c,                           \
             const Expr<T>& expr)                                        \
     {                                                                   \
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
-      typedef OP< ConstT, Expr<T> > expr_t;                             \
+      typedef typename T::scalar_type ConstT;                           \
+      typedef OP< ConstT, typename Expr<T>::derived_type,               \
+                  true, false, typename T::expr_spec_type > expr_t;     \
                                                                         \
-      return Expr<expr_t>(ConstT(c), expr);                             \
+      return expr_t(c, expr.derived());                                 \
     }                                                                   \
                                                                         \
     template <typename T>                                               \
     SACADO_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                                \
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_SCALAR(OP)                            \
     OPNAME (const Expr<T>& expr,                                        \
-            const typename Expr<T>::scalar_type& c)                     \
+            const typename T::scalar_type& c)                           \
     {                                                                   \
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
-      typedef OP< Expr<T>, ConstT > expr_t;                             \
+      typedef typename T::scalar_type ConstT;                           \
+      typedef OP< typename Expr<T>::derived_type, ConstT,               \
+                  false, true, typename T::expr_spec_type > expr_t;     \
                                                                         \
-      return Expr<expr_t>(expr, ConstT(c));                             \
+      return expr_t(expr.derived(), c);                                 \
     }                                                                   \
+                                                                        \
+    template <typename T1, typename T2, bool c1, bool c2, typename E>   \
+    struct ExprLevel< OP< T1, T2, c1, c2, E > > {                       \
+      static constexpr unsigned value_1 = ExprLevel<T1>::value;         \
+      static constexpr unsigned value_2 = ExprLevel<T2>::value;         \
+      static constexpr unsigned value =                                 \
+        value_1 >= value_2 ? value_1 : value_2;                         \
+    };                                                                  \
+                                                                        \
+    template <typename T1, typename T2, bool c1, bool c2, typename E>   \
+    struct IsFadExpr< OP< T1, T2, c1, c2, E > > {                       \
+      static constexpr unsigned value = true;                           \
+    };                                                                  \
+                                                                        \
   }                                                                     \
+                                                                        \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct IsExpr< Fad::OP< T1, T2, c1, c2, E > > {                  \
+    static constexpr bool value = true;                                 \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct BaseExprType< Fad::OP< T1, T2, c1, c2, E > > {            \
+    typedef typename BaseExprType<T1>::type base_expr_1;                \
+    typedef typename BaseExprType<T2>::type base_expr_2;                \
+    typedef typename Sacado::Promote<base_expr_1,                       \
+                                     base_expr_2>::type type;           \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct IsSimdType< Fad::OP< T1, T2, c1, c2, E > > {              \
+    static const bool value =                                           \
+      IsSimdType< typename Fad::OP< T1, T2, c1, c2, E >::value_type >::value; \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct ValueType< Fad::OP< T1, T2, c1, c2, E > > {               \
+    typedef typename Fad::OP< T1, T2, c1, c2, E >::value_type type;\
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2, bool c1, bool c2, typename E>     \
+  struct ScalarType< Fad::OP< T1, T2, c1, c2, E > > {              \
+    typedef typename Fad::OP< T1, T2, c1, c2, E >::scalar_type type;\
+  };                                                                    \
                                                                         \
 }
 
@@ -720,9 +735,11 @@ FAD_BINARYOP_MACRO(operator+,
                    ;,
                    expr1.val() + expr2.val(),
                    expr1.dx(i) + expr2.dx(i),
+                   expr2.dx(i),
+                   expr1.dx(i),
                    expr1.fastAccessDx(i) + expr2.fastAccessDx(i),
-                   c.val() + expr2.val(),
-                   expr1.val() + c.val(),
+                   c + expr2.val(),
+                   expr1.val() + c,
                    expr2.dx(i),
                    expr1.dx(i),
                    expr2.fastAccessDx(i),
@@ -732,401 +749,108 @@ FAD_BINARYOP_MACRO(operator-,
                    ;,
                    expr1.val() - expr2.val(),
                    expr1.dx(i) - expr2.dx(i),
+                   -expr2.dx(i),
+                   expr1.dx(i),
                    expr1.fastAccessDx(i) - expr2.fastAccessDx(i),
-                   c.val() - expr2.val(),
-                   expr1.val() - c.val(),
+                   c - expr2.val(),
+                   expr1.val() - c,
                    -expr2.dx(i),
                    expr1.dx(i),
                    -expr2.fastAccessDx(i),
                    expr1.fastAccessDx(i))
-// FAD_BINARYOP_MACRO(operator*,
-//                 MultiplicationOp,
-//                 ;,
-//                 expr1.val() * expr2.val(),
-//                 expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val(),
-//                 expr1.val()*expr2.fastAccessDx(i) +
-//                   expr1.fastAccessDx(i)*expr2.val(),
-//                 c.val() * expr2.val(),
-//                 expr1.val() * c.val(),
-//                 c.val()*expr2.dx(i),
-//                 expr1.dx(i)*c.val(),
-//                 c.val()*expr2.fastAccessDx(i),
-//                 expr1.fastAccessDx(i)*c.val())
+FAD_BINARYOP_MACRO(operator*,
+                   MultiplicationOp,
+                   ;,
+                   expr1.val() * expr2.val(),
+                   expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val(),
+                   expr1.val()*expr2.dx(i),
+                   expr1.dx(i)*expr2.val(),
+                   expr1.val()*expr2.fastAccessDx(i) +
+                     expr1.fastAccessDx(i)*expr2.val(),
+                   c * expr2.val(),
+                   expr1.val() * c,
+                   c*expr2.dx(i),
+                   expr1.dx(i)*c,
+                   c*expr2.fastAccessDx(i),
+                   expr1.fastAccessDx(i)*c)
 FAD_BINARYOP_MACRO(operator/,
                    DivisionOp,
                    ;,
                    expr1.val() / expr2.val(),
                    (expr1.dx(i)*expr2.val() - expr2.dx(i)*expr1.val()) /
                      (expr2.val()*expr2.val()),
+                   -expr2.dx(i)*expr1.val() / (expr2.val()*expr2.val()),
+                   expr1.dx(i)/expr2.val(),
                    (expr1.fastAccessDx(i)*expr2.val() -
                       expr2.fastAccessDx(i)*expr1.val()) /
                       (expr2.val()*expr2.val()),
-                   c.val() / expr2.val(),
-                   expr1.val() / c.val(),
-                   -expr2.dx(i)*c.val() / (expr2.val()*expr2.val()),
-                   expr1.dx(i)/c.val(),
-                   -expr2.fastAccessDx(i)*c.val() / (expr2.val()*expr2.val()),
-                   expr1.fastAccessDx(i)/c.val())
+                   c / expr2.val(),
+                   expr1.val() / c,
+                   -expr2.dx(i)*c / (expr2.val()*expr2.val()),
+                   expr1.dx(i)/c,
+                   -expr2.fastAccessDx(i)*c / (expr2.val()*expr2.val()),
+                   expr1.fastAccessDx(i)/c)
 FAD_BINARYOP_MACRO(atan2,
                    Atan2Op,
                    using std::atan2;,
                    atan2(expr1.val(), expr2.val()),
                    (expr2.val()*expr1.dx(i) - expr1.val()*expr2.dx(i))/
                         (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+                   -expr1.val()*expr2.dx(i)/
+                        (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+                   expr2.val()*expr1.dx(i)/
+                        (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
                    (expr2.val()*expr1.fastAccessDx(i) - expr1.val()*expr2.fastAccessDx(i))/
                         (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
-                   atan2(c.val(), expr2.val()),
-                   atan2(expr1.val(), c.val()),
-                   (-c.val()*expr2.dx(i)) / (c.val()*c.val() + expr2.val()*expr2.val()),
-                   (c.val()*expr1.dx(i))/ (expr1.val()*expr1.val() + c.val()*c.val()),
-                   (-c.val()*expr2.fastAccessDx(i))/ (c.val()*c.val() + expr2.val()*expr2.val()),
-                   (c.val()*expr1.fastAccessDx(i))/ (expr1.val()*expr1.val() + c.val()*c.val()))
+                   atan2(c, expr2.val()),
+                   atan2(expr1.val(), c),
+                   (-c*expr2.dx(i)) / (c*c + expr2.val()*expr2.val()),
+                   (c*expr1.dx(i))/ (expr1.val()*expr1.val() + c*c),
+                   (-c*expr2.fastAccessDx(i))/ (c*c + expr2.val()*expr2.val()),
+                   (c*expr1.fastAccessDx(i))/ (expr1.val()*expr1.val() + c*c))
 // FAD_BINARYOP_MACRO(pow,
 //                    PowerOp,
 //                    using std::pow; using std::log; using Sacado::if_then_else;,
 //                    pow(expr1.val(), expr2.val()),
 //                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(expr1.val())*pow(expr1.val(),expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(expr2.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),expr2.val())) ),
 //                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
-//                    pow(c.val(), expr2.val()),
-//                    pow(expr1.val(), c.val()),
-//                    if_then_else( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c.val())*pow(c.val(),expr2.val())) ),
-//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),c.val())) ),
-//                    if_then_else( c.val() == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c.val())*pow(c.val(),expr2.val())) ),
-//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val()))) )
+//                    pow(c, expr2.val()),
+//                    pow(expr1.val(), c),
+//                    if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c)) ),
+//                    if_then_else( c == value_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) ),
+//                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c))) )
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    using Sacado::if_then_else;,
                    if_then_else( expr1.val() >= expr2.val(),  expr1.val(), expr2.val() ),
                    if_then_else( expr1.val() >= expr2.val(), expr1.dx(i), expr2.dx(i) ),
+                   if_then_else( expr1.val() >= expr2.val(), value_type(0.0), expr2.dx(i) ),
+                   if_then_else( expr1.val() >= expr2.val(), expr1.dx(i), value_type(0.0) ),
                    if_then_else( expr1.val() >= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
-                   if_then_else( c.val() >= expr2.val(), value_type(c.val()),  expr2.val() ),
-                   if_then_else( expr1.val() >= c.val(), expr1.val(), value_type(c.val()) ),
-                   if_then_else( c.val() >= expr2.val(), value_type(0.0),  expr2.dx(i) ),
-                   if_then_else( expr1.val() >= c.val(), expr1.dx(i), value_type(0.0) ),
-                   if_then_else( c.val() >= expr2.val(), value_type(0.0), expr2.fastAccessDx(i) ),
-                   if_then_else( expr1.val() >= c.val(), expr1.fastAccessDx(i), value_type(0.0) ) )
+                   if_then_else( c >= expr2.val(), value_type(c),  expr2.val() ),
+                   if_then_else( expr1.val() >= c, expr1.val(), value_type(c) ),
+                   if_then_else( c >= expr2.val(), value_type(0.0),  expr2.dx(i) ),
+                   if_then_else( expr1.val() >= c, expr1.dx(i), value_type(0.0) ),
+                   if_then_else( c >= expr2.val(), value_type(0.0), expr2.fastAccessDx(i) ),
+                   if_then_else( expr1.val() >= c, expr1.fastAccessDx(i), value_type(0.0) ) )
 FAD_BINARYOP_MACRO(min,
                    MinOp,
                    using Sacado::if_then_else;,
                    if_then_else( expr1.val() <= expr2.val(), expr1.val(), expr2.val() ),
                    if_then_else( expr1.val() <= expr2.val(), expr1.dx(i), expr2.dx(i) ),
+                   if_then_else( expr1.val() <= expr2.val(), value_type(0.0), expr2.dx(i) ),
+                   if_then_else( expr1.val() <= expr2.val(), expr1.dx(i), value_type(0.0) ),
                    if_then_else( expr1.val() <= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
-                   if_then_else( c.val() <= expr2.val(), value_type(c.val()), expr2.val() ),
-                   if_then_else( expr1.val() <= c.val(), expr1.val(), value_type(c.val()) ),
-                   if_then_else( c.val() <= expr2.val(), value_type(0), expr2.dx(i) ),
-                   if_then_else( expr1.val() <= c.val(), expr1.dx(i), value_type(0) ),
-                   if_then_else( c.val() <= expr2.val(), value_type(0), expr2.fastAccessDx(i) ),
-                   if_then_else( expr1.val() <= c.val(), expr1.fastAccessDx(i), value_type(0) ) )
+                   if_then_else( c <= expr2.val(), value_type(c), expr2.val() ),
+                   if_then_else( expr1.val() <= c, expr1.val(), value_type(c) ),
+                   if_then_else( c <= expr2.val(), value_type(0), expr2.dx(i) ),
+                   if_then_else( expr1.val() <= c, expr1.dx(i), value_type(0) ),
+                   if_then_else( c <= expr2.val(), value_type(0), expr2.fastAccessDx(i) ),
+                   if_then_else( expr1.val() <= c, expr1.fastAccessDx(i), value_type(0) ) )
 
-
-#undef FAD_BINARYOP_MACRO
-
-namespace Sacado {
-  namespace Fad {
-
-    template <typename ExprT1, typename ExprT2>
-    class MultiplicationOp {};
-
-    template <typename ExprT1, typename ExprT2>
-    struct ExprSpec< MultiplicationOp< ExprT1, ExprT2 > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename ExprT1, typename ExprT2>
-    class Expr< MultiplicationOp< ExprT1, ExprT2 >,ExprSpecDefault > {
-
-    public:
-
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
-
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
-
-      SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
-        expr1(expr1_), expr2(expr2_) {}
-
-      SACADO_INLINE_FUNCTION
-      int size() const {
-        int sz1 = expr1.size(), sz2 = expr2.size();
-        return sz1 > sz2 ? sz1 : sz2;
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool hasFastAccess() const {
-        return expr1.hasFastAccess() && expr2.hasFastAccess();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive() && expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const {
-        return expr1.updateValue() && expr2.updateValue();
-      }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
-        return expr1.val()*expr2.val();
-      }
-
-      SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
-        if (expr1.size() > 0 && expr2.size() > 0)
-          return expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val();
-        else if (expr1.size() > 0)
-          return expr1.dx(i)*expr2.val();
-        else
-          return expr1.val()*expr2.dx(i);
-      }
-
-      SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        return expr1.val()*expr2.fastAccessDx(i) +
-          expr1.fastAccessDx(i)*expr2.val();
-      }
-
-    protected:
-
-      const ExprT1& expr1;
-      const ExprT2& expr2;
-
-    };
-
-    template <typename ExprT1, typename T2>
-    struct ExprSpec< MultiplicationOp< ExprT1, ConstExpr<T2> > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename ExprT1, typename T2>
-    class Expr< MultiplicationOp< ExprT1, ConstExpr<T2> >,ExprSpecDefault > {
-
-    public:
-
-      typedef ConstExpr<T2> ConstT;
-      typedef ConstExpr<T2> ExprT2;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
-
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
-
-      SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ConstT& c_) :
-        expr1(expr1_), c(c_) {}
-
-      SACADO_INLINE_FUNCTION
-      int size() const {
-        return expr1.size();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool hasFastAccess() const {
-        return expr1.hasFastAccess();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr1.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
-        return expr1.val()*c.val();
-      }
-
-      SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
-        return expr1.dx(i)*c.val();
-      }
-
-      SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        return expr1.fastAccessDx(i)*c.val();
-      }
-
-    protected:
-
-      const ExprT1& expr1;
-      ConstT c;
-    };
-
-    template <typename T1, typename ExprT2>
-    struct ExprSpec< MultiplicationOp< ConstExpr<T1>, ExprT2 > > {
-      typedef typename ExprSpec<ExprT2>::type type;
-    };
-
-    template <typename T1, typename ExprT2>
-    class Expr< MultiplicationOp< ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {
-
-    public:
-
-      typedef ConstExpr<T1> ConstT;
-      typedef ConstExpr<T1> ExprT1;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
-
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
-
-      SACADO_INLINE_FUNCTION
-      Expr(const ConstT& c_, const ExprT2& expr2_) :
-        c(c_), expr2(expr2_) {}
-
-      SACADO_INLINE_FUNCTION
-      int size() const {
-        return expr2.size();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool hasFastAccess() const {
-        return expr2.hasFastAccess();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr2.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
-        return c.val()*expr2.val();
-      }
-
-      SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
-        return c.val()*expr2.dx(i);
-      }
-
-      SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        return c.val()*expr2.fastAccessDx(i);
-      }
-
-    protected:
-
-      ConstT c;
-      const ExprT2& expr2;
-    };
-
-    template <typename T1, typename T2>
-    SACADO_INLINE_FUNCTION
-    typename mpl::enable_if_c<
-       ExprLevel< Expr<T1> >::value == ExprLevel< Expr<T2> >::value,
-       Expr< MultiplicationOp< Expr<T1>, Expr<T2> > >
-     >::type
-    /*SACADO_FAD_OP_ENABLE_EXPR_EXPR(MultiplicationOp)*/
-    operator* (const Expr<T1>& expr1, const Expr<T2>& expr2)
-    {
-      typedef MultiplicationOp< Expr<T1>, Expr<T2> > expr_t;
-
-      return Expr<expr_t>(expr1, expr2);
-    }
-
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< MultiplicationOp< Expr<T>, Expr<T> > >
-    operator* (const Expr<T>& expr1, const Expr<T>& expr2)
-    {
-      typedef MultiplicationOp< Expr<T>, Expr<T> > expr_t;
-
-      return Expr<expr_t>(expr1, expr2);
-    }
-
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< MultiplicationOp< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >
-    operator* (const typename Expr<T>::value_type& c,
-               const Expr<T>& expr)
-    {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef MultiplicationOp< ConstT, Expr<T> > expr_t;
-
-      return Expr<expr_t>(ConstT(c), expr);
-    }
-
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< MultiplicationOp< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >
-    operator* (const Expr<T>& expr,
-               const typename Expr<T>::value_type& c)
-    {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef MultiplicationOp< Expr<T>, ConstT > expr_t;
-
-      return Expr<expr_t>(expr, ConstT(c));
-    }
-
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(MultiplicationOp)
-    operator* (const typename Expr<T>::scalar_type& c,
-               const Expr<T>& expr)
-    {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef MultiplicationOp< ConstT, Expr<T> > expr_t;
-
-      return Expr<expr_t>(ConstT(c), expr);
-    }
-
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(MultiplicationOp)
-    operator* (const Expr<T>& expr,
-               const typename Expr<T>::scalar_type& c)
-    {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef MultiplicationOp< Expr<T>, ConstT > expr_t;
-
-      return Expr<expr_t>(expr, ConstT(c));
-    }
-  }
-}
 
 // Special handling for std::pow() to provide specializations of PowerOp for
 // "simd" value types that use if_then_else(). The only reason for not using
@@ -1135,32 +859,23 @@ namespace Sacado {
 namespace Sacado {
   namespace Fad {
 
-    template <typename ExprT1, typename ExprT2, typename Impl>
+    template <typename T1, typename T2,
+              bool is_const_T1, bool is_const_T2,
+              typename ExprSpec, typename Impl >
     class PowerOp {};
-
-    template <typename ExprT1, typename ExprT2>
-    struct ExprSpec< PowerOp< ExprT1, ExprT2 > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename ExprT1, typename T2>
-    struct ExprSpec<PowerOp< ExprT1, ConstExpr<T2> > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename T1, typename ExprT2>
-    struct ExprSpec< PowerOp< ConstExpr<T1>, ExprT2 > > {
-      typedef typename ExprSpec<ExprT2>::type type;
-    };
 
     //
     // Implementation for simd type using if_then_else()
     //
-    template <typename ExprT1, typename ExprT2>
-    class Expr< PowerOp< ExprT1, ExprT2, PowerImpl::Simd >, ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecDefault,
+                   PowerImpl::Simd > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecDefault,
+                   PowerImpl::Simd > > {
     public:
 
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
@@ -1171,18 +886,15 @@ namespace Sacado {
       typedef typename Sacado::Promote<scalar_type_1,
                                        scalar_type_2>::type scalar_type;
 
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
+      PowerOp(const T1& expr1_, const T2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
       int size() const {
-        int sz1 = expr1.size(), sz2 = expr2.size();
+        const int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
@@ -1192,26 +904,13 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive() && expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const {
-        return expr1.updateValue() && expr2.updateValue();
-      }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
         return pow(expr1.val(), expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log; using Sacado::if_then_else;
         const int sz1 = expr1.size(), sz2 = expr2.size();
         if (sz1 > 0 && sz2 > 0)
@@ -1225,43 +924,34 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using std::log; using Sacado::if_then_else;
-        return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) );
+        return if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())));
       }
 
     protected:
 
-      const ExprT1& expr1;
-      const ExprT2& expr2;
+      const T1& expr1;
+      const T2& expr2;
 
     };
 
-    template <typename ExprT1, typename T2>
-    class Expr< PowerOp< ExprT1, ConstExpr<T2>, PowerImpl::Simd >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecDefault,
+                   PowerImpl::Simd > :
+      public Expr< PowerOp< T1, T2, false, true, ExprSpecDefault,
+                   PowerImpl::Simd > > {
     public:
 
-      typedef ConstExpr<T2> ConstT;
-      typedef ConstExpr<T2> ExprT2;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ConstT& c_) :
+      PowerOp(const T1& expr1_, const ConstT& c_) :
         expr1(expr1_), c(c_) {}
 
       SACADO_INLINE_FUNCTION
@@ -1275,70 +965,49 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr1.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
-        return pow(expr1.val(), c.val());
+        return pow(expr1.val(), c);
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using Sacado::if_then_else;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
-        return if_then_else( c.val() == scalar_type(1.0), expr1.dx(i), if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),c.val())) ));
+        return if_then_else( c == scalar_type(1.0), expr1.dx(i), if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c)) ));
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using Sacado::if_then_else;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
-        return if_then_else( c.val() == scalar_type(1.0), expr1.fastAccessDx(i), if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val()))));
+        return if_then_else( c == scalar_type(1.0), expr1.fastAccessDx(i), if_then_else( expr1.val() == scalar_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c)) ));
       }
 
     protected:
 
-      const ExprT1& expr1;
-      ConstT c;
+      const T1& expr1;
+      const ConstT& c;
     };
 
-    template <typename T1, typename ExprT2>
-    class Expr< PowerOp< ConstExpr<T1>, ExprT2, PowerImpl::Simd >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, true, false, ExprSpecDefault,
+                   PowerImpl::Simd > :
+      public Expr< PowerOp< T1, T2, true, false, ExprSpecDefault,
+                   PowerImpl::Simd > > {
     public:
 
-      typedef ConstExpr<T1> ConstT;
-      typedef ConstExpr<T1> ExprT1;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
-
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ConstT& c_, const ExprT2& expr2_) :
+      PowerOp(const ConstT& c_, const T2& expr2_) :
         c(c_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
@@ -1352,50 +1021,42 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr2.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
-        return pow(c.val(), expr2.val());
+        return pow(c, expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log; using Sacado::if_then_else;
-        return if_then_else( c.val() == scalar_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c.val())*pow(c.val(),expr2.val())) );
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.dx(i)*log(c)*pow(c,expr2.val())) );
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using std::log; using Sacado::if_then_else;
-        return if_then_else( c.val() == scalar_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c.val())*pow(c.val(),expr2.val())) );
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val())) );
       }
 
     protected:
 
-      ConstT c;
-      const ExprT2& expr2;
+      const ConstT& c;
+      const T2& expr2;
     };
 
     //
     // Specialization for scalar types using ternary operator
     //
 
-    template <typename ExprT1, typename ExprT2>
-    class Expr< PowerOp< ExprT1, ExprT2, PowerImpl::Scalar >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecDefault,
+                   PowerImpl::Scalar > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecDefault,
+                            PowerImpl::Scalar > > {
     public:
 
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
@@ -1406,18 +1067,15 @@ namespace Sacado {
       typedef typename Sacado::Promote<scalar_type_1,
                                        scalar_type_2>::type scalar_type;
 
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
+      PowerOp(const T1& expr1_, const T2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
       int size() const {
-        int sz1 = expr1.size(), sz2 = expr2.size();
+        const int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
@@ -1427,26 +1085,13 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive() && expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const {
-        return expr1.updateValue() && expr2.updateValue();
-      }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
         return pow(expr1.val(), expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log;
         const int sz1 = expr1.size(), sz2 = expr2.size();
         if (sz1 > 0 && sz2 > 0)
@@ -1460,43 +1105,34 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
         return expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val()));
       }
 
     protected:
 
-      const ExprT1& expr1;
-      const ExprT2& expr2;
+      const T1& expr1;
+      const T2& expr2;
 
     };
 
-    template <typename ExprT1, typename T2>
-    class Expr< PowerOp< ExprT1, ConstExpr<T2>, PowerImpl::Scalar >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecDefault,
+                   PowerImpl::Scalar > :
+      public Expr< PowerOp< T1, T2, false, true, ExprSpecDefault,
+                            PowerImpl::Scalar > > {
     public:
 
-      typedef ConstExpr<T2> ConstT;
-      typedef ConstExpr<T2> ExprT2;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ConstT& c_) :
+      PowerOp(const T1& expr1_, const ConstT& c_) :
         expr1(expr1_), c(c_) {}
 
       SACADO_INLINE_FUNCTION
@@ -1510,70 +1146,49 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr1.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
-        return pow(expr1.val(), c.val());
+        return pow(expr1.val(), c);
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
-        return c.val() == scalar_type(1.0) ? expr1.dx(i) : expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)/expr1.val()*pow(expr1.val(),c.val()));
+        return c == scalar_type(1.0) ? expr1.dx(i) : expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)/expr1.val()*pow(expr1.val(),c));
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow;
         // Don't use formula (a(x)^b)' = b*a(x)^{b-1}*a'(x)
         // It seems less accurate and caused convergence problems in some codes
-        return c.val() == scalar_type(1.0) ? expr1.fastAccessDx(i) : expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val()));
+        return c == scalar_type(1.0) ? expr1.fastAccessDx(i) : expr1.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c));
       }
 
     protected:
 
-      const ExprT1& expr1;
-      ConstT c;
+      const T1& expr1;
+      const ConstT& c;
     };
 
-    template <typename T1, typename ExprT2>
-    class Expr< PowerOp< ConstExpr<T1>, ExprT2, PowerImpl::Scalar >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, true, false, ExprSpecDefault,
+                   PowerImpl::Scalar > :
+      public Expr< PowerOp< T1, T2, true, false, ExprSpecDefault,
+                            PowerImpl::Scalar > > {
     public:
 
-      typedef ConstExpr<T1> ConstT;
-      typedef ConstExpr<T1> ExprT1;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
-
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ConstT& c_, const ExprT2& expr2_) :
+      PowerOp(const ConstT& c_, const T2& expr2_) :
         c(c_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
@@ -1587,38 +1202,27 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr2.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
-        return pow(c.val(), expr2.val());
+        return pow(c, expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log;
-        return c.val() == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(c.val())*pow(c.val(),expr2.val()));
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.dx(i)*log(c)*pow(c,expr2.val()));
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
-        return c.val() == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.fastAccessDx(i)*log(c.val())*pow(c.val(),expr2.val()));
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val()));
       }
 
     protected:
 
-      ConstT c;
-      const ExprT2& expr2;
+      const ConstT& c;
+      const T2& expr2;
     };
 
     //
@@ -1626,12 +1230,15 @@ namespace Sacado {
     // if_then_else/ternary-operator on the base so that nested derivatives
     // are correct.
     //
-    template <typename ExprT1, typename ExprT2>
-    class Expr< PowerOp< ExprT1, ExprT2, PowerImpl::Nested >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecDefault,
+                   PowerImpl::Nested > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecDefault,
+                   PowerImpl::Nested > > {
     public:
 
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
@@ -1642,18 +1249,15 @@ namespace Sacado {
       typedef typename Sacado::Promote<scalar_type_1,
                                        scalar_type_2>::type scalar_type;
 
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
+      PowerOp(const T1& expr1_, const T2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
       int size() const {
-        int sz1 = expr1.size(), sz2 = expr2.size();
+        const int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
@@ -1663,26 +1267,13 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive() && expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const {
-        return expr1.updateValue() && expr2.updateValue();
-      }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
         return pow(expr1.val(), expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log;
         const int sz1 = expr1.size(), sz2 = expr2.size();
         if (sz1 > 0 && sz2 > 0)
@@ -1694,43 +1285,34 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
         return (expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val());
       }
 
     protected:
 
-      const ExprT1& expr1;
-      const ExprT2& expr2;
+      const T1& expr1;
+      const T2& expr2;
 
     };
 
-    template <typename ExprT1, typename T2>
-    class Expr< PowerOp< ExprT1, ConstExpr<T2>, PowerImpl::Nested >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecDefault,
+                   PowerImpl::Nested > :
+      public Expr< PowerOp< T1, T2, false, true, ExprSpecDefault,
+                   PowerImpl::Nested > > {
     public:
 
-      typedef ConstExpr<T2> ConstT;
-      typedef ConstExpr<T2> ExprT2;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ConstT& c_) :
+      PowerOp(const T1& expr1_, const ConstT& c_) :
         expr1(expr1_), c(c_) {}
 
       SACADO_INLINE_FUNCTION
@@ -1744,66 +1326,45 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive();
+      value_type val() const {
+        using std::pow;
+        return pow(expr1.val(), c);
       }
 
       SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr1.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type dx(int i) const {
         using std::pow;
-        return pow(expr1.val(), c.val());
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0)));
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow;
-        return c.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
-      }
-
-      SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        using std::pow;
-        return c.val() == scalar_type(0.0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0)));
+        return c == scalar_type(0.0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0)));
       }
 
     protected:
 
-      const ExprT1& expr1;
-      ConstT c;
+      const T1& expr1;
+      const ConstT& c;
     };
 
-    template <typename T1, typename ExprT2>
-    class Expr< PowerOp< ConstExpr<T1>, ExprT2, PowerImpl::Nested >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp<T1, T2, true, false, ExprSpecDefault,
+                   PowerImpl::Nested > :
+      public Expr< PowerOp< T1, T2, true, false, ExprSpecDefault,
+                   PowerImpl::Nested > > {
     public:
 
-      typedef ConstExpr<T1> ConstT;
-      typedef ConstExpr<T1> ExprT1;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
-
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ConstT& c_, const ExprT2& expr2_) :
+      PowerOp(const ConstT& c_, const T2& expr2_) :
         c(c_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
@@ -1817,38 +1378,27 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr2.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
-        return pow(c.val(), expr2.val());
+        return pow(c, expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log;
-        return expr2.dx(i)*log(c.val())*pow(c.val(),expr2.val());
+        return expr2.dx(i)*log(c)*pow(c,expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
-        return expr2.fastAccessDx(i)*log(c.val())*pow(c.val(),expr2.val());
+        return expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val());
       }
 
     protected:
 
-      ConstT c;
-      const ExprT2& expr2;
+      const ConstT& c;
+      const T2& expr2;
     };
 
     //
@@ -1856,12 +1406,15 @@ namespace Sacado {
     // if_then_else/ternary-operator on the base so that nested derivatives
     // are correct.
     //
-    template <typename ExprT1, typename ExprT2>
-    class Expr< PowerOp< ExprT1, ExprT2, PowerImpl::NestedSimd >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, false, ExprSpecDefault,
+                   PowerImpl::NestedSimd > :
+      public Expr< PowerOp< T1, T2, false, false, ExprSpecDefault,
+                   PowerImpl::NestedSimd > > {
     public:
 
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
@@ -1872,18 +1425,15 @@ namespace Sacado {
       typedef typename Sacado::Promote<scalar_type_1,
                                        scalar_type_2>::type scalar_type;
 
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
+      PowerOp(const T1& expr1_, const T2& expr2_) :
         expr1(expr1_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
       int size() const {
-        int sz1 = expr1.size(), sz2 = expr2.size();
+        const int sz1 = expr1.size(), sz2 = expr2.size();
         return sz1 > sz2 ? sz1 : sz2;
       }
 
@@ -1893,26 +1443,13 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive() && expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const {
-        return expr1.updateValue() && expr2.updateValue();
-      }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
         return pow(expr1.val(), expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log; using Sacado::if_then_else;
         const int sz1 = expr1.size(), sz2 = expr2.size();
         if (sz1 > 0 && sz2 > 0)
@@ -1924,43 +1461,34 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        using std::pow; using std::log;
+      value_type fastAccessDx(int i) const {
+        using std::pow; using std::log; using Sacado::if_then_else;
         return (expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val());
       }
 
     protected:
 
-      const ExprT1& expr1;
-      const ExprT2& expr2;
+      const T1& expr1;
+      const T2& expr2;
 
     };
 
-    template <typename ExprT1, typename T2>
-    class Expr< PowerOp< ExprT1, ConstExpr<T2>, PowerImpl::NestedSimd >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp< T1, T2, false, true, ExprSpecDefault,
+                   PowerImpl::NestedSimd > :
+      public Expr< PowerOp< T1, T2, false, true, ExprSpecDefault,
+                   PowerImpl::NestedSimd > > {
     public:
 
-      typedef ConstExpr<T2> ConstT;
-      typedef ConstExpr<T2> ExprT2;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ExprT1& expr1_, const ConstT& c_) :
+      PowerOp(const T1& expr1_, const ConstT& c_) :
         expr1(expr1_), c(c_) {}
 
       SACADO_INLINE_FUNCTION
@@ -1974,66 +1502,45 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr1.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
-        return pow(expr1.val(), c.val());
+        return pow(expr1.val(), c);
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using Sacado::if_then_else;
-        return if_then_else( c.val() == scalar_type(0.0), value_type(0.0), value_type(c.val()*expr1.dx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))));
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.dx(i)*pow(expr1.val(),c-scalar_type(1.0))));
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using Sacado::if_then_else;
-        return if_then_else( c.val() == scalar_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)*pow(expr1.val(),c.val()-scalar_type(1.0))));
+        return if_then_else( c == scalar_type(0.0), value_type(0.0), value_type(c*expr1.fastAccessDx(i)*pow(expr1.val(),c-scalar_type(1.0))));
       }
 
     protected:
 
-      const ExprT1& expr1;
-      ConstT c;
+      const T1& expr1;
+      const ConstT& c;
     };
 
-    template <typename T1, typename ExprT2>
-    class Expr< PowerOp< ConstExpr<T1>, ExprT2, PowerImpl::NestedSimd >,
-                ExprSpecDefault > {
-
+    template <typename T1, typename T2>
+    class PowerOp<T1, T2, true, false, ExprSpecDefault,
+                   PowerImpl::NestedSimd > :
+      public Expr< PowerOp< T1, T2, true, false, ExprSpecDefault,
+                   PowerImpl::NestedSimd > > {
     public:
 
-      typedef ConstExpr<T1> ConstT;
-      typedef ConstExpr<T1> ExprT1;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
-
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const ConstT& c_, const ExprT2& expr2_) :
+      PowerOp(const ConstT& c_, const T2& expr2_) :
         c(c_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
@@ -2047,135 +1554,161 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr2.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using std::pow;
-        return pow(c.val(), expr2.val());
+        return pow(c, expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using std::pow; using std::log;
-        return expr2.dx(i)*log(c.val())*pow(c.val(),expr2.val());
+        return expr2.dx(i)*log(c)*pow(c,expr2.val());
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using std::pow; using std::log;
-        return expr2.fastAccessDx(i)*log(c.val())*pow(c.val(),expr2.val());
+        return expr2.fastAccessDx(i)*log(c)*pow(c,expr2.val());
       }
 
     protected:
 
-      ConstT c;
-      const ExprT2& expr2;
+      const ConstT& c;
+      const T2& expr2;
     };
 
     template <typename T1, typename T2>
     SACADO_INLINE_FUNCTION
-    typename mpl::enable_if_c<
-       ExprLevel< Expr<T1> >::value == ExprLevel< Expr<T2> >::value,
-       Expr< PowerOp< Expr<T1>, Expr<T2> > >
-     >::type
-    /*SACADO_FAD_OP_ENABLE_EXPR_EXPR(PowerOp)*/
-    pow (const Expr<T1>& expr1, const Expr<T2>& expr2)
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_EXPR(PowerOp)
+    pow (const T1& expr1, const T2& expr2)
     {
-      typedef PowerOp< Expr<T1>, Expr<T2> > expr_t;
+      typedef PowerOp< typename Expr<T1>::derived_type,
+                  typename Expr<T2>::derived_type,
+                  false, false, typename T1::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(expr1, expr2);
+      return expr_t(expr1.derived(), expr2.derived());
     }
 
     template <typename T>
     SACADO_INLINE_FUNCTION
-    Expr< PowerOp< Expr<T>, Expr<T> > >
-    pow (const Expr<T>& expr1, const Expr<T>& expr2)
+    PowerOp< typename T::value_type, typename Expr<T>::derived_type,
+        true, false, typename T::expr_spec_type >
+    pow (const typename T::value_type& c,
+            const Expr<T>& expr)
     {
-      typedef PowerOp< Expr<T>, Expr<T> > expr_t;
+      typedef typename T::value_type ConstT;
+      typedef PowerOp< ConstT, typename Expr<T>::derived_type,
+                  true, false, typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(expr1, expr2);
+      return expr_t(c, expr.derived());
     }
 
     template <typename T>
     SACADO_INLINE_FUNCTION
-    Expr< PowerOp< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >
-    pow (const typename Expr<T>::value_type& c,
+    PowerOp< typename Expr<T>::derived_type, typename T::value_type,
+        false, true, typename T::expr_spec_type >
+    pow (const Expr<T>& expr,
+         const typename T::value_type& c)
+    {
+      typedef typename T::value_type ConstT;
+      typedef PowerOp< typename Expr<T>::derived_type, ConstT,
+              false, true, typename T::expr_spec_type > expr_t;
+
+      return expr_t(expr.derived(), c);
+    }
+
+    template <typename T>
+    SACADO_INLINE_FUNCTION
+    SACADO_FAD_EXP_OP_ENABLE_SCALAR_EXPR(PowerOp)
+    pow (const typename T::scalar_type& c,
          const Expr<T>& expr)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef PowerOp< ConstT, Expr<T> > expr_t;
+      typedef typename T::scalar_type ConstT;
+      typedef PowerOp< ConstT, typename Expr<T>::derived_type,
+                       true, false, typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(ConstT(c), expr);
+      return expr_t(c, expr.derived());
     }
 
     template <typename T>
     SACADO_INLINE_FUNCTION
-    Expr< PowerOp< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >
+    SACADO_FAD_EXP_OP_ENABLE_EXPR_SCALAR(PowerOp)
     pow (const Expr<T>& expr,
-         const typename Expr<T>::value_type& c)
+         const typename T::scalar_type& c)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef PowerOp< Expr<T>, ConstT > expr_t;
+      typedef typename T::scalar_type ConstT;
+      typedef PowerOp< typename Expr<T>::derived_type, ConstT,
+                       false, true, typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(expr, ConstT(c));
+      return expr_t(expr.derived(), c);
     }
 
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(PowerOp)
-    pow (const typename Expr<T>::scalar_type& c,
-         const Expr<T>& expr)
-    {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef PowerOp< ConstT, Expr<T> > expr_t;
+    template <typename T1, typename T2, bool c1, bool c2, typename E>
+    struct ExprLevel< PowerOp< T1, T2, c1, c2, E > > {
+      static constexpr unsigned value_1 = ExprLevel<T1>::value;
+      static constexpr unsigned value_2 = ExprLevel<T2>::value;
+      static constexpr unsigned value =
+        value_1 >= value_2 ? value_1 : value_2;
+    };
 
-      return Expr<expr_t>(ConstT(c), expr);
-    }
+    template <typename T1, typename T2, bool c1, bool c2, typename E>
+    struct IsFadExpr< PowerOp< T1, T2, c1, c2, E > > {
+      static constexpr unsigned value = true;
+    };
 
-    template <typename T>
-    SACADO_INLINE_FUNCTION
-    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(PowerOp)
-    pow (const Expr<T>& expr,
-         const typename Expr<T>::scalar_type& c)
-    {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef PowerOp< Expr<T>, ConstT > expr_t;
-
-      return Expr<expr_t>(expr, ConstT(c));
-    }
   }
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct IsExpr< Fad::PowerOp< T1, T2, c1, c2, E > > {
+    static constexpr bool value = true;
+  };
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct BaseExprType< Fad::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename BaseExprType<T1>::type base_expr_1;
+    typedef typename BaseExprType<T2>::type base_expr_2;
+    typedef typename Sacado::Promote<base_expr_1,
+                                     base_expr_2>::type type;
+  };
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct IsSimdType< Fad::PowerOp< T1, T2, c1, c2, E > > {
+    static const bool value =
+      IsSimdType< typename Fad::PowerOp< T1, T2, c1, c2, E >::value_type >::value;
+  };
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct ValueType< Fad::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename Fad::PowerOp< T1, T2, c1, c2, E >::value_type type;
+  };
+
+  template <typename T1, typename T2, bool c1, bool c2, typename E>
+  struct ScalarType< Fad::PowerOp< T1, T2, c1, c2, E > > {
+    typedef typename Fad::PowerOp< T1, T2, c1, c2, E >::scalar_type type;
+  };
+
 }
 
 //--------------------------if_then_else operator -----------------------
 // Can't use the above macros because it is a ternary operator (sort of).
 // Also, relies on C++11
 
-
 namespace Sacado {
   namespace Fad {
 
-    template <typename CondT, typename ExprT1, typename ExprT2>
+    template <typename CondT, typename T1, typename T2,
+              bool is_const_T1, bool is_const_T2,
+              typename ExprSpec>
     class IfThenElseOp {};
 
-    template <typename CondT, typename ExprT1, typename ExprT2>
-    struct ExprSpec< IfThenElseOp< CondT, ExprT1, ExprT2 > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename CondT, typename ExprT1, typename ExprT2>
-    class Expr< IfThenElseOp< CondT, ExprT1, ExprT2 >,ExprSpecDefault > {
+    template <typename CondT, typename T1, typename T2>
+    class IfThenElseOp< CondT, T1, T2, false, false, ExprSpecDefault > :
+      public Expr< IfThenElseOp< CondT, T1, T2, false, false, ExprSpecDefault > > {
 
     public:
 
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef typename std::remove_cv<T2>::type ExprT2;
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
@@ -2186,13 +1719,10 @@ namespace Sacado {
       typedef typename Sacado::Promote<scalar_type_1,
                                        scalar_type_2>::type scalar_type;
 
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const CondT& cond_, const ExprT1& expr1_, const ExprT2& expr2_) :
+      IfThenElseOp(const CondT& cond_, const T1& expr1_, const T2& expr2_) :
         cond(cond_), expr1(expr1_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
@@ -2207,32 +1737,19 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive() && expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const {
-        return expr1.updateValue() && expr2.updateValue();
-      }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using Sacado::if_then_else;
         return if_then_else( cond, expr1.val(), expr2.val() );
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using Sacado::if_then_else;
         return if_then_else( cond, expr1.dx(i), expr2.dx(i) );
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using Sacado::if_then_else;
         return if_then_else( cond, expr1.fastAccessDx(i), expr2.fastAccessDx(i) );
       }
@@ -2240,40 +1757,26 @@ namespace Sacado {
     protected:
 
       const CondT&  cond;
-      const ExprT1& expr1;
-      const ExprT2& expr2;
+      const T1& expr1;
+      const T2& expr2;
 
     };
 
-    template <typename CondT, typename ExprT1, typename T2>
-    struct ExprSpec< IfThenElseOp< CondT, ExprT1, ConstExpr<T2> > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename CondT, typename ExprT1, typename T2>
-    class Expr< IfThenElseOp< CondT, ExprT1, ConstExpr<T2> >,ExprSpecDefault > {
+    template <typename CondT, typename T1, typename T2>
+    class IfThenElseOp< CondT, T1, T2, false, true, ExprSpecDefault > :
+      public Expr< IfThenElseOp< CondT, T1, T2, false, true, ExprSpecDefault > > {
 
     public:
 
-      typedef ConstExpr<T2> ConstT;
-      typedef ConstExpr<T2> ExprT2;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T1>::type ExprT1;
+      typedef T2 ConstT;
+      typedef typename ExprT1::value_type value_type;
+      typedef typename ExprT1::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const CondT& cond_, const ExprT1& expr1_, const ConstT& c_) :
+      IfThenElseOp(const CondT& cond_, const T1& expr1_, const ConstT& c_) :
         cond(cond_), expr1(expr1_), c(c_) {}
 
       SACADO_INLINE_FUNCTION
@@ -2287,30 +1790,19 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr1.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr1.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using Sacado::if_then_else;
-        return if_then_else( cond, expr1.val(), c.val() );
+        return if_then_else( cond, expr1.val(), c );
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using Sacado::if_then_else;
         return if_then_else( cond, expr1.dx(i), value_type(0.0) );
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using Sacado::if_then_else;
         return if_then_else( cond, expr1.fastAccessDx(i), value_type(0.0) );
       }
@@ -2318,39 +1810,25 @@ namespace Sacado {
     protected:
 
       const CondT&  cond;
-      const ExprT1& expr1;
-      ConstT c;
+      const T1& expr1;
+      const ConstT& c;
     };
 
-    template <typename CondT, typename T1, typename ExprT2>
-    struct ExprSpec< IfThenElseOp< CondT, ConstExpr<T1>, ExprT2 > > {
-      typedef typename ExprSpec<ExprT2>::type type;
-    };
-
-    template <typename CondT, typename T1, typename ExprT2>
-    class Expr< IfThenElseOp< CondT, ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {
+    template <typename CondT, typename T1, typename T2>
+    class IfThenElseOp< CondT, T1, T2, true, false, ExprSpecDefault > :
+      public Expr< IfThenElseOp< CondT, T1, T2, true, false, ExprSpecDefault > > {
 
     public:
 
-      typedef ConstExpr<T1> ConstT;
-      typedef ConstExpr<T1> ExprT1;
-      typedef typename ExprT1::value_type value_type_1;
-      typedef typename ExprT2::value_type value_type_2;
-      typedef typename Sacado::Promote<value_type_1,
-                                       value_type_2>::type value_type;
+      typedef typename std::remove_cv<T2>::type ExprT2;
+      typedef T1 ConstT;
+      typedef typename ExprT2::value_type value_type;
+      typedef typename ExprT2::scalar_type scalar_type;
 
-      typedef typename ExprT1::scalar_type scalar_type_1;
-      typedef typename ExprT2::scalar_type scalar_type_2;
-      typedef typename Sacado::Promote<scalar_type_1,
-                                       scalar_type_2>::type scalar_type;
-
-      typedef typename ExprT1::base_expr_type base_expr_type_1;
-      typedef typename ExprT2::base_expr_type base_expr_type_2;
-      typedef typename Sacado::Promote<base_expr_type_1,
-                                       base_expr_type_2>::type base_expr_type;
+      typedef ExprSpecDefault expr_spec_type;
 
       SACADO_INLINE_FUNCTION
-      Expr(const CondT& cond_, const ConstT& c_, const ExprT2& expr2_) :
+      IfThenElseOp(const CondT& cond_, const ConstT& c_, const T2& expr2_) :
         cond(cond_), c(c_), expr2(expr2_) {}
 
       SACADO_INLINE_FUNCTION
@@ -2364,30 +1842,19 @@ namespace Sacado {
       }
 
       SACADO_INLINE_FUNCTION
-      bool isPassive() const {
-        return expr2.isPassive();
-      }
-
-      SACADO_INLINE_FUNCTION
-      bool updateValue() const { return expr2.updateValue(); }
-
-      SACADO_INLINE_FUNCTION
-      void cache() const {}
-
-      SACADO_INLINE_FUNCTION
-      const value_type val() const {
+      value_type val() const {
         using Sacado::if_then_else;
-        return if_then_else( cond, c.val(), expr2.val() );
+        return if_then_else( cond, c, expr2.val() );
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type dx(int i) const {
+      value_type dx(int i) const {
         using Sacado::if_then_else;
         return if_then_else( cond, value_type(0.0), expr2.dx(i) );
       }
 
       SACADO_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
+      value_type fastAccessDx(int i) const {
         using Sacado::if_then_else;
         return if_then_else( cond, value_type(0.0), expr2.fastAccessDx(i) );
       }
@@ -2395,138 +1862,207 @@ namespace Sacado {
     protected:
 
       const CondT&  cond;
-      ConstT c;
-      const ExprT2& expr2;
+      const ConstT& c;
+      const T2& expr2;
     };
 
     template <typename CondT, typename T1, typename T2>
     SACADO_INLINE_FUNCTION
     typename mpl::enable_if_c< IsFadExpr<T1>::value && IsFadExpr<T2>::value &&
                                ExprLevel<T1>::value == ExprLevel<T2>::value,
-                               Expr< IfThenElseOp< CondT, T1, T2 > >
+                               IfThenElseOp< CondT,
+                                             typename Expr<T1>::derived_type,
+                                             typename Expr<T2>::derived_type,
+                                             false, false,
+                                             typename T1::expr_spec_type >
                              >::type
     if_then_else (const CondT& cond, const T1& expr1, const T2& expr2)
     {
-      typedef IfThenElseOp< CondT, T1, T2 > expr_t;
+      typedef IfThenElseOp< CondT, typename Expr<T1>::derived_type,
+                            typename Expr<T2>::derived_type,
+                            false, false, typename T1::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(cond, expr1, expr2);
+      return expr_t(cond, expr1.derived(), expr2.derived());
     }
 
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
-    Expr< IfThenElseOp< CondT, Expr<T>, Expr<T> > >
-    if_then_else (const CondT& cond, const Expr<T>& expr1, const Expr<T>& expr2)
-    {
-      typedef IfThenElseOp< CondT, Expr<T>, Expr<T> > expr_t;
-
-      return Expr<expr_t>(cond, expr1, expr2);
-    }
-
-    template <typename CondT, typename T>
-    SACADO_INLINE_FUNCTION
-    Expr< IfThenElseOp< CondT, ConstExpr<typename Expr<T>::value_type>,
-                        Expr<T> > >
-    if_then_else (const CondT& cond, const typename Expr<T>::value_type& c,
+    IfThenElseOp< CondT, typename T::value_type, typename Expr<T>::derived_type,
+                  true, false, typename T::expr_spec_type >
+    if_then_else (const CondT& cond, const typename T::value_type& c,
                   const Expr<T>& expr)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef IfThenElseOp< CondT, ConstT, Expr<T> > expr_t;
+      typedef typename T::value_type ConstT;
+      typedef IfThenElseOp< CondT, ConstT, typename Expr<T>::derived_type,
+                            true, false, typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(cond, ConstT(c), expr);
+      return expr_t(cond, c, expr.derived());
     }
 
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
-    Expr< IfThenElseOp< CondT, Expr<T>,
-                        ConstExpr<typename Expr<T>::value_type> > >
+    IfThenElseOp< CondT, typename Expr<T>::derived_type, typename T::value_type,
+                  false, true, typename T::expr_spec_type >
     if_then_else (const CondT& cond, const Expr<T>& expr,
-                  const typename Expr<T>::value_type& c)
+                  const typename T::value_type& c)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef IfThenElseOp< CondT, Expr<T>, ConstT > expr_t;
+      typedef typename T::value_type ConstT;
+      typedef IfThenElseOp< CondT, typename Expr<T>::derived_type, ConstT,
+                            false, true, typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(cond, expr, ConstT(c));
+      return expr_t(cond, expr.derived(), c);
     }
 
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      std::is_same< typename Expr<T>::value_type,
-                    typename Expr<T>::scalar_type>,
-      Expr< IfThenElseOp< CondT, ConstExpr<typename Expr<T>::scalar_type>,
-                          Expr<T> > >
+      std::is_same< typename T::value_type,
+                    typename T::scalar_type >,
+      IfThenElseOp< CondT, typename T::scalar_type,
+                    typename Expr<T>::derived_type,
+                    true, false, typename T::expr_spec_type >
       >::type
     if_then_else (const CondT& cond, const typename Expr<T>::scalar_type& c,
                   const Expr<T>& expr)
     {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef IfThenElseOp< CondT, ConstT, Expr<T> > expr_t;
+      typedef typename T::scalar_type ConstT;
+      typedef IfThenElseOp< CondT, ConstT, typename Expr<T>::derived_type,
+                            true, false, typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(cond, ConstT(c), expr);
+      return expr_t(cond, c, expr.derived());
     }
 
     template <typename CondT, typename T>
     SACADO_INLINE_FUNCTION
     typename mpl::disable_if<
-      std::is_same< typename Expr<T>::value_type,
-                    typename Expr<T>::scalar_type>,
-      Expr< IfThenElseOp< CondT, Expr<T>,
-                          ConstExpr<typename Expr<T>::scalar_type> > >
+      std::is_same< typename T::value_type,
+                    typename T::scalar_type >,
+      IfThenElseOp< CondT, typename Expr<T>::derived_type,
+                    typename T::scalar_type,
+                    false, true, typename T::expr_spec_type >
       >::type
     if_then_else (const CondT& cond, const Expr<T>& expr,
                   const typename Expr<T>::scalar_type& c)
     {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef IfThenElseOp< CondT, Expr<T>, ConstT > expr_t;
+      typedef typename T::scalar_type ConstT;
+      typedef IfThenElseOp< CondT, typename Expr<T>::derived_type, ConstT,
+                            false, true, typename T::expr_spec_type > expr_t;
 
-      return Expr<expr_t>(cond, expr, ConstT(c));
+      return expr_t(cond, expr.derived(), c);
     }
+
+    template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+              typename E>
+    struct ExprLevel< IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+      static constexpr unsigned value_1 = ExprLevel<T1>::value;
+      static constexpr unsigned value_2 = ExprLevel<T2>::value;
+      static constexpr unsigned value =
+        value_1 >= value_2 ? value_1 : value_2;
+    };
+
+    template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+              typename E>
+    struct IsFadExpr< IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+      static constexpr unsigned value = true;
+    };
+
   }
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct IsExpr< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    static constexpr bool value = true;
+  };
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct BaseExprType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    typedef typename BaseExprType<T1>::type base_expr_1;
+    typedef typename BaseExprType<T2>::type base_expr_2;
+    typedef typename Sacado::Promote<base_expr_1,
+                                     base_expr_2>::type type;
+  };
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct IsSimdType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    static const bool value =
+      IsSimdType< typename Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type >::value;
+  };
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct ValueType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    typedef typename Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E >::value_type type;
+  };
+
+  template <typename CondT, typename T1, typename T2, bool c1, bool c2,
+            typename E>
+  struct ScalarType< Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E > > {
+    typedef typename Fad::IfThenElseOp< CondT, T1, T2, c1, c2, E >::scalar_type type;
+  };
 }
+
+#undef FAD_BINARYOP_MACRO
 
 //-------------------------- Relational Operators -----------------------
 
 namespace Sacado {
   namespace Fad {
-    template <typename T1, typename T2 = T1>
-    struct ConditionalReturnType {
+  namespace Impl {
+    // Helper trait to determine return type of logical comparison operations
+    // (==, !=, ...), usually bool but maybe something else for SIMD types.
+    // Need to use SFINAE to restrict to types that define == operator in the
+    // conditional overloads below, otherwise instantiating ConditionaReturnType
+    // may fail during overload resolution.
+    template <typename T1, typename T2 = T1,
+              bool = mpl::has_equal_to<T1,T2>::value>
+    struct ConditionalReturnType {};
+
+    template <typename T1, typename T2>
+    struct ConditionalReturnType<T1,T2,true> {
       typedef decltype( std::declval<T1>() == std::declval<T2>() ) type;
     };
+  }
   }
 }
 
 #define FAD_RELOP_MACRO(OP)                                             \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-    template <typename ExprT1, typename ExprT2>                         \
+                                                         \
+    template <typename T1, typename T2>                                 \
     SACADO_INLINE_FUNCTION                                              \
-    typename ConditionalReturnType<typename Expr<ExprT1>::value_type,   \
-                                   typename Expr<ExprT2>::value_type>::type \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const Expr<ExprT2>& expr2)                             \
+    typename mpl::enable_if_c<                                          \
+       IsFadExpr<T1>::value && IsFadExpr<T2>::value &&                  \
+       ExprLevel<T1>::value == ExprLevel<T2>::value,                    \
+       typename Impl::ConditionalReturnType<typename T1::value_type,    \
+                                            typename T2::value_type>::type \
+       >::type                                                          \
+    operator OP (const T1& expr1, const T2& expr2)                      \
     {                                                                   \
-      return expr1.val() OP expr2.val();                                \
+      return expr1.derived().val() OP expr2.derived().val();            \
     }                                                                   \
                                                                         \
-    template <typename ExprT2>                                          \
+    template <typename T2>                                              \
     SACADO_INLINE_FUNCTION                                              \
-    typename ConditionalReturnType<typename Expr<ExprT2>::value_type>::type \
-    operator OP (const typename Expr<ExprT2>::value_type& a,            \
-                 const Expr<ExprT2>& expr2)                             \
+    typename Impl::ConditionalReturnType<typename T2::value_type>::type \
+    operator OP (const typename T2::value_type& a,                      \
+                 const Expr<T2>& expr2)                                 \
     {                                                                   \
-      return a OP expr2.val();                                          \
+      return a OP expr2.derived().val();                                \
     }                                                                   \
                                                                         \
-    template <typename ExprT1>                                          \
+    template <typename T1>                                              \
     SACADO_INLINE_FUNCTION                                              \
-    typename ConditionalReturnType<typename Expr<ExprT1>::value_type>::type \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const typename Expr<ExprT1>::value_type& b)            \
+    typename Impl::ConditionalReturnType<typename T1::value_type>::type \
+    operator OP (const Expr<T1>& expr1,                                 \
+                 const typename T1::value_type& b)                      \
     {                                                                   \
-      return expr1.val() OP b;                                          \
+      return expr1.derived().val() OP b;                                \
     }                                                                   \
   }                                                                     \
-}
+}                                                                       \
 
 FAD_RELOP_MACRO(==)
 FAD_RELOP_MACRO(!=)
@@ -2542,14 +2078,13 @@ FAD_RELOP_MACRO(|)
 #undef FAD_RELOP_MACRO
 
 namespace Sacado {
-
   namespace Fad {
 
     template <typename ExprT>
     SACADO_INLINE_FUNCTION
     bool operator ! (const Expr<ExprT>& expr)
     {
-      return ! expr.val();
+      return ! expr.derived().val();
     }
 
   } // namespace Fad
@@ -2558,12 +2093,12 @@ namespace Sacado {
 
 //-------------------------- Boolean Operators -----------------------
 namespace Sacado {
-
   namespace Fad {
 
-    template <typename ExprT>
+    template <typename T>
     SACADO_INLINE_FUNCTION
-    bool toBool(const Expr<ExprT>& x) {
+    bool toBool(const Expr<T>& xx) {
+      const typename Expr<T>::derived_type& x = xx.derived();
       bool is_zero = (x.val() == 0.0);
       for (int i=0; i<x.size(); i++)
         is_zero = is_zero && (x.dx(i) == 0.0);
@@ -2577,29 +2112,30 @@ namespace Sacado {
 #define FAD_BOOL_MACRO(OP)                                              \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
-    template <typename ExprT1, typename ExprT2>                         \
+                                                         \
+    template <typename T1, typename T2>                                 \
     SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const Expr<ExprT2>& expr2)                             \
+    operator OP (const Expr<T1>& expr1,                                 \
+                 const Expr<T2>& expr2)                                 \
     {                                                                   \
       return toBool(expr1) OP toBool(expr2);                            \
     }                                                                   \
                                                                         \
-    template <typename ExprT2>                                          \
+    template <typename T2>                                              \
     SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
-    operator OP (const typename Expr<ExprT2>::value_type& a,            \
-                 const Expr<ExprT2>& expr2)                             \
+    operator OP (const typename Expr<T2>::value_type& a,                \
+                 const Expr<T2>& expr2)                                 \
     {                                                                   \
       return a OP toBool(expr2);                                        \
     }                                                                   \
                                                                         \
-    template <typename ExprT1>                                          \
+    template <typename T1>                                              \
     SACADO_INLINE_FUNCTION                                              \
     bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const typename Expr<ExprT1>::value_type& b)            \
+    operator OP (const Expr<T1>& expr1,                                 \
+                 const typename Expr<T1>::value_type& b)                \
     {                                                                   \
       return toBool(expr1) OP b;                                        \
     }                                                                   \
@@ -2614,11 +2150,11 @@ FAD_BOOL_MACRO(||)
 //-------------------------- I/O Operators -----------------------
 
 namespace Sacado {
-
   namespace Fad {
 
-    template <typename ExprT>
-    std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
+    template <typename T>
+    std::ostream& operator << (std::ostream& os, const Expr<T>& xx) {
+      const typename Expr<T>::derived_type& x = xx.derived();
       os << x.val() << " [";
 
       for (int i=0; i< x.size(); i++) {
@@ -2632,5 +2168,46 @@ namespace Sacado {
   } // namespace Fad
 
 } // namespace Sacado
+
+#if defined(HAVE_SACADO_KOKKOS)
+
+//-------------------------- Atomic Operators -----------------------
+
+namespace Sacado {
+  namespace Fad {
+
+    // Overload of Kokkos::atomic_add for Fad types.
+    template <typename S>
+    SACADO_INLINE_FUNCTION
+    void atomic_add(GeneralFad<S>* dst, const GeneralFad<S>& x) {
+      using Kokkos::atomic_add;
+
+      const int xsz = x.size();
+      const int sz = dst->size();
+
+      // We currently cannot handle resizing since that would need to be
+      // done atomically.
+      if (xsz > sz)
+        Kokkos::abort(
+          "Sacado error: Fad resize within atomic_add() not supported!");
+
+      if (xsz != sz && sz > 0 && xsz > 0)
+        Kokkos::abort(
+          "Sacado error: Fad assignment of incompatiable sizes!");
+
+
+      if (sz > 0 && xsz > 0) {
+        SACADO_FAD_DERIV_LOOP(i,sz)
+          atomic_add(&(dst->fastAccessDx(i)), x.fastAccessDx(i));
+      }
+      SACADO_FAD_THREAD_SINGLE
+        atomic_add(&(dst->val()), x.val());
+    }
+
+  } // namespace Fad
+
+} // namespace Sacado
+
+#endif // HAVE_SACADO_KOKKOS
 
 #endif // SACADO_FAD_OPS_HPP

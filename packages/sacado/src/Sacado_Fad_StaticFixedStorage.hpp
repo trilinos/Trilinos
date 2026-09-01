@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_EXP_STATICFIXEDSTORAGE_HPP
-#define SACADO_FAD_EXP_STATICFIXEDSTORAGE_HPP
+#ifndef SACADO_FAD_STATICFIXEDSTORAGE_HPP
+#define SACADO_FAD_STATICFIXEDSTORAGE_HPP
 
 #include <type_traits>
 #include <utility>
@@ -17,9 +17,7 @@
 #include "Sacado_StaticArrayTraits.hpp"
 
 namespace Sacado {
-
   namespace Fad {
-  namespace Exp {
 
     //! Derivative array storage class using static, fixed memory allocation
     /*!
@@ -227,9 +225,8 @@ namespace Sacado {
 
     }; // class StaticFixedStorage
 
-  } // namespace Exp
   } // namespace Fad
 
 } // namespace Sacado
 
-#endif // SACADO_FAD_EXP_STATICFIXEDSTORAGE_HPP
+#endif // SACADO_FAD_STATICFIXEDSTORAGE_HPP

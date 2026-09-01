@@ -4,145 +4,104 @@
 //
 // Copyright 2006 NTESS and the Sacado contributors.
 // SPDX-License-Identifier: LGPL-2.1-or-later
-//
-// ***********************************************************************
-//
-// The forward-mode AD classes in Sacado are a derivative work of the
-// expression template classes in the Fad package by Nicolas Di Cesare.
-// The following banner is included in the original Fad source code:
-//
-// ************ DO NOT REMOVE THIS BANNER ****************
-//
-//  Nicolas Di Cesare <Nicolas.Dicesare@ann.jussieu.fr>
-//  http://www.ann.jussieu.fr/~dicesare
-//
-//            CEMRACS 98 : C++ courses,
-//         templates : new C++ techniques
-//            for scientific computing
-//
-//********************************************************
-//
-//  A short implementation ( not all operators and
-//  functions are overloaded ) of 1st order Automatic
-//  Differentiation in forward mode (FAD) using
-//  EXPRESSION TEMPLATES.
-//
-//********************************************************
+// *****************************************************************************
 // @HEADER
 
 #ifndef SACADO_FAD_GENERALFAD_HPP
 #define SACADO_FAD_GENERALFAD_HPP
 
+#include "Sacado_Fad_GeneralFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
+#include "Sacado_Fad_Extender.hpp"
+#include "Sacado_Fad_ExprAssign.hpp"
 
 namespace Sacado {
 
   //! Namespace for forward-mode AD classes
   namespace Fad {
 
-#ifndef SACADO_FAD_DERIV_LOOP
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
-#define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=threadIdx.x; I<SZ; I+=blockDim.x)
-#else
-#define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=0; I<SZ; ++I)
-#endif
-#endif
-
-#ifndef SACADO_FAD_THREAD_SINGLE
-#if (defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
-#define SACADO_FAD_THREAD_SINGLE if (threadIdx.x == 0)
-#else
-#define SACADO_FAD_THREAD_SINGLE /* */
-#endif
-#endif
-
     //! Forward-mode AD class templated on the storage for the derivative array
     /*!
      * This class provides a general forward mode AD implementation for any
-     * type of derivative array storage.  It does not incorporate expression
-     * templates.
+     * type of derivative array storage.
      */
-    template <typename T, typename Storage>
-    class GeneralFad : public Storage {
-
+    template <typename Storage>
+    class GeneralFad :
+      public Expr< GeneralFad<Storage> >, // Brings in expression interface
+      public Extender<Storage> // Brings in interface extensions & storage
+    {
     public:
 
+      //! Storage type
+      typedef Storage StorageType;
+
+      //! Expression type
+      typedef Expr< GeneralFad<Storage> > ExprType;
+
+      //! Extender type
+      typedef Extender<Storage> ExtenderType;
+
       //! Typename of values
-      typedef typename RemoveConst<T>::type value_type;
+      using typename StorageType::value_type;
 
       //! Typename of scalar's (which may be different from T)
       typedef typename ScalarType<value_type>::type scalar_type;
+
+      //! Whether we are a view
+      static constexpr bool is_view = Storage::is_view;
+
+      //! Turn GeneralFad into a meta-function class usable with mpl::apply
+      template <typename T>
+      struct apply {
+        typedef typename Storage::template apply<T>::type S;
+        typedef GeneralFad<S> type;
+      };
+
+      //! Replace static derivative length
+      template <int N>
+      struct apply_N {
+        typedef typename Storage::template apply_N<N>::type S;
+        typedef GeneralFad<S> type;
+      };
 
       /*!
        * @name Initialization methods
        */
       //@{
 
+       //! Inherit Storage's and Extender's constructors
+      using ExtenderType::ExtenderType;
+
       //! Default constructor
-      SACADO_INLINE_FUNCTION
-      GeneralFad() : Storage(T(0.)) {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      template <typename S>
-      SACADO_INLINE_FUNCTION
-      GeneralFad(const S& x, SACADO_ENABLE_VALUE_CTOR_DECL) :
-        Storage(x) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      SACADO_INLINE_FUNCTION
-      GeneralFad(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
-        Storage(sz, x, zero_out) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      SACADO_INLINE_FUNCTION
-      GeneralFad(const int sz, const int i, const T & x) :
-        Storage(sz, x, InitDerivArray) {
-        this->fastAccessDx(i)=1.;
-      }
-
-      //! Constructor with supplied storage \c s
-      SACADO_INLINE_FUNCTION
-      GeneralFad(const Storage& s) : Storage(s) {}
+      SACADO_DEFAULTED_FUNCTION
+      GeneralFad() = default;
 
       //! Copy constructor
-      SACADO_INLINE_FUNCTION
-      GeneralFad(const GeneralFad& x) :
-        Storage(x) {}
+      SACADO_DEFAULTED_FUNCTION
+      GeneralFad(const GeneralFad& x) = default;
 
-      //! Copy constructor from any Expression object
+      //! Move constructor
+      SACADO_DEFAULTED_FUNCTION
+      GeneralFad(GeneralFad&& x) = default;
+
+      //! Constructor with value (disabled for ViewFad)
       template <typename S>
       SACADO_INLINE_FUNCTION
-      GeneralFad(const Expr<S>& x, SACADO_ENABLE_EXPR_CTOR_DECL)  :
-        Storage(x.size(), T(0.), NoInitDerivArray)
+      GeneralFad(const S & x, SACADO_EXP_ENABLE_VALUE_CTOR_DECL) :
+        ExtenderType(x) {}
+
+      //! Copy constructor from any Expression object (disabled for ViewFad)
+      template <typename S>
+      SACADO_INLINE_FUNCTION
+      GeneralFad(const Expr<S>& x, SACADO_EXP_ENABLE_EXPR_CTOR_DECL) :
+        ExtenderType(x.derived().size(), value_type(0.), NoInitDerivArray)
       {
-        const int sz = x.size();
-
-        if (sz) {
-          if (x.hasFastAccess())
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) = x.fastAccessDx(i);
-          else
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) = x.dx(i);
-        }
-
-        this->val() = x.val();
+        ExprAssign<GeneralFad>::assign_equal(*this, x.derived());
       }
 
       //! Destructor
-      SACADO_INLINE_FUNCTION
-      ~GeneralFad() {}
+      SACADO_DEFAULTED_FUNCTION
+      ~GeneralFad() = default;
 
       //! Set %GeneralFad object as the \c ith independent variable
       /*!
@@ -157,25 +116,34 @@ namespace Sacado {
           this->resize(n);
 
         this->zero();
-        this->fastAccessDx(ith) = T(1.);
+        this->fastAccessDx(ith) = value_type(1.);
       }
 
       //! Set whether this Fad object should update values
+      /*! Retained for backward compatibility.
+       */
       SACADO_INLINE_FUNCTION
-      void setUpdateValue(bool update_val) {  }
+      void setUpdateValue(bool update_val) {}
 
       //! Return whether this Fad object has an updated value
+      /*! Retained for backward compatibility.
+       */
       SACADO_INLINE_FUNCTION
       bool updateValue() const { return true; }
 
       //! Cache values
+      /*! Retained for backward compatibility.
+       */
       SACADO_INLINE_FUNCTION
       void cache() const {}
 
       //! Returns whether two Fad objects have the same values
       template <typename S>
       SACADO_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(bool) isEqualTo(const Expr<S>& x) const {
+      SACADO_EXP_ENABLE_EXPR_FUNC(bool) isEqualTo(const Expr<S>& xx) const {
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
         typedef IsEqual<value_type> IE;
         if (x.size() != this->size()) return false;
         bool eq = IE::eval(x.val(), this->val());
@@ -203,10 +171,6 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       bool hasFastAccess() const { return this->size()!=0; }
 
-      //! Returns true if derivative array is empty
-      SACADO_INLINE_FUNCTION
-      bool isPassive() const { return this->size()==0; }
-
       //! Set whether variable is constant
       SACADO_INLINE_FUNCTION
       void setIsConstant(bool is_const) {
@@ -231,42 +195,20 @@ namespace Sacado {
       }
 
       //! Assignment with GeneralFad right-hand-side
-      SACADO_INLINE_FUNCTION
+      SACADO_DEFAULTED_FUNCTION
       GeneralFad&
-      operator=(const GeneralFad& x) {
-        // Copy value & dx_
-        Storage::operator=(x);
-        return *this;
-      }
+      operator=(const GeneralFad& x) = default;
+
+      //! Move assignment with GeneralFad right-hand-side
+      SACADO_DEFAULTED_FUNCTION
+      GeneralFad&
+      operator=(GeneralFad&& x) = default;
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
       SACADO_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator=(const Expr<S>& x) {
-        const int xsz = x.size();
-
-        if (xsz != this->size())
-          this->resizeAndZero(xsz);
-
-        const int sz = this->size();
-
-        // For ViewStorage, the resize above may not in fact resize the
-        // derivative array, so it is possible that sz != xsz at this point.
-        // The only valid use case here is sz > xsz == 0, so we use sz in the
-        // assignment below
-
-        if (sz) {
-          if (x.hasFastAccess()) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) = x.fastAccessDx(i);
-          }
-          else
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) = x.dx(i);
-        }
-
-        this->val() = x.val();
-
+      SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator=(const Expr<S>& x) {
+        ExprAssign<GeneralFad>::assign_equal(*this, x.derived());
         return *this;
       }
 
@@ -318,287 +260,60 @@ namespace Sacado {
       //! Addition-assignment operator with GeneralFad right-hand-side
       SACADO_INLINE_FUNCTION
       GeneralFad& operator += (const GeneralFad& x) {
-        const int xsz = x.size(), sz = this->size();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) += x.fastAccessDx(i);
-          }
-          else {
-            this->resizeAndZero(xsz);
-            SACADO_FAD_DERIV_LOOP(i,xsz)
-              this->fastAccessDx(i) = x.fastAccessDx(i);
-          }
-        }
-
-        this->val() += x.val();
-
+        ExprAssign<GeneralFad>::assign_plus_equal(*this, x);
         return *this;
       }
 
       //! Subtraction-assignment operator with GeneralFad right-hand-side
       SACADO_INLINE_FUNCTION
       GeneralFad& operator -= (const GeneralFad& x) {
-        const int xsz = x.size(), sz = this->size();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) -= x.fastAccessDx(i);
-          }
-          else {
-            this->resizeAndZero(xsz);
-            SACADO_FAD_DERIV_LOOP(i,xsz)
-              this->fastAccessDx(i) = -x.fastAccessDx(i);
-          }
-        }
-
-        this->val() -= x.val();
-
-
+        ExprAssign<GeneralFad>::assign_minus_equal(*this, x);
         return *this;
       }
 
       //! Multiplication-assignment operator with GeneralFad right-hand-side
       SACADO_INLINE_FUNCTION
       GeneralFad& operator *= (const GeneralFad& x) {
-        const int xsz = x.size(), sz = this->size();
-        T xval = x.val();
-        T v = this->val();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
-          }
-          else {
-            this->resizeAndZero(xsz);
-            SACADO_FAD_DERIV_LOOP(i,xsz)
-              this->fastAccessDx(i) = v*x.fastAccessDx(i);
-          }
-        }
-        else {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) *= xval;
-          }
-        }
-
-        this->val() *= xval;
-
+        ExprAssign<GeneralFad>::assign_times_equal(*this, x);
         return *this;
       }
 
       //! Division-assignment operator with GeneralFad right-hand-side
       SACADO_INLINE_FUNCTION
       GeneralFad& operator /= (const GeneralFad& x) {
-        const int xsz = x.size(), sz = this->size();
-        T xval = x.val();
-        T v = this->val();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) =
-                ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
-          }
-          else {
-            this->resizeAndZero(xsz);
-            SACADO_FAD_DERIV_LOOP(i,xsz)
-              this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
-          }
-        }
-        else {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) /= xval;
-          }
-        }
-
-        this->val() /= xval;
-
+        ExprAssign<GeneralFad>::assign_divide_equal(*this, x);
         return *this;
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       SACADO_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator += (const Expr<S>& x) {
-        const int xsz = x.size(), sz = this->size();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) += x.fastAccessDx(i);
-            else
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) += x.dx(i);
-          }
-          else {
-            this->resizeAndZero(xsz);
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = x.fastAccessDx(i);
-            else
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = x.dx(i);
-          }
-        }
-
-        this->val() += x.val();
-
+      SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator += (const Expr<S>& x) {
+        ExprAssign<GeneralFad>::assign_plus_equal(*this, x.derived());
         return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       SACADO_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator -= (const Expr<S>& x) {
-        const int xsz = x.size(), sz = this->size();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) -= x.fastAccessDx(i);
-            else
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) -= x.dx(i);
-          }
-          else {
-            this->resizeAndZero(xsz);
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = -x.fastAccessDx(i);
-            else
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = -x.dx(i);
-          }
-        }
-
-        this->val() -= x.val();
-
-
+      SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator -= (const Expr<S>& x) {
+        ExprAssign<GeneralFad>::assign_minus_equal(*this, x.derived());
         return *this;
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       SACADO_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator *= (const Expr<S>& x) {
-        const int xsz = x.size(), sz = this->size();
-        T xval = x.val();
-        T v = this->val();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
-            else
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
-          }
-          else {
-            this->resizeAndZero(xsz);
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = v*x.fastAccessDx(i);
-            else
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = v*x.dx(i);
-          }
-        }
-        else {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) *= xval;
-          }
-        }
-
-        this->val() *= xval;
-
+      SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator *= (const Expr<S>& x) {
+        ExprAssign<GeneralFad>::assign_times_equal(*this, x.derived());
         return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       SACADO_INLINE_FUNCTION
-      SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator /= (const Expr<S>& x) {
-        const int xsz = x.size(), sz = this->size();
-        T xval = x.val();
-        T v = this->val();
-
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
-        if ((xsz != sz) && (xsz != 0) && (sz != 0))
-          throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-        if (xsz) {
-          if (sz) {
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
-            else
-              SACADO_FAD_DERIV_LOOP(i,sz)
-                this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
-          }
-          else {
-            this->resizeAndZero(xsz);
-            if (x.hasFastAccess())
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
-            else
-              SACADO_FAD_DERIV_LOOP(i,xsz)
-                this->fastAccessDx(i) = -v*x.dx(i) / (xval*xval);
-          }
-        }
-        else {
-          if (sz) {
-            SACADO_FAD_DERIV_LOOP(i,sz)
-              this->fastAccessDx(i) /= xval;
-          }
-        }
-
-        this->val() /= xval;
-
+      SACADO_EXP_ENABLE_EXPR_FUNC(GeneralFad&) operator /= (const Expr<S>& x) {
+        ExprAssign<GeneralFad>::assign_divide_equal(*this, x.derived());
         return *this;
       }
 
@@ -606,8 +321,41 @@ namespace Sacado {
 
     }; // class GeneralFad
 
+    template <typename S>
+    struct ExprLevel< GeneralFad<S> > {
+      static constexpr unsigned value =
+        ExprLevel< typename GeneralFad<S>::value_type >::value + 1;
+    };
+
+    template <typename S>
+    struct IsFadExpr< GeneralFad<S> > {
+      static constexpr bool value = true;
+    };
+
   } // namespace Fad
 
+  template <typename S>
+  struct IsView< Fad::GeneralFad<S> > {
+    static constexpr bool value =  Fad::GeneralFad<S>::is_view;
+  };
+
+  template <typename S>
+  struct IsFad< Fad::GeneralFad<S> > {
+    static constexpr bool value = true;
+  };
+
+  template <typename S>
+  struct IsExpr< Fad::GeneralFad<S> > {
+    static constexpr bool value = true;
+  };
+
+  template <typename S>
+  struct BaseExprType< Fad::GeneralFad<S> > {
+    typedef Fad::GeneralFad<S> type;
+  };
+
 } // namespace Sacado
+
+#include "Sacado_Fad_Ops.hpp"
 
 #endif // SACADO_FAD_GENERALFAD_HPP
