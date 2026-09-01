@@ -1739,6 +1739,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // Synchronize R_ before and after copying over diagonal of HP
 	  DMT::SyncDeviceToHost( *R_ );
           RCP<DM> Rtmp = DMT::Subview( *R_, keff, keff );
+          DMT::SyncDeviceToHost(*HP_);
           for (int ii = 0; ii < keff; ++ii) {
             for (int jj = ii; jj < keff; ++jj) {
               DMT::Value(*Rtmp,ii,jj) = DMT::ValueConst(*HPtmp,ii,jj);
@@ -2153,6 +2154,7 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
   DMT::SyncDeviceToHost( *R_ );
   Teuchos::RCP<DM> Rtmp = DMT::Subview( *R_, keff_new, keff_new );
+  DMT::SyncDeviceToHost(*HP_);
   for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) DMT::Value(*Rtmp,i,j) = DMT::ValueConst(*HPtmp,i,j); }
 
   DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
