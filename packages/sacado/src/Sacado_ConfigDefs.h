@@ -103,6 +103,4 @@
   #define SACADO_DEPRECATED_WITH_COMMENT(comment)
 #endif
 
-#define SACADO_ENABLE_NEW_DESIGN 1
-
 #endif /* SACADO_CONFIGDEFS_H */
