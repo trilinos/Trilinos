@@ -231,6 +231,20 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   )
   LIST(APPEND SOURCES ${BLOCKEDVECTOR_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::BlockedCrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
+    BLOCKEDCRSMATRIX_OUTPUT_FILES
+    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+    "BlockedCrsMatrix"
+    "BLOCKEDCRSMATRIX"
+    "${CrsMatrix_ETI_SCALARS}"
+    "${TpetraCore_ETI_LORDS}"
+    "${TpetraCore_ETI_GORDS}"
+    "${TpetraCore_ETI_NODES}"
+    TRUE
+  )
+  LIST(APPEND SOURCES ${BLOCKEDCRSMATRIX_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::BlockCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(
     BLOCKCRSMATRIX_OUTPUT_FILES
