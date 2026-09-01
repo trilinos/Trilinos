@@ -1685,9 +1685,9 @@ Kokkos::View<bool*, typename NO::device_type>
 UtilitiesBase<SC, LO, GO, NO>::
     DetectDirichletCols(const Xpetra::Matrix<SC, LO, GO, NO>& A,
                         const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
-  using ATS        = KokkosKernels::ArithTraits<SC>;
-  using impl_ATS   = KokkosKernels::ArithTraits<typename ATS::val_type>;
-  using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+  using ATS         = KokkosKernels::ArithTraits<SC>;
+  using impl_ATS    = KokkosKernels::ArithTraits<typename ATS::val_type>;
+  using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
   using scalar_type = typename KokkosKernels::ArithTraits<SC>::val_type;
   using mag_type    = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
   using KAT_M       = typename KokkosKernels::ArithTraits<mag_type>;
@@ -1712,7 +1712,7 @@ UtilitiesBase<SC, LO, GO, NO>::
           auto length  = rowView.length;
 
           for (decltype(length) colID = 0; colID < length; colID++) {
-            if ( KAT_S::abs(rowView.value(colID)) >  KAT_M::zero())
+            if (KAT_S::abs(rowView.value(colID)) > KAT_M::zero())
               myColsToZeroView(rowView.colidx(colID), 0) = impl_ATS::one();
           }
         }
