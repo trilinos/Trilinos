@@ -1298,6 +1298,9 @@ class Map : public Teuchos::Describable {
   /// need this).
   mutable global_to_local_table_host_type glMapHost_;
 
+  /// Add secondary debugging table
+  glocal_to_local_table_host_type glMapHost_DEBUG:
+
   /// \brief Object that can find the process rank and local index
   ///   for any given global index.
   ///
