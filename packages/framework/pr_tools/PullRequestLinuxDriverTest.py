@@ -231,6 +231,12 @@ def parse_args():
                           default="",
                           help="Extra arguments that will be passed to CMake for configuring Trilinos.")
 
+    optional.add_argument("--extra-ctest-driver-args",
+                          dest="extra_ctest_driver_args",
+                          action="store",
+                          default="",
+                          help="Extra arguments that will be passed to the CTest driver for configure/build/test/submit.")
+
     arguments = parser.parse_args()
 
     if not arguments.ctest_driver:

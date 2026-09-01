@@ -135,6 +135,10 @@ do
         bootstrap=0
         shift
         ;;
+    (--extra-ctest-driver-args)
+        extra_ctest_driver_args=$2
+        shift 2
+        ;;
     (--extra-configure-args)
         extra_configure_args=$2
         shift 2
@@ -304,6 +308,11 @@ fi
 if [[ ${extra_configure_args} ]]
 then
     test_cmd_options+=( "--extra-configure-args=\"${extra_configure_args}\" ")
+fi
+
+if [[ ${extra_ctest_driver_args} ]]
+then
+    test_cmd_options+=( "--extra-ctest-driver-args=\"${extra_ctest_driver_args}\" ")
 fi
 
 if [[ ${GENCONFIG_BUILD_NAME} == *"gnu"* ]]
