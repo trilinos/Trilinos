@@ -27,6 +27,14 @@
 #include <Xpetra_BlockedMultiVector_decl.hpp>
 #include <Xpetra_MultiVectorFactory_decl.hpp>
 
+// Xpetra::MapExtractor is now a thin wrapper around Tpetra::MapExtractor.  All
+// Extract/Insert logic (import/export, thyra/xpetra numbering, blocked handling)
+// lives in Tpetra; this class holds an RCP<Tpetra::MapExtractor> and forwards every
+// method to it, unwrapping Xpetra (Blocked)(Multi)Vector arguments to their underlying
+// Tpetra objects and re-wrapping the results.  Epetra-backed arguments trigger
+// Xpetra::Exceptions::BadCast, which is the intended behavior in the Tpetra-only world.
+#include <Tpetra_MapExtractor_decl.hpp>
+
 namespace Xpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -50,6 +58,9 @@ class MapExtractor : public Teuchos::Describable {
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node node_type;
+
+  //! The type of the underlying Tpetra::MapExtractor.
+  using tpetra_mapextractor_type = ::Tpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
  private:
 #undef XPETRA_MAPEXTRACTOR_SHORT
@@ -151,9 +162,20 @@ class MapExtractor : public Teuchos::Describable {
 
   //@}
 
+  //! @name Xpetra-specific accessors for the wrapped Tpetra object
+  //@{
+
+  //! Get the underlying Tpetra::MapExtractor object.
+  Teuchos::RCP<const tpetra_mapextractor_type> getTpetra_MapExtractor() const { return te_; }
+
+  //@}
+
  private:
-  //! blocked map containing the sub block maps (either thyra or xpetra mode)
-  Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> map_;
+  //! The wrapped Tpetra::MapExtractor.
+  Teuchos::RCP<const tpetra_mapextractor_type> te_;
+
+  //! Lazy Xpetra wrapper around the wrapped BlockedMap (identity cache).
+  mutable Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> blockedMapXpetra_;
 };
 
 }  // namespace Xpetra
