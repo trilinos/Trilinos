@@ -43,18 +43,22 @@ toTpetraMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, Glob
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapExtractor(const RCP<const Map>& fullmap, const std::vector<RCP<const Map>>& maps, bool bThyraMode) {
-  te_ = Teuchos::rcp(new tpetra_mapextractor_type(
-      toTpetra(fullmap),
-      MapExtractorDetails::toTpetraMaps<Scalar, LocalOrdinal, GlobalOrdinal, Node>(maps),
-      bThyraMode));
+  // Build an Xpetra::BlockedMap wrapper first: it caches the original Xpetra
+  // sub-maps and full map so their dynamic type (e.g. StridedMap) survives
+  // getMap()/getFullMap().  The Tpetra core extractor is then built from that
+  // wrapper's Tpetra blocked map -- identical to building it directly from the
+  // unwrapped maps, but preserving the richer Xpetra identity for MueLu.
+  blockedMapXpetra_ = Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(fullmap, maps, bThyraMode));
+  te_               = Teuchos::rcp(new tpetra_mapextractor_type(blockedMapXpetra_->getTpetra_BlockedMap()));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapExtractor(const std::vector<RCP<const Map>>& maps, const std::vector<RCP<const Map>>& thyramaps) {
-  te_ = Teuchos::rcp(new tpetra_mapextractor_type(
-      MapExtractorDetails::toTpetraMaps<Scalar, LocalOrdinal, GlobalOrdinal, Node>(maps),
-      MapExtractorDetails::toTpetraMaps<Scalar, LocalOrdinal, GlobalOrdinal, Node>(thyramaps)));
+  // As above: route through an Xpetra::BlockedMap so the original sub-maps'
+  // dynamic type is retained for getMap().
+  blockedMapXpetra_ = Teuchos::rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(maps, thyramaps));
+  te_               = Teuchos::rcp(new tpetra_mapextractor_type(blockedMapXpetra_->getTpetra_BlockedMap()));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -67,7 +71,8 @@ MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapExtractor(const MapExtractor& input) {
-  te_ = Teuchos::rcp(new tpetra_mapextractor_type(*input.getTpetra_MapExtractor()));
+  te_               = Teuchos::rcp(new tpetra_mapextractor_type(*input.getTpetra_MapExtractor()));
+  blockedMapXpetra_ = input.blockedMapXpetra_;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -305,6 +310,10 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getMap(size_t i, bool bThyraMode) const {
+  // Prefer the cached Xpetra sub-map so its dynamic type (e.g. StridedMap) is
+  // preserved; the Tpetra core stores only flattened plain maps.
+  if (!blockedMapXpetra_.is_null())
+    return blockedMapXpetra_->getMap(i, bThyraMode);
   return toXpetra(te_->getMap(i, bThyraMode));
 }
 
@@ -328,6 +337,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     getFullMap() const {
+  // Prefer the cached Xpetra full map so its dynamic type (e.g. StridedMap) is
+  // preserved for MueLu factories that rcp_dynamic_cast it.
+  if (!blockedMapXpetra_.is_null()) {
+    RCP<const Map> full = blockedMapXpetra_->getFullMap();
+    if (!full.is_null())
+      return full;
+  }
   return toXpetra(te_->getFullMap());
 }
 

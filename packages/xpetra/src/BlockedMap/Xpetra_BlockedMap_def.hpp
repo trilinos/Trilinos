@@ -52,6 +52,11 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
     thyraMapsXpetra_ = maps;
   else
     mapsXpetra_ = maps;
+  // Retain the original full map too, so getFullMap() preserves its dynamic
+  // type (e.g. StridedMap).  The Tpetra core flattens it to a plain Map, so
+  // re-wrapping map_->getFullMap() would lose that richer type -- which MueLu
+  // factories (SubBlockAFactory, BlockedPFactory) rely on via rcp_dynamic_cast.
+  fullmapXpetra_ = fullmap;
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
