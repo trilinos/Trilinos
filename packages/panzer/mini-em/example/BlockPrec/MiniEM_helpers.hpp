@@ -32,12 +32,6 @@
 
 namespace mini_em {
 
-  //! Which linear algebra backend to build the linear system with.
-  enum linearAlgebraType {
-    linAlgTpetra,
-    linAlgEpetra
-  };
-
   //! Which physics (equation set) the mini-em example is solving.
   enum physicsType {
     MAXWELL,
@@ -46,9 +40,7 @@ namespace mini_em {
 
   //! Which preconditioning/solver strategy to use.
   enum solverType {
-    AUGMENTATION,
     MUELU,
-    ML,
     CG,
     GMRES,
     MAXWELL1_RS,
@@ -85,7 +77,6 @@ namespace mini_em {
 
   /** \brief Builds the Stratimikos/Teko solver ParameterList for the given linear algebra backend, physics, and solver strategy, optionally reading overrides from an xml file.
     *
-    * \param[in] linAlgebra which linear algebra backend (Tpetra/Epetra) the solver is configured for.
     * \param[in] physics which physics (Maxwell/Darcy) the solver is configured for.
     * \param[in] solver which solver/preconditioner strategy to load the base configuration for.
     * \param[in] dim spatial dimension of the problem; selects the 2D solver configuration override when 2.
@@ -97,8 +88,7 @@ namespace mini_em {
     * \param[in] useBarriers if true, layers on the MueLu configuration override that adds MPI barriers for profiling.
     * \param[in] truncateMueLuHierarchy if true, layers on the MueLu configuration override that truncates the multigrid hierarchy.
     */
-  Teuchos::RCP<Teuchos::ParameterList> getSolverParameters(linearAlgebraType linAlgebra,
-                                                           physicsType physics,
+  Teuchos::RCP<Teuchos::ParameterList> getSolverParameters(physicsType physics,
                                                            solverType solver,
                                                            int dim,
                                                            Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,

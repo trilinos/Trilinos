@@ -11,42 +11,16 @@
             <ParameterList name="Preconditioner Types">
               <ParameterList name="MueLuRefMaxwell">
 
-                <ParameterList name="smoother: params">
-                  <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
-                </ParameterList>
-
                 <ParameterList name="refmaxwell: 11list">
 
                   <Parameter name="coarse: type" type="string" value="tacho"/>
-                  <ParameterList name="coarse: params">
-                    <ParameterList name="Amesos2">
-                      <ParameterList name="Tacho">
-                        <Parameter name="small problem threshold size" type="int" value="100"/>
-                      </ParameterList>
-                    </ParameterList>
-                  </ParameterList>
-
-                  <ParameterList name="smoother: params">
-                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
-                  </ParameterList>
-
+                  
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 22list">
 
                   <Parameter name="coarse: type" type="string" value="tacho"/>
-                  <ParameterList name="coarse: params">
-                    <ParameterList name="Amesos2">
-                      <ParameterList name="Tacho">
-                        <Parameter name="small problem threshold size" type="int" value="100"/>
-                      </ParameterList>
-                    </ParameterList>
-                  </ParameterList>
-
-                  <ParameterList name="smoother: params">
-                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
-                  </ParameterList>
-
+                  
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -59,42 +33,16 @@
             <ParameterList name="Preconditioner Types">
               <ParameterList name="MueLuRefMaxwell">
 
-                <ParameterList name="smoother: params">
-                  <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
-                </ParameterList>
-
                 <ParameterList name="refmaxwell: 11list">
 
                   <Parameter name="coarse: type" type="string" value="tacho"/>
-                  <ParameterList name="coarse: params">
-                    <ParameterList name="Amesos2">
-                      <ParameterList name="Tacho">
-                        <Parameter name="small problem threshold size" type="int" value="100"/>
-                      </ParameterList>
-                    </ParameterList>
-                  </ParameterList>
-
-                  <ParameterList name="smoother: params">
-                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
-                  </ParameterList>
-
+                  
                 </ParameterList>
 
                 <ParameterList name="refmaxwell: 22list">
 
                   <Parameter name="coarse: type" type="string" value="tacho"/>
-                  <ParameterList name="coarse: params">
-                    <ParameterList name="Amesos2">
-                      <ParameterList name="Tacho">
-                        <Parameter name="small problem threshold size" type="int" value="100"/>
-                      </ParameterList>
-                    </ParameterList>
-                  </ParameterList>
-
-                  <ParameterList name="smoother: params">
-                    <Parameter name="chebyshev: use native spmv" type="bool" value="true"/>
-                  </ParameterList>
-
+                  
                 </ParameterList>
               </ParameterList>
             </ParameterList>

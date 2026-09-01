@@ -2251,7 +2251,7 @@ optimized neighbor discovery for Importer construction.</description>
     <parameter>
       <name>refmaxwell: subsolves on subcommunicators</name>
       <type>bool</type>
-      <default>false</default>
+      <default>true</default>
       <description>Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).</description>
     </parameter>
 

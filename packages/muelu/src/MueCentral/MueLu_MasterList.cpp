@@ -373,7 +373,7 @@ namespace MueLu {
   "<ParameterList name=\"refmaxwell: 22list\"/>"
   "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"refmaxwell: dump matrices\" type=\"bool\" value=\"false\"/>"
-  "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"refmaxwell: normalize nullspace\" type=\"bool\" value=\"false\"/>"

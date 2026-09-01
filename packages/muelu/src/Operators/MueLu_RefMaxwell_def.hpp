@@ -84,6 +84,11 @@ T pop(Teuchos::ParameterList &pl, std::string const &name_in, T def_value) {
   return result;
 }
 
+template <typename T>
+T pop(Teuchos::ParameterList &pl1, Teuchos::ParameterList &pl2, std::string const &name_in, T def_value) {
+  return pop(pl2, name_in, pop(pl1, name_in, def_value));
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
   return SM_Matrix_->getDomainMap();
@@ -162,6 +167,8 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   precList11.disableRecursiveValidation();
   ParameterList &precList22 = params->sublist("refmaxwell: 22list");
   precList22.disableRecursiveValidation();
+  ParameterList &userData = params->sublist("user data");
+  userData.disableRecursiveValidation();
 
   params->set("smoother: type", "CHEBYSHEV");
   ParameterList &smootherList = params->sublist("smoother: params");
@@ -186,7 +193,14 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   params->set("aggregation: type", MasterList::getDefault<std::string>("aggregation: type"));
   params->set("aggregation: drop tol", MasterList::getDefault<double>("aggregation: drop tol"));
   params->set("aggregation: drop scheme", MasterList::getDefault<std::string>("aggregation: drop scheme"));
+#ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
   params->set("aggregation: distance laplacian algo", MasterList::getDefault<std::string>("aggregation: distance laplacian algo"));
+#endif
+  params->set("aggregation: strength-of-connection: matrix", MasterList::getDefault<std::string>("aggregation: strength-of-connection: matrix"));
+  params->set("aggregation: strength-of-connection: measure", MasterList::getDefault<std::string>("aggregation: strength-of-connection: measure"));
+  params->set("aggregation: distance laplacian metric", MasterList::getDefault<std::string>("aggregation: distance laplacian metric"));
+
+  params->set("aggregation: backend", MasterList::getDefault<std::string>("aggregation: backend"));
   params->set("aggregation: min agg size", MasterList::getDefault<int>("aggregation: min agg size"));
   params->set("aggregation: max agg size", MasterList::getDefault<int>("aggregation: max agg size"));
   params->set("aggregation: match ML phase1", MasterList::getDefault<bool>("aggregation: match ML phase1"));
@@ -202,7 +216,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
   if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
     Teuchos::ParameterList newList;
     {
-      Teuchos::ParameterList newList2                = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell"));
+      Teuchos::ParameterList newList2                = *MueLu::ML2MueLuParameterTranslator::translate(list, "refmaxwell");
       RCP<Teuchos::ParameterList> validateParameters = getValidParamterList();
       for (auto it = newList2.begin(); it != newList2.end(); ++it) {
         const std::string &entry_name = it->first;
@@ -214,9 +228,9 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
     }
 
     if (list.isSublist("refmaxwell: 11list") && list.sublist("refmaxwell: 11list").isSublist("edge matrix free: coarse"))
-      newList.sublist("refmaxwell: 11list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA"));
+      newList.sublist("refmaxwell: 11list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse"), "SA");
     if (list.isSublist("refmaxwell: 22list"))
-      newList.sublist("refmaxwell: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA"));
+      newList.sublist("refmaxwell: 22list") = *MueLu::ML2MueLuParameterTranslator::translate(list.sublist("refmaxwell: 22list"), "SA");
     list = newList;
   }
 
@@ -252,43 +266,217 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teucho
   applyBCsToCoarse11_ = parameterList_.get<bool>("refmaxwell: apply BCs to coarse 11");
   applyBCsTo22_       = parameterList_.get<bool>("refmaxwell: apply BCs to 22");
 
-  precList11_ = parameterList_.sublist("refmaxwell: 11list");
-  if (!precList11_.isType<std::string>("Preconditioner Type") &&
-      !precList11_.isType<std::string>("smoother: type") &&
-      !precList11_.isType<std::string>("smoother: pre type") &&
-      !precList11_.isType<std::string>("smoother: post type")) {
-    precList11_.set("smoother: type", "CHEBYSHEV");
-    precList11_.sublist("smoother: params").set("chebyshev: degree", 2);
-    precList11_.sublist("smoother: params").set("chebyshev: ratio eigenvalue", 5.4);
-    precList11_.sublist("smoother: params").set("chebyshev: eigenvalue max iterations", 30);
+  precList11_          = parameterList_.sublist("refmaxwell: 11list");
+  const bool isMueLu11 = !precList11_.isType<std::string>("Preconditioner Type");
+  if (isMueLu11) {
+    if (!precList11_.isType<std::string>("smoother: type") &&
+        !precList11_.isType<std::string>("smoother: pre type") &&
+        !precList11_.isType<std::string>("smoother: post type"))
+      precList11_.set("smoother: type", "CHEBYSHEV");
+
+    for (std::string smootherType : {"", " pre", " post"}) {
+      if (precList11_.isType<std::string>("smoother: " + smootherType + "type") &&
+          Teuchos::StrUtils::allCaps(precList11_.get<std::string>("smoother: " + smootherType + "type")) == "CHEBYSHEV") {
+        if (!precList11_.sublist("smoother: " + smootherType + "params").isType<int>("chebyshev: degree"))
+          precList11_.sublist("smoother: " + smootherType + "params").set("chebyshev: degree", 2);
+        if (!precList11_.sublist("smoother: " + smootherType + "params").isType<double>("chebyshev: ratio eigenvalue"))
+          precList11_.sublist("smoother: " + smootherType + "params").set("chebyshev: ratio eigenvalue", 5.4);
+        if (!precList11_.sublist("smoother: " + smootherType + "params").isType<int>("chebyshev: eigenvalue max iterations"))
+          precList11_.sublist("smoother: " + smootherType + "params").set("chebyshev: eigenvalue max iterations", 30);
+      }
+    }
+
+    if (!precList11_.isType<int>("number of equations"))
+      precList11_.set<int>("number of equations", dim_);
+
+    if (!precList11_.isType<std::string>("coarse: type")) {
+      if constexpr (Node::is_cpu)
+        precList11_.set("coarse: type", "KLU");
+      else if constexpr (Node::is_gpu) {
+#ifdef KOKKOS_ENABLE_CUDA
+        if constexpr (std::is_same_v<Node, Tpetra::KokkosCompat::KokkosCudaWrapperNode>) {
+          precList11_.set("coarse: type", "cuSOLVER");
+        } else
+#endif
+        {
+          precList11_.set("coarse: type", "KLU");
+        }
+      }
+    }
+
+    if (Teuchos::StrUtils::allCaps(precList11_.get<std::string>("coarse: type")) == "KLU") {
+      if (!precList11_.isType<int>("coarse: max size")) {
+        if constexpr (Node::is_cpu)
+          precList11_.set("coarse: max size", 2500);
+        else if constexpr (Node::is_gpu)
+          precList11_.set("coarse: max size", 500);
+      }
+    } else if (Teuchos::StrUtils::allCaps(precList11_.get<std::string>("coarse: type")) == "CHEBYSHEV") {
+      if (!precList11_.sublist("coarse: params").isType<int>("chebyshev: degree"))
+        precList11_.sublist("coarse: params").set("chebyshev: degree", 6);
+      if (!precList11_.sublist("coarse: params").isType<double>("chebyshev: ratio eigenvalue"))
+        precList11_.sublist("coarse: params").set("chebyshev: ratio eigenvalue", 5.4);
+      if (!precList11_.sublist("coarse: params").isType<int>("chebyshev: eigenvalue max iterations"))
+        precList11_.sublist("coarse: params").set("chebyshev: eigenvalue max iterations", 30);
+    } else if (Teuchos::StrUtils::allCaps(precList11_.get<std::string>("coarse: type")) == "TACHO") {
+      if (!precList11_.isSublist("coarse: params") ||
+          !precList11_.sublist("coarse: params").isSublist("Amesos2") ||
+          !precList11_.sublist("coarse: params").sublist("Amesos2").isSublist("Tacho") ||
+          !precList11_.sublist("coarse: params").sublist("Amesos2").sublist("Tacho").isType<int>("small problem threshold size"))
+        precList11_.sublist("coarse: params").sublist("Amesos2").sublist("Tacho").set("small problem threshold size", 100);
+    }
+
+    if (enable_reuse_ &&
+        !precList11_.isParameter("reuse: type"))
+      precList11_.set("reuse: type", "full");
+
+    if (!precList11_.isType<bool>("fuse prolongation and update"))
+      precList11_.set("fuse prolongation and update", true);
+    if (!precList11_.isType<bool>("repartition: enable"))
+      precList11_.set("repartition: enable", true);
+    if (!precList11_.isType<int>("repartition: start level"))
+      precList11_.set("repartition: start level", 1);
+    if (!precList11_.isType<double>("repartition: max imbalance"))
+      precList11_.set("repartition: max imbalance", 1.1);
+
+    if constexpr (Node::is_serial) {
+      if (!precList11_.isType<int>("repartition: target rows per thread"))
+        precList11_.set("repartition: target rows per thread", 3750);
+      if (!precList11_.isType<int>("repartition: min rows per thread"))
+        precList11_.set("repartition: min rows per thread", 250);
+    } else if constexpr (Node::is_gpu) {
+      if (!precList11_.isType<int>("repartition: target rows per thread"))
+        precList11_.set("repartition: target rows per thread", 95000);
+      if (!precList11_.isType<int>("repartition: min rows per thread"))
+        precList11_.set("repartition: min rows per thread", 10000);
+    }
+
+    if (!precList11_.isSublist("matvec params") ||
+        !precList11_.sublist("matvec params").isType<std::string>("Send type")) {
+      precList11_.sublist("matvec params").set("Send type", "Isend");
+    }
   }
 
-  precList22_ = parameterList_.sublist("refmaxwell: 22list");
-  if (!precList22_.isType<std::string>("Preconditioner Type") &&
-      !precList22_.isType<std::string>("smoother: type") &&
-      !precList22_.isType<std::string>("smoother: pre type") &&
-      !precList22_.isType<std::string>("smoother: post type")) {
-    precList22_.set("smoother: type", "CHEBYSHEV");
-    precList22_.sublist("smoother: params").set("chebyshev: degree", 2);
-    precList22_.sublist("smoother: params").set("chebyshev: ratio eigenvalue", 7.0);
-    precList22_.sublist("smoother: params").set("chebyshev: eigenvalue max iterations", 30);
+  precList22_          = parameterList_.sublist("refmaxwell: 22list");
+  const bool isMueLu22 = !precList22_.isType<std::string>("Preconditioner Type");
+  if (isMueLu22) {
+    if (!precList22_.isType<std::string>("smoother: type") &&
+        !precList22_.isType<std::string>("smoother: pre type") &&
+        !precList22_.isType<std::string>("smoother: post type"))
+      precList22_.set("smoother: type", "CHEBYSHEV");
+
+    for (std::string smootherType : {"", " pre", " post"}) {
+      if (precList22_.isType<std::string>("smoother: " + smootherType + "type") &&
+          Teuchos::StrUtils::allCaps(precList22_.get<std::string>("smoother: " + smootherType + "type")) == "CHEBYSHEV") {
+        if (!precList22_.sublist("smoother: " + smootherType + "params").isType<int>("chebyshev: degree"))
+          precList22_.sublist("smoother: " + smootherType + "params").set("chebyshev: degree", 2);
+        if (!precList22_.sublist("smoother: " + smootherType + "params").isType<double>("chebyshev: ratio eigenvalue"))
+          precList22_.sublist("smoother: " + smootherType + "params").set("chebyshev: ratio eigenvalue", 7.0);
+        if (!precList22_.sublist("smoother: " + smootherType + "params").isType<int>("chebyshev: eigenvalue max iterations"))
+          precList22_.sublist("smoother: " + smootherType + "params").set("chebyshev: eigenvalue max iterations", 30);
+      }
+    }
+
+    if (!precList22_.isType<std::string>("coarse: type")) {
+      if constexpr (Node::is_cpu)
+        precList22_.set("coarse: type", "KLU");
+      else if constexpr (Node::is_gpu) {
+#ifdef KOKKOS_ENABLE_CUDA
+        if constexpr (std::is_same_v<Node, Tpetra::KokkosCompat::KokkosCudaWrapperNode>) {
+          precList22_.set("coarse: type", "cuSOLVER");
+        } else
+#endif
+        {
+          precList22_.set("coarse: type", "KLU");
+        }
+      }
+    }
+
+    if (Teuchos::StrUtils::allCaps(precList22_.get<std::string>("coarse: type")) == "KLU") {
+      if (!precList22_.isType<int>("coarse: max size")) {
+        if constexpr (Node::is_cpu)
+          precList22_.set("coarse: max size", 2500);
+        else if constexpr (Node::is_gpu)
+          precList22_.set("coarse: max size", 500);
+      }
+    } else if (Teuchos::StrUtils::allCaps(precList22_.get<std::string>("coarse: type")) == "CHEBYSHEV") {
+      if (!precList22_.sublist("coarse: params").isType<int>("chebyshev: degree"))
+        precList22_.sublist("coarse: params").set("chebyshev: degree", 6);
+      if (!precList22_.sublist("coarse: params").isType<double>("chebyshev: ratio eigenvalue"))
+        precList22_.sublist("coarse: params").set("chebyshev: ratio eigenvalue", 7.0);
+      if (!precList22_.sublist("coarse: params").isType<int>("chebyshev: eigenvalue max iterations"))
+        precList22_.sublist("coarse: params").set("chebyshev: eigenvalue max iterations", 30);
+    } else if (Teuchos::StrUtils::allCaps(precList22_.get<std::string>("coarse: type")) == "TACHO") {
+      if (!precList22_.isSublist("coarse: params") ||
+          !precList22_.sublist("coarse: params").isSublist("Amesos2") ||
+          !precList22_.sublist("coarse: params").sublist("Amesos2").isSublist("Tacho") ||
+          !precList22_.sublist("coarse: params").sublist("Amesos2").sublist("Tacho").isType<int>("small problem threshold size"))
+        precList22_.sublist("coarse: params").sublist("Amesos2").sublist("Tacho").set("small problem threshold size", 100);
+    }
+
+    if (enable_reuse_ &&
+        !precList22_.isParameter("reuse: type"))
+      precList22_.set("reuse: type", "full");
+
+    if (!precList22_.isType<bool>("fuse prolongation and update"))
+      precList22_.set("fuse prolongation and update", true);
+    if (!precList22_.isType<bool>("repartition: enable"))
+      precList22_.set("repartition: enable", true);
+    if (!precList22_.isType<int>("repartition: min rows per thread"))
+      precList22_.set("repartition: start level", 1);
+    if (!precList22_.isType<double>("repartition: max imbalance"))
+      precList22_.set("repartition: max imbalance", 1.1);
+
+    if constexpr (Node::is_serial) {
+      if (!precList22_.isType<int>("repartition: target rows per thread"))
+        precList22_.set("repartition: target rows per thread", 15000);
+      if (!precList22_.isType<int>("repartition: min rows per thread"))
+        precList22_.set("repartition: min rows per thread", 1000);
+    } else if constexpr (Node::is_gpu) {
+      if (!precList22_.isType<int>("repartition: target rows per thread"))
+        precList22_.set("repartition: target rows per thread", 180000);
+      if (!precList22_.isType<int>("repartition: min rows per thread"))
+        precList22_.set("repartition: min rows per thread", 10000);
+    }
+
+    if (!precList22_.isSublist("matvec params") ||
+        !precList22_.sublist("matvec params").isType<std::string>("Send type")) {
+      precList22_.sublist("matvec params").set("Send type", "Isend");
+    }
   }
 
-  if (!parameterList_.isType<std::string>("smoother: type") && !parameterList_.isType<std::string>("smoother: pre type") && !parameterList_.isType<std::string>("smoother: post type")) {
+  if (!parameterList_.isType<std::string>("smoother: type") &&
+      !parameterList_.isType<std::string>("smoother: pre type") &&
+      !parameterList_.isType<std::string>("smoother: post type"))
     list.set("smoother: type", "CHEBYSHEV");
-    list.sublist("smoother: params").set("chebyshev: degree", 2);
-    list.sublist("smoother: params").set("chebyshev: ratio eigenvalue", 20.0);
-    list.sublist("smoother: params").set("chebyshev: eigenvalue max iterations", 30);
+
+  for (std::string smootherType : {"", " pre", " post"}) {
+    if (list.isType<std::string>("smoother: " + smootherType + "type") &&
+        Teuchos::StrUtils::allCaps(list.get<std::string>("smoother: " + smootherType + "type")) == "CHEBYSHEV") {
+      if (!list.sublist("smoother: " + smootherType + "params").isType<int>("chebyshev: degree"))
+        list.sublist("smoother: " + smootherType + "params").set("chebyshev: degree", 2);
+      if (!list.sublist("smoother: " + smootherType + "params").isType<double>("chebyshev: ratio eigenvalue"))
+        list.sublist("smoother: " + smootherType + "params").set("chebyshev: ratio eigenvalue", 20.0);
+      if (!list.sublist("smoother: " + smootherType + "params").isType<int>("chebyshev: eigenvalue max iterations"))
+        list.sublist("smoother: " + smootherType + "params").set("chebyshev: eigenvalue max iterations", 30);
+    }
   }
 
-  if (enable_reuse_ &&
-      !precList11_.isType<std::string>("Preconditioner Type") &&
-      !precList11_.isParameter("reuse: type"))
-    precList11_.set("reuse: type", "full");
-  if (enable_reuse_ &&
-      !precList22_.isType<std::string>("Preconditioner Type") &&
-      !precList22_.isParameter("reuse: type"))
-    precList22_.set("reuse: type", "full");
+  if (!list.isType<bool>("fuse prolongation and update"))
+    list.set("fuse prolongation and update", true);
+
+  if (!list.isSublist("matvec params") ||
+      !list.sublist("matvec params").isType<std::string>("Send type")) {
+    list.sublist("matvec params").set("Send type", "Isend");
+  }
+
+  if (!precList11_.isType<std::string>("verbosity"))
+    precList11_.set("verbosity", verbosityLevel);
+  if (!precList22_.isType<std::string>("verbosity"))
+    precList22_.set("verbosity", verbosityLevel);
+
+  precList11_.validateParameters(*MasterList::List(), /*maxDepth=*/0);
+  precList22_.validateParameters(*MasterList::List(), /*maxDepth=*/0);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -355,10 +543,6 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     setFineLevelSmoother11();
     return;
   }
-
-  ////////////////////////////////////////////////////////////////////////////////
-
-  dim_ = NodalCoords_->getNumVectors();
 
   ////////////////////////////////////////////////////////////////////////////////
   // build special prolongators
@@ -1771,14 +1955,26 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildNodalProlongato
       SaPFact = rcp(new SaPFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-    double dropTol           = parameterList_.get<double>("aggregation: drop tol");
-    std::string dropScheme   = parameterList_.get<std::string>("aggregation: drop scheme");
-    std::string distLaplAlgo = parameterList_.get<std::string>("aggregation: distance laplacian algo");
+    double dropTol             = parameterList_.get<double>("aggregation: drop tol");
+    std::string dropScheme     = parameterList_.get<std::string>("aggregation: drop scheme");
+    std::string socMatrix      = parameterList_.get<std::string>("aggregation: strength-of-connection: matrix");
+    std::string socMeasure     = parameterList_.get<std::string>("aggregation: strength-of-connection: measure");
+    std::string distLaplMetric = parameterList_.get<std::string>("aggregation: distance laplacian metric");
     dropFact->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(dropTol));
     dropFact->SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(dropScheme));
+    if (useKokkos_) {
+      dropFact->SetParameter("aggregation: strength-of-connection: matrix", Teuchos::ParameterEntry(socMatrix));
+      dropFact->SetParameter("aggregation: strength-of-connection: measure", Teuchos::ParameterEntry(socMeasure));
+      dropFact->SetParameter("aggregation: distance laplacian metric", Teuchos::ParameterEntry(distLaplMetric));
+    }
+#ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
+    std::string distLaplAlgo = parameterList_.get<std::string>("aggregation: distance laplacian algo");
     dropFact->SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(distLaplAlgo));
+#endif
 
     UncoupledAggFact->SetFactory("Graph", dropFact);
+    std::string backend = parameterList_.get<std::string>("aggregation: backend");
+    UncoupledAggFact->SetParameter("aggregation: backend", Teuchos::ParameterEntry(backend));
     int minAggSize = parameterList_.get<int>("aggregation: min agg size");
     UncoupledAggFact->SetParameter("aggregation: min agg size", Teuchos::ParameterEntry(minAggSize));
     int maxAggSize = parameterList_.get<int>("aggregation: max agg size");
@@ -2527,6 +2723,52 @@ bool RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasTransposeApply() 
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::pair<std::set<std::string>, std::set<std::string>>
+RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    requiredAndOptionalUserData(const Teuchos::ParameterList &params) {
+  std::set<std::string> requiredUserData;
+  int spaceNumber = 1;
+  if (params.isType<int>("refmaxwell: space number"))
+    spaceNumber = params.get<int>("refmaxwell: space number");
+  bool disable_addon = MasterList::getDefault<bool>("refmaxwell: disable addon");
+  if (params.isType<bool>("refmaxwell: disable addon"))
+    disable_addon = params.get<bool>("refmaxwell: disable addon");
+  bool disable_addon22 = true;
+  if (params.isType<bool>("refmaxwell: disable addon 22"))
+    disable_addon22 = params.get<bool>("refmaxwell: disable addon 22");
+
+  requiredUserData.insert("Coordinates");
+  requiredUserData.insert("Dk_1");
+
+  requiredUserData.insert("M1_beta");
+  if (spaceNumber >= 2)
+    requiredUserData.insert("M1_alpha");
+
+  if (!disable_addon) {
+    requiredUserData.insert("Mk_one");
+    requiredUserData.insert("invMk_1_invBeta");
+  }
+
+  if ((spaceNumber >= 2) && (!disable_addon22)) {
+    requiredUserData.insert("Dk_2");
+    requiredUserData.insert("Mk_1_one");
+    requiredUserData.insert("invMk_2_invAlpha");
+  }
+
+  auto [requiredUserData11, optionalUserData11] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 11list"));
+  auto [requiredUserData22, optionalUserData22] = ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::requiredAndOptionalUserData(params.sublist("refmaxwell: 22list"));
+
+  if (requiredUserData11.contains("Material") || requiredUserData22.contains("Material"))
+    requiredUserData.insert("Material");
+
+  std::set<std::string> optionalUserData;
+  optionalUserData.insert("Nullspace11");
+  optionalUserData.insert("Nullspace22");
+
+  return std::make_pair(requiredUserData, optionalUserData);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     RefMaxwell(const Teuchos::RCP<Matrix> &SM_Matrix,
                Teuchos::ParameterList &List,
@@ -2540,22 +2782,24 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<MultiVector> Nullspace11, Nullspace22;
   RCP<RealValuedMultiVector> NodalCoords;
 
-  Dk_1 = pop(List, "Dk_1", Dk_1);
-  Dk_2 = pop<RCP<Matrix>>(List, "Dk_2", Dk_2);
-  D0   = pop<RCP<Matrix>>(List, "D0", D0);
+  auto &userData = List.sublist("user data");
 
-  M1_beta  = pop<RCP<Matrix>>(List, "M1_beta", M1_beta);
-  M1_alpha = pop<RCP<Matrix>>(List, "M1_alpha", M1_alpha);
+  Dk_1 = pop(List, userData, "Dk_1", Dk_1);
+  Dk_2 = pop(List, userData, "Dk_2", Dk_2);
+  D0   = pop(List, userData, "D0", D0);
 
-  Mk_one   = pop<RCP<Matrix>>(List, "Mk_one", Mk_one);
-  Mk_1_one = pop<RCP<Matrix>>(List, "Mk_1_one", Mk_1_one);
+  M1_beta  = pop(List, userData, "M1_beta", M1_beta);
+  M1_alpha = pop(List, userData, "M1_alpha", M1_alpha);
 
-  invMk_1_invBeta  = pop<RCP<Matrix>>(List, "invMk_1_invBeta", invMk_1_invBeta);
-  invMk_2_invAlpha = pop<RCP<Matrix>>(List, "invMk_2_invAlpha", invMk_2_invAlpha);
+  Mk_one   = pop(List, userData, "Mk_one", Mk_one);
+  Mk_1_one = pop(List, userData, "Mk_1_one", Mk_1_one);
 
-  Nullspace11 = pop<RCP<MultiVector>>(List, "Nullspace11", Nullspace11);
-  Nullspace22 = pop<RCP<MultiVector>>(List, "Nullspace22", Nullspace22);
-  NodalCoords = pop<RCP<RealValuedMultiVector>>(List, "Coordinates", NodalCoords);
+  invMk_1_invBeta  = pop(List, userData, "invMk_1_invBeta", invMk_1_invBeta);
+  invMk_2_invAlpha = pop(List, userData, "invMk_2_invAlpha", invMk_2_invAlpha);
+
+  Nullspace11 = pop(List, userData, "Nullspace11", Nullspace11);
+  Nullspace22 = pop(List, userData, "Nullspace22", Nullspace22);
+  NodalCoords = pop(List, userData, "Coordinates", NodalCoords);
 
   // old parameter names
   if (List.isType<RCP<Matrix>>("Ms")) {
@@ -2665,6 +2909,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   disable_addon_     = false;
   disable_addon_22_  = true;
   mode_              = "additive";
+
+  dim_ = NodalCoords->getNumVectors();
 
   // set parameters
   setParameters(List);
