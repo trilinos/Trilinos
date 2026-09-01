@@ -126,8 +126,8 @@ public:
     const bool print_diag = (verbosity_ >= 1) &&
                             (GlobalMPISession::getNProc() <= 1
                              || GlobalMPISession::getRank() == 0);
-    if (print_diag) writeHeader_();
     if (print_diag) {
+      writeHeader_();
       writeRow_(0, gnorm, true, false, zero, false, zero,
                 false, zero, false, 0);
     }
