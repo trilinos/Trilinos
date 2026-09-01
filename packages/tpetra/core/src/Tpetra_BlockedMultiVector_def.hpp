@@ -36,8 +36,17 @@ BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   vv_.reserve(map->getNumMaps());
 
   // add sub-multivectors in row order
-  for (size_t r = 0; r < map->getNumMaps(); ++r)
-    vv_.push_back(Teuchos::rcp(new MultiVector(map->getMap(r, map_->getThyraMode()), NumVectors, zeroOut)));
+  for (size_t r = 0; r < map->getNumMaps(); ++r) {
+    // If sub-block r is itself a BlockedMap (a nested blocked operator),
+    // build a nested BlockedMultiVector so its dynamic type is preserved --
+    // mirroring Xpetra, where MultiVectorFactory::Build(BlockedMap) returned a
+    // nested BlockedMultiVector.  Leaf sub-blocks build a plain MultiVector.
+    Teuchos::RCP<const BlockedMap> nested = map->getBlockedSubMap(r);
+    if (!nested.is_null())
+      vv_.push_back(Teuchos::rcp(new BlockedMultiVector(nested, NumVectors, zeroOut)));
+    else
+      vv_.push_back(Teuchos::rcp(new MultiVector(map->getMap(r, map_->getThyraMode()), NumVectors, zeroOut)));
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

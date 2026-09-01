@@ -154,6 +154,12 @@ MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (bThyraMode == true)
       vv->replaceMap(getMap(block, true));  // switch to Thyra-style map
     rcpNonConstFull->replaceMap(oldThyMapFull);
+    // If sub-block is itself blocked, re-slice the extracted vector into a
+    // nested BlockedMultiVector so nested identity is preserved (mirrors
+    // Xpetra's MultiVectorFactory::Build(BlockedMap)).
+    Teuchos::RCP<const BlockedMap> nested = map_->getBlockedSubMap(block);
+    if (!nested.is_null())
+      return Teuchos::rcp(new BlockedMultiVector(nested, Teuchos::rcp_implicit_cast<const MultiVector>(vv)));
     return vv;
   } else {
     // special case: full is of type BlockedMultiVector
@@ -185,6 +191,10 @@ MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (bThyraMode == true)
       vv->replaceMap(getMap(block, true));  // switch to Thyra-style map
     full->replaceMap(oldThyMapFull);
+    // If sub-block is itself blocked, re-slice into a nested BlockedMultiVector.
+    Teuchos::RCP<const BlockedMap> nested = map_->getBlockedSubMap(block);
+    if (!nested.is_null())
+      return Teuchos::rcp(new BlockedMultiVector(nested, Teuchos::rcp_implicit_cast<const MultiVector>(vv)));
     return vv;
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(map_->getNumMaps() != bfull->getBlockedMap()->getNumMaps(), std::runtime_error,
@@ -363,6 +373,12 @@ MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TEUCHOS_TEST_FOR_EXCEPTION(map_->getThyraMode() == false && bThyraMode == true, std::runtime_error,
                              "MapExtractor::getVector: getVector in Thyra-style numbering only possible if MapExtractor has been created using "
                              "Thyra-style numbered submaps.");
+  // If sub-block i is itself blocked, build a nested BlockedMultiVector so the
+  // nested blocked operators (e.g. a nested BGS smoother) see a properly nested
+  // vector rather than a flattened plain one.
+  Teuchos::RCP<const BlockedMap> nested = map_->getBlockedSubMap(i);
+  if (!nested.is_null())
+    return Teuchos::rcp(new BlockedMultiVector(nested, numvec, bZero));
   return Teuchos::rcp(new MultiVector(getMap(i, bThyraMode), numvec, bZero));
 }
 

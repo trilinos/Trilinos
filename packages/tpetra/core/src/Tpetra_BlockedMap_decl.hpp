@@ -218,6 +218,24 @@ class BlockedMap : public Teuchos::Describable {
   /// \brief Get the local Map for Kokkos kernels.
   local_map_type getLocalMap() const { return fullmap_->getLocalMap(); }
 
+  /// \brief Record that sub-block \c i is itself a BlockedMap.
+  ///
+  /// Because Tpetra::Map is not derivable, \c maps_[i] can only ever be a
+  /// flattened plain Map.  To preserve *nested* blocked identity (needed so
+  /// that a BlockedMultiVector over sub-block \c i is itself a nested
+  /// BlockedMultiVector, mirroring Xpetra where BlockedMap : public Map), the
+  /// nested BlockedMap is recorded here alongside the flattened \c maps_[i].
+  /// Only the reorder builders, which know the true nested structure, call
+  /// this; leaf sub-blocks leave \c nestedMaps_[i] null.
+  void setBlockedSubMap(size_t i, const Teuchos::RCP<const BlockedMap>& submap);
+
+  /// \brief The nested BlockedMap for sub-block \c i, or null if sub-block \c i
+  /// is a leaf (plain) map.  \sa setBlockedSubMap.
+  Teuchos::RCP<const BlockedMap> getBlockedSubMap(size_t i) const;
+
+  /// \brief Whether sub-block \c i is itself a BlockedMap.  \sa setBlockedSubMap.
+  bool isBlocked(size_t i) const;
+
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -256,7 +274,8 @@ class BlockedMap : public Teuchos::Describable {
   std::vector<Teuchos::RCP<import_type>> importers_;
   bool bThyraMode_;                                        //< boolean flag: use Thyra numbering for local sub-block maps. default = false (Xpetra mode)
   std::vector<Teuchos::RCP<const map_type>> thyraMaps_;    //< Thyra-style numbering maps (empty in Xpetra mode).
-};                                                         // BlockedMap class
+  std::vector<Teuchos::RCP<const BlockedMap>> nestedMaps_;  //< nested BlockedMap per sub-block, parallel to maps_ (null entry = leaf). \sa setBlockedSubMap
+};                                                          // BlockedMap class
 
 }  // namespace Tpetra
 

@@ -465,6 +465,31 @@ BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
+    setBlockedSubMap(size_t i, const Teuchos::RCP<const BlockedMap>& submap) {
+  TEUCHOS_TEST_FOR_EXCEPTION(i >= getNumMaps(), std::runtime_error,
+                             "BlockedMap::setBlockedSubMap: block " << i << " is out of range (" << getNumMaps() << " maps).");
+  if (nestedMaps_.size() != getNumMaps())
+    nestedMaps_.resize(getNumMaps());
+  nestedMaps_[i] = submap;
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const BlockedMap<LocalOrdinal, GlobalOrdinal, Node>>
+BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
+    getBlockedSubMap(size_t i) const {
+  if (i >= nestedMaps_.size())
+    return Teuchos::null;
+  return nestedMaps_[i];
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+bool BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
+    isBlocked(size_t i) const {
+  return !getBlockedSubMap(i).is_null();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 std::string
 BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
     description() const {
@@ -503,6 +528,7 @@ void BlockedMap<LocalOrdinal, GlobalOrdinal, Node>::
   maps_       = input.maps_;
   thyraMaps_  = input.thyraMaps_;
   importers_  = input.importers_;
+  nestedMaps_ = input.nestedMaps_;
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
