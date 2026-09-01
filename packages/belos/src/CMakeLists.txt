@@ -6,6 +6,14 @@
 
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
+# Windows shared-library import/export for DATA symbols in belos.dll
+# (e.g. Belos::DefaultSolverParameters::convTol and related static doubles).
+# CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS exports via .def, but consumers still need
+# __declspec(dllimport) for DATA or LNK2001/LNK2019 results (see belostpetra).
+SET(CURRENT_PACKAGE BELOS)
+CONFIGURE_FILE("${Trilinos_SOURCE_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h)
+
 ######################################################################
 ## Define the header and source files (and directories)
 ######################################################################
@@ -17,6 +25,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_DLLExportMacro.h
   )
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -201,11 +210,13 @@ IF (${PACKAGE_NAME}_ENABLE_TSQR)
     belos
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
+    DEFINES -DBELOS_LIB_EXPORTS_MODE
     )
 ELSE ()
   TRIBITS_ADD_LIBRARY(
     belos
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
+    DEFINES -DBELOS_LIB_EXPORTS_MODE
     )
 ENDIF ()
