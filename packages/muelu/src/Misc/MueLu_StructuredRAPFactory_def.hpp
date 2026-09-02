@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <sstream>
-#include <type_traits>
 #include <vector>
 
 #include <Xpetra_Matrix.hpp>
@@ -106,8 +105,9 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInp
       "the prebuilt coarse graph assumes the Galerkin product P^T A P.");
 
   const bool prebuildCoarseGraph = pL.get<bool>("rap: prebuild coarse graph");
+  const bool useRAPDelegate      = !prebuildCoarseGraph || Node::is_gpu;
 
-  if (!prebuildCoarseGraph) {
+  if (useRAPDelegate) {
     ConfigureRAPFactoryDelegate();
     coarseLevel.DeclareInput("A", rapFactoryDelegate_.get(), this);
     coarseLevel.DeclareInput("RAP reuse data", rapFactoryDelegate_.get(), this);
@@ -611,6 +611,7 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
   const bool doOptimizeStorage     = true;
   const Teuchos::ParameterList& pL = GetParameterList();
   const bool prebuildCoarseGraph   = pL.get<bool>("rap: prebuild coarse graph");
+  const bool useRAPDelegate        = !prebuildCoarseGraph || Node::is_gpu;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       !pL.get<bool>("transpose: use implicit"), Exceptions::RuntimeError,
@@ -622,13 +623,14 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
   TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_ == false, Exceptions::RuntimeError,
                              "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
 
-  if (!prebuildCoarseGraph) {
+  if (useRAPDelegate) {
     if (coarseLevel.IsAvailable("RAP reuse data", this)) {
       RCP<ParameterList> RAPparams = coarseLevel.Get<RCP<ParameterList>>("RAP reuse data", this);
       coarseLevel.Set("RAP reuse data", RAPparams, rapFactoryDelegate_.get());
     }
 
-    // If prebuildCoarseGraph is false, we delegate the whole RAP computation to RAPFactory.
+    // Delegate the whole RAP computation when coarse-graph prebuilding is disabled
+    // or when the Node uses a GPU execution space (makeshift)
     rapFactoryDelegate_->Build(fineLevel, coarseLevel);
 
     Ac = coarseLevel.Get<RCP<Matrix>>("A", rapFactoryDelegate_.get());
@@ -649,18 +651,9 @@ void StructuredRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Leve
     levelstr << coarseLevel.GetLevelID();
     std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
 
-#ifdef KOKKOS_ENABLE_CUDA
-    const bool isCuda = std::is_same<typename Node::execution_space, Kokkos::Cuda>::value;
-#else
-    const bool isCuda = false;
-#endif
-
     TEUCHOS_TEST_FOR_EXCEPTION(
         pL.get<bool>("rap: triple product") == false, Exceptions::RuntimeError,
         "StructuredRAPFactory requires \"rap: triple product\" = true.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        isCuda, Exceptions::RuntimeError,
-        "StructuredRAPFactory does not currently support CUDA.");
 
     RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
     RCP<Matrix> P = Get<RCP<Matrix>>(coarseLevel, "P");
