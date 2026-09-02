@@ -84,6 +84,7 @@ APPEND_SET(HEADERS
   BelosRCGIter.hpp
   BelosRCGSolMgr.hpp
   BelosSimpleOrthoManager.hpp
+  BelosSolutionProjection.hpp
   BelosSolverManager.hpp
   BelosSolverFactory.hpp
   BelosSolverFactory_Belos.hpp
