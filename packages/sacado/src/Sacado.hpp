@@ -85,7 +85,7 @@
 #include "Sacado_ELRCacheFad_SLFad.hpp"
 
 // Kokkos::View specialization for Sacado AD classes
-#include "Kokkos_View_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 
 //
 // AD classes that won't or don't build under Cuda

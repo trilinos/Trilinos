@@ -63,7 +63,7 @@ void run_fad_scratch(const FluxView& flux, const WgbView& wgb,
 
   const int vector_size  = 1;
   const int team_size    = is_cuda_space<execution_space>::value ? 32 : 1;
-  const int fad_size     = Kokkos::dimension_scalar(residual);
+  const int fad_size     = Sacado::dimension_scalar(residual);
   const size_t range     = (num_cells+team_size-1)/team_size;
   const size_t bytes     = 2*tmp_scratch_type::shmem_size(team_size,fad_size);
   policy_type policy(range,team_size,vector_size);

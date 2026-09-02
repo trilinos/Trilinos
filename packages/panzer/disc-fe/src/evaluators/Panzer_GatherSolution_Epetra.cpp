@@ -8,7 +8,7 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Kokkos_View_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 
 #include "PanzerDiscFE_config.hpp"
 

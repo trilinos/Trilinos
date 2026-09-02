@@ -11,6 +11,14 @@ TRIBITS_PACKAGE(Sacado)
 #
 TRIBITS_SET_ST_FOR_DEV_MODE(ST_FOR_DEV_PT_FOR_RELEASE)
 
+SET(Sacado_ENABLE_DEPRECATED_CODE_DEFAULT ON)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Sacado_ENABLE_DEPRECATED_CODE
+  SACADO_ENABLE_DEPRECATED_CODE
+  "Whether Sacado enables deprecated code (that is, anything marked with the Sacado_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled)."
+  ${Sacado_ENABLE_DEPRECATED_CODE_DEFAULT}
+)
+
 IF (Trilinos_ENABLE_COMPLEX_DOUBLE)
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT  TRUE)
 ELSE()

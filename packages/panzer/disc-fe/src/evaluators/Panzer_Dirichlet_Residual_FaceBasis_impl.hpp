@@ -17,7 +17,7 @@
 
 #include "Intrepid2_CellTools.hpp"
 
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -80,7 +80,7 @@ postRegistrationSetup(
 {
   orientations = sd.orientations_;
   this->utils.setFieldData(pointValues.jac,fm);
-  faceNormal = Kokkos::createDynRankView(residual.get_static_view(),"faceNormal",dof.extent(0),dof.extent(1),dof.extent(2));
+  faceNormal = Sacado::createDynRankView(residual.get_static_view(),"faceNormal",dof.extent(0),dof.extent(1),dof.extent(2));
 }
 
 //**********************************************************************

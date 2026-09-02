@@ -300,19 +300,14 @@ SET(HEADERS ${HEADERS}
   Sacado_Traits.hpp
   Sacado.hpp
   Sacado_No_Kokkos.hpp
-  Kokkos_View_Fad.hpp
-  Kokkos_DynRankView_Fad.hpp
-  Kokkos_DynRankView_Fad_Contiguous.hpp
-  Kokkos_LayoutContiguous.hpp
-  Kokkos_LayoutNatural.hpp
-  Kokkos_View_Fad_Fwd.hpp
-  KokkosExp_View_Fad.hpp
-  KokkosExp_View_Fad_Contiguous.hpp
-  Kokkos_ViewFactory.hpp
+  Sacado_Fad_Kokkos_Fwd.hpp
+  Sacado_Fad_Kokkos.hpp
   Sacado_Fad_Kokkos_View_Support.hpp
   Sacado_Fad_Kokkos_ThreadLocalScalar.hpp
   Sacado_Fad_Kokkos_TeuchosComm.hpp
   Sacado_Fad_Kokkos_Specialization.hpp
+  Sacado_Fad_Kokkos_LayoutContiguous.hpp
+  Sacado_Fad_Kokkos_ViewFactory.hpp
   Sacado_DisableKokkosCuda.hpp
   Sacado_MathFunctions.hpp
   Sacado_cmath.hpp

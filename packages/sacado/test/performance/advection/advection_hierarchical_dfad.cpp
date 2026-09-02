@@ -76,7 +76,7 @@ void run_dfad_hierarchical_team_scratch(
   const bool is_cuda     = is_cuda_space<execution_space>::value;
   const int vector_size  = is_cuda ? 32 : 1;
   const int team_size    = is_cuda ? 256/vector_size : 1;
-  const int fad_size     = Kokkos::dimension_scalar(residual);
+  const int fad_size     = Sacado::dimension_scalar(residual);
   const size_t bytes     = 2*tmp_scratch_type::shmem_size(team_size,fad_size);
   policy_type policy(num_cells,team_size,vector_size);
 
@@ -107,7 +107,7 @@ double time_dfad_hierarchical_team(int ncells, int num_basis, int num_points,
   typedef Sacado::Fad::DFad<double> FadType;
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-  typedef Kokkos::LayoutContiguous<DefaultLayout> ContLayout;
+  typedef Sacado::LayoutContiguous<DefaultLayout> ContLayout;
   typedef Kokkos::View<FadType****,ContLayout,ExecSpace> t_4DView;
   typedef Kokkos::View<FadType***,ContLayout,ExecSpace> t_3DView;
   typedef Kokkos::View<FadType**,ContLayout,ExecSpace> t_2DView;
@@ -163,7 +163,7 @@ double time_dfad_hierarchical_team_scratch(
   typedef Sacado::Fad::DFad<double> FadType;
 
   typedef typename ExecSpace::array_layout DefaultLayout;
-  typedef Kokkos::LayoutContiguous<DefaultLayout> ContLayout;
+  typedef Sacado::LayoutContiguous<DefaultLayout> ContLayout;
   typedef Kokkos::View<FadType****,ContLayout,ExecSpace> t_4DView;
   typedef Kokkos::View<FadType***,ContLayout,ExecSpace> t_3DView;
   typedef Kokkos::View<FadType**,ContLayout,ExecSpace> t_2DView;

@@ -129,7 +129,7 @@ struct is_sycl {
 };
 #if defined(KOKKOS_ENABLE_SYCL)
 template <>
-struct is_sycl<Kokkos::Experimental::SYCL> {
+struct is_sycl<Kokkos::SYCL> {
   enum : bool { value = true };
 };
 #endif
@@ -177,9 +177,9 @@ struct ExecutionSpaceFactory<Kokkos::HIP> {
 
 #if defined(KOKKOS_ENABLE_SYCL)
 template <>
-struct ExecutionSpaceFactory<Kokkos::Experimental::SYCL> {
-  static void createInstance(Kokkos::Experimental::SYCL &exec_instance) {
-    exec_instance = Kokkos::Experimental::SYCL();
+struct ExecutionSpaceFactory<Kokkos::SYCL> {
+  static void createInstance(Kokkos::SYCL &exec_instance) {
+    exec_instance = Kokkos::SYCL();
   }
 };
 #endif

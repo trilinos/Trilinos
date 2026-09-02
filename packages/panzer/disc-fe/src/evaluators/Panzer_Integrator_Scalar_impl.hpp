@@ -14,7 +14,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 namespace panzer {
@@ -71,7 +71,7 @@ postRegistrationSetup(
   PHX::FieldManager<Traits>& /* fm */)
 {
   num_qp = scalar.extent(1);
-  tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp", scalar.extent(0), num_qp);
+  tmp = Sacado::createDynRankView(scalar.get_static_view(),"tmp", scalar.extent(0), num_qp);
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 
   Kokkos::deep_copy(field_multipliers, field_multipliers_h);

@@ -11,8 +11,7 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
-#include "KokkosExp_View_Fad.hpp"
-#include "Kokkos_DynRankView_Fad.hpp"
+#include "Sacado_Fad_Kokkos.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"

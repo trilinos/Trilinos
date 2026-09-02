@@ -19,7 +19,7 @@
 
 #ifdef HAVE_INTREPID2_SACADO
 #include <Sacado.hpp>
-#include <Kokkos_DynRankView_Fad.hpp> // This Sacado header defines deep_copy, subview overloads
+#include <Sacado_Fad_Kokkos.hpp> // This Sacado header defines deep_copy, subview overloads
 #endif
 
 #endif

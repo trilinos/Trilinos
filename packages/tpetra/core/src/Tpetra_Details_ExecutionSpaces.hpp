@@ -133,9 +133,9 @@ using IsHIP = std::enable_if_t<std::is_same_v<Space, Kokkos::HIP>, bool>;
 #endif  // KOKKOS_ENABLE_HIP
 
 #if defined(KOKKOS_ENABLE_SYCL)
-///\brief IsSYCL<Space> is a type if Space is Kokkos::Experimental::SYCL
+///\brief IsSYCL<Space> is a type if Space is Kokkos::SYCL
 template <typename Space>
-using IsSYCL = std::enable_if_t<std::is_same_v<Space, Kokkos::Experimental::SYCL>, bool>;
+using IsSYCL = std::enable_if_t<std::is_same_v<Space, Kokkos::SYCL>, bool>;
 #endif  // KOKKOS_ENABLE_SYCL
 
 /*! \brief Construct a Kokkos execution space instance with the following
@@ -323,7 +323,7 @@ extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::OpenMP> openMPS
 extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::HIP> HIPSpaces;
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::Experimental::SYCL> SYCLSpaces;
+extern TPETRACORE_LIB_DLL_EXPORT InstanceLifetimeManager<Kokkos::SYCL> SYCLSpaces;
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -370,7 +370,7 @@ Teuchos::RCP<const ExecSpace> space_instance(int i = 0) {
 }
 #endif
 #if defined(KOKKOS_ENABLE_SYCL)
-/*! \brief get a strong Teuchos::RCP to Tpetra-managed Kokkos::Experimental::SYCL instance \c
+/*! \brief get a strong Teuchos::RCP to Tpetra-managed Kokkos::SYCL instance \c
  * i
  */
 template <typename ExecSpace, Priority priority = Priority::medium,
@@ -482,7 +482,7 @@ is_gpu_exec_space<Kokkos::HIP>() {
 #if defined(KOKKOS_ENABLE_SYCL)
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool
-is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
+is_gpu_exec_space<Kokkos::SYCL>() {
   return true;
 }
 #endif

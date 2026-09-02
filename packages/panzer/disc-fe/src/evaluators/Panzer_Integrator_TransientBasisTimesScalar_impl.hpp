@@ -15,7 +15,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -83,7 +83,7 @@ postRegistrationSetup(
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.extent(0), num_qp); 
+  tmp = Sacado::createDynRankView(residual.get_static_view(),"tmp",scalar.extent(0), num_qp); 
 }
 
 //**********************************************************************

@@ -102,7 +102,7 @@ namespace Intrepid2 {
           auto out = Kokkos::subview(output_, cl, Kokkos::ALL(), pt, Kokkos::ALL()); // N, D
           ImplBasis::template Serial<OPERATOR_GRAD>::getValues(out, in);
         } else {
-          static_assert((Operator != OPERATOR_VALUE) && (Operator != OPERATOR_GRAD), "Invalid template parameter. Only OPERATOR_VALUE and OPERATOR_GRAD are supported.");
+          static_assert((Operator == OPERATOR_VALUE) || (Operator == OPERATOR_GRAD), "Invalid template parameter. Only OPERATOR_VALUE and OPERATOR_GRAD are supported.");
         } 
       }
     };

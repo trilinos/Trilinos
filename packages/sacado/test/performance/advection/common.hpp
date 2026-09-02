@@ -55,7 +55,7 @@ void init_fad(const V1& v1, const V2& v2, const V3& v3, const V4& v4,
   const int num_basis  = v1.extent(1);
   const int num_points = v1.extent(2);
   const int ndim       = v1.extent(3);
-  const int N          = Kokkos::dimension_scalar(v1)-1;
+  const int N          = Sacado::dimension_scalar(v1)-1;
 
   // Kokkos::deep_copy(typename V1::array_type(v1), 1.0);
   // Kokkos::deep_copy(typename V2::array_type(v2), 2.0);
@@ -170,7 +170,7 @@ void init_array(const V1& v1, const V2& v2, const V3& v3, const V4& v4,
 }
 
 template <typename View1, typename View2>
-typename std::enable_if< !Kokkos::is_view_fad<View2>::value, bool>::type
+typename std::enable_if< !Sacado::is_view_fad<View2>::value, bool>::type
 check(const View1& v_gold, const View2& v, const double tol)
 {
   // Copy to host
@@ -206,7 +206,7 @@ check(const View1& v_gold, const View2& v, const double tol)
 }
 
 template <typename View1, typename View2>
-typename std::enable_if< Kokkos::is_view_fad<View2>::value, bool>::type
+typename std::enable_if< Sacado::is_view_fad<View2>::value, bool>::type
 check(const View1& v_gold, const View2& v, const double tol)
 {
   // Copy to host
@@ -247,7 +247,7 @@ Kokkos::View<double***,typename FluxView::execution_space>
 compute_gold_residual(
   const FluxView& flux, const WgbView& wgb, const SrcView& src,
   const WbsView& wbs,
-  typename std::enable_if< Kokkos::is_view_fad<FluxView>::value>::type* = 0)
+  typename std::enable_if< Sacado::is_view_fad<FluxView>::value>::type* = 0)
 {
   typedef typename FluxView::execution_space execution_space;
 
@@ -255,7 +255,7 @@ compute_gold_residual(
   const int num_basis    = wgb.extent(1);
   const int num_points   = wgb.extent(2);
   const int num_dim      = wgb.extent(3);
-  const int N            = Kokkos::dimension_scalar(wgb)-1;
+  const int N            = Sacado::dimension_scalar(wgb)-1;
 
   Kokkos::View<double***,typename FluxView::execution_space> residual(
     "",num_cells,num_basis,N+1);
@@ -303,7 +303,7 @@ Kokkos::View<double***,typename FluxView::execution_space>
 compute_gold_residual(
   const FluxView& flux, const WgbView& wgb, const SrcView& src,
   const WbsView& wbs,
-  typename std::enable_if< !Kokkos::is_view_fad<FluxView>::value>::type* = 0)
+  typename std::enable_if< !Sacado::is_view_fad<FluxView>::value>::type* = 0)
 {
   typedef typename FluxView::execution_space execution_space;
 

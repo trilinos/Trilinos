@@ -27,18 +27,11 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaAligned)
   const int Stride = 32;
   const int LocalDim = 2;
   typedef Sacado::Fad::SFad<double,StaticDim> FadType;
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
+  typedef Sacado::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
   typedef Kokkos::Cuda Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
-#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
-  typedef typename ViewType::traits TraitsType;
-  typedef Kokkos::Impl::ViewMapping< TraitsType , typename TraitsType::specialize > MappingType;
-  const int view_static_dim = MappingType::FadStaticDimension;
-  TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
-#endif
-
-  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
+  typedef typename Sacado::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
   const int static_dim = Sacado::StaticSize<local_fad_type>::value;
   TEUCHOS_TEST_EQUALITY(issfd, true, out, success);
@@ -49,12 +42,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaAligned)
 
   ViewType v("v", num_rows, fad_size+1);
   const size_t span = v.span();
-  // This doesn't make sense really - span is number of elements not subelements
-  #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-  TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
-  #else
   TEUCHOS_TEST_EQUALITY(span, num_rows, out, success);
-  #endif
 }
 
 TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaNotAligned)
@@ -63,18 +51,11 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaNotAligned)
   const int Stride = 32;
   const int LocalDim = 0;
   typedef Sacado::Fad::SFad<double,StaticDim> FadType;
-  typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
+  typedef Sacado::LayoutContiguous<Kokkos::LayoutLeft,Stride> Layout;
   typedef Kokkos::Cuda Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
-#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
-  typedef typename ViewType::traits TraitsType;
-  typedef Kokkos::Impl::ViewMapping< TraitsType , typename TraitsType::specialize > MappingType;
-  const int view_static_dim = MappingType::FadStaticDimension;
-  TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
-#endif
-
-  typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
+  typedef typename Sacado::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
   const int static_dim = Sacado::StaticSize<local_fad_type>::value;
   TEUCHOS_TEST_EQUALITY(issfd, false, out, success);
@@ -85,12 +66,7 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadCudaNotAligned)
 
   ViewType v("v", num_rows, fad_size+1);
   const size_t span = v.span();
-  // This doesn't make sense really - span is number of elements not subelements
-  #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
-  TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
-  #else
   TEUCHOS_TEST_EQUALITY(span, num_rows, out, success);
-  #endif
 }
 
 int main( int argc, char* argv[] ) {

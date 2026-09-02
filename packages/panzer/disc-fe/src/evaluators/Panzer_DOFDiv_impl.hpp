@@ -41,7 +41,7 @@ public:
       div_basis(in_div_basis),
       num_fields(static_cast<int>(div_basis.extent(1))),
       num_points(static_cast<int>(div_basis.extent(2))),
-      fad_size(static_cast<int>(Kokkos::dimension_scalar(in_dof_div.get_view()))),
+      fad_size(static_cast<int>(Sacado::dimension_scalar(in_dof_div.get_view()))),
       use_shared_memory(in_use_shared_memory)
   {}
 

@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef KOKKOS_ARITHTRAITS_MP_VECTOR_HPP
-#define KOKKOS_ARITHTRAITS_MP_VECTOR_HPP
+#ifndef KOKKOSKERNELS_ARITHTRAITS_MP_VECTOR_HPP
+#define KOKKOSKERNELS_ARITHTRAITS_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
@@ -190,4 +190,4 @@ namespace KokkosBatched {
 
 }
 
-#endif /* #ifndef KOKKOS_ARITHTRAITS_MP_VECTOR_HPP */
+#endif /* #ifndef KOKKOSKERNELS_ARITHTRAITS_MP_VECTOR_HPP */

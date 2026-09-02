@@ -12,7 +12,7 @@
 #include "Panzer_Traits.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
-#include "Kokkos_ViewFactory.hpp"
+#include "Sacado_Fad_Kokkos_ViewFactory.hpp"
 #include "Panzer_OrientationsInterface.hpp"
 
 #include "Intrepid2_Utils.hpp"
@@ -41,7 +41,7 @@ applyOrientationsImpl(const int num_cells,
   if(view.rank() == 3){
     // Grab subview of object to re-orient and create a copy of it
     auto sub_view = Kokkos::subview(view, std::make_pair(0,num_cells), Kokkos::ALL(), Kokkos::ALL());
-    auto sub_view_clone = Kokkos::createDynRankView(view, "sub_view_clone", sub_view.extent(0), sub_view.extent(1), sub_view.extent(2));
+    auto sub_view_clone = Sacado::createDynRankView(view, "sub_view_clone", sub_view.extent(0), sub_view.extent(1), sub_view.extent(2));
     Kokkos::deep_copy(sub_view_clone, sub_view);
 
     // Apply the orientations to the subview
@@ -49,7 +49,7 @@ applyOrientationsImpl(const int num_cells,
   } else if (view.rank() == 4){
     // Grab subview of object to re-orient and create a copy of it
     auto sub_view = Kokkos::subview(view, std::make_pair(0,num_cells), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-    auto sub_view_clone = Kokkos::createDynRankView(view, "sub_view_clone", sub_view.extent(0), sub_view.extent(1), sub_view.extent(2), sub_view.extent(3));
+    auto sub_view_clone = Sacado::createDynRankView(view, "sub_view_clone", sub_view.extent(0), sub_view.extent(1), sub_view.extent(2), sub_view.extent(3));
     Kokkos::deep_copy(sub_view_clone, sub_view);
 
     // Apply the orientations to the subview
