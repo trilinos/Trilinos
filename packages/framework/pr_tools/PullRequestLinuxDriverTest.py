@@ -275,8 +275,9 @@ def parse_args():
     print("| - [O] workspace-dir               : {workspace_dir}".format(**vars(arguments)))
     print("| - [O] skip-run-tests              : {skip_run_tests}".format(**vars(arguments)))
     print("| - [O] extra_configure_args        : {extra_configure_args}".format(**vars(arguments)))
+    print("| - [O] extra_ctest_driver_args     : {extra_ctest_driver_args}".format(**vars(arguments)))
     print("| - [O] dashboard_build_name        : {dashboard_build_name}".format(**vars(arguments)))
-    print("| - [O] use_explicit_cachefile       : {use_explicit_cachefile}".format(**vars(arguments)))
+    print("| - [O] use_explicit_cachefile      : {use_explicit_cachefile}".format(**vars(arguments)))
     #print("| - [O] : {}".format(**vars(arguments)))
     print("+" + "="*78 + "+")
 
