@@ -27,7 +27,6 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDenseMatTraits.hpp"
 
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
