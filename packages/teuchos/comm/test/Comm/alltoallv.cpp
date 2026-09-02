@@ -39,11 +39,10 @@ testAlltoallv (bool& success, std::ostream& out,
       << " and numProcs = " << numProcs << endl;
 
   const packet_type ZERO = Teuchos::ScalarTraits<packet_type>::zero ();
-  const packet_type ONE = Teuchos::ScalarTraits<packet_type>::one ();
-  packet_type sendBuf[total_count];
-  packet_type recvBuf[total_count];
-  int send_counts[total_count], send_displs[total_count+1];
-  int recv_counts[total_count], recv_displs[total_count+1];
+  Teuchos::Array<packet_type> sendBuf (total_count);
+  Teuchos::Array<packet_type> recvBuf (total_count);
+  Teuchos::Array<int> send_counts(total_count), send_displs(total_count+1);
+  Teuchos::Array<int> recv_counts(total_count), recv_displs(total_count+1);
   send_displs[0] = recv_displs[0] = 0;
   for (int i = 0; i < total_count; ++i) {
     sendBuf[i] = myRank * total_count + i;
@@ -51,8 +50,8 @@ testAlltoallv (bool& success, std::ostream& out,
     send_counts[i] = send_count; send_displs[i+1] = send_displs[i] + send_counts[i];
     recv_counts[i] = recv_count; recv_displs[i+1] = recv_displs[i] + recv_counts[i];
   }
-  alltoAllv<int, packet_type> (sendBuf, send_counts, send_displs,
-                               recvBuf, recv_counts, recv_displs, comm);
+  alltoAllv<int, packet_type> (sendBuf.data(), send_counts.data(), send_displs.data(),
+                               recvBuf.data(), recv_counts.data(), recv_displs.data(), comm);
 
   // Don't trust that any other Teuchos communicator wrapper functions
   // work here.  Instead, if building with MPI, use raw MPI.  If not
@@ -75,10 +74,10 @@ testAlltoallv (bool& success, std::ostream& out,
     (err != MPI_SUCCESS, std::logic_error, "MPI_Barrier failed!");
 
   // Recompute using MPI.  Use an all-reduce to simplify the test.
-  packet_type sendBuf2[total_count];
-  packet_type recvBuf2[total_count];
-  int send_counts2[total_count], send_displs2[total_count+1];
-  int recv_counts2[total_count], recv_displs2[total_count+1];
+  Teuchos::Array<packet_type> sendBuf2 (total_count);
+  Teuchos::Array<packet_type> recvBuf2 (total_count);
+  Teuchos::Array<int> send_counts2(total_count), send_displs2(total_count+1);
+  Teuchos::Array<int> recv_counts2(total_count), recv_displs2(total_count+1);
   send_displs2[0] = recv_displs2[0] = 0;
   for (int i = 0; i < total_count; ++i) {
     sendBuf2[i] = myRank * total_count + i;
@@ -113,8 +112,8 @@ testAlltoallv (bool& success, std::ostream& out,
       (true, std::logic_error, "Unimplemented conversion from PacketType = "
        << TypeNameTraits<packet_type>::name () << " to MPI_Datatype.");
   }
-  err = MPI_Alltoallv (sendBuf2, send_counts2, send_displs2, rawMpiType,
-                       recvBuf2, recv_counts2, recv_displs2, rawMpiType,
+  err = MPI_Alltoallv (sendBuf2.data(), send_counts2.data(), send_displs2.data(), rawMpiType,
+                       recvBuf2.data(), recv_counts2.data(), recv_displs2.data(), rawMpiType,
                        rawMpiComm);
   TEUCHOS_TEST_FOR_EXCEPTION
     (err != MPI_SUCCESS, std::logic_error, "MPI_Alltoallv failed!");

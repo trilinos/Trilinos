@@ -39,14 +39,14 @@ testAlltoall (bool& success, std::ostream& out,
       << " and numProcs = " << numProcs << endl;
 
   const packet_type ZERO = Teuchos::ScalarTraits<packet_type>::zero ();
-  const packet_type ONE = Teuchos::ScalarTraits<packet_type>::one ();
-  packet_type sendBuf[total_count];
-  packet_type recvBuf[total_count];
+  Teuchos::Array<packet_type> sendBuf (total_count);
+  Teuchos::Array<packet_type> recvBuf (total_count);
   for (int i = 0; i < total_count; ++i) {
     sendBuf[i] = myRank * total_count + i;
     recvBuf[i] = ZERO;
   }
-  alltoAll<int, packet_type> (sendBuf, send_count, recvBuf, recv_count, comm);
+  alltoAll<int, packet_type> (sendBuf.data(), send_count,
+                              recvBuf.data(), recv_count, comm);
 
   // Don't trust that any other Teuchos communicator wrapper functions
   // work here.  Instead, if building with MPI, use raw MPI.  If not
@@ -69,8 +69,8 @@ testAlltoall (bool& success, std::ostream& out,
     (err != MPI_SUCCESS, std::logic_error, "MPI_Barrier failed!");
 
   // Recompute using MPI.  Use an all-reduce to simplify the test.
-  packet_type sendBuf2[total_count];
-  packet_type recvBuf2[total_count];
+  Teuchos::Array<packet_type> sendBuf2 (total_count);
+  Teuchos::Array<packet_type> recvBuf2 (total_count);
   for (int i = 0; i < total_count; ++i) {
     sendBuf2[i] = myRank * total_count + i;
     recvBuf2[i] = ZERO;
@@ -102,8 +102,8 @@ testAlltoall (bool& success, std::ostream& out,
       (true, std::logic_error, "Unimplemented conversion from PacketType = "
        << TypeNameTraits<packet_type>::name () << " to MPI_Datatype.");
   }
-  err = MPI_Alltoall (sendBuf2, send_count, rawMpiType,
-                      recvBuf2, recv_count, rawMpiType,
+  err = MPI_Alltoall (sendBuf2.data(), send_count, rawMpiType,
+                      recvBuf2.data(), recv_count, rawMpiType,
                       rawMpiComm);
   TEUCHOS_TEST_FOR_EXCEPTION
     (err != MPI_SUCCESS, std::logic_error, "MPI_Alltoall failed!");
