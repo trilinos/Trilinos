@@ -77,7 +77,6 @@ class TrilinosPRConfigurationBase(object):
         self._concurrency_test     = None
         self._debug_level          = 1
         self._arg_extra_configure_args = None
-        self._arg_extra_ctest_args = None
 
 
     # --------------------
@@ -133,6 +132,7 @@ class TrilinosPRConfigurationBase(object):
         Returns:
             self.args.extra_ctest_driver_args
         """
+        print(f"DIAG HIT {self.args.extra_ctest_driver_args}")
         return shlex.split(self.args.extra_ctest_driver_args)
 
     @property
