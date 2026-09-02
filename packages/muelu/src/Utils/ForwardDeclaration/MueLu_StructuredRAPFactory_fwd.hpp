@@ -10,6 +10,9 @@
 #ifndef MUELU_STRUCTUREDRAPFACTORY_FWD_HPP
 #define MUELU_STRUCTUREDRAPFACTORY_FWD_HPP
 
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
+
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class StructuredRAPFactory;
@@ -17,6 +20,8 @@ class StructuredRAPFactory;
 
 #ifndef MUELU_STRUCTUREDRAPFACTORY_SHORT
 #define MUELU_STRUCTUREDRAPFACTORY_SHORT
+#endif
+
 #endif
 
 #endif  // MUELU_STRUCTUREDRAPFACTORY_FWD_HPP
