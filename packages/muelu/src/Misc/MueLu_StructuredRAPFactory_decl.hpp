@@ -82,6 +82,25 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
 
   //@}
 
+  // These implementation details must be public because CUDA extended lambdas
+  // cannot be enclosed by a private member function or capture a private type.
+  struct StencilOffset {
+    int x;
+    int y;
+    int z;
+  };
+
+  struct StructuredGraphSpec {
+    int numDimensions;
+    LocalOrdinal dofsPerNode;
+    std::vector<StencilOffset> stencilOffsets;
+    std::string description;
+  };
+
+  void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
+                          const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
+                          const StructuredGraphSpec& graphSpec) const;
+
  private:
   //@{
 
@@ -98,24 +117,7 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
 
   //@{
 
-  struct StencilOffset {
-    int x;
-    int y;
-    int z;
-  };
-
-  struct StructuredGraphSpec {
-    int numDimensions;
-    LocalOrdinal dofsPerNode;
-    std::vector<StencilOffset> stencilOffsets;
-    std::string description;
-  };
-
   StructuredGraphSpec GetStructuredGraphSpec(const std::string& matrixType, int interpolationOrder) const;
-
-  void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
-                          const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
-                          const StructuredGraphSpec& graphSpec) const;
 
   void ConfigureRAPFactoryDelegate() const;
 
