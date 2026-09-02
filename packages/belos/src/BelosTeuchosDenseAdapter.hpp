@@ -301,7 +301,15 @@ namespace Belos {
     
     //!  \brief Adds sourceDM to thisDM and returns answer in thisDM.
     static void Add( DM& thisDM, const DM& sourceDM){
-      thisDM += sourceDM; 
+      thisDM += sourceDM;
+    }
+
+    //!  \brief Add source to diagonal entries of dest
+    static void AddDiag( DM& dest, ScalarType source) {
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumCols(dest));
+      for (int i = 0; i < GetNumRows(dest); i++) {
+          Value(dest, i, i) += source;
+      }
     }
 
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
@@ -341,6 +349,34 @@ namespace Belos {
     //!  \brief Copies entries of source to dest (deep copy). 
     static void Assign( DM& dest, const DM& source){
       dest.assign(source);
+    }
+
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, ScalarType source) {
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumCols(dest));
+      for (int i = 0; i < GetNumRows(dest); i++) {
+          Value(dest, i, i) = source;
+      }
+    }
+
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, const DM& source) {
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumRows(source));
+      TEUCHOS_ASSERT(GetNumCols(dest) == GetNumRows(source));
+      TEUCHOS_ASSERT(GetNumCols(source) == 1);
+      for (int i = 0; i < GetNumRows(source); i++) {
+          Value(dest, i, i) = ValueConst(source, i, 0);
+      }
+    }
+
+    //!  \brief Assign upper triangular entries of source to dest
+    static void AssignUpperTri( DM& dest, const DM& source){
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumRows(source));
+      TEUCHOS_ASSERT(GetNumCols(dest) == GetNumCols(source));
+      for (int i = 0; i < GetNumRows(source); i++) {
+        for (int j = i; j < GetNumCols(source); j++)
+          Value(dest, i, j) = ValueConst(source, i, j);
+      }
     }
 
     //!  \brief Returns the Frobenius norm of the dense matrix.

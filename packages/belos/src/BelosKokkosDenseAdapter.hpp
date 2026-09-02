@@ -524,6 +524,20 @@ namespace Belos {
       thisDM.modify_device();
     }
 
+    //!  \brief Add source to diagonal entries of dest
+    static void AddDiag( DM& dest, Scalar source) {
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumCols(dest));
+      TEUCHOS_ASSERT(!dest.need_sync_device());
+
+      auto dest_d = dest.view_device();
+      Kokkos::parallel_for(Kokkos::RangePolicy<typename DM::t_dev::execution_space>(0, GetNumRows(dest)),
+          KOKKOS_LAMBDA(size_t i)
+          {
+            dest_d(i, i) += source;
+          });
+      dest.modify_device();
+    }
+
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
     static void PutScalar( DM& dm, Scalar value = Teuchos::ScalarTraits<Scalar>::zero()){
       dm.clear_sync_state();
@@ -563,6 +577,56 @@ namespace Belos {
       Kokkos::deep_copy(dest,source);
     }
 
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, Scalar source) {
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumCols(dest));
+      TEUCHOS_ASSERT(!dest.need_sync_device());
+
+      auto dest_d = dest.view_device();
+      Kokkos::parallel_for(Kokkos::RangePolicy<typename DM::t_dev::execution_space>(0, GetNumRows(dest)),
+          KOKKOS_LAMBDA(size_t i)
+          {
+            dest_d(i, i) = source;
+          });
+      dest.modify_device();
+    }
+
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, const DM& source) {
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumRows(source));
+      TEUCHOS_ASSERT(GetNumCols(dest) == GetNumRows(source));
+      TEUCHOS_ASSERT(GetNumCols(source) == 1);
+      TEUCHOS_ASSERT(!source.need_sync_device());
+      TEUCHOS_ASSERT(!dest.need_sync_device());
+
+      auto dest_d = dest.view_device();
+      auto source_d = source.view_device();
+      Kokkos::parallel_for(Kokkos::RangePolicy<typename DM::t_dev::execution_space>(0, GetNumRows(dest)),
+          KOKKOS_LAMBDA(size_t i)
+          {
+            dest_d(i, i) = source_d(i, 0);
+          });
+      dest.modify_device();
+    }
+
+    //!  \brief Assign upper triangular entries of source to dest
+    static void AssignUpperTri( DM& dest, const DM& source) {
+      TEUCHOS_ASSERT(GetNumRows(dest) == GetNumRows(source));
+      TEUCHOS_ASSERT(GetNumCols(dest) == GetNumCols(source));
+      TEUCHOS_ASSERT(!source.need_sync_device());
+      TEUCHOS_ASSERT(!dest.need_sync_device());
+
+      auto dest_d = dest.view_device();
+      auto source_d = source.view_device();
+      Kokkos::parallel_for(Kokkos::MDRangePolicy<typename DM::t_dev::execution_space, Kokkos::Rank<2>>({0, 0}, {GetNumRows(dest), GetNumCols(dest)}),
+          KOKKOS_LAMBDA(size_t i, size_t j)
+          {
+            if (i <= j)
+              dest_d(i, j) = source_d(i, j);
+          });
+      dest.modify_device();
+    }
+
     //!  \brief Returns the Frobenius norm of the dense matrix.
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType NormFrobenius(const DM& dm) {
       using KAT = KokkosKernels::ArithTraits<IST>;
@@ -570,7 +634,7 @@ namespace Belos {
       // CAG: This is a bit naughty.
       const_cast<DM*>(&dm)->sync_device();
       mag_t frobNorm;
-      Kokkos::parallel_reduce(Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {dm.extent(0), dm.extent(1)}),
+      Kokkos::parallel_reduce(Kokkos::MDRangePolicy<typename DM::t_dev::execution_space, Kokkos::Rank<2>>({0, 0}, {dm.extent(0), dm.extent(1)}),
           KOKKOS_LAMBDA(size_t i, size_t j, mag_t& lfrobNorm)
           {
           mag_t absVal = KAT::abs((dm.view_device())(i, j));

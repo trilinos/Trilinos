@@ -187,6 +187,10 @@ View(const pointer_type &ptr, const IntType&... indices)
     static void Add( DM& thisDM, const DM& sourceDM)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
+    //!  \brief Add source to diagonal entries of dest
+    static void AddDiag( DM& dest, ScalarType source)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
     //!  \brief Fill all entries with \c value. Value is zero if not specified.
     static void PutScalar( DM& dm, ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero()) 
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
@@ -204,8 +208,20 @@ View(const pointer_type &ptr, const IntType&... indices)
     static void Randomize( DM& dm)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
-    //!  \brief Copies entries of sourceDM to thisDM (deep copy). 
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, ScalarType source)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Assign source to diagonal entries of dest
+    static void AssignDiag( DM& dest, const DM& source)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Copies entries of sourceDM to thisDM (deep copy).
     static void Assign( DM& thisDM, const DM& sourceDM)
+    { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
+
+    //!  \brief Assign upper triangular entries of source to dest
+    static void AssignUpperTri(DM &dest, const DM &source)
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }
 
     //!  \brief Returns the Frobenius norm of the dense matrix.

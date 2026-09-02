@@ -1737,15 +1737,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // Step #3: Explicitly construct Q and R factors
           // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
           // Synchronize R_ before and after copying over diagonal of HP
-	  DMT::SyncDeviceToHost( *R_ );
           RCP<DM> Rtmp = DMT::Subview( *R_, keff, keff );
-          DMT::SyncDeviceToHost(*HP_);
-          for (int ii = 0; ii < keff; ++ii) {
-            for (int jj = ii; jj < keff; ++jj) {
-              DMT::Value(*Rtmp,ii,jj) = DMT::ValueConst(*HPtmp,ii,jj);
-	    }
-          }
-          DMT::SyncHostToDevice( *R_ );
+          DMT::AssignUpperTri(*Rtmp, *DMT::SubviewConst( *HP_, keff, keff ));
 
           DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
 
@@ -1764,6 +1757,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // backsolve capabilities don't exist in the Belos::MultiVec class
 
           // Step #1: First, compute LU factorization of R
+          DMT::SyncDeviceToHost( *R_ );
           ipiv_.resize(DMT::GetNumRows(*Rtmp));
           lapack.GETRF(DMT::GetNumRows(*Rtmp), DMT::GetNumCols(*Rtmp), DMT::GetRawHostPtr(*Rtmp),
 		       DMT::GetStride(*Rtmp), &ipiv_[0], &info);
@@ -1780,7 +1774,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,DM,true>::solve() {
           // Step #2: Form inv(R)
           int lwork = DMT::GetNumRows(*Rtmp);
           work_.resize(lwork);
-          lapack.GETRI(DMT::GetNumRows(*Rtmp), DMT::GetRawHostPtr(*Rtmp), DMT::GetStride(*Rtmp), 
+          lapack.GETRI(DMT::GetNumRows(*Rtmp), DMT::GetRawHostPtr(*Rtmp), DMT::GetStride(*Rtmp),
 		       &ipiv_[0], &work_[0], lwork, &info);
           TEUCHOS_TEST_FOR_EXCEPTION(
             info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
@@ -2152,10 +2146,8 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
 
   // Explicitly construct Q and R factors
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
-  DMT::SyncDeviceToHost( *R_ );
   Teuchos::RCP<DM> Rtmp = DMT::Subview( *R_, keff_new, keff_new );
-  DMT::SyncDeviceToHost(*HP_);
-  for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) DMT::Value(*Rtmp,i,j) = DMT::ValueConst(*HPtmp,i,j); }
+  DMT::AssignUpperTri(*Rtmp, *DMT::SubviewConst(*HP_, keff_new, keff_new));
 
   DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
 
@@ -2194,6 +2186,7 @@ void GCRODRSolMgr<ScalarType,MV,OP,DM,true>::buildRecycleSpace2(Teuchos::RCP<GCR
 
   // Finally, compute U_ = U_*R^{-1}
   // First, compute LU factorization of R
+  DMT::SyncDeviceToHost( *R_ );
   ipiv_.resize(DMT::GetNumRows(*Rtmp));
   lapack.GETRF(DMT::GetNumRows(*Rtmp),DMT::GetNumCols(*Rtmp),DMT::GetRawHostPtr(*Rtmp),DMT::GetStride(*Rtmp),&ipiv_[0],&info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::buildRecycleSpace2(): LAPACK _GETRF failed to compute an LU factorization.");
@@ -2688,14 +2681,8 @@ int GCRODRSolMgr<ScalarType,MV,OP,DM,true>::getHarmonicVecs2(int keffloc, int m,
 
   A11 = Teuchos::null;
   A21 = Teuchos::null;
-  DMT::SyncDeviceToHost(*A_tmp);
 
-  // A_tmp(keffloc+1:m-k+keffloc,keffloc+1:m-k+keffloc) = eye(m-k);
-  for( i=keffloc; i<keffloc+m; i++ ) {
-    DMT::Value(*A_tmp,i,i) = one;
-  }
-
-  DMT::SyncHostToDevice(*A_tmp);
+  DMT::AssignDiag(*DMT::Subview(*A_tmp, m, m, keffloc, keffloc), one);
 
   // A = H2' * A_tmp;
   Teuchos::RCP<DM> A = DMT::Create( m2, DMT::GetNumCols(*A_tmp) );
