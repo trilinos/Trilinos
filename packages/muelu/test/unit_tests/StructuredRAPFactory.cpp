@@ -359,12 +359,14 @@ void compareRAPMatrices(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, 
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &localGraphMismatch, &globalGraphMismatch);
   const std::string graphMismatchMessage =
       "Prebuilt RAP graph does not contain symbolic RAP graph";
+  const std::string graphMismatchDetails =
+      localGraphMismatch
+          ? graphMismatchMessage + ": " + localMismatchReason
+          : graphMismatchMessage + " on another MPI rank.";
   TEUCHOS_TEST_FOR_EXCEPTION(
       globalGraphMismatch != 0,
       std::runtime_error,
-      localGraphMismatch
-          ? graphMismatchMessage + ": " + localMismatchReason
-          : graphMismatchMessage + " on another MPI rank.");
+      graphMismatchDetails);
 
   Teuchos::RCP<Matrix> difference;
   Xpetra::MatrixMatrix<SC, LO, GO, NO>::TwoMatrixAdd(

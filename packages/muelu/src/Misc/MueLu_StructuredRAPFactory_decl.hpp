@@ -13,11 +13,8 @@
 #include <vector>
 
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_MatrixUtils_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -28,12 +25,11 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
-/*!
+/*!s
   @class StructuredRAPFactory
-  @brief Factory for building coarse matrices.
+  @brief Factory for building coarse matrices in an optimized way by prebuilding the coarse graph based on the structuredness of the problem.
 */
 template <class Scalar        = DefaultScalar,
           class LocalOrdinal  = DefaultLocalOrdinal,
@@ -49,7 +45,7 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
 
   StructuredRAPFactory();
 
-  virtual ~StructuredRAPFactory();
+  virtual ~StructuredRAPFactory() = default;
 
   //@}
 
@@ -75,12 +71,29 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
   */
   void AddTransferFactory(const RCP<const FactoryBase>& factory);
 
-  // TODO add a function to remove a specific transfer factory?
-
   //! Returns number of transfer factories.
   size_t NumTransferFactories() const { return transferFacts_.size(); }
 
   //@}
+
+  // These implementation details must be public because CUDA extended lambdas
+  // cannot be enclosed by a private member function or capture a private type.
+  struct StencilOffset {
+    int x;
+    int y;
+    int z;
+  };
+
+  struct StructuredGraphSpec {
+    int numDimensions;
+    LocalOrdinal dofsPerNode;
+    std::vector<StencilOffset> stencilOffsets;
+    std::string description;
+  };
+
+  void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
+                          const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
+                          const StructuredGraphSpec& graphSpec) const;
 
  private:
   //@{
@@ -98,24 +111,7 @@ class StructuredRAPFactory : public TwoLevelFactoryBase {
 
   //@{
 
-  struct StencilOffset {
-    int x;
-    int y;
-    int z;
-  };
-
-  struct StructuredGraphSpec {
-    int numDimensions;
-    LocalOrdinal dofsPerNode;
-    std::vector<StencilOffset> stencilOffsets;
-    std::string description;
-  };
-
   StructuredGraphSpec GetStructuredGraphSpec(const std::string& matrixType, int interpolationOrder) const;
-
-  void GetStructuredGraph(RCP<Matrix>& Ac, const RCP<Matrix> P,
-                          const Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim,
-                          const StructuredGraphSpec& graphSpec) const;
 
   void ConfigureRAPFactoryDelegate() const;
 
