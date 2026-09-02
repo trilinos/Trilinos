@@ -301,7 +301,23 @@ public:
    void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
 
    virtual void beginFill(LinearObjContainer & loc) const;
+
+   /** \brief Open the ghosted container for filling, giving it the owned container's operator.
+     *
+     * Under FE assembly the ghosted container holds no operator of its own; this is where it
+     * borrows the owned one. Outside FE assembly it is exactly beginFill(ghostContainer).
+     */
+   virtual void beginFill(LinearObjContainer & ghostContainer,
+                          const LinearObjContainer & container) const;
    virtual void endFill(LinearObjContainer & loc) const;
+
+   /** \brief Close the ghosted container after filling, returning the borrowed matrix.
+     *
+     * The counterpart of beginFill(ghostContainer,container). Outside FE assembly it is
+     * exactly endFill(ghostContainer).
+     */
+   virtual void endFill(LinearObjContainer & ghostContainer,
+                        const LinearObjContainer & container) const;
 
    Teuchos::RCP<const panzer::BlockedDOFManager> getGlobalIndexer() const
    { return blockedDOFManager_; }
@@ -386,7 +402,6 @@ protected:
    bool useFEAssembly_;
 
    mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<FECrsGraphType>,panzer::pair_hash> feGraphs_;
-   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<FECrsMatrixType>,panzer::pair_hash> feMatrices_;
 
    /** Which FE matrices currently have an assembly open, tracked so the paired
      * beginFill(ghosted)/beginFill(global) calls AssemblyEngine makes -- which in FE mode

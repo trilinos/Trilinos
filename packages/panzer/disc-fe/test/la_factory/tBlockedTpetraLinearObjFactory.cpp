@@ -861,11 +861,14 @@ assembleOnesAndCollectOwnedRowSums(const Teuchos::RCP<BLOFact> & la_factory,
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  RCP<Thyra::LinearOpBase<double> > gh_A = rcp_dynamic_cast<BLOC>(ghosted)->get_A();
-
-  // AssemblyEngine's ordering: beginFill(ghosted), scatter, ghostToGlobal,
+  // AssemblyEngine's ordering: beginFill(ghosted,global), scatter, ghostToGlobal,
   // beginFill(global), endFill(global), endFill(ghosted).
-  la_factory->beginFill(*ghosted);
+  //
+  // The ghosted operator must be read AFTER beginFill: under FE assembly the ghosted
+  // container holds none of its own and borrows the global container's there.
+  la_factory->beginFill(*ghosted,*global);
+
+  RCP<Thyra::LinearOpBase<double> > gh_A = rcp_dynamic_cast<BLOC>(ghosted)->get_A();
 
   std::vector<std::string> elementBlockIds;
   blkIndexer->getFieldDOFManagers()[0]->getElementBlockIds(elementBlockIds);
@@ -900,7 +903,7 @@ assembleOnesAndCollectOwnedRowSums(const Teuchos::RCP<BLOFact> & la_factory,
   la_factory->ghostToGlobalContainer(*ghosted,*global,LinearObjContainer::Mat);
   la_factory->beginFill(*global);
   la_factory->endFill(*global);
-  la_factory->endFill(*ghosted);
+  la_factory->endFill(*ghosted,*global);
 
   RCP<Thyra::LinearOpBase<double> > g_A = rcp_dynamic_cast<BLOC>(global)->get_A();
 
@@ -933,8 +936,9 @@ assembleOnesAndCollectOwnedRowSums(const Teuchos::RCP<BLOFact> & la_factory,
 
 // The flag is opt-in and it changes what the matrix getters hand back.
 //
-// Classic: getTpetraMatrix(i,j) and getGhostedTpetraMatrix(i,j) allocate a fresh, disjoint
-// matrix on every call. FE: both return the one cached FECrsMatrix for that block, which is
+// Both paths allocate a fresh, disjoint matrix per call. What differs is the ghosted side:
+// classic gives out a separate ghosted matrix per block, while FE has no ghosted matrix at
+// all -- the ghosted container borrows the owned one at beginFill(ghosted,owned), which is
 // what lets endAssembly() migrate ghost rows onto owned rows in place.
 TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, fe_opt_in)
 {
@@ -974,15 +978,17 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, fe_opt_in)
 
       for(int i=0;i<numBlocks;i++) {
          for(int j=0;j<numBlocks;j++) {
-            RCP<CrsMatrixType> owned   = fe->getTpetraMatrix(i,j);
-            RCP<CrsMatrixType> ghosted = fe->getGhostedTpetraMatrix(i,j);
-
-            // the shared object: this is the whole point of FE mode
-            TEST_ASSERT(owned.get()==ghosted.get());
+            RCP<CrsMatrixType> owned = fe->getTpetraMatrix(i,j);
             TEST_ASSERT(rcp_dynamic_cast<FECrsMatrixType>(owned)!=Teuchos::null);
 
-            // cached, so repeated calls keep returning it
-            TEST_ASSERT(fe->getTpetraMatrix(i,j).get()==owned.get());
+            // a fresh object per call, exactly like the classic getter
+            TEST_ASSERT(fe->getTpetraMatrix(i,j).get()!=owned.get());
+
+            // ...but they share the cached graph, so only values are reallocated
+            TEST_ASSERT(fe->getFEGraph(i,j).get()==fe->getFEGraph(i,j).get());
+
+            // There is no ghosted matrix to hand out under FE assembly.
+            TEST_THROW(fe->getGhostedTpetraMatrix(i,j),std::logic_error);
 
             // The graph rests in its OWNED view once endAssembly() has run, so this is the
             // owned row map, not the ghosted one.
@@ -990,31 +996,23 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, fe_opt_in)
          }
       }
 
-      // The blocked operators must declare stable spaces -- owned for the owned operator,
-      // ghosted for the ghosted one -- even though both wrap the same FECrsMatrix per block.
-      //
-      // The matrix's own getRangeMap()/getDomainMap() cannot be used for this: they follow
-      // whichever view is active, which flips across the assembly cycle (and a freshly built
-      // FECrsMatrix starts in owned+shared, not owned). So the factory states the spaces
-      // explicitly instead of letting Thyra deduce them from the matrix.
+      // The owned operator must declare stable spaces. The matrix's own getRangeMap()/
+      // getDomainMap() cannot be used for this: they follow whichever view is active, which
+      // flips across the assembly cycle (and a freshly built FECrsMatrix starts in
+      // owned+shared, not owned). So the factory states the spaces explicitly instead of
+      // letting Thyra deduce them from the matrix.
       RCP<Thyra::BlockedLinearOpBase<double> > ownedOp
          = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(fe->getThyraMatrix(),true);
-      RCP<Thyra::BlockedLinearOpBase<double> > ghostedOp = fe->getGhostedThyraMatrix();
 
       for(int i=0;i<numBlocks;i++) {
          for(int j=0;j<numBlocks;j++) {
             TEST_ASSERT(ownedOp->getBlock(i,j)->range()->isCompatible(*fe->getThyraRangeSpace(i)));
             TEST_ASSERT(ownedOp->getBlock(i,j)->domain()->isCompatible(*fe->getThyraDomainSpace(j)));
-
-            RCP<const Thyra::ProductVectorSpaceBase<double> > gRange
-               = rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(fe->getGhostedThyraRangeSpace(),true);
-            RCP<const Thyra::ProductVectorSpaceBase<double> > gDomain
-               = rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(fe->getGhostedThyraDomainSpace(),true);
-
-            TEST_ASSERT(ghostedOp->getBlock(i,j)->range()->isCompatible(*gRange->getBlock(i)));
-            TEST_ASSERT(ghostedOp->getBlock(i,j)->domain()->isCompatible(*gDomain->getBlock(j)));
          }
       }
+
+      // ...and there is no ghosted operator at all.
+      TEST_THROW(fe->getGhostedThyraMatrix(),std::logic_error);
    }
 }
 

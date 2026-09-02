@@ -190,7 +190,7 @@ public:
    //! Get the (cached) FE graph, built via the Tpetra::FECrsGraph "V2" constructor.
    Teuchos::RCP<FECrsGraphType> getFEGraph() const;
 
-   //! Build a new Tpetra::FECrsMatrix over the FE graph.
+   //! Build a new Tpetra::FECrsMatrix over the (cached) FE graph. Fresh object per call.
    Teuchos::RCP<FECrsMatrixType> getFEMatrix() const;
 
    //! Build a new Tpetra::FEMultiVector compatible with the FE graph.
@@ -275,7 +275,24 @@ public:
    { return gidProvider_; }
 
    virtual void beginFill(LinearObjContainer & loc) const;
+
+   /** \brief Open the ghosted container for filling, giving it the owned container's matrix.
+     *
+     * Under FE assembly the ghosted container holds no matrix of its own; this is where it
+     * borrows the owned one. Outside FE assembly it is exactly beginFill(ghostContainer).
+     */
+   virtual void beginFill(LinearObjContainer & ghostContainer,
+                          const LinearObjContainer & container) const;
+
    virtual void endFill(LinearObjContainer & loc) const;
+
+   /** \brief Close the ghosted container after filling, returning the borrowed matrix.
+     *
+     * The counterpart of beginFill(ghostContainer,container). Outside FE assembly it is
+     * exactly endFill(ghostContainer).
+     */
+   virtual void endFill(LinearObjContainer & ghostContainer,
+                        const LinearObjContainer & container) const;
 
 protected:
 
@@ -308,7 +325,6 @@ protected:
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > graph_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedGraph_;
    mutable Teuchos::RCP<FECrsGraphType> feGraph_;
-   mutable Teuchos::RCP<FECrsMatrixType> feMatrix_;
 
    /** Which FE matrix (if any) currently has an assembly open, tracked so the paired
      * beginFill()/endFill() calls AssemblyEngine makes on the ghosted AND global containers

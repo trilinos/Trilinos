@@ -135,7 +135,10 @@ public:
    /// \brief Sets every entry of the Jacobian matrix A to \p value.
    void initializeMatrix(ScalarT value)
    {
-     A->setAllToScalar(value);
+     // May be null: under Tpetra FE assembly a ghosted container carries no matrix of its
+     // own, and only borrows the owned container's at beginFill().
+     if(A!=Teuchos::null)
+       A->setAllToScalar(value);
    }
 
    //! \name ThyraObjContainer overrides: Thyra-wrapped views of the same underlying Tpetra data.

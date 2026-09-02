@@ -802,6 +802,16 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_opt_in)
       TEST_ASSERT(feMatrix!=Teuchos::null);
       TEST_ASSERT(feMatrix->getLocalNumRows()>0);
 
+      // Unlike the graph, the matrix is NOT cached: every call allocates a fresh one, so a
+      // caller that needs several independent Jacobians gets them. Only the values are
+      // reallocated -- the graph underneath is shared.
+      TEST_ASSERT(la_factory->getFEMatrix().get()!=feMatrix.get());
+      TEST_ASSERT(la_factory->getTpetraMatrix().get()!=feMatrix.get());
+
+      // There is no ghosted matrix to hand out: the ghosted container borrows the owned
+      // container's at beginFill(ghosted,owned).
+      TEST_THROW(la_factory->getGhostedTpetraMatrix(),std::logic_error);
+
       // A range-space (residual-side) FE multivector's owned+shared view must be over the
       // ghosted ROW map exactly -- that is the map the scatter evaluators index with the
       // GlobalIndexer's local ids, and the source map getGhostedExport() migrates from.
@@ -1053,21 +1063,22 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_shared_matrix_assembly_cycle)
    RCP<LOCType> gt = rcp_dynamic_cast<LOCType>(gLoc);
    RCP<LOCType> ght = rcp_dynamic_cast<LOCType>(ghLoc);
 
-   // THE key structural property of the FE path: one object, two views. The owned container
-   // gets its matrix via getTpetraMatrix() (the same route ModelEvaluator::create_W_op takes
-   // to hand NOX its W operator) and the ghosted container via getGhostedTpetraMatrix();
-   // in FE mode both must resolve to the identical cached FECrsMatrix.
+   // The owned container gets its matrix via getTpetraMatrix() -- the same route
+   // ModelEvaluator::create_W_op takes to hand NOX its W operator. The ghosted container
+   // gets none of its own.
    TEST_ASSERT(gt->get_A()!=Teuchos::null);
-   TEST_ASSERT(ght->get_A()!=Teuchos::null);
+   TEST_ASSERT(ght->get_A()==Teuchos::null);
+
+   // --- AssemblyEngine-style cycle ---------------------------------------------------
+   // 1) begin fill on the ghosted container, handing it the owned container. THE key
+   //    structural property of the FE path -- one object, two views -- is established
+   //    right here, and only here.
+   la_factory->beginFill(*ghLoc,*gLoc);
    TEST_EQUALITY(gt->get_A().get(),ght->get_A().get());
 
    RCP<LOFType::FECrsMatrixType> feA
       = Teuchos::rcp_dynamic_cast<LOFType::FECrsMatrixType>(ght->get_A());
    TEST_ASSERT(feA!=Teuchos::null);
-
-   // --- AssemblyEngine-style cycle ---------------------------------------------------
-   // 1) begin fill on the ghosted container
-   la_factory->beginFill(*ghLoc);
 
    // 2) "scatter": every rank sums 1.0 into the diagonal of each row it can see through its
    //    GHOSTED map -- i.e. exactly what a local element loop does with ghosted LIDs. Rows
@@ -1093,7 +1104,13 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_shared_matrix_assembly_cycle)
    //    ghosted one. Only one begin/end may actually reach the FE state machine.
    TEST_NOTHROW(la_factory->beginFill(*gLoc));
    TEST_NOTHROW(la_factory->endFill(*gLoc));
-   TEST_NOTHROW(la_factory->endFill(*ghLoc));
+   TEST_NOTHROW(la_factory->endFill(*ghLoc,*gLoc));
+
+   // The borrow lasts only for the assembly: the ghosted container hands the matrix back,
+   // so it does not pin the caller's Jacobian alive afterwards. The owned container -- which
+   // actually owns it -- keeps it.
+   TEST_ASSERT(ght->get_A()==Teuchos::null);
+   TEST_ASSERT(gt->get_A()!=Teuchos::null);
 
    // --- verify the assembled OWNED Jacobian -------------------------------------------
    // The matrix now presents its owned view.
@@ -1245,7 +1262,7 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_repeated_assembly_is_not_polluted)
    RCP<LOCType> gt = rcp_dynamic_cast<LOCType>(gLoc);
    RCP<LOCType> ght = rcp_dynamic_cast<LOCType>(ghLoc);
    RCP<LOFType::FECrsMatrixType> feA
-      = Teuchos::rcp_dynamic_cast<LOFType::FECrsMatrixType>(ght->get_A());
+      = Teuchos::rcp_dynamic_cast<LOFType::FECrsMatrixType>(gt->get_A());
    TEST_ASSERT(feA!=Teuchos::null);
 
    std::vector<panzer::GlobalOrdinal> ghosted, ownedIdx;
@@ -1255,7 +1272,7 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_repeated_assembly_is_not_polluted)
    // One AssemblyEngine-style cycle: sum 1.0 into the diagonal of every row this rank can
    // see through its ghosted map, then migrate. Returns the resulting owned diagonals.
    auto runCycleAndCollectOwnedDiagonals = [&]() {
-      la_factory->beginFill(*ghLoc);
+      la_factory->beginFill(*ghLoc,*gLoc);
       {
          Teuchos::Array<panzer::GlobalOrdinal> cols(1);
          Teuchos::Array<double> vals(1); vals[0] = 1.0;
@@ -1267,7 +1284,7 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_repeated_assembly_is_not_polluted)
       la_factory->ghostToGlobalContainer(*ghLoc,*gLoc,LOC::Mat);
       la_factory->beginFill(*gLoc);
       la_factory->endFill(*gLoc);
-      la_factory->endFill(*ghLoc);
+      la_factory->endFill(*ghLoc,*gLoc);
 
       std::vector<double> diags;
       for(std::size_t i=0;i<ownedIdx.size();i++) {
@@ -1287,7 +1304,10 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, fe_repeated_assembly_is_not_polluted)
 
    std::vector<double> firstPass = runCycleAndCollectOwnedDiagonals();
 
-   // Exactly what panzer::ModelEvaluator does before the next Jacobian evaluation.
+   // Exactly what panzer::ModelEvaluator does before the next Jacobian evaluation. Under
+   // FE assembly the ghosted container holds no matrix at this point -- the borrow lasts
+   // only for the assembly -- so this is a no-op and beginFill() is what must clear the
+   // matrix. That is precisely the pollution this test guards against.
    ght->initializeMatrix(0.0);
 
    std::vector<double> secondPass = runCycleAndCollectOwnedDiagonals();
