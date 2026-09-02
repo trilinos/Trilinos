@@ -173,6 +173,7 @@ endif()
 cmake_host_system_information(RESULT HOSTNAME QUERY HOSTNAME)
 
 set(CTEST_SITE "${HOSTNAME}" CACHE STRING "Name of the CDash site")
+message(STATUS "CTEST_SITE is ${CTEST_SITE}")
 
 set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS 500)
 
