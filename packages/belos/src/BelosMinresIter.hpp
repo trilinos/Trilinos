@@ -57,7 +57,7 @@ namespace Belos {
 ///
 /// \ingroup belos_solver_framework
 ///
-template<class ScalarType, class MV, class OP, class DM>
+template<class ScalarType, class MV, class OP, class DM = DefaultDenseMatrix<int,ScalarType>>
 class MinresIter : virtual public MinresIteration<ScalarType,MV,OP,DM> {
 
   public:
