@@ -634,7 +634,8 @@ namespace Belos {
     DM E = *DMT::Create(dim_,1);
     DMT::PutScalar(E, SCT::zero());
     DMT::Value(E, dim_-1,0) = SCT::one();
-      
+    DMT::SyncHostToDevice(E);
+
     auto HSolver = DMT::createDenseSolver();
     HSolver->setMatrix( Teuchos::rcpFromRef(Htemp));
     HSolver->solveWithTransposeFlag( Teuchos::CONJ_TRANS );
