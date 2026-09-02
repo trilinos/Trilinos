@@ -108,6 +108,7 @@ ARGS=$(getopt -n PullRequestLinuxDriver.sh \
  --options '+x' \
  --longoptions kokkos-develop \
  --longoptions extra-configure-args: \
+ --longoptions extra-ctest-driver-args: \
  --longoptions no-bootstrap -- "${manual_args[@]}") || true
 
 eval set -- "${ARGS}"
