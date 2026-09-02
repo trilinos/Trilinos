@@ -32,7 +32,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -48,7 +48,6 @@ using Teuchos::rcp;
 #include "Panzer_ParameterLibraryUtilities.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_LinearObjFactory_Utilities.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
@@ -542,6 +541,14 @@ namespace panzer {
 
       out << "evalModel(fd)" << std::endl;
       OutArgs outArgs_delta = me->createOutArgs();
+      // TODO BWR Why does this Vp_StV operation ultimately cause the segfault?
+      // TODO BWR Potentially because these are no longer the same spaces?
+      // TODO BWR is the p space is ghosted? x is not
+      // TODO BWR For the gatherTangent step we need ghosted containers
+      // TODO BWR Recall that the x_space does not actually propagate to solution gather
+      // TODO BWR but rather a ghostedContainer is set up (I believe in the assembly engine)
+      std::cout << std::boolalpha << x->space()->isCompatible(*(v->space())) << std::endl;
+      std::cout << " DIMS " << x->space()->dim() << " " << v->space()->dim() << std::endl;
       Thyra::Vp_StV(x.ptr(),1.0,*v); // x = x + 1 * v
       Thyra::put_scalar(6.0,p.ptr());// p = p + 1
       outArgs_delta.set_f(fd);
@@ -1303,7 +1310,7 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
     else {
@@ -1314,7 +1321,8 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,panzer::LocalOrdinal,panzer::GlobalOrdinal>(
+            mpiComm,Teuchos::rcp_dynamic_cast<const panzer::BlockedDOFManager>(dofManager)));
       ap.lof = linObjFactory;
     }
 

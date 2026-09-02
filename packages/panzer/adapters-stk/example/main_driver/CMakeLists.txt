@@ -36,6 +36,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-ss-blocked.xml
     energy-transient-tempus-blocked.xml
     energy-transient-tempus-opt-blocked.xml
+    energy-transient-tempus-opt-blocked-p-dependent-g.xml
     rol_params.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
@@ -222,7 +223,15 @@ IF(${PACKAGE_NAME}_ENABLE_Teko)
         main_driver_energy-transient-tempus-opt-blocked
         EXCLUDE_IF_NOT_TRUE PANZER_THIS_IS_AN_OPT_BUILD
         TEST_0 EXEC main_driver_opt
-          PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+          PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
+          NUM_MPI_PROCS 4
+        )
+      TRIBITS_ADD_ADVANCED_TEST(
+        main_driver_energy-transient-tempus-opt-blocked-p-dependent-g
+        TEST_0 EXEC main_driver_opt
+          ARGS --i=energy-transient-tempus-opt-blocked-p-dependent-g.xml
+          PASS_REGULAR_EXPRESSION "panzer::MainDriverOpt run completed."
+          NUM_MPI_PROCS 4
         )
     ENDIF()
 
