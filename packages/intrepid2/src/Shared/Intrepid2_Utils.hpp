@@ -324,13 +324,21 @@ namespace Intrepid2 {
   template<typename T, typename ...P>
   KOKKOS_FORCEINLINE_FUNCTION
   static ordinal_type get_dimension_scalar(const Kokkos::DynRankView<T, P...> &view) {
+#ifdef HAVE_INTREPID2_SACADO
     return Sacado::dimension_scalar(view);
+#else
+    return 1;
+#endif
   }
 
   template<typename T, typename ...P>
   KOKKOS_FORCEINLINE_FUNCTION
   static ordinal_type get_dimension_scalar(const Kokkos::View<T, P...> &view) {
+#ifdef HAVE_INTREPID2_SACADO
     return Sacado::dimension_scalar(view);
+#else
+    return 1;
+#endif
   }
 
   //! Used to obtain the dynRankView type from an input View,
