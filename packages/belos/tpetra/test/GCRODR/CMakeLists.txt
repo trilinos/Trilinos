@@ -25,6 +25,7 @@ IF (Tpetra_INST_COMPLEX_DOUBLE)
       SOURCES test_gcrodr_complex_hb.cpp
       ARGS
         "--verbose --filename=mhd1280b.cua"
+        "--verbose --filename=mhd1280b.cua --flexible"
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraGCRODRComplexFiles
