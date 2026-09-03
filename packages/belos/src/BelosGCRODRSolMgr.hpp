@@ -2368,58 +2368,15 @@ buildFlexibleRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > g
   int info = 0;
   int lwork = -1;
 
-  tau_.resize(keff_new);
-  if (work_.size() < 1) work_.resize(1);
-
-  lapack.GEQRF(DMT::GetNumRows(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetRawHostPtr(*HPtmp),
-               DMT::GetStride(*HPtmp),
-               &tau_[0], &work_[0], lwork, &info);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0,
-    GCRODRSolMgrLAPACKFailure,
-    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GEQRF workspace query failed.");
-
-  lwork = std::abs(static_cast<int>(Teuchos::ScalarTraits<ScalarType>::real(work_[0])));
-  work_.resize(lwork);
-
-  lapack.GEQRF(DMT::GetNumRows(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetRawHostPtr(*HPtmp),
-               DMT::GetStride(*HPtmp),
-               &tau_[0], &work_[0], lwork, &info);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0,
-    GCRODRSolMgrLAPACKFailure,
-    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK GEQRF failed.");
+  DMT::Reshape(*tau_, keff_new, 1);
+  DMT::geqrf(*HPtmp, *tau_);
 
   // Copy R from upper triangular part of HP.
-  DMT::SyncDeviceToHost(*R_);
   Teuchos::RCP<DM> Rtmp = DMT::Subview(*R_, keff_new, keff_new);
-
-  for (int i=0; i<keff_new; ++i) {
-    for (int j=i; j<keff_new; ++j) {
-      DMT::Value(*Rtmp, i, j) = DMT::ValueConst(*HPtmp, i, j);
-    }
-  }
+  DMT::AssignUpperTri(*Rtmp, *DMT::SubviewConst(*HP_, keff_new, keff_new));
 
   // Form Q explicitly in HPtmp.
-  lapack.UNGQR(DMT::GetNumRows(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetNumCols(*HPtmp),
-               DMT::GetRawHostPtr(*HPtmp),
-               DMT::GetStride(*HPtmp),
-               &tau_[0], &work_[0], lwork, &info);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    info != 0,
-    GCRODRSolMgrLAPACKFailure,
-    "Belos::GCRODRSolMgr::buildFlexibleRecycleSpace2(): LAPACK UNGQR failed.");
-
-  DMT::SyncHostToDevice(*HP_);
+  DMT::ungqr(DMT::GetNumCols(*HPtmp), *HPtmp, *tau_);
 
   // C1 = [C, V_{p+1}] * Q.
   {
@@ -2454,8 +2411,8 @@ buildFlexibleRecycleSpace2(Teuchos::RCP<GCRODRIteration<ScalarType,MV,OP,DM> > g
   std::swap(C_, C1_);
 
   // Compute R^{-1}.
+  DMT::SyncDeviceToHost(*Rtmp);
   ipiv_.resize(DMT::GetNumRows(*Rtmp));
-
   lapack.GETRF(DMT::GetNumRows(*Rtmp),
                DMT::GetNumCols(*Rtmp),
                DMT::GetRawHostPtr(*Rtmp),
